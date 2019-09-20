@@ -69,7 +69,7 @@ public class DispatcherTest {
     public void requireThatDispatcherSupportsSingleNodeDirectDispatch() {
         SearchCluster cl = new MockSearchCluster("1", 0, 0) {
             @Override
-            public Optional<Node> localCorpusDispatchTarget() {
+            public Optional<Node> directDispatchTarget() {
                 return Optional.of(new Node(1, "test", 123, 1));
             }
         };

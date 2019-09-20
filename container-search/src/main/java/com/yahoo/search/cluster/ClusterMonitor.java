@@ -22,9 +22,9 @@ import java.util.logging.Logger;
  */
 public class ClusterMonitor<T> {
 
-    private final MonitorConfiguration configuration = new MonitorConfiguration();
+    private MonitorConfiguration configuration = new MonitorConfiguration();
 
-    private static Logger log = Logger.getLogger(ClusterMonitor.class.getName());
+    private static Logger log=Logger.getLogger(ClusterMonitor.class.getName());
 
     private NodeManager<T> nodeManager;
 
@@ -33,7 +33,7 @@ public class ClusterMonitor<T> {
     private volatile boolean shutdown = false;
 
     /** A map from Node to corresponding MonitoredNode */
-    private final Map<T, TrafficNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
+    private final Map<T, BaseNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
     public ClusterMonitor(NodeManager<T> manager) {
         nodeManager = manager;
@@ -56,7 +56,8 @@ public class ClusterMonitor<T> {
      * @param internal whether or not this node is internal to this cluster
      */
     public void add(T node, boolean internal) {
-        nodeMonitors.put(node, new TrafficNodeMonitor<>(node, configuration, internal));
+        BaseNodeMonitor<T> monitor = new TrafficNodeMonitor<>(node, configuration, internal);
+        nodeMonitors.put(node, monitor);
     }
 
     /**
@@ -68,20 +69,22 @@ public class ClusterMonitor<T> {
 
     /** Called from ClusterSearcher/NodeManager when a node failed */
     public synchronized void failed(T node, ErrorMessage error) {
-        TrafficNodeMonitor<T> monitor = nodeMonitors.get(node);
-        Boolean wasWorking = monitor.isKnownWorking();
+        BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
+        boolean wasWorking = monitor.isWorking();
         monitor.failed(error);
-        if (wasWorking != monitor.isKnownWorking())
+        if (wasWorking && !monitor.isWorking()) {
             nodeManager.failed(node);
+        }
     }
 
     /** Called when a node responded */
     public synchronized void responded(T node) {
-        TrafficNodeMonitor<T> monitor = nodeMonitors.get(node);
-        Boolean wasWorking = monitor.isKnownWorking();
+        BaseNodeMonitor<T> monitor = nodeMonitors.get(node);
+        boolean wasFailing =! monitor.isWorking();
         monitor.responded();
-        if (wasWorking != monitor.isKnownWorking())
+        if (wasFailing && monitor.isWorking()) {
             nodeManager.working(monitor.getNode());
+        }
     }
 
     /**
