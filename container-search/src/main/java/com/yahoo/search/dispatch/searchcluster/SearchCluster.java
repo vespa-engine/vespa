@@ -202,18 +202,21 @@ public class SearchCluster implements NodeManager<Node> {
         return localCorpusDispatchTarget;
     }
 
+    private void updateWorkingState(Node node, boolean isWorking) {
+        node.setWorking(isWorking);
+        updateVipStatusOnNodeChange(node, isWorking);
+    }
+
     /** Called by the cluster monitor when node state changes to working */
     @Override
     public void working(Node node) {
-        node.setWorking(true);
-        updateVipStatusOnNodeChange(node, true);
+        updateWorkingState(node, true);
     }
 
     /** Called by the cluster monitor when node state changes to failed */
     @Override
     public void failed(Node node) {
-        node.setWorking(false);
-        updateVipStatusOnNodeChange(node, true);
+        updateWorkingState(node, false);
     }
 
     private void updateSufficientCoverage(Group group, boolean sufficientCoverage) {
