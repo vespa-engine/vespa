@@ -14,8 +14,7 @@ import com.yahoo.search.searchchain.Execution;
  */
 public abstract class PingableSearcher extends Searcher {
 
-    public PingableSearcher() {
-    }
+    public PingableSearcher() { }
 
     public PingableSearcher(ComponentId id) {
         super(id);
