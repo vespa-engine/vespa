@@ -48,24 +48,21 @@ public abstract class InvokerFactory {
      * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the
      *         list is invalid and the remaining coverage is not sufficient
      */
-    public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
-                                                       Query query,
-                                                       OptionalInt groupId,
-                                                       List<Node> nodes,
-                                                       boolean acceptIncompleteCoverage) {
+    public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher, Query query, OptionalInt groupId, List<Node> nodes,
+            boolean acceptIncompleteCoverage) {
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
             boolean nodeAdded = false;
-            if (node.isWorking() != Boolean.FALSE) {
+            if (node.isWorking()) {
                 Optional<SearchInvoker> invoker = createNodeSearchInvoker(searcher, query, node);
-                if (invoker.isPresent()) {
+                if(invoker.isPresent()) {
                     invokers.add(invoker.get());
                     nodeAdded = true;
                 }
             }
 
-            if ( ! nodeAdded) {
+            if (!nodeAdded) {
                 if (failed == null) {
                     failed = new HashSet<>();
                 }

@@ -54,7 +54,7 @@ public class Group {
     public int workingNodes() {
         int nodesUp = 0;
         for (Node node : nodes) {
-            if (node.isWorking() == Boolean.TRUE) {
+            if (node.isWorking()) {
                 nodesUp++;
             }
         }
@@ -64,7 +64,7 @@ public class Group {
     void aggregateActiveDocuments() {
         long activeDocumentsInGroup = 0;
         for (Node node : nodes) {
-            if (node.isWorking() == Boolean.TRUE) {
+            if (node.isWorking()) {
                 activeDocumentsInGroup += node.getActiveDocuments();
             }
         }
@@ -75,11 +75,6 @@ public class Group {
     /** Returns the active documents on this node. If unknown, 0 is returned. */
     long getActiveDocuments() {
         return this.activeDocuments.get();
-    }
-
-    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
-        boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
-        return previousState != hasFullCoverageNow;
     }
 
     @Override
@@ -95,4 +90,8 @@ public class Group {
         return ((Group) other).id == this.id;
     }
 
+    public boolean isFullCoverageStatusChanged(boolean hasFullCoverageNow) {
+        boolean previousState = hasFullCoverage.getAndSet(hasFullCoverageNow);
+        return previousState != hasFullCoverageNow;
+    }
 }
