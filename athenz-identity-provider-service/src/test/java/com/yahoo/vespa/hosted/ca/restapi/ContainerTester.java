@@ -25,7 +25,7 @@ public class ContainerTester {
 
     @Before
     public void startContainer() {
-        container = JDisc.fromServicesXml(servicesXml(), Networking.disable);
+        container = JDisc.fromServicesXml(servicesXml(), Networking.enable);
     }
 
     @After
@@ -63,6 +63,9 @@ public class ContainerTester {
                "  <handler id='com.yahoo.vespa.hosted.ca.restapi.CertificateAuthorityApiHandler'>\n" +
                "    <binding>http://*/ca/v1/*</binding>\n" +
                "  </handler>\n" +
+               "  <http>\n" +
+               "    <server id='default' port='12345'/>\n" +
+               "  </http>\n" +
                "</container>";
     }
 
