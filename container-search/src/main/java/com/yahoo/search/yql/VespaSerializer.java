@@ -90,7 +90,6 @@ import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
-import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.prelude.query.ToolBox.QueryVisitor;
 import com.yahoo.prelude.query.UriItem;
