@@ -86,8 +86,6 @@ public class ClusterSearcher extends Searcher {
                            VipStatus vipStatus) {
         super(id);
 
-        Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus, metric);
-
         int searchClusterIndex = clusterConfig.clusterId();
         clusterModelName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
@@ -98,8 +96,7 @@ public class ClusterSearcher extends Searcher {
                                                                             .setLogRaw(false).setLogMean(true));
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
-        maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(),
-                                                              DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
+        maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
 
         SummaryParameters docSumParams = new SummaryParameters(qrsConfig
                 .com().yahoo().prelude().fastsearch().FastSearcher().docsum()
@@ -115,12 +112,12 @@ public class ClusterSearcher extends Searcher {
         }
 
         if (searchClusterConfig.indexingmode() == STREAMING) {
-            VdsStreamingSearcher searcher = vdsCluster(fs4ResourcePool.getServerId(),
-                                                       searchClusterIndex,
-                                                       searchClusterConfig, docSumParams,
-                                                       documentDbConfig);
+            VdsStreamingSearcher searcher = vdsCluster(fs4ResourcePool.getServerId(), searchClusterIndex,
+                                                       searchClusterConfig, docSumParams, documentDbConfig);
             addBackendSearcher(searcher);
+            vipStatus.addToRotation(searcher.getName());
         } else {
+            Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus, metric);
             for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
                 try {
                     if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
@@ -129,13 +126,12 @@ public class ClusterSearcher extends Searcher {
                         addBackendSearcher(searcher);
                     }
                 } catch (UnknownHostException e) {
-                    e.printStackTrace();
                     throw new RuntimeException(e);
                 }
             }
         }
         if ( server == null ) {
-            throw new IllegalStateException("ClusterSearcher should have a top level dispatch.");
+            throw new IllegalStateException("ClusterSearcher should have backend.");
         }
     }
 
