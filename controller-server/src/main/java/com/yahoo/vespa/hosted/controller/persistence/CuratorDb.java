@@ -138,6 +138,12 @@ public class CuratorDb {
         return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
+    public Lock lock(TenantAndApplicationId id) {
+        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
+    }
+
+    /** Use {@link #lock(TenantAndApplicationId)} for application or instance locking. */
+    // TODO jonmv: Make private.
     public Lock lock(ApplicationId id) {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
@@ -430,6 +436,7 @@ public class CuratorDb {
      * Write Application to instance and application and old application paths  DONE
      * Read Application from instance path                                      DONE
      * Use Application where applicable
+     * Lock instances and application on same level: tenant + application       DONE
      *
      * Stop writing Instance to old application path
      * Read Application and Instance parts from respective paths
@@ -573,10 +580,14 @@ public class CuratorDb {
                 .append(tenant.value());
     }
 
-    private Path lockPath(ApplicationId application) {
+    private Path lockPath(TenantAndApplicationId application) {
         return lockPath(application.tenant())
-                .append(application.application().value())
-                .append(application.instance().value());
+                .append(application.application().value());
+    }
+
+    private Path lockPath(ApplicationId instance) {
+        return lockPath(TenantAndApplicationId.from(instance))
+                .append(instance.instance().value());
     }
 
     private Path lockPath(ApplicationId application, ZoneId zone) {

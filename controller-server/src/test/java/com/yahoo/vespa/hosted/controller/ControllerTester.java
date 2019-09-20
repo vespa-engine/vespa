@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
@@ -184,7 +185,7 @@ public final class ControllerTester {
     public Instance createApplication(Slime slime) {
         InstanceSerializer serializer = new InstanceSerializer();
         Instance instance = serializer.fromSlime(slime);
-        try (Lock lock = controller().applications().lock(instance.id())) {
+        try (Lock lock = controller().applications().lock(TenantAndApplicationId.from(instance.id()))) {
             controller().applications().store(new LockedInstance(instance, lock));
         }
         return instance;
