@@ -8,6 +8,7 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/storage/config/config-stor-server.h>
 #include <vespa/storage/storageutil/distributorstatecache.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
@@ -18,8 +19,8 @@
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/config/config.h>
+#include <vespa/config/helper/configgetter.hpp>
 #include <chrono>
 
 #include <vespa/log/bufferedlogger.h>
@@ -46,7 +47,8 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
       _doneInitialized(false),
       _requestsCurrentlyProcessing(0),
       _component(compReg, "bucketmanager"),
-      _metrics(std::make_shared<BucketManagerMetrics>(_component.getBucketSpaceRepo()))
+      _metrics(std::make_shared<BucketManagerMetrics>(_component.getBucketSpaceRepo())),
+      _simulated_processing_delay(0)
 {
     _metrics->setDisks(_component.getDiskCount());
     _component.registerStatusPage(*this);
@@ -60,6 +62,10 @@ BucketManager::BucketManager(const config::ConfigUri & configUri,
             *_component.getStateUpdater().getReportedNodeState());
     ns.setMinUsedBits(58);
     _component.getStateUpdater().setReportedNodeState(ns);
+
+    auto server_config = config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(
+            configUri.getConfigId(), configUri.getContext());
+    _simulated_processing_delay = std::chrono::milliseconds(std::max(0, server_config->simulatedBucketRequestLatencyMsec));
 }
 
 BucketManager::~BucketManager()
@@ -630,6 +636,11 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         if (LOG_WOULD_LOG(debug)) {
             distrList << ' ' << nodeAndCmd.first;
         }
+    }
+
+    if (_simulated_processing_delay.count() > 0) {
+        LOG(info, "Simulating bucket processing delay for %" PRIu64 " ms", _simulated_processing_delay.count());
+        std::this_thread::sleep_for(_simulated_processing_delay);
     }
 
     _metrics->fullBucketInfoRequestSize.addValue(requests.size());
