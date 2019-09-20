@@ -2,7 +2,6 @@
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.NodeResources;
 import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 
 import java.util.List;
@@ -10,7 +9,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 
@@ -135,12 +133,6 @@ public class Flags {
                     "reservation, and fail with exception unless requested resource match advertised host resources exactly.",
             "Takes effect on next iteration of HostProvisionMaintainer.",
             APPLICATION_ID);
-
-    public static final UnboundJacksonFlag<NodeResources> DEFAULT_RESOURCES = defineJacksonFlag(
-            "default-resources", null, NodeResources.class,
-            "Node resources that will be used when not specified in services.xml",
-            "Takes effect on next deployment",
-            CLUSTER_TYPE);
 
     public static final UnboundBooleanFlag USE_HTTPS_LOAD_BALANCER_UPSTREAM = defineFeatureFlag(
             "use-https-load-balancer-upstream", false,
