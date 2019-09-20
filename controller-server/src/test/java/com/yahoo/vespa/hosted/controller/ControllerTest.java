@@ -186,6 +186,7 @@ public class ControllerTest {
                 .build();
         tester.jobCompletion(component).application(app1).nextBuildNumber().nextBuildNumber().uploadArtifact(applicationPackage).submit();
         try {
+            assertTrue(tester.instance(instance.id()).deployments().containsKey(ZoneId.from("prod", "us-west-1")));
             tester.deploy(systemTest, instance.id(), applicationPackage);
             fail("Expected exception due to illegal production deployment removal");
         }

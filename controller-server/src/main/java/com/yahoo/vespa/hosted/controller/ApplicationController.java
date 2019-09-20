@@ -376,12 +376,15 @@ public class ApplicationController {
                     applicationCertificate = Optional.empty();
                 }
 
-                // Update application with information from application package
+                // TODO jonmv: REMOVE! This is now irrelevant for non-CD-test deployments and non-unit tests.
                 if (   ! preferOldestVersion
                     && ! instance.get().deploymentJobs().deployedInternally()
-                    && ! zone.environment().isManuallyDeployed())
+                    && ! zone.environment().isManuallyDeployed()) {
                     // TODO(jvenstad): Store only on submissions
-                    storeWithUpdatedConfig(instance, applicationPackage);
+                    ApplicationPackage finalApplicationPackage = applicationPackage;
+                    lockApplicationOrThrow(applicationId, lockedApplication ->
+                            storeWithUpdatedConfig(lockedApplication, finalApplicationPackage));
+                }
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -432,22 +435,27 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public LockedInstance storeWithUpdatedConfig(LockedInstance application, ApplicationPackage applicationPackage) {
+    public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
         deploymentSpecValidator.validate(applicationPackage.deploymentSpec());
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
 
+        store(application);
+
         // Delete zones not listed in DeploymentSpec, if allowed
         // We do this at deployment time for externally built applications, and at submission time
         // for internally built ones, to be able to return a validation failure message when necessary
-        application = withoutDeletedDeployments(application);
+        for (Instance instance : asList(TenantAndApplicationId.from(application.get().id()))) {
+            lockOrThrow(instance.id(), locked -> {
+                locked = withoutDeletedDeployments(locked, applicationPackage);
 
-        // Clean up deployment jobs that are no longer referenced by deployment spec
-        application = withoutUnreferencedDeploymentJobs(application);
+                // Clean up deployment jobs that are no longer referenced by deployment spec
+                locked = withoutUnreferencedDeploymentJobs(locked, applicationPackage);
 
-        store(application);
-        return application;
+                store(locked);
+            });
+        }
     }
 
     /** Deploy a system application to given zone */
@@ -602,16 +610,16 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
-    private LockedInstance withoutDeletedDeployments(LockedInstance application) {
-        List<Deployment> deploymentsToRemove = application.get().productionDeployments().values().stream()
-                .filter(deployment -> ! application.get().deploymentSpec().includes(deployment.zone().environment(),
-                                                                                    Optional.of(deployment.zone().region())))
+    private LockedInstance withoutDeletedDeployments(LockedInstance instance, ApplicationPackage applicationPackage) {
+        List<Deployment> deploymentsToRemove = instance.get().productionDeployments().values().stream()
+                .filter(deployment -> ! applicationPackage.deploymentSpec().includes(deployment.zone().environment(),
+                                                                                     Optional.of(deployment.zone().region())))
                 .collect(Collectors.toList());
 
-        if (deploymentsToRemove.isEmpty()) return application;
+        if (deploymentsToRemove.isEmpty()) return instance;
 
-        if ( ! application.get().validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
-            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application.get() +
+        if ( ! applicationPackage.validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
+            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + instance.get() +
                                                " is deployed in " +
                                                deploymentsToRemove.stream()
                                                                    .map(deployment -> deployment.zone().region().value())
@@ -621,20 +629,20 @@ public class ApplicationController {
                                                " in deployment.xml. " +
                                                ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
 
-        LockedInstance applicationWithRemoval = application;
+        LockedInstance instanceWithRemoval = instance;
         for (Deployment deployment : deploymentsToRemove)
-            applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone());
-        return applicationWithRemoval;
+            instanceWithRemoval = deactivate(instanceWithRemoval, deployment.zone());
+        return instanceWithRemoval;
     }
 
-    private LockedInstance withoutUnreferencedDeploymentJobs(LockedInstance application) {
-        for (JobType job : JobList.from(application.get()).production().mapToList(JobStatus::type)) {
+    private LockedInstance withoutUnreferencedDeploymentJobs(LockedInstance instance, ApplicationPackage applicationPackage) {
+        for (JobType job : JobList.from(instance.get()).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
-            if (application.get().deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))
+            if (applicationPackage.deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))
                 continue;
-            application = application.withoutDeploymentJob(job);
+            instance = instance.withoutDeploymentJob(job);
         }
-        return application;
+        return instance;
     }
 
     private DeployOptions withVersion(Version version, DeployOptions options) {
@@ -870,15 +878,15 @@ public class ApplicationController {
      *
      * @return the application with the deployment in the given zone removed
      */
-    private LockedInstance deactivate(LockedInstance application, ZoneId zone) {
+    private LockedInstance deactivate(LockedInstance instance, ZoneId zone) {
         try {
-            configServer.deactivate(new DeploymentId(application.get().id(), zone));
+            configServer.deactivate(new DeploymentId(instance.get().id(), zone));
         } catch (NotFoundException ignored) {
             // ok; already gone
         } finally {
-            routingPolicies.refresh(application.get().id(), application.get().deploymentSpec(), zone);
+            routingPolicies.refresh(instance.get().id(), instance.get().deploymentSpec(), zone);
         }
-        return application.withoutDeploymentIn(zone);
+        return instance.withoutDeploymentIn(zone);
     }
 
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
