@@ -1270,7 +1270,8 @@ public class UpgraderTest {
         Application app2 = tester.createAndDeploy("app2", 1, "default");
 
         // Keep app 1 on current version
-        tester.controller().applications().lockIfPresent(app1.id(), app -> tester.controller().applications().store(app.withChange(app.get().change().withPin())));
+        tester.controller().applications().lockApplicationIfPresent(app1.id(), app ->
+                tester.controller().applications().store(app.withChange(app.get().change().withPin())));
 
         // New version is released
         Version version1 = Version.fromString("6.2");
@@ -1290,7 +1291,8 @@ public class UpgraderTest {
         assertEquals(version2, tester.controller().applications().require(app2.id()).change().platform().get());
 
         // App 1 is unpinned and upgrades to latest 6
-        tester.controller().applications().lockIfPresent(app1.id(), app -> tester.controller().applications().store(app.withChange(app.get().change().withoutPin())));
+        tester.controller().applications().lockApplicationIfPresent(app1.id(), app ->
+                tester.controller().applications().store(app.withChange(app.get().change().withoutPin())));
         tester.upgrader().maintain();
         assertEquals("Application upgrades to latest allowed major", version1,
                      tester.controller().applications().require(app1.id()).change().platform().get());

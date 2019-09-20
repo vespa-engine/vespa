@@ -110,10 +110,10 @@ public class LockedInstance {
                                   rotations, rotationStatus);
     }
 
-    public LockedInstance withJobCompletion(long projectId, JobType jobType, JobStatus.JobRun completion,
+    public LockedInstance withJobCompletion(JobType jobType, JobStatus.JobRun completion,
                                             Optional<DeploymentJobs.JobError> jobError) {
         return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs.withCompletion(projectId, jobType, completion, jobError),
+                                  deploymentJobs.withCompletion(jobType, completion, jobError),
                                   change, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
                                   pemDeployKey, rotations, rotationStatus);
     }
@@ -174,18 +174,6 @@ public class LockedInstance {
                                   deploymentJobs.without(jobType), change, outstandingChange,
                                   ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
                                   rotations, rotationStatus);
-    }
-
-    public LockedInstance withChange(Change change) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                  metrics, pemDeployKey, rotations, rotationStatus);
-    }
-
-    public LockedInstance withOutstandingChange(Change outstandingChange) {
-        return new LockedInstance(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                  deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                                  metrics, pemDeployKey, rotations, rotationStatus);
     }
 
     public LockedInstance with(ApplicationMetrics metrics) {

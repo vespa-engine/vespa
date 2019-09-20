@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -104,7 +106,7 @@ public class DeploymentTrigger {
             return;
         }
 
-        applications().lockOrThrow(report.applicationId(), application -> {
+        applications().lockApplicationOrThrow(report.applicationId(), application -> {
             JobRun triggering;
             if (report.jobType() == component) {
                 ApplicationVersion applicationVersion = report.version().get();
@@ -135,13 +137,16 @@ public class DeploymentTrigger {
                                                                                       .orElse("never")))
                                    .lastTriggered().get();
             }
-            application = application.withJobCompletion(report.projectId(),
-                                                        report.jobType(),
-                                                        triggering.completion(report.buildNumber(), clock.instant()),
-                                                        report.jobError());
-            application = application.withChange(remainingChange(application.get()));
+            application = application.withJobCompletion(report.projectId(), report.jobType());
             applications().store(application);
+
+            applications().lockOrThrow(report.applicationId(), instance ->
+                    applications().store(instance.withJobCompletion(report.jobType(),
+                                                                    triggering.completion(report.buildNumber(), clock.instant()),
+                                                                    report.jobError())));
         });
+        applications().lockApplicationOrThrow(report.applicationId(), application ->
+                applications().store(application.withChange(remainingChange(application.get()))));
     }
 
     /** Returns a map of jobs that are scheduled to be run, grouped by the job type */
@@ -246,7 +251,7 @@ public class DeploymentTrigger {
 
     /** Overrides the given application's platform and application changes with any contained in the given change. */
     public void forceChange(ApplicationId applicationId, Change change) {
-        applications().lockOrThrow(applicationId, application -> {
+        applications().lockApplicationOrThrow(applicationId, application -> {
             if (change.application().isPresent())
                 application = application.withOutstandingChange(Change.empty());
             applications().store(application.withChange(change.onTopOf(application.get().change())));
@@ -255,7 +260,7 @@ public class DeploymentTrigger {
 
     /** Cancels the indicated part of the given application's change. */
     public void cancelChange(ApplicationId applicationId, ChangesToCancel cancellation) {
-        applications().lockOrThrow(applicationId, application -> {
+        applications().lockApplicationOrThrow(applicationId, application -> {
             Change change;
             switch (cancellation) {
                 case ALL: change = Change.empty(); break;
@@ -514,24 +519,27 @@ public class DeploymentTrigger {
 
     // ---------- Change management o_O ----------
 
-    private boolean acceptNewApplicationVersion(Instance instance) {
-        if ( ! instance.deploymentSpec().canChangeRevisionAt(clock.instant())) return false;
-        if (instance.change().application().isPresent()) return true; // Replacing a previous application change is ok.
-        if (instance.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
-        return instance.change().platform().isEmpty();
+    private boolean acceptNewApplicationVersion(Application application) {
+        if ( ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return false;
+        if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
+        for (Instance instance : controller.applications().asList(TenantAndApplicationId.from(application.id())))
+            if (instance.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
+        return application.change().platform().isEmpty();
     }
 
-    private Change remainingChange(Instance instance) {
-        DeploymentSteps steps = steps(instance.deploymentSpec());
+    private Change remainingChange(Application application) {
+        DeploymentSteps steps = steps(application.deploymentSpec());
         List<JobType> jobs = steps.production().isEmpty()
                 ? steps.testJobs()
                 : steps.productionJobs();
 
-        Change change = instance.change();
-        if (jobs.stream().allMatch(job -> isComplete(instance.change().withoutApplication(), instance, job)))
+        // TODO jonmv: Replace with checking of all instance-jobs, when this is available.
+        Instance instance = controller.applications().require(application.id());
+        Change change = application.change();
+        if (jobs.stream().allMatch(job -> isComplete(application.change().withoutApplication(), instance, job)))
             change = change.withoutPlatform();
 
-        if (jobs.stream().allMatch(job -> isComplete(instance.change().withoutPlatform(), instance, job)))
+        if (jobs.stream().allMatch(job -> isComplete(application.change().withoutPlatform(), instance, job)))
             change = change.withoutApplication();
 
         return change;

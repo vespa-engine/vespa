@@ -130,10 +130,10 @@ public class LockedApplication {
                                      rotations, rotationStatus);
     }
 
-    public LockedApplication withJobCompletion(long projectId, JobType jobType, JobStatus.JobRun completion,
-                                               Optional<DeploymentJobs.JobError> jobError) {
+    public LockedApplication withJobCompletion(long projectId, JobType jobType) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
-                                     deploymentJobs.withCompletion(projectId, jobType, completion, jobError),
+                                     deploymentJobs.withProjectId(jobType == JobType.component ? OptionalLong.of(projectId)
+                                                                                               : deploymentJobs.projectId()),
                                      change, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
                                      pemDeployKey, rotations, rotationStatus);
     }
