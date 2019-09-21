@@ -24,7 +24,6 @@ import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.statistics.Statistics;
-import com.yahoo.statistics.Value;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 import org.apache.commons.lang.StringUtils;
@@ -53,8 +52,6 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.S
 @After("*")
 public class ClusterSearcher extends Searcher {
 
-    private final Value cacheHitRatio;
-
     private final String clusterModelName;
 
     // The set of document types contained in this search cluster
@@ -71,16 +68,12 @@ public class ClusterSearcher extends Searcher {
 
     private VespaBackEndSearcher server = null;
 
-    /**
-     * Creates a new ClusterSearcher.
-     */
     public ClusterSearcher(ComponentId id,
                            QrSearchersConfig qrsConfig,
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
                            DispatchConfig dispatchConfig,
                            ClusterInfoConfig clusterInfoConfig,
-                           Statistics manager,
                            Metric metric,
                            FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
@@ -90,10 +83,6 @@ public class ClusterSearcher extends Searcher {
         clusterModelName = clusterConfig.clusterName();
         QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
         documentTypes = new LinkedHashSet<>();
-
-        String eventName = clusterModelName + ".cache_hit_ratio";
-        cacheHitRatio = new Value(eventName, manager, new Value.Parameters().setNameExtension(false)
-                                                                            .setLogRaw(false).setLogMean(true));
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
         maxQueryCacheTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryCacheTimeout(), DEFAULT_MAX_QUERY_CACHE_TIMEOUT);
@@ -162,8 +151,7 @@ public class ClusterSearcher extends Searcher {
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
                                                Dispatcher dispatcher,
-                                               int dispatcherIndex)
-    {
+                                               int dispatcherIndex) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex, dispatcherIndex);
         return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
@@ -172,8 +160,7 @@ public class ClusterSearcher extends Searcher {
                                                    int searchclusterIndex,
                                                    QrSearchersConfig.Searchcluster searchClusterConfig,
                                                    SummaryParameters docSumParams,
-                                                   DocumentdbInfoConfig documentdbInfoConfig)
-    {
+                                                   DocumentdbInfoConfig documentdbInfoConfig) {
         if (searchClusterConfig.searchdef().size() != 1) {
             throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
         }
@@ -189,8 +176,6 @@ public class ClusterSearcher extends Searcher {
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> documentTypes) {
         this.documentTypes = documentTypes;
-        cacheHitRatio = new Value("com.yahoo.prelude.cluster.ClusterSearcher.ClusterSearcher().dummy",
-                                  Statistics.nullImplementation, new Value.Parameters());
         clusterModelName = "testScenario";
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
@@ -270,7 +255,7 @@ public class ClusterSearcher extends Searcher {
         VespaBackEndSearcher searcher = server;
         if (searcher != null) {
             if (query.getTimeLeft() > 0) {
-                doFill(searcher, result, summaryClass, execution);
+                searcher.fill(result, summaryClass, execution);
             } else {
                 if (result.hits().getErrorHit() == null) {
                     result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " + query.getTimeout() + " ms"));
@@ -279,23 +264,6 @@ public class ClusterSearcher extends Searcher {
         } else {
             if (result.hits().getErrorHit() == null) {
                 result.hits().addError(ErrorMessage.createNoBackendsInService("Could not fill result"));
-            }
-        }
-    }
-
-    private void doFill(Searcher searcher, Result result, String summaryClass, Execution execution) {
-        searcher.fill(result, summaryClass, execution);
-        updateCacheHitRatio(result, result.getQuery());
-    }
-
-    private void updateCacheHitRatio(Result result, Query query) {
-        // result.isCached() looks at the contained hits, so if there are no
-        // hits, the result will be treated as cached, even though the backend was queried.
-        if (result.hits().getError() == null && result.hits().getConcreteSize() > 0) {
-            if (result.isCached()) {
-                cacheHit();
-            } else if (!query.getNoCache()) {
-                cacheMiss();
             }
         }
     }
@@ -337,9 +305,8 @@ public class ClusterSearcher extends Searcher {
     }
 
     private Result doSearch(Searcher searcher, Query query, Execution execution) {
-        Result result;
         if (documentTypes.size() > 1) {
-            result = searchMultipleDocumentTypes(searcher, query, execution);
+            return searchMultipleDocumentTypes(searcher, query, execution);
         } else {
             String docType = documentTypes.iterator().next();
 
@@ -349,20 +316,15 @@ public class ClusterSearcher extends Searcher {
             }
 
             query.getModel().setRestrict(docType);
-            result = searcher.search(query, execution);
+            return searcher.search(query, execution);
         }
-        updateCacheHitRatio(result, query);
-        return result;
     }
-
 
     private Result searchMultipleDocumentTypes(Searcher searcher, Query query, Execution execution) {
         Set<String> docTypes = resolveDocumentTypes(query, execution.context().getIndexFacts());
 
         Result invalidRankProfile = checkValidRankProfiles(query, docTypes);
-        if (invalidRankProfile != null) {
-            return invalidRankProfile;
-        }
+        if (invalidRankProfile != null) return invalidRankProfile;
 
         List<Query> queries = createQueries(query, docTypes);
         if (queries.size() == 1) {
@@ -427,14 +389,7 @@ public class ClusterSearcher extends Searcher {
         return retval;
     }
 
-    private void cacheHit() {
-        cacheHitRatio.put(1.0);
-    }
-
-    private void cacheMiss() {
-        cacheHitRatio.put(0.0);
-    }
-
     @Override
     public void deconstruct() { }
+
 }

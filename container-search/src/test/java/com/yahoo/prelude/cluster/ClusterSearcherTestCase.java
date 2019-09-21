@@ -47,6 +47,7 @@ import static org.junit.Assert.assertTrue;
  * @author bratseth
  */
 public class ClusterSearcherTestCase {
+
     private static final double DELTA = 0.0000000000000001;
 
     @Test
@@ -544,7 +545,6 @@ public class ClusterSearcherTestCase {
                                    documentDbConfig.build(),
                                    new DispatchConfig.Builder().build(),
                                    createClusterInfoConfig(),
-                                   Statistics.nullImplementation,
                                    new MockMetric(),
                                    new FS4ResourcePool(new QrConfig.Builder().build()),
                                    vipStatus);
