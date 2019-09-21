@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.statistics;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
@@ -12,14 +11,14 @@ import com.yahoo.log.LogLevel;
 import com.yahoo.log.event.Event;
 import com.yahoo.statistics.SampleSet.Sampling;
 
-
 /**
  * A statistical variable, typically representing a sampling of an
  * arbitrarily changing parameter.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class Value extends Handle {
+
     // For accumulated values, SampleSet instances are mem barriers between {n
     // sampling threads} and {logging thread}.
 
