@@ -132,7 +132,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
         private final boolean useDedicatedNodeForLogserver;
-        private final boolean useFdispatchByDefault;
         private final boolean useAdaptiveDispatch;
         private final boolean dispatchWithProtobuf;
         private final Optional<TlsSecrets> tlsSecrets;
@@ -165,8 +164,6 @@ public class ModelContextImpl implements ModelContext {
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
             this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
-            this.useFdispatchByDefault = Flags.USE_FDISPATCH_BY_DEFAULT.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.dispatchWithProtobuf = Flags.DISPATCH_WITH_PROTOBUF.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
@@ -221,7 +218,7 @@ public class ModelContextImpl implements ModelContext {
         public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
 
         @Override
-        public boolean useFdispatchByDefault() { return useFdispatchByDefault; }
+        public boolean useFdispatchByDefault() { return false; }
 
         @Override
         public boolean dispatchWithProtobuf() { return dispatchWithProtobuf; }

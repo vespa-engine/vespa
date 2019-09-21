@@ -54,7 +54,7 @@ public interface ModelContext {
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
-        boolean useFdispatchByDefault();
+        boolean useFdispatchByDefault(); // TODO Remove once 7.110 is the oldest old config models
         boolean dispatchWithProtobuf();
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
