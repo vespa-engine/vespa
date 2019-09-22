@@ -55,7 +55,7 @@ public interface ModelContext {
         boolean isFirstTimeDeployment();
         boolean useDedicatedNodeForLogserver();
         boolean useFdispatchByDefault(); // TODO Remove once 7.110 is the oldest old config models
-        boolean dispatchWithProtobuf();
+        boolean dispatchWithProtobuf(); // TODO Remove once 7.110 is the oldest old config models
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }

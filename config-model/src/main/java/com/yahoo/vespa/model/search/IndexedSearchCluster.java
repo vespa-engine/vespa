@@ -106,7 +106,6 @@ public class IndexedSearchCluster extends SearchCluster
     private final SimpleConfigProducer dispatchParent;
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
-    private final boolean dispatchWithProtobuf;
     private final boolean useAdaptiveDispatch;
     private List<SearchNode> searchNodes = new ArrayList<>();
 
@@ -125,7 +124,6 @@ public class IndexedSearchCluster extends SearchCluster
         unionCfg = new UnionConfiguration(this, documentDbs);
         dispatchParent = new SimpleConfigProducer(this, "dispatchers");
         rootDispatch =  new DispatchGroup(this);
-        dispatchWithProtobuf = deployState.getProperties().dispatchWithProtobuf();
         useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
     }
 
@@ -438,7 +436,6 @@ public class IndexedSearchCluster extends SearchCluster
         }
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.useMultilevelDispatch(useMultilevelDispatchSetup());
-        builder.dispatchWithProtobuf(dispatchWithProtobuf);
         builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {

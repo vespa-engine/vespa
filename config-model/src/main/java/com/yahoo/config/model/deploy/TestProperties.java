@@ -38,7 +38,6 @@ public class TestProperties implements ModelContext.Properties {
     private boolean isBootstrap = false;
     private boolean isFirstTimeDeployment = false;
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean dispatchWithProtobuf = true;
     private boolean useAdaptiveDispatch = false;
     private double defaultTermwiseLimit = 1.0;
     private Optional<TlsSecrets> tlsSecrets = Optional.empty();
@@ -60,7 +59,7 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public boolean useFdispatchByDefault() { return false; }
-    @Override public boolean dispatchWithProtobuf() { return dispatchWithProtobuf; }
+    @Override public boolean dispatchWithProtobuf() { return true; }
     @Override public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 

@@ -27,12 +27,10 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 
     private final RpcResourcePool rpcResourcePool;
-    private final boolean dispatchWithProtobuf;
 
-    public RpcInvokerFactory(RpcResourcePool rpcResourcePool, SearchCluster searchCluster, boolean dispatchWithProtobuf) {
+    public RpcInvokerFactory(RpcResourcePool rpcResourcePool, SearchCluster searchCluster) {
         super(searchCluster);
         this.rpcResourcePool = rpcResourcePool;
-        this.dispatchWithProtobuf = dispatchWithProtobuf;
     }
 
     @Override
@@ -45,7 +43,7 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
-        boolean useProtoBuf = query.properties().getBoolean(Dispatcher.dispatchProtobuf, dispatchWithProtobuf);
+        boolean useProtoBuf = query.properties().getBoolean(Dispatcher.dispatchProtobuf, true);
         boolean useDispatchDotSummaries = query.properties().getBoolean(dispatchSummaries, false);
 
         return  ((useDispatchDotSummaries || !useProtoBuf) && ! summaryNeedsQuery)
