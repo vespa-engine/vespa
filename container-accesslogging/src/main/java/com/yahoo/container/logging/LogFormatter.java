@@ -22,13 +22,13 @@ public class LogFormatter extends Formatter {
     static SimpleDateFormat yyyyMMdd;
 
     static {
-        ddMMMyyyy = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]");
+        ddMMMyyyy = new SimpleDateFormat("[dd/MMM/yyyy:HH:mm:ss Z]", Locale.US);
         ddMMMyyyy.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        dfMMM = new SimpleDateFormat("MMM");
+        dfMMM = new SimpleDateFormat("MMM", Locale.US);
         dfMMM.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-        yyyyMMdd = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]");
+        yyyyMMdd = new SimpleDateFormat("[yyyy-MM-dd HH:mm:ss]", Locale.US);
         yyyyMMdd.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
@@ -102,7 +102,7 @@ public class LogFormatter extends Formatter {
      * </ul>
      */
     public static String insertDate(String pattern, long time) {
-        DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS Z");
+        DateFormat df = new SimpleDateFormat("yyyy.MM.dd:HH:mm:ss.SSS Z", Locale.US);
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         Date date = new Date(time);
         String datetime = df.format(date);
