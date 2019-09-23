@@ -139,6 +139,10 @@ public class History {
             requested,
             // The node was rebooted
             rebooted(false),
+            // The node upgraded its OS (implies a reboot)
+            osUpgraded(false),
+            // The node verified its firmware (whether this resulted in a reboot depends on the node model)
+            firmwareVerified(false),
             // The node was failed
             failed(false);
             
