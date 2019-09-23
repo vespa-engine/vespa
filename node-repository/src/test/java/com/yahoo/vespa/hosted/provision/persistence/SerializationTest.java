@@ -325,10 +325,17 @@ public class SerializationTest {
         assertFalse(serialized.status().osVersion().isPresent());
 
         // Update OS version
-        serialized = serialized.with(serialized.status()
-                                               .withOsVersion(Version.fromString("7.1")));
+        serialized = serialized.withCurrentOsVersion(Version.fromString("7.1"), Instant.ofEpochMilli(123))
+                               // Another update for same version:
+                               .withCurrentOsVersion(Version.fromString("7.1"), Instant.ofEpochMilli(456));
         serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
         assertEquals(Version.fromString("7.1"), serialized.status().osVersion().get());
+        var osUpgradedEvents = serialized.history().events().stream()
+                                         .filter(event -> event.type() == History.Event.Type.osUpgraded)
+                                         .collect(Collectors.toList());
+        assertEquals("OS upgraded event is added", 1, osUpgradedEvents.size());
+        assertEquals("Duplicate updates of same version uses earliest instant", Instant.ofEpochMilli(123),
+                     osUpgradedEvents.get(0).at());
     }
 
     @Test
