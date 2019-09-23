@@ -93,6 +93,6 @@ while [ $# -gt 0 ]; do
 done
 
 $sudo java \
-	-cp $VESPA_HOME/lib/jars/zkctl-jar-with-dependencies.jar \
+	-cp $VESPA_HOME/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
 	-Dlog4j.configuration=file:$VESPA_HOME/etc/log4j-vespa.properties \
 	org.apache.zookeeper.ZooKeeperMain "$@"
