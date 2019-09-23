@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.vespa.model.content.SearchCoverage;
-
-import java.util.*;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Class representing a group of @link{SearchInterface} nodes and a set of @link{Dispatch} nodes.
@@ -14,18 +13,12 @@ import java.util.*;
  */
 public class DispatchGroup {
 
-    private final List<Dispatch> dispatchers = new ArrayList<>();
-    private final Map<Integer, Map<Integer, SearchInterface> > searchers = new TreeMap<>();
+    private final Map<Integer, Map<Integer, SearchInterface>> searchers = new TreeMap<>();
 
     final private IndexedSearchCluster sc;
 
     public DispatchGroup(IndexedSearchCluster sc) {
         this.sc = sc;
-    }
-
-    DispatchGroup addDispatcher(Dispatch dispatch) {
-        dispatchers.add(dispatch);
-        return this;
     }
 
     DispatchGroup addSearcher(SearchInterface search) {
@@ -41,15 +34,6 @@ public class DispatchGroup {
             rows.put(search.getNodeSpec().groupIndex(), search);
         }
         return this;
-    }
-
-    DispatchGroup clearSearchers() {
-        searchers.clear();
-        return this;
-    }
-
-    List<Dispatch> getDispatchers() {
-        return Collections.unmodifiableList(dispatchers);
     }
 
     public Iterable getSearchersIterable() {
@@ -68,26 +52,10 @@ public class DispatchGroup {
         return sc.useFixedRowInDispatch();
     }
 
-    public int getMinNodesPerColumn() {
-        return sc.getMinNodesPerColumn();
-    }
-
     public int getSearchableCopies() { return sc.getSearchableCopies(); }
 
     public int getMaxNodesDownPerFixedRow() {
         return sc.getMaxNodesDownPerFixedRow();
-    }
-
-    SearchCoverage getSearchCoverage() {
-        return sc.getSearchCoverage();
-    }
-
-    Tuning getTuning() {
-        return sc.getTuning();
-    }
-
-    String getClusterName() {
-        return sc.getClusterName();
     }
 
     static class Iterator implements java.util.Iterator<SearchInterface> {

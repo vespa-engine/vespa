@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.content.DispatchSpec;
 
@@ -30,47 +28,26 @@ public class DispatchGroupBuilder {
         this.searchCluster = searchCluster;
     }
 
-    public void build(DeployLogger deployLogger, List<DispatchSpec.Group> groupsSpec, List<SearchNode> searchNodes) {
+    public void build(List<DispatchSpec.Group> groupsSpec, List<SearchNode> searchNodes) {
         Map<Integer, SearchNode> searchNodeMap = buildSearchNodeMap(searchNodes);
         for (int partId = 0; partId < groupsSpec.size(); ++partId) {
             DispatchSpec.Group groupSpec = groupsSpec.get(partId);
             DispatchGroup group = new DispatchGroup(searchCluster);
-            populateDispatchGroup(deployLogger, group, groupSpec.getNodes(), searchNodeMap, partId);
+            populateDispatchGroup(group, groupSpec.getNodes(), searchNodeMap, partId);
         }
     }
 
-    private void populateDispatchGroup(DeployLogger deployLogger,
-                                       DispatchGroup group,
+    private void populateDispatchGroup(DispatchGroup group,
                                        List<DispatchSpec.Node> nodeList,
                                        Map<Integer, SearchNode> searchNodesMap,
                                        int partId) {
         for (int rowId = 0; rowId < nodeList.size(); ++rowId) {
             int distributionKey = nodeList.get(rowId).getDistributionKey();
             SearchNode searchNode = searchNodesMap.get(distributionKey);
-            Dispatch dispatch = buildDispatch(deployLogger, group, new NodeSpec(rowId, partId), distributionKey, searchNode.getHostResource());
-            group.addDispatcher(dispatch);
-            rootDispatch.addSearcher(dispatch);
 
             // Note: the rowId in this context will be the partId for the underlying search node.
             group.addSearcher(buildSearchInterface(searchNode, rowId));
         }
-    }
-
-    /**
-     * Builds a mid-level dispatcher with a configId containing the same stable distribution-key as the search node it
-     * is located on.
-     *
-     * If this.dispatchParent has subConfigId 'dispatchers', the config ids of the mid-level
-     * dispatchers are '../dispatchers/dispatch.X' where X is the distribution-key of the search node.
-     *
-     * The dispatch group that will contain this mid-level dispatcher is no longer part of the config producer tree,
-     * but only contains information about the dispatchers and searchers in this group.
-     */
-    private Dispatch buildDispatch(DeployLogger deployLogger, DispatchGroup group, NodeSpec nodeSpec, int distributionKey, HostResource hostResource) {
-        Dispatch dispatch = Dispatch.createDispatchWithStableConfigId(group, dispatchParent, nodeSpec, distributionKey, 1);
-        dispatch.setHostResource(hostResource);
-        dispatch.initService(deployLogger);
-        return dispatch;
     }
 
     private static SearchInterface buildSearchInterface(SearchNode searchNode, int partId) {
