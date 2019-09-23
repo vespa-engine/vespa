@@ -340,6 +340,7 @@ public class NodeSerializer {
             case "down" : return History.Event.Type.down;
             case "requested" : return History.Event.Type.requested;
             case "rebooted" : return History.Event.Type.rebooted;
+            case "osUpgraded" : return History.Event.Type.osUpgraded;
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
@@ -358,6 +359,7 @@ public class NodeSerializer {
             case down : return "down";
             case requested: return "requested";
             case rebooted: return "rebooted";
+            case osUpgraded: return "osUpgraded";
         }
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }

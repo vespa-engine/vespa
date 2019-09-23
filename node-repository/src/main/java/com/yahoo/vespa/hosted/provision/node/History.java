@@ -139,6 +139,8 @@ public class History {
             requested,
             // The node was rebooted
             rebooted(false),
+            // The node upgraded its OS (implies a reboot)
+            osUpgraded(false),
             // The node was failed
             failed(false);
             
