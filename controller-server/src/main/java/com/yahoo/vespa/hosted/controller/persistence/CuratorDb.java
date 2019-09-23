@@ -427,22 +427,24 @@ public class CuratorDb {
     /**
      * Migration plan:
      *
-     * Add filter for reading only Instance from old application path           MERGED
-     * Write instance to Instance and old application path                      MERGED
+     * Add filter for reading only Instance from old application path           RELEASED
+     * Write instance to Instance and old application path                      RELEASED
      *
-     * Write Instance to instance and application and old application paths     DONE
-     * Read Instance from instance path                                         DONE
+     * Write Instance to instance and application and old application paths     DONE    TO REMOVE
+     * Read Instance from instance path                                         DONE    TO REMOVE
      * Duplicate Application from Instance, with helper classes                 DONE
-     * Write Application to instance and application and old application paths  DONE
-     * Read Application from instance path                                      DONE
-     * Use Application where applicable                                         D
-     * Lock instances and application on same level: tenant + application       DONE
+     * Write Application to instance and application and old application paths  DONE    TO CHANGE
+     * Read Application from instance path                                      DONE    TO REMOVE
+     * Use Application where applicable                                         DO
+     * Lock instances and application on same level: tenant + application       DONE    TO CHANGE
+     * When reading an application, read all instances, and aggregate them
+     * Write application with instances to application path
+     * Lock application on both tenant + application, and instance levels       DONE
+     *
+     * Read Application with instances from application path (with filter)
+     * Stop locking applications on instance level
      *
      * Stop writing Instance to old application path
-     * Read Application and Instance parts from respective paths
-     * Stop locking instance and applications on instance level:
-     *
-     * Stop writing instance part to application path, and vice versa
      * Remove unused parts of Instance and Application
      */
 
