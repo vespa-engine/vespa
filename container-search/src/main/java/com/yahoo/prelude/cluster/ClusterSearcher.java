@@ -107,17 +107,9 @@ public class ClusterSearcher extends Searcher {
             vipStatus.addToRotation(searcher.getName());
         } else {
             Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus, metric);
-            for (int dispatcherIndex = 0; dispatcherIndex < searchClusterConfig.dispatcher().size(); dispatcherIndex++) {
-                try {
-                    if ( ! isRemote(searchClusterConfig.dispatcher(dispatcherIndex).host())) {
-                        FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool.getServerId(), docSumParams,
-                                                               documentDbConfig, dispatcher, dispatcherIndex);
-                        addBackendSearcher(searcher);
-                    }
-                } catch (UnknownHostException e) {
-                    throw new RuntimeException(e);
-                }
-            }
+            FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool.getServerId(), docSumParams, documentDbConfig, dispatcher);
+            addBackendSearcher(searcher);
+
         }
         if ( server == null ) {
             throw new IllegalStateException("ClusterSearcher should have backend.");
@@ -142,17 +134,16 @@ public class ClusterSearcher extends Searcher {
                 : !host.equals(HostName.getLocalhost());
     }
 
-    private static ClusterParams makeClusterParams(int searchclusterIndex, int dispatchIndex) {
-        return new ClusterParams("sc" + searchclusterIndex + ".num" + dispatchIndex);
+    private static ClusterParams makeClusterParams(int searchclusterIndex) {
+        return new ClusterParams("sc" + searchclusterIndex + ".num" + 0);
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
                                                String serverId,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
-                                               Dispatcher dispatcher,
-                                               int dispatcherIndex) {
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, dispatcherIndex);
+                                               Dispatcher dispatcher) {
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
 
@@ -164,7 +155,7 @@ public class ClusterSearcher extends Searcher {
         if (searchClusterConfig.searchdef().size() != 1) {
             throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
         }
-        ClusterParams clusterParams = makeClusterParams(searchclusterIndex, 0);
+        ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         VdsStreamingSearcher searcher = new VdsStreamingSearcher();
         searcher.setSearchClusterConfigId(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
