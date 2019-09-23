@@ -686,17 +686,17 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(TensorModifyUpdate update) {
-        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemented for Vespa 6");
+        throw new IllegalArgumentException("Write of TensorModifyUpdate not implemented for this document format version");
     }
 
     @Override
     public void write(TensorAddUpdate update) {
-        throw new IllegalArgumentException("Write of TensorAddUpdate not implemented for Vespa 6");
+        throw new IllegalArgumentException("Write of TensorAddUpdate not implemented for this document format version");
     }
 
     @Override
     public void write(TensorRemoveUpdate update) {
-        throw new IllegalArgumentException("Write of TensorRemoveUpdate not implemented for Vespa 6");
+        throw new IllegalArgumentException("Write of TensorRemoveUpdate not implemented for this document format version");
     }
 
 
