@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.deploy;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
@@ -120,14 +121,12 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
-        try (Lock lock = tenant.getApplicationRepo().lock(session.getApplicationId())) {
+        ApplicationId applicationId = session.getApplicationId();
+        try (Lock lock = tenant.getApplicationRepo().lock(applicationId)) {
             validateSessionStatus(session);
             NestedTransaction transaction = new NestedTransaction();
-            transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(session.getApplicationId()), session, ignoreSessionStaleFailure));
-
-            if (hostProvisioner.isPresent()) {
-                hostProvisioner.get().activate(transaction, session.getApplicationId(), session.getAllocatedHosts().getHosts());
-            }
+            transaction.add(deactivateCurrentActivateNew(applicationRepository.getActiveSession(applicationId), session, ignoreSessionStaleFailure));
+            hostProvisioner.ifPresent(provisioner -> provisioner.activate(transaction, applicationId, session.getAllocatedHosts().getHosts()));
             transaction.commit();
         } catch (RuntimeException e) {
             throw e;
@@ -139,8 +138,9 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
 
         log.log(LogLevel.INFO, session.logPre() + "Session " + session.getSessionId() +
                                " activated successfully using " +
-                               ( hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner" ) +
-                               ". Config generation " + session.getMetaData().getGeneration());
+                               (hostProvisioner.isPresent() ? hostProvisioner.get() : "no host provisioner") +
+                               ". Config generation " + session.getMetaData().getGeneration() +
+                               ". File references used: " + applicationRepository.getFileReferences(applicationId));
     }
 
     /**

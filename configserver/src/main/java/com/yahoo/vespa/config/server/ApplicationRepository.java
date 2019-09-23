@@ -328,7 +328,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
         deployment.activate();
         ApplicationId applicationId = localSession.getApplicationId();
-        log.log(LogLevel.INFO, "File references used by " + applicationId + ": " + getFileReferences(applicationId));
         return applicationId;
     }
 
@@ -447,7 +446,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileReferencesToDelete;
     }
 
-    private Set<FileReference> getFileReferences(ApplicationId applicationId) {
+    public Set<FileReference> getFileReferences(ApplicationId applicationId) {
         return getOptionalApplication(applicationId).map(app -> app.getModel().fileReferences()).orElse(Set.of());
     }
 
