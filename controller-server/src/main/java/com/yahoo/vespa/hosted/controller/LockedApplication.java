@@ -183,6 +183,12 @@ public class LockedApplication {
                                      metrics, pemDeployKey, rotations, rotationStatus);
     }
 
+    public LockedApplication withPemDeployKey(String pemDeployKey) {
+        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, deployments,
+                                     deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                                     metrics, Optional.ofNullable(pemDeployKey), rotations, rotationStatus);
+    }
+
     @Override
     public String toString() {
         return "application '" + id + "'";

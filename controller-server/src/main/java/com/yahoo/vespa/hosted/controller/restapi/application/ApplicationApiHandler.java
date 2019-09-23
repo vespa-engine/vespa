@@ -263,7 +263,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePATCH(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return patchApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return patchApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return patchApplication(path.get("tenant"), path.get("application"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -375,15 +375,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 application = application.withMajorVersion(majorVersion);
                 messageBuilder.add("Set major version to " + (majorVersion == null ? "empty" : majorVersion));
             }
-            controller.applications().store(application);
-        });
-        return new MessageResponse(messageBuilder.toString());
-    }
 
-    private HttpResponse patchApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
-        Inspector requestObject = toSlime(request.getData()).get();
-        StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
-        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, instanceName), application -> {
             Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
             if (pemDeployKeyField.valid()) {
                 String pemDeployKey = pemDeployKeyField.type() == Type.NIX ? null : pemDeployKeyField.asString();

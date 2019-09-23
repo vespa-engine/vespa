@@ -362,6 +362,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Set major version to empty\"}");
 
         // PATCH in removal of the pem deploy key
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"pemDeployKey\":null}"),
+                              "{\"message\":\"Set pem deploy key to empty\"}");
+
+        // PATCH in removal of the pem deploy key on deprecated path
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
                                       .userIdentity(USER_ID)
                                       .data("{\"pemDeployKey\":null}"),
