@@ -36,11 +36,13 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
     private final BooleanFlag dynamicUpstreamConnectionCache;
+    private final BooleanFlag healthCheckOn4081;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
         this.dynamicUpstreamConnectionCache = Flags.DYNAMIC_UPSTREAM_CONNECTION_CACHE.bindTo(flagSource);
+        this.healthCheckOn4081 = Flags.HEALTH_CHECK_ON_4081.bindTo(flagSource);
     }
 
     @Override
@@ -68,6 +70,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
         ab.dynamicUpstreamConnectionCache(dynamicUpstreamConnectionCache.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
+        ab.healthCheckOn4081(healthCheckOn4081.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));

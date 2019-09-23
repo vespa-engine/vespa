@@ -9,6 +9,8 @@ namespace=cloud.config
 tenants{}.applications{}.activeRotation                         bool default=true
 # Scale upstream connection cache with number of upstream servers
 tenants{}.applications{}.dynamicUpstreamConnectionCache         bool default=false
+# Send health check requests on port 4081 instead of 4080
+tenants{}.applications{}.healthCheckOn4081                      bool default=false
 
 tenants{}.applications{}.hosts{}.hostname                       string default="(unknownhostname)"
 tenants{}.applications{}.hosts{}.services{}.type                string default="(noservicetype)"
