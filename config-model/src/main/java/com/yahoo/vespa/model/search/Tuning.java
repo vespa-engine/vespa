@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.TuningDispatch;
 
@@ -13,15 +14,47 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author geirst
  */
-public class Tuning extends AbstractConfigProducer implements ProtonConfig.Producer {
+public class Tuning extends AbstractConfigProducer implements PartitionsConfig.Producer, ProtonConfig.Producer {
 
-    public static class Dispatch {
+    public static class Dispatch implements PartitionsConfig.Producer {
 
         public Integer maxHitsPerPartition = null;
         public TuningDispatch.DispatchPolicy policy = null;
         public boolean useLocalNode = false;
         public Double minGroupCoverage = null;
         public Double minActiveDocsCoverage = null;
+
+        @Override
+        public void getConfig(PartitionsConfig.Builder builder) {
+            if (maxHitsPerPartition != null) {
+                for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
+                    dataset.maxhitspernode(maxHitsPerPartition);
+                }
+            }
+            if (minGroupCoverage != null) {
+                for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
+                    dataset.min_group_coverage(minGroupCoverage);
+                }
+            }
+            if (minActiveDocsCoverage != null) {
+                for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
+                    dataset.min_activedocs_coverage(minActiveDocsCoverage);
+                }
+            }
+            if (policy != null) {
+                for (PartitionsConfig.Dataset.Builder dataset : builder.dataset) {
+                    switch (policy) {
+                        case ADAPTIVE:
+                            dataset.useroundrobinforfixedrow(false);
+                            break;
+                        case ROUNDROBIN:
+                        default:
+                            dataset.useroundrobinforfixedrow(true);
+                            break;
+                    }
+                }
+            }
+        }
     }
 
     public static class SearchNode implements ProtonConfig.Producer {
@@ -396,6 +429,13 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
 
     public Tuning(AbstractConfigProducer parent) {
         super(parent, "tuning");
+    }
+
+    @Override
+    public void getConfig(PartitionsConfig.Builder builder) {
+        if (dispatch != null) {
+            dispatch.getConfig(builder);
+        }
     }
 
     @Override

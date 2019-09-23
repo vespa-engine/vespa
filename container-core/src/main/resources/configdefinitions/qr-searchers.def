@@ -71,3 +71,10 @@ searchcluster[].indexingmode enum { REALTIME, STREAMING } default=REALTIME
 
 ## Storage cluster route to use for search cluster if indexingmode is streaming.
 searchcluster[].storagecluster.routespec string default=""
+
+# The available dispatchers on each search cluster
+searchcluster[].dispatcher[].host string
+searchcluster[].dispatcher[].port int
+
+# Per dispatcher config-id might be nice to have, remove it until needed.
+# searchcluster[].dispatcher[].configid reference

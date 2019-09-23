@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.log.LogLevel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.searchdefinition.DocumentOnlySearch;
@@ -13,6 +15,10 @@ import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.vespa.model.HostResource;
+import com.yahoo.vespa.model.SimpleConfigProducer;
+import com.yahoo.vespa.model.container.Container;
+import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.content.DispatchSpec;
 import com.yahoo.vespa.model.content.SearchCoverage;
@@ -23,6 +29,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author baldersheim
@@ -78,6 +85,8 @@ public class IndexedSearchCluster extends SearchCluster
         }
     }
 
+    private static final Logger log = Logger.getLogger(IndexedSearchCluster.class.getName());
+
     private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
     private String indexingChainName = null;
 
@@ -94,6 +103,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     private int searchableCopies = 1;
 
+    private final SimpleConfigProducer dispatchParent;
     private final DispatchGroup rootDispatch;
     private DispatchSpec dispatchSpec;
     private final boolean useAdaptiveDispatch;
@@ -112,6 +122,7 @@ public class IndexedSearchCluster extends SearchCluster
     public IndexedSearchCluster(AbstractConfigProducer parent, String clusterName, int index, DeployState deployState) {
         super(parent, clusterName, index);
         unionCfg = new UnionConfiguration(this, documentDbs);
+        dispatchParent = new SimpleConfigProducer(this, "dispatchers");
         rootDispatch =  new DispatchGroup(this);
         useAdaptiveDispatch = deployState.getProperties().useAdaptiveDispatch();
     }
@@ -172,12 +183,54 @@ public class IndexedSearchCluster extends SearchCluster
         return this;
     }
 
+    public Dispatch addTld(DeployLogger deployLogger, AbstractConfigProducer tldParent, HostResource hostResource) {
+        int index = rootDispatch.getDispatchers().size();
+        Dispatch tld = Dispatch.createTld(rootDispatch, tldParent, index);
+        tld.useAdaptiveDispatch(useAdaptiveDispatch);
+        tld.setHostResource(hostResource);
+        tld.initService(deployLogger);
+        rootDispatch.addDispatcher(tld);
+        return tld;
+    }
+
+    /**
+     * Make sure to allocate tld with same id as container (i.e if container cluster name is 'foo', with containers
+     * with index 0,1,2 the tlds created will get names ../foo.0.tld.0, ../foo.1.tld.1, ../foo.2.tld.2, so that tld config id is
+     * stable no matter what changes are done to the number of containers in a container cluster
+     * @param tldParent the indexed search cluster the tlds to add should be connected to
+     * @param containerCluster the container cluster that should use the tlds created for searching the indexed search cluster above
+     */
+    public void addTldsWithSameIdsAsContainers(DeployLogger deployLogger, AbstractConfigProducer tldParent, ContainerCluster<? extends Container> containerCluster) {
+        for (Container container : containerCluster.getContainers()) {
+            String containerSubId = container.getSubId();
+            if ( ! containerSubId.contains(".")) {
+                throw new RuntimeException("Expected container sub id to be of the form string.number");
+            }
+            int containerIndex = Integer.parseInt(containerSubId.split("\\.")[1]);
+            String containerClusterName = containerCluster.getName();
+            log.log(LogLevel.DEBUG, "Adding tld with index " + containerIndex + " for content cluster " + this.getClusterName() +
+                                    ", container cluster " + containerClusterName + " (container id " + containerSubId +
+                                    ") on host " + container.getHostResource().getHostname());
+            rootDispatch.addDispatcher(createTld(deployLogger, tldParent, container.getHostResource(), containerClusterName, containerIndex).useAdaptiveDispatch(useAdaptiveDispatch));
+        }
+    }
+
+    private Dispatch createTld(DeployLogger deployLogger, AbstractConfigProducer tldParent, HostResource hostResource, String containerClusterName, int containerIndex) {
+        Dispatch tld = Dispatch.createTldWithContainerIdInName(rootDispatch, tldParent, containerClusterName, containerIndex);
+        tld.useAdaptiveDispatch(useAdaptiveDispatch);
+        tld.setHostResource(hostResource);
+        tld.initService(deployLogger);
+        return tld;
+    }
+
     public DispatchGroup getRootDispatch() { return rootDispatch; }
 
     public void addSearcher(SearchNode searcher) {
         searchNodes.add(searcher);
         rootDispatch.addSearcher(searcher);
     }
+
+    public List<Dispatch> getTLDs() { return rootDispatch.getDispatchers(); }
 
     public List<SearchNode> getSearchNodes() { return Collections.unmodifiableList(searchNodes); }
     public int getSearchNodeCount() { return searchNodes.size(); }
@@ -274,6 +327,10 @@ public class IndexedSearchCluster extends SearchCluster
         this.searchCoverage = searchCoverage;
     }
 
+    SearchCoverage getSearchCoverage() {
+        return searchCoverage;
+    }
+
     @Override
     public DerivedConfiguration getSdConfig() { return null; }
 
@@ -299,6 +356,8 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     protected void exportSdFiles(File toDir) { }
+
+    int getMinNodesPerColumn() { return 0; }
 
     boolean useFixedRowInDispatch() {
         for (SearchNode node : getSearchNodes()) {
@@ -338,6 +397,18 @@ public class IndexedSearchCluster extends SearchCluster
         return dispatchSpec;
     }
 
+    public boolean useMultilevelDispatchSetup() {
+        return dispatchSpec != null && dispatchSpec.getGroups() != null && !dispatchSpec.getGroups().isEmpty();
+    }
+
+    public void setupDispatchGroups(DeployLogger deployLogger) {
+        if (!useMultilevelDispatchSetup()) {
+            return;
+        }
+        rootDispatch.clearSearchers();
+        new DispatchGroupBuilder(dispatchParent, rootDispatch, this).build(deployLogger, dispatchSpec.getGroups(), getSearchNodes());
+    }
+
     @Override
     public void getConfig(DispatchConfig.Builder builder) {
         for (SearchNode node : getSearchNodes()) {
@@ -349,9 +420,6 @@ public class IndexedSearchCluster extends SearchCluster
             nodeBuilder.fs4port(node.getDispatchPort());
             builder.node(nodeBuilder);
         }
-        if (useAdaptiveDispatch)
-            builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
-
         if (tuning.dispatch.minActiveDocsCoverage != null)
             builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
         if (tuning.dispatch.minGroupCoverage != null)
@@ -366,10 +434,8 @@ public class IndexedSearchCluster extends SearchCluster
                     break;
             }
         }
-        if (tuning.dispatch.maxHitsPerPartition != null)
-            builder.maxHitsPerNode(tuning.dispatch.maxHitsPerPartition);
-
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
+        builder.useMultilevelDispatch(useMultilevelDispatchSetup());
         builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {

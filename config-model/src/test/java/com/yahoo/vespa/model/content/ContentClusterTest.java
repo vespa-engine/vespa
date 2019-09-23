@@ -18,7 +18,7 @@ import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
-import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -269,6 +269,25 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(1, model.getContentClusters().get("storage").getDocumentDefinitions().size());
         ContainerCluster cluster = model.getAdmin().getClusterControllers();
         assertEquals(1, cluster.getContainers().size());
+    }
+
+    private void verifyRoundRobinPropertiesControl(boolean useAdaptiveDispatch) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseAdaptiveDispatch(useAdaptiveDispatch));
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        PartitionsConfig.Builder partBuilder = new PartitionsConfig.Builder();
+        assertNotNull(cc.getSearch());
+        assertNotNull(cc.getSearch().getIndexed());
+        assertEquals(1, cc.getSearch().getIndexed().getTLDs().size());
+        cc.getSearch().getIndexed().getTLDs().get(0).getConfig(partBuilder);
+        PartitionsConfig partitionsConfig = new PartitionsConfig(partBuilder);
+        assertFalse(useAdaptiveDispatch == partitionsConfig.dataset(0).useroundrobinforfixedrow());
+    }
+
+    @Test
+    public void default_dispatch_controlled_by_properties() {
+        verifyRoundRobinPropertiesControl(false);
+        verifyRoundRobinPropertiesControl(true);
     }
 
     @Test
@@ -930,28 +949,5 @@ public class ContentClusterTest extends ContentBaseTest {
         StorDistributormanagerConfig storDistributormanagerConfig = new StorDistributormanagerConfig(sdBuilder);
         assertEquals(distributionBits, storDistributormanagerConfig.minsplitcount());
     }
-
-    private void verifyRoundRobinPropertiesControl(boolean useAdaptiveDispatch) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setUseAdaptiveDispatch(useAdaptiveDispatch));
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cc.getSearch().getConfig(builder);
-
-        DispatchConfig cfg = new DispatchConfig(builder);
-        if (useAdaptiveDispatch) {
-            assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, cfg.distributionPolicy());
-        } else {
-            assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, cfg.distributionPolicy());
-        }
-
-    }
-
-    @Test
-    public void default_dispatch_controlled_by_properties() {
-        verifyRoundRobinPropertiesControl(false);
-        verifyRoundRobinPropertiesControl(true);
-    }
-
 
 }

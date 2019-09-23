@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.XmlHelper;
@@ -180,7 +181,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
                 if (port > 0) {
                     t.setBasePort(port);
                 }
-                allocateHost(t, hostSystem, producerSpec);
+                allocateHost(t, hostSystem, producerSpec, deployState.getDeployLogger());
             }
             // This depends on which constructor in AbstractService is used, but the best way
             // is to let this method do initialize.
@@ -198,7 +199,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
          * @param producerSpec xml element for the service
          */
         private void allocateHost(final AbstractService service, HostSystem hostSystem,
-                                  Element producerSpec)
+                                  Element producerSpec, DeployLogger deployLogger)
         {
             // TODO store service on something else than HostSystem, to not make that overloaded
             service.setHostResource(hostSystem.getHost(producerSpec.getAttribute("hostalias")));
@@ -206,15 +207,15 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     /**
-     * The SimpleConfigProducer is the producer for elements such as qrservers, gateways.
+     * The SimpleConfigProducer is the producer for elements such as qrservers, topleveldispatchers, gateways.
      * Must support overrides for that too, hence this builder
      *
      * @author vegardh
      */
-    static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer> {
-        private String configId;
+    public static class DomSimpleConfigProducerBuilder extends DomConfigProducerBuilder<SimpleConfigProducer> {
+        private String configId = null;
 
-        DomSimpleConfigProducerBuilder(String configId) {
+        public DomSimpleConfigProducerBuilder(String configId) {
             this.configId = configId;
         }
 
@@ -230,7 +231,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
         /**
          * @param name The name of the Vespa to create. Usually 'root' when there is only one.
          */
-        DomRootBuilder(String name) {
+        public DomRootBuilder(String name) {
             this.name = name;
         }
 
@@ -248,13 +249,23 @@ public class VespaDomBuilder extends VespaModelBuilder {
     }
 
     /**
+     * Gets the index from a service's spec
+     *
+     * @param spec The element containing the xml specification for this Service.
+     * @return the index of the service, which is retrieved from the xml spec.
+     */
+    static int getIndex(Element spec) {
+        return getXmlIntegerAttribute(spec, "index");
+    }
+
+    /**
      * Gets an integer attribute value from a service's spec
      *
      * @param spec          XML element
      * @param attributeName nam of attribute to get value from
      * @return value of attribute, or 0 if it does not exist or is empty
      */
-    private static int getXmlIntegerAttribute(Element spec, String attributeName) {
+    static int getXmlIntegerAttribute(Element spec, String attributeName) {
         String value = (spec == null) ? null : spec.getAttribute(attributeName);
         if (value == null || value.equals("")) {
             return 0;
@@ -276,6 +287,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
      * @param configModelRepo a {@link ConfigModelRepo}
      */
     public void postProc(DeployLogger deployLogger, AbstractConfigProducer root, ConfigModelRepo configModelRepo) {
+        createTlds(deployLogger, configModelRepo);
         setContentSearchClusterIndexes(configModelRepo);
         createDocprocMBusServersAndClients(configModelRepo);
     }
@@ -289,6 +301,14 @@ public class VespaDomBuilder extends VespaModelBuilder {
     private void addServerAndClientsForChains(ContainerDocproc docproc) {
         if (docproc != null)
             docproc.getChains().addServersAndClientsForChains();
+    }
+
+    private void createTlds(DeployLogger deployLogger, ConfigModelRepo pc) {
+         for (ConfigModel p : pc.asMap().values()) {
+            if (p instanceof Content) {
+                ((Content)p).createTlds(deployLogger, pc);
+            }
+        }
     }
 
     /**

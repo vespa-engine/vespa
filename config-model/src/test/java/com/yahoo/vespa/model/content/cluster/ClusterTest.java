@@ -4,9 +4,10 @@ package com.yahoo.vespa.model.content.cluster;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
-import com.yahoo.vespa.config.search.DispatchConfig;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.Content;
+import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import org.junit.Test;
@@ -15,7 +16,6 @@ import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -24,7 +24,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class ClusterTest {
 
-    static final double DELTA = 1E-12;
     @Test
     public void requireThatContentSearchIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
@@ -33,19 +32,10 @@ public class ClusterTest {
                 "</search>"));
         IndexedSearchCluster searchCluster = cluster.getSearch().getIndexed();
         assertNotNull(searchCluster);
-        assertEquals(1.1, searchCluster.getQueryTimeout(), DELTA);
-        assertEquals(2.3, searchCluster.getVisibilityDelay(), DELTA);
+        assertEquals(1.1, searchCluster.getQueryTimeout(), 1E-6);
+        assertEquals(2.3, searchCluster.getVisibilityDelay(), 1E-6);
         ProtonConfig proton = getProtonConfig(cluster);
-        assertEquals(searchCluster.getVisibilityDelay(), proton.documentdb(0).visibilitydelay(), DELTA);
-    }
-
-    @Test
-    public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() {
-        ContentCluster cluster = newContentCluster(joinLines("<search>",
-                "  <visibility-delay>2.3</visibility-delay>",
-                "</search>"), true);
-        ProtonConfig proton = getProtonConfig(cluster);
-        assertEquals(0.0, proton.documentdb(0).visibilitydelay(), DELTA);
+        assertEquals(searchCluster.getVisibilityDelay(), proton.documentdb(0).visibilitydelay(), 1E-6);
     }
 
     @Test
@@ -57,93 +47,56 @@ public class ClusterTest {
                 "    <max-wait-after-coverage-factor>0.58</max-wait-after-coverage-factor>",
                 "  </coverage>",
                 "</search>"));
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cluster.getSearch().getConfig(builder);
-        DispatchConfig config = new DispatchConfig(builder);
-        assertEquals(11.0, config.minSearchCoverage(), DELTA);
-        assertEquals(0.23, config.minWaitAfterCoverageFactor(), DELTA);
-        assertEquals(0.58, config.maxWaitAfterCoverageFactor(), DELTA);
-        assertEquals(2, config.searchableCopies());
-        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
+        assertEquals(1, cluster.getSearch().getIndexed().getTLDs().size());
+        for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
+            PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
+            tld.getConfig(builder);
+            PartitionsConfig config = new PartitionsConfig(builder);
+            assertEquals(11.0, config.dataset(0).minimal_searchcoverage(), 1E-6);
+            assertEquals(0.23, config.dataset(0).higher_coverage_minsearchwait(), 1E-6);
+            assertEquals(0.58, config.dataset(0).higher_coverage_maxsearchwait(), 1E-6);
+            assertEquals(2, config.dataset(0).searchablecopies());
+            assertTrue(config.dataset(0).useroundrobinforfixedrow());
+        }
     }
 
     @Test
-    public void requireThatDispatchTuningIsApplied() {
+    public void requireThatDispatchTuningIsApplied()  {
         ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
-                                                   "",
-                                                   joinLines(
-                                                           "<max-hits-per-partition>77</max-hits-per-partition>",
-                                                           "<dispatch-policy>adaptive</dispatch-policy>",
-                                                           "<min-group-coverage>13</min-group-coverage>",
-                                                           "<min-active-docs-coverage>93</min-active-docs-coverage>",
-                                                           "<use-local-node>true</use-local-node>"),
-                                                   false);
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cluster.getSearch().getConfig(builder);
-        DispatchConfig config = new DispatchConfig(builder);
-        assertEquals(2, config.searchableCopies());
-        assertEquals(93.0, config.minActivedocsPercentage(), DELTA);
-        assertEquals(13.0, config.minGroupCoverage(), DELTA);
-        assertTrue(config.useLocalNode());
-        assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
-        assertEquals(77, config.maxHitsPerNode());
+                joinLines("<tuning>",
+                        "</tuning>"));
+        assertEquals(1, cluster.getSearch().getIndexed().getTLDs().size());
+        for (Dispatch tld : cluster.getSearch().getIndexed().getTLDs()) {
+            PartitionsConfig.Builder builder = new PartitionsConfig.Builder();
+            tld.getConfig(builder);
+            PartitionsConfig config = new PartitionsConfig(builder);
+            assertEquals(2, config.dataset(0).searchablecopies());
+            assertTrue(config.dataset(0).useroundrobinforfixedrow());
+        }
     }
 
     @Test
-    public void requireThatDefaultDispatchConfigIsCorrect()  {
-        ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
-                                                   joinLines("<tuning>", "</tuning>"));
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cluster.getSearch().getConfig(builder);
-        DispatchConfig config = new DispatchConfig(builder);
-        assertEquals(2, config.searchableCopies());
-        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
-        assertEquals(0, config.maxNodesDownPerGroup());
-        assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
-        assertEquals(0, config.minWaitAfterCoverageFactor(), DELTA);
-        assertEquals(8, config.numJrtConnectionsPerNode());
-        assertEquals(8, config.numJrtTransportThreads());
-        assertEquals(100.0, config.minSearchCoverage(), DELTA);
-        assertEquals(97.0, config.minActivedocsPercentage(), DELTA);
-        assertEquals(100.0, config.minGroupCoverage(), DELTA);
-        assertFalse(config.useLocalNode());
-        assertEquals(3, config.node().size());
-        assertEquals(0, config.node(0).key());
-        assertEquals(1, config.node(1).key());
-        assertEquals(2, config.node(2).key());
-
-        assertEquals(19106, config.node(0).port());
-        assertEquals(19118, config.node(1).port());
-        assertEquals(19130, config.node(2).port());
-
-        assertEquals(19107, config.node(0).fs4port());
-        assertEquals(19119, config.node(1).fs4port());
-        assertEquals(19131, config.node(2).fs4port());
-
-        assertEquals(0, config.node(0).group());
-        assertEquals(0, config.node(1).group());
-        assertEquals(0, config.node(2).group());
-
-        assertEquals("localhost", config.node(0).host());
-        assertEquals("localhost", config.node(1).host());
-        assertEquals("localhost", config.node(2).host());
-    }
-
-    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {
-        return newContentCluster(contentSearchXml, searchNodeTuningXml, "", false);
+    public void requireThatVisibilityDelayIsZeroForGlobalDocumentType() {
+        ContentCluster cluster = newContentCluster(joinLines("<search>",
+                "  <visibility-delay>2.3</visibility-delay>",
+                "</search>"), true);
+        ProtonConfig proton = getProtonConfig(cluster);
+        assertEquals(0.0, proton.documentdb(0).visibilitydelay(), 1E-6);
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml) {
-        return newContentCluster(contentSearchXml, false);
+        return newContentCluster(contentSearchXml, "", false);
+    }
+
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {
+        return newContentCluster(contentSearchXml, searchNodeTuningXml, false);
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml, boolean globalDocType) {
-        return newContentCluster(contentSearchXml, "", "", globalDocType);
+        return newContentCluster(contentSearchXml, "", globalDocType);
     }
 
-    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml,
-                                                    String dispatchTuning, boolean globalDocType)
-    {
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml, boolean globalDocType) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withHosts(joinLines(
                         "<hosts>",
@@ -175,11 +128,6 @@ public class ClusterTest {
                         "      <node hostalias='my_host' distribution-key='2' />",
                         "    </group>",
                         contentSearchXml,
-                        "    <tuning>",
-                        "      <dispatch>",
-                        dispatchTuning,
-                        "      </dispatch>",
-                        "    </tuning>",
                         "  </content>",
                         "</services>"))
                 .withSearchDefinitions(ApplicationPackageUtils.generateSearchDefinition("my_document"))
