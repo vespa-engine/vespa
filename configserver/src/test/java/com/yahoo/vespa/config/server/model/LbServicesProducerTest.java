@@ -17,6 +17,7 @@ import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
@@ -107,6 +108,22 @@ public class LbServicesProducerTest {
             RegionName regionName = RegionName.from("us-east-2");
             LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
             assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").activeRotation());
+        }
+    }
+
+    @Test
+    public void dynamic_upstream_connections_is_configured_from_feature_flag() throws IOException, SAXException {
+        {
+            flagSource.withBooleanFlag(Flags.DYNAMIC_UPSTREAM_CONNECTION_CACHE.id(), true);
+            RegionName regionName = RegionName.from("us-east-1");
+            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+            assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").dynamicUpstreamConnectionCache());
+        }
+        {
+            flagSource.withBooleanFlag(Flags.DYNAMIC_UPSTREAM_CONNECTION_CACHE.id(), false);
+            RegionName regionName = RegionName.from("us-east-2");
+            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+            assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").dynamicUpstreamConnectionCache());
         }
     }
 

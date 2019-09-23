@@ -158,6 +158,11 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart (may vary where used).",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag DYNAMIC_UPSTREAM_CONNECTION_CACHE = defineFeatureFlag(
+            "dynamic-upstream-connection-cache", false,
+            "Scale upstream connection cache with number of upstream servers",
+            "Takes effect on routing container redeployment");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
