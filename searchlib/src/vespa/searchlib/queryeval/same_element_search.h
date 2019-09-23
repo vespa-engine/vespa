@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <memory>
 #include <vector>
 
@@ -40,6 +41,11 @@ public:
     void doUnpack(uint32_t) override {}
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<SearchIterator::UP> &children() const { return _children; }
+
+    // used during docsum fetching to identify matching elements
+    // initRange must be called before use.
+    // doSeek/doUnpack must not be called.
+    void find_matching_elements(uint32_t docid, std::vector<uint32_t> &dst);
 };
 
 }

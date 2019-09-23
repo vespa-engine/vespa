@@ -114,4 +114,22 @@ SameElementSearch::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "strict", _strict);
 }
 
+void
+SameElementSearch::find_matching_elements(uint32_t docid, std::vector<uint32_t> &dst)
+{
+    if (check_docid_match(docid)) {
+        unpack_children(docid);
+        int32_t cand = 0;
+        while (cand >= 0) {
+            int32_t next = try_match(_childMatch, _iterators, cand);
+            if (next == cand) {
+                dst.push_back(cand);
+                ++cand;
+            } else {
+                cand = next;
+            }
+        }
+    }
+}
+
 }
