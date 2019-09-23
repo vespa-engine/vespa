@@ -818,15 +818,15 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     }
 
     protected ValueUpdate readTensorModifyUpdate(DataType type) {
-        throw new DeserializationException("Cannot deserialize TensorModifyUpdate, not implemented for Vespa 6");
+        throw new DeserializationException("Cannot deserialize TensorModifyUpdate, not implemented for this document format version");
     }
 
     protected ValueUpdate readTensorAddUpdate(DataType type) {
-        throw new DeserializationException("Cannot deserialize TensorAddUpdate, not implemented for Vespa 6");
+        throw new DeserializationException("Cannot deserialize TensorAddUpdate, not implemented for this document format version");
     }
 
     protected ValueUpdate readTensorRemoveUpdate(DataType type) {
-        throw new DeserializationException("Cannot deserialize TensorRemoveUpdate, not implemented for Vespa 6");
+        throw new DeserializationException("Cannot deserialize TensorRemoveUpdate, not implemented for this document format version");
     }
 
 }
