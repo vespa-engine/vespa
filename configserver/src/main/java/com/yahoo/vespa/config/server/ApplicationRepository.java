@@ -5,7 +5,6 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
@@ -71,8 +70,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -326,7 +327,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Deployment deployment = deployFromPreparedSession(localSession, tenant, timeoutBudget.timeLeft());
         deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
         deployment.activate();
-        return localSession.getApplicationId();
+        ApplicationId applicationId = localSession.getApplicationId();
+        return applicationId;
     }
 
     private Deployment deployFromPreparedSession(LocalSession session, Tenant tenant, Duration timeout) {
@@ -442,6 +444,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             });
         }
         return fileReferencesToDelete;
+    }
+
+    public Set<FileReference> getFileReferences(ApplicationId applicationId) {
+        return getOptionalApplication(applicationId).map(app -> app.getModel().fileReferences()).orElse(Set.of());
     }
 
     public ApplicationFile getApplicationFileFromSession(TenantName tenantName, long sessionId, String path, LocalSession.Mode mode) {
