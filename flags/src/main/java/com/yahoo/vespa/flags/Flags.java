@@ -166,7 +166,8 @@ public class Flags {
     public static final UnboundBooleanFlag HEALTH_CHECK_ON_4081 = defineFeatureFlag(
             "health-check-on-4081", false,
             "Change nginx to send health check requests on port 4081 instead of 4080.",
-            "Takes effect on routing container redeployment");
+            "Takes effect on routing container redeployment",
+            APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
