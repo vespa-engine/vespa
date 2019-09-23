@@ -66,10 +66,10 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
-import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -108,6 +108,10 @@ import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
+import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
+import static com.yahoo.jdisc.Response.Status.CONFLICT;
+import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
+import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static java.util.stream.Collectors.joining;
 
 /**
@@ -166,7 +170,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (ConfigServerException e) {
-            return ErrorResponse.from(e);
+            switch (e.getErrorCode()) {
+                case NOT_FOUND:
+                    return new ErrorResponse(NOT_FOUND, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                case ACTIVATION_CONFLICT:
+                    return new ErrorResponse(CONFLICT, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                case INTERNAL_SERVER_ERROR:
+                    return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                default:
+                    return new ErrorResponse(BAD_REQUEST, e.getErrorCode().name(), Exceptions.toMessageString(e));
+            }
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);

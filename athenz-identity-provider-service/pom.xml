@@ -94,6 +94,12 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- COMPILE -->
         <dependency>
@@ -134,6 +140,18 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>application</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+      <dependency>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>testutil</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
 
     <build>

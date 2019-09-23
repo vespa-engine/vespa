@@ -13,9 +13,9 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.vespa.hosted.controller.restapi.ResourceResponse;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 

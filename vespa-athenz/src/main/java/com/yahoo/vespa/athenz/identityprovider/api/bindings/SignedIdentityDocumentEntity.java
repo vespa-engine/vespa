@@ -79,7 +79,7 @@ public class SignedIdentityDocumentEntity {
                 Objects.equals(instanceHostname, that.instanceHostname) &&
                 Objects.equals(createdAt, that.createdAt) &&
                 Objects.equals(ipAddresses, that.ipAddresses) &&
-                Objects.equals(identityType, identityType);
+                Objects.equals(identityType, that.identityType);
     }
 
     @Override

@@ -3,18 +3,16 @@ package com.yahoo.vespa.hosted.controller.restapi.zone.v1;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
-import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Comparator;

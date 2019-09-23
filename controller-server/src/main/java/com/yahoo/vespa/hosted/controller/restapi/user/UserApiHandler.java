@@ -19,9 +19,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
-import com.yahoo.vespa.hosted.controller.restapi.ErrorResponse;
-import com.yahoo.vespa.hosted.controller.restapi.MessageResponse;
-import com.yahoo.vespa.hosted.controller.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.yolean.Exceptions;
 

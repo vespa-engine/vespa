@@ -99,7 +99,7 @@ class AthenzCredentialsService {
                 document.ipAddresses(),
                 newKeyPair);
 
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, tenantIdentity, sslContext)) {
+        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, sslContext)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.refreshInstance(
                             configserverIdentity,

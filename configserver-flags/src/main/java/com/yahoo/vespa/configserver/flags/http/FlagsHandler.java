@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.log.LogLevel;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.configserver.flags.FlagsDb;
 import com.yahoo.vespa.flags.FlagDefinition;
