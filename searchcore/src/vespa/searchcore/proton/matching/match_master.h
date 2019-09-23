@@ -32,9 +32,6 @@ public:
                                       uint32_t distributionKey,
                                       uint32_t numSearchPartitions);
 
-    static std::shared_ptr<search::FeatureSet>
-    getFeatureSet(const MatchToolsFactory &matchToolsFactory,
-                  const std::vector<uint32_t> &docs, bool summaryFeatures);
     static MatchingStats getStats(MatchMaster && rhs) { return std::move(rhs._stats); }
 };
 

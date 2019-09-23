@@ -7,6 +7,7 @@
 #include "matching_stats.h"
 #include "search_session.h"
 #include "viewresolver.h"
+#include "docsum_matcher.h"
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/common/featureset.h>
@@ -64,9 +65,6 @@ private:
     QueryLimiter                 &_queryLimiter;
     uint32_t                      _distributionKey;
 
-    search::FeatureSet::SP
-    getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
-                  SessionManager &sessionMgr, bool summaryFeatures);
     std::unique_ptr<search::engine::SearchReply>
     handleGroupingSession(SessionManager &sessionMgr,
                           search::grouping::GroupingContext & groupingContext,
@@ -171,9 +169,12 @@ public:
      *                     about and how they relate to each other
      * @return matching elements
      **/
-    MatchingElements get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
-                                           IAttributeContext &attr_ctx, SessionManager &session_manager,
-                                           const StructFieldMapper &field_mapper);
+    MatchingElements::UP get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
+                                               IAttributeContext &attr_ctx, SessionManager &session_manager,
+                                               const StructFieldMapper &field_mapper);
+
+    DocsumMatcher::UP create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
+                                            IAttributeContext &attr_ctx, SessionManager &session_manager);
 
     /**
      * @return true if this rankprofile has summary-features enabled

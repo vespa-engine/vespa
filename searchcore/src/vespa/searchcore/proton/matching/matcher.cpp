@@ -58,20 +58,6 @@ struct StupidMetaStore : search::IDocumentMetaStore {
     void foreach(const search::IGidToLidMapperVisitor &) const override { }
 };
 
-FeatureSet::SP
-findFeatureSet(const DocsumRequest &req, MatchToolsFactory &mtf, bool summaryFeatures)
-{
-    std::vector<uint32_t> docs;
-    docs.reserve(req.hits.size());
-    for (const auto & hit : req.hits) {
-        if (hit.docid != search::endDocId) {
-            docs.push_back(hit.docid);
-        }
-    }
-    std::sort(docs.begin(), docs.end());
-    return MatchMaster::getFeatureSet(mtf, docs, summaryFeatures);
-}
-
 size_t numThreads(size_t hits, size_t minHits) {
     return static_cast<size_t>(std::ceil(double(hits) / double(minHits)));
 }
@@ -98,38 +84,6 @@ bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & g
 }
 
 }  // namespace proton::matching::<unnamed>
-
-FeatureSet::SP
-Matcher::getFeatureSet(const DocsumRequest & req, ISearchContext & searchCtx, IAttributeContext & attrCtx,
-                       SessionManager & sessionMgr, bool summaryFeatures)
-{
-    SessionId sessionId(&req.sessionId[0], req.sessionId.size());
-    bool expectedSessionCached(false);
-    if (!sessionId.empty()) {
-        const Properties &cache_props = req.propertiesMap.cacheProperties();
-        expectedSessionCached = cache_props.lookup("query").found();
-        if (expectedSessionCached) {
-            SearchSession::SP session(sessionMgr.pickSearch(sessionId));
-            if (session) {
-                MatchToolsFactory &mtf = session->getMatchToolsFactory();
-                FeatureSet::SP result = findFeatureSet(req, mtf, summaryFeatures);
-                session->releaseEnumGuards();
-                return result;
-            }
-        }
-    }
-
-    StupidMetaStore metaStore;
-    MatchToolsFactory::UP mtf = create_match_tools_factory(req, searchCtx, attrCtx, metaStore,
-                                                           req.propertiesMap.featureOverrides());
-    if (!mtf->valid()) {
-        LOG(warning, "getFeatureSet(%s): query execution failed (%s). Returning empty feature set",
-                     (summaryFeatures ? "summary features" : "rank features"),
-                     (expectedSessionCached) ? "session has expired" : "invalid query");
-        return std::make_shared<FeatureSet>();
-    }
-    return findFeatureSet(req, *mtf, summaryFeatures);
-}
 
 Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
                  QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, uint32_t distributionKey)
@@ -360,27 +314,60 @@ FeatureSet::SP
 Matcher::getSummaryFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
                             IAttributeContext & attrCtx, SessionManager &sessionMgr)
 {
-    return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, true);
+    auto docsum_matcher = create_docsum_matcher(req, searchCtx, attrCtx, sessionMgr);
+    return docsum_matcher->get_summary_features();
 }
 
 FeatureSet::SP
 Matcher::getRankFeatures(const DocsumRequest & req, ISearchContext & searchCtx,
                          IAttributeContext & attrCtx, SessionManager &sessionMgr)
 {
-    return getFeatureSet(req, searchCtx, attrCtx, sessionMgr, false);
+    auto docsum_matcher = create_docsum_matcher(req, searchCtx, attrCtx, sessionMgr);
+    return docsum_matcher->get_rank_features();
 }
 
-MatchingElements
+MatchingElements::UP
 Matcher::get_matching_elements(const DocsumRequest &req, ISearchContext &search_ctx,
                                IAttributeContext &attr_ctx, SessionManager &session_manager,
                                const StructFieldMapper &field_mapper)
 {
-    (void) req;
-    (void) search_ctx;
-    (void) attr_ctx;
-    (void) session_manager;
-    (void) field_mapper;
-    return MatchingElements();
+    auto docsum_matcher = create_docsum_matcher(req, search_ctx, attr_ctx, session_manager);
+    return docsum_matcher->get_matching_elements(field_mapper);
+}
+
+DocsumMatcher::UP
+Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_ctx,
+                               IAttributeContext &attr_ctx, SessionManager &session_manager)
+{
+    std::vector<uint32_t> docs;
+    docs.reserve(req.hits.size());
+    for (const auto &hit : req.hits) {
+        if (hit.docid != search::endDocId) {
+            docs.push_back(hit.docid);
+        }
+    }
+    std::sort(docs.begin(), docs.end());
+    SessionId sessionId(&req.sessionId[0], req.sessionId.size());
+    bool expectedSessionCached(false);
+    if (!sessionId.empty()) {
+        const Properties &cache_props = req.propertiesMap.cacheProperties();
+        expectedSessionCached = cache_props.lookup("query").found();
+        if (expectedSessionCached) {
+            SearchSession::SP session(session_manager.pickSearch(sessionId));
+            if (session) {
+                return std::make_unique<DocsumMatcher>(std::move(session), std::move(docs));
+            }
+        }
+    }
+    StupidMetaStore meta;
+    MatchToolsFactory::UP mtf = create_match_tools_factory(req, search_ctx, attr_ctx, meta,
+            req.propertiesMap.featureOverrides());
+    if (!mtf->valid()) {
+        LOG(warning, "could not initialize docsum matching: %s",
+            (expectedSessionCached) ? "session has expired" : "invalid query");
+        return std::make_unique<DocsumMatcher>();
+    }
+    return std::make_unique<DocsumMatcher>(std::move(mtf), std::move(docs));
 }
 
 }
