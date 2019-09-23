@@ -8,9 +8,7 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
-import com.yahoo.search.dispatch.rpc.Client;
-import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
-import com.yahoo.search.dispatch.rpc.RpcResourcePool;
+
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -38,7 +36,7 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -75,7 +73,7 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -115,7 +113,7 @@ public class FillTestCase {
         nodes.put(1, client.createConnection("host1", 123));
         nodes.put(2, client.createConnection("host2", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -155,7 +153,7 @@ public class FillTestCase {
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);
@@ -173,7 +171,7 @@ public class FillTestCase {
         Map<Integer, Client.NodeConnection> nodes = new HashMap<>();
         nodes.put(0, client.createConnection("host0", 123));
         RpcResourcePool rpcResourcePool = new RpcResourcePool(nodes);
-        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null, true);
+        RpcInvokerFactory factory = new RpcInvokerFactory(rpcResourcePool, null);
 
         Query query = new Query();
         Result result = new Result(query);

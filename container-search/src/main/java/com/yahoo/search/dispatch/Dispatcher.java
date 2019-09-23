@@ -84,7 +84,7 @@ public class Dispatcher extends AbstractComponent {
                                     VipStatus vipStatus,
                                     Metric metric) {
         var searchCluster = new SearchCluster(clusterId, dispatchConfig, containerClusterSize, vipStatus);
-        var rpcFactory = new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster, !dispatchConfig.useFdispatchByDefault());
+        var rpcFactory = new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster);
 
         return new Dispatcher(searchCluster, dispatchConfig, rpcFactory, rpcFactory, metric);
     }
