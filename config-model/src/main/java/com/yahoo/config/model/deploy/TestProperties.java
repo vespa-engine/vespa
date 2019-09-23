@@ -58,8 +58,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
     @Override public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
-    @Override public boolean useFdispatchByDefault() { return false; }
-    @Override public boolean dispatchWithProtobuf() { return true; }
     @Override public Optional<TlsSecrets> tlsSecrets() { return tlsSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
 

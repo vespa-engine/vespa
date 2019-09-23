@@ -215,12 +215,6 @@ public class ModelContextImpl implements ModelContext {
         public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
 
         @Override
-        public boolean useFdispatchByDefault() { return false; }
-
-        @Override
-        public boolean dispatchWithProtobuf() { return true; }
-
-        @Override
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
 
         @Override
