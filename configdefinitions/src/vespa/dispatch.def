@@ -16,6 +16,13 @@ maxNodesDownPerGroup int default=0
 # Distribution policy for group selection
 distributionPolicy enum { ROUNDROBIN, ADAPTIVE } default=ROUNDROBIN
 
+## Maximum number of hits that will be requested from a single node
+## in this dataset. If not set, there is no limit. Using this option
+## may help reduce network traffic when searching in datasets with big
+## fan-out, but it will also result in incorrect and incomplete results;
+## don't use it if you don't (really) mean it.
+maxHitsPerNode int default=2147483647
+
 # Is multi-level dispatch configured for this cluster
 # Deprecated, will go away soon, NOOP
 useMultilevelDispatch bool default=false

@@ -21,12 +21,9 @@ import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.Test;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -420,26 +417,6 @@ public class ClusterSearcherTestCase {
     }
 
     @Test
-    public void testLocalConnect() throws UnknownHostException {
-        ClusterSearcher cluster = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("dummy")));
-        boolean canFindYahoo;
-        final String yahoo = "www.yahoo.com";
-
-        try {
-            canFindYahoo = (null != InetAddress.getByName(yahoo));
-        } catch (Exception e) {
-            canFindYahoo = false;
-        }
-
-        assertFalse(cluster.isRemote("127.0.0.1"));
-        assertFalse(cluster.isRemote("localhost"));
-
-        if (canFindYahoo) {
-            assertTrue(cluster.isRemote(yahoo));
-        }
-    }
-
-    @Test
     public void testRequireThatSearchFailsForUndefinedRankProfileWithOneDocType() {
         Execution execution = createExecution(Arrays.asList("type1"), false);
 
@@ -525,10 +502,6 @@ public class ClusterSearcherTestCase {
             searchClusterConfig.searchdef("streaming_sd");
         }
         qrSearchersConfig.searchcluster(searchClusterConfig);
-        QrSearchersConfig.Searchcluster.Dispatcher.Builder dispatcherConfig = new QrSearchersConfig.Searchcluster.Dispatcher.Builder();
-        dispatcherConfig.host("localhost");
-        dispatcherConfig.port(0);
-        searchClusterConfig.dispatcher(dispatcherConfig);
 
         ClusterConfig.Builder clusterConfig = new ClusterConfig.Builder().clusterName(clusterName);
         if (maxQueryTimeout != null)

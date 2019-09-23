@@ -81,23 +81,6 @@ public class Content extends ConfigModel {
      */
     public Optional<ApplicationContainerCluster> ownedIndexingCluster() { return ownedIndexingCluster; }
 
-    public void createTlds(DeployLogger deployLogger, ConfigModelRepo modelRepo) {
-        IndexedSearchCluster indexedCluster = cluster.getSearch().getIndexed();
-        if (indexedCluster == null) return;
-
-        SimpleConfigProducer tldParent = new SimpleConfigProducer(indexedCluster, "tlds");
-        for (ConfigModel model : modelRepo.asMap().values()) {
-            if ( ! (model instanceof ContainerModel)) continue;
-
-            ContainerCluster<? extends Container> containerCluster = ((ContainerModel) model).getCluster();
-            if (containerCluster.getSearch() == null) continue; // this is not a qrs cluster
-
-            log.log(LogLevel.DEBUG, "Adding tlds for indexed cluster " + indexedCluster.getClusterName() + ", container cluster " + containerCluster.getName());
-            indexedCluster.addTldsWithSameIdsAsContainers(deployLogger, tldParent, containerCluster);
-        }
-        indexedCluster.setupDispatchGroups(deployLogger);
-    }
-
     private static boolean containsIndexingChain(ComponentRegistry<DocprocChain> allChains, ChainSpecification chainSpec) {
         if (IndexingDocprocChain.NAME.equals(chainSpec.componentId.stringValue())) return true;
 
