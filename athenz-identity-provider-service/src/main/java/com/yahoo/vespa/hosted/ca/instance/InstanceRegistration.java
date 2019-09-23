@@ -6,8 +6,8 @@ import com.yahoo.security.Pkcs10Csr;
 import java.util.Objects;
 
 /**
- * Information for registering a new instance in the system. This is similar to the InstanceRegisterInformation type in
- * ZTS.
+ * Information for registering a new instance in the system. This is the same type as InstanceRegisterInformation type
+ * in the ZTS API.
  *
  * @author mpolden
  */
@@ -47,6 +47,7 @@ public class InstanceRegistration {
         return attestationData;
     }
 
+    /** The Certificate Signed Request describing the wanted certificate */
     public Pkcs10Csr csr() {
         return csr;
     }

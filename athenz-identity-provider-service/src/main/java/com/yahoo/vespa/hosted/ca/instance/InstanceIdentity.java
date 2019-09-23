@@ -7,7 +7,7 @@ import java.util.Optional;
 
 /**
  * A signed instance identity object that includes a client certificate. This is the result of a successful
- * {@link InstanceRegistration}.
+ * {@link InstanceRegistration} and is the same type as InstanceIdentity in the ZTS API.
  *
  * @author mpolden
  */

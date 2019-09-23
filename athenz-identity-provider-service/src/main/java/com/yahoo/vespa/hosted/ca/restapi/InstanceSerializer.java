@@ -6,6 +6,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
+import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRegistration;
 
 /**
@@ -31,6 +32,11 @@ public class InstanceSerializer {
                                         requireField(SERVICE_FIELD, root).asString(),
                                         requireField(ATTESTATION_DATA_FIELD, root).asString(),
                                         Pkcs10CsrUtils.fromPem(requireField(CSR_FIELD, root).asString()));
+    }
+
+    public static InstanceRefresh refreshFromSlime(Slime slime) {
+        Cursor root = slime.get();
+        return new InstanceRefresh(Pkcs10CsrUtils.fromPem(requireField(CSR_FIELD, root).asString()));
     }
 
     public static Slime identityToSlime(InstanceIdentity identity) {

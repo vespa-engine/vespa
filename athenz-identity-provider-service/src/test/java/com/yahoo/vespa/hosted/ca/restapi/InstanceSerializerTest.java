@@ -7,6 +7,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.ca.CertificateTester;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
+import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRegistration;
 import org.junit.Test;
 
@@ -53,6 +54,16 @@ public class InstanceSerializerTest {
                    "\"x509Certificate\":\"" + pem.replace("\n", "\\n") + "\"" +
                    "}";
         assertEquals(json, asJsonString(InstanceSerializer.identityToSlime(identity)));
+    }
+
+    @Test
+    public void serialize_instance_refresh() {
+        var csr = CertificateTester.createCsr();
+        var csrPem = Pkcs10CsrUtils.toPem(csr);
+        var json = "{\"csr\": \"" + csrPem + "\"}";
+        var instanceRefresh = new InstanceRefresh(csr);
+        var deserialized = InstanceSerializer.refreshFromSlime(SlimeUtils.jsonToSlime(json));
+        assertEquals(instanceRefresh, deserialized);
     }
 
     private static String asJsonString(Slime slime) {
