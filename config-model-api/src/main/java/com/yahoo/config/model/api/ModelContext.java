@@ -53,9 +53,10 @@ public interface ModelContext {
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
-        boolean useDedicatedNodeForLogserver();
         default boolean useFdispatchByDefault() { return false; } // TODO Remove once 7.111 is the oldest old config models
         default boolean dispatchWithProtobuf() { return true; } // TODO Remove once 7.111 is the oldest old config models
+        // TODO: Remove when Vespa 7.112 is the oldest config model in use
+        default boolean useDedicatedNodeForLogserver() { return true; }
         boolean useAdaptiveDispatch();
         // TODO: Remove temporary default implementation
         default Optional<TlsSecrets> tlsSecrets() { return Optional.empty(); }

@@ -81,6 +81,5 @@ public class ModelContextImplTest {
         assertThat(context.properties().rotations(), equalTo(rotations));
         assertThat(context.properties().endpoints(), equalTo(endpoints));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
-        assertThat(context.properties().useDedicatedNodeForLogserver(), equalTo(true));
     }
 }

@@ -73,11 +73,6 @@ public class Flags {
             "Takes effect immediately (but used only during provisioning).",
             NODE_TYPE);
 
-    public static final UnboundBooleanFlag USE_DEDICATED_NODE_FOR_LOGSERVER = defineFeatureFlag(
-            "use-dedicated-node-for-logserver", true,
-            "Whether to use a dedicated node for the logserver.", "Takes effect at redeployment",
-            APPLICATION_ID);
-
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +

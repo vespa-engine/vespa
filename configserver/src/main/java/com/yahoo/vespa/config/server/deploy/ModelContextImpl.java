@@ -131,7 +131,6 @@ public class ModelContextImpl implements ModelContext {
         private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
-        private final boolean useDedicatedNodeForLogserver;
         private final boolean useAdaptiveDispatch;
         private final Optional<TlsSecrets> tlsSecrets;
         private final double defaultTermwiseLimit;
@@ -162,8 +161,6 @@ public class ModelContextImpl implements ModelContext {
             this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
-            this.useDedicatedNodeForLogserver = Flags.USE_DEDICATED_NODE_FOR_LOGSERVER.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.useAdaptiveDispatch = Flags.USE_ADAPTIVE_DISPATCH.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
             this.tlsSecrets = tlsSecrets;
@@ -210,9 +207,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean isFirstTimeDeployment() { return isFirstTimeDeployment; }
-
-        @Override
-        public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
 
         @Override
         public boolean useAdaptiveDispatch() { return useAdaptiveDispatch; }
