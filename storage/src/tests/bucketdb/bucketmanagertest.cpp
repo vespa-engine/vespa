@@ -156,7 +156,7 @@ void BucketManagerTest::setupTestEnvironment(bool fakePersistenceLayer,
     _node->setTypeRepo(repo);
     _node->setupDummyPersistence();
     // Set up the 3 links
-    auto manager = std::make_unique<BucketManager>("", _node->getComponentRegister());
+    auto manager = std::make_unique<BucketManager>(config.getConfigId(), _node->getComponentRegister());
     _manager = manager.get();
     _top->push_back(std::move(manager));
     if (fakePersistenceLayer) {

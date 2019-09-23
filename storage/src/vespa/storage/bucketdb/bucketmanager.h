@@ -1,13 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 /**
- * @class storage::BucketManager
- * @ingroup bucketdb
+ * Storage link handling requests concerning buckets.
  *
- * @brief Storage link handling requests concerning buckets.
- *
- * @author H�kon Humberset
- * @date 2006-01-16
- * @version $Id$
+ * @author Håkon Humberset
  */
 
 #pragma once
@@ -23,6 +18,7 @@
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 
+#include <chrono>
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
@@ -84,6 +80,7 @@ private:
     ServiceLayerComponent _component;
     std::shared_ptr<BucketManagerMetrics> _metrics;
     framework::Thread::UP _thread;
+    std::chrono::milliseconds _simulated_processing_delay;
 
     BucketManager(const BucketManager&);
     BucketManager& operator=(const BucketManager&);

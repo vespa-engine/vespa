@@ -80,3 +80,7 @@ switch_new_meta_data_flow bool default=false restart
 ## operations.
 bucket_rechecking_chunk_size int default=100
 
+## If greater than zero, simulates added latency caused by CPU processing during
+## full bucket info requests. The latency is added per batch of operations processed.
+## Only useful for testing!
+simulated_bucket_request_latency_msec int default=0
