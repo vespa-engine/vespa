@@ -122,7 +122,7 @@ public class NodePatcher {
             case "currentOsVersion" :
                 return node.withCurrentOsVersion(Version.fromString(asString(value)), clock.instant());
             case "currentFirmwareCheck":
-                return node.with(node.status().withFirmwareVerifiedAt(Instant.ofEpochMilli(asLong(value))));
+                return node.withFirmwareVerifiedAt(Instant.ofEpochMilli(asLong(value)));
             case "failCount" :
                 return node.with(node.status().setFailCount(asLong(value).intValue()));
             case "flavor" :

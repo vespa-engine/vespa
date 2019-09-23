@@ -299,6 +299,13 @@ public final class Node {
         return this.with(newStatus).with(newHistory);
     }
 
+    /** Returns a copy of this node with firmware verified at the given instant */
+    public Node withFirmwareVerifiedAt(Instant instant) {
+        var newStatus = status.withFirmwareVerifiedAt(instant);
+        var newHistory = history.with(new History.Event(History.Event.Type.firmwareVerified, Agent.system, instant));
+        return this.with(newStatus).with(newHistory);
+    }
+
     /** Returns a copy of this node with the given history. */
     public Node with(History history) {
         return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type, reports, modelName);

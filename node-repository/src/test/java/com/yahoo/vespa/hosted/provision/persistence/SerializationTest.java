@@ -343,9 +343,10 @@ public class SerializationTest {
         Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
         assertFalse(node.status().firmwareVerifiedAt().isPresent());
 
-        node = node.with(node.status().withFirmwareVerifiedAt(Instant.ofEpochMilli(100)));
+        node = node.withFirmwareVerifiedAt(Instant.ofEpochMilli(100));
         node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
         assertEquals(100, node.status().firmwareVerifiedAt().get().toEpochMilli());
+        assertEquals(Instant.ofEpochMilli(100), node.history().event(History.Event.Type.firmwareVerified).get().at());
     }
 
     @Test
