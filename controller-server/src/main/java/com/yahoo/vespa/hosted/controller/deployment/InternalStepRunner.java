@@ -660,13 +660,13 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private void appendAndStoreCertificate(ZipBuilder zipBuilder, RunId id) {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
+        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
         X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
         X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair,
                                                                          subject,
                                                                          controller.clock().instant(),
                                                                          controller.clock().instant().plus(certificateTimeout),
-                                                                         SignatureAlgorithm.SHA512_WITH_ECDSA,
+                                                                         SignatureAlgorithm.SHA512_WITH_RSA,
                                                                          BigInteger.valueOf(1))
                                                             .build();
         controller.jobController().storeTesterCertificate(id, certificate);
