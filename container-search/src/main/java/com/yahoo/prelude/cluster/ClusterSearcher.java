@@ -124,15 +124,6 @@ public class ClusterSearcher extends Searcher {
         return null;
     }
 
-    /**
-     * Returns false if this host is local.
-     */
-    boolean isRemote(String host) throws UnknownHostException {
-        return (InetAddress.getByName(host).isLoopbackAddress())
-                ? false
-                : !host.equals(HostName.getLocalhost());
-    }
-
     private static ClusterParams makeClusterParams(int searchclusterIndex) {
         return new ClusterParams("sc" + searchclusterIndex + ".num" + 0);
     }
