@@ -107,30 +107,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <finalName>zkctl</finalName>
-           <archive>
-             <manifest>
-               <mainClass>org.apache.zookeeper.ZooKeeperMain</mainClass>
-             </manifest>
-           </archive>
-           <descriptorRefs>
-             <descriptorRef>jar-with-dependencies</descriptorRef>
-           </descriptorRefs>
-         </configuration>
-         <executions>
-           <execution>
-             <id>make-assembly</id>
-             <phase>package</phase>
-             <!-- append to the packaging phase. -->
-             <goals>
-               <goal>single</goal>
-             </goals>
-           </execution>
-         </executions>
-      </plugin>
-      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
       </plugin>
