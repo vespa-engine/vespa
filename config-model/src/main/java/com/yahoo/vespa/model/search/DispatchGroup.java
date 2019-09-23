@@ -54,26 +54,10 @@ public class DispatchGroup {
         return sc.useFixedRowInDispatch();
     }
 
-    public int getMinNodesPerColumn() {
-        return sc.getMinNodesPerColumn();
-    }
-
     public int getSearchableCopies() { return sc.getSearchableCopies(); }
 
     public int getMaxNodesDownPerFixedRow() {
         return sc.getMaxNodesDownPerFixedRow();
-    }
-
-    SearchCoverage getSearchCoverage() {
-        return sc.getSearchCoverage();
-    }
-
-    Tuning getTuning() {
-        return sc.getTuning();
-    }
-
-    String getClusterName() {
-        return sc.getClusterName();
     }
 
     static class Iterator implements java.util.Iterator<SearchInterface> {

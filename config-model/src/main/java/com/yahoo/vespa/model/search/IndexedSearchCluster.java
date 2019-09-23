@@ -274,10 +274,6 @@ public class IndexedSearchCluster extends SearchCluster
         this.searchCoverage = searchCoverage;
     }
 
-    SearchCoverage getSearchCoverage() {
-        return searchCoverage;
-    }
-
     @Override
     public DerivedConfiguration getSdConfig() { return null; }
 
@@ -303,8 +299,6 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     protected void exportSdFiles(File toDir) { }
-
-    int getMinNodesPerColumn() { return 0; }
 
     boolean useFixedRowInDispatch() {
         for (SearchNode node : getSearchNodes()) {
@@ -355,6 +349,9 @@ public class IndexedSearchCluster extends SearchCluster
             nodeBuilder.fs4port(node.getDispatchPort());
             builder.node(nodeBuilder);
         }
+        if (useAdaptiveDispatch)
+            builder.distributionPolicy(DistributionPolicy.ADAPTIVE);
+
         if (tuning.dispatch.minActiveDocsCoverage != null)
             builder.minActivedocsPercentage(tuning.dispatch.minActiveDocsCoverage);
         if (tuning.dispatch.minGroupCoverage != null)
@@ -369,6 +366,9 @@ public class IndexedSearchCluster extends SearchCluster
                     break;
             }
         }
+        if (tuning.dispatch.maxHitsPerPartition != null)
+            builder.maxHitsPerNode(tuning.dispatch.maxHitsPerPartition);
+
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
         builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
