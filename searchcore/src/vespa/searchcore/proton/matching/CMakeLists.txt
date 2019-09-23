@@ -5,6 +5,7 @@ vespa_add_library(searchcore_matching STATIC
     blueprintbuilder.cpp
     constant_value_repo.cpp
     docid_range_scheduler.cpp
+    docsum_matcher.cpp
     document_scorer.cpp
     fakesearchcontext.cpp
     handlerecorder.cpp
@@ -19,7 +20,6 @@ vespa_add_library(searchcore_matching STATIC
     match_tools.cpp
     matcher.cpp
     matching_stats.cpp
-    unpacking_iterators_optimizer.cpp
     partial_result.cpp
     query.cpp
     queryenvironment.cpp
@@ -35,6 +35,7 @@ vespa_add_library(searchcore_matching STATIC
     sessionmanager.cpp
     termdataextractor.cpp
     termdatafromnode.cpp
+    unpacking_iterators_optimizer.cpp
     viewresolver.cpp
     DEPENDS
     searchcore_grouping

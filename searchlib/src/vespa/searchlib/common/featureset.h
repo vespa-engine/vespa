@@ -50,11 +50,8 @@ private:
     FeatureSet & operator=(const FeatureSet &);
 
 public:
-    /**
-     * Convenience typedef for a shared pointer to an object of this
-     * class.
-     **/
-    typedef std::shared_ptr<FeatureSet> SP;
+    using SP = std::shared_ptr<FeatureSet>;
+    using UP = std::unique_ptr<FeatureSet>;
 
     /**
      * Create a new object without any feature information.
