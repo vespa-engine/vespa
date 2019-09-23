@@ -23,7 +23,6 @@ import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 import org.apache.commons.lang.StringUtils;
