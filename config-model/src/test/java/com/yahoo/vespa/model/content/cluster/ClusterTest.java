@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.content.cluster;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.TestDriver;
+import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -21,6 +22,7 @@ import static org.junit.Assert.assertNotNull;
  */
 public class ClusterTest {
 
+    static final double DELTA = 1E-12;
     @Test
     public void requireThatContentSearchIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
@@ -29,10 +31,10 @@ public class ClusterTest {
                 "</search>"));
         IndexedSearchCluster searchCluster = cluster.getSearch().getIndexed();
         assertNotNull(searchCluster);
-        assertEquals(1.1, searchCluster.getQueryTimeout(), 1E-6);
-        assertEquals(2.3, searchCluster.getVisibilityDelay(), 1E-6);
+        assertEquals(1.1, searchCluster.getQueryTimeout(), DELTA);
+        assertEquals(2.3, searchCluster.getVisibilityDelay(), DELTA);
         ProtonConfig proton = getProtonConfig(cluster);
-        assertEquals(searchCluster.getVisibilityDelay(), proton.documentdb(0).visibilitydelay(), 1E-6);
+        assertEquals(searchCluster.getVisibilityDelay(), proton.documentdb(0).visibilitydelay(), DELTA);
     }
 
     @Test
@@ -41,7 +43,44 @@ public class ClusterTest {
                 "  <visibility-delay>2.3</visibility-delay>",
                 "</search>"), true);
         ProtonConfig proton = getProtonConfig(cluster);
-        assertEquals(0.0, proton.documentdb(0).visibilitydelay(), 1E-6);
+        assertEquals(0.0, proton.documentdb(0).visibilitydelay(), DELTA);
+    }
+
+    @Test
+    public void requireThatSearchCoverageIsApplied() {
+        ContentCluster cluster = newContentCluster(joinLines("<search>",
+                "  <coverage>",
+                "    <minimum>0.11</minimum>",
+                "    <min-wait-after-coverage-factor>0.23</min-wait-after-coverage-factor>",
+                "    <max-wait-after-coverage-factor>0.58</max-wait-after-coverage-factor>",
+                "  </coverage>",
+                "</search>"));
+        DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        cluster.getSearch().getConfig(builder);
+        DispatchConfig config = new DispatchConfig(builder);
+        assertEquals(11.0, config.minSearchCoverage(), DELTA);
+        assertEquals(0.23, config.minWaitAfterCoverageFactor(), DELTA);
+        assertEquals(0.58, config.maxWaitAfterCoverageFactor(), DELTA);
+        assertEquals(2, config.searchableCopies());
+        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
+    }
+
+    @Test
+    public void requireThatDefaultDispatchConfigIsCorrect()  {
+        ContentCluster cluster = newContentCluster(joinLines("<search>", "</search>"),
+                                                   joinLines("<tuning>", "</tuning>"));
+        DispatchConfig.Builder builder = new DispatchConfig.Builder();
+        cluster.getSearch().getConfig(builder);
+        DispatchConfig config = new DispatchConfig(builder);
+        assertEquals(2, config.searchableCopies());
+        assertEquals(DispatchConfig.DistributionPolicy.ROUNDROBIN, config.distributionPolicy());
+        assertEquals(0, config.maxNodesDownPerGroup());
+        assertEquals(1.0, config.maxWaitAfterCoverageFactor(), DELTA);
+        assertEquals(0, config.minWaitAfterCoverageFactor(), DELTA);
+    }
+
+    private static ContentCluster newContentCluster(String contentSearchXml, String searchNodeTuningXml) {
+        return newContentCluster(contentSearchXml, searchNodeTuningXml, false);
     }
 
     private static ContentCluster newContentCluster(String contentSearchXml) {
