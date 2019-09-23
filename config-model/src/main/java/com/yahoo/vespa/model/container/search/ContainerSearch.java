@@ -12,6 +12,7 @@ import com.yahoo.vespa.model.container.component.ContainerSubsystem;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
@@ -123,7 +124,13 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     		}
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));
     		scB.indexingmode(QrSearchersConfig.Searchcluster.Indexingmode.Enum.valueOf(sys.getIndexingModeName()));
-    		if ( ! (sys instanceof IndexedSearchCluster)) {
+    		if (sys instanceof IndexedSearchCluster) {
+                for (Dispatch tld: ((IndexedSearchCluster)sys).getTLDs()) {
+                	scB.dispatcher(new QrSearchersConfig.Searchcluster.Dispatcher.Builder().
+                			host(tld.getHostname()).
+                			port(tld.getDispatchPort()));
+                }
+            } else {
             	scB.storagecluster(new QrSearchersConfig.Searchcluster.Storagecluster.Builder().
             			routespec(((StreamingSearchCluster)sys).getStorageRouteSpec()));
             }

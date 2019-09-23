@@ -12,6 +12,7 @@ import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
 import com.yahoo.vespa.config.GenericConfig;
+import com.yahoo.vespa.config.search.core.PartitionsConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
+import com.yahoo.vespa.model.search.Dispatch;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
@@ -170,11 +172,25 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("clu/storage/0", c.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
         assertEquals(1, c.getRoot().getHostSystem().getHosts().size());
         HostResource h = c.getRoot().getHostSystem().getHost("mockhost");
-        String [] expectedServices = {"configserver", "logserver", "logd", "container-clustercontroller", "metricsproxy-container", "slobrok", "configproxy","config-sentinel", "qrserver", "storagenode", "searchnode", "distributor", "transactionlogserver"};
-        assertServices(h, expectedServices);
+        String [] expectedServices = {"logd", "configproxy","config-sentinel", "qrserver", "storagenode", "searchnode", "distributor", "topleveldispatch", "transactionlogserver"};
+// TODO        assertServices(h, expectedServices);
         assertEquals("clu/storage/0", h.getService("storagenode").getConfigId());
         assertEquals("clu/search/cluster.clu/0", h.getService("searchnode").getConfigId());
         assertEquals("clu/distributor/0", h.getService("distributor").getConfigId());
+        assertEquals("clu/search/cluster.clu/tlds/qrc.0.tld.0", h.getService("topleveldispatch").getConfigId());
+        //assertEquals("tcp/node0:19104", h.getService("topleveldispatch").getConfig("partitions", "").innerArray("dataset").value("0").innerArray("engine").value("0").getString("name_and_port"));
+        PartitionsConfig partitionsConfig = new PartitionsConfig((PartitionsConfig.Builder)
+                m.getConfig(new PartitionsConfig.Builder(), "clu/search/cluster.clu/tlds/qrc.0.tld.0"));
+        assertTrue(partitionsConfig.dataset(0).engine(0).name_and_port().startsWith("tcp/node0:191"));
+    }
+
+    @Test
+    public void testConfigIdLookup() {
+        VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), getBasicServices())).create();
+
+        PartitionsConfig partitionsConfig = new PartitionsConfig((PartitionsConfig.Builder)
+                m.getConfig(new PartitionsConfig.Builder(), "clu/search/cluster.clu/tlds/qrc.0.tld.0"));
+        assertTrue(partitionsConfig.dataset(0).engine(0).name_and_port().startsWith("tcp/node0:191"));
     }
 
     @Test
@@ -182,6 +198,9 @@ public class ContentBuilderTest extends DomBuilderTest {
         String services = getServices("<node hostalias='mockhost' distribution-key='0'/>" +
                                       "<node hostalias='mockhost' distribution-key='1'/>");
         VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), services)).create();
+        PartitionsConfig partitionsConfig = new PartitionsConfig((PartitionsConfig.Builder)
+                m.getConfig(new PartitionsConfig.Builder(), "clu/search/cluster.clu/tlds/qrc.0.tld.0"));
+        assertTrue(partitionsConfig.dataset(0).engine(0).name_and_port().startsWith("tcp/node0:191"));
         IndexedSearchCluster sc = m.getContentClusters().get("clu").getSearch().getIndexed();
         assertEquals(2, sc.getSearchNodeCount());
     }
@@ -689,6 +708,45 @@ public class ContentBuilderTest extends DomBuilderTest {
             m.getConfig(builder, configId);
             assertEquals(builder.getPayload().getSlime().get().field("myfield").asString(), "myvalue");
         }
+    }
+
+    @Test
+    public void requireOneTldPerSearchContainer() {
+        ContentCluster content = createContent(
+                "  <content version='1.0' id='storage'>\n" +
+                "    <redundancy>1</redundancy>\n" +
+                "    <documents>" +
+                "       <document type='music' mode='index'/>" +
+                "    </documents>" +
+                "    <group>\n" +
+                "      <node hostalias='mockhost' distribution-key='0' />\n" +
+                "    </group>\n" +
+                "  </content>\n" +
+                "  <container version='1.0' id='qrc'>" +
+                "      <search/>" +
+                "      <nodes>" +
+                "        <node hostalias='mockhost' />" +
+                "      </nodes>" +
+                "  </container>" +
+                "  <container version='1.0' id='qrc2'>" +
+                "      <http>" +
+                "      <server id ='server1' port='5000' />" +
+                "      </http>" +
+                "      <search/>" +
+                "      <nodes>" +
+                "        <node hostalias='mockhost' />" +
+                "        <node hostalias='mockhost2' />" +
+                "      </nodes>" +
+                "  </container>"
+
+        );
+        List<Dispatch> tlds = content.getSearch().getIndexed().getTLDs();
+
+        assertThat(tlds.get(0).getHostname(), is("node0"));
+        assertThat(tlds.get(1).getHostname(), is("node0"));
+        assertThat(tlds.get(2).getHostname(), is("node1"));
+
+        assertThat(tlds.size(), is(3));
     }
 
     @Test
