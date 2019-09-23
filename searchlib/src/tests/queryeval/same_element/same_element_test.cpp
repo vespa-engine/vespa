@@ -14,6 +14,13 @@ using namespace search::fef;
 using namespace search::queryeval;
 using search::attribute::ElementIterator;
 
+void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializer_list<uint32_t> list) {
+    std::vector<uint32_t> expect(list);
+    std::vector<uint32_t> actual;
+    se.find_matching_elements(docid, actual);
+    EXPECT_EQUAL(actual, expect);
+}
+
 std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
     auto result = std::make_unique<SameElementBlueprint>(false);
     for (size_t i = 0; i < children.size(); ++i) {
@@ -59,6 +66,20 @@ TEST("require that simple match can be found") {
     SimpleResult result = find_matches({a, b});
     SimpleResult expect({5});
     EXPECT_EQUAL(result, expect);
+}
+
+TEST("require that matching elements can be identified") {
+    auto a = make_result({{5, {1,3,7,12}}, {10, {1,2,3}}});
+    auto b = make_result({{5, {3,5,7,10}}, {10, {4,5,6}}});
+    auto bp = finalize(make_blueprint({a,b}), false);
+    auto md = MatchData::makeTestInstance(0, 0);
+    auto search = bp->createSearch(*md, false);
+    search->initRange(1, 1000);
+    SameElementSearch *se = dynamic_cast<SameElementSearch*>(search.get());
+    ASSERT_TRUE(se != nullptr);
+    TEST_DO(verify_elements(*se, 5, {3, 7}));
+    TEST_DO(verify_elements(*se, 10, {}));
+    TEST_DO(verify_elements(*se, 20, {}));
 }
 
 TEST("require that children must match within same element") {
