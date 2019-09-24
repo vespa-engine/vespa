@@ -243,6 +243,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 toOptionalOption("--memory", containerResources.map(ContainerResources::memoryBytes)),
                 toRepeatedOption("--label", labelList),
                 toRepeatedOption("--ulimit", ulimitList),
+                "--pids-limit -1",
                 toRepeatedOption("--env", environmentAssignments),
                 toRepeatedOption("--volume", volumeBindSpecs),
                 toRepeatedOption("--cap-add", addCapabilitiesList),

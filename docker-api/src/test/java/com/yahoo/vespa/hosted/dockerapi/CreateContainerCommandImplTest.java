@@ -49,6 +49,7 @@ public class CreateContainerCommandImplTest {
                 "--label my-label=test-label " +
                 "--ulimit nofile=1:2 " +
                 "--ulimit nproc=10:20 " +
+                "--pids-limit -1 " +
                 "--env env1=val1 " +
                 "--env env2=val2 " +
                 "--volume vol1:/host/vol1:Z " +
