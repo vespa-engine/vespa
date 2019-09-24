@@ -86,7 +86,7 @@ public abstract class Hit extends Identifiable {
             return false;
         }
         Hit rhs = (Hit)obj;
-        if (rank != rhs.rank) {
+        if (Double.compare(rank, rhs.rank) != 0) {
             return false;
         }
         if (!equals(context, rhs.context)) {
