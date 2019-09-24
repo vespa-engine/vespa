@@ -58,6 +58,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                          framework::TickingThreadPool& threadPool,
                          DoneInitializeHandler& doneInitHandler,
                          bool manageActiveBucketCopies,
+                         bool use_btree_database,
                          HostInfo& hostInfoReporterRegistrar,
                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
@@ -66,8 +67,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _clusterStateBundle(lib::ClusterState()),
       _compReg(compReg),
       _component(compReg, "distributor"),
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
-      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>()),
+      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(use_btree_database)),
+      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(use_btree_database)),
       _metrics(new DistributorMetricSet(_component.getLoadTypes()->getMetricLoadTypes())),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -103,6 +104,10 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                 std::chrono::seconds(0))), // Set by config later
       _must_send_updated_host_info(false)
 {
+    if (use_btree_database) {
+        LOG(info, "Using new B-tree bucket database implementation instead of legacy implementation"); // TODO remove this once default is swapped
+    }
+
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook,
                                         framework::SecondTime(0));

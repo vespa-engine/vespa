@@ -244,6 +244,7 @@ public:
 
         virtual void find_parents_and_self(const document::BucketId& bucket,
                                            std::vector<Entry>& entries) const = 0;
+        virtual uint64_t generation() const noexcept = 0;
     };
 
     virtual std::unique_ptr<ReadGuard> acquire_read_guard() const {
