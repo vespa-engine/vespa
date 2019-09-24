@@ -130,36 +130,6 @@ PostingChange<P>::PostingChange() = default;
 template <typename P>
 PostingChange<P>::~PostingChange() = default;
 
-template <typename P>
-void
-PostingChange<P>::apply(GrowableBitVector &bv)
-{
-    P *a = &_additions[0];
-    P *ae = &_additions[0] + _additions.size();
-    uint32_t *r = &_removals[0];
-    uint32_t *re = &_removals[0] + _removals.size();
-
-    while (a != ae || r != re) {
-        if (r != re && (a == ae || *r < a->_key)) {
-            // remove
-            assert(*r < bv.size());
-            bv.slowClearBit(*r);
-            ++r;
-        } else {
-            if (r != re && !(a->_key < *r)) {
-                // update or add
-                assert(a->_key < bv.size());
-                bv.slowSetBit(a->_key);
-                ++r;
-            } else {
-                assert(a->_key < bv.size());
-                bv.slowSetBit(a->_key);
-            }
-            ++a;
-        }
-    }
-}
-
 template <typename WeightedIndex>
 class ActualChangeComputer {
 public:

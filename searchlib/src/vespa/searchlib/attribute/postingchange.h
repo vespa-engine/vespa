@@ -43,7 +43,6 @@ public:
      * posting list tree doesn't support duplicate entries.
      */
     void removeDups();
-    void apply(GrowableBitVector &bv);
 };
 
 class EnumIndexMapper
