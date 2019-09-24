@@ -16,7 +16,7 @@ public class OsVersion {
     private final boolean active;
 
     public OsVersion(Version version, boolean active) {
-        this.version = version;
+        this.version = requireNonEmpty(version);
         this.active = active;
     }
 
@@ -47,6 +47,12 @@ public class OsVersion {
     @Override
     public String toString() {
         return "OS version " + version + " [active: " + active + "]";
+    }
+
+    private static Version requireNonEmpty(Version version) {
+        Objects.requireNonNull(version, "version must be non-null");
+        if (version.isEmpty()) throw new IllegalArgumentException("version must be non-empty");
+        return version;
     }
 
 }
