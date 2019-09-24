@@ -3,6 +3,7 @@
 #include <vespa/eval/eval/gbdt.h>
 #include <vespa/eval/eval/vm_forest.h>
 #include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
 #include <vespa/eval/eval/interpreted_function.h>
@@ -295,6 +296,24 @@ TEST("require that models with too large sets are rejected by general vm optimiz
     EXPECT_TRUE(!Optimize::apply_chain(general_vm_chain, stats, trees).valid());
 }
 
+TEST("require that FastForest model evaluation works") {
+    Function function = Function::parse("if((a<2),1.0,if((b<2),if((c<2),2.0,3.0),4.0))+"
+                                        "if(!(c>=1),10.0,if((a<1),if((b<1),20.0,30.0),40.0))");
+    CompiledFunction compiled(function, PassParams::ARRAY, Optimize::none);
+    auto f = compiled.get_function();
+    EXPECT_TRUE(compiled.get_forests().empty());
+    auto forest = FastForest::try_convert(function);
+    ASSERT_TRUE(forest);
+    FastForest::Context ctx(*forest);
+    std::vector<double> p1({0.5, 0.5, 0.5}); // all true: 1.0 + 10.0
+    std::vector<double> p2({2.5, 2.5, 2.5}); // all false: 4.0 + 40.0
+    std::vector<double> pn(3, std::numeric_limits<double>::quiet_NaN()); // default: 4.0 + 10.0
+    EXPECT_EQUAL(forest->eval(ctx, [&p1](size_t i){return p1[i];}), f(&p1[0]));
+    EXPECT_EQUAL(forest->eval(ctx, [&p2](size_t i){return p2[i];}), f(&p2[0]));
+    EXPECT_EQUAL(forest->eval(ctx, [&pn](size_t i){return pn[i];}), f(&pn[0]));
+    EXPECT_EQUAL(forest->eval(ctx, [&p1](size_t i){return p1[i];}), f(&p1[0]));
+}
+
 //-----------------------------------------------------------------------------
 
 double eval_compiled(const CompiledFunction &cfun, std::vector<double> &params) {
@@ -311,11 +330,13 @@ double eval_compiled(const CompiledFunction &cfun, std::vector<double> &params) 
 TEST("require that forests evaluate to approximately the same for all evaluation options") {
     for (PassParams pass_params: {PassParams::ARRAY, PassParams::LAZY}) {
         for (size_t tree_size: std::vector<size_t>({20})) {
-            for (size_t num_trees: std::vector<size_t>({10, 60})) {
+            for (size_t num_trees: std::vector<size_t>({60})) {
                 for (size_t less_percent: std::vector<size_t>({100, 80})) {
                     for (size_t invert_percent: std::vector<size_t>({0, 50})) {
                         vespalib::string expression = Model().less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
                         Function function = Function::parse(expression);
+                        auto forest = FastForest::try_convert(function);
+                        EXPECT_EQUAL(bool(forest), bool(less_percent == 100));
                         CompiledFunction none(function, pass_params, Optimize::none);
                         CompiledFunction deinline(function, pass_params, DeinlineForest::optimize_chain);
                         CompiledFunction vm_forest(function, pass_params, VMForest::optimize_chain);
@@ -325,10 +346,20 @@ TEST("require that forests evaluate to approximately the same for all evaluation
                         ASSERT_EQUAL(1u, vm_forest.get_forests().size());
                         EXPECT_TRUE(dynamic_cast<VMForest*>(vm_forest.get_forests()[0].get()) != nullptr);
                         std::vector<double> inputs(function.num_params(), 0.5);
+                        std::vector<double> inputs_nan(function.num_params(), std::numeric_limits<double>::quiet_NaN());
                         double expected = eval_double(function, inputs);
+                        double expected_nan = eval_double(function, inputs_nan);
                         EXPECT_EQUAL(expected, eval_compiled(none, inputs));
                         EXPECT_EQUAL(expected, eval_compiled(deinline, inputs));
                         EXPECT_EQUAL(expected, eval_compiled(vm_forest, inputs));
+                        EXPECT_EQUAL(expected_nan, eval_compiled(none, inputs_nan));
+                        EXPECT_EQUAL(expected_nan, eval_compiled(deinline, inputs_nan));
+                        EXPECT_EQUAL(expected_nan, eval_compiled(vm_forest, inputs_nan));
+                        if (forest) {
+                            FastForest::Context ctx(*forest);
+                            EXPECT_EQUAL(expected, forest->eval(ctx, [&inputs](size_t i){return inputs[i];}));
+                            EXPECT_EQUAL(expected_nan, forest->eval(ctx, [&inputs_nan](size_t i){return inputs_nan[i];}));
+                        }
                     }
                 }
             }

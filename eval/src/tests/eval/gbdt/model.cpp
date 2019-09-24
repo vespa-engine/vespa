@@ -21,9 +21,14 @@ private:
         return dist(_gen);
     }
 
-    double get_real(double min, double max) {
-        std::uniform_real_distribution<double> dist(min, max);
-        return dist(_gen);
+    double get_real() {
+        std::uniform_real_distribution<double> dist(0.0, 1.0);
+        double result = dist(_gen);
+        // avoid different decisions based on using float vs. double split values
+        while (float(result) == 0.5) {
+            result = dist(_gen);
+        }
+        return result;
     }
 
     std::string make_feature_name() {
@@ -45,11 +50,11 @@ private:
             if (get_int(1,100) > _invert_percent) {
                 return make_string("(%s<%g)",
                                    make_feature_name().c_str(),
-                                   get_real(0.0, 1.0));
+                                   get_real());
             } else {
                 return make_string("(!(%s>=%g))",
                                    make_feature_name().c_str(),
-                                   get_real(0.0, 1.0));
+                                   get_real());
             }
         }
     }
@@ -70,7 +75,7 @@ public:
     std::string make_tree(size_t size) {
         assert(size > 0);
         if (size == 1) {
-            return make_string("%g", get_real(0.0, 1.0));
+            return make_string("%g", get_real());
         }
         size_t pivot = get_int(1, size - 1);
         return make_string("if(%s,%s,%s)",
