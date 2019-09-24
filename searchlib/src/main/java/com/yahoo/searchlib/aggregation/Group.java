@@ -298,13 +298,7 @@ public class Group extends Identifiable {
         if (diff > 0) {
             return 1;
         }
-        if (rank > rhs.rank) {
-            return -1;
-        }
-        if (rank < rhs.rank) {
-            return 1;
-        }
-        return 0;
+        return -Double.compare(rank, rhs.rank);
     }
 
     @Override
