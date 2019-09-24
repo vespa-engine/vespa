@@ -44,7 +44,8 @@ class HitConverter implements ResultBuilder.HitConverter {
     }
 
     private Hit convertFs4Hit(String summaryClass, FS4Hit groupHit) {
-        FastHit hit = new FastHit(groupHit.getGlobalId().getRawId(), new Relevance(groupHit.getRank()),
+        FastHit hit = new FastHit(groupHit.getGlobalId().getRawId(),
+                                  new Relevance(groupHit.getRank()),
                                   groupHit.getPath(), groupHit.getDistributionKey());
         hit.setFillable();
         hit.setSearcherSpecificMetaData(searcher, summaryClass);
@@ -72,4 +73,5 @@ class HitConverter implements ResultBuilder.HitConverter {
         }
         return ret;
     }
+
 }

@@ -79,14 +79,14 @@ public abstract class Hit extends Identifiable {
         return super.hashCode() + (int)rank;
     }
 
-    @SuppressWarnings({ "RedundantIfStatement", "EqualsWhichDoesntCheckParameterClass" })
+    @SuppressWarnings({ "RedundantIfStatement" })
     @Override
     public boolean equals(Object obj) {
         if (!super.equals(obj)) {
             return false;
         }
         Hit rhs = (Hit)obj;
-        if (rank != rhs.rank) {
+        if (Double.compare(rank, rhs.rank) != 0) {
             return false;
         }
         if (!equals(context, rhs.context)) {
@@ -101,4 +101,5 @@ public abstract class Hit extends Identifiable {
         visitor.visit("rank", rank);
         visitor.visit("context", context);
     }
+
 }

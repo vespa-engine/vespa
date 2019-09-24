@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
 /**
- * <p>This is the aggregation super-class from which all types of aggregation inherits.</p>
+ * The result of some aggregation
  *
  * @author baldersheim
  * @author Simon Thoresen Hult
@@ -20,7 +20,7 @@ public abstract class AggregationResult extends ExpressionNode {
     private int tag = -1;
 
     /**
-     * <p>Returns the tag of this aggregation result. This is useful for uniquely identifying a result.</p>
+     * Returns the tag of this aggregation result. This is useful for uniquely identifying a result.
      *
      * @return The numerical tag.
      */
@@ -29,10 +29,10 @@ public abstract class AggregationResult extends ExpressionNode {
     }
 
     /**
-     * <p>Assigns a tag to this group.</p>
+     * Assigns a tag to this group.
      *
-     * @param tag The numerical tag to set.
-     * @return This, to allow chaining.
+     * @param tag the numerical tag to set.
+     * @return this, to allow chaining.
      */
     public AggregationResult setTag(int tag) {
         this.tag = tag;
@@ -40,55 +40,47 @@ public abstract class AggregationResult extends ExpressionNode {
     }
 
     /**
-     * <p>This method is called when merging aggregation results. This method is simply a proxy for the abstract {@link
-     * #onMerge(AggregationResult)} method.</p>
+     * Called when merging aggregation results. This method is simply a proxy for the abstract {@link
+     * #onMerge(AggregationResult)} method.
      *
-     * @param result The result to merge with.
+     * @param result the result to merge with.
      */
     public void merge(AggregationResult result) {
         onMerge(result);
     }
 
     /**
-     * <p>This method is called when all aggregation results have been merged. This method can be overloaded by
-     * subclasses that need special behaviour to occur after merge.</p>
+     * Hook called when all aggregation results have been merged. This method can be overloaded by
+     * subclasses that need special behaviour to occur after merge.
      */
     public void postMerge() {
         // empty
     }
 
-    /**
-     * <p>This method returns a value that can be used for ranking.</p>
-     *
-     * @return The rankable result.
-     */
+    /** Returns a value that can be used for ranking. */
     public abstract ResultNode getRank();
 
     /**
-     * <p>Sets the expression to aggregate on.</p>
+     * Sets the expression to aggregate on.
      *
-     * @param exp The expression.
-     * @return This, to allow chaining.
+     * @param exp the expression
+     * @return this, to allow chaining
      */
     public AggregationResult setExpression(ExpressionNode exp) {
         expression = exp;
         return this;
     }
 
-    /**
-     * <p>Returns the expression to aggregate on.</p>
-     *
-     * @return The expression.
-     */
+    /** Returns the expression to aggregate on. */
     public ExpressionNode getExpression() {
         return expression;
     }
 
     /**
-     * <p>This method must be implemented by subclasses to support merge. It is called as the {@link
-     * #merge(AggregationResult)} method is invoked.</p>
+     * Mmust be implemented by subclasses to support merge. It is called as the {@link
+     * #merge(AggregationResult)} method is invoked.
      *
-     * @param result The result to merge with.
+     * @param result the result to merge with
      */
     protected abstract void onMerge(AggregationResult result);
 
@@ -158,4 +150,5 @@ public abstract class AggregationResult extends ExpressionNode {
         visitor.visit("expression", expression);
         visitor.visit("tag", tag);
     }
+
 }

@@ -14,7 +14,6 @@ import com.yahoo.search.result.Relevance;
  */
 public class Group extends HitGroup {
 
-    private static final long serialVersionUID = 2122928012157537800L;
     private final GroupId groupId;
 
     /**
@@ -80,4 +79,5 @@ public class Group extends HitGroup {
         }
         return null;
     }
+
 }

@@ -7,7 +7,7 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
 /**
- * This class represents a single hit from the fastserver4 backend
+ * A single hit from a Vespa content cluster
  *
  * @author havardpe
  */
@@ -103,7 +103,7 @@ public class FS4Hit extends Hit {
         return super.hashCode() + path + globalId.hashCode() + distributionKey;
     }
 
-    @SuppressWarnings({ "EqualsWhichDoesntCheckParameterClass", "RedundantIfStatement" })
+    @SuppressWarnings("RedundantIfStatement")
     @Override
     public boolean equals(Object obj) {
         if (!super.equals(obj)) {
@@ -129,4 +129,5 @@ public class FS4Hit extends Hit {
         visitor.visit("globalId", globalId.toString());
         visitor.visit("distributionKey", distributionKey);
     }
+
 }
