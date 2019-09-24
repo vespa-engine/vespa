@@ -66,6 +66,13 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations.
+                 Provided scoped here to avoid dependents getting it transitively. -->
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <scope>provided</scope>
