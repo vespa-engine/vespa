@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/exception.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
@@ -64,8 +65,13 @@ int
 Cmd::run(const char *cmd, const char *arg)
 {
     int retval = 0;
-    initRPC("tcp/localhost:19097");
-
+    try {
+        initRPC("tcp/localhost:19097");
+    } catch (vespalib::Exception &e) {
+        fprintf(stderr, "vespa-sentinel-cmd: exception in network initialization: %s\n",
+                e.what());
+        return 2;
+    }
     FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
     req->SetMethodName(cmd);
 
