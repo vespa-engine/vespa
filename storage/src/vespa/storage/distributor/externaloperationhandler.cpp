@@ -284,8 +284,8 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
     auto& metrics = getMetrics().gets[cmd->getLoadType()];
     bounce_or_invoke_read_only_op(*cmd, bucket, metrics, [&](auto& bucket_space_repo) {
-        _op = std::make_shared<GetOperation>(*this, bucket_space_repo.get(cmd->getBucket().getBucketSpace()),
-                                             cmd, metrics);
+        auto& space = bucket_space_repo.get(cmd->getBucket().getBucketSpace());
+        _op = std::make_shared<GetOperation>(*this, space, space.getBucketDatabase().acquire_read_guard(), cmd, metrics);
     });
     return true;
 }

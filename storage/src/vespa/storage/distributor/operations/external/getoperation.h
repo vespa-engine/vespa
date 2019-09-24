@@ -3,7 +3,7 @@
 
 #include <vespa/storageapi/defs.h>
 #include <vespa/storage/distributor/operations/operation.h>
-#include <vespa/storage/bucketdb/bucketcopy.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 
@@ -23,8 +23,11 @@ class DistributorBucketSpace;
 class GetOperation  : public Operation
 {
 public:
-    GetOperation(DistributorComponent& manager, DistributorBucketSpace &bucketSpace,
-                 std::shared_ptr<api::GetCommand> msg, PersistenceOperationMetricSet& metric);
+    GetOperation(DistributorComponent& manager,
+                 DistributorBucketSpace &bucketSpace,
+                 std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
+                 std::shared_ptr<api::GetCommand> msg,
+                 PersistenceOperationMetricSet& metric);
 
     void onClose(DistributorMessageSender& sender) override;
     void onStart(DistributorMessageSender& sender) override;
@@ -89,7 +92,7 @@ private:
     void sendReply(DistributorMessageSender& sender);
     bool sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res);
 
-    void assignTargetNodeGroups();
+    void assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard);
     bool copyIsOnLocalNode(const BucketCopy&) const;
     /**
      * Returns the vector index of the target to send to, or -1 if none

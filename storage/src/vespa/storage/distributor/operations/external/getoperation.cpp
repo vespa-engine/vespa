@@ -46,6 +46,7 @@ GetOperation::GroupId::operator==(const GroupId& other) const
 
 GetOperation::GetOperation(DistributorComponent& manager,
                            DistributorBucketSpace &bucketSpace,
+                           std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                            std::shared_ptr<api::GetCommand> msg,
                            PersistenceOperationMetricSet& metric)
     : Operation(),
@@ -58,7 +59,7 @@ GetOperation::GetOperation(DistributorComponent& manager,
       _metric(metric),
       _operationTimer(manager.getClock())
 {
-    assignTargetNodeGroups();
+    assignTargetNodeGroups(*read_guard);
 }
 
 void
@@ -213,13 +214,13 @@ GetOperation::sendReply(DistributorMessageSender& sender)
 }
 
 void
-GetOperation::assignTargetNodeGroups()
+GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard)
 {
     document::BucketIdFactory bucketIdFactory;
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
 
     std::vector<BucketDatabase::Entry> entries;
-    _bucketSpace.getBucketDatabase().acquire_read_guard()->find_parents_and_self(bid, entries);
+    read_guard.find_parents_and_self(bid, entries);
 
     for (uint32_t j = 0; j < entries.size(); ++j) {
         const BucketDatabase::Entry& e = entries[j];
