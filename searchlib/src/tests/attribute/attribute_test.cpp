@@ -242,7 +242,7 @@ private:
 
     void testCompactLidSpace();
 
-    void test_shrink_lid_space();
+    void test_default_value_ref_count_is_updated_after_shrink_lid_space();
 
     template <typename AttributeType>
     void requireThatAddressSpaceUsageIsReported(const Config &config, bool fastSearch);
@@ -2043,7 +2043,7 @@ get_default_value_ref_count(AttributeVector &attr)
 
 
 void
-AttributeTest::test_shrink_lid_space()
+AttributeTest::test_default_value_ref_count_is_updated_after_shrink_lid_space()
 {
     Config cfg(BasicType::INT32, CollectionType::SINGLE);
     cfg.setFastSearch(true);
@@ -2263,7 +2263,7 @@ int AttributeTest::Main()
     testCreateSerialNum();
     testPredicateHeaderTags();
     TEST_DO(testCompactLidSpace());
-    TEST_DO(test_shrink_lid_space());
+    TEST_DO(test_default_value_ref_count_is_updated_after_shrink_lid_space());
     TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();
     TEST_DO(testPendingCompaction());
