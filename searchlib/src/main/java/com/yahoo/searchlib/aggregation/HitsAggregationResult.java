@@ -161,7 +161,7 @@ public class HitsAggregationResult extends AggregationResult {
     public void postMerge() {
         Collections.sort(hits, new Comparator<Hit>() {
             public int compare(Hit lhs, Hit rhs) {
-                return (lhs.getRank() > rhs.getRank()) ? -1 : (lhs.getRank() < rhs.getRank()) ? 1 : 0;
+                return -Double.compare(lhs.getRank(), rhs.getRank());
             }
         });
         if ((maxHits >= 0) && (hits.size() > maxHits)) {
