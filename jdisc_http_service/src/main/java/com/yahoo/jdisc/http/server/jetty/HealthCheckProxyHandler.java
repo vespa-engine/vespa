@@ -136,6 +136,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                                 .setSslcontext(sslContextFactory.getSslContext())
                                 .setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE)
                                 .setUserTokenHandler(context -> null) // https://stackoverflow.com/a/42112034/1615280
+                                .setUserAgent("health-check-proxy-client")
                                 .build();
                     }
                 }
