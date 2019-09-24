@@ -9,15 +9,13 @@ import java.util.List;
  *
  * @author bratseth
  */
-
 public abstract class HitOrderer {
 
     /** Orders the given list of hits */
     public abstract void order(List<Hit> hits);
 
     /**
-     * Returns the Comparator that this HitOrderer uses internally to
-     * sort hits. Returns null if no Comparator is used.
+     * Returns the Comparator that this HitOrderer uses internally to sort hits. Returns null if no Comparator is used.
      * <p>
      * This default implementation returns null.
      *

@@ -8,7 +8,7 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
 /**
- * <p>This is the aggregation super-class from which all types of aggregation inherits.</p>
+ * The result of some aggregation
  *
  * @author baldersheim
  * @author Simon Thoresen Hult
@@ -20,7 +20,7 @@ public abstract class AggregationResult extends ExpressionNode {
     private int tag = -1;
 
     /**
-     * <p>Returns the tag of this aggregation result. This is useful for uniquely identifying a result.</p>
+     * Returns the tag of this aggregation result. This is useful for uniquely identifying a result.
      *
      * @return The numerical tag.
      */
@@ -50,8 +50,8 @@ public abstract class AggregationResult extends ExpressionNode {
     }
 
     /**
-     * <p>This method is called when all aggregation results have been merged. This method can be overloaded by
-     * subclasses that need special behaviour to occur after merge.</p>
+     * This method is called when all aggregation results have been merged. This method can be overloaded by
+     * subclasses that need special behaviour to occur after merge.
      */
     public void postMerge() {
         // empty
@@ -85,10 +85,10 @@ public abstract class AggregationResult extends ExpressionNode {
     }
 
     /**
-     * <p>This method must be implemented by subclasses to support merge. It is called as the {@link
-     * #merge(AggregationResult)} method is invoked.</p>
+     * This method must be implemented by subclasses to support merge. It is called as the {@link
+     * #merge(AggregationResult)} method is invoked.
      *
-     * @param result The result to merge with.
+     * @param result the result to merge with
      */
     protected abstract void onMerge(AggregationResult result);
 

@@ -6,20 +6,21 @@ import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.result.Hit;
 
 /**
- * <p>This class represents a labeled hit list in the grouping result model. It is contained in {@link Group}, and
+ * This class represents a labeled hit list in the grouping result model. It is contained in {@link Group}, and
  * contains one or more {@link Hit hits} itself, making this the parent of leaf nodes in the hierarchy of grouping
- * results. Use the {@link GroupingRequest#getResultGroup(Result)} to retrieve grouping results.</p>
+ * results. Use the {@link GroupingRequest#getResultGroup(Result)} to retrieve grouping results.
  *
  * @author Simon Thoresen Hult
  */
 public class HitList extends AbstractList {
 
     /**
-     * <p>Constructs a new instance of this class.</p>
+     * Constructs a new instance of this class.
      *
-     * @param label The label to assign to this.
+     * @param label the label to assign to this
      */
     public HitList(String label) {
         super("hitlist", label);
     }
+
 }

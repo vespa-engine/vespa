@@ -12,28 +12,28 @@ public class Group extends Identifiable {
 
     public static final int classId = registerClass(0x4000 + 90, Group.class);
     private static final ObjectPredicate REF_LOCATOR = new RefLocator();
-    private List<Integer> orderByIdx = new ArrayList<Integer>();
-    private List<ExpressionNode> orderByExp = new ArrayList<ExpressionNode>();
-    private List<AggregationResult> aggregationResults = new ArrayList<AggregationResult>();
-    private List<Group> children = new ArrayList<Group>();
+    private List<Integer> orderByIdx = new ArrayList<>();
+    private List<ExpressionNode> orderByExp = new ArrayList<>();
+    private List<AggregationResult> aggregationResults = new ArrayList<>();
+    private List<Group> children = new ArrayList<>();
     private ResultNode id = null;
     private double rank;
     private int tag = -1;
     private SortType sortType = SortType.UNSORTED;
 
     /**
-     * <p>This tells you if the children are ranked by the pure relevance or by a more complex expression.  That
-     * indicates if the rank score from the child can be used for ordering.</p>
+     * This tells you if the children are ranked by the pure relevance or by a more complex expression.
+     * That indicates if the rank score from the child can be used for ordering.
      *
-     * @return True if it ranked by pure relevance.
+     * @return true if it ranked by pure relevance.
      */
     public boolean isRankedByRelevance() {
         return orderByIdx.isEmpty();
     }
 
     /**
-     * <p>Merges the content of the given group <b>into</b> this. When this function returns, make sure to call {@link
-     * #postMerge(java.util.List, int, int)}.</p>
+     * Merges the content of the given group <b>into</b> this. When this function returns, make sure to call
+     * {@link #postMerge(java.util.List, int, int)}.
      *
      * @param firstLevel   The first level to merge.
      * @param currentLevel The current level.
@@ -49,7 +49,7 @@ public class Group extends Identifiable {
             }
         }
 
-        ArrayList<Group> merged = new ArrayList<Group>();
+        ArrayList<Group> merged = new ArrayList<>();
         Iterator<Group> lhsChild = children.iterator(), rhsChild = rhs.children.iterator();
         if (lhsChild.hasNext() && rhsChild.hasNext()) {
             Group lhsGroup = lhsChild.next();
@@ -93,8 +93,8 @@ public class Group extends Identifiable {
     }
 
     /**
-     * <p>After merging, this method will prune all levels so that they do not exceed the configured maximum number of
-     * groups per level.</p>
+     * After merging, this method will prune all levels so that they do not exceed the configured maximum number of
+     * groups per level.
      *
      * @param levels       The specs of all grouping levels.
      * @param firstLevel   The first level to merge.
@@ -127,9 +127,7 @@ public class Group extends Identifiable {
 
     }
 
-    /**
-     * <p>Will sort the children by their id, if they are not sorted already.</p>
-     */
+    /** Sorts the children by their id, if they are not sorted already. */
     public void sortChildrenById() {
         if (sortType == SortType.BYID) {
             return;
@@ -142,9 +140,7 @@ public class Group extends Identifiable {
         sortType = SortType.BYID;
     }
 
-    /**
-     * <p>Will sort the children by their rank, if they are not sorted already.</p>
-     */
+    /** Sorts the children by their rank, if they are not sorted already. */
     public void sortChildrenByRank() {
         if (sortType == SortType.BYRANK) {
             return;
@@ -158,18 +154,16 @@ public class Group extends Identifiable {
     }
 
     /**
-     * <p>Returns the label to use for this group. See comment on {@link #setId(com.yahoo.searchlib.expression.ResultNode)}
-     * on the rationale of this being a {@link ResultNode}.</p>
-     *
-     * @return The label.
+     * Returns the label to use for this group. See comment on {@link #setId(com.yahoo.searchlib.expression.ResultNode)}
+     * on the rationale of this being a {@link ResultNode}.
      */
     public ResultNode getId() {
         return id;
     }
 
     /**
-     * <p>Sets the label to use for this group. This is a {@link ResultNode} so that a group can be labeled with
-     * whatever value the classifier expression returns.</p>
+     * Sets the label to use for this group. This is a {@link ResultNode} so that a group can be labeled with
+     * whatever value the classifier expression returns.
      *
      * @param id The label to set.
      * @return This, to allow chaining.
@@ -180,7 +174,7 @@ public class Group extends Identifiable {
     }
 
     /**
-     * <p>Sets the relevancy to use for this group.</p>
+     * Sets the relevancy to use for this group.
      *
      * @param rank The rank to set.
      * @return This, to allow chaining.
@@ -190,17 +184,13 @@ public class Group extends Identifiable {
         return this;
     }
 
-    /**
-     * <p>Return the relevancy of this group.</p>
-     *
-     * @return Relevance.
-     */
+    /** Return the rank score of this group. */
     public double getRank() {
         return rank;
     }
 
     /**
-     * <p>Adds a child group to this.</p>
+     * Adds a child group to this.
      *
      * @param child The group to add.
      * @return This, to allow chaining.

@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 
 public class SortDataHitSorter {
+
     public static void sort(HitGroup hitGroup, List<Hit> hits) {
         var sorting = hitGroup.getQuery().getRanking().getSorting();
         var fallbackOrderer = hitGroup.getOrderer();
@@ -61,4 +62,5 @@ public class SortDataHitSorter {
             return fallback.compare(left, right);
         }
     }
+
 }

@@ -9,7 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
 /**
- * This is the base class to do cross-language serialization and deserialization of complete object structures without
+ * The base class to do cross-language serialization and deserialization of complete object structures without
  * the need for a separate protocol. Each subclass needs to register itself using the {@link #registerClass(int, Class)}
  * method, and override {@link #onGetClassId()} to return the same classId as the one registered. Creating an instance
  * of an identifiable object is done through the {@link #create(Deserializer)} or {@link #createFromId(int)} factory

@@ -1039,7 +1039,7 @@ public class YqlParser implements Parser {
         assertHasOperator(ast, ExpressionOperator.CONTAINS);
         String field = getIndex(ast.getArgument(0));
         if (userQuery != null && indexFactsSession.getIndex(field).isAttribute()) {
-            userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly", 1);
+            userQuery.trace("Field '" + field + "' is an attribute, 'contains' will only match exactly", 2);
         }
         return instantiateLeafItem(field, ast.<OperatorNode<ExpressionOperator>> getArgument(1));
     }

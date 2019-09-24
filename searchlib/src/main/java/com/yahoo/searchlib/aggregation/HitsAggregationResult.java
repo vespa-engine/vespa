@@ -73,8 +73,8 @@ public class HitsAggregationResult extends AggregationResult {
     /**
      * Sets the summary class of hits to collect.
      *
-     * @param summaryClass The summary class to collect.
-     * @return This, to allow chaining.
+     * @param summaryClass the summary class to collect.
+     * @return this, to allow chaining.
      */
     public HitsAggregationResult setSummaryClass(String summaryClass) {
         this.summaryClass = summaryClass;
@@ -84,8 +84,8 @@ public class HitsAggregationResult extends AggregationResult {
     /**
      * Sets the maximum number of hits to collect.
      *
-     * @param maxHits The number of hits to collect.
-     * @return This, to allow chaining.
+     * @param maxHits the number of hits to collect.
+     * @return this, to allow chaining.
      */
     public HitsAggregationResult setMaxHits(int maxHits) {
         this.maxHits = maxHits;
@@ -102,7 +102,7 @@ public class HitsAggregationResult extends AggregationResult {
     }
 
     /**
-     * Add a hit to this aggregation result
+     * Adds a hit to this aggregation result
      *
      * @param h the hit
      * @return this object
