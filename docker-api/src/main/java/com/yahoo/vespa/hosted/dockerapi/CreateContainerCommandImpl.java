@@ -170,6 +170,9 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withSecurityOpts(new ArrayList<>(securityOpts))
                 .withBinds(volumeBinds)
                 .withUlimits(ulimits)
+                // Docker version 1.13.1 patch 94 changed default pids.max for the Docker container's cgroup
+                // from max to 4096. -1L reinstates "max". File: /sys/fs/cgroup/pids/docker/CONTAINERID/pids.max.
+                .withPidsLimit(-1L)
                 .withCapAdd(addCapabilities.toArray(new Capability[0]))
                 .withCapDrop(dropCapabilities.toArray(new Capability[0]))
                 .withPrivileged(privileged);
@@ -240,6 +243,7 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 toOptionalOption("--memory", containerResources.map(ContainerResources::memoryBytes)),
                 toRepeatedOption("--label", labelList),
                 toRepeatedOption("--ulimit", ulimitList),
+                "--pids-limit -1",
                 toRepeatedOption("--env", environmentAssignments),
                 toRepeatedOption("--volume", volumeBindSpecs),
                 toRepeatedOption("--cap-add", addCapabilitiesList),
