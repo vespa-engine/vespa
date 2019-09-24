@@ -57,6 +57,7 @@ import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -237,7 +238,8 @@ public class ApplicationController {
     public Instance createApplication(ApplicationId id, Optional<Credentials> credentials) {
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
-        try (Lock lock = lock(id)) {
+        try (Lock lock = lock(TenantAndApplicationId.from(id));
+             Lock oldLock = lock(id)) {
             // Validate only application names which do not already exist.
             if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
@@ -291,7 +293,8 @@ public class ApplicationController {
             Set<ContainerEndpoint> endpoints;
             Optional<ApplicationCertificate> applicationCertificate;
 
-            try (Lock lock = lock(applicationId)) {
+            try (Lock lock = lock(TenantAndApplicationId.from(applicationId));
+                 Lock oldLock = lock(applicationId)) {
                 LockedInstance application = new LockedInstance(require(applicationId), lock);
 
                 boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
@@ -744,7 +747,8 @@ public class ApplicationController {
      * @param action Function which acts on the locked application.
      */
     public void lockIfPresent(ApplicationId applicationId, Consumer<LockedInstance> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Lock lock = lock(TenantAndApplicationId.from(applicationId));
+             Lock oldLock = lock(applicationId)) {
             get(applicationId).map(application -> new LockedInstance(application, lock)).ifPresent(action);
         }
     }
@@ -757,7 +761,8 @@ public class ApplicationController {
      * @throws IllegalArgumentException when application does not exist.
      */
     public void lockOrThrow(ApplicationId applicationId, Consumer<LockedInstance> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Lock lock = lock(TenantAndApplicationId.from(applicationId));
+             Lock oldLock = lock(applicationId)) {
             action.accept(new LockedInstance(require(applicationId), lock));
         }
     }
@@ -813,6 +818,15 @@ public class ApplicationController {
         return ApplicationId.from(id.tenant().value(),
                                   id.application().value().replaceAll("-", "_"),
                                   id.instance().value());
+    }
+
+    /**
+     * Returns a lock which provides exclusive rights to changing this application.
+     * Any operation which stores an application need to first acquire this lock, then read, modify
+     * and store the application, and finally release (close) the lock.
+     */
+    Lock lock(TenantAndApplicationId application) {
+        return curator.lock(application);
     }
 
     /**
