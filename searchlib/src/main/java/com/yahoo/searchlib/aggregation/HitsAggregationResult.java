@@ -159,11 +159,7 @@ public class HitsAggregationResult extends AggregationResult {
 
     @Override
     public void postMerge() {
-        Collections.sort(hits, new Comparator<Hit>() {
-            public int compare(Hit lhs, Hit rhs) {
-                return -Double.compare(lhs.getRank(), rhs.getRank());
-            }
-        });
+        hits.sort((lhs, rhs) -> -Double.compare(lhs.getRank(), rhs.getRank()));
         if ((maxHits >= 0) && (hits.size() > maxHits)) {
             hits = hits.subList(0, maxHits);
         }
@@ -172,15 +168,9 @@ public class HitsAggregationResult extends AggregationResult {
     @Override
     protected boolean equalsAggregation(AggregationResult obj) {
         HitsAggregationResult rhs = (HitsAggregationResult)obj;
-        if (!summaryClass.equals(rhs.summaryClass)) {
-            return false;
-        }
-        if (maxHits != rhs.maxHits) {
-            return false;
-        }
-        if (!hits.equals(rhs.hits)) {
-            return false;
-        }
+        if ( ! summaryClass.equals(rhs.summaryClass)) return false;
+        if (maxHits != rhs.maxHits) return false;
+        if ( ! hits.equals(rhs.hits)) return false;
         return true;
     }
 
@@ -215,4 +205,5 @@ public class HitsAggregationResult extends AggregationResult {
             hit.select(predicate, operation);
         }
     }
+
 }
