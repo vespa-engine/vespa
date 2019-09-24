@@ -25,12 +25,14 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 
 /**
  * REST API for issuing and refreshing node certificates in a hosted Vespa system.
  *
  * The API implements the following subset of methods from the Athenz ZTS REST API:
+ *
  * - Instance registration
  * - Instance refresh
  *
@@ -59,12 +61,12 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         try {
             switch (request.getMethod()) {
                 case POST: return handlePost(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
+                default: return ErrorResponse.methodNotAllowed("Method " + request.getMethod() + " is unsupported");
             }
         } catch (IllegalArgumentException e) {
-            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
+            return ErrorResponse.badRequest(request.getMethod() + " " + request.getUri() + " failed: " + Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
-            log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
+            log.log(Level.WARNING, "Unexpected error handling " + request.getMethod() + " " + request.getUri(), e);
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
     }
@@ -72,17 +74,28 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePost(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/ca/v1/instance/")) return registerInstance(request);
-        // TODO: Implement refresh
+        if (path.matches("/ca/v1/instance/{provider}/{domain}/{service}/{instanceId}")) return refreshInstance(request, path.get("provider"), path.get("service"), path.get("instanceId"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse registerInstance(HttpRequest request) {
-        var body = slimeFromRequest(request);
-        var instanceRegistration = InstanceSerializer.registrationFromSlime(body);
+        var instanceRegistration = deserializeRequest(request, InstanceSerializer::registrationFromSlime);
         var certificate = certificates.create(instanceRegistration.csr(), caCertificate(), caPrivateKey());
         var instanceId = Certificates.extractDnsName(instanceRegistration.csr());
         var identity = new InstanceIdentity(instanceRegistration.provider(), instanceRegistration.service(), instanceId,
                                             Optional.of(certificate));
+        return new SlimeJsonResponse(InstanceSerializer.identityToSlime(identity));
+    }
+
+    private HttpResponse refreshInstance(HttpRequest request, String provider, String service, String instanceId) {
+        var instanceRefresh = deserializeRequest(request, InstanceSerializer::refreshFromSlime);
+        var instanceIdFromCsr = Certificates.extractDnsName(instanceRefresh.csr());
+        if (!instanceIdFromCsr.equals(instanceId)) {
+            throw new IllegalArgumentException("Mismatched instance ID and SAN DNS name [instanceId=" + instanceId +
+                                               ",dnsName=" + instanceIdFromCsr + "]");
+        }
+        var certificate = certificates.create(instanceRefresh.csr(), caCertificate(), caPrivateKey());
+        var identity = new InstanceIdentity(provider, service, instanceIdFromCsr, Optional.of(certificate));
         return new SlimeJsonResponse(InstanceSerializer.identityToSlime(identity));
     }
 
@@ -98,9 +111,10 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         return KeyUtils.fromPemEncodedPrivateKey(secretStore.getSecret(keyName));
     }
 
-    private static Slime slimeFromRequest(HttpRequest request) {
+    private static <T> T deserializeRequest(HttpRequest request, Function<Slime, T> serializer) {
         try {
-            return SlimeUtils.jsonToSlime(request.getData().readAllBytes());
+            var slime = SlimeUtils.jsonToSlime(request.getData().readAllBytes());
+            return serializer.apply(slime);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

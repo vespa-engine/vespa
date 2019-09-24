@@ -35,9 +35,9 @@ public class CertificateAuthorityApiTest extends ContainerTester {
     public void register_instance() throws Exception {
         // POST instance registration
         var csr = CertificateTester.createCsr("node1.example.com");
-        assertRegistration(new Request("http://localhost:12345/ca/v1/instance/",
-                                       instanceRegistrationJson(csr),
-                                       Request.Method.POST));
+        assertIdentityResponse(new Request("http://localhost:12345/ca/v1/instance/",
+                                           instanceRegistrationJson(csr),
+                                           Request.Method.POST));
 
         // POST instance registration with ZTS client
         var ztsClient = new DefaultZtsClient(URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
@@ -49,9 +49,26 @@ public class CertificateAuthorityApiTest extends ContainerTester {
     }
 
     @Test
-    public void invalid_register_instance() {
+    public void refresh_instance() throws Exception {
+        // POST instance refresh
+        var csr = CertificateTester.createCsr("node1.example.com");
+        assertIdentityResponse(new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/node1.example.com",
+                                           instanceRefreshJson(csr),
+                                           Request.Method.POST));
+
+        // POST instance refresh with ZTS client
+        var ztsClient = new DefaultZtsClient(URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
+        var instanceIdentity = ztsClient.refreshInstance(new AthenzService("vespa.external", "provider_prod_us-north-1"),
+                                                          new AthenzService("vespa.external", "tenant"),
+                                                          "node1.example.com",
+                                                          csr);
+        assertEquals("CN=Vespa CA", instanceIdentity.certificate().getIssuerX500Principal().getName());
+    }
+
+    @Test
+    public void invalid_requests() {
         // POST instance registration with missing fields
-        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Missing required field 'provider'\"}",
+        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/ failed: Missing required field 'provider'\"}",
                        new Request("http://localhost:12345/ca/v1/instance/",
                                    new byte[0],
                                    Request.Method.POST));
@@ -61,7 +78,20 @@ public class CertificateAuthorityApiTest extends ContainerTester {
         var request = new Request("http://localhost:12345/ca/v1/instance/",
                                   instanceRegistrationJson(csr),
                                   Request.Method.POST);
-        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"DNS name not found in CSR\"}", request);
+        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/ failed: DNS name not found in CSR\"}", request);
+
+        // POST instance refresh with missing field
+        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/node1.example.com failed: Missing required field 'csr'\"}",
+                       new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/node1.example.com",
+                                   new byte[0],
+                                   Request.Method.POST));
+
+        // POST instance refresh where instanceId does not match CSR dnsName
+        csr = CertificateTester.createCsr("node1.example.com");
+        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/node2.example.com failed: Mismatched instance ID and SAN DNS name [instanceId=node2.example.com,dnsName=node1.example.com]\"}",
+                       new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/node2.example.com",
+                                   instanceRefreshJson(csr),
+                                   Request.Method.POST));
     }
 
     private void setCaCertificateAndKey() {
@@ -72,11 +102,11 @@ public class CertificateAuthorityApiTest extends ContainerTester {
                      .setSecret("vespa.external.main.configserver.ca.key.key", privateKeyPem);
     }
 
-    private void assertRegistration(Request request) {
+    private void assertIdentityResponse(Request request) {
         assertResponse(200, (body) -> {
             var slime = SlimeUtils.jsonToSlime(body);
             var root = slime.get();
-            assertEquals("provider_prod_us-north-1", root.field("provider").asString());
+            assertEquals("vespa.external.provider_prod_us-north-1", root.field("provider").asString());
             assertEquals("tenant", root.field("service").asString());
             assertEquals("node1.example.com", root.field("instanceId").asString());
             var pemEncodedCertificate = root.field("x509Certificate").asString();
@@ -86,10 +116,16 @@ public class CertificateAuthorityApiTest extends ContainerTester {
         }, request);
     }
 
+    private static byte[] instanceRefreshJson(Pkcs10Csr csr) {
+        var csrPem = Pkcs10CsrUtils.toPem(csr);
+        var json  = "{\"csr\": \"" + csrPem + "\"}";
+        return json.getBytes(StandardCharsets.UTF_8);
+    }
+
     private static byte[] instanceRegistrationJson(Pkcs10Csr csr) {
         var csrPem = Pkcs10CsrUtils.toPem(csr);
         var json  = "{\n" +
-               "  \"provider\": \"provider_prod_us-north-1\",\n" +
+               "  \"provider\": \"vespa.external.provider_prod_us-north-1\",\n" +
                "  \"domain\": \"vespa.external\",\n" +
                "  \"service\": \"tenant\",\n" +
                "  \"attestationData\": \"identity document generated by config server\",\n" +
