@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Assigns the {@link Role#buildService(TenantName, ApplicationName)} role to requests with a
+ * Assigns the {@link Role#publicHeadless(TenantName, ApplicationName)} (TenantName, ApplicationName)} role to requests with a
  * Authorization header signature matching the public key of the indicated application.
  * Requests which already have a set of roles assigned to them are not modified.
  *
@@ -60,9 +60,7 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                     request.setUserPrincipal(principal);
                     request.setRemoteUser(principal.getName());
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME,
-                                         new SecurityContext(principal,
-                                                             Set.of(Role.buildService(id.tenant(), id.application()),
-                                                                    Role.applicationDeveloper(id.tenant(), id.application()))));
+                                         new SecurityContext(principal, Set.of(Role.publicHeadless(id.tenant(), id.application()))));
                 }
             }
             catch (Exception e) {

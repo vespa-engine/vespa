@@ -20,17 +20,16 @@ public class Roles {
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
     public static List<TenantRole> tenantRoles(TenantName tenant) {
-        return List.of(Role.tenantOwner(tenant),
-                       Role.tenantAdmin(tenant),
-                       Role.tenantOperator(tenant));
+        return List.of(
+                Role.publicReader(tenant),
+                Role.publicDeveloper(tenant),
+                Role.publicAdministrator(tenant)
+        );
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
     public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(Role.applicationAdmin(tenant, application),
-                       Role.applicationOperator(tenant, application),
-                       Role.applicationDeveloper(tenant, application),
-                       Role.applicationReader(tenant, application));
+        return List.of(Role.publicHeadless(tenant, application));
     }
 
     /** Returns the {@link Role} the given value represents. */
@@ -45,9 +44,9 @@ public class Roles {
     /** Returns the {@link Role} the given tenant, application and role names correspond to. */
     public static Role toRole(TenantName tenant, String roleName) {
         switch (roleName) {
-            case "tenantOwner": return Role.tenantOwner(tenant);
-            case "tenantAdmin": return Role.tenantAdmin(tenant);
-            case "tenantOperator": return Role.tenantOperator(tenant);
+            case "publicReader": return Role.publicReader(tenant);
+            case "publicUser": return Role.publicDeveloper(tenant);
+            case "publicAdministrator": return Role.publicAdministrator(tenant);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -55,10 +54,7 @@ public class Roles {
     /** Returns the {@link Role} the given tenant and role names correspond to. */
     public static Role toRole(TenantName tenant, ApplicationName application, String roleName) {
         switch (roleName) {
-            case "applicationAdmin": return Role.applicationAdmin(tenant, application);
-            case "applicationOperator": return Role.applicationOperator(tenant, application);
-            case "applicationDeveloper": return Role.applicationDeveloper(tenant, application);
-            case "applicationReader": return Role.applicationReader(tenant, application);
+            case "publicHeadless": return Role.publicHeadless(tenant, application);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -92,15 +88,12 @@ public class Roles {
         return application.value();
     }
 
-    private static String valueOf(RoleDefinition role) {
+    public static String valueOf(RoleDefinition role) {
         switch (role) {
-            case tenantOwner:          return "tenantOwner";
-            case tenantAdmin:          return "tenantAdmin";
-            case tenantOperator:       return "tenantOperator";
-            case applicationAdmin:     return "applicationAdmin";
-            case applicationOperator:  return "applicationOperator";
-            case applicationDeveloper: return "applicationDeveloper";
-            case applicationReader:    return "applicationReader";
+            case publicAdministrator:  return "publicAdministrator";
+            case publicDeveloper:      return "publicUser";
+            case publicReader:         return "publicReader";
+            case publicHeadless:       return "publicHeadless";
             default: throw new IllegalArgumentException("No value defined for role '" + role + "'.");
         }
     }

@@ -36,9 +36,14 @@ public class CloudAccessControl implements AccessControl {
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
         CloudTenant tenant = new CloudTenant(spec.tenant(), defaultBillingInfo);
 
-        for (Role role : Roles.tenantRoles(spec.tenant()))
+        for (Role role : Roles.tenantRoles(spec.tenant())) {
             userManagement.createRole(role);
-        userManagement.addUsers(Role.tenantOwner(spec.tenant()), List.of(new UserId(credentials.user().getName())));
+        }
+
+        var userId = List.of(new UserId(credentials.user().getName()));
+        userManagement.addUsers(Role.publicAdministrator(spec.tenant()), userId);
+        userManagement.addUsers(Role.publicDeveloper(spec.tenant()), userId);
+        userManagement.addUsers(Role.publicReader(spec.tenant()), userId);
 
         return tenant;
     }
@@ -58,15 +63,16 @@ public class CloudAccessControl implements AccessControl {
 
     @Override
     public void createApplication(ApplicationId id, Credentials credentials) {
-        for (Role role : Roles.applicationRoles(id.tenant(), id.application()))
+        for (Role role : Roles.applicationRoles(id.tenant(), id.application())) {
             userManagement.createRole(role);
-        userManagement.addUsers(Role.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
+        }
     }
 
     @Override
     public void deleteApplication(ApplicationId id, Credentials credentials) {
-        for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application()))
+        for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application())) {
             userManagement.deleteRole(role);
+        }
     }
 
     @Override

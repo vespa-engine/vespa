@@ -20,60 +20,46 @@ public enum RoleDefinition {
     /** Deus ex machina. */
     hostedOperator(Policy.operator),
 
+    /** Reader - the base role for all tenant users */
+    publicReader(
+            Policy.tenantRead,
+            Policy.applicationRead,
+            Policy.deploymentRead,
+            Policy.publicRead
+    ),
+
+    /** User - the dev.ops. role for normal Vespa tenant users */
+    publicDeveloper(
+            Policy.applicationCreate,
+            Policy.applicationUpdate,
+            Policy.applicationDelete,
+            Policy.developmentDeployment
+    ),
+
+    /** Admin - the administrative function for user management etc. */
+    publicAdministrator(
+            Policy.tenantUpdate,
+            Policy.tenantManager
+    ),
+
+    /** Headless - the application specific role identified by deployment keys for production */
+    publicHeadless(
+            Policy.submission,
+            Policy.deploymentPipeline,
+            Policy.productionDeployment
+    ),
+
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
              Policy.publicRead,
              Policy.userCreate,
              Policy.tenantCreate),
 
-    /** Application reader which can see all information about an application, its tenant and deployments. */
-    applicationReader(everyone,
-                      Policy.tenantRead,
-                      Policy.applicationRead,
-                      Policy.deploymentRead),
-
-    /** Build service which may submit new applications for continuous deployment. */
-    buildService(applicationReader,
-                 Policy.submission),
-
-    /** Application developer with access to deploy to development zones. */
-    applicationDeveloper(applicationReader,
-                         Policy.developmentDeployment),
-
-    /** Application operator with access to normal, operational tasks of an application. */
-    applicationOperator(applicationReader,
-                        Policy.applicationOperations),
-
-    /** Application administrator with full access to an already existing application, including emergency operations. */
-    applicationAdmin(applicationDeveloper,
-                     applicationOperator,
-                     Policy.applicationUpdate,
-                     Policy.applicationDelete,
-                     Policy.applicationManager,
-                     Policy.productionDeployment,
-                     Policy.submission),
-
-    /** Tenant operator with access to create application under a tenant, and to read the tenant's and public data. */
-    tenantOperator(everyone,
-                   Policy.tenantRead,
-                   Policy.applicationCreate),
-
-    /** Tenant admin with full access to all tenant resources, except deleting the tenant. */
-    tenantAdmin(tenantOperator,
-                applicationAdmin,
-                Policy.applicationDelete,
-                Policy.tenantManager,
-                Policy.tenantUpdate),
-
-    /** Tenant admin with full access to all tenant resources. */
-    tenantOwner(tenantAdmin,
-                Policy.tenantDelete),
-
     /** Build and continuous delivery service. */ // TODO replace with buildService, when everyone is on new pipeline.
     tenantPipeline(everyone,
-                   Policy.submission,
-                   Policy.deploymentPipeline,
-                   Policy.productionDeployment),
+            Policy.submission,
+            Policy.deploymentPipeline,
+            Policy.productionDeployment),
 
     /** Tenant administrator with full access to all child resources. */
     athenzTenantAdmin(everyone,
