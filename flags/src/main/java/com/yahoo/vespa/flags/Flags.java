@@ -153,6 +153,12 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart (may vary where used).",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_INTERNAL_ZTS = defineFeatureFlag(
+            "use-internal-zts", false,
+            "Decides if certificate in public should be requested from 'zts' configserver or mapped in",
+            "Takes effect on next tick or on host-admin restart.",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag DYNAMIC_UPSTREAM_CONNECTION_CACHE = defineFeatureFlag(
             "dynamic-upstream-connection-cache", false,
             "Scale upstream connection cache with number of upstream servers",
