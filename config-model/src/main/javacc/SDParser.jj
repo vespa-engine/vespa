@@ -241,6 +241,7 @@ TOKEN :
 | < FULL: "full" >
 | < STATIC: "static" >
 | < DYNAMIC: "dynamic" >
+| < MATCHEDELEMENTSONLY: "matched-elements-only" >
 | < SSCONTEXTUAL: "contextual" >
 | < SSOVERRIDE: "override" >
 | < SSTITLE: "title" >
@@ -1312,6 +1313,7 @@ SummaryInFieldOperation summaryInFieldShort(FieldOperationContainer field) :
     <COLON> ( <DYNAMIC> { op.setTransform(SummaryTransform.DYNAMICTEASER);
                           op.addSource(name);
                         }
+              | <MATCHEDELEMENTSONLY> { op.setTransform(SummaryTransform.MATCHED_ELEMENTS_FILTER); }
               | (<FULL> | <STATIC>) { op.setTransform(SummaryTransform.NONE); } )
     { return op; }
 }
@@ -1362,6 +1364,7 @@ Object summaryItem(SummaryInFieldLongOperation field) : { }
 Object summaryTransform(SummaryInFieldOperation field) : { }
 {
     ( <DYNAMIC>             { field.setTransform(SummaryTransform.DYNAMICTEASER); }
+     | <MATCHEDELEMENTSONLY> { field.setTransform(SummaryTransform.MATCHED_ELEMENTS_FILTER); }
      | (<FULL> | <STATIC>) { field.setTransform(SummaryTransform.NONE); } )
     { return null; }
 }

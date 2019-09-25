@@ -46,6 +46,7 @@ public class Processing {
                 SummaryConsistency::new,
                 SummaryNamesFieldCollisions::new,
                 SummaryFieldsMustHaveValidSource::new,
+                MatchedElementsOnlyResolver::new,
                 AddAttributeTransformToSummaryOfImportedFields::new,
                 MakeDefaultSummaryTheSuperSet::new,
                 Bolding::new,

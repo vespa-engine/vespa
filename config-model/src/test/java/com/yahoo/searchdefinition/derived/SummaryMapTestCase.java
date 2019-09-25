@@ -16,6 +16,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -148,6 +149,44 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
         } catch (Exception e) {
             assertTrue(e.getMessage().matches(".*equally named field.*"));
         }
+    }
+
+    @Test
+    public void source_field_is_passed_as_argument_in_matched_elements_filter_transforms() throws ParseException {
+        assertOverride(joinLines("field my_field type map<string, string> {",
+                "  indexing: summary",
+                "  summary: matched-elements-only",
+                "  struct-field key { indexing: attribute }",
+                "}"), "my_field", SummaryTransform.MATCHED_ELEMENTS_FILTER.getName());
+
+        assertOverride(joinLines("field my_field type map<string, string> {",
+                "  indexing: summary",
+                "  summary: matched-elements-only",
+                "  struct-field key { indexing: attribute }",
+                "  struct-field value { indexing: attribute }",
+                "}"), "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName());
+    }
+
+    private void assertOverride(String fieldContent, String expFieldName, String expCommand) throws ParseException {
+        var summaryMap = new SummaryMap(buildSearch(fieldContent));
+        var cfgBuilder = new SummarymapConfig.Builder();
+        summaryMap.getConfig(cfgBuilder);
+        var cfg = new SummarymapConfig(cfgBuilder);
+        var override = cfg.override(0);
+        assertEquals(expFieldName, override.field());
+        assertEquals(expCommand, override.command());
+        assertEquals(expFieldName, override.arguments());
+    }
+
+    private Search buildSearch(String field) throws ParseException {
+        var builder = new SearchBuilder(new RankProfileRegistry());
+        builder.importString(joinLines("search test {",
+                "  document test {",
+                field,
+                "  }",
+                "}"));
+        builder.build();
+        return builder.getSearch();
     }
 
 }
