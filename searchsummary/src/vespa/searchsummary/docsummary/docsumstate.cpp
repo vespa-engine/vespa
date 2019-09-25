@@ -4,10 +4,10 @@
 #include <vespa/juniper/rpinterface.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include "docsum_field_writer_state.h"
 
-namespace search {
-namespace docsummary {
+namespace search::docsummary {
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
     : _args(),
@@ -25,7 +25,8 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _parsedLocation(),
       _summaryFeatures(NULL),
       _summaryFeaturesCached(false),
-      _rankFeatures(NULL)
+      _rankFeatures(NULL),
+      _matching_elements(nullptr)
 {
     _dynteaser._docid    = static_cast<uint32_t>(-1);
     _dynteaser._input    = static_cast<uint32_t>(-1);
@@ -48,5 +49,13 @@ GetDocsumsState::~GetDocsumsState()
     }
 }
 
+const MatchingElements &
+GetDocsumsState::get_matching_elements()
+{
+    if (_matching_elements == nullptr) {
+        _matching_elements = &_callback.fill_matching_elements();
+    }
+    return *_matching_elements;
 }
+
 }

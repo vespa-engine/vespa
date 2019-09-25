@@ -4,6 +4,7 @@
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -146,7 +147,8 @@ DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docs
     _attrCtx(attrCtx),
     _attrMgr(attrMgr),
     _docsumState(*this),
-    _sessionMgr(sessionMgr)
+    _sessionMgr(sessionMgr),
+    _matching_elements()
 {
     initState();
 }
@@ -211,6 +213,13 @@ void
 DocsumContext::ParseLocation(search::docsummary::GetDocsumsState *state)
 {
     state->_parsedLocation.reset(getLocation(_request.location, _attrMgr));
+}
+
+const MatchingElements&
+DocsumContext::fill_matching_elements()
+{
+    _matching_elements = std::make_unique<MatchingElements>();
+    return *_matching_elements;
 }
 
 } // namespace proton

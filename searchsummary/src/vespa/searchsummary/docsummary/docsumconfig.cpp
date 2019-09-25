@@ -94,7 +94,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         }
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
-            fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager());
+            fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager(), false);
             rc = static_cast<bool>(fieldWriter);
         }
     } else {

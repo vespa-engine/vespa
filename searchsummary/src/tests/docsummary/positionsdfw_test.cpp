@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
 #include <vespa/searchsummary/docsummary/positionsdfw.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
@@ -17,6 +18,7 @@ LOG_SETUP("positionsdfw_test");
 
 using search::RawBuf;
 using search::IAttributeManager;
+using search::MatchingElements;
 using search::SingleInt64ExtAttribute;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
@@ -104,6 +106,7 @@ struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
     virtual void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
     virtual void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override {}
     virtual void ParseLocation(GetDocsumsState *) override {}
+    const MatchingElements& fill_matching_elements() override { abort(); }
 };
 
 template <typename AttrType>

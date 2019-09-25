@@ -2,19 +2,22 @@
 
 #include "vsm-adapter.h"
 #include "docsumconfig.h"
+#include <vespa/searchlib/common/matching_elements.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::ResConfigEntry;
 using search::docsummary::KeywordExtractor;
+using search::MatchingElements;
 using config::ConfigSnapshot;
 
 namespace vsm {
 
 GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _summaryFeatures(),
-    _rankFeatures()
+    _rankFeatures(),
+    _matching_elements()
 { }
 
 void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
@@ -45,6 +48,14 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
     (void) env;
 }
 
+const MatchingElements&
+GetDocsumsStateCallback::fill_matching_elements()
+{
+    if (!_matching_elements) {
+        _matching_elements = std::make_unique<MatchingElements>();
+    }
+    return *_matching_elements;
+}
 
 GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
 

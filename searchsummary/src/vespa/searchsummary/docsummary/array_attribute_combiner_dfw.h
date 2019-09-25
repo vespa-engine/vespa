@@ -19,10 +19,11 @@ class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
     std::vector<vespalib::string> _fields;
     std::vector<vespalib::string> _attributeNames;
 
-    std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context) override;
+    std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context, const MatchingElements* matching_elements) override;
 public:
     ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
-                              const std::vector<vespalib::string> &fields);
+                              const std::vector<vespalib::string> &fields,
+                              bool filter_elements);
     ~ArrayAttributeCombinerDFW() override;
 };
 
