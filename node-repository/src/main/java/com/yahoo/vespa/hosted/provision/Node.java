@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
@@ -284,6 +285,24 @@ public final class Node {
         History newHistory = history();
         if (generation > status().reboot().current())
             newHistory = history.with(new History.Event(History.Event.Type.rebooted, Agent.system, instant));
+        return this.with(newStatus).with(newHistory);
+    }
+
+    /** Returns a copy of this node with the current OS version set to the given version at the given instant */
+    public Node withCurrentOsVersion(Version version, Instant instant) {
+        var newStatus = status.withOsVersion(version);
+        var newHistory = history();
+        // Only update history if version has changed
+        if (status.osVersion().isEmpty() || !status.osVersion().get().equals(version)) {
+            newHistory = history.with(new History.Event(History.Event.Type.osUpgraded, Agent.system, instant));
+        }
+        return this.with(newStatus).with(newHistory);
+    }
+
+    /** Returns a copy of this node with firmware verified at the given instant */
+    public Node withFirmwareVerifiedAt(Instant instant) {
+        var newStatus = status.withFirmwareVerifiedAt(instant);
+        var newHistory = history.with(new History.Event(History.Event.Type.firmwareVerified, Agent.system, instant));
         return this.with(newStatus).with(newHistory);
     }
 
