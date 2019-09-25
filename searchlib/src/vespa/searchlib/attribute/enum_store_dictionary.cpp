@@ -85,7 +85,7 @@ EnumStoreDictionary<DictionaryT>::remove(const EntryComparator &comp, EntryRef r
     auto itr = this->_dict.lowerBound(ref, comp);
     assert(itr.valid() && itr.getKey() == ref);
     if constexpr (std::is_same_v<DictionaryT, EnumPostingTree>) {
-            assert(EntryRef(itr.getData()) == EntryRef());
+        assert(EntryRef(itr.getData()) == EntryRef());
     }
     this->_dict.remove(itr);
 }
