@@ -93,6 +93,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                 postings.clear();
             }
         }
+        assert(refCount < std::numeric_limits<uint32_t>::max());
         ++refCount;
         assert(elem.getDocId() < docIdLimit);
         (void) docIdLimit;

@@ -41,6 +41,7 @@ public:
     void free_unused_values(const IndexSet& to_remove,
                             const datastore::EntryComparator& cmp) override;
 
+    void remove(const datastore::EntryComparator& comp, datastore::EntryRef ref) override;
     bool find_index(const datastore::EntryComparator& cmp, Index& idx) const override;
     bool find_frozen_index(const datastore::EntryComparator& cmp, Index& idx) const override;
     std::vector<attribute::IAttributeVector::EnumHandle>

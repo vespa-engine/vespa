@@ -138,6 +138,7 @@ public:
         (void) docId;
         (void) weight;
         assert(e < _hist.size());
+        assert(_hist[e] < std::numeric_limits<uint32_t>::max());
         ++_hist[e];
     }
 };
