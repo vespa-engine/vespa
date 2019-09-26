@@ -21,9 +21,6 @@ vespa_define_module(
 
     LIBS
     src/vespa/searchcore/config
-    src/vespa/searchcore/fdispatch/common
-    src/vespa/searchcore/fdispatch/program
-    src/vespa/searchcore/fdispatch/search
     src/vespa/searchcore/grouping
     src/vespa/searchcore/proton/attribute
     src/vespa/searchcore/proton/bucketdb
@@ -46,7 +43,6 @@ vespa_define_module(
     src/vespa/searchcore/util
 
     APPS
-    src/apps/fdispatch
     src/apps/proton
     src/apps/tests
     src/apps/verify_ranksetup
@@ -56,8 +52,6 @@ vespa_define_module(
     src/apps/vespa-transactionlog-inspect
 
     TESTS
-    src/tests/fdispatch/randomrow
-    src/tests/fdispatch/fnet_search
     src/tests/grouping
     src/tests/proton/attribute
     src/tests/proton/attribute/attribute_aspect_delayer
