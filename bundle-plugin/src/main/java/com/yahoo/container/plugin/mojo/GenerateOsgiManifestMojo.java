@@ -173,8 +173,8 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                                         Set<String> exportedPackagesFromProvidedDeps) {
         Set<String> overlappingProjectPackages = Sets.intersection(projectPackages.definedPackages(), exportedPackagesFromProvidedDeps);
         if (! overlappingProjectPackages.isEmpty()) {
-            getLog().warn("Project classes use the following packages that are already defined in provided scoped dependencies: "
-                                  + overlappingProjectPackages);
+            getLog().warn("This project defines packages that are also defined in provided scoped dependencies " +
+                          "(overlapping packages are strongly discouraged): " + overlappingProjectPackages);
         }
     }
 
