@@ -311,7 +311,7 @@ TEST_F(BucketManagerTest, Min_Used_Bits_From_Component_Is_Honored) {
 }
 
 // FIXME: non-deterministic test
-TEST_F(BucketManagerTest, IGNORED_request_bucket_info_with_state) {
+TEST_F(BucketManagerTest, DISABLED_request_bucket_info_with_state) {
     // Test prior to building bucket cache
     setupTestEnvironment();
     addBucketsToDB(30);
