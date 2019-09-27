@@ -44,9 +44,7 @@ public enum RoleDefinition {
 
     /** Headless - the application specific role identified by deployment keys for production */
     headless(
-            Policy.submission,
-            Policy.deploymentPipeline,
-            Policy.productionDeployment
+            Policy.submission
     ),
 
     /** Base role which every user is part of. */
