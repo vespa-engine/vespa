@@ -35,6 +35,7 @@ public:
     }
     EntryRef mapEnumValueToEntryRef(uint32_t enumValue) {
         assert(enumValue < _refs.size());
+        assert(_refCounts[enumValue] < std::numeric_limits<uint32_t>::max());
         ++_refCounts[enumValue];
         return _refs[enumValue];
     }

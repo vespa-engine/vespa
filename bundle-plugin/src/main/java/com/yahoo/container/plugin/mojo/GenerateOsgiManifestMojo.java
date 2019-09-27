@@ -76,9 +76,6 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
     @Parameter(alias = "X-JDisc-Privileged-Activator")
     private String jdiscPrivilegedActivator = null;
 
-    @Parameter(alias = "X-Config-Models")
-    private String configModels = null;
-
     @Parameter(alias = "Import-Package")
     private String importPackage = null;
 
@@ -87,9 +84,6 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
     @Parameter(alias = "Main-Class")
     private String mainClass = null;
-
-    @Parameter(alias = "X-Jersey-Binding")
-    private String jerseyBinding = null;
 
     public void execute() throws MojoExecutionException {
         try {
@@ -179,8 +173,8 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                                         Set<String> exportedPackagesFromProvidedDeps) {
         Set<String> overlappingProjectPackages = Sets.intersection(projectPackages.definedPackages(), exportedPackagesFromProvidedDeps);
         if (! overlappingProjectPackages.isEmpty()) {
-            getLog().warn("Project classes use the following packages that are already defined in provided scoped dependencies: "
-                                  + overlappingProjectPackages);
+            getLog().warn("This project defines packages that are also defined in provided scoped dependencies " +
+                          "(overlapping packages are strongly discouraged): " + overlappingProjectPackages);
         }
     }
 
@@ -237,8 +231,6 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                 Pair.of("Main-Class", mainClass), //
                 Pair.of("X-JDisc-Application", discApplicationClass), //
                 Pair.of("X-JDisc-Preinstall-Bundle", trimWhitespace(Optional.ofNullable(discPreInstallBundle))), //
-                Pair.of("X-Config-Models", configModels), //
-                Pair.of("X-Jersey-Binding", jerseyBinding), //
                 Pair.of("WebInfUrl", webInfUrl), //
                 Pair.of("Import-Package", importPackage), //
                 Pair.of("Export-Package", exportPackage))) {

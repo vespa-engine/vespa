@@ -45,7 +45,10 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
             if (summaryField.getTransform()==SummaryTransform.ATTRIBUTE ||
                 summaryField.getTransform()==SummaryTransform.DISTANCE ||
                 summaryField.getTransform()==SummaryTransform.GEOPOS ||
-                summaryField.getTransform()==SummaryTransform.POSITIONS) {
+                summaryField.getTransform()==SummaryTransform.POSITIONS ||
+                summaryField.getTransform()==SummaryTransform.MATCHED_ELEMENTS_FILTER ||
+                summaryField.getTransform()==SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)
+            {
                 resultTransforms.put(summaryField.getName(),new FieldResultTransform(summaryField.getName(),
                                                                                      summaryField.getTransform(),
                                                                                      summaryField.getSingleSource()));
@@ -99,7 +102,9 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
                     frt.getTransform().equals(SummaryTransform.DISTANCE) ||
                     frt.getTransform().equals(SummaryTransform.GEOPOS) ||
                     frt.getTransform().equals(SummaryTransform.POSITIONS) ||
-                    frt.getTransform().equals(SummaryTransform.TEXTEXTRACTOR))
+                    frt.getTransform().equals(SummaryTransform.TEXTEXTRACTOR) ||
+                    frt.getTransform().equals(SummaryTransform.MATCHED_ELEMENTS_FILTER) ||
+                    frt.getTransform().equals(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER))
                 {
                     oB.arguments(frt.getArgument());
                 } else {

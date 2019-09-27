@@ -74,7 +74,7 @@ public class Constant extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "\t" + lazyGetType() + ":\tConstant(" + type + ")";
+        return "\t" + type + ":\tConstant(" + type + ")";
     }
 
 }

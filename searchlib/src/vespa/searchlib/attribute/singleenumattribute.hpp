@@ -284,6 +284,17 @@ SingleValueEnumAttribute<B>::onShrinkLidSpace()
     if (pab != nullptr) {
         pab->clearPostings(e, committedDocIdLimit, _enumIndices.size());
     }
+    uint32_t shrink_docs = _enumIndices.size() - committedDocIdLimit;
+    if (shrink_docs > 0u) {
+        datastore::EntryRef default_value_ref(e);
+        assert(default_value_ref.valid());
+        uint32_t default_value_ref_count = this->_enumStore.get_ref_count(default_value_ref);
+        assert(default_value_ref_count >= shrink_docs);
+        this->_enumStore.set_ref_count(default_value_ref, default_value_ref_count - shrink_docs);
+        IEnumStore::IndexSet possibly_unused;
+        possibly_unused.insert(default_value_ref);
+        this->_enumStore.free_unused_values(possibly_unused);
+    }
     _enumIndices.shrink(committedDocIdLimit);
     this->setNumDocs(committedDocIdLimit);
 }

@@ -537,4 +537,8 @@ void BTreeBucketDatabase::ReadGuardImpl::find_parents_and_self(const document::B
     _db->find_parents_and_self_internal(_frozen_view, bucket, entries);
 }
 
+uint64_t BTreeBucketDatabase::ReadGuardImpl::generation() const noexcept {
+    return _guard.getGeneration();
+}
+
 }

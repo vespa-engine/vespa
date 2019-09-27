@@ -73,6 +73,7 @@ private:
 
         void find_parents_and_self(const document::BucketId& bucket,
                                    std::vector<Entry>& entries) const override;
+        uint64_t generation() const noexcept override { return 0; }
     };
 
     uint32_t allocate();

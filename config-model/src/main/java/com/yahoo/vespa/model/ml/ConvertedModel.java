@@ -409,6 +409,24 @@ public class ConvertedModel {
                         return reduceBatchDimensionExpression(tensorFunction, typeContext);
                     }
                 }
+                // Modify any renames in expression to disregard batch dimension
+                else if (children.size() == 1 && children.get(0) instanceof TensorFunctionNode) {
+                    TensorFunction childFunction = (((TensorFunctionNode) children.get(0)).function());
+                    TensorType childType = childFunction.type(typeContext);
+                    Rename rename = (Rename) tensorFunction;
+                    List<String> from = new ArrayList<>();
+                    List<String> to = new ArrayList<>();
+                    for (TensorType.Dimension dimension : childType.dimensions()) {
+                        int i = rename.fromDimensions().indexOf(dimension.name());
+                        if (i < 0) {
+                            throw new IllegalArgumentException("Rename does not contain dimension '" +
+                                    dimension + "' in child expression type: " + childType);
+                        }
+                        from.add(rename.fromDimensions().get(i));
+                        to.add(rename.toDimensions().get(i));
+                    }
+                    return new TensorFunctionNode(new Rename(childFunction, from, to));
+                }
             }
         }
         if (node instanceof ReferenceNode) {

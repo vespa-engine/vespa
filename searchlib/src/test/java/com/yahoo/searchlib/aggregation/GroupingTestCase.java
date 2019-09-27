@@ -223,5 +223,6 @@ public class GroupingTestCase {
         Grouping other = (Grouping)Grouping.create(buf);
         assertEquals(grouping, other);
     }
+
 }
 

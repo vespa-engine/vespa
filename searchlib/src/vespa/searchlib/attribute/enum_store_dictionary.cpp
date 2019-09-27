@@ -78,6 +78,19 @@ EnumStoreDictionary<DictionaryT>::free_unused_values(const IndexSet& to_remove,
 }
 
 template <typename DictionaryT>
+void
+EnumStoreDictionary<DictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
+{
+    assert(ref.valid());
+    auto itr = this->_dict.lowerBound(ref, comp);
+    assert(itr.valid() && itr.getKey() == ref);
+    if constexpr (std::is_same_v<DictionaryT, EnumPostingTree>) {
+        assert(EntryRef(itr.getData()) == EntryRef());
+    }
+    this->_dict.remove(itr);
+}
+
+template <typename DictionaryT>
 bool
 EnumStoreDictionary<DictionaryT>::find_index(const datastore::EntryComparator& cmp,
                                              Index& idx) const
@@ -184,9 +197,13 @@ EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
     EntryRef posting_list_ref(it.getData());
     _dict.remove(it);
     // Maybe copy posting list reference to next entry
-    if (posting_list_ref.valid() && it.valid() && !EntryRef(it.getData()).valid() && !(*_folded_compare)(ref, it.getKey())) {
-        this->_dict.thaw(it);
-        it.writeData(posting_list_ref.ref());
+    if (posting_list_ref.valid()) {
+        if (it.valid() && !EntryRef(it.getData()).valid() && !(*_folded_compare)(ref, it.getKey())) {
+            this->_dict.thaw(it);
+            it.writeData(posting_list_ref.ref());
+        } else {
+            LOG_ABORT("Posting list not cleared for removed unique value");
+        }
     }
 }
 

@@ -51,6 +51,7 @@ public:
                 framework::TickingThreadPool&,
                 DoneInitializeHandler&,
                 bool manageActiveBucketCopies,
+                bool use_btree_database,
                 HostInfo& hostInfoReporterRegistrar,
                 ChainedMessageSender* = nullptr);
 

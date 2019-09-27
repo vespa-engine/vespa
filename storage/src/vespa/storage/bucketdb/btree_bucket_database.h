@@ -81,16 +81,16 @@ private:
 
         void find_parents_and_self(const document::BucketId& bucket,
                                    std::vector<Entry>& entries) const override;
+        uint64_t generation() const noexcept override;
     };
 
     friend class ReadGuardImpl;
-
+    friend struct BTreeBuilderMerger;
+    friend struct BTreeTrailingInserter;
+public:
     std::unique_ptr<ReadGuard> acquire_read_guard() const override {
         return std::make_unique<ReadGuardImpl>(*this);
     }
-
-    friend struct BTreeBuilderMerger;
-    friend struct BTreeTrailingInserter;
 };
 
 }

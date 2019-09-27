@@ -67,7 +67,7 @@ public class Argument extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "\t" + lazyGetType() + ":\tArgument(" + standardNamingType + ")";
+        return "\t" + type + ":\tArgument(" + standardNamingType + ")";
     }
 
 }

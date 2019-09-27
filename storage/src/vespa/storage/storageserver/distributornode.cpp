@@ -19,6 +19,7 @@ DistributorNode::DistributorNode(
         DistributorNodeContext& context,
         ApplicationGenerationFetcher& generationFetcher,
         NeedActiveState activeState,
+        bool use_btree_database,
         StorageLink::UP communicationManager)
     : StorageNode(configUri, context, generationFetcher,
             std::unique_ptr<HostInfo>(new HostInfo()),
@@ -29,6 +30,7 @@ DistributorNode::DistributorNode(
       _lastUniqueTimestampRequested(0),
       _uniqueTimestampCounter(0),
       _manageActiveBucketCopies(activeState == NEED_ACTIVE_BUCKET_STATES_SET),
+      _use_btree_database(use_btree_database),
       _retrievedCommunicationManager(std::move(communicationManager))
 {
     try{
@@ -108,6 +110,7 @@ DistributorNode::createChain()
             new storage::distributor::Distributor(
                 dcr, *_threadPool, getDoneInitializeHandler(),
                 _manageActiveBucketCopies,
+                _use_btree_database,
                 stateManager->getHostInfo())));
 
     chain->push_back(StorageLink::UP(stateManager.release()));
