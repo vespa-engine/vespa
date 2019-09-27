@@ -10,7 +10,6 @@
     </parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>maven-plugins</artifactId>
-    <name>maven-plugins</name>
     <packaging>pom</packaging>
     <version>7-SNAPSHOT</version>
     <description>Parent artifact for Vespa maven plugins.</description>
