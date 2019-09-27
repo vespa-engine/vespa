@@ -15,6 +15,7 @@ namespace storage {
 class DistributorProcess : public Process {
     DistributorNodeContext _context;
     DistributorNode::NeedActiveState _activeFlag;
+    bool _use_btree_database;
     DistributorNode::UP _node;
     config::ConfigHandle<vespa::config::content::core::StorDistributormanagerConfig>::UP
             _distributorConfigHandler;
@@ -23,7 +24,7 @@ class DistributorProcess : public Process {
 
 public:
     DistributorProcess(const config::ConfigUri & configUri);
-    ~DistributorProcess();
+    ~DistributorProcess() override;
 
     void shutdown() override;
     void setupConfig(uint64_t subscribeTimeout) override;

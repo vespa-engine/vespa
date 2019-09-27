@@ -10,15 +10,17 @@ namespace storage::distributor {
 
 namespace {
 
-std::unique_ptr<BucketDatabase> make_default_db_impl() {
-    //return std::make_unique<BTreeBucketDatabase>();
+std::unique_ptr<BucketDatabase> make_default_db_impl(bool use_btree_db) {
+    if (use_btree_db) {
+        return std::make_unique<BTreeBucketDatabase>();
+    }
     return std::make_unique<MapBucketDatabase>();
 }
 
 }
 
-DistributorBucketSpace::DistributorBucketSpace()
-    : _bucketDatabase(make_default_db_impl()),
+DistributorBucketSpace::DistributorBucketSpace(bool use_btree_db)
+    : _bucketDatabase(make_default_db_impl(use_btree_db)),
       _clusterState(),
       _distribution()
 {

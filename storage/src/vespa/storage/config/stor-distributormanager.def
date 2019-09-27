@@ -199,3 +199,9 @@ allow_stale_reads_during_cluster_state_transitions bool default=false
 ## Setting any of these values only makes sense for testing!
 simulated_db_pruning_latency_msec int default=0
 simulated_db_merging_latency_msec int default=0
+
+## Whether to use a B-tree data structure for the distributor bucket database instead
+## of the legacy database. Setting this option may trigger alternate code paths for
+## read only operations, as the B-tree database is thread safe for concurrent reads.
+use_btree_database bool default=false restart
+
