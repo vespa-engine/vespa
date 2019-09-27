@@ -39,7 +39,8 @@ public enum RoleDefinition {
     /** Admin - the administrative function for user management etc. */
     administrator(
             Policy.tenantUpdate,
-            Policy.tenantManager
+            Policy.tenantManager,
+            Policy.applicationManager
     ),
 
     /** Headless - the application specific role identified by deployment keys for production */
