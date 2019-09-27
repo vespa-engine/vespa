@@ -28,7 +28,6 @@ vespa_add_library(searchlib_engine OBJECT
     searchrequest.cpp
     trace.cpp
     transport_metrics.cpp
-    transportserver.cpp
     ${searchlib_engine_PROTOBUF_SRCS}
     DEPENDS
 )
