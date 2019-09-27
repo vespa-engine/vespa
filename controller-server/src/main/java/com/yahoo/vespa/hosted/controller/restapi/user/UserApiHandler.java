@@ -128,7 +128,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     private void fillRoles(Cursor root, List<? extends Role> roles, List<? extends Role> superRoles) {
         Cursor rolesArray = root.setArray("roleNames");
         for (Role role : roles)
-            rolesArray.addString(Roles.valueOf(role));
+            rolesArray.addString(valueOf(role));
 
         Map<User, List<Role>> memberships = new LinkedHashMap<>();
         List<Role> allRoles = new ArrayList<>(superRoles); // Membership in a super role may imply membership in a role.
@@ -153,7 +153,7 @@ public class UserApiHandler extends LoggingRequestHandler {
 
             Cursor rolesObject = userObject.setObject("roles");
             for (Role role : roles) {
-                Cursor roleObject = rolesObject.setObject(Roles.valueOf(role));
+                Cursor roleObject = rolesObject.setObject(valueOf(role));
                 roleObject.setBool("explicit", userRoles.contains(role));
                 roleObject.setBool("implied", userRoles.stream().anyMatch(userRole -> userRole.implies(role)));
             }
@@ -209,6 +209,16 @@ public class UserApiHandler extends LoggingRequestHandler {
     private <Type> Type require(String name, Function<Inspector, Type> mapper, Inspector object) {
         if ( ! object.field(name).valid()) throw new IllegalArgumentException("Missing field '" + name + "'.");
         return mapper.apply(object.field(name));
+    }
+
+    public static String valueOf(Role role) {
+        switch (role.definition()) {
+            case administrator:  return "administrator";
+            case developer:      return "user";
+            case reader:         return "reader";
+            case headless:       return "headless";
+            default: throw new IllegalArgumentException("Unexpected role type '" + role.definition() + "'.");
+        }
     }
 
 }
