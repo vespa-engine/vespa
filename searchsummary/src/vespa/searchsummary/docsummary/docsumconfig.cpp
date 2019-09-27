@@ -97,6 +97,12 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager(), false);
             rc = static_cast<bool>(fieldWriter);
         }
+    } else if (overrideName == "matchedattributeelementsfilter") {
+        string source_field = argument.empty() ? fieldName : argument;
+        if (getEnvironment() && getEnvironment()->getAttributeManager()) {
+            fieldWriter = AttributeCombinerDFW::create(source_field, *getEnvironment()->getAttributeManager(), true);
+            rc = static_cast<bool>(fieldWriter);
+        }
     } else {
         throw IllegalArgumentException("unknown override operation '" + overrideName + "' for field '" + fieldName + "'.");
     }
