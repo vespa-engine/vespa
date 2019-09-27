@@ -2,12 +2,14 @@
 
 #include "vsm-adapter.h"
 #include "docsumconfig.h"
+#include <vespa/searchlib/common/matching_elements.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::ResConfigEntry;
 using search::docsummary::KeywordExtractor;
+using search::MatchingElements;
 using config::ConfigSnapshot;
 
 namespace vsm {
@@ -45,6 +47,11 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
     (void) env;
 }
 
+std::unique_ptr<MatchingElements>
+GetDocsumsStateCallback::fill_matching_elements()
+{
+    return std::make_unique<MatchingElements>();
+}
 
 GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
 

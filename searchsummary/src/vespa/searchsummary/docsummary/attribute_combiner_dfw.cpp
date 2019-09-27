@@ -89,9 +89,10 @@ StructFields::~StructFields() = default;
 
 }
 
-AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName)
+AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements)
     : ISimpleDFW(),
       _stateIndex(0),
+      _filter_elements(filter_elements),
       _fieldName(fieldName)
 {
 }
@@ -112,15 +113,15 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 std::unique_ptr<IDocsumFieldWriter>
-AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeManager &attrMgr)
+AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeManager &attrMgr, bool filter_elements)
 {
     StructFields structFields(fieldName, attrMgr);
     if (structFields.getError()) {
         return std::unique_ptr<IDocsumFieldWriter>();
     } else if (!structFields.getMapFields().empty()) {
-        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields.getMapFields());
+        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields.getMapFields(), filter_elements);
     }
-    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields.getArrayFields());
+    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields.getArrayFields(), filter_elements);
 }
 
 void
@@ -128,7 +129,11 @@ AttributeCombinerDFW::insertField(uint32_t docid, GetDocsumsState *state, ResTyp
 {
     auto &fieldWriterState = state->_fieldWriterStates[_stateIndex];
     if (!fieldWriterState) {
-        fieldWriterState = allocFieldWriterState(*state->_attrCtx);
+        const MatchingElements *matching_elements = nullptr;
+        if (_filter_elements) {
+            matching_elements = &state->get_matching_elements();
+        }
+        fieldWriterState = allocFieldWriterState(*state->_attrCtx, matching_elements);
     }
     fieldWriterState->insertField(docid, target);
 }

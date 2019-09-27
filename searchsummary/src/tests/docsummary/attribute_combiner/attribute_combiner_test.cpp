@@ -8,12 +8,13 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
 #include <vespa/searchsummary/docsummary/attribute_combiner_dfw.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_combiner_test");
@@ -23,6 +24,7 @@ using search::AttributeManager;
 using search::AttributeVector;
 using search::IntegerAttribute;
 using search::FloatingPointAttribute;
+using search::MatchingElements;
 using search::StringAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
@@ -122,7 +124,7 @@ AttributeManagerFixture::buildAttribute(const vespalib::string &name,
     for (const auto &docValues : values) {
         uint32_t docId = 0;
         EXPECT_TRUE(attr->addDoc(docId));
-        EXPECT_NOT_EQUAL(0u, docId);
+        EXPECT_NE(0u, docId);
         for (const auto &value : docValues) {
             attr->append(docId, value, 1);
         }
@@ -157,40 +159,65 @@ AttributeManagerFixture::buildIntegerAttribute(const vespalib::string &name,
 class DummyStateCallback : public GetDocsumsStateCallback
 {
 public:
+    MatchingElements _matching_elements;
+
+    DummyStateCallback();
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
+    std::unique_ptr<MatchingElements> fill_matching_elements() override { return std::make_unique<MatchingElements>(_matching_elements); }
     ~DummyStateCallback() override { }
 };
 
+DummyStateCallback::DummyStateCallback()
+    : GetDocsumsStateCallback(),
+      _matching_elements()
+{
+    _matching_elements.add_matching_elements(1, "array", {1});
+    _matching_elements.add_matching_elements(3, "array", {0});
+    _matching_elements.add_matching_elements(4, "array", {1});
+    _matching_elements.add_matching_elements(1, "smap", {1});
+    _matching_elements.add_matching_elements(3, "smap", {0});
+    _matching_elements.add_matching_elements(4, "smap", {1});
+    _matching_elements.add_matching_elements(1, "map", {1});
+    _matching_elements.add_matching_elements(3, "map", {0});
+    _matching_elements.add_matching_elements(4, "map", {1});
+}
 
-struct Fixture
+struct AttributeCombinerTest : public ::testing::Test
 {
     AttributeManagerFixture             attrs;
     std::unique_ptr<IDocsumFieldWriter> writer;
     DummyStateCallback                  stateCallback;
     GetDocsumsState                     state;
 
-    Fixture(const vespalib::string &fieldName);
-    ~Fixture();
+    AttributeCombinerTest();
+    ~AttributeCombinerTest();
+    void set_field(const vespalib::string &field_name, bool filter_elements);
     void assertWritten(const vespalib::string &exp, uint32_t docId);
 };
 
-Fixture::Fixture(const vespalib::string &fieldName)
+AttributeCombinerTest::AttributeCombinerTest()
     : attrs(),
-      writer(AttributeCombinerDFW::create(fieldName, attrs.mgr)),
+      writer(),
       stateCallback(),
       state(stateCallback)
 {
-    EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._attrCtx = attrs.mgr.createContext();
+}
+
+AttributeCombinerTest::~AttributeCombinerTest() = default;
+
+void
+AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter_elements)
+{
+    writer = AttributeCombinerDFW::create(field_name, attrs.mgr, filter_elements);
+    EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
 }
 
-Fixture::~Fixture() = default;
-
 void
-Fixture::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
+AttributeCombinerTest::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
 {
     vespalib::Slime target;
     vespalib::slime::SlimeInserter inserter(target);
@@ -200,41 +227,76 @@ Fixture::assertWritten(const vespalib::string &expectedJson, uint32_t docId)
     search::SlimeOutputRawBufAdapter adapter(binary);
     vespalib::slime::BinaryFormat::encode(target, adapter);
     FieldBlock block(expectedJson);
-    if (!EXPECT_EQUAL(block.dataLen(), binary.GetUsedLen()) ||
-        !EXPECT_EQUAL(0, memcmp(block.data(), binary.GetDrainPos(), block.dataLen()))) {
+    EXPECT_EQ(block.dataLen(), binary.GetUsedLen());
+    EXPECT_EQ(0, memcmp(block.data(), binary.GetDrainPos(), block.dataLen()));
+    if (block.dataLen() != binary.GetUsedLen() ||
+        memcmp(block.data(), binary.GetDrainPos(), block.dataLen()) != 0) {
         LOG(error, "Expected '%s'", expectedJson.c_str());
         LOG(error, "Expected normalized '%s'", block.json.c_str());
         LOG(error, "Got '%s'", json.c_str());
     }
 }
 
-TEST_F("require that attribute combiner dfw generates correct slime output for array of struct", Fixture("array"))
+TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_array_of_struct)
 {
-    TEST_DO(f.assertWritten("[ { fval: 110.0, name: \"n1.1\", val: 10}, { name: \"n1.2\", val: 11}]", 1));
-    TEST_DO(f.assertWritten("[ { fval: 120.0, name: \"n2\", val: 20}, { fval: 121.0, val: 21 }]", 2));
-    TEST_DO(f.assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30}, { fval: 131.0, name: \"n3.2\"} ]", 3));
-    TEST_DO(f.assertWritten("[ { }, { fval: 141.0, name: \"n4.2\", val:  41} ]", 4));
-    TEST_DO(f.assertWritten("null", 5));
+    set_field("array", false);
+    assertWritten("[ { fval: 110.0, name: \"n1.1\", val: 10}, { name: \"n1.2\", val: 11}]", 1);
+    assertWritten("[ { fval: 120.0, name: \"n2\", val: 20}, { fval: 121.0, val: 21 }]", 2);
+    assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30}, { fval: 131.0, name: \"n3.2\"} ]", 3);
+    assertWritten("[ { }, { fval: 141.0, name: \"n4.2\", val:  41} ]", 4);
+    assertWritten("null", 5);
 }
 
-TEST_F("require that attribute combiner dfw generates correct slime output for map of struct", Fixture("smap"))
+TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_map_of_struct)
 {
-    TEST_DO(f.assertWritten("[ { key: \"k1.1\", value: { fval: 110.0, name: \"n1.1\", val: 10} }, { key: \"k1.2\", value: { name: \"n1.2\", val: 11} }]", 1));
-    TEST_DO(f.assertWritten("[ { key: \"k2\", value: { fval: 120.0, name: \"n2\", val: 20} }, { value: { fval: 121.0, val: 21 } }]", 2));
-    TEST_DO(f.assertWritten("[ { key: \"k3.1\", value: { fval: 130.0, name: \"n3.1\", val: 30} }, { key: \"k3.2\", value: { fval: 131.0, name: \"n3.2\"} } ]", 3));
-    TEST_DO(f.assertWritten("[ { value: { } }, { key: \"k4.2\", value: { fval: 141.0, name: \"n4.2\", val:  41} } ]", 4));
-    TEST_DO(f.assertWritten("null", 5));
+    set_field("smap", false);
+    assertWritten("[ { key: \"k1.1\", value: { fval: 110.0, name: \"n1.1\", val: 10} }, { key: \"k1.2\", value: { name: \"n1.2\", val: 11} }]", 1);
+    assertWritten("[ { key: \"k2\", value: { fval: 120.0, name: \"n2\", val: 20} }, { value: { fval: 121.0, val: 21 } }]", 2);
+    assertWritten("[ { key: \"k3.1\", value: { fval: 130.0, name: \"n3.1\", val: 30} }, { key: \"k3.2\", value: { fval: 131.0, name: \"n3.2\"} } ]", 3);
+    assertWritten("[ { value: { } }, { key: \"k4.2\", value: { fval: 141.0, name: \"n4.2\", val:  41} } ]", 4);
+    assertWritten("null", 5);
 }
 
-TEST_F("require that attribute combiner dfw generates correct slime output for map of string", Fixture("map"))
+TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_map_of_string)
 {
-    TEST_DO(f.assertWritten("[ { key: \"k1.1\", value: \"n1.1\" }, { key: \"k1.2\", value: \"n1.2\"}]", 1));
-    TEST_DO(f.assertWritten("[ { key: \"k2\"}]", 2));
-    TEST_DO(f.assertWritten("[ { key: \"k3.1\", value: \"n3.1\" }, { value: \"n3.2\"} ]", 3));
-    TEST_DO(f.assertWritten("[ { }, { key: \"k4.2\", value: \"n4.2\" } ]", 4));
-    TEST_DO(f.assertWritten("null", 5));
+    set_field("map", false);
+    assertWritten("[ { key: \"k1.1\", value: \"n1.1\" }, { key: \"k1.2\", value: \"n1.2\"}]", 1);
+    assertWritten("[ { key: \"k2\"}]", 2);
+    assertWritten("[ { key: \"k3.1\", value: \"n3.1\" }, { value: \"n3.2\"} ]", 3);
+    assertWritten("[ { }, { key: \"k4.2\", value: \"n4.2\" } ]", 4);
+    assertWritten("null", 5);
+}
+
+TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_array_of_struct)
+{
+    set_field("array", true);
+    assertWritten("[ { name: \"n1.2\", val: 11}]", 1);
+    assertWritten("[ ]", 2);
+    assertWritten("[ { fval: 130.0, name: \"n3.1\", val: 30} ]", 3);
+    assertWritten("[ { fval: 141.0, name: \"n4.2\", val:  41} ]", 4);
+    assertWritten("null", 5);
+}
+
+TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_map_of_struct)
+{
+    set_field("smap", true);
+    assertWritten("[ { key: \"k1.2\", value: { name: \"n1.2\", val: 11} }]", 1);
+    assertWritten("[ ]", 2);
+    assertWritten("[ { key: \"k3.1\", value: { fval: 130.0, name: \"n3.1\", val: 30} } ]", 3);
+    assertWritten("[ { key: \"k4.2\", value: { fval: 141.0, name: \"n4.2\", val:  41} } ]", 4);
+    assertWritten("null", 5);
+}
+
+TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_correct_slime_output_for_filtered_map_of_string)
+{
+    set_field("map", true);
+    assertWritten("[ { key: \"k1.2\", value: \"n1.2\"}]", 1);
+    assertWritten("[ ]", 2);
+    assertWritten("[ { key: \"k3.1\", value: \"n3.1\" } ]", 3);
+    assertWritten("[ { key: \"k4.2\", value: \"n4.2\" } ]", 4);
+    assertWritten("null", 5);
 }
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
