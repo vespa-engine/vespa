@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -133,6 +134,10 @@ public class CuratorDb {
 
     public Lock lock(TenantName name) {
         return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
+    }
+
+    public Lock lock(TenantAndApplicationId id) {
+        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
     public Lock lock(ApplicationId id) {
@@ -505,10 +510,14 @@ public class CuratorDb {
                 .append(tenant.value());
     }
 
-    private Path lockPath(ApplicationId application) {
+    private Path lockPath(TenantAndApplicationId application) {
         return lockPath(application.tenant())
-                .append(application.application().value())
-                .append(application.instance().value());
+                .append(application.application().value());
+    }
+
+    private Path lockPath(ApplicationId instance) {
+        return lockPath(TenantAndApplicationId.from(instance))
+                .append(instance.instance().value());
     }
 
     private Path lockPath(ApplicationId application, ZoneId zone) {
