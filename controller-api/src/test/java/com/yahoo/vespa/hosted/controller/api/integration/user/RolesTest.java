@@ -26,20 +26,20 @@ public class RolesTest {
 
         assertEquals(Role.hostedOperator(),
                      Roles.toRole("hostedOperator"));
-        assertEquals(Role.publicAdministrator(tenant),
+        assertEquals(Role.administrator(tenant),
                      Roles.toRole("my-tenant.publicAdministrator"));
-        assertEquals(Role.publicHeadless(tenant, application),
+        assertEquals(Role.headless(tenant, application),
                      Roles.toRole("my-tenant.my-application.publicHeadless"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalTenantName() {
-        Roles.valueOf(Role.publicAdministrator(TenantName.from("my.tenant")));
+        Roles.valueOf(Role.administrator(TenantName.from("my.tenant")));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void illegalApplicationName() {
-        Roles.valueOf(Role.publicHeadless(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
+        Roles.valueOf(Role.headless(TenantName.from("my-tenant"), ApplicationName.from("my.app")));
     }
 
     @Test(expected = IllegalArgumentException.class)

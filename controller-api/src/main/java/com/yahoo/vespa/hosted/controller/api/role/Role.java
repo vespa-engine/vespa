@@ -42,24 +42,24 @@ public abstract class Role {
         return new ApplicationRole(RoleDefinition.tenantPipeline, tenant, application);
     }
 
-    /** Returns a {@link RoleDefinition#publicReader} for the current system and given tenant. */
-    public static TenantRole publicReader(TenantName tenant) {
-        return new TenantRole(RoleDefinition.publicReader, tenant);
+    /** Returns a {@link RoleDefinition#reader} for the current system and given tenant. */
+    public static TenantRole reader(TenantName tenant) {
+        return new TenantRole(RoleDefinition.reader, tenant);
     }
 
-    /** Returns a {@link RoleDefinition#publicDeveloper} for the current system and given tenant. */
-    public static TenantRole publicDeveloper(TenantName tenant) {
-        return new TenantRole(RoleDefinition.publicDeveloper, tenant);
+    /** Returns a {@link RoleDefinition#developer} for the current system and given tenant. */
+    public static TenantRole developer(TenantName tenant) {
+        return new TenantRole(RoleDefinition.developer, tenant);
     }
 
-    /** Returns a {@link RoleDefinition#publicAdministrator} for the current system and given tenant. */
-    public static TenantRole publicAdministrator(TenantName tenant) {
-        return new TenantRole(RoleDefinition.publicAdministrator, tenant);
+    /** Returns a {@link RoleDefinition#administrator} for the current system and given tenant. */
+    public static TenantRole administrator(TenantName tenant) {
+        return new TenantRole(RoleDefinition.administrator, tenant);
     }
 
-    /** Returns a {@link RoleDefinition#publicHeadless} for the current system, given tenant, and application */
-    public static ApplicationRole publicHeadless(TenantName tenant, ApplicationName application) {
-        return new ApplicationRole(RoleDefinition.publicHeadless, tenant, application);
+    /** Returns a {@link RoleDefinition#headless} for the current system, given tenant, and application */
+    public static ApplicationRole headless(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.headless, tenant, application);
     }
 
     /** Returns the role definition of this bound role. */

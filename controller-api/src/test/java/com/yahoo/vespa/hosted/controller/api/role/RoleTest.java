@@ -61,11 +61,11 @@ public class RoleTest {
         TenantName tenant2 = TenantName.from("t2");
         ApplicationName application2 = ApplicationName.from("a2");
 
-        Role tenantAdmin1 = Role.publicAdministrator(tenant1);
-        Role tenantAdmin2 = Role.publicAdministrator(tenant2);
-        Role tenantDeveloper1 = Role.publicDeveloper(tenant1);
-        Role applicationHeadless11 = Role.publicHeadless(tenant1, application1);
-        Role applicationHeadless12 = Role.publicHeadless(tenant1, application2);
+        Role tenantAdmin1 = Role.administrator(tenant1);
+        Role tenantAdmin2 = Role.administrator(tenant2);
+        Role tenantDeveloper1 = Role.developer(tenant1);
+        Role applicationHeadless11 = Role.headless(tenant1, application1);
+        Role applicationHeadless12 = Role.headless(tenant1, application2);
 
         assertFalse(tenantAdmin1.implies(tenantAdmin2));
         assertFalse(tenantAdmin1.implies(tenantDeveloper1));

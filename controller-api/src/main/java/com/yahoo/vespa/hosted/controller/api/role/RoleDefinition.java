@@ -21,7 +21,7 @@ public enum RoleDefinition {
     hostedOperator(Policy.operator),
 
     /** Reader - the base role for all tenant users */
-    publicReader(
+    reader(
             Policy.tenantRead,
             Policy.applicationRead,
             Policy.deploymentRead,
@@ -29,7 +29,7 @@ public enum RoleDefinition {
     ),
 
     /** User - the dev.ops. role for normal Vespa tenant users */
-    publicDeveloper(
+    developer(
             Policy.applicationCreate,
             Policy.applicationUpdate,
             Policy.applicationDelete,
@@ -37,13 +37,13 @@ public enum RoleDefinition {
     ),
 
     /** Admin - the administrative function for user management etc. */
-    publicAdministrator(
+    administrator(
             Policy.tenantUpdate,
             Policy.tenantManager
     ),
 
     /** Headless - the application specific role identified by deployment keys for production */
-    publicHeadless(
+    headless(
             Policy.submission,
             Policy.deploymentPipeline,
             Policy.productionDeployment

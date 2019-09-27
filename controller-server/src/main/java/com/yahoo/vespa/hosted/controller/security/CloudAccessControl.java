@@ -41,9 +41,9 @@ public class CloudAccessControl implements AccessControl {
         }
 
         var userId = List.of(new UserId(credentials.user().getName()));
-        userManagement.addUsers(Role.publicAdministrator(spec.tenant()), userId);
-        userManagement.addUsers(Role.publicDeveloper(spec.tenant()), userId);
-        userManagement.addUsers(Role.publicReader(spec.tenant()), userId);
+        userManagement.addUsers(Role.administrator(spec.tenant()), userId);
+        userManagement.addUsers(Role.developer(spec.tenant()), userId);
+        userManagement.addUsers(Role.reader(spec.tenant()), userId);
 
         return tenant;
     }

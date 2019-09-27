@@ -184,7 +184,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
         List<User> currentUsers = users.listUsers(role);
-        if (role.definition() == RoleDefinition.publicAdministrator
+        if (role.definition() == RoleDefinition.administrator
                 && currentUsers.size() == 1
                 && currentUsers.get(0).email().equals(user.value()))
             throw new IllegalArgumentException("Can't remove the last owner of a tenant.");

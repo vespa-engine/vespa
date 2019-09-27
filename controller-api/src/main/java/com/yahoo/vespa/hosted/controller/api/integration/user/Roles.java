@@ -21,15 +21,15 @@ public class Roles {
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
     public static List<TenantRole> tenantRoles(TenantName tenant) {
         return List.of(
-                Role.publicReader(tenant),
-                Role.publicDeveloper(tenant),
-                Role.publicAdministrator(tenant)
+                Role.reader(tenant),
+                Role.developer(tenant),
+                Role.administrator(tenant)
         );
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
     public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(Role.publicHeadless(tenant, application));
+        return List.of(Role.headless(tenant, application));
     }
 
     /** Returns the {@link Role} the given value represents. */
@@ -44,9 +44,9 @@ public class Roles {
     /** Returns the {@link Role} the given tenant, application and role names correspond to. */
     public static Role toRole(TenantName tenant, String roleName) {
         switch (roleName) {
-            case "publicReader": return Role.publicReader(tenant);
-            case "publicUser": return Role.publicDeveloper(tenant);
-            case "publicAdministrator": return Role.publicAdministrator(tenant);
+            case "reader": return Role.reader(tenant);
+            case "user": return Role.developer(tenant);
+            case "administrator": return Role.administrator(tenant);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -54,7 +54,7 @@ public class Roles {
     /** Returns the {@link Role} the given tenant and role names correspond to. */
     public static Role toRole(TenantName tenant, ApplicationName application, String roleName) {
         switch (roleName) {
-            case "publicHeadless": return Role.publicHeadless(tenant, application);
+            case "headless": return Role.headless(tenant, application);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -90,10 +90,10 @@ public class Roles {
 
     public static String valueOf(RoleDefinition role) {
         switch (role) {
-            case publicAdministrator:  return "publicAdministrator";
-            case publicDeveloper:      return "publicUser";
-            case publicReader:         return "publicReader";
-            case publicHeadless:       return "publicHeadless";
+            case administrator:  return "administrator";
+            case developer:      return "user";
+            case reader:         return "reader";
+            case headless:       return "headless";
             default: throw new IllegalArgumentException("No value defined for role '" + role + "'.");
         }
     }
