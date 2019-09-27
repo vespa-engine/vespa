@@ -27,12 +27,12 @@ import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
+import com.yahoo.vespa.hosted.provision.os.OsVersions;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
-import com.yahoo.vespa.hosted.provision.os.OsVersions;
 import com.yahoo.vespa.hosted.provision.restapi.v2.NotFoundException;
 
 import java.time.Clock;
@@ -608,7 +608,7 @@ public class NodeRepository extends AbstractComponent {
      *  Non-Docker-container node: iff in state provisioned|failed|parked
      *  Docker-container-node:
      *    If only removing the container node: node in state ready
-     *    If also removing the parent node: child is in state provisioned|failed|parked|ready
+     *    If also removing the parent node: child is in state provisioned|failed|parked|dirty|ready
      */
     private boolean canRemove(Node node, boolean deletingAsChild) {
         if (node.type() == NodeType.tenant && node.allocation().isPresent()) {
@@ -623,7 +623,7 @@ public class NodeRepository extends AbstractComponent {
 
         } else if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER) {
             Set<Node.State> legalStates = EnumSet.of(Node.State.provisioned, Node.State.failed, Node.State.parked,
-                                                     Node.State.ready);
+                                                     Node.State.dirty, Node.State.ready);
 
             if (! legalStates.contains(node.state())) {
                 throw new IllegalArgumentException(String.format("Child node %s can only be removed from following states: %s",

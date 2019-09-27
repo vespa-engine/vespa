@@ -10,7 +10,6 @@ import org.junit.Test;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -119,11 +118,11 @@ public class NodeRepositoryTest {
         tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
         assertEquals(6, tester.nodeRepository().getNodes().size());
 
-        tester.setNodeState("node11", Node.State.dirty);
+        tester.setNodeState("node11", Node.State.active);
 
         try {
             tester.nodeRepository().removeRecursively("host1");
-            fail("Should not be able to delete host node, one of the children is in state dirty");
+            fail("Should not be able to delete host node, one of the children is in state active");
         } catch (IllegalArgumentException ignored) {
             // Expected
         }
@@ -133,9 +132,10 @@ public class NodeRepositoryTest {
         tester.nodeRepository().removeRecursively("host2");
         assertEquals(4, tester.nodeRepository().getNodes().size());
 
-        // Now node10 and node12 are in provisioned, set node11 to ready, and it should be OK to delete host1
-        tester.nodeRepository().setReady("node11", Agent.system, getClass().getSimpleName());
-        tester.nodeRepository().removeRecursively("node11"); // Remove one of the children first instead
+        // Now node10 is in provisioned, set node11 to failed and node12 to ready, and it should be OK to delete host1
+        tester.nodeRepository().fail("node11", Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().setReady("node12", Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().removeRecursively("node12"); // Remove one of the children first instead
         assertEquals(3, tester.nodeRepository().getNodes().size());
 
         tester.nodeRepository().removeRecursively("host1");
