@@ -39,7 +39,7 @@
             <dependency>
                 <groupId>aopalliance</groupId>
                 <artifactId>aopalliance</artifactId>
-                <version>1.0</version>
+                <version>${aopalliance.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -416,6 +416,7 @@
     </dependencyManagement>
 
     <properties>
+        <aopalliance.version>1.0</aopalliance.version>
         <bouncycastle.version>1.58</bouncycastle.version>
         <commons-daemon.version>1.0.3</commons-daemon.version>
         <felix.version>6.0.3</felix.version>

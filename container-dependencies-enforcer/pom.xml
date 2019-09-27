@@ -68,7 +68,7 @@
                                             </excludes>
                                             <includes>
                                                 <include>com.yahoo.vespa</include>
-                                                <include>aopalliance:aopalliance:[1.0]:jar:provided</include>
+                                                <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.core:jackson-core:[${jackson2.version}]:jar:provided</include>
                                                 <include>com.fasterxml.jackson.core:jackson-databind:[${jackson-databind.version}]:jar:provided</include>
