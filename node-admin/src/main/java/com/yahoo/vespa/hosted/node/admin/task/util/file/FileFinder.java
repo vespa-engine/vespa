@@ -193,7 +193,7 @@ public class FileFinder {
         private final Path path;
         private final BasicFileAttributes attributes;
 
-        FileAttributes(Path path, BasicFileAttributes attributes) {
+        public FileAttributes(Path path, BasicFileAttributes attributes) {
             this.path = path;
             this.attributes = attributes;
         }
