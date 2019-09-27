@@ -33,6 +33,7 @@ public enum RoleDefinition {
             Policy.applicationCreate,
             Policy.applicationUpdate,
             Policy.applicationDelete,
+            Policy.applicationOperations,
             Policy.developmentDeployment
     ),
 
