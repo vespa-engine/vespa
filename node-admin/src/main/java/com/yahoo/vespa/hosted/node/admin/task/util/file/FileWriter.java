@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -17,19 +19,29 @@ public class FileWriter {
     private final Path path;
     private final FileSync fileSync;
     private final PartialFileData.Builder fileDataBuilder = PartialFileData.builder();
-    private final Supplier<byte[]> contentProducer;
+    private final Optional<ByteArraySupplier> contentProducer;
 
     private boolean overwriteExistingFile = true;
+
+    public FileWriter(Path path) {
+        this(path, Optional.empty());
+    }
 
     public FileWriter(Path path, Supplier<String> contentProducer) {
         this(path, () -> contentProducer.get().getBytes(StandardCharsets.UTF_8));
     }
 
     public FileWriter(Path path, ByteArraySupplier contentProducer) {
+        this(path, Optional.of(contentProducer));
+    }
+
+    private FileWriter(Path path, Optional<ByteArraySupplier> contentProducer) {
         this.path = path;
         this.fileSync = new FileSync(path);
         this.contentProducer = contentProducer;
     }
+
+    public Path path() { return path; }
 
     public FileWriter withOwner(String owner) {
         fileDataBuilder.withOwner(owner);
@@ -52,11 +64,19 @@ public class FileWriter {
     }
 
     public boolean converge(TaskContext context) {
+        return converge(context, contentProducer.orElseThrow().get());
+    }
+
+    public boolean converge(TaskContext context, String utf8Content) {
+        return converge(context, utf8Content.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public boolean converge(TaskContext context, byte[] content) {
         if (!overwriteExistingFile && Files.isRegularFile(path)) {
             return false;
         }
 
-        fileDataBuilder.withContent(contentProducer.get());
+        fileDataBuilder.withContent(content);
         PartialFileData fileData = fileDataBuilder.create();
         return fileSync.convergeTo(context, fileData);
     }
