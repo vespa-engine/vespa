@@ -214,8 +214,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                                                metaStore, *feature_overrides);
         traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
-            reply->errorCode = ECODE_QUERY_PARSE_ERROR;
-            reply->errorMessage = "query execution failed (invalid query)";
             return reply;
         }
 

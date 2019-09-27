@@ -9,12 +9,13 @@
 #include <vespa/document/datatype/mapdatatype.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fnet/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");

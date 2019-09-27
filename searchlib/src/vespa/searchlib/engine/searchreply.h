@@ -83,10 +83,6 @@ public:
     std::vector<Hit>      hits;
     PropertiesMap         propertiesMap;
 
-    // in case of error
-    uint32_t              errorCode;
-    vespalib::string      errorMessage;
-
     SearchRequest::UP     request;
 
     SearchReply();

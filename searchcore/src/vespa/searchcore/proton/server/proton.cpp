@@ -23,6 +23,7 @@
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
