@@ -25,7 +25,6 @@ private:
     search::IAttributeManager            & _attrMgr;
     search::docsummary::GetDocsumsState    _docsumState;
     matching::SessionManager             & _sessionMgr;
-    std::unique_ptr<search::MatchingElements> _matching_elements;
 
     void initState();
     search::engine::DocsumReply::UP createReply();
@@ -49,7 +48,7 @@ public:
     void FillSummaryFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
     void FillRankFeatures(search::docsummary::GetDocsumsState * state, search::docsummary::IDocsumEnvironment * env) override;
     void ParseLocation(search::docsummary::GetDocsumsState * state) override;
-    const search::MatchingElements& fill_matching_elements() override;
+    std::unique_ptr<search::MatchingElements> fill_matching_elements() override;
 };
 
 } // namespace proton

@@ -165,7 +165,7 @@ public:
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
-    const MatchingElements& fill_matching_elements() override { return _matching_elements; }
+    std::unique_ptr<MatchingElements> fill_matching_elements() override { return std::make_unique<MatchingElements>(_matching_elements); }
     ~DummyStateCallback() override { }
 };
 

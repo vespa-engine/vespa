@@ -79,7 +79,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
-    const MatchingElements& fill_matching_elements() override { abort(); }
+    std::unique_ptr<MatchingElements> fill_matching_elements() override { abort(); }
 };
 
 

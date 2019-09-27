@@ -32,7 +32,7 @@ public:
     virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void ParseLocation(GetDocsumsState * state) = 0;
-    virtual const MatchingElements& fill_matching_elements() = 0;
+    virtual std::unique_ptr<MatchingElements> fill_matching_elements() = 0;
     virtual ~GetDocsumsStateCallback(void) { }
     GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;
     GetDocsumsStateCallback & operator = (const GetDocsumsStateCallback &) = delete;
@@ -87,7 +87,7 @@ public:
     FeatureSet::SP _rankFeatures;
 
     // Used by AttributeCombinerDFW when filtering is enabled
-    const search::MatchingElements* _matching_elements;
+    std::unique_ptr<search::MatchingElements> _matching_elements;
 
     GetDocsumsState(const GetDocsumsState &) = delete;
     GetDocsumsState& operator=(const GetDocsumsState &) = delete;

@@ -32,7 +32,6 @@ class GetDocsumsStateCallback : public search::docsummary::GetDocsumsStateCallba
 private:
     search::FeatureSet::SP _summaryFeatures;
     search::FeatureSet::SP _rankFeatures;
-    std::unique_ptr<search::MatchingElements> _matching_elements;
 
 public:
     GetDocsumsStateCallback();
@@ -40,7 +39,7 @@ public:
     void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) override;
     void ParseLocation(GetDocsumsState * state) override;
     virtual void FillDocumentLocations(GetDocsumsState * state, IDocsumEnvironment * env);
-    virtual const search::MatchingElements& fill_matching_elements() override;
+    virtual std::unique_ptr<search::MatchingElements> fill_matching_elements() override;
     void setSummaryFeatures(const search::FeatureSet::SP & sf) { _summaryFeatures = sf; }
     void setRankFeatures(const search::FeatureSet::SP & rf) { _rankFeatures = rf; }
     ~GetDocsumsStateCallback();

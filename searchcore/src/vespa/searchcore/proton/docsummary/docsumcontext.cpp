@@ -147,8 +147,7 @@ DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docs
     _attrCtx(attrCtx),
     _attrMgr(attrMgr),
     _docsumState(*this),
-    _sessionMgr(sessionMgr),
-    _matching_elements()
+    _sessionMgr(sessionMgr)
 {
     initState();
 }
@@ -215,11 +214,10 @@ DocsumContext::ParseLocation(search::docsummary::GetDocsumsState *state)
     state->_parsedLocation.reset(getLocation(_request.location, _attrMgr));
 }
 
-const MatchingElements&
+std::unique_ptr<MatchingElements>
 DocsumContext::fill_matching_elements()
 {
-    _matching_elements = std::make_unique<MatchingElements>();
-    return *_matching_elements;
+    return std::make_unique<MatchingElements>();
 }
 
 } // namespace proton

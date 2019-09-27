@@ -16,8 +16,7 @@ namespace vsm {
 
 GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _summaryFeatures(),
-    _rankFeatures(),
-    _matching_elements()
+    _rankFeatures()
 { }
 
 void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
@@ -48,13 +47,10 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
     (void) env;
 }
 
-const MatchingElements&
+std::unique_ptr<MatchingElements>
 GetDocsumsStateCallback::fill_matching_elements()
 {
-    if (!_matching_elements) {
-        _matching_elements = std::make_unique<MatchingElements>();
-    }
-    return *_matching_elements;
+    return std::make_unique<MatchingElements>();
 }
 
 GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
