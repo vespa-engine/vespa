@@ -133,12 +133,12 @@
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
-                <version>1</version>
+                <version>${javax.inject.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>
               <artifactId>javax.servlet-api</artifactId>
-              <version>3.1.0</version>
+              <version>${javax.servlet-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.validation</groupId>
@@ -186,7 +186,7 @@
             <dependency>
                 <groupId>net.jpountz.lz4</groupId>
                 <artifactId>lz4</artifactId>
-                <version>1.3.0</version>
+                <version>${lz4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
@@ -196,7 +196,7 @@
             <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.log</artifactId>
-                <version>1.0.1</version>
+                <version>${felix.log.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
@@ -321,7 +321,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20090211</version>
+                <version>${org.json.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
@@ -351,7 +351,7 @@
             <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
-                <version>1.4.01</version>
+                <version>${xml-apis.version}</version>
             </dependency>
 
             <!--  NOTE: The dependencies below are not provided from the jdisc container runtime, but had to be moved
@@ -420,12 +420,18 @@
         <bouncycastle.version>1.58</bouncycastle.version>
         <commons-daemon.version>1.0.3</commons-daemon.version>
         <felix.version>6.0.3</felix.version>
+        <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>20.0</guava.version>
         <guice.version>3.0</guice.version>
+        <javax.inject.version>1</javax.inject.version>
+        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.20.v20190813</jetty.version>
+        <lz4.version>1.3.0</lz4.version>
+        <org.json.version>20090211</org.json.version>
         <slf4j.version>1.7.5</slf4j.version>
+        <xml-apis.version>1.4.01</xml-apis.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
         <!-- MUST be updated each time jersey2 is upgraded! -->
