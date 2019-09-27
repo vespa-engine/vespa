@@ -294,13 +294,13 @@ public class InternalStepRunner implements StepRunner {
                     return Optional.of(running);
                 }
             }
-            else if (timedOut(deployment.get(), endpointTimeout)) {
+            else if (timedOut(id, deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return Optional.of(error);
             }
         }
 
-        if (timedOut(deployment.get(), installationTimeout)) {
+        if (timedOut(id, deployment.get(), installationTimeout)) {
             logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
             return Optional.of(installationFailed);
         }
@@ -326,13 +326,13 @@ public class InternalStepRunner implements StepRunner {
                     return Optional.of(running);
                 }
             }
-            else if (timedOut(deployment.get(), endpointTimeout)) {
+            else if (timedOut(id, deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return Optional.of(error);
             }
         }
 
-        if (timedOut(deployment.get(), testerTimeout)) {
+        if (timedOut(id, deployment.get(), testerTimeout)) {
             logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes of real deployment!");
             return Optional.of(error);
         }
@@ -443,14 +443,14 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Attempting to find endpoints ...");
         var endpoints = controller.applications().clusterEndpoints(id.application(), zones);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(deployment.get(), endpointTimeout)) {
+        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(id, deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
         logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isEmpty() && timedOut(deployment.get(), endpointTimeout)) {
+        if (testerEndpoint.isEmpty() && timedOut(id, deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
             return Optional.of(error);
         }
@@ -622,7 +622,13 @@ public class InternalStepRunner implements StepRunner {
      * to be able to collect the Vespa log from the deployment. Thus, the lower of the zone's deployment expiry,
      * and the given default installation timeout, minus one minute, is used as a timeout threshold.
      */
-    private boolean timedOut(Deployment deployment, Duration defaultTimeout) {
+    private boolean timedOut(RunId id, Deployment deployment, Duration defaultTimeout) {
+        // TODO jonmv: This is a workaround for new deployment writes not yet being visible in spite of Curator locking.
+        // TODO Investigate what's going on here, and remove this workaround.
+        Run run = controller.jobController().run(id).get();
+        if (run.start().isAfter(deployment.at()))
+            return false;
+
         Duration timeout = controller.zoneRegistry().getDeploymentTimeToLive(deployment.zone())
                                      .filter(zoneTimeout -> zoneTimeout.compareTo(defaultTimeout) < 0)
                                      .orElse(defaultTimeout);
