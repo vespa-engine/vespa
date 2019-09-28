@@ -3,12 +3,11 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;

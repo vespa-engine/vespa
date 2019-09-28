@@ -4,10 +4,8 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
 
 import java.time.Instant;
 import java.time.ZoneOffset;

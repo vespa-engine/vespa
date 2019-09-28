@@ -201,12 +201,6 @@ public class Instance {
                             metrics, pemDeployKey, rotations, rotationStatus);
     }
 
-    public Instance withPemDeployKey(String pemDeployKey) {
-        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
-                            deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-                            metrics, Optional.ofNullable(pemDeployKey), rotations, rotationStatus);
-    }
-
     public Instance with(List<AssignedRotation> assignedRotations) {
         return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
                             deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
