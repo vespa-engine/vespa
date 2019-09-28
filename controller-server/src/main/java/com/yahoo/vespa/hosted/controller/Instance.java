@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
@@ -299,7 +300,7 @@ public class Instance {
     /**
      * Returns the oldest platform version this has deployed in a permanent zone (not test or staging).
      *
-     * This is unfortunately quite similar to {@link ApplicationController#oldestInstalledPlatform(ApplicationId)},
+     * This is unfortunately quite similar to {@link ApplicationController#oldestInstalledPlatform(TenantAndApplicationId)},
      * but this checks only what the controller has deployed to the production zones, while that checks the node repository
      * to see what's actually installed on each node. Thus, this is the right choice for, e.g., target Vespa versions for
      * new deployments, while that is the right choice for version to compile against.

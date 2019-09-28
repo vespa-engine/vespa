@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -79,8 +80,11 @@ public class Application {
         this.pemDeployKey = Objects.requireNonNull(pemDeployKey, "pemDeployKey cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.internal = internal;
-        this.instances = instances.stream().collect(Collectors.toUnmodifiableMap(instance -> instance.id().instance(),
-                                                                                 instance -> instance));
+        this.instances = ImmutableMap.copyOf((Iterable<Map.Entry<InstanceName, Instance>>)
+                                                     instances.stream()
+                                                              .map(instance -> Map.entry(instance.name(), instance))
+                                                              .sorted(Comparator.comparing(Map.Entry::getKey))
+                                                             ::iterator);
     }
 
     /** Returns an aggregate application, from the given instances, if at least one. */
