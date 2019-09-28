@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -82,7 +83,7 @@ public class ApplicationSerializer {
     private static final String majorVersionField = "majorVersion";
     private static final String writeQualityField = "writeQuality";
     private static final String queryQualityField = "queryQuality";
-    private static final String pemDeployKeyField = "pemDeployKey";
+    private static final String pemDeployKeyField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
     private static final String applicationCertificateField = "applicationCertificate";
@@ -186,7 +187,7 @@ public class ApplicationSerializer {
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
-        application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
+        deployKeysToSlime(application.pemDeployKey().stream(), root.setArray(pemDeployKeyField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -202,6 +203,9 @@ public class ApplicationSerializer {
         }
     }
 
+    private void deployKeysToSlime(Stream<String> pemDeployKeys, Cursor array) {
+        pemDeployKeys.forEach(array::addString);
+    }
     private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
         for (Deployment deployment : deployments)
             deploymentToSlime(deployment, array.addObject());
@@ -374,14 +378,14 @@ public class ApplicationSerializer {
         OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
-        Optional<String> pemDeployKey = Serializers.optionalString(root.field(pemDeployKeyField));
+        List<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeyField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKey, projectId, builtInternally, instances);
+                               pemDeployKeys.stream().findFirst(), projectId, builtInternally, instances);
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
@@ -401,6 +405,11 @@ public class ApplicationSerializer {
         return instances;
     }
 
+    private List<String> pemDeployKeysFromSlime(Inspector array) {
+        List<String> keys = new ArrayList<>();
+        array.traverse((ArrayTraverser) (__, key) -> keys.add(key.asString()));
+        return keys;
+    }
     private List<Deployment> deploymentsFromSlime(Inspector array) {
         List<Deployment> deployments = new ArrayList<>();
         array.traverse((ArrayTraverser) (int i, Inspector item) -> deployments.add(deploymentFromSlime(item)));

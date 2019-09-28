@@ -16,7 +16,9 @@
   "outstandingChangeField": false,
   "queryQuality": 100,
   "writeQuality": 99.99894341115082,
-  "pemDeployKey": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----",
+  "pemDeployKeys": [
+    "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"
+  ],
   "instances": [
     {
       "instanceName": "default",
