@@ -40,10 +40,6 @@ public class JobList {
         return new JobList(jobs);
     }
 
-    public static JobList from(Application application) {
-        return from(application.deploymentJobs().jobStatus().values());
-    }
-
     public static JobList from(Instance instance) {
         return from(instance.deploymentJobs().jobStatus().values());
     }

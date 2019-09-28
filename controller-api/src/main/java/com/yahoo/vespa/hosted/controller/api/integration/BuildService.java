@@ -8,6 +8,7 @@ import java.util.Objects;
 /**
  * @author jonmv
  */
+// TODO jonmv: Remove this.
 public interface BuildService {
 
     /**

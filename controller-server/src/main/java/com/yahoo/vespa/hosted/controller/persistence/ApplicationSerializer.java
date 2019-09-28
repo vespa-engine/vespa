@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -13,6 +14,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -29,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
@@ -67,22 +70,29 @@ public class ApplicationSerializer {
     private static final String createdAtField = "createdAt";
     private static final String deploymentSpecField = "deploymentSpecField";
     private static final String validationOverridesField = "validationOverrides";
-    private static final String deploymentsField = "deployments";
-    private static final String deploymentJobsField = "deploymentJobs";
+    private static final String instancesField = "instances";
     private static final String deployingField = "deployingField";
+    private static final String projectIdField = "projectId";
+    private static final String builtInternallyField = "builtInternally";
     private static final String pinnedField = "pinned";
     private static final String outstandingChangeField = "outstandingChangeField";
+    private static final String deploymentIssueField = "deploymentIssueId";
     private static final String ownershipIssueIdField = "ownershipIssueId";
     private static final String ownerField = "confirmedOwner";
     private static final String majorVersionField = "majorVersion";
     private static final String writeQualityField = "writeQuality";
     private static final String queryQualityField = "queryQuality";
     private static final String pemDeployKeyField = "pemDeployKey";
-    private static final String assignedRotationsField = "assignedRotations";
-    private static final String assignedRotationEndpointField = "endpointId";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
     private static final String applicationCertificateField = "applicationCertificate";
+
+    // Instance fields
+    private static final String instanceNameField = "instanceName";
+    private static final String deploymentsField = "deployments";
+    private static final String deploymentJobsField = "deploymentJobs";
+    private static final String assignedRotationsField = "assignedRotations";
+    private static final String assignedRotationEndpointField = "endpointId";
 
     // Deployment fields
     private static final String zoneField = "zone";
@@ -104,10 +114,7 @@ public class ApplicationSerializer {
     private static final String lastWritesPerSecondField = "lastWritesPerSecond";
 
     // DeploymentJobs fields
-    private static final String projectIdField = "projectId";
     private static final String jobStatusField = "jobStatus";
-    private static final String issueIdField = "jiraIssueId";
-    private static final String builtInternallyField = "builtInternally";
 
     // JobStatus field
     private static final String jobTypeField = "jobType";
@@ -162,26 +169,37 @@ public class ApplicationSerializer {
 
     // ------------------ Serialization
 
-    public Slime toSlime(Application instance) {
+    public Slime toSlime(Application application) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        root.setString(idField, instance.id().serializedForm());
-        root.setLong(createdAtField, instance.createdAt().toEpochMilli());
-        root.setString(deploymentSpecField, instance.deploymentSpec().xmlForm());
-        root.setString(validationOverridesField, instance.validationOverrides().xmlForm());
-        deploymentsToSlime(instance.deployments().values(), root.setArray(deploymentsField));
-        toSlime(instance.deploymentJobs(), root.setObject(deploymentJobsField));
-        toSlime(instance.change(), root, deployingField);
-        toSlime(instance.outstandingChange(), root, outstandingChangeField);
-        instance.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
-        instance.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
-        instance.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
-        root.setDouble(queryQualityField, instance.metrics().queryServiceQuality());
-        root.setDouble(writeQualityField, instance.metrics().writeServiceQuality());
-        instance.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
-        assignedRotationsToSlime(instance.rotations(), root, assignedRotationsField);
-        toSlime(instance.rotationStatus(), root.setArray(rotationStatusField));
+        root.setString(idField, application.id().serialized());
+        root.setLong(createdAtField, application.createdAt().toEpochMilli());
+        root.setString(deploymentSpecField, application.deploymentSpec().xmlForm());
+        root.setString(validationOverridesField, application.validationOverrides().xmlForm());
+        application.projectId().ifPresent(projectId -> root.setLong(projectIdField, projectId));
+        application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
+        application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
+        root.setBool(builtInternallyField, application.internal());
+        toSlime(application.change(), root, deployingField);
+        toSlime(application.outstandingChange(), root, outstandingChangeField);
+        application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
+        application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
+        root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
+        root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
+        application.pemDeployKey().ifPresent(pemDeployKey -> root.setString(pemDeployKeyField, pemDeployKey));
+        instancesToSlime(application, root.setArray(instancesField));
         return slime;
+    }
+
+    private void instancesToSlime(Application application, Cursor array) {
+        for (Instance instance : application.instances().values()) {
+            Cursor instanceObject = array.addObject();
+            instanceObject.setString(instanceNameField, instance.name().value());
+            deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
+            toSlime(instance.deploymentJobs(), instanceObject.setObject(deploymentJobsField));
+            assignedRotationsToSlime(instance.rotations(), instanceObject, assignedRotationsField);
+            toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
+        }
     }
 
     private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
@@ -273,10 +291,7 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(DeploymentJobs deploymentJobs, Cursor cursor) {
-        deploymentJobs.projectId().ifPresent(projectId -> cursor.setLong(projectIdField, projectId));
         jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
-        deploymentJobs.issueId().ifPresent(jiraIssueId -> cursor.setString(issueIdField, jiraIssueId.value()));
-        cursor.setBool(builtInternallyField, deploymentJobs.deployedInternally());
     }
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
@@ -347,26 +362,43 @@ public class ApplicationSerializer {
     public Application fromSlime(Slime slime) {
         Inspector root = slime.get();
 
-        ApplicationId id = ApplicationId.fromSerializedForm(root.field(idField).asString());
+        TenantAndApplicationId id = TenantAndApplicationId.fromSerialized(root.field(idField).asString());
         Instant createdAt = Instant.ofEpochMilli(root.field(createdAtField).asLong());
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
-        List<Deployment> deployments = deploymentsFromSlime(root.field(deploymentsField));
-        DeploymentJobs deploymentJobs = deploymentJobsFromSlime(root.field(deploymentJobsField));
         Change deploying = changeFromSlime(root.field(deployingField));
         Change outstandingChange = changeFromSlime(root.field(outstandingChangeField));
+        Optional<IssueId> deploymentIssueId = Serializers.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
         Optional<IssueId> ownershipIssueId = Serializers.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         Optional<User> owner = Serializers.optionalString(root.field(ownerField)).map(User::from);
         OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
         Optional<String> pemDeployKey = Serializers.optionalString(root.field(pemDeployKeyField));
-        List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, root);
-        RotationStatus rotationStatus = rotationStatusFromSlime(root);
+        List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
+        OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
+        boolean builtInternally = root.field(builtInternallyField).asBool();
 
-        return new Application(id, createdAt, deploymentSpec, validationOverrides, deployments, deploymentJobs,
-                            deploying, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
-                            pemDeployKey, assignedRotations, rotationStatus);
+        return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
+                               deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
+                               pemDeployKey, projectId, builtInternally, instances);
+    }
+
+    private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
+        List<Instance> instances = new ArrayList<>();
+        field.traverse((ArrayTraverser) (name, object) -> {
+            InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
+            List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField));
+            DeploymentJobs deploymentJobs = deploymentJobsFromSlime(object.field(deploymentJobsField));
+            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, object);
+            RotationStatus rotationStatus = rotationStatusFromSlime(object);
+            instances.add(new Instance(id.instance(instanceName),
+                                       deployments,
+                                       deploymentJobs,
+                                       assignedRotations,
+                                       rotationStatus));
+        });
+        return instances;
     }
 
     private List<Deployment> deploymentsFromSlime(Inspector array) {
@@ -497,12 +529,9 @@ public class ApplicationSerializer {
     }
 
     private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
-        OptionalLong projectId = Serializers.optionalLong(object.field(projectIdField));
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
-        Optional<IssueId> issueId = Serializers.optionalString(object.field(issueIdField)).map(IssueId::from);
-        boolean builtInternally = object.field(builtInternallyField).asBool();
 
-        return new DeploymentJobs(projectId, jobStatusList, issueId, builtInternally);
+        return new DeploymentJobs(OptionalLong.empty(), jobStatusList, Optional.empty(), false); // WARNING: Unused variables.
     }
 
     private Change changeFromSlime(Inspector object) {

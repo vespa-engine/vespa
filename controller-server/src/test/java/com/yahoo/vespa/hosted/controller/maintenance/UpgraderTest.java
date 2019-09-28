@@ -62,12 +62,12 @@ public class UpgraderTest {
         Application default2 = tester.createAndDeploy("default2", 5, "default");
         Application conservative0 = tester.createAndDeploy("conservative0", 6, "conservative");
 
-        Instance canary0default = tester.instance(canary0.id());
-        Instance canary1default = tester.instance(canary1.id());
-        Instance default0default = tester.instance(default0.id());
-        Instance default1default = tester.instance(default1.id());
-        Instance default2default = tester.instance(default2.id());
-        Instance conservative0default = tester.instance(conservative0.id());
+        Instance canary0default = tester.defaultInstance(canary0.id());
+        Instance canary1default = tester.defaultInstance(canary1.id());
+        Instance default0default = tester.defaultInstance(default0.id());
+        Instance default1default = tester.defaultInstance(default1.id());
+        Instance default2default = tester.defaultInstance(default2.id());
+        Instance conservative0default = tester.defaultInstance(conservative0.id());
 
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
@@ -134,9 +134,9 @@ public class UpgraderTest {
         tester.upgradeSystem(version3);
         assertEquals(version3, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
-        tester.buildService().remove(ControllerTester.buildJob(canary0.id(), stagingTest));
-        tester.buildService().remove(ControllerTester.buildJob(canary1.id(), systemTest));
-        tester.buildService().remove(ControllerTester.buildJob(canary1.id(), stagingTest));
+        tester.buildService().remove(ControllerTester.buildJob(canary0default.id(), stagingTest));
+        tester.buildService().remove(ControllerTester.buildJob(canary1default.id(), systemTest));
+        tester.buildService().remove(ControllerTester.buildJob(canary1default.id(), stagingTest));
         tester.triggerUntilQuiescence();
 
         assertEquals("New system version: Should upgrade Canaries", 4, tester.buildService().jobs().size());
@@ -204,11 +204,11 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
 
         assertEquals("Upgrade of defaults are scheduled", 10, tester.buildService().jobs().size());
-        assertEquals(version4, tester.instance(default0.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default1.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default2.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default3.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default4.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default0.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default1.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default2.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default3.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default4.id()).change().platform().get());
 
         tester.completeUpgrade(default0, version4, "default");
         // State: Default applications started upgrading to version4 (and one completed)
@@ -224,11 +224,11 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
 
         assertEquals("Upgrade of defaults are scheduled", 10, tester.buildService().jobs().size());
-        assertEquals(version5, tester.instance(default0.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default1.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default2.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default3.id()).change().platform().get());
-        assertEquals(version4, tester.instance(default4.id()).change().platform().get());
+        assertEquals(version5, tester.defaultInstance(default0.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default1.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default2.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default3.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default4.id()).change().platform().get());
 
         tester.completeUpgrade(default1, version4, "default");
         tester.completeUpgrade(default2, version4, "default");
@@ -260,7 +260,7 @@ public class UpgraderTest {
         assertEquals("Upgrade of defaults are scheduled on " + version4 + " instead, since " + version5 + " is broken: " +
                      "This is default3 since it failed upgrade on both " + version4 + " and " + version5,
                      2, tester.buildService().jobs().size());
-        assertEquals(version4, tester.instance(default3.id()).change().platform().get());
+        assertEquals(version4, tester.defaultInstance(default3.id()).change().platform().get());
     }
 
     @Test
@@ -347,7 +347,7 @@ public class UpgraderTest {
         tester.upgradeSystem(version);
 
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        Instance instance = tester.instance(app.id());
+        Instance instance = tester.defaultInstance(app.id());
         tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, systemTest);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, stagingTest);
@@ -370,8 +370,8 @@ public class UpgraderTest {
 
         // staging-test fails and failure is recorded
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, stagingTest);
-        assertTrue("Failure is recorded", tester.instance(app.id()).deploymentJobs().hasFailures());
-        assertTrue("Application has pending change", tester.instance(app.id()).change().hasTargets());
+        assertTrue("Failure is recorded", tester.defaultInstance(app.id()).deploymentJobs().hasFailures());
+        assertTrue("Application has pending change", tester.defaultInstance(app.id()).change().hasTargets());
 
         // New version is released
         version = Version.fromString("6.4");
@@ -382,7 +382,7 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         tester.jobCompletion(stagingTest).application(app).unsuccessful().submit();
-        assertTrue("Application still has failures", tester.instance(app.id()).deploymentJobs().hasFailures());
+        assertTrue("Application still has failures", tester.defaultInstance(app.id()).deploymentJobs().hasFailures());
         assertEquals(2, tester.buildService().jobs().size());
 
         // Upgrader runs again, nothing happens as test jobs are already running.
@@ -435,7 +435,7 @@ public class UpgraderTest {
         tester.triggerUntilQuiescence();
 
         // apps pass system-test, but do not trigger next jobs as upgrade is cancelled
-        assertFalse("No change present", tester.applications().require(default4.id()).change().hasTargets());
+        assertFalse("No change present", tester.applications().requireInstance(default4.id().defaultInstance()).change().hasTargets());
         tester.jobCompletion(systemTest).application(default0).submit();
         tester.jobCompletion(systemTest).application(default1).submit();
         tester.jobCompletion(systemTest).application(default2).submit();
@@ -510,7 +510,7 @@ public class UpgraderTest {
         tester.upgrader().maintain();
         tester.triggerUntilQuiescence();
         assertEquals("Upgrade scheduled for remaining apps", 10, tester.buildService().jobs().size());
-        assertEquals("default4 is still upgrading to 5.1", v1, tester.instance(default4.id()).change().platform().get());
+        assertEquals("default4 is still upgrading to 5.1", v1, tester.defaultInstance(default4.id()).change().platform().get());
 
         // 4/5 applications fail (in the last prod zone) and lowers confidence
         tester.completeUpgradeWithError(default0, v2, "default", productionUsEast3);
@@ -520,8 +520,8 @@ public class UpgraderTest {
         tester.upgradeSystem(v2);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
-        assertEquals(v2, tester.instance("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
-        assertEquals(v0, tester.instance("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
+        assertEquals(v2, tester.defaultInstance("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
+        assertEquals(v0, tester.defaultInstance("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
         tester.upgrader().maintain();
         tester.buildService().clear();
         tester.triggerUntilQuiescence();
@@ -529,16 +529,16 @@ public class UpgraderTest {
         assertEquals("Upgrade to 5.1 scheduled for apps not completely on 5.1 or 5.2", 10, tester.buildService().jobs().size());
 
         // The tester code for completing upgrades does not handle this scenario, so we trigger each step manually (for one app)
-        tester.deployAndNotify(tester.instance("default0").id(), DeploymentTester.applicationPackage("default"), true, systemTest);
-        tester.deployAndNotify(tester.instance("default0").id(), DeploymentTester.applicationPackage("default"), true, stagingTest);
+        tester.deployAndNotify(tester.defaultInstance("default0").id(), DeploymentTester.applicationPackage("default"), true, systemTest);
+        tester.deployAndNotify(tester.defaultInstance("default0").id(), DeploymentTester.applicationPackage("default"), true, stagingTest);
         // prod zone on 5.2 (usWest1) is skipped, but we still trigger the next zone from triggerReadyJobs:
-        tester.deployAndNotify(tester.instance("default0").id(), DeploymentTester.applicationPackage("default"), true, productionUsEast3);
+        tester.deployAndNotify(tester.defaultInstance("default0").id(), DeploymentTester.applicationPackage("default"), true, productionUsEast3);
 
         // Resulting state:
-        assertEquals(v2, tester.instance("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
+        assertEquals(v2, tester.defaultInstance("default0").deployments().get(ZoneId.from("prod.us-west-1")).version());
         assertEquals("Last zone is upgraded to v1",
-                     v1, tester.instance("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
-        assertFalse(tester.instance("default0").change().hasTargets());
+                     v1, tester.defaultInstance("default0").deployments().get(ZoneId.from("prod.us-east-3")).version());
+        assertFalse(tester.defaultInstance("default0").change().hasTargets());
     }
 
     @Test
@@ -653,7 +653,7 @@ public class UpgraderTest {
                 .build();
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackage);
-        Instance instance = tester.instance(app.id());
+        Instance instance = tester.defaultInstance(app.id());
 
         // New version is released
         version = Version.fromString("6.3");
@@ -691,7 +691,7 @@ public class UpgraderTest {
                 .build();
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackage);
-        Instance instance = tester.instance(app.id());
+        Instance instance = tester.defaultInstance(app.id());
 
         // New version is released
         version = Version.fromString("6.3");
@@ -748,7 +748,7 @@ public class UpgraderTest {
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
 
         // App is completely upgraded to the latest version
-        for (Deployment deployment : tester.applications().require(app.id()).deployments().values())
+        for (Deployment deployment : tester.applications().requireInstance(instance.id()).deployments().values())
             assertEquals(version, deployment.version());
     }
 
@@ -822,7 +822,7 @@ public class UpgraderTest {
         tester.jobCompletion(stagingTest).application(default4).unsuccessful().submit();
 
         // 5th app never reports back and has a dead job, but no ongoing change
-        Instance deadLocked = tester.applications().require(default4.id());
+        Instance deadLocked = tester.applications().requireInstance(default4.id().defaultInstance());
         tester.assertRunning(systemTest, deadLocked.id());
         assertFalse("No change present", deadLocked.change().hasTargets());
 
@@ -850,10 +850,10 @@ public class UpgraderTest {
         tester.completeUpgrade(default2, version, defaultApplicationPackageV2);
         tester.completeUpgrade(default3, version, defaultApplicationPackageV2);
 
-        assertEquals(version, tester.instance(default0.id()).oldestDeployedPlatform().get());
-        assertEquals(version, tester.instance(default1.id()).oldestDeployedPlatform().get());
-        assertEquals(version, tester.instance(default2.id()).oldestDeployedPlatform().get());
-        assertEquals(version, tester.instance(default3.id()).oldestDeployedPlatform().get());
+        assertEquals(version, tester.defaultInstance(default0.id()).oldestDeployedPlatform().get());
+        assertEquals(version, tester.defaultInstance(default1.id()).oldestDeployedPlatform().get());
+        assertEquals(version, tester.defaultInstance(default2.id()).oldestDeployedPlatform().get());
+        assertEquals(version, tester.defaultInstance(default3.id()).oldestDeployedPlatform().get());
     }
 
     @Test
@@ -878,7 +878,7 @@ public class UpgraderTest {
 
         // Dev deployment which should be ignored
         Application dev0 = tester.createApplication("dev0", "tenant1", 7, 1L);
-        tester.controllerTester().deploy(dev0.id(), ZoneId.from(Environment.dev, RegionName.from("dev-region")));
+        tester.controllerTester().deploy(dev0.id().defaultInstance(), ZoneId.from(Environment.dev, RegionName.from("dev-region")));
 
         // New version is released and canaries upgrade
         version = Version.fromString("6.3");
@@ -959,7 +959,7 @@ public class UpgraderTest {
         Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
         Application default0 = tester.createAndDeploy("default0", 2, default0ApplicationPackage);
         tester.applications().lockApplicationOrThrow(default0.id(), a -> tester.applications().store(a.withMajorVersion(6)));
-        assertEquals(OptionalInt.of(6), tester.applications().get(default0.id()).get().majorVersion());
+        assertEquals(OptionalInt.of(6), tester.applications().getInstance(default0.id().defaultInstance()).get().majorVersion());
 
         // New major version is released
         version = Version.fromString("7.0");
@@ -1047,7 +1047,7 @@ public class UpgraderTest {
                 .build();
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackage);
-        Instance instance = tester.instance(app.id());
+        Instance instance = tester.defaultInstance(app.id());
 
         // New version is released
         version = Version.fromString("6.3");
@@ -1076,7 +1076,7 @@ public class UpgraderTest {
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsWest1);
         assertTrue("All jobs consumed", tester.buildService().jobs().isEmpty());
 
-        instance = tester.instance(app.id());
+        instance = tester.defaultInstance(app.id());
         for (Deployment deployment : instance.deployments().values()) {
             assertEquals(version, deployment.version());
             assertEquals(applicationVersion, deployment.applicationVersion().id());
@@ -1101,7 +1101,7 @@ public class UpgraderTest {
                 .build();
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackage);
-        Instance instance = tester.instance(app.id());
+        Instance instance = tester.defaultInstance(app.id());
 
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
@@ -1154,7 +1154,7 @@ public class UpgraderTest {
                 .build();
 
         Application app = tester.createAndDeploy("app1", 1, applicationPackage);
-        Instance instance = tester.instance(app.id());
+        Instance instance = tester.defaultInstance(app.id());
 
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
 
@@ -1179,16 +1179,16 @@ public class UpgraderTest {
         assertEquals(Collections.emptyList(), tester.buildService().jobs()); // No jobs left.
 
         tester.outstandingChangeDeployer().run();
-        assertFalse(tester.instance(app.id()).change().hasTargets());
+        assertFalse(tester.defaultInstance(app.id()).change().hasTargets());
         tester.clock().advance(Duration.ofHours(2));
 
         tester.outstandingChangeDeployer().run();
-        assertTrue(tester.instance(app.id()).change().hasTargets());
+        assertTrue(tester.defaultInstance(app.id()).change().hasTargets());
         tester.readyJobTrigger().run();
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsWest1);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsCentral1);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsEast3);
-        assertFalse(tester.instance(app.id()).change().hasTargets());
+        assertFalse(tester.defaultInstance(app.id()).change().hasTargets());
     }
 
     @Test
@@ -1199,7 +1199,7 @@ public class UpgraderTest {
 
         // Create an application with pinned platform version.
         Application application = tester.createApplication("application", "tenant", 2, 3);
-        Instance instance = tester.instance(application.id());
+        Instance instance = tester.defaultInstance(application.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().environment(Environment.prod)
                                                                                .region("us-east-3")
                                                                                .region("us-west-1")
@@ -1207,33 +1207,33 @@ public class UpgraderTest {
         tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
 
         tester.deployCompletely(application, applicationPackage);
-        assertFalse(tester.instance(application.id()).change().hasTargets());
-        assertTrue(tester.instance(application.id()).change().isPinned());
-        assertEquals(2, tester.instance(application.id()).deployments().size());
+        assertFalse(tester.defaultInstance(application.id()).change().hasTargets());
+        assertTrue(tester.defaultInstance(application.id()).change().isPinned());
+        assertEquals(2, tester.defaultInstance(application.id()).deployments().size());
 
         // Application does not upgrade.
         Version version1 = Version.fromString("6.3");
         tester.upgradeSystem(version1);
         tester.upgrader().maintain();
-        assertFalse(tester.instance(application.id()).change().hasTargets());
-        assertTrue(tester.instance(application.id()).change().isPinned());
+        assertFalse(tester.defaultInstance(application.id()).change().hasTargets());
+        assertTrue(tester.defaultInstance(application.id()).change().isPinned());
 
         // New application package is deployed.
         tester.deployCompletely(application, applicationPackage, BuildJob.defaultBuildNumber + 1);
-        assertFalse(tester.instance(application.id()).change().hasTargets());
-        assertTrue(tester.instance(application.id()).change().isPinned());
+        assertFalse(tester.defaultInstance(application.id()).change().hasTargets());
+        assertTrue(tester.defaultInstance(application.id()).change().isPinned());
 
         // Application upgrades to new version when pin is removed.
         tester.deploymentTrigger().cancelChange(application.id(), PIN);
         tester.upgrader().maintain();
-        assertTrue(tester.instance(application.id()).change().hasTargets());
-        assertFalse(tester.instance(application.id()).change().isPinned());
+        assertTrue(tester.defaultInstance(application.id()).change().hasTargets());
+        assertFalse(tester.defaultInstance(application.id()).change().isPinned());
 
         // Application is pinned to new version, and upgrade is therefore not cancelled, even though confidence is broken.
         tester.deploymentTrigger().forceChange(application.id(), Change.empty().withPin());
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
-        assertEquals(version1, tester.instance(application.id()).change().platform().get());
+        assertEquals(version1, tester.defaultInstance(application.id()).change().platform().get());
 
         // Application fails upgrade after one zone is complete, and is pinned again to the old version.
         tester.deployAndNotify(instance.id(), Optional.empty(), true, systemTest);
@@ -1244,16 +1244,16 @@ public class UpgraderTest {
         tester.deploymentTrigger().cancelChange(application.id(), ALL);
         tester.deploymentTrigger().forceChange(application.id(), Change.of(version0).withPin());
         tester.buildService().clear();
-        assertEquals(version0, tester.instance(application.id()).change().platform().get());
+        assertEquals(version0, tester.defaultInstance(application.id()).change().platform().get());
 
         // Application downgrades to pinned version.
         tester.readyJobTrigger().maintain();
         tester.deployAndNotify(instance.id(), Optional.empty(), true, systemTest);
         tester.deployAndNotify(instance.id(), Optional.empty(), true, stagingTest);
         tester.deployAndNotify(instance.id(), Optional.empty(), true, productionUsEast3);
-        assertTrue(tester.instance(application.id()).change().hasTargets());
+        assertTrue(tester.defaultInstance(application.id()).change().hasTargets());
         tester.deployAndNotify(instance.id(), Optional.empty(), true, productionUsWest1);
-        assertFalse(tester.instance(application.id()).change().hasTargets());
+        assertFalse(tester.defaultInstance(application.id()).change().hasTargets());
     }
 
     @Test
@@ -1288,22 +1288,22 @@ public class UpgraderTest {
         // App 2 is allowed on new major and upgrades
         tester.controller().applications().lockApplicationIfPresent(app2.id(), app -> tester.applications().store(app.withMajorVersion(7)));
         tester.upgrader().maintain();
-        assertEquals(version2, tester.controller().applications().require(app2.id()).change().platform().get());
+        assertEquals(version2, tester.controller().applications().requireInstance(app2.id().defaultInstance()).change().platform().get());
 
         // App 1 is unpinned and upgrades to latest 6
         tester.controller().applications().lockApplicationIfPresent(app1.id(), app ->
                 tester.controller().applications().store(app.withChange(app.get().change().withoutPin())));
         tester.upgrader().maintain();
         assertEquals("Application upgrades to latest allowed major", version1,
-                     tester.controller().applications().require(app1.id()).change().platform().get());
+                     tester.controller().applications().requireInstance(app1.id().defaultInstance()).change().platform().get());
     }
 
     @Test
     public void testsEachUpgradeCombinationWithFailingDeployments() {
         DeploymentTester tester = new DeploymentTester();
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
-        Instance instance = tester.instance(application.id());
-        Supplier<Instance> app = () -> tester.instance(application.id());
+        Instance instance = tester.defaultInstance(application.id());
+        Supplier<Instance> app = () -> tester.defaultInstance(application.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")

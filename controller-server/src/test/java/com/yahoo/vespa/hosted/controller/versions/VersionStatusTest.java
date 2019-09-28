@@ -158,13 +158,13 @@ public class VersionStatusTest {
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
         assertEquals("No applications are failing on version1.", ImmutableSet.of(), v1.statistics().failing());
-        assertEquals("All applications have at least one active production deployment on version 1.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v1.statistics().production());
+        assertEquals("All applications have at least one active production deployment on version 1.", ImmutableSet.of(app1.id().defaultInstance(), app2.id().defaultInstance(), app3.id().defaultInstance()), v1.statistics().production());
         assertEquals("No applications have active deployment jobs on version1.", ImmutableSet.of(), v1.statistics().deploying());
 
         VespaVersion v2 = versions.get(1);
         assertEquals(version2, v2.versionNumber());
-        assertEquals("All applications have failed on version2 in at least one zone.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v2.statistics().failing());
-        assertEquals("Only app2 has successfully deployed to production on version2.", ImmutableSet.of(app2.id()), v2.statistics().production());
+        assertEquals("All applications have failed on version2 in at least one zone.", ImmutableSet.of(app1.id().defaultInstance(), app2.id().defaultInstance(), app3.id().defaultInstance()), v2.statistics().failing());
+        assertEquals("Only app2 has successfully deployed to production on version2.", ImmutableSet.of(app2.id().defaultInstance()), v2.statistics().production());
         // Should test the below, but can't easily be done with current test framework. This test passes in DeploymentApiTest.
         // assertEquals("All applications are being retried on version2.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v2.statistics().deploying());
     }

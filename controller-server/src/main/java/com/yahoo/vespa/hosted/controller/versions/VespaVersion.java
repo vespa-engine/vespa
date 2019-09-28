@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 
 import java.time.Instant;
@@ -49,12 +51,12 @@ public class VespaVersion implements Comparable<VespaVersion> {
 
     public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
         // 'production on this': All deployment jobs upgrading to this version have completed without failure
-        InstanceList productionOnThis = InstanceList.from(statistics.production(), controller.applications())
-                                                    .notUpgradingTo(statistics.version())
-                                                    .notFailing();
-        InstanceList failingOnThis = InstanceList.from(statistics.failing(), controller.applications());
-        InstanceList all = InstanceList.from(controller.applications().asList())
-                                       .hasDeployment();
+        ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications())
+                                                          .notUpgradingTo(statistics.version())
+                                                          .notFailing();
+        ApplicationList failingOnThis = ApplicationList.from(statistics.failing(), controller.applications());
+        ApplicationList all = ApplicationList.from(controller.applications().asList())
+                                             .withProductionDeployment();
 
         // 'broken' if any Canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
@@ -162,10 +164,10 @@ public class VespaVersion implements Comparable<VespaVersion> {
     }
 
     private static boolean nonCanaryApplicationsBroken(Version version,
-                                                       InstanceList failingOnThis,
-                                                       InstanceList productionOnThis) {
-        InstanceList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOn(version);
-        InstanceList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
+                                                       ApplicationList failingOnThis,
+                                                       ApplicationList productionOnThis) {
+        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOn(version);
+        ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
 
         if (productionNonCanaries.size() + failingNonCanaries.size() == 0) return false;
 

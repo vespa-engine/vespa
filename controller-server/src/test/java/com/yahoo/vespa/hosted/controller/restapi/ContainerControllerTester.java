@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
@@ -94,16 +95,17 @@ public class ContainerControllerTester {
                                         .uploadArtifact(applicationPackage)
                                         .submit();
         DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
+        // TODO jonmv: Connect instances from deployment spec to deployments below.
         boolean succeeding = true;
         for (var job : steps.jobs()) {
             if (!succeeding) return;
             var zone = job.zone(controller().system());
-            deploy(application.id(), applicationPackage, zone);
+            deploy(application.id().defaultInstance(), applicationPackage, zone);
             if (failStaging && zone.environment() == Environment.staging) {
                 succeeding = false;
             }
             if (zone.environment().isTest()) {
-                controller().applications().deactivate(application.id(), zone);
+                controller().applications().deactivate(application.id().defaultInstance(), zone);
             }
             jobCompletion(job).application(application).success(succeeding).projectId(projectId).submit();
         }
@@ -127,7 +129,7 @@ public class ContainerControllerTester {
     /*
      * Authorize action on tenantDomain/application for a given screwdriverId
      */
-    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, ApplicationId id) {
+    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, TenantAndApplicationId id) {
         AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
                 .getComponent(AthenzClientFactoryMock.class.getName());
 

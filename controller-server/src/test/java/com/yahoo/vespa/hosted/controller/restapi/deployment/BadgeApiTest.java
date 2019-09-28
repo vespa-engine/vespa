@@ -26,7 +26,7 @@ public class BadgeApiTest extends ControllerContainerTest {
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .region("us-west-1")
                 .build();
-        tester.controller().jobController().submit(application.id(),
+        tester.controller().jobController().submit(application.id().defaultInstance(),
                                                    new SourceRevision("repository", "branch", "commit"),
                                                    "foo@bar",
                                                    123,

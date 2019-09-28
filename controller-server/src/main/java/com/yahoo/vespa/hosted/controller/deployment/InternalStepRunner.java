@@ -19,8 +19,9 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -37,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -573,9 +575,9 @@ public class InternalStepRunner implements StepRunner {
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
     private void sendNotification(Run run, DualLogger logger) {
-        Instance instance = controller.applications().require(run.id().application());
-        Notifications notifications = instance.deploymentSpec().notifications();
-        boolean newCommit = instance.change().application()
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
+        Notifications notifications = application.deploymentSpec().notifications();
+        boolean newCommit = application.change().application()
                                     .map(run.versions().targetApplication()::equals)
                                     .orElse(false);
         When when = newCommit ? failingCommit : failing;
@@ -611,8 +613,8 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the real application with the given id. */
     private Instance application(ApplicationId id) {
-        controller.applications().lockOrThrow(id, __ -> { }); // Memory fence.
-        return controller.applications().require(id);
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), __ -> { }); // Memory fence.
+        return controller.applications().requireInstance(id);
     }
 
     /**
@@ -638,7 +640,7 @@ public class InternalStepRunner implements StepRunner {
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
-        DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
+        DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();

@@ -42,7 +42,7 @@ public class RotationStatusUpdaterTest {
                 .build();
         tester.deployCompletely(application, applicationPackage);
 
-        Supplier<Instance> app = () -> tester.instance(application.id());
+        Supplier<Instance> app = () -> tester.defaultInstance(application.id());
         Supplier<Deployment> deployment1 = () -> app.get().deployments().get(zone1);
         Supplier<Deployment> deployment2 = () -> app.get().deployments().get(zone2);
         Supplier<Deployment> deployment3 = () -> app.get().deployments().get(zone3);

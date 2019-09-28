@@ -4,12 +4,15 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
@@ -50,10 +53,10 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** Returns the applications to maintain issue status for. */
-    private List<Instance> applications() {
-        return InstanceList.from(controller().applications().asList())
-                           .withProjectId()
-                           .asList();
+    private List<Application> applications() {
+        return ApplicationList.from(controller().applications().asList())
+                              .withProjectId()
+                              .asList();
     }
 
     /**
@@ -61,18 +64,18 @@ public class DeploymentIssueReporter extends Maintainer {
      * and store the issue id for the filed issues. Also, clear the issueIds of applications
      * where deployment has not failed for this amount of time.
      */
-    private void maintainDeploymentIssues(List<Instance> instances) {
-        Set<ApplicationId> failingApplications = InstanceList.from(instances)
-                                                             .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
-                                                             .asList().stream()
-                                                             .map(Instance::id)
-                                                             .collect(Collectors.toSet());
+    private void maintainDeploymentIssues(List<Application> applications) {
+        Set<TenantAndApplicationId> failingApplications = ApplicationList.from(applications)
+                                                                         .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
+                                                                         .asList().stream()
+                                                                         .map(Application::id)
+                                                                         .collect(Collectors.toSet());
 
-        for (Instance instance : instances)
-            if (failingApplications.contains(instance.id()))
-                fileDeploymentIssueFor(instance.id());
+        for (Application application : applications)
+            if (failingApplications.contains(application.id()))
+                fileDeploymentIssueFor(application.id());
             else
-                store(instance.id(), null);
+                store(application.id(), null);
     }
 
     /**
@@ -80,7 +83,7 @@ public class DeploymentIssueReporter extends Maintainer {
      * applications that have been failing the upgrade to the system version for
      * longer than the set grace period, or update this list if the issue already exists.
      */
-    private void maintainPlatformIssue(List<Instance> instances) {
+    private void maintainPlatformIssue(List<Application> applications) {
         if (controller().system() == SystemName.cd)
             return;
         
@@ -89,21 +92,25 @@ public class DeploymentIssueReporter extends Maintainer {
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))
             return;
 
-        if (InstanceList.from(instances)
-                        .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
-                        .isEmpty())
+        if (ApplicationList.from(applications)
+                           .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
+                           .isEmpty())
             return;
 
-        List<ApplicationId> failingApplications = InstanceList.from(instances)
-                                                              .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
-                                                              .idList();
+        List<ApplicationId> failingApplications = ApplicationList.from(applications)
+                                                                 .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
+                                                                 .idList()
+                                                                 .stream()
+                                                                 .map(TenantAndApplicationId::defaultInstance)
+                                                                 .collect(Collectors.toUnmodifiableList());
 
+        // TODO jonmv: Send only tenant and application, here and elsewhere in this.
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
     }
 
-    private Tenant ownerOf(ApplicationId applicationId) {
+    private Tenant ownerOf(TenantAndApplicationId applicationId) {
         return controller().tenants().get(applicationId.tenant())
-                .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
+                           .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
 
     private User userFor(Tenant tenant) {
@@ -111,13 +118,13 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */
-    private void fileDeploymentIssueFor(ApplicationId applicationId) {
+    private void fileDeploymentIssueFor(TenantAndApplicationId applicationId) {
         try {
             Tenant tenant = ownerOf(applicationId);
             tenant.contact().ifPresent(contact -> {
                 User assignee = tenant.type() == Tenant.Type.user ? userFor(tenant) : null;
-                Optional<IssueId> ourIssueId = controller().applications().require(applicationId).deploymentJobs().issueId();
-                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId, assignee, contact);
+                Optional<IssueId> ourIssueId = controller().applications().requireApplication(applicationId).deploymentIssueId();
+                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId.defaultInstance(), assignee, contact);
                 store(applicationId, issueId);
             });
         }
@@ -127,8 +134,8 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** Escalate issues for which there has been no activity for a certain amount of time. */
-    private void escalateInactiveDeploymentIssues(Collection<Instance> instances) {
-        instances.forEach(application -> application.deploymentJobs().issueId().ifPresent(issueId -> {
+    private void escalateInactiveDeploymentIssues(Collection<Application> applications) {
+        applications.forEach(application -> application.deploymentIssueId().ifPresent(issueId -> {
             try {
                 Tenant tenant = ownerOf(application.id());
                 deploymentIssues.escalateIfInactive(issueId,
@@ -141,7 +148,7 @@ public class DeploymentIssueReporter extends Maintainer {
         }));
     }
 
-    private void store(ApplicationId id, IssueId issueId) {
+    private void store(TenantAndApplicationId id, IssueId issueId) {
         controller().applications().lockApplicationIfPresent(id, application ->
                 controller().applications().store(application.withDeploymentIssueId(issueId)));
     }

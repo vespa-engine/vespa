@@ -4,8 +4,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -70,7 +72,7 @@ public class Upgrader extends Maintainer {
         cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTargets), reason);
 
         // Schedule the right upgrades
-        InstanceList applications = applications();
+        ApplicationList applications = applications();
         canaryTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.canary), target));
         defaultTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target));
         conservativeTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.conservative), target));
@@ -90,12 +92,12 @@ public class Upgrader extends Maintainer {
     }
 
     /** Returns a list of all applications, except those which are pinned — these should not be manipulated by the Upgrader */
-    private InstanceList applications() {
-        return InstanceList.from(controller().applications().asList()).unpinned();
+    private ApplicationList applications() {
+        return ApplicationList.from(controller().applications().asList()).unpinned();
     }
 
-    private void upgrade(InstanceList applications, Version version) {
-        applications = applications.hasProductionDeployment();
+    private void upgrade(ApplicationList applications, Version version) {
+        applications = applications.withProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()));
         applications = applications.notDeploying(); // wait with applications deploying an application change or already upgrading
@@ -103,15 +105,15 @@ public class Upgrader extends Maintainer {
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
-        for (Instance instance : applications.asList())
-            controller().applications().deploymentTrigger().triggerChange(instance.id(), Change.of(version));
+        for (Application application : applications.asList())
+            controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
     }
 
-    private void cancelUpgradesOf(InstanceList applications, String reason) {
+    private void cancelUpgradesOf(ApplicationList applications, String reason) {
         if (applications.isEmpty()) return;
         log.info("Cancelling upgrading of " + applications.asList().size() + " applications: " + reason);
-        for (Instance instance : applications.asList())
-            controller().applications().deploymentTrigger().cancelChange(instance.id(), PLATFORM);
+        for (Application application : applications.asList())
+            controller().applications().deploymentTrigger().cancelChange(application.id(), PLATFORM);
     }
 
     /** Returns the number of applications to upgrade in this run */

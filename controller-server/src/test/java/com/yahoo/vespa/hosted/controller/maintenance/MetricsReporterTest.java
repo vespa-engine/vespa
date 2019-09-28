@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -63,7 +62,7 @@ public class MetricsReporterTest {
 
         // 1 app fails system-test
         tester.jobCompletion(component).application(app4).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app4.id(), Optional.of(applicationPackage), false, systemTest);
+        tester.deployAndNotify(app4.id().defaultInstance(), Optional.of(applicationPackage), false, systemTest);
 
         metricsReporter.maintain();
         assertEquals(25.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
@@ -82,22 +81,22 @@ public class MetricsReporterTest {
         Application app = tester.createApplication("app1", "tenant1", 1, 11L);
         tester.deployCompletely(app, applicationPackage);
         reporter.maintain();
-        assertEquals(Duration.ZERO, getAverageDeploymentDuration(app.id())); // An exceptionally fast deployment :-)
+        assertEquals(Duration.ZERO, getAverageDeploymentDuration(app.id().defaultInstance())); // An exceptionally fast deployment :-)
 
         // App spends 3 hours deploying
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
         tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, systemTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, systemTest);
 
         tester.clock().advance(Duration.ofMinutes(30));
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, stagingTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, stagingTest);
 
         tester.clock().advance(Duration.ofMinutes(90));
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, productionUsWest1);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, productionUsWest1);
         reporter.maintain();
 
         // Average time is 1 hour (system-test) + 90 minutes (staging-test runs in parallel with system-test) + 90 minutes (production) / 3 jobs
-        assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(app.id()));
+        assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(app.id().defaultInstance()));
 
         // Another deployment starts and stalls for 12 hours
         tester.jobCompletion(component).application(app).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
@@ -108,7 +107,7 @@ public class MetricsReporterTest {
                              .plus(Duration.ofHours(12)) // hanging staging-test
                              .plus(Duration.ofMinutes(90)) // previous production job
                              .dividedBy(3), // Total number of orchestrated jobs
-                     getAverageDeploymentDuration(app.id()));
+                     getAverageDeploymentDuration(app.id().defaultInstance()));
     }
 
     @Test
@@ -125,41 +124,41 @@ public class MetricsReporterTest {
         // Initial deployment without failures
         tester.deployCompletely(app, applicationPackage);
         reporter.maintain();
-        assertEquals(0, getDeploymentsFailingUpgrade(app.id()));
+        assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Failing application change is not counted
         tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), false, systemTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, systemTest);
         reporter.maintain();
-        assertEquals(0, getDeploymentsFailingUpgrade(app.id()));
+        assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Application change completes
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, systemTest);
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, stagingTest);
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, productionUsWest1);
-        assertFalse("Change deployed", tester.controller().applications().require(app.id()).change().hasTargets());
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, systemTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, stagingTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, productionUsWest1);
+        assertFalse("Change deployed", tester.controller().applications().requireApplication(app.id()).change().hasTargets());
 
         // New versions is released and upgrade fails in test environments
         Version version = Version.fromString("7.1");
         tester.upgradeSystem(version);
         tester.upgrader().maintain();
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), false, systemTest);
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), false, stagingTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, systemTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, stagingTest);
         reporter.maintain();
-        assertEquals(2, getDeploymentsFailingUpgrade(app.id()));
+        assertEquals(2, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Test and staging pass and upgrade fails in production
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, systemTest);
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, stagingTest);
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), false, productionUsWest1);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, systemTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, stagingTest);
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, productionUsWest1);
         reporter.maintain();
-        assertEquals(1, getDeploymentsFailingUpgrade(app.id()));
+        assertEquals(1, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Upgrade eventually succeeds
-        tester.deployAndNotify(app.id(), Optional.of(applicationPackage), true, productionUsWest1);
-        assertFalse("Upgrade deployed", tester.controller().applications().require(app.id()).change().hasTargets());
+        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, productionUsWest1);
+        assertFalse("Upgrade deployed", tester.controller().applications().requireApplication(app.id()).change().hasTargets());
         reporter.maintain();
-        assertEquals(0, getDeploymentsFailingUpgrade(app.id()));
+        assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
     }
 
     @Test
@@ -172,11 +171,11 @@ public class MetricsReporterTest {
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
         Application application = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-west-1")), 3);
-        tester.configServer().generateWarnings(new DeploymentId(application.id(), ZoneId.from("prod", "us-east-3")), 4);
+        tester.configServer().generateWarnings(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-west-1")), 3);
+        tester.configServer().generateWarnings(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-east-3")), 4);
         tester.deployCompletely(application, applicationPackage);
         reporter.maintain();
-        assertEquals(4, getDeploymentWarnings(application.id()));
+        assertEquals(4, getDeploymentWarnings(application.id().defaultInstance()));
     }
 
     @Test

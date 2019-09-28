@@ -42,11 +42,11 @@ public class OutstandingChangeDeployerTest {
         Application app2 = tester.createAndDeploy("app2", 22, applicationPackage);
 
         Version version = new Version(6, 2);
-        tester.deploymentTrigger().triggerChange(tester.instance("app1").id(), Change.of(version));
+        tester.deploymentTrigger().triggerChange(app1.id(), Change.of(version));
         tester.deploymentTrigger().triggerReadyJobs();
 
-        assertEquals(Change.of(version), tester.instance("app1").change());
-        assertFalse(tester.instance("app1").outstandingChange().hasTargets());
+        assertEquals(Change.of(version), tester.defaultInstance("app1").change());
+        assertFalse(tester.defaultInstance("app1").outstandingChange().hasTargets());
 
         tester.jobCompletion(JobType.component)
               .application(app1)
@@ -55,7 +55,7 @@ public class OutstandingChangeDeployerTest {
               .uploadArtifact(applicationPackage)
               .submit();
 
-        Instance instance = tester.instance("app1");
+        Instance instance = tester.defaultInstance("app1");
         assertTrue(instance.outstandingChange().hasTargets());
         assertEquals("1.0.43-cafed00d", instance.outstandingChange().application().get().id());
         assertEquals(2, tester.buildService().jobs().size());
@@ -74,13 +74,13 @@ public class OutstandingChangeDeployerTest {
 
         deployer.maintain();
         tester.deploymentTrigger().triggerReadyJobs();
-        instance = tester.instance("app1");
+        instance = tester.defaultInstance("app1");
         assertEquals("1.0.43-cafed00d", instance.change().application().get().id());
         List<BuildService.BuildJob> jobs = tester.buildService().jobs();
         assertEquals(1, jobs.size());
         assertEquals(JobType.productionUsWest1.jobName(), jobs.get(0).jobName());
-        assertEquals(11, jobs.get(0).projectId());
-        assertFalse(tester.instance("app1").outstandingChange().hasTargets());
+        assertEquals(app1.id().defaultInstance(), jobs.get(0).applicationId());
+        assertFalse(tester.defaultInstance("app1").outstandingChange().hasTargets());
     }
 
 }

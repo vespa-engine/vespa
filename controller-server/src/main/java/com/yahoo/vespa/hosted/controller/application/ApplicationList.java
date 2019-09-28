@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.Instance;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -14,7 +15,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A list of applications which can be filtered in various ways.
@@ -23,20 +25,24 @@ import java.util.stream.Stream;
  */
 public class ApplicationList {
 
-    private final ImmutableList<Application> list;
+    private final List<Application> list;
 
-    private ApplicationList(Iterable<Application> applications) {
-        this.list = ImmutableList.copyOf(applications);
+    private ApplicationList(List<Application> applications) {
+        this.list = applications;
     }
 
     // ----------------------------------- Factories
 
-    public static ApplicationList from(Iterable<Application> applications) {
-        return new ApplicationList(applications);
+    public static ApplicationList from(Collection<Application> applications) {
+        return new ApplicationList(List.copyOf(applications));
     }
 
     public static ApplicationList from(Collection<ApplicationId> ids, ApplicationController applications) {
-        return listOf(ids.stream().map(applications::requireApplication));
+        return new ApplicationList(ids.stream()
+                                      .map(TenantAndApplicationId::from)
+                                      .distinct()
+                                      .map(applications::requireApplication)
+                                      .collect(Collectors.toUnmodifiableList()));
     }
 
     // ----------------------------------- Accessors
@@ -45,7 +51,7 @@ public class ApplicationList {
     public List<Application> asList() { return list; }
 
     /** Returns the ids of the applications in this as an immutable list */
-    public List<ApplicationId> idList() { return ImmutableList.copyOf(list.stream().map(Application::id)::iterator); }
+    public List<TenantAndApplicationId> idList() { return list.stream().map(Application::id).collect(Collectors.toUnmodifiableList()); }
 
     public boolean isEmpty() { return list.isEmpty(); }
 
@@ -55,17 +61,17 @@ public class ApplicationList {
 
     /** Returns the subset of applications which are upgrading (to any version), not considering block windows. */
     public ApplicationList upgrading() {
-        return listOf(list.stream().filter(application -> application.change().platform().isPresent()));
+        return filteredOn(application -> application.change().platform().isPresent());
     }
 
     /** Returns the subset of applications which are currently upgrading to the given version */
     public ApplicationList upgradingTo(Version version) {
-        return listOf(list.stream().filter(application -> isUpgradingTo(version, application)));
+        return filteredOn(application -> isUpgradingTo(version, application));
     }
 
     /** Returns the subset of applications which are not pinned to a certain Vespa version. */
     public ApplicationList unpinned() {
-        return listOf(list.stream().filter(application -> ! application.change().isPinned()));
+        return filteredOn(application -> ! application.change().isPinned());
     }
 
     /** Returns the subset of applications which are currently not upgrading to the given version */
@@ -75,7 +81,7 @@ public class ApplicationList {
 
     /** Returns the subset of applications which are currently not upgrading to any of the given versions */
     public ApplicationList notUpgradingTo(Collection<Version> versions) {
-        return listOf(list.stream().filter(application -> versions.stream().noneMatch(version -> isUpgradingTo(version, application))));
+        return filteredOn(application -> versions.stream().noneMatch(version -> isUpgradingTo(version, application)));
     }
 
     /**
@@ -89,79 +95,87 @@ public class ApplicationList {
 
     /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
     public ApplicationList withChanges() {
-        return listOf(list.stream().filter(application -> application.change().hasTargets() || application.outstandingChange().hasTargets()));
+        return filteredOn(application -> application.change().hasTargets() || application.outstandingChange().hasTargets());
     }
 
     /** Returns the subset of applications which are currently not deploying a change */
     public ApplicationList notDeploying() {
-        return listOf(list.stream().filter(application -> ! application.change().hasTargets()));
+        return filteredOn(application -> ! application.change().hasTargets());
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs */
     public ApplicationList notFailing() {
-        return listOf(list.stream().filter(application -> ! application.deploymentJobs().hasFailures()));
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .noneMatch(instance -> instance.deploymentJobs().hasFailures()));
     }
 
     /** Returns the subset of applications which currently have failing jobs */
     public ApplicationList failing() {
-        return listOf(list.stream().filter(application -> application.deploymentJobs().hasFailures()));
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .anyMatch(instance -> instance.deploymentJobs().hasFailures()));
     }
 
     /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */
     public ApplicationList failingUpgradeToVersionSince(Version version, Instant threshold) {
-        return listOf(list.stream().filter(application -> failingUpgradeToVersionSince(application, version, threshold)));
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .anyMatch(instance -> failingUpgradeToVersionSince(instance, version, threshold)));
     }
 
     /** Returns the subset of applications which have been failing an application change since the given instant */
     public ApplicationList failingApplicationChangeSince(Instant threshold) {
-        return listOf(list.stream().filter(application -> failingApplicationChangeSince(application, threshold)));
+        return filteredOn(application -> application.instances().values().stream()
+                          .anyMatch(instance -> failingApplicationChangeSince(instance, threshold)));
     }
 
     /** Returns the subset of applications which currently does not have any failing jobs on the given version */
     public ApplicationList notFailingOn(Version version) {
-        return listOf(list.stream().filter(application -> ! failingOn(version, application)));
+        return filteredOn(application -> application.instances().values().stream()
+                          .noneMatch(instance -> failingOn(version, instance)));
     }
 
     /** Returns the subset of applications which have at least one production deployment */
-    public ApplicationList hasDeployment() {
-        return listOf(list.stream().filter(a -> !a.productionDeployments().isEmpty()));
+    public ApplicationList withProductionDeployment() {
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .anyMatch(instance -> instance.productionDeployments().size() > 0));
     }
 
     /** Returns the subset of applications which started failing on the given version */
     public ApplicationList startedFailingOn(Version version) {
-        return listOf(list.stream().filter(application -> ! JobList.from(application).firstFailing().on(version).isEmpty()));
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .anyMatch(instance ->  ! JobList.from(instance).firstFailing().on(version).isEmpty()));
     }
 
     /** Returns the subset of applications which has the given upgrade policy */
     public ApplicationList with(UpgradePolicy policy) {
-        return listOf(list.stream().filter(a ->  a.deploymentSpec().upgradePolicy() == policy));
+        return filteredOn(application ->  application.deploymentSpec().upgradePolicy() == policy);
     }
 
     /** Returns the subset of applications which does not have the given upgrade policy */
     public ApplicationList without(UpgradePolicy policy) {
-        return listOf(list.stream().filter(a ->  a.deploymentSpec().upgradePolicy() != policy));
+        return filteredOn(application ->  application.deploymentSpec().upgradePolicy() != policy);
     }
 
     /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
     public ApplicationList onLowerVersionThan(Version version) {
-        return listOf(list.stream()
-                          .filter(a -> a.productionDeployments().values().stream()
-                                                                         .anyMatch(d -> d.version().isBefore(version))));
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .flatMap(instance -> instance.productionDeployments().values().stream())
+                                                    .anyMatch(deployment -> deployment.version().isBefore(version)));
     }
 
     /** Returns the subset of applications which have a project ID */
     public ApplicationList withProjectId() {
-        return listOf(list.stream().filter(a -> a.deploymentJobs().projectId().isPresent()));
-    }
-
-    /** Returns the subset of applications which have at least one production deployment */
-    public ApplicationList hasProductionDeployment() {
-        return listOf(list.stream().filter(a -> ! a.productionDeployments().isEmpty()));
+        return filteredOn(application -> application.projectId().isPresent());
     }
 
     /** Returns the subset of applications that are allowed to upgrade at the given time */
     public ApplicationList canUpgradeAt(Instant instant) {
-        return listOf(list.stream().filter(a -> a.deploymentSpec().canUpgradeAt(instant)));
+        return filteredOn(application -> application.deploymentSpec().canUpgradeAt(instant));
+    }
+
+    /** Returns the subset of applications that have at least one assigned rotation */
+    public ApplicationList hasRotation() {
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .anyMatch(instance -> ! instance.rotations().isEmpty()));
     }
 
     /**
@@ -171,8 +185,9 @@ public class ApplicationList {
      * @param defaultMajorVersion the default major version to assume for applications not specifying one
      */
     public ApplicationList allowMajorVersion(int targetMajorVersion, int defaultMajorVersion) {
-        return listOf(list.stream().filter(a -> a.deploymentSpec().majorVersion().orElse(a.majorVersion().orElse(defaultMajorVersion))
-                                           >= targetMajorVersion));
+        return filteredOn(application -> targetMajorVersion <= application.deploymentSpec().majorVersion()
+                                                                          .orElse(application.majorVersion()
+                                                                                             .orElse(defaultMajorVersion)));
     }
 
     /** Returns the first n application in this (or all, if there are less than n). */
@@ -189,7 +204,10 @@ public class ApplicationList {
      * Applications without any deployments are ordered first.
      */
     public ApplicationList byIncreasingDeployedVersion() {
-        return listOf(list.stream().sorted(Comparator.comparing(application -> application.oldestDeployedPlatform().orElse(Version.emptyVersion))));
+        return new ApplicationList(list.stream()
+                                       .sorted(Comparator.comparing(application -> application.oldestDeployedPlatform()
+                                                                                              .orElse(Version.emptyVersion)))
+                                       .collect(Collectors.toUnmodifiableList()));
     }
 
     // ----------------------------------- Internal helpers
@@ -198,31 +216,30 @@ public class ApplicationList {
         return application.change().platform().equals(Optional.of(version));
     }
 
-    private static boolean failingOn(Version version, Application application) {
-        return ! JobList.from(application)
-                .failing()
-                .lastCompleted().on(version)
-                .isEmpty();
+    private static boolean failingOn(Version version, Instance instance) {
+        return ! JobList.from(instance)
+                        .failing()
+                        .lastCompleted().on(version)
+                        .isEmpty();
     }
 
-    private static boolean failingUpgradeToVersionSince(Application application, Version version, Instant threshold) {
-        return ! JobList.from(application)
-                .not().failingApplicationChange()
-                .firstFailing().before(threshold)
-                .lastCompleted().on(version)
-                .isEmpty();
+    private static boolean failingUpgradeToVersionSince(Instance instance, Version version, Instant threshold) {
+        return ! JobList.from(instance)
+                        .not().failingApplicationChange()
+                        .firstFailing().before(threshold)
+                        .lastCompleted().on(version)
+                        .isEmpty();
     }
 
-    private static boolean failingApplicationChangeSince(Application application, Instant threshold) {
-        return ! JobList.from(application)
-                .failingApplicationChange()
-                .firstFailing().before(threshold)
-                .isEmpty();
+    private static boolean failingApplicationChangeSince(Instance instance, Instant threshold) {
+        return ! JobList.from(instance)
+                        .failingApplicationChange()
+                        .firstFailing().before(threshold)
+                        .isEmpty();
     }
 
-    /** Convenience converter from a stream to an ApplicationList */
-    private static ApplicationList listOf(Stream<Application> applications) {
-        return from(applications::iterator);
+    private ApplicationList filteredOn(Predicate<Application> condition) {
+        return new ApplicationList(list.stream().filter(condition).collect(Collectors.toUnmodifiableList()));
     }
 
 }

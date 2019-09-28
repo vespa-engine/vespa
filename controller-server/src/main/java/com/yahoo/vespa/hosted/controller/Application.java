@@ -1,27 +1,24 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
-import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Instant;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -41,66 +37,80 @@ import java.util.stream.Collectors;
  */
 public class Application {
 
-    private final ApplicationId id;
+    private final TenantAndApplicationId id;
     private final Instant createdAt;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Map<ZoneId, Deployment> deployments;
-    private final DeploymentJobs deploymentJobs;
+    private final OptionalLong projectId;
+    private final boolean internal;
     private final Change change;
     private final Change outstandingChange;
+    private final Optional<IssueId> deploymentIssueId;
     private final Optional<IssueId> ownershipIssueId;
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
     private final Optional<String> pemDeployKey;
-    private final List<AssignedRotation> rotations;
-    private final RotationStatus rotationStatus;
+    private final Map<InstanceName, Instance> instances;
 
     /** Creates an empty application. */
-    public Application(ApplicationId id, Instant now) {
-        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Collections.emptyMap(),
-             new DeploymentJobs(OptionalLong.empty(), Collections.emptyList(), Optional.empty(), false),
-             Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0),
-             Optional.empty(), Collections.emptyList(), RotationStatus.EMPTY);
+    public Application(TenantAndApplicationId id, Instant now) {
+        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(), Change.empty(),
+             Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
+             new ApplicationMetrics(0, 0), Optional.empty(), OptionalLong.empty(), true, List.of());
     }
 
-    /** Used from persistence layer: Do not use */
-    public Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                       List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                       Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                       OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                       List<AssignedRotation> rotations, RotationStatus rotationStatus) {
-        this(id, createdAt, deploymentSpec, validationOverrides,
-             deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
-             deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
-             metrics, pemDeployKey, rotations, rotationStatus);
-    }
-
-    Application(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                Map<ZoneId, Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
-                Change outstandingChange, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey,
-                List<AssignedRotation> rotations, RotationStatus rotationStatus) {
+    // DO NOT USE! For serialization purposes, only.
+    public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
+                Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+                OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey, OptionalLong projectId,
+                boolean internal, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
         this.validationOverrides = Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
-        this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null"));
-        this.deploymentJobs = Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
         this.change = Objects.requireNonNull(change, "change cannot be null");
         this.outstandingChange = Objects.requireNonNull(outstandingChange, "outstandingChange cannot be null");
+        this.deploymentIssueId = Objects.requireNonNull(deploymentIssueId, "deploymentIssueId cannot be null");
         this.ownershipIssueId = Objects.requireNonNull(ownershipIssueId, "ownershipIssueId cannot be null");
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
-        this.pemDeployKey = pemDeployKey;
-        this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
-        this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
+        this.pemDeployKey = Objects.requireNonNull(pemDeployKey, "pemDeployKey cannot be null");
+        this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
+        this.internal = internal;
+        this.instances = instances.stream().collect(Collectors.toUnmodifiableMap(instance -> instance.id().instance(),
+                                                                                 instance -> instance));
     }
 
-    public ApplicationId id() { return id; }
+    /** Returns an aggregate application, from the given instances, if at least one. */
+    public static Optional<Application> aggregate(List<Instance> instances) {
+        if (instances.isEmpty())
+            return Optional.empty();
+
+        Instance base = instances.stream()
+                                 .filter(instance -> instance.id().instance().isDefault())
+                                 .findFirst()
+                                 .orElse(instances.iterator().next());
+
+        return Optional.of(new Application(TenantAndApplicationId.from(base.id()), base.createdAt(), base.deploymentSpec(),
+                                           base.validationOverrides(), base.change(), base.outstandingChange(),
+                                           base.deploymentJobs().issueId(), base.ownershipIssueId(), base.owner(),
+                                           base.majorVersion(), base.metrics(), base.pemDeployKey(),
+                                           base.deploymentJobs().projectId(), base.deploymentJobs().deployedInternally(), instances));
+    }
+
+    /** Returns an old Instance representation of this and the given instance, for serialisation. */
+    public Instance legacy(InstanceName instance) {
+        Instance base = require(instance);
+
+        return new Instance(base.id(), createdAt, deploymentSpec, validationOverrides, base.deployments(),
+                            new DeploymentJobs(projectId, base.deploymentJobs().jobStatus().values(), deploymentIssueId, internal),
+                            change, outstandingChange, ownershipIssueId, owner,
+                            majorVersion, metrics, pemDeployKey, base.rotations(), base.rotationStatus());
+    }
+
+    public TenantAndApplicationId id() { return id; }
 
     public Instant createdAt() { return createdAt; }
 
@@ -110,6 +120,13 @@ public class Application {
      */
     public DeploymentSpec deploymentSpec() { return deploymentSpec; }
 
+    /** Returns the project id of this application, if it has any. */
+    public OptionalLong projectId() { return projectId; }
+
+    /** Returns whether this application is run on the internal deployment pipeline. */
+    // TODO jonmv: Remove, as will be always true.
+    public boolean internal() { return internal; }
+
     /**
      * Returns the last deployed validation overrides of this application,
      * or the empty validation overrides if it has never been deployed
@@ -117,20 +134,16 @@ public class Application {
      */
     public ValidationOverrides validationOverrides() { return validationOverrides; }
 
-    /** Returns an immutable map of the current deployments of this */
-    public Map<ZoneId, Deployment> deployments() { return deployments; }
+    /** Returns the instances of this application */
+    public Map<InstanceName, Instance> instances() { return instances; }
 
-    /**
-     * Returns an immutable map of the current *production* deployments of this
-     * (deployments also includes manually deployed environments)
-     */
-    public Map<ZoneId, Deployment> productionDeployments() {
-        return ImmutableMap.copyOf(deployments.values().stream()
-                                           .filter(deployment -> deployment.zone().environment() == Environment.prod)
-                                           .collect(Collectors.toMap(Deployment::zone, Function.identity())));
+    /** Returns the instance with the given name, if it exists. */
+    public Optional<Instance> get(InstanceName instance) { return Optional.ofNullable(instances.get(instance)); }
+
+    /** Returns the instance with the given name, or throws. */
+    public Instance require(InstanceName instance) {
+        return get(instance).orElseThrow(() -> new IllegalArgumentException("Unknown instance '" + instance + "'"));
     }
-
-    public DeploymentJobs deploymentJobs() { return deploymentJobs; }
 
     /**
      * Returns base change for this application, i.e., the change that is deployed outside block windows.
@@ -143,6 +156,11 @@ public class Application {
      * has currently not started deploying (because a deployment is (or was) already in progress
      */
     public Change outstandingChange() { return outstandingChange; }
+
+    /** Returns ID of any open deployment issue filed for this */
+    public Optional<IssueId> deploymentIssueId() {
+        return deploymentIssueId;
+    }
 
     /** Returns ID of the last ownership issue filed for this */
     public Optional<IssueId> ownershipIssueId() {
@@ -166,19 +184,26 @@ public class Application {
 
     /** Returns activity for this */
     public ApplicationActivity activity() {
-        return ApplicationActivity.from(deployments.values());
+        return ApplicationActivity.from(instances.values().stream()
+                                                 .flatMap(instance -> instance.deployments().values().stream())
+                                                 .collect(Collectors.toUnmodifiableList()));
     }
 
+    public Map<InstanceName, List<Deployment>> productionDeployments() {
+        return instances.values().stream()
+                        .collect(Collectors.toUnmodifiableMap(Instance::name,
+                                                              instance -> List.copyOf(instance.productionDeployments().values())));
+    }
     /**
      * Returns the oldest platform version this has deployed in a permanent zone (not test or staging).
      *
-     * This is unfortunately quite similar to {@link ApplicationController#oldestInstalledPlatform(ApplicationId)},
+     * This is unfortunately quite similar to {@link ApplicationController#oldestInstalledPlatform(TenantAndApplicationId)},
      * but this checks only what the controller has deployed to the production zones, while that checks the node repository
      * to see what's actually installed on each node. Thus, this is the right choice for, e.g., target Vespa versions for
      * new deployments, while that is the right choice for version to compile against.
      */
     public Optional<Version> oldestDeployedPlatform() {
-        return productionDeployments().values().stream()
+        return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::version)
                                       .min(Comparator.naturalOrder());
     }
@@ -187,22 +212,12 @@ public class Application {
      * Returns the oldest application version this has deployed in a permanent zone (not test or staging).
      */
     public Optional<ApplicationVersion> oldestDeployedApplication() {
-        return productionDeployments().values().stream()
+        return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::applicationVersion)
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns all rotations assigned to this */
-    public List<AssignedRotation> rotations() {
-        return rotations;
-    }
-
     public Optional<String> pemDeployKey() { return pemDeployKey; }
-
-    /** Returns the status of the global rotation(s) assigned to this */
-    public RotationStatus rotationStatus() {
-        return rotationStatus;
-    }
 
     @Override
     public boolean equals(Object o) {

@@ -37,7 +37,7 @@ public class InstanceList {
     }
 
     public static InstanceList from(Collection<ApplicationId> ids, ApplicationController applications) {
-        return listOf(ids.stream().map(applications::require));
+        return listOf(ids.stream().map(applications::requireInstance));
     }
 
     // ----------------------------------- Accessors

@@ -37,8 +37,8 @@ public class DeploymentExpirerTest {
         Application devApp = tester.createApplication("app1", "tenant1", 123L, 1L);
         Application prodApp = tester.createApplication("app2", "tenant2", 456L, 2L);
 
-        Instance devInstance = tester.instance(devApp.id());
-        Instance prodInstance = tester.instance(prodApp.id());
+        Instance devInstance = tester.defaultInstance(devApp.id());
+        Instance prodInstance = tester.defaultInstance(prodApp.id());
 
         // Deploy dev
         tester.controllerTester().deploy(devInstance.id(), tester.controllerTester().toZone(Environment.dev));
@@ -65,7 +65,7 @@ public class DeploymentExpirerTest {
     }
 
     private List<Deployment> permanentDeployments(Instance instance) {
-        return tester.controller().applications().get(instance.id()).get().deployments().values().stream()
+        return tester.controller().applications().getInstance(instance.id()).get().deployments().values().stream()
                      .filter(deployment -> deployment.zone().environment() != Environment.test &&
                                       deployment.zone().environment() != Environment.staging)
                      .collect(Collectors.toList());

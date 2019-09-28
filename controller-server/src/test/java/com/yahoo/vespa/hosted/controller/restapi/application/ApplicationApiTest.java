@@ -50,6 +50,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
@@ -319,7 +320,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(app2.application().value()));
 
         // Trigger upgrade and then application change
-        controllerTester.controller().applications().deploymentTrigger().triggerChange(app2, Change.of(Version.fromString("7.0")));
+        controllerTester.controller().applications().deploymentTrigger().triggerChange(TenantAndApplicationId.from(app2), Change.of(Version.fromString("7.0")));
 
         controllerTester.jobCompletion(JobType.component)
                         .application(app2)
@@ -398,7 +399,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("deployment.json"));
 
-        addIssues(controllerTester, ApplicationId.from("tenant1", "application1", "instance1"));
+        addIssues(controllerTester, TenantAndApplicationId.from("tenant1", "application1"));
         // GET at root, with "&recursive=deployment", returns info about all tenants, their applications and their deployments
         tester.assertResponse(request("/application/v4/", GET)
                                       .userIdentity(USER_ID)
@@ -433,19 +434,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"message\":\"Changed deployment from 'application change to 1.0.42-commit1' to 'no change' for application 'tenant1.application1.instance1'\"}");
+                              "{\"message\":\"Changed deployment from 'application change to 1.0.42-commit1' to 'no change' for application 'tenant1.application1'\"}");
 
         // DELETE (cancel) again is a no-op
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"cancel\":\"all\"}"),
-                              "{\"message\":\"No deployment in progress for application 'tenant1.application1.instance1' at this time\"}");
+                              "{\"message\":\"No deployment in progress for application 'tenant1.application1' at this time\"}");
 
         // POST pinning to a given version to an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
                                       .data("6.1.0"),
-                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1.instance1\"}");
+                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
         assertTrue("Action is logged to audit log",
                    tester.controller().auditLogger().readLog().entries().stream()
                          .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin")));
@@ -457,7 +458,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE only the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1.instance1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1'\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":false}");
 
@@ -465,21 +466,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
                                       .data("6.1"),
-                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1.instance1\"}");
+                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
 
         // DELETE only the version, but leave the pin
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/platform", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'pin to current platform' for application 'tenant1.application1.instance1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'pin to current platform' for application 'tenant1.application1'\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"pinned\":true}");
 
         // DELETE also the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to current platform' to 'no change' for application 'tenant1.application1.instance1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to current platform' to 'no change' for application 'tenant1.application1'\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{}");
 
@@ -686,7 +687,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("tenant-without-applications.json"));
     }
 
-    private void addIssues(ContainerControllerTester tester, ApplicationId id) {
+    private void addIssues(ContainerControllerTester tester, TenantAndApplicationId id) {
         tester.controller().applications().lockApplicationOrThrow(id, application ->
                 tester.controller().applications().store(application.withDeploymentIssueId(IssueId.from("123"))
                                                                     .withOwnershipIssueId(IssueId.from("321"))
@@ -1250,7 +1251,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
         controllerTester.jobCompletion(JobType.component)
-                        .application(application.id())
+                        .application(application)
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1280,9 +1281,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
-        // Allow systemtest to succeed by notifying completion of system test
+        // Allow systemtest to succeed by notifying completion of component
         controllerTester.jobCompletion(JobType.component)
-                        .application(application.id())
+                        .application(application)
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1379,7 +1380,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
-                        .application(application.id())
+                        .application(application)
                         .projectId(screwdriverProjectId)
                         .uploadArtifact(applicationPackage)
                         .submit();
@@ -1414,9 +1415,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
 
-        // Allow systemtest to succeed by notifying completion of system test
+        // Allow systemtest to succeed by notifying completion of component
         controllerTester.jobCompletion(JobType.component)
-                .application(application.id())
+                .application(application)
                 .projectId(screwdriverProjectId)
                 .uploadArtifact(applicationPackage)
                 .submit();
@@ -1449,7 +1450,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .application(app)
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
-        controllerTester.deploy(app.id(), applicationPackage, TEST_ZONE);
+        controllerTester.deploy(app.id().defaultInstance(), applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
 
         // Notifying about job started not by the controller fails
@@ -1459,7 +1460,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .get();
         tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Notified of completion " +
                                        "of system-test for tenant1.application1, but that has not been triggered; last was " +
-                                       controllerTester.controller().applications().require(app.id()).deploymentJobs().jobStatus().get(JobType.systemTest).lastTriggered().get().at() + "\"}", 400);
+                                       controllerTester.controller().applications().requireInstance(app.id().defaultInstance()).deploymentJobs().jobStatus().get(JobType.systemTest).lastTriggered().get().at() + "\"}", 400);
 
         // Notifying about unknown job fails
         request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
@@ -1472,14 +1473,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... and assert it was recorded
         JobStatus recordedStatus =
-                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(JobType.component);
+                tester.controller().applications().getInstance(app.id().defaultInstance()).get().deploymentJobs().jobStatus().get(JobType.component);
 
         assertNotNull("Status was recorded", recordedStatus);
         assertTrue(recordedStatus.isSuccess());
         assertEquals(vespaVersion, recordedStatus.lastCompleted().get().platform());
 
         recordedStatus =
-                tester.controller().applications().get(app.id()).get().deploymentJobs().jobStatus().get(JobType.productionApNortheast2);
+                tester.controller().applications().getInstance(app.id().defaultInstance()).get().deploymentJobs().jobStatus().get(JobType.productionApNortheast2);
         assertNull("Status of never-triggered jobs is empty", recordedStatus);
         assertTrue("All jobs have been run", tester.controller().applications().deploymentTrigger().jobsToRun().isEmpty());
     }
@@ -1501,17 +1502,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
 
-        controllerTester.deploy(app.id(), applicationPackage, TEST_ZONE);
+        controllerTester.deploy(app.id().defaultInstance(), applicationPackage, TEST_ZONE);
         job.type(JobType.systemTest).submit();
-        controllerTester.deploy(app.id(), applicationPackage, STAGING_ZONE);
+        controllerTester.deploy(app.id().defaultInstance(), applicationPackage, STAGING_ZONE);
         job.type(JobType.stagingTest).error(DeploymentJobs.JobError.outOfCapacity).submit();
 
         // Appropriate error is recorded
-        JobStatus jobStatus = tester.controller().applications().get(app.id())
-                .get()
-                .deploymentJobs()
-                .jobStatus()
-                .get(JobType.stagingTest);
+        JobStatus jobStatus = tester.controller().applications().getInstance(app.id().defaultInstance()).get()
+                                    .deploymentJobs()
+                                    .jobStatus()
+                                    .get(JobType.stagingTest);
         assertFalse(jobStatus.isSuccess());
         assertEquals(DeploymentJobs.JobError.outOfCapacity, jobStatus.jobError().get());
     }
@@ -1524,12 +1524,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         controllerTester.deployCompletely(app, applicationPackage, 1, false);
-        RoutingPolicy policy = new RoutingPolicy(app.id(),
+        RoutingPolicy policy = new RoutingPolicy(app.id().defaultInstance(),
                                                  ClusterSpec.Id.from("default"),
                                                  ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
                                                  HostName.from("lb-0-canonical-name"),
                                                  Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")));
-        tester.controller().curator().writeRoutingPolicies(app.id(), Set.of(policy));
+        tester.controller().curator().writeRoutingPolicies(app.id().defaultInstance(), Set.of(policy));
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
@@ -1722,30 +1722,32 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * This sets these values as if the maintainers has been ran.
      */
     private void setDeploymentMaintainedInfo(ContainerControllerTester controllerTester) {
-        for (Instance instance : controllerTester.controller().applications().asList()) {
-            controllerTester.controller().applications().lockOrThrow(instance.id(), lockedApplication -> {
+        for (Application application : controllerTester.controller().applications().asList()) {
+            controllerTester.controller().applications().lockApplicationOrThrow(application.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
-                for (Deployment deployment : instance.deployments().values()) {
-                    Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
-                    List<String> hostnames = new ArrayList<>();
-                    hostnames.add("host1");
-                    hostnames.add("host2");
-                    clusterInfo.put(ClusterSpec.Id.from("cluster1"),
-                                    new ClusterInfo("flavor1", 37, 2, 4, 50,
-                                                    ClusterSpec.Type.content, hostnames));
-                    Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
-                    clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
-                    DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
-                                                                      Optional.of(Instant.ofEpochMilli(123123)), Map.of());
+                for (Instance instance : application.instances().values()) {
+                    for (Deployment deployment : instance.deployments().values()) {
+                        Map<ClusterSpec.Id, ClusterInfo> clusterInfo = new HashMap<>();
+                        List<String> hostnames = new ArrayList<>();
+                        hostnames.add("host1");
+                        hostnames.add("host2");
+                        clusterInfo.put(ClusterSpec.Id.from("cluster1"),
+                                        new ClusterInfo("flavor1", 37, 2, 4, 50,
+                                                        ClusterSpec.Type.content, hostnames));
+                        Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
+                        clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
+                        DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
+                                                                          Optional.of(Instant.ofEpochMilli(123123)), Map.of());
 
-                    lockedApplication = lockedApplication
-                            .withClusterInfo(deployment.zone(), clusterInfo)
-                            .withClusterUtilization(deployment.zone(), clusterUtils)
-                            .with(deployment.zone(), metrics)
-                            .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone());
+                        lockedApplication = lockedApplication.with(instance.name(),
+                                                                   lockedInstance -> lockedInstance.withClusterInfo(deployment.zone(), clusterInfo)
+                                                                                                   .withClusterUtilization(deployment.zone(), clusterUtils)
+                                                                                                   .with(deployment.zone(), metrics)
+                                                                                                   .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone()));
+                    }
+                    controllerTester.controller().applications().store(lockedApplication);
                 }
-                controllerTester.controller().applications().store(lockedApplication);
             });
         }
     }

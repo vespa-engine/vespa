@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.restapi.Uri;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -97,7 +98,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
 
             Cursor failingArray = versionObject.setArray("failingApplications");
             for (ApplicationId id : version.statistics().failing()) {
-                controller.applications().get(id).ifPresent(application -> {
+                controller.applications().getInstance(id).ifPresent(application -> {
                     firstFailingOn(version.versionNumber(), application).ifPresent(firstFailing -> {
                         Cursor applicationObject = failingArray.addObject();
                         toSlime(applicationObject, application, request);
@@ -108,7 +109,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
 
             Cursor productionArray = versionObject.setArray("productionApplications");
             for (ApplicationId id : version.statistics().production()) {
-                controller.applications().get(id).ifPresent(application -> {
+                controller.applications().getInstance(id).ifPresent(application -> {
                     int successes = productionSuccessesFor(version.versionNumber(), application);
                     if (successes == 0) return; // Just upgraded to a newer version.
                     Cursor applicationObject = productionArray.addObject();
@@ -120,7 +121,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
 
             Cursor runningArray = versionObject.setArray("deployingApplications");
             for (ApplicationId id : version.statistics().deploying()) {
-                controller.applications().get(id).ifPresent(application -> {
+                controller.applications().getInstance(id).ifPresent(application -> {
                     lastDeployingTo(version.versionNumber(), application).ifPresent(lastDeploying -> {
                         Cursor applicationObject = runningArray.addObject();
                         toSlime(applicationObject, application, request);
@@ -140,7 +141,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                                    instance.id().tenant().value() +
                                                                    "/application/" +
                                                                    instance.id().application().value()).toString());
-        object.setString("upgradePolicy", toString(instance.deploymentSpec().upgradePolicy()));
+        object.setString("upgradePolicy", toString(controller.applications().requireApplication(TenantAndApplicationId.from(instance.id()))
+                                                             .deploymentSpec().upgradePolicy()));
     }
 
     private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {

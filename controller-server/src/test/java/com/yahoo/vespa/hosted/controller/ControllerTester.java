@@ -14,7 +14,6 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -46,6 +45,7 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Consumer;
@@ -54,6 +54,7 @@ import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Convenience methods for controller tests.
@@ -182,13 +183,12 @@ public final class ControllerTester {
     }
 
     /** Create application from slime */
-    public Instance createApplication(Slime slime) {
-        InstanceSerializer serializer = new InstanceSerializer();
-        Instance instance = serializer.fromSlime(slime);
-        try (Lock lock = controller().applications().lock(TenantAndApplicationId.from(instance.id()))) {
-            controller().applications().store(new LockedInstance(instance, lock));
+    public void createApplication(Slime slime) {
+        Instance instance = new InstanceSerializer().fromSlime(slime);
+        Application application = Application.aggregate(List.of(instance)).get();
+        try (Lock lock = controller().applications().lock(application.id())) {
+            controller().applications().store(new LockedApplication(application, lock));
         }
-        return instance;
     }
 
     public ZoneId toZone(Environment environment) {
@@ -208,7 +208,7 @@ public final class ControllerTester {
         return domain;
     }
 
-    public Optional<AthenzDomain> domainOf(ApplicationId id) {
+    public Optional<AthenzDomain> domainOf(TenantAndApplicationId id) {
         Tenant tenant = controller().tenants().require(id.tenant());
         return tenant.type() == Tenant.Type.athenz ? Optional.of(((AthenzTenant) tenant).domain()) : Optional.empty();
     }
@@ -236,7 +236,7 @@ public final class ControllerTester {
         return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
 
-    public Optional<Credentials> credentialsFor(ApplicationId id) {
+    public Optional<Credentials> credentialsFor(TenantAndApplicationId id) {
         return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                 domain,
                                                                 new OktaAccessToken("okta-token")));
@@ -244,10 +244,12 @@ public final class ControllerTester {
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
-        controller().applications().createApplication(applicationId, credentialsFor(applicationId));
-        controller().applications().lockApplicationOrThrow(applicationId, application ->
+        controller().applications().createApplication(applicationId, credentialsFor(TenantAndApplicationId.from(applicationId)));
+        controller().applications().lockApplicationOrThrow(TenantAndApplicationId.from(applicationId), application ->
                 controller().applications().store(application.withProjectId(OptionalLong.of(projectId))));
-        return controller().applications().requireApplication(applicationId);
+        Application application = controller().applications().requireApplication(TenantAndApplicationId.from(applicationId));
+        assertTrue(application.projectId().isPresent());
+        return application;
     }
 
     public void deploy(ApplicationId id, ZoneId zone) {
@@ -274,12 +276,7 @@ public final class ControllerTester {
     }
 
     public Supplier<Instance> application(ApplicationId application) {
-        return () -> controller().applications().require(application);
-    }
-
-    /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
-    public static LockedInstance writable(Instance instance) {
-        return new LockedInstance(instance, new Lock("/test", new MockCurator()));
+        return () -> controller().applications().requireInstance(application);
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,

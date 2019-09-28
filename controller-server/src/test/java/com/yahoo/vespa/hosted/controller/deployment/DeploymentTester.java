@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.test.ManualClock;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
@@ -113,16 +115,20 @@ public class DeploymentTester {
 
     public ConfigServerMock configServer() { return tester.serviceRegistry().configServerMock(); }
 
-    public Application application(ApplicationId id) {
+    public Application application(TenantAndApplicationId id) {
         return controller().applications().requireApplication(id);
     }
 
-    public Instance instance(String name) {
+    public Instance defaultInstance(String name) {
         return instance(ApplicationId.from("tenant1", name, "default"));
     }
 
+    public Instance defaultInstance(TenantAndApplicationId application) {
+        return controller().applications().requireApplication(application).require(InstanceName.defaultName());
+    }
+
     public Instance instance(ApplicationId application) {
-        return controller().applications().require(application);
+        return controller().applications().requireInstance(application);
     }
 
     /** Re-compute and write version status */
@@ -236,22 +242,22 @@ public class DeploymentTester {
     }
 
     private void completeDeployment(Application application, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(application.id() + " has pending changes to deploy", applications().require(application.id()).change().hasTargets());
+        assertTrue(application.id() + " has pending changes to deploy", applications().requireApplication(application.id()).change().hasTargets());
         DeploymentSteps steps = controller().applications().deploymentTrigger().steps(applicationPackage.deploymentSpec());
         List<JobType> jobs = steps.jobs();
         // TODO jonmv: Change to list instances here.
         for (JobType job : jobs) {
             boolean failJob = failOnJob.map(j -> j.equals(job)).orElse(false);
-            deployAndNotify(application.id(), applicationPackage, ! failJob, job);
+            deployAndNotify(application.id().defaultInstance(), applicationPackage, ! failJob, job);
             if (failJob) {
                 break;
             }
         }
         if (failOnJob.isPresent()) {
-            assertTrue(applications().require(application.id()).change().hasTargets());
-            assertTrue(applications().require(application.id()).deploymentJobs().hasFailures());
+            assertTrue(applications().requireApplication(application.id()).change().hasTargets());
+            assertTrue(defaultInstance(application.id()).deploymentJobs().hasFailures());
         } else {
-            assertFalse(applications().require(application.id()).change().hasTargets());
+            assertFalse(applications().requireApplication(application.id()).change().hasTargets());
         }
         if (updateDnsAutomatically) {
             flushDnsRequests();
@@ -263,8 +269,8 @@ public class DeploymentTester {
     }
 
     public void completeUpgrade(Application application, Version version, ApplicationPackage applicationPackage) {
-        assertTrue(application + " has a change", applications().require(application.id()).change().hasTargets());
-        assertEquals(Change.of(version), applications().require(application.id()).change());
+        assertTrue(application + " has a change", applications().requireApplication(application.id()).change().hasTargets());
+        assertEquals(Change.of(version), applications().requireApplication(application.id()).change());
         completeDeployment(application, applicationPackage, Optional.empty());
     }
 
@@ -277,8 +283,8 @@ public class DeploymentTester {
     }
 
     private void completeUpgradeWithError(Application application, Version version, ApplicationPackage applicationPackage, Optional<JobType> failOnJob) {
-        assertTrue(applications().require(application.id()).change().hasTargets());
-        assertEquals(Change.of(version), applications().require(application.id()).change());
+        assertTrue(applications().requireApplication(application.id()).change().hasTargets());
+        assertEquals(Change.of(version), applications().requireApplication(application.id()).change());
         completeDeployment(application, applicationPackage, failOnJob);
     }
 
@@ -327,7 +333,7 @@ public class DeploymentTester {
     }
 
     public Optional<JobStatus.JobRun> firstFailing(Instance instance, JobType job) {
-        return tester.controller().applications().require(instance.id())
+        return tester.controller().applications().requireInstance(instance.id())
                      .deploymentJobs().jobStatus().get(job).firstFailing();
     }
 

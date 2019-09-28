@@ -46,7 +46,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
 
@@ -216,7 +215,7 @@ public class InstanceSerializerTest {
 
     @Test
     public void testCompleteApplicationDeserialization() throws Exception {
-        byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
+        byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-instance.json"));
         INSTANCE_SERIALIZER.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
         // ok if no error
     }

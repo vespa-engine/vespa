@@ -52,11 +52,10 @@ public class BuildJob {
     }
 
     public BuildJob application(Application application) {
-        this.applicationId = application.id();
-        if (application.deploymentJobs().projectId().isPresent()) {
-            this.projectId = application.deploymentJobs().projectId().getAsLong();
-        }
-        return this;
+        if (application.projectId().isPresent())
+            this.projectId = application.projectId().getAsLong();
+
+        return application(application.id().defaultInstance());
     }
 
     public BuildJob application(ApplicationId applicationId) {

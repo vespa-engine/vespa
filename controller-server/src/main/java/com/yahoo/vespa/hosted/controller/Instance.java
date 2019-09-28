@@ -6,25 +6,33 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
+import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
+import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -68,6 +76,18 @@ public class Instance {
              Optional.empty(), Collections.emptyList(), RotationStatus.EMPTY);
     }
 
+    /** Creates an empty instance*/
+    public Instance(ApplicationId id, List<Deployment> deployments, DeploymentJobs deploymentJobs,
+                    List<AssignedRotation> rotations, RotationStatus rotationStatus) {
+        this(id,
+             Instant.EPOCH, DeploymentSpec.empty, ValidationOverrides.empty,
+             deployments.stream().collect(Collectors.toMap(Deployment::zone, Function.identity())),
+             deploymentJobs,
+             Change.empty(), Change.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
+             new ApplicationMetrics(0, 0), Optional.empty(),
+             rotations, rotationStatus);
+    }
+
     /** Used from persistence layer: Do not use */
     public Instance(ApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                     List<Deployment> deployments, DeploymentJobs deploymentJobs, Change change,
@@ -102,7 +122,118 @@ public class Instance {
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
     }
 
+    public Instance withJobPause(JobType jobType, OptionalLong pausedUntil) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs.withPause(jobType, pausedUntil), change, outstandingChange,
+                            ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
+                            rotations, rotationStatus);
+    }
+
+    public Instance withJobCompletion(JobType jobType, JobStatus.JobRun completion,
+                                      Optional<DeploymentJobs.JobError> jobError) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs.withCompletion(jobType, completion, jobError),
+                            change, outstandingChange, ownershipIssueId, owner, majorVersion, metrics,
+                            pemDeployKey, rotations, rotationStatus);
+    }
+
+    public Instance withJobTriggering(JobType jobType, JobStatus.JobRun job) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs.withTriggering(jobType, job), change, outstandingChange,
+                            ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
+                            rotations, rotationStatus);
+    }
+
+    public Instance withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
+                                      Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings) {
+        // Use info from previous deployment if available, otherwise create a new one.
+        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
+                                                                                      version, instant));
+        Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
+                                                  previousDeployment.clusterUtils(),
+                                                  previousDeployment.clusterInfo(),
+                                                  previousDeployment.metrics().with(warnings),
+                                                  previousDeployment.activity());
+        return with(newDeployment);
+    }
+
+    public Instance withClusterUtilization(ZoneId zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
+        Deployment deployment = deployments.get(zone);
+        if (deployment == null) return this;    // No longer deployed in this zone.
+        return with(deployment.withClusterUtils(clusterUtilization));
+    }
+
+    public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
+        Deployment deployment = deployments.get(zone);
+        if (deployment == null) return this;    // No longer deployed in this zone.
+        return with(deployment.withClusterInfo(clusterInfo));
+
+    }
+
+    public Instance recordActivityAt(Instant instant, ZoneId zone) {
+        Deployment deployment = deployments.get(zone);
+        if (deployment == null) return this;
+        return with(deployment.recordActivityAt(instant));
+    }
+
+    public Instance with(ZoneId zone, DeploymentMetrics deploymentMetrics) {
+        Deployment deployment = deployments.get(zone);
+        if (deployment == null) return this;    // No longer deployed in this zone.
+        return with(deployment.withMetrics(deploymentMetrics));
+    }
+
+    public Instance withoutDeploymentIn(ZoneId zone) {
+        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
+        deployments.remove(zone);
+        return with(deployments);
+    }
+
+    public Instance withoutDeploymentJob(JobType jobType) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs.without(jobType), change, outstandingChange,
+                            ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
+                            rotations, rotationStatus);
+    }
+
+    public Instance with(ApplicationMetrics metrics) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                            metrics, pemDeployKey, rotations, rotationStatus);
+    }
+
+    public Instance withPemDeployKey(String pemDeployKey) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                            metrics, Optional.ofNullable(pemDeployKey), rotations, rotationStatus);
+    }
+
+    public Instance with(List<AssignedRotation> assignedRotations) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                            metrics, pemDeployKey, assignedRotations, rotationStatus);
+    }
+
+    public Instance with(RotationStatus rotationStatus) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                            metrics, pemDeployKey, rotations, rotationStatus);
+    }
+
+    private Instance with(Deployment deployment) {
+        Map<ZoneId, Deployment> deployments = new LinkedHashMap<>(this.deployments);
+        deployments.put(deployment.zone(), deployment);
+        return with(deployments);
+    }
+
+    private Instance with(Map<ZoneId, Deployment> deployments) {
+        return new Instance(id, createdAt, deploymentSpec, validationOverrides, deployments,
+                            deploymentJobs, change, outstandingChange, ownershipIssueId, owner, majorVersion,
+                            metrics, pemDeployKey, rotations, rotationStatus);
+    }
+
     public ApplicationId id() { return id; }
+
+    public InstanceName name() { return id.instance(); }
 
     public Instant createdAt() { return createdAt; }
 
