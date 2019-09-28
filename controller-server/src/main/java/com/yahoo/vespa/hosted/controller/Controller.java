@@ -5,12 +5,15 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -34,6 +37,7 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.time.Clock;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -56,7 +60,7 @@ import java.util.stream.Stream;
  * 
  * @author bratseth
  */
-public class Controller extends AbstractComponent {
+public class Controller extends AbstractComponent implements ApplicationIdSource {
 
     private static final Logger log = Logger.getLogger(Controller.class.getName());
 
@@ -271,22 +275,6 @@ public class Controller extends AbstractComponent {
         return auditLogger;
     }
 
-    /** Returns all other roles the given tenant role implies. */
-    public Set<Role> impliedRoles(TenantRole role) {
-        return Stream.concat(Roles.tenantRoles(role.tenant()).stream(),
-                             applications().asList(role.tenant()).stream()
-                                           .flatMap(application -> Roles.applicationRoles(application.id().tenant(), application.id().application()).stream()))
-                .filter(role::implies)
-                .collect(Collectors.toUnmodifiableSet());
-    }
-
-    /** Returns all other roles the given application role implies. */
-    public Set<Role> impliedRoles(ApplicationRole role) {
-        return Roles.applicationRoles(role.tenant(), role.application()).stream()
-                .filter(role::implies)
-                .collect(Collectors.toUnmodifiableSet());
-    }
-
     private Set<CloudName> clouds() {
         return zoneRegistry.zones().all().zones().stream()
                            .map(ZoneApi::getCloudName)
@@ -295,6 +283,22 @@ public class Controller extends AbstractComponent {
 
     private static String printableVersion(Optional<VespaVersion> vespaVersion) {
         return vespaVersion.map(v -> v.versionNumber().toFullString()).orElse("unknown");
+    }
+
+    @Override
+    public List<ApplicationId> listApplications() {
+        return applications().asList().stream()
+                             .flatMap(application -> application.instances().keySet().stream()
+                                                                .map(application.id()::instance))
+                             .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Override
+    public List<ApplicationId> listApplications(TenantName tenant) {
+        return applications().asList(tenant).stream()
+                             .flatMap(application -> application.instances().keySet().stream()
+                                                                .map(application.id()::instance))
+                             .collect(Collectors.toUnmodifiableList());
     }
 
 }
