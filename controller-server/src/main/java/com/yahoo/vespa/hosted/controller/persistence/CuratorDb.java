@@ -77,7 +77,6 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
-    private static final Path instanceRoot = root.append("instances");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
@@ -140,10 +139,6 @@ public class CuratorDb {
     }
 
     public Lock lock(TenantAndApplicationId id) {
-        return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
-    }
-
-    public Lock lock(ApplicationId id) {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
@@ -399,10 +394,6 @@ public class CuratorDb {
             curator.delete(applicationPath(TenantAndApplicationId.from(id)));
     }
 
-    public void clearInstanceRoot() {
-        curator.delete(instanceRoot);
-    }
-
     /**
      * Migration plan:
      *
@@ -422,12 +413,14 @@ public class CuratorDb {
      * Write application with instances to application path                     DONE
      * Write all instances of an application to old application path            DONE
      * Remove everything under instance root                                    DONE
+     * Stop locking applications on instance level                              DONE
      *
      * Read Application with instances from application path (with filter)
-     * Stop locking applications on instance level
      *
      * Stop writing Instance to old application path
      * Remove unused parts of Instance (Used only for legacy serialization)
+     * Store new production application packages under non-instance path
+     * Read production packages from non-instance path, with fallback
      */
 
     // -------------- Job Runs ------------------------------------------------
@@ -575,19 +568,19 @@ public class CuratorDb {
                 .append(instance.instance().value());
     }
 
-    private Path lockPath(ApplicationId application, ZoneId zone) {
-        return lockPath(application)
+    private Path lockPath(ApplicationId instance, ZoneId zone) {
+        return lockPath(instance)
                 .append(zone.environment().value())
                 .append(zone.region().value());
     }
 
-    private Path lockPath(ApplicationId application, JobType type) {
-        return lockPath(application)
+    private Path lockPath(ApplicationId instance, JobType type) {
+        return lockPath(instance)
                 .append(type.jobName());
     }
 
-    private Path lockPath(ApplicationId application, JobType type, Step step) {
-        return lockPath(application, type)
+    private Path lockPath(ApplicationId instance, JobType type, Step step) {
+        return lockPath(instance, type)
                 .append(step.name());
     }
 
@@ -655,10 +648,6 @@ public class CuratorDb {
 
     private static Path oldApplicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
-    }
-
-    private static Path instancePath(ApplicationId id) {
-        return instanceRoot.append(id.serializedForm());
     }
 
     private static Path runsPath(ApplicationId id, JobType type) {

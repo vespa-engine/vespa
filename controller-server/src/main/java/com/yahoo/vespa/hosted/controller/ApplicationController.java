@@ -149,7 +149,6 @@ public class ApplicationController {
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
-            curator.clearInstanceRoot();
             Instant start = clock.instant();
             int count = 0;
             for (Application application : curator.readApplications()) {
