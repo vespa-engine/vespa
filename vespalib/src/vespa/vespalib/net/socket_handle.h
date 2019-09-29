@@ -16,6 +16,9 @@ class SocketHandle
 {
 private:
     int _fd;
+#ifdef __APPLE__
+    volatile bool _shutdown;
+#endif
 
     static void maybe_close(int fd) {
         if (fd >= 0) {
@@ -24,11 +27,20 @@ private:
     }
 
 public:
+#ifdef __APPLE__
+    SocketHandle() : _fd(-1), _shutdown(false) {}
+    explicit SocketHandle(int sockfd) : _fd(sockfd), _shutdown(false) {}
+#else
     SocketHandle() : _fd(-1) {}
     explicit SocketHandle(int sockfd) : _fd(sockfd) {}
+#endif
     SocketHandle(const SocketHandle &) = delete;
     SocketHandle &operator=(const SocketHandle &) = delete;
+#ifdef __APPLE__
+    SocketHandle(SocketHandle &&rhs) : _fd(rhs.release()), _shutdown(rhs._shutdown) {}
+#else
     SocketHandle(SocketHandle &&rhs) : _fd(rhs.release()) {}
+#endif
     SocketHandle &operator=(SocketHandle &&rhs) {
         maybe_close(_fd);
         _fd = rhs.release();
@@ -49,6 +61,7 @@ public:
     }
 
     bool set_blocking(bool value) { return SocketOptions::set_blocking(_fd, value); }
+    bool get_blocking() { return SocketOptions::get_blocking(_fd); }
     bool set_nodelay(bool value) { return SocketOptions::set_nodelay(_fd, value); }
     bool set_reuse_addr(bool value) { return SocketOptions::set_reuse_addr(_fd, value); }
     bool set_ipv6_only(bool value) { return SocketOptions::set_ipv6_only(_fd, value); }

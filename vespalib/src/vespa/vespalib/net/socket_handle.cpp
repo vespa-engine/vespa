@@ -4,6 +4,9 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <cassert>
+#ifdef __APPLE__
+#include <poll.h>
+#endif
 
 namespace vespalib {
 
@@ -32,6 +35,33 @@ SocketHandle::write(const char *buf, size_t len)
 SocketHandle
 SocketHandle::accept()
 {
+#ifdef __APPLE__
+    if (get_blocking()) {
+        set_blocking(false);
+        while (!_shutdown) {
+            pollfd fds;
+            fds.fd = _fd;
+            fds.events = POLLIN;
+            fds.revents = 0;
+            int res = poll(&fds, 1, 1);
+            if (res < 1 || fds.revents == 0) {
+                continue;
+            }
+            SocketHandle result(::accept(_fd, nullptr, 0));
+            if (result.valid() || (errno != EINTR)) {
+                set_blocking(true);
+                if (result) {
+                    result.set_blocking(true);
+                }
+                return result;
+            }
+        }
+        set_blocking(true);
+        SocketHandle result;
+        errno = EINVAL;
+        return result;
+    }
+#endif
     for (;;) {
         SocketHandle result(::accept(_fd, nullptr, 0));
         if (result.valid() || (errno != EINTR)) {
@@ -43,6 +73,9 @@ SocketHandle::accept()
 void
 SocketHandle::shutdown()
 {
+#ifdef __APPLE__
+    _shutdown = true;
+#endif
     ::shutdown(_fd, SHUT_RDWR);
 }
 

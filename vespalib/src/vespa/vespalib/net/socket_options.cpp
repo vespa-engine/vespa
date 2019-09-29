@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <cassert>
 
 namespace vespalib {
 
@@ -34,6 +35,14 @@ SocketOptions::set_blocking(int fd, bool value)
         return (fcntl(fd, F_SETFL, flags) == 0);
     }
     return false;
+}
+
+bool
+SocketOptions::get_blocking(int fd)
+{
+    int flags = fcntl(fd, F_GETFL, nullptr);
+    assert(flags != -1);
+    return (flags & O_NONBLOCK) == 0;
 }
 
 bool

@@ -10,6 +10,7 @@ namespace vespalib {
  **/
 struct SocketOptions {
     static bool set_blocking(int fd, bool value);
+    static bool get_blocking(int fd);
     static bool set_nodelay(int fd, bool value);
     static bool set_reuse_addr(int fd, bool value);
     static bool set_ipv6_only(int fd, bool value);
