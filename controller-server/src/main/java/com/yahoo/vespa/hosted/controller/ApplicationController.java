@@ -742,7 +742,6 @@ public class ApplicationController {
                                                    application.get().require(applicationId.instance()).deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
 
-            curator.removeApplication(applicationId);
             applicationStore.removeAll(applicationId);
             applicationStore.removeAll(TesterId.of(applicationId));
 
@@ -755,6 +754,7 @@ public class ApplicationController {
                              controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
                          });
             });
+            curator.storeWithoutInstance(application.without(applicationId.instance()).get(), applicationId);
 
             log.info("Deleted " + application);
         });
