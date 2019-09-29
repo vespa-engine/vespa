@@ -231,6 +231,8 @@ public class UnixPath {
         return new UnixPath(link);
     }
 
+    public FileSnapshot getFileSnapshot() { return FileSnapshot.forPath(path); }
+
     @Override
     public String toString() {
         return path.toString();
