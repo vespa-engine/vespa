@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -65,6 +67,21 @@ public class QueryProfileVariantsTestCase {
         assertGet("a.1.*.5","a", new String[] {"x1","y?","z5"}, profile, cprofile);
         assertGet("a.1.5.*","a", new String[] {"x1","y5","z5"}, profile, cprofile); // Left dimension gets precedence
         assertGet("a.2.*.*","a", new String[] {"x2","y?","z?"}, profile, cprofile);
+    }
+
+    @Test
+    public void testVariantSubstitution() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "langReg", "region", "site" });
+        profile.set("property", "%{site}", null);
+        profile.set("property", "fp", new String[] { null, null, "frontpage"}, null);
+        profile.set("streams", "ntk_stream_fresh", new String[] { "en-GB", "GB" }, null);
+        CompiledQueryProfile cProfile = profile.compile(null);
+
+        Query query = new Query("?langReg=en-GB&region=GB&site=frontpage&tracelevel=4", cProfile);
+        assertEquals("frontpage",        query.properties().get("property"));
+        assertEquals("ntk_stream_fresh", query.properties().get("streams"));
+        assertTrue(traceContains("property=frontpage", query));
     }
 
     @Test
@@ -1145,6 +1162,14 @@ public class QueryProfileVariantsTestCase {
             context.put(entry[0].trim(), entry[1].trim());
         }
         return context;
+    }
+
+    // NB: NOT RECURSIVE
+    private boolean traceContains(String string, Query query) {
+        for (TraceNode node : query.getContext(true).getTrace().traceNode().children())
+            if (node.payload().toString().contains(string))
+                return true;
+        return false;
     }
 
 }
