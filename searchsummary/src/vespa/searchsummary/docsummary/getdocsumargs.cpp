@@ -13,8 +13,7 @@ GetDocsumArgs::GetDocsumArgs()
       _stackDump(),
       _location(),
       _timeout(30 * fastos::TimeStamp::SEC),
-      _propertiesMap(),
-      _isLocationSet(false)
+      _propertiesMap()
 { }
 
 
