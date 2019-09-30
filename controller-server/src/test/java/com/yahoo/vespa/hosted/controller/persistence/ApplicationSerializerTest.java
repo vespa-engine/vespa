@@ -101,7 +101,7 @@ public class ApplicationSerializerTest {
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
                                 .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
 
-        DeploymentJobs deploymentJobs = new DeploymentJobs(OptionalLong.empty(), statusList, empty(), true);
+        DeploymentJobs deploymentJobs = new DeploymentJobs(statusList);
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                                                         Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
@@ -116,7 +116,7 @@ public class ApplicationSerializerTest {
                                                         rotationStatus),
                                            new Instance(id3,
                                                         List.of(),
-                                                        new DeploymentJobs(OptionalLong.empty(), List.of(), empty(), true),
+                                                        new DeploymentJobs(List.of()),
                                                         List.of(),
                                                         RotationStatus.EMPTY));
 
@@ -163,7 +163,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get());
         assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get());
 
-        assertEquals(original.require(id1.instance()).deploymentJobs().projectId(), serialized.require(id1.instance()).deploymentJobs().projectId());
         assertEquals(original.require(id1.instance()).deploymentJobs().jobStatus().size(), serialized.require(id1.instance()).deploymentJobs().jobStatus().size());
         assertEquals(  original.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.systemTest),
                      serialized.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.systemTest));

@@ -58,7 +58,7 @@ public class Application {
     public Application(TenantAndApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(), Change.empty(),
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0), Optional.empty(), OptionalLong.empty(), true, List.of());
+             new ApplicationMetrics(0, 0), Optional.empty(), OptionalLong.empty(), false, List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
@@ -85,33 +85,6 @@ public class Application {
                                                               .map(instance -> Map.entry(instance.name(), instance))
                                                               .sorted(Comparator.comparing(Map.Entry::getKey))
                                                              ::iterator);
-    }
-
-    /** Returns an aggregate application, from the given instances, if at least one. */
-    public static Optional<Application> aggregate(List<Instance> instances) {
-        if (instances.isEmpty())
-            return Optional.empty();
-
-        Instance base = instances.stream()
-                                 .filter(instance -> instance.id().instance().isDefault())
-                                 .findFirst()
-                                 .orElse(instances.iterator().next());
-
-        return Optional.of(new Application(TenantAndApplicationId.from(base.id()), base.createdAt(), base.deploymentSpec(),
-                                           base.validationOverrides(), base.change(), base.outstandingChange(),
-                                           base.deploymentJobs().issueId(), base.ownershipIssueId(), base.owner(),
-                                           base.majorVersion(), base.metrics(), base.pemDeployKey(),
-                                           base.deploymentJobs().projectId(), base.deploymentJobs().deployedInternally(), instances));
-    }
-
-    /** Returns an old Instance representation of this and the given instance, for serialisation. */
-    public Instance legacy(InstanceName instance) {
-        Instance base = require(instance);
-
-        return new Instance(base.id(), createdAt, deploymentSpec, validationOverrides, base.deployments(),
-                            new DeploymentJobs(projectId, base.deploymentJobs().jobStatus().values(), deploymentIssueId, internal),
-                            change, outstandingChange, ownershipIssueId, owner,
-                            majorVersion, metrics, pemDeployKey, base.rotations(), base.rotationStatus());
     }
 
     public TenantAndApplicationId id() { return id; }

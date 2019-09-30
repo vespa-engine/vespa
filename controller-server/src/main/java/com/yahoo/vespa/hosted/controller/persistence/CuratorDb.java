@@ -87,7 +87,6 @@ public class CuratorDb {
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
-    private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
@@ -337,10 +336,6 @@ public class CuratorDb {
 
     public void writeApplication(Application application) {
         curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
-        for (InstanceName name : application.instances().keySet()) {
-            curator.set(oldApplicationPath(application.id().instance(name)),
-                        asJson(instanceSerializer.toSlime(application.legacy(name))));
-        }
     }
 
     public Optional<Application> readApplication(TenantAndApplicationId application) {
@@ -376,8 +371,7 @@ public class CuratorDb {
     }
 
     // TODO jonmv: Refactor when instance split operation is done
-    public void storeWithoutInstance(Application application, ApplicationId instanceId) {
-        curator.delete(oldApplicationPath(instanceId));
+    public void storeWithoutInstance(Application application) {
         if (application.instances().isEmpty())
                 curator.delete(applicationPath(application.id()));
         else
@@ -390,7 +384,7 @@ public class CuratorDb {
      * Add filter for reading only Instance from old application path           RELEASED
      * Write Instance to instance and old application path                      RELEASED
      *
-     * Lock on application level for instance mutations                         MERGED
+     * Lock on application level for instance mutations                         RELEASED
      *
      * Write Instance to instance and application and old application paths     DONE    TO CHANGE   DONE
      * Read Instance from instance path                                         DONE    TO REMOVE   DONE
@@ -407,7 +401,7 @@ public class CuratorDb {
      *
      * Read Application with instances from application path (with filter)      DONE
      *
-     * Stop writing Instance to old application path
+     * Stop writing Instance to old application path                            DONE
      * Remove unused parts of Instance (Used only for legacy serialization)
      * Store new production application packages under non-instance path
      * Read production packages from non-instance path, with fallback
@@ -634,10 +628,6 @@ public class CuratorDb {
 
     private static Path applicationPath(TenantAndApplicationId id) {
         return applicationRoot.append(id.serialized());
-    }
-
-    private static Path oldApplicationPath(ApplicationId application) {
-        return applicationRoot.append(application.serializedForm());
     }
 
     private static Path runsPath(ApplicationId id, JobType type) {

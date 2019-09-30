@@ -106,6 +106,14 @@ public class LockedApplication {
                                projectId, internal, instances.values());
     }
 
+    public LockedApplication withNewInstance(InstanceName instance) {
+        var instances = new HashMap<>(this.instances);
+        instances.put(instance, new Instance(id.instance(instance)));
+        return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKey,
+                                     projectId, internal, instances);
+    }
+
     public LockedApplication with(InstanceName instance, UnaryOperator<Instance> modification) {
         var instances = new HashMap<>(this.instances);
         instances.put(instance, modification.apply(instances.get(instance)));

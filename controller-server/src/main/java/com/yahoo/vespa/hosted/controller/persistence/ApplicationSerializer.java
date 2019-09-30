@@ -539,8 +539,7 @@ public class ApplicationSerializer {
 
     private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
         List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
-
-        return new DeploymentJobs(OptionalLong.empty(), jobStatusList, Optional.empty(), false); // WARNING: Unused variables.
+        return new DeploymentJobs(jobStatusList);
     }
 
     private Change changeFromSlime(Inspector object) {
