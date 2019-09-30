@@ -9,6 +9,7 @@ import com.yahoo.slime.Slime;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.URI;
 
 /**
  * Returns a response containing an array of links to sub-resources
@@ -19,16 +20,19 @@ public class ResourceResponse extends HttpResponse {
 
     private final Slime slime = new Slime();
 
-    public ResourceResponse(HttpRequest request, String ... subResources) {
+    public ResourceResponse(URI parentUrl, String ... subResources) {
         super(200);
         Cursor resourceArray = slime.setObject().setArray("resources");
         for (String subResource : subResources) {
             Cursor resourceEntry = resourceArray.addObject();
-            resourceEntry.setString("url", new Uri(request.getUri())
-                .append(subResource)
-                .withTrailingSlash()
-                .toString());
+            resourceEntry.setString("url", new Uri(parentUrl).append(subResource)
+                                                             .withTrailingSlash()
+                                                             .toString());
         }
+    }
+
+    public ResourceResponse(HttpRequest request, String ... subResources) {
+        this(request.getUri(), subResources);
     }
 
     @Override
