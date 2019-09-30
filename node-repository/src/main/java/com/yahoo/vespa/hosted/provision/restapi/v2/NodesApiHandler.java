@@ -12,7 +12,10 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -98,13 +101,13 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.equals(    "/nodes/v2/")) return ResourcesResponse.fromStrings(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
+        if (path.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade");
         if (path.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (path.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (path.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
         if (path.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
         if (path.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
-        if (path.equals(    "/nodes/v2/command/")) return ResourcesResponse.fromStrings(request.getUri(), "restart", "reboot");
+        if (path.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
         if (path.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
         if (path.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.dockerImages());
         if (path.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);

@@ -931,6 +931,7 @@
       "public"
     ],
     "methods": [
+      "public varargs void <init>(java.net.URI, java.lang.String[])",
       "public varargs void <init>(com.yahoo.container.jdisc.HttpRequest, java.lang.String[])",
       "public void render(java.io.OutputStream)",
       "public java.lang.String getContentType()"

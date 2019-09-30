@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.restapi.v2;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.yolean.Exceptions;
