@@ -35,9 +35,6 @@ import static org.junit.Assume.assumeTrue;
  */
 public class QueryTestCase {
 
-    /**
-     * Basic test
-     */
     @Test
     public void testSimpleQueryParsing () {
         Query q = newQuery("/search?query=foobar&offset=10&hits=20");
@@ -46,9 +43,6 @@ public class QueryTestCase {
         assertEquals(20,q.getHits());
     }
 
-    /**
-     * Not quite so basic
-     */
     @Test
     public void testAdvancedQueryParsing () {
         Query q = newQuery("/search?query=fOObar and kanoo&offset=10&hits=20&filter=-foo +bar&type=adv&suggestonly=true");
@@ -58,9 +52,6 @@ public class QueryTestCase {
         assertEquals(true, q.properties().getBoolean("suggestonly", false));
     }
 
-    /**
-     * Not quite so basic
-     */
     @Test
     public void testAnyQueryParsing () {
         Query q = newQuery("/search?query=foobar and kanoo&offset=10&hits=10&type=any&suggestonly=true&filter=-fast.type:offensive&encoding=latin1");
@@ -71,9 +62,6 @@ public class QueryTestCase {
         assertEquals("latin1",q.getModel().getEncoding());
     }
 
-    /**
-     * A long string
-     */
     @Test
     public void testLongQueryParsing() {
         Query q = newQuery("/p13n?query=news"
@@ -108,18 +96,12 @@ public class QueryTestCase {
         }
     }
 
-    /**
-     * Test UTF-8 decoding
-     */
     @Test
     public void testUtf8Decoding() {
         Query q = new Query("/?query=beyonc%C3%A9");
         assertEquals("beyonc\u00e9",((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
     }
 
-    /**
-     * Check sortspec "parsing" is correct.
-     */
     @Test
     public void testSortSpec() {
         Query q = newQuery("?query=test&sortspec=+a -b c +[rank]");
@@ -321,7 +303,7 @@ public class QueryTestCase {
     /** Test a vertical specific patch, see Tokenizer */
     @Test
     @Ignore
-    public void testOtherharactersParsing() {
+    public void testOtherCharactersParsing() {
         Query query=newQuery(com.yahoo.search.test.QueryTestCase.httpEncode("?query=\u3007\u2e80\u2eff\u2ed0"));
         assertEquals(Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION,
                      Character.UnicodeBlock.of(query.getModel().getQueryTree().getRoot().toString().charAt(0)));
