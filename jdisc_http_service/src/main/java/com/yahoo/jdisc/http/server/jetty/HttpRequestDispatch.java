@@ -127,7 +127,7 @@ class HttpRequestDispatch {
             boolean reportedError = false;
 
             if (error != null) {
-                if (error instanceof CompletionException && error.getCause() instanceof EofException) {
+                if (isErrorOfType(error, EofException.class, IOException.class)) {
                     log.log(Level.FINE,
                             error,
                             () -> "Network connection was unexpectedly terminated: " + parent.jettyRequest.getRequestURI());
