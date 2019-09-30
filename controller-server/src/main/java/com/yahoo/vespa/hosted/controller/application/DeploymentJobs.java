@@ -32,7 +32,9 @@ public class DeploymentJobs {
     private final ImmutableMap<JobType, JobStatus> status;
 
     public DeploymentJobs(Collection<JobStatus> jobStatusEntries) {
-        this.status = ImmutableMap.copyOf(jobStatusEntries.stream().collect(toMap(JobStatus::type, Function.identity())));
+        this.status = ImmutableMap.copyOf((Iterable<Map.Entry<JobType, JobStatus>>)
+                                                  jobStatusEntries.stream()
+                                                                  .map(job -> Map.entry(job.type(), job))::iterator);
     }
 
     /** Return a new instance with the given job update applied. */
@@ -59,7 +61,7 @@ public class DeploymentJobs {
     }
 
     public DeploymentJobs without(JobType job) {
-        Map<JobType, JobStatus> status = new HashMap<>(this.status);
+        Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.remove(job);
         return new DeploymentJobs(status.values());
     }
