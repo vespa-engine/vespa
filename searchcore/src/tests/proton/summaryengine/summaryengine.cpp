@@ -7,7 +7,7 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/searchlib/common/transport.h>
+#include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/metrics/metricset.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 
@@ -336,7 +336,7 @@ void
 createSummary(search::RawBuf &buf) {
     vespalib::Slime summary;
     summary.setObject().setLong("long", 982);
-    uint32_t magic = search::fs4transport::SLIME_MAGIC_ID;
+    uint32_t magic = search::docsummary::SLIME_MAGIC_ID;
     buf.append(&magic, sizeof(magic));
     search::SlimeOutputRawBufAdapter adapter(buf);
     BinaryFormat::encode(summary, adapter);

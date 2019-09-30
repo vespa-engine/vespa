@@ -15,8 +15,8 @@ public:
 
 private:
     vespalib::string  _ranking;
-    uint32_t          _qflags;
     vespalib::string  _resultClassName;
+    bool              _dumpFeatures;
     uint32_t          _stackItems;
     std::vector<char> _stackDump;
     vespalib::string  _location;
@@ -29,7 +29,6 @@ public:
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
 
     void SetRankProfile(const vespalib::string &ranking) { _ranking = ranking; }
-    void SetQueryFlags(uint32_t qflags)         { _qflags = qflags; }
     void setResultClassName(vespalib::stringref name) { _resultClassName = name; }
     void SetStackDump(uint32_t stackItems, uint32_t stackDumpLen, const char *stackDump);
     void setLocation(vespalib::stringref location) {
@@ -45,7 +44,8 @@ public:
         return vespalib::stringref(&_stackDump[0], _stackDump.size());
     }
 
-    uint32_t GetQueryFlags()                           const { return _qflags;       }
+    void dumpFeatures(bool v) { _dumpFeatures = v; }
+    bool dumpFeatures() const { return _dumpFeatures; }
 
     const PropsMap &propertiesMap() const { return _propertiesMap; }
 

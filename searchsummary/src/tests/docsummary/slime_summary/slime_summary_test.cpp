@@ -4,7 +4,6 @@
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 
@@ -43,7 +42,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         ASSERT_GREATER(buf.GetUsedLen(), sizeof(classId));
         memcpy(&classId, buf.GetDrainPos(), sizeof(classId));
         buf.Drain(sizeof(classId));
-        EXPECT_EQUAL(classId, ::search::fs4transport::SLIME_MAGIC_ID);
+        EXPECT_EQUAL(classId, SLIME_MAGIC_ID);
         EXPECT_GREATER(vespalib::slime::BinaryFormat
                        ::decode(Memory(buf.GetDrainPos(), buf.GetUsedLen()), slime), 0u);
     }
