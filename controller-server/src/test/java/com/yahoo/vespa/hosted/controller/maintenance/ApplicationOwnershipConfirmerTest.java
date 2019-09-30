@@ -44,12 +44,12 @@ public class ApplicationOwnershipConfirmerTest {
         Optional<Contact> contact = Optional.of(tester.controllerTester().serviceRegistry().contactRetrieverMock().contact());
         TenantName property = tester.controllerTester().createTenant("property", "domain", 1L, contact);
         tester.createAndDeploy(property, "application", 1, "default");
-        Supplier<Instance> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
+        Supplier<Instance> propertyApp = () -> tester.controller().applications().requireInstance(ApplicationId.from("property", "application", "default"));
 
         UserTenant user = UserTenant.create("by-user", contact);
         tester.controller().tenants().createUser(user);
         tester.createAndDeploy(user.name(), "application", 2, "default");
-        Supplier<Instance> userApp = () -> tester.controller().applications().require(ApplicationId.from("by-user", "application", "default"));
+        Supplier<Instance> userApp = () -> tester.controller().applications().requireInstance(ApplicationId.from("by-user", "application", "default"));
 
         assertFalse("No issue is initially stored for a new application.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is initially stored for a new application.", userApp.get().ownershipIssueId().isPresent());

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -16,6 +17,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -36,49 +38,49 @@ public class OutstandingChangeDeployerTest {
                 .region("us-west-1")
                 .build();
 
-        tester.createAndDeploy("app1", 11, applicationPackage);
-        tester.createAndDeploy("app2", 22, applicationPackage);
+        Application app1 = tester.createAndDeploy("app1", 11, applicationPackage);
+        Application app2 = tester.createAndDeploy("app2", 22, applicationPackage);
 
         Version version = new Version(6, 2);
-        tester.deploymentTrigger().triggerChange(tester.application("app1").id(), Change.of(version));
+        tester.deploymentTrigger().triggerChange(app1.id(), Change.of(version));
         tester.deploymentTrigger().triggerReadyJobs();
 
-        assertEquals(Change.of(version), tester.application("app1").change());
-        assertFalse(tester.application("app1").outstandingChange().hasTargets());
+        assertEquals(Change.of(version), tester.defaultInstance("app1").change());
+        assertFalse(tester.defaultInstance("app1").outstandingChange().hasTargets());
 
         tester.jobCompletion(JobType.component)
-              .application(tester.application("app1"))
+              .application(app1)
               .sourceRevision(new SourceRevision("repository1","master", "cafed00d"))
               .nextBuildNumber()
               .uploadArtifact(applicationPackage)
               .submit();
 
-        Instance app = tester.application("app1");
-        assertTrue(app.outstandingChange().hasTargets());
-        assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
+        Instance instance = tester.defaultInstance("app1");
+        assertTrue(instance.outstandingChange().hasTargets());
+        assertEquals("1.0.43-cafed00d", instance.outstandingChange().application().get().id());
         assertEquals(2, tester.buildService().jobs().size());
 
         deployer.maintain();
         tester.deploymentTrigger().triggerReadyJobs();
         assertEquals("No effect as job is in progress", 2, tester.buildService().jobs().size());
-        assertEquals("1.0.43-cafed00d", app.outstandingChange().application().get().id());
+        assertEquals("1.0.43-cafed00d", instance.outstandingChange().application().get().id());
 
-        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.productionUsWest1);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(app, applicationPackage, true, JobType.stagingTest);
+        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.systemTest);
+        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.stagingTest);
+        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.productionUsWest1);
+        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.systemTest);
+        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.stagingTest);
         assertEquals("Upgrade done", 0, tester.buildService().jobs().size());
 
         deployer.maintain();
         tester.deploymentTrigger().triggerReadyJobs();
-        app = tester.application("app1");
-        assertEquals("1.0.43-cafed00d", app.change().application().get().id());
+        instance = tester.defaultInstance("app1");
+        assertEquals("1.0.43-cafed00d", instance.change().application().get().id());
         List<BuildService.BuildJob> jobs = tester.buildService().jobs();
         assertEquals(1, jobs.size());
         assertEquals(JobType.productionUsWest1.jobName(), jobs.get(0).jobName());
-        assertEquals(11, jobs.get(0).projectId());
-        assertFalse(tester.application("app1").outstandingChange().hasTargets());
+        assertEquals(app1.id().defaultInstance(), jobs.get(0).applicationId());
+        assertFalse(tester.defaultInstance("app1").outstandingChange().hasTargets());
     }
 
 }

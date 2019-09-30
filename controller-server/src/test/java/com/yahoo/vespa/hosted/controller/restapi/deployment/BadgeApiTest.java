@@ -2,7 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -20,13 +20,13 @@ public class BadgeApiTest extends ControllerContainerTest {
     @Test
     public void testBadgeApi() {
         ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        Instance instance = tester.createApplication("domain", "tenant", "application", "default");
+        Application application = tester.createApplication("domain", "tenant", "application", "default");
         ApplicationPackage packageWithService = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
                 .region("us-west-1")
                 .build();
-        tester.controller().jobController().submit(instance.id(),
+        tester.controller().jobController().submit(application.id().defaultInstance(),
                                                    new SourceRevision("repository", "branch", "commit"),
                                                    "foo@bar",
                                                    123,

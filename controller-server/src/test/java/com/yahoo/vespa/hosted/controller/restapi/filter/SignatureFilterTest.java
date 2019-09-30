@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +43,8 @@ public class SignatureFilterTest {
                                                   "PbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
                                                   "-----END EC PRIVATE KEY-----\n";
 
-    private static final ApplicationId id = ApplicationId.from("my-tenant", "my-app", "default");
+    private static final TenantAndApplicationId appId = TenantAndApplicationId.from("my-tenant", "my-app");
+    private static final ApplicationId id = appId.defaultInstance();
 
     private ControllerTester tester;
     private ApplicationController applications;
@@ -77,12 +79,12 @@ public class SignatureFilterTest {
         assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
         // Signed request gets no role when a non-matching key is stored for the application.
-        applications.lockOrThrow(id, application -> applications.store(application.withPemDeployKey(otherPublicKey)));
+        applications.lockApplicationOrThrow(appId, application -> applications.store(application.withPemDeployKey(otherPublicKey)));
         filter.filter(signed);
         assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
         // Signed request gets a build service role when a matching key is stored for the application.
-        applications.lockOrThrow(id, application -> applications.store(application.withPemDeployKey(publicKey)));
+        applications.lockApplicationOrThrow(appId, application -> applications.store(application.withPemDeployKey(publicKey)));
         assertTrue(filter.filter(signed).isEmpty());
         SecurityContext securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
         assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());

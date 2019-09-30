@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -25,7 +25,7 @@ public class TestConfigSerializerTest {
     @Test
     public void testConfig() throws IOException {
         ZoneId zone = JobType.systemTest.zone(SystemName.PublicCd);
-        byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(appId,
+        byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(instanceId,
                                                                                JobType.systemTest,
                                                                                Map.of(zone, Map.of(ClusterSpec.Id.from("ai"),
                                                                                                    URI.create("https://server/"))),

@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -83,7 +84,7 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          phasedExecutor(phaser), stepRunner);
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
         jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
@@ -114,7 +115,7 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
         jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
@@ -202,7 +203,7 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
         jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
@@ -217,7 +218,7 @@ public class JobRunnerTest {
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
-        tester.controllerTester().controller().applications().deleteApplication(id.tenant(), id.application(), tester.controllerTester().credentialsFor(id));
+        tester.controllerTester().controller().applications().deleteApplication(id.tenant(), id.application(), tester.controllerTester().credentialsFor(TenantAndApplicationId.from(id)));
         assertEquals(Collections.emptyList(), jobs.active());
         assertEquals(runId, jobs.last(id, systemTest).get().id());
 
@@ -238,7 +239,7 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), (id, step) -> Optional.of(running));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
         jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         for (int i = 0; i < jobs.historyLength(); i++) {
@@ -266,7 +267,7 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
         jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);

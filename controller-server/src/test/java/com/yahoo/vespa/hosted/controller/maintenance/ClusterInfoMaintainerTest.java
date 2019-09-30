@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -29,21 +29,23 @@ public class ClusterInfoMaintainerTest {
 
     @Test
     public void maintain() {
-        ApplicationId app = tester.createAndDeploy("tenant1", "domain1", "app1",
-                                                   Environment.dev, 123).id();
+        tester.createTenant("tenant1", "domain123", 321L);
+        ApplicationId app = tester.createApplication(TenantName.from("tenant1"), "app1", "default", 123).id().defaultInstance();
+        ZoneId zone = ZoneId.from("dev", "us-east-1");
+        tester.deploy(app, zone);
 
         // Precondition: no cluster info attached to the deployments
-        Deployment deployment = tester.controller().applications().get(app).get().deployments().values().stream()
+        Deployment deployment = tester.controller().applications().getInstance(app).get().deployments().values().stream()
                                       .findFirst()
                                       .get();
         assertEquals(0, deployment.clusterInfo().size());
 
-        addNodes(ZoneId.from("dev", "us-east-1"));
+        addNodes(zone);
         ClusterInfoMaintainer maintainer = new ClusterInfoMaintainer(tester.controller(), Duration.ofHours(1),
                                                                      new JobControl(new MockCuratorDb()));
         maintainer.maintain();
 
-        deployment = tester.controller().applications().get(app).get().deployments().values().stream()
+        deployment = tester.controller().applications().getInstance(app).get().deployments().values().stream()
                            .findFirst()
                            .get();
         assertEquals(2, deployment.clusterInfo().size());

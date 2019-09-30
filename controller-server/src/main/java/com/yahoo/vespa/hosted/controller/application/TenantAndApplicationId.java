@@ -45,7 +45,11 @@ public class TenantAndApplicationId implements Comparable<TenantAndApplicationId
     }
 
     public ApplicationId defaultInstance() {
-        return ApplicationId.from(tenant, application, InstanceName.defaultName());
+        return instance(InstanceName.defaultName());
+    }
+
+    public ApplicationId instance(InstanceName instance) {
+        return ApplicationId.from(tenant, application, instance);
     }
 
     public String serialized() {

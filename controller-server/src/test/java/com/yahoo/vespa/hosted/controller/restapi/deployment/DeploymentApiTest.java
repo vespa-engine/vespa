@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -39,15 +40,15 @@ public class DeploymentApiTest extends ControllerContainerTest {
                 .build();
 
         // 3 applications deploy on current system version
-        Instance failingInstance = tester.createApplication("domain1", "tenant1", "application1", "default");
-        Instance productionInstance = tester.createApplication("domain2", "tenant2", "application2", "default");
-        Instance instanceWithoutDeployment = tester.createApplication("domain3", "tenant3", "application3", "default");
+        Application failingInstance = tester.createApplication("domain1", "tenant1", "application1", "default");
+        Application productionInstance = tester.createApplication("domain2", "tenant2", "application2", "default");
+        Application instanceWithoutDeployment = tester.createApplication("domain3", "tenant3", "application3", "default");
         tester.deployCompletely(failingInstance, applicationPackage, 1L, false);
         tester.deployCompletely(productionInstance, applicationPackage, 2L, false);
 
         // Deploy once so that job information is stored, then remove the deployment
         tester.deployCompletely(instanceWithoutDeployment, applicationPackage, 3L, false);
-        tester.controller().applications().deactivate(instanceWithoutDeployment.id(), ZoneId.from("prod", "us-west-1"));
+        tester.controller().applications().deactivate(instanceWithoutDeployment.id().defaultInstance(), ZoneId.from("prod", "us-west-1"));
 
         // New version released
         version = Version.fromString("5.1");

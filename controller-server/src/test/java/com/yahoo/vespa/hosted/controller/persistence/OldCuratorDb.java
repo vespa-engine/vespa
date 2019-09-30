@@ -337,8 +337,7 @@ public class OldCuratorDb {
     }
 
     public Optional<Instance> readInstance(ApplicationId application) {
-        return readSlime(instancePath(application)).or(() -> readSlime(applicationPath(application)))
-                                                   .map(instanceSerializer::fromSlime);
+        return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
     }
 
     public List<Instance> readInstances() {
@@ -350,11 +349,10 @@ public class OldCuratorDb {
     }
 
     private Stream<ApplicationId> readInstanceIds() {
-        return Stream.concat(curator.getChildren(applicationRoot).stream()
-                                    .filter(id -> id.split(":").length == 3),
-                             curator.getChildren(instanceRoot).stream())
-                     .distinct()
-                     .map(ApplicationId::fromSerializedForm);
+        return curator.getChildren(applicationRoot).stream()
+                      .filter(id -> id.split(":").length == 3)
+                      .distinct()
+                      .map(ApplicationId::fromSerializedForm);
     }
 
     private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {

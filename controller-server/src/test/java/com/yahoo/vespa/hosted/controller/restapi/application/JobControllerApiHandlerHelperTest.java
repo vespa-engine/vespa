@@ -33,7 +33,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
@@ -55,7 +55,7 @@ public class JobControllerApiHandlerHelperTest {
 
         // Revision 1 gets deployed everywhere.
         ApplicationVersion revision1 = tester.deployNewSubmission();
-        assertEquals(2, tester.app().deploymentJobs().projectId().getAsLong());
+        assertEquals(2, tester.instance().deploymentJobs().projectId().getAsLong());
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.
@@ -69,20 +69,20 @@ public class JobControllerApiHandlerHelperTest {
         // us-east-3 eats the deployment failure and fails before deployment, while us-west-1 fails after.
         tester.configServer().throwOnNextPrepare(new ConfigServerException(URI.create("url"), "ERROR!", INVALID_APPLICATION_PACKAGE, null));
         tester.runner().run();
-        assertEquals(deploymentFailed, tester.jobs().last(appId, productionUsEast3).get().status());
+        assertEquals(deploymentFailed, tester.jobs().last(instanceId, productionUsEast3).get().status());
 
         ZoneId usWest1 = productionUsWest1.zone(tester.tester().controller().system());
-        tester.configServer().convergeServices(appId, usWest1);
+        tester.configServer().convergeServices(instanceId, usWest1);
         tester.configServer().convergeServices(testerId.id(), usWest1);
-        tester.setEndpoints(appId, usWest1);
+        tester.setEndpoints(instanceId, usWest1);
         tester.setEndpoints(testerId.id(), usWest1);
         tester.runner().run();
         tester.cloud().set(FAILURE);
         tester.runner().run();
-        assertEquals(testFailure, tester.jobs().last(appId, productionUsWest1).get().status());
-        assertEquals(revision2, tester.app().deployments().get(productionUsCentral1.zone(tester.tester().controller().system())).applicationVersion());
-        assertEquals(revision1, tester.app().deployments().get(productionUsEast3.zone(tester.tester().controller().system())).applicationVersion());
-        assertEquals(revision2, tester.app().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(testFailure, tester.jobs().last(instanceId, productionUsWest1).get().status());
+        assertEquals(revision2, tester.instance().deployments().get(productionUsCentral1.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision1, tester.instance().deployments().get(productionUsEast3.zone(tester.tester().controller().system())).applicationVersion());
+        assertEquals(revision2, tester.instance().deployments().get(productionUsWest1.zone(tester.tester().controller().system())).applicationVersion());
 
         tester.clock().advance(Duration.ofMillis(1000));
 
@@ -93,17 +93,17 @@ public class JobControllerApiHandlerHelperTest {
         tester.tester().readyJobTrigger().maintain(); // Starts a run for us-central-1.
         tester.tester().readyJobTrigger().maintain(); // Starts a new staging test run.
         tester.runner().run();
-        assertEquals(running, tester.jobs().last(appId, productionUsCentral1).get().status());
-        assertEquals(running, tester.jobs().last(appId, stagingTest).get().status());
+        assertEquals(running, tester.jobs().last(instanceId, productionUsCentral1).get().status());
+        assertEquals(running, tester.jobs().last(instanceId, stagingTest).get().status());
 
         // Staging is expired, and the job fails and won't be retried immediately.
-        tester.tester().controller().applications().deactivate(appId, stagingTest.zone(tester.tester().controller().system()));
+        tester.tester().controller().applications().deactivate(instanceId, stagingTest.zone(tester.tester().controller().system()));
         tester.runner().run();
-        assertEquals(installationFailed, tester.jobs().last(appId, stagingTest).get().status());
+        assertEquals(installationFailed, tester.jobs().last(instanceId, stagingTest).get().status());
 
         tester.clock().advance(Duration.ofMillis(100_000)); // More than the minute within which there are immediate retries.
         tester.tester().readyJobTrigger().maintain();
-        assertEquals(installationFailed, tester.jobs().last(appId, stagingTest).get().status());
+        assertEquals(installationFailed, tester.jobs().last(instanceId, stagingTest).get().status());
 
         // System upgrades to a new version, which won't yet start.
         Version platform = new Version("7.1");
@@ -114,13 +114,13 @@ public class JobControllerApiHandlerHelperTest {
         // Only us-east-3 is verified, on revision1.
         // staging-test has 4 runs: one success without sources on revision1, one success from revision1 to revision2,
         // one success from revision2 to revision3 and one failure from revision1 to revision3.
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
-        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
-        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root/")), "overview.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(instanceId, stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(instanceId, productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), instanceId, URI.create("https://some.url:43/root/")), "overview.json");
 
-        tester.jobs().deploy(appId, JobType.devAwsUsEast2a, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(instanceId, JobType.devAwsUsEast2a, Optional.empty(), applicationPackage);
         tester.runJob(JobType.devAwsUsEast2a);
-        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(appId, devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
+        assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(instanceId, devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
     }
 
     @Test
@@ -129,17 +129,17 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().setInstant(Instant.EPOCH);
 
         ZoneId zone = JobType.devUsEast1.zone(tester.tester().controller().system());
-        tester.jobs().deploy(appId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(instanceId, JobType.devUsEast1, Optional.empty(), applicationPackage);
         tester.configServer().setLogStream("1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n");
-        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, devUsEast1).get().id(), null), "dev-us-east-1-log-first-part.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(instanceId, devUsEast1).get().id(), null), "dev-us-east-1-log-first-part.json");
 
         tester.configServer().setLogStream("Nope, this won't be logged");
-        tester.configServer().convergeServices(appId, zone);
-        tester.setEndpoints(appId, zone);
+        tester.configServer().convergeServices(instanceId, zone);
+        tester.setEndpoints(instanceId, zone);
         tester.runner().run();
 
-        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root")), "dev-overview.json");
-        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(appId, devUsEast1).get().id(), "9"), "dev-us-east-1-log-second-part.json");
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), instanceId, URI.create("https://some.url:43/root")), "dev-overview.json");
+        assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(instanceId, devUsEast1).get().id(), "9"), "dev-us-east-1-log-second-part.json");
     }
 
     @Test
@@ -149,11 +149,11 @@ public class JobControllerApiHandlerHelperTest {
         var region = "us-west-1";
         var applicationPackage = new ApplicationPackageBuilder().region(region).build();
         // Deploy directly to production zone, like integration tests.
-        tester.tester().controller().applications().deploy(tester.app().id(), ZoneId.from("prod", region),
+        tester.tester().controller().applications().deploy(tester.instance().id(), ZoneId.from("prod", region),
                                                            Optional.of(applicationPackage),
                                                            new DeployOptions(true, Optional.empty(),
                                                                              false, false));
-        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), appId, URI.create("https://some.url:43/root/")),
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), instanceId, URI.create("https://some.url:43/root/")),
                        "jobs-direct-deployment.json");
     }
 

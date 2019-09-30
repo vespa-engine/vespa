@@ -5,12 +5,14 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -24,6 +26,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
@@ -68,8 +71,9 @@ public class InternalDeploymentTester {
             .emailAddress("b@a")
             .trust(generateCertificate())
             .build();
-    public static final ApplicationId appId = ApplicationId.from("tenant", "application", "default");
-    public static final TesterId testerId = TesterId.of(appId);
+    public static final TenantAndApplicationId appId = TenantAndApplicationId.from("tenant", "application");
+    public static final ApplicationId instanceId = appId.defaultInstance();
+    public static final TesterId testerId = TesterId.of(instanceId);
     public static final String athenzDomain = "domain";
 
     private final DeploymentTester tester;
@@ -86,12 +90,13 @@ public class InternalDeploymentTester {
     public ConfigServerMock configServer() { return tester.configServer(); }
     public ApplicationController applications() { return tester.applications(); }
     public ManualClock clock() { return tester.clock(); }
-    public Instance app() { return tester.application(appId); }
+    public Application application() { return tester.application(appId); }
+    public Instance instance() { return tester.instance(instanceId); }
 
     public InternalDeploymentTester() {
         tester = new DeploymentTester();
-        tester.controllerTester().createApplication(tester.controllerTester().createTenant(appId.tenant().value(), athenzDomain, 1L),
-                                                    appId.application().value(),
+        tester.controllerTester().createApplication(tester.controllerTester().createTenant(instanceId.tenant().value(), athenzDomain, 1L),
+                                                    instanceId.application().value(),
                                                     "default",
                                                     1);
         jobs = tester.controller().jobController();
@@ -115,7 +120,7 @@ public class InternalDeploymentTester {
      * Submits a new application, and returns the version of the new submission.
      */
     public ApplicationVersion newSubmission() {
-        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2,
+        return jobs.submit(instanceId, BuildJob.defaultSourceRevision, "a@b", 2,
                            tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage, new byte[0]);
     }
 
@@ -145,10 +150,10 @@ public class InternalDeploymentTester {
     public ApplicationVersion deployNewSubmission() {
         ApplicationVersion applicationVersion = newSubmission();
 
-        assertFalse(app().deployments().values().stream()
-                         .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
-        assertEquals(applicationVersion, app().change().application().get());
-        assertFalse(app().change().platform().isPresent());
+        assertFalse(instance().deployments().values().stream()
+                              .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
+        assertEquals(applicationVersion, instance().change().application().get());
+        assertFalse(instance().change().platform().isPresent());
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
@@ -164,28 +169,28 @@ public class InternalDeploymentTester {
      */
     public void deployNewPlatform(Version version) {
         tester.upgradeSystem(version);
-        assertFalse(app().deployments().values().stream()
-                         .anyMatch(deployment -> deployment.version().equals(version)));
-        assertEquals(version, app().change().platform().get());
-        assertFalse(app().change().application().isPresent());
+        assertFalse(instance().deployments().values().stream()
+                              .anyMatch(deployment -> deployment.version().equals(version)));
+        assertEquals(version, instance().change().platform().get());
+        assertFalse(instance().change().application().isPresent());
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
         runJob(JobType.productionUsCentral1);
         runJob(JobType.productionUsWest1);
         runJob(JobType.productionUsEast3);
-        assertTrue(app().productionDeployments().values().stream()
-                        .allMatch(deployment -> deployment.version().equals(version)));
+        assertTrue(instance().productionDeployments().values().stream()
+                             .allMatch(deployment -> deployment.version().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
-                         .list(JobType.productionAwsUsEast1a.zone(tester.controller().system()), appId).stream()
+                         .list(JobType.productionAwsUsEast1a.zone(tester.controller().system()), instanceId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
-                         .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
+                         .list(JobType.productionUsEast3.zone(tester.controller().system()), instanceId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
         assertTrue(tester.configServer().nodeRepository()
-                         .list(JobType.productionUsEast3.zone(tester.controller().system()), appId).stream()
+                         .list(JobType.productionUsEast3.zone(tester.controller().system()), instanceId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
-        assertFalse(app().change().hasTargets());
+        assertFalse(instance().change().hasTargets());
     }
 
     /**
@@ -201,15 +206,15 @@ public class InternalDeploymentTester {
         assertNotSame(aborted, run.status());
 
         ZoneId zone = type.zone(tester.controller().system());
-        DeploymentId deployment = new DeploymentId(appId, zone);
+        DeploymentId deployment = new DeploymentId(instanceId, zone);
 
         // First steps are always deployments.
         runner.run();
 
         if (type == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installInitialReal));
-            tester.configServer().convergeServices(appId, zone);
-            setEndpoints(appId, zone);
+            tester.configServer().convergeServices(instanceId, zone);
+            setEndpoints(instanceId, zone);
             run.versions().sourcePlatform().ifPresent(version -> tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), version));
             runner.run();
             assertEquals(Step.Status.succeeded, jobs.active(run.id()).get().steps().get(Step.installInitialReal));
@@ -219,12 +224,12 @@ public class InternalDeploymentTester {
         tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), run.versions().targetPlatform());
         runner.run();
         assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installReal));
-        tester.configServer().convergeServices(appId, zone);
+        tester.configServer().convergeServices(instanceId, zone);
         runner.run();
         if (   ! (run.versions().sourceApplication().isPresent() && type.isProduction())
             &&   type != JobType.stagingTest) {
             assertEquals(unfinished, jobs.active(run.id()).get().steps().get(Step.installReal));
-            setEndpoints(appId, zone);
+            setEndpoints(instanceId, zone);
         }
         runner.run();
         if (type.environment().isManuallyDeployed()) {
@@ -253,10 +258,10 @@ public class InternalDeploymentTester {
         runner.run();
         assertTrue(jobs.run(run.id()).get().hasEnded());
         assertFalse(jobs.run(run.id()).get().hasFailed());
-        assertEquals(type.isProduction(), app().deployments().containsKey(zone));
+        assertEquals(type.isProduction(), instance().deployments().containsKey(zone));
         assertTrue(tester.configServer().nodeRepository().list(zone, testerId.id()).isEmpty());
 
-        if ( ! app().deployments().containsKey(zone))
+        if ( ! instance().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
         routing.removeEndpoints(new DeploymentId(testerId.id(), zone));
     }
@@ -264,9 +269,9 @@ public class InternalDeploymentTester {
     public RunId startSystemTestTests() {
         RunId id = newRun(JobType.systemTest);
         runner.run();
-        tester.configServer().convergeServices(appId, JobType.systemTest.zone(tester.controller().system()));
+        tester.configServer().convergeServices(instanceId, JobType.systemTest.zone(tester.controller().system()));
         tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(tester.controller().system()));
-        setEndpoints(appId, JobType.systemTest.zone(tester.controller().system()));
+        setEndpoints(instanceId, JobType.systemTest.zone(tester.controller().system()));
         setEndpoints(testerId.id(), JobType.systemTest.zone(tester.controller().system()));
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
@@ -277,7 +282,7 @@ public class InternalDeploymentTester {
      * Creates and submits a new application, and then starts the job of the given type.
      */
     public RunId newRun(JobType type) {
-        assertFalse(app().deploymentJobs().deployedInternally()); // Use this only once per test.
+        assertFalse(instance().deploymentJobs().deployedInternally()); // Use this only once per test.
         newSubmission();
         tester.readyJobTrigger().maintain();
 

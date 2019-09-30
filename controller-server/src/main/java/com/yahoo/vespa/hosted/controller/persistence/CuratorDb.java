@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -13,6 +14,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -86,6 +88,7 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
+    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
@@ -336,44 +339,96 @@ public class CuratorDb {
         curator.delete(tenantPath(name));
     }
 
-    // -------------- Application ---------------------------------------------
+    // -------------- Applications ---------------------------------------------
 
-    public void writeInstance(Instance instance) {
-        curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
-        curator.set(instancePath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
+    public void writeApplication(Application application) {
+        curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
+        for (InstanceName name : application.instances().keySet()) {
+            curator.set(oldApplicationPath(application.id().instance(name)),
+                        asJson(instanceSerializer.toSlime(application.legacy(name))));
+        }
     }
 
-    public Optional<Instance> readInstance(ApplicationId application) {
-        return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
+    public Optional<Application> readApplication(TenantAndApplicationId application) {
+        List<Instance> instances = readInstances(id -> TenantAndApplicationId.from(id).equals(application));
+        return Application.aggregate(instances);
     }
 
-    public List<Instance> readInstances() {
-        return readInstances(ignored -> true);
+    public List<Application> readApplications() {
+        return readApplications(ignored -> true);
     }
 
-    public List<Instance> readInstances(TenantName name) {
-        return readInstances(application -> application.tenant().equals(name));
+    public List<Application> readApplications(TenantName name) {
+        return readApplications(application -> application.tenant().equals(name));
+    }
+
+    private Stream<TenantAndApplicationId> readTenantAndApplicationIds() {
+        return readInstanceIds().map(TenantAndApplicationId::from).distinct();
+    }
+
+    private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter) {
+        return readTenantAndApplicationIds().filter(applicationFilter)
+                                            .sorted()
+                                            .map(this::readApplication)
+                                            .flatMap(Optional::stream)
+                                            .collect(Collectors.toUnmodifiableList());
+    }
+
+    private Optional<Instance> readInstance(ApplicationId application) {
+        return readSlime(oldApplicationPath(application)).map(instanceSerializer::fromSlime);
     }
 
     private Stream<ApplicationId> readInstanceIds() {
         return curator.getChildren(applicationRoot).stream()
                       .filter(id -> id.split(":").length == 3)
-                      .distinct()
                       .map(ApplicationId::fromSerializedForm);
     }
 
-    private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
-        return readInstanceIds().filter(instanceFilter)
+    private List<Instance> readInstances(Predicate<ApplicationId> applicationFilter) {
+        return readInstanceIds().filter(applicationFilter)
+                                .sorted()
                                 .map(this::readInstance)
                                 .flatMap(Optional::stream)
                                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void removeInstance(ApplicationId id) {
+    public void removeApplication(ApplicationId id) {
         // WARNING: This is part of a multi-step data move operation, so don't touch!!!
-        curator.delete(applicationPath(id));
-        curator.delete(instancePath(id));
+        curator.delete(oldApplicationPath(id));
+        if (readApplication(TenantAndApplicationId.from(id)).isEmpty())
+            curator.delete(applicationPath(TenantAndApplicationId.from(id)));
     }
+
+    public void clearInstanceRoot() {
+        curator.delete(instanceRoot);
+    }
+
+    /**
+     * Migration plan:
+     *
+     * Add filter for reading only Instance from old application path           RELEASED
+     * Write Instance to instance and old application path                      RELEASED
+     *
+     * Lock on application level for instance mutations                         MERGED
+     *
+     * Write Instance to instance and application and old application paths     DONE    TO CHANGE   DONE
+     * Read Instance from instance path                                         DONE    TO REMOVE   DONE
+     * Duplicate Application from Instance, with helper classes                 DONE
+     * Write Application to instance and application and old application paths  DONE    TO CHANGE   DONE
+     * Read Application from instance path                                      DONE    TO REMOVE   DONE
+     * Use Application where applicable                                         DONE    !!!
+     * Lock instances and application on same level: tenant + application       DONE    TO CHANGE   DONE
+     * When reading an application, read all instances, and aggregate them      DONE
+     * Write application with instances to application path                     DONE
+     * Write all instances of an application to old application path            DONE
+     * Remove everything under instance root                                    DONE
+     *
+     * Read Application with instances from application path (with filter)
+     * Stop locking applications on instance level
+     *
+     * Stop writing Instance to old application path
+     * Remove unused parts of Instance (Used only for legacy serialization)
+     */
 
     // -------------- Job Runs ------------------------------------------------
 
@@ -594,7 +649,11 @@ public class CuratorDb {
         return tenantRoot.append(name.value());
     }
 
-    private static Path applicationPath(ApplicationId application) {
+    private static Path applicationPath(TenantAndApplicationId id) {
+        return applicationRoot.append(id.serialized());
+    }
+
+    private static Path oldApplicationPath(ApplicationId application) {
         return applicationRoot.append(application.serializedForm());
     }
 

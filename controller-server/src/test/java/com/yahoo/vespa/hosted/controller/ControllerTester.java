@@ -14,7 +14,6 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -27,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
@@ -45,6 +45,7 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Consumer;
@@ -53,6 +54,7 @@ import java.util.logging.Handler;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Convenience methods for controller tests.
@@ -126,8 +128,11 @@ public final class ControllerTester {
               .ifPresent(configureFunc);
     }
 
-    public static BuildService.BuildJob buildJob(Instance instance, JobType jobType) {
-        return BuildService.BuildJob.of(instance.id(), instance.deploymentJobs().projectId().getAsLong(), jobType.jobName());
+    public static BuildService.BuildJob buildJob(ApplicationId id, JobType jobType) {
+        if (jobType == JobType.component)
+            throw new AssertionError("Not supposed to happen");
+
+        return BuildService.BuildJob.of(id, 0, jobType.jobName());
     }
 
     public Controller controller() { return controller; }
@@ -157,37 +162,33 @@ public final class ControllerTester {
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
-        return createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
+    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId, Long propertyId) {
+        createAndDeploy(tenantName, domainName, applicationName, toZone(environment), projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName,
+    public void createAndDeploy(String tenantName, String domainName, String applicationName,
                                     String instanceName, ZoneId zone, long projectId, Long propertyId) {
-        TenantName tenant = createTenant(tenantName, domainName, propertyId);
-        Instance instance = createApplication(tenant, applicationName, instanceName, projectId);
-        deploy(instance, zone);
-        return instance;
+        throw new AssertionError("Not supposed to use this");
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
-        return createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
+    public void createAndDeploy(String tenantName, String domainName, String applicationName, ZoneId zone, long projectId, Long propertyId) {
+        createAndDeploy(tenantName, domainName, applicationName, "default", zone, projectId, propertyId);
     }
 
     /** Creates the given tenant and application and deploys it */
-    public Instance createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
-        return createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
+    public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
+        createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
 
     /** Create application from slime */
-    public Instance createApplication(Slime slime) {
-        InstanceSerializer serializer = new InstanceSerializer();
-        Instance instance = serializer.fromSlime(slime);
-        try (Lock lock = controller().applications().lock(instance.id())) {
-            controller().applications().store(new LockedInstance(instance, lock));
+    public void createApplication(Slime slime) {
+        Instance instance = new InstanceSerializer().fromSlime(slime);
+        Application application = Application.aggregate(List.of(instance)).get();
+        try (Lock lock = controller().applications().lock(application.id())) {
+            controller().applications().store(new LockedApplication(application, lock));
         }
-        return instance;
     }
 
     public ZoneId toZone(Environment environment) {
@@ -207,7 +208,7 @@ public final class ControllerTester {
         return domain;
     }
 
-    public Optional<AthenzDomain> domainOf(ApplicationId id) {
+    public Optional<AthenzDomain> domainOf(TenantAndApplicationId id) {
         Tenant tenant = controller().tenants().require(id.tenant());
         return tenant.type() == Tenant.Type.athenz ? Optional.of(((AthenzTenant) tenant).domain()) : Optional.empty();
     }
@@ -235,50 +236,47 @@ public final class ControllerTester {
         return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
 
-    public Optional<Credentials> credentialsFor(ApplicationId id) {
+    public Optional<Credentials> credentialsFor(TenantAndApplicationId id) {
         return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                 domain,
                                                                 new OktaAccessToken("okta-token")));
     }
 
-    public Instance createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
+    public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
         ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
-        controller().applications().createApplication(applicationId, credentialsFor(applicationId));
-        controller().applications().lockOrThrow(applicationId, lockedInstance ->
-                controller().applications().store(lockedInstance.withProjectId(OptionalLong.of(projectId))));
-        return controller().applications().require(applicationId);
+        controller().applications().createApplication(applicationId, credentialsFor(TenantAndApplicationId.from(applicationId)));
+        controller().applications().lockApplicationOrThrow(TenantAndApplicationId.from(applicationId), application ->
+                controller().applications().store(application.withProjectId(OptionalLong.of(projectId))));
+        Application application = controller().applications().requireApplication(TenantAndApplicationId.from(applicationId));
+        assertTrue(application.projectId().isPresent());
+        return application;
     }
 
-    public void deploy(Instance instance, ZoneId zone) {
-        deploy(instance, zone, new ApplicationPackage(new byte[0]));
+    public void deploy(ApplicationId id, ZoneId zone) {
+        deploy(id, zone, new ApplicationPackage(new byte[0]));
     }
 
-    public void deploy(Instance instance, ZoneId zone, ApplicationPackage applicationPackage) {
-        deploy(instance, zone, applicationPackage, false);
+    public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage) {
+        deploy(id, zone, applicationPackage, false);
     }
 
-    public void deploy(Instance instance, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
-        deploy(instance, zone, Optional.of(applicationPackage), deployCurrentVersion);
+    public void deploy(ApplicationId id, ZoneId zone, ApplicationPackage applicationPackage, boolean deployCurrentVersion) {
+        deploy(id, zone, Optional.of(applicationPackage), deployCurrentVersion);
     }
 
-    public void deploy(Instance instance, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
-        deploy(instance, zone, applicationPackage, deployCurrentVersion, Optional.empty());
+    public void deploy(ApplicationId id, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion) {
+        deploy(id, zone, applicationPackage, deployCurrentVersion, Optional.empty());
     }
 
-    public void deploy(Instance instance, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
-        controller().applications().deploy(instance.id(),
+    public void deploy(ApplicationId id, ZoneId zone, Optional<ApplicationPackage> applicationPackage, boolean deployCurrentVersion, Optional<Version> version) {
+        controller().applications().deploy(id,
                                            zone,
                                            applicationPackage,
                                            new DeployOptions(false, version, false, deployCurrentVersion));
     }
 
     public Supplier<Instance> application(ApplicationId application) {
-        return () -> controller().applications().require(application);
-    }
-
-    /** Used by ApplicationSerializerTest to avoid breaking encapsulation. Should not be used by anything else */
-    public static LockedInstance writable(Instance instance) {
-        return new LockedInstance(instance, new Lock("/test", new MockCurator()));
+        return () -> controller().applications().requireInstance(application);
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,

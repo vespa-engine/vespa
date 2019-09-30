@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -10,7 +11,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
@@ -47,13 +49,13 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     /** File an ownership issue with the owners of all applications we know about. */
     private void confirmApplicationOwnerships() {
-        InstanceList.from(controller().applications().asList())
-                    .withProjectId()
-                    .hasProductionDeployment()
-                    .asList()
-                    .stream()
-                    .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
-                    .forEach(application -> {
+        ApplicationList.from(controller().applications().asList())
+                       .withProjectId()
+                       .withProductionDeployment()
+                       .asList()
+                       .stream()
+                       .filter(application -> application.createdAt().isBefore(controller().clock().instant().minus(Duration.ofDays(90))))
+                       .forEach(application -> {
                            try {
                                Tenant tenant = tenantOf(application.id());
                                tenant.contact().ifPresent(contact -> { // TODO jvenstad: Makes sense to require, and run this only in main?
@@ -71,25 +73,27 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
 
     }
 
-    private ApplicationSummary summaryOf(ApplicationId application) {
-        var app = applications.require(application);
+    private ApplicationSummary summaryOf(TenantAndApplicationId application) {
+        var app = applications.requireApplication(application);
         var metrics = new HashMap<ZoneId, ApplicationSummary.Metric>();
-        for (var kv : app.deployments().entrySet()) {
-            var zone = kv.getKey();
-            var deploymentMetrics = kv.getValue().metrics();
-            metrics.put(zone, new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
-                                                            deploymentMetrics.queriesPerSecond(),
-                                                            deploymentMetrics.writesPerSecond()));
-        }
-        return new ApplicationSummary(app.id(), app.activity().lastQueried(), app.activity().lastWritten(), metrics);
+        for (Instance instance : app.instances().values())
+            for (var kv : instance.deployments().entrySet()) {
+                var zone = kv.getKey();
+                var deploymentMetrics = kv.getValue().metrics();
+                metrics.put(zone, new ApplicationSummary.Metric(deploymentMetrics.documentCount(),
+                                                                deploymentMetrics.queriesPerSecond(),
+                                                                deploymentMetrics.writesPerSecond()));
+            }
+        // TODO jonmv: Default instance should really be replaced with something better.
+        return new ApplicationSummary(app.id().defaultInstance(), app.activity().lastQueried(), app.activity().lastWritten(), metrics);
     }
 
     /** Escalate ownership issues which have not been closed before a defined amount of time has passed. */
     private void ensureConfirmationResponses() {
-        for (Instance instance : controller().applications().asList())
-            instance.ownershipIssueId().ifPresent(issueId -> {
+        for (Application application : controller().applications().asList())
+            application.ownershipIssueId().ifPresent(issueId -> {
                 try {
-                    Tenant tenant = tenantOf(instance.id());
+                    Tenant tenant = tenantOf(application.id());
                     ownershipIssues.ensureResponse(issueId, tenant.type() == Tenant.Type.athenz ? tenant.contact() : Optional.empty());
                 }
                 catch (RuntimeException e) {
@@ -99,28 +103,26 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
     }
 
     private void updateConfirmedApplicationOwners() {
-        InstanceList.from(controller().applications().asList())
-                    .withProjectId()
-                    .hasProductionDeployment()
-                    .asList()
-                    .stream()
-                    .filter(application -> application.ownershipIssueId().isPresent())
-                    .forEach(application -> {
-                    IssueId ownershipIssueId = application.ownershipIssueId().get();
-                    ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
-                        controller().applications().lockIfPresent(application.id(), lockedApplication ->
-                                controller().applications().store(lockedApplication.withOwner(owner)));
-                    });
-                });
+        ApplicationList.from(controller().applications().asList())
+                       .withProjectId()
+                       .withProductionDeployment()
+                       .asList()
+                       .stream()
+                       .filter(application -> application.ownershipIssueId().isPresent())
+                       .forEach(application -> {
+                           IssueId ownershipIssueId = application.ownershipIssueId().get();
+                           ownershipIssues.getConfirmedOwner(ownershipIssueId).ifPresent(owner -> {
+                               controller().applications().lockApplicationIfPresent(application.id(), lockedApplication ->
+                                       controller().applications().store(lockedApplication.withOwner(owner)));
+                           });
+                       });
     }
 
-    private User determineAssignee(Tenant tenant, Instance instance) {
-        return instance.owner().orElse(
-                tenant instanceof UserTenant ? userFor(tenant) : null
-        );
+    private User determineAssignee(Tenant tenant, Application application) {
+        return application.owner().orElse(tenant instanceof UserTenant ? userFor(tenant) : null);
     }
 
-    private Tenant tenantOf(ApplicationId applicationId) {
+    private Tenant tenantOf(TenantAndApplicationId applicationId) {
         return controller().tenants().get(applicationId.tenant())
                 .orElseThrow(() -> new IllegalStateException("No tenant found for application " + applicationId));
     }
@@ -129,8 +131,8 @@ public class ApplicationOwnershipConfirmer extends Maintainer {
         return User.from(tenant.name().value().replaceFirst(Tenant.userPrefix, ""));
     }
 
-    protected void store(IssueId issueId, ApplicationId applicationId) {
-        controller().applications().lockIfPresent(applicationId, application ->
+    protected void store(IssueId issueId, TenantAndApplicationId applicationId) {
+        controller().applications().lockApplicationIfPresent(applicationId, application ->
                 controller().applications().store(application.withOwnershipIssueId(issueId)));
     }
 }

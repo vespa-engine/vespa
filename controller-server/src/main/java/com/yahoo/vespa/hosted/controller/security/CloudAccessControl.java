@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.security;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
@@ -44,7 +45,7 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Instance> instances) {
+    public Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications) {
         throw new UnsupportedOperationException("Update is not supported here, as it would entail changing the tenant name.");
     }
 
