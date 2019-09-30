@@ -272,7 +272,7 @@ void SearchVisitor::init(const Parameters & params)
     if (params.lookup("location", valueRef)) {
         location = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Location = '%s'", location.c_str());
-        _summaryGenerator.getDocsumState()._args.SetLocation(valueRef.size(), (const char*)valueRef.data());
+        _summaryGenerator.getDocsumState()._args.setLocation(valueRef);
     }
 
     Parameters::ValueRef searchClusterBlob;
