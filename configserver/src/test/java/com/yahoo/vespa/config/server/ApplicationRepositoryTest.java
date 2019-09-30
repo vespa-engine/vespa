@@ -3,14 +3,11 @@ package com.yahoo.vespa.config.server;
 
 import com.google.common.io.Files;
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.TenantName;
@@ -224,7 +221,7 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir);
+        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, Duration.ofHours(48));
         assertEquals(Collections.singleton("foo"), toBeDeleted);
         assertFalse(filereferenceDir.exists());
         assertTrue(filereferenceDir2.exists());

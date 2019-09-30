@@ -409,7 +409,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath) {
+    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, Duration keepFileReferences) {
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         Set<String> fileReferencesInUse = new HashSet<>();
@@ -429,7 +429,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             fileReferencesOnDisk.addAll(Arrays.stream(filesOnDisk).map(File::getName).collect(Collectors.toSet()));
         log.log(LogLevel.DEBUG, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
 
-        Instant instant = Instant.now().minus(Duration.ofDays(14));
+        Instant instant = Instant.now().minus(keepFileReferences);
         Set<String> fileReferencesToDelete = fileReferencesOnDisk
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
