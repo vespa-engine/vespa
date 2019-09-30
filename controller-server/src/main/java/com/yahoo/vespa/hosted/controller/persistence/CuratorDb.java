@@ -363,11 +363,16 @@ public class CuratorDb {
                                    .collect(Collectors.toUnmodifiableList());
     }
 
-    // TODO jonmv: Clear out old instance data here
     private Stream<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
                       .filter(id -> id.split(":").length == 2)
                       .map(TenantAndApplicationId::fromSerialized);
+    }
+
+    public void deleteOldApplicationData() {
+        curator.getChildren(applicationRoot).stream()
+               .filter(id -> id.split(":").length == 3)
+               .forEach(id -> curator.delete(applicationRoot.append(id)));
     }
 
     // TODO jonmv: Refactor when instance split operation is done
