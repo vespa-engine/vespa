@@ -524,28 +524,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.documentapi.ThroughputLimitQueue": {
-    "superClass": "java.util.concurrent.LinkedBlockingQueue",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(long)",
-      "public void <init>(com.yahoo.concurrent.Timer, long)",
-      "public boolean add(java.lang.Object)",
-      "public boolean offer(java.lang.Object)",
-      "public java.lang.Object poll()",
-      "public void put(java.lang.Object)",
-      "public boolean offer(java.lang.Object, long, java.util.concurrent.TimeUnit)",
-      "public java.lang.Object take()",
-      "public java.lang.Object poll(long, java.util.concurrent.TimeUnit)",
-      "public int capacity()",
-      "public int remainingCapacity()",
-      "public boolean addAll(java.util.Collection)"
-    ],
-    "fields": []
-  },
   "com.yahoo.documentapi.UpdateResponse": {
     "superClass": "com.yahoo.documentapi.Response",
     "interfaces": [],
