@@ -8,7 +8,6 @@
 #include "matcher.h"
 #include "sessionmanager.h"
 #include <vespa/searchcore/grouping/groupingcontext.h>
-#include <vespa/searchlib/engine/errorcodes.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -214,8 +213,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                                                metaStore, *feature_overrides);
         traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
-            reply->errorCode = ECODE_QUERY_PARSE_ERROR;
-            reply->errorMessage = "query execution failed (invalid query)";
             return reply;
         }
 

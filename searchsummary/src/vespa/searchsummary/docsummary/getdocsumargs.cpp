@@ -13,13 +13,12 @@ GetDocsumArgs::GetDocsumArgs()
       _stackDump(),
       _location(),
       _timeout(30 * fastos::TimeStamp::SEC),
-      _flags(0u),
       _propertiesMap(),
       _isLocationSet(false)
 { }
 
 
-GetDocsumArgs::~GetDocsumArgs() { }
+GetDocsumArgs::~GetDocsumArgs() = default;
 
 void
 GetDocsumArgs::setTimeout(const fastos::TimeStamp & timeout)
@@ -33,35 +32,6 @@ GetDocsumArgs::getTimeout() const
     return _timeout;
 }
 
-
-void
-GetDocsumArgs::Reset()
-{
-    _ranking.clear();
-    _qflags             = 0;
-    _stackItems         = 0;
-    _timeout            = 30 * fastos::TimeStamp::SEC;
-    _flags = 0;
-    _resultClassName.clear();
-    _stackDump.clear();
-    _location.clear();
-    _isLocationSet = false;
-    {
-        PropsMap tmp;
-        std::swap(_propertiesMap, tmp);
-    }
-}
-
-
-void
-GetDocsumArgs::Copy(GetDocsumArgs *src)
-{
-    if (src == this) {
-        return;
-    }
-    *src = *this;
-}
-
 void
 GetDocsumArgs::initFromDocsumRequest(const search::engine::DocsumRequest &req)
 {
@@ -72,9 +42,7 @@ GetDocsumArgs::initFromDocsumRequest(const search::engine::DocsumRequest &req)
     _stackDump         = req.stackDump;
     _location          = req.location;
     _timeout           = req.getTimeLeft();
-    _flags             = req._flags;
     _propertiesMap     = req.propertiesMap;
-    _isLocationSet = (_location.size() > 0);
 }
 
 void

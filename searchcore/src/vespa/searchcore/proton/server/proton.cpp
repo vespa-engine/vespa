@@ -23,6 +23,7 @@
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/searchlib/common/packets.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -30,7 +31,6 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/random.h>
-#include <vespa/searchlib/engine/transportserver.h>
 #include <vespa/vespalib/net/state_server.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
@@ -203,7 +203,6 @@ Proton::Proton(const config::ConfigUri & configUri,
       _customComponentBindToken(),
       _customComponentRootToken(),
       _stateServer(),
-      _fs4Server(),
       // This executor can only have 1 thread as it is used for
       // serializing startup.
       _executor(1, 128 * 1024),
@@ -289,9 +288,6 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _tls->start();
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
                                                  strategy, flush.maxconcurrent, flush.idleinterval*1000);
-    _fs4Server = std::make_unique<TransportServer>(*_matchEngine, *_summaryEngine, *this, protonConfig.ptport, TransportServer::DEBUG_ALL);
-    _fs4Server->setTCPNoDelay(true);
-    _metricsEngine->addExternalMetrics(_fs4Server->getMetrics());
     _metricsEngine->addExternalMetrics(_summaryEngine->getMetrics());
 
     char tmp[1024];
@@ -333,11 +329,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     waitForOnlineState();
     _isReplayDone = true;
     _rpcHooks->set_online();
-    if ( ! _fs4Server->start() ) {
-        throw vespalib::PortListenException(protonConfig.ptport, "FS4");
-    }
-    int port = _fs4Server->getListenPort();
-    LOG(debug, "Started fs4 interface on port %d", port);
+
     _flushEngine->start();
     _isInitializing = false;
     _protonConfigurer.setAllowReconfig(true);
@@ -445,13 +437,7 @@ Proton::~Proton()
     if (_sharedExecutor) {
         _sharedExecutor->sync();
     }
-    LOG(debug, "Shutting down fs4 interface");
-    if (_metricsEngine && _fs4Server) {
-        _metricsEngine->removeExternalMetrics(_fs4Server->getMetrics());
-    }
-    if (_fs4Server) {
-        _fs4Server->shutDown();
-    }
+
     if ( ! _documentDBMap.empty()) {
         size_t numCores = 4;
         const std::shared_ptr<proton::ProtonConfigSnapshot> pcsp = _protonConfigurer.getActiveConfigSnapshot();

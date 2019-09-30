@@ -29,8 +29,6 @@
 #include <mutex>
 #include <shared_mutex>
 
-namespace search::engine { class TransportServer; }
-
 namespace vespalib { class StateServer; }
 
 namespace proton {
@@ -54,7 +52,6 @@ class Proton : public IProtonConfigurerOwner,
 {
 private:
     typedef search::transactionlog::TransLogServerApp     TLS;
-    using TransportServer = search::engine::TransportServer;
     typedef search::engine::MonitorRequest                MonitorRequest;
     typedef search::engine::MonitorReply                  MonitorReply;
     typedef search::engine::MonitorClient                 MonitorClient;
@@ -109,7 +106,6 @@ private:
     vespalib::JsonHandlerRepo::Token::UP _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP _customComponentRootToken;
     std::unique_ptr<vespalib::StateServer>  _stateServer;
-    std::unique_ptr<TransportServer>        _fs4Server;
     vespalib::ThreadStackExecutor   _executor;
     std::unique_ptr<IProtonDiskLayout> _protonDiskLayout;
     ProtonConfigurer                _protonConfigurer;

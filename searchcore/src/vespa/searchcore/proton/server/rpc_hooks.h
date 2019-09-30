@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/closure.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/engine/proto_rpc_adapter.h>
 #include <mutex>
 #include <condition_variable>
