@@ -131,7 +131,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
                                                new ApplicationMetrics(0.5, 0.9),
-                                               Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
+                                               List.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                projectId,
                                                true,
                                                instances);
@@ -175,7 +175,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.owner(), serialized.owner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
         assertEquals(original.change(), serialized.change());
-        assertEquals(original.pemDeployKey(), serialized.pemDeployKey());
+        assertEquals(original.pemDeployKeys(), serialized.pemDeployKeys());
 
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());
         assertEquals(original.require(id1.instance()).rotationStatus(), serialized.require(id1.instance()).rotationStatus());

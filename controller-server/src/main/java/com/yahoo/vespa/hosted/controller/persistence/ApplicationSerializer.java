@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -83,7 +82,7 @@ public class ApplicationSerializer {
     private static final String majorVersionField = "majorVersion";
     private static final String writeQualityField = "writeQuality";
     private static final String queryQualityField = "queryQuality";
-    private static final String pemDeployKeyField = "pemDeployKeys";
+    private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
     private static final String applicationCertificateField = "applicationCertificate";
@@ -187,7 +186,7 @@ public class ApplicationSerializer {
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
-        deployKeysToSlime(application.pemDeployKey().stream(), root.setArray(pemDeployKeyField));
+        deployKeysToSlime(application.pemDeployKeys().stream(), root.setArray(pemDeployKeysField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -378,14 +377,14 @@ public class ApplicationSerializer {
         OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
-        List<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeyField));
+        List<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKeys.stream().findFirst(), projectId, builtInternally, instances);
+                               pemDeployKeys, projectId, builtInternally, instances);
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {

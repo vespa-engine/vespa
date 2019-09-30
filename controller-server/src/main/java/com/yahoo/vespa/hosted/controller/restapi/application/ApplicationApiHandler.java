@@ -377,12 +377,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 messageBuilder.add("Set major version to " + (majorVersion == null ? "empty" : majorVersion));
             }
 
+            Inspector pemDeployKeyRemovalField = requestObject.field("pemDeployKeyRemoval");
+            if (pemDeployKeyRemovalField.valid()) {
+                String pemDeployKey = pemDeployKeyRemovalField.asString();
+                application = application.withoutPemDeployKey(pemDeployKey);
+                messageBuilder.add("Removed deploy key " + pemDeployKey);
+            }
+
             Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
             if (pemDeployKeyField.valid()) {
-                String pemDeployKey = pemDeployKeyField.type() == Type.NIX ? null : pemDeployKeyField.asString();
+                String pemDeployKey = pemDeployKeyField.asString();
                 application = application.withPemDeployKey(pemDeployKey);
-                messageBuilder.add("Set pem deploy key to " + (pemDeployKey == null ? "empty" : pemDeployKey));
+                messageBuilder.add("Added deploy key " + pemDeployKey);
             }
+
             controller.applications().store(application);
         });
         return new MessageResponse(messageBuilder.toString());
@@ -608,7 +616,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
 
-        application.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
+        application.pemDeployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", key));
+        application.pemDeployKeys().forEach(object.setArray("pemDeployKeys")::addString);
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
