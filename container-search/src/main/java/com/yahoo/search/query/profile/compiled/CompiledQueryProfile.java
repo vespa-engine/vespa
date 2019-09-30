@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  */
 public class CompiledQueryProfile extends AbstractComponent implements Cloneable {
 
-    private static final Pattern namePattern=Pattern.compile("[$a-zA-Z_/][-$a-zA-Z0-9_/()]*");
+    private static final Pattern namePattern = Pattern.compile("[$a-zA-Z_/][-$a-zA-Z0-9_/()]*");
 
     private final CompiledQueryProfileRegistry registry;
 

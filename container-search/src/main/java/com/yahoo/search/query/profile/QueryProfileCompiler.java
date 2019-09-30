@@ -10,6 +10,7 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,14 +41,12 @@ public class QueryProfileCompiler {
         // Resolve values for each existing variant and combine into a single data structure
         Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
         variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
-        if (log.isLoggable(Level.FINE))
-            log.fine("Compiling " + in.toString() + " having " + variants.size() + " variants");
-        int i = 0;
+        log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
         for (DimensionBindingForPath variant : variants) {
-            if (log.isLoggable(Level.FINER))
-                log.finer("    Compiling variant " + i++ + ": " + variant);
-            for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet())
+            log.finer(() -> "  Compiling variant " + variant);
+            for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet()) {
                 values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
+            }
             for (Map.Entry<CompoundName, QueryProfileType> entry : in.listTypes(variant.path(), variant.binding().getContext()).entrySet())
                 types.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
             for (CompoundName reference : in.listReferences(variant.path(), variant.binding().getContext()))
@@ -62,7 +61,7 @@ public class QueryProfileCompiler {
     }
 
     /**
-     * Returns all the unique combinations of dimension values which have values set reachable from this profile.
+     * Returns all the unique combinations of dimension values which have values reachable from this profile.
      *
      * @param profile the profile we are collecting the variants of
      * @param currentVariant the variant we must have to arrive at this point in the query profile graph
@@ -74,14 +73,58 @@ public class QueryProfileCompiler {
         if (profile instanceof BackedOverridableQueryProfile)
             variants.addAll(collectVariantsInThis(path, ((BackedOverridableQueryProfile) profile).getBacking(), currentVariant));
 
-        Set<DimensionBindingForPath> parentVariants = new HashSet<>();
+        Set<DimensionBindingForPath> parentVariants;
         for (QueryProfile inheritedProfile : profile.inherited()) {
             parentVariants = collectVariants(path, inheritedProfile, currentVariant);
             variants.addAll(parentVariants);
             variants.addAll(combined(variants, parentVariants)); // parents and children may have different variant dimensions
         }
+
+        variants.addAll(leftExpanded(variants));
         return variants;
     }
+
+    /**
+     * For variants which are underspecified on the left we must explicitly resolve each possible combination
+     * of actual left-side values.
+     *
+     * I.e if we have the variants [-,b=b1], [a=a1,-], [a=a2,-],
+     * this returns the variants [a=a1,b=b1], [a=a2,b=b1]
+     *
+     * This is necessary because left-specified values takes precedence, such that resolving [a=a1,b=b1] would
+     * lead us to the compiled profile [a=a1,-], which may contain default values for properties where
+     * we should have preferred variant values in [-,b=b1].
+     */
+    private static Set<DimensionBindingForPath> leftExpanded(Set<DimensionBindingForPath> variants) {
+        Set<DimensionBindingForPath> expanded = new HashSet<>();
+        for (var variant : variants) {
+            if (hasLeftWildcard(variant.binding()))
+                expanded.addAll(leftExpanded(variant, variants));
+        }
+        return expanded;
+    }
+
+    private static boolean hasLeftWildcard(DimensionBinding variant) {
+        for (int i = 0; i < variant.getValues().size() - 1; i++) { // -1 to not check the rightmost
+            if (variant.getValues().get(i) == null)
+                return true;
+        }
+        return false;
+    }
+
+    private static Set<DimensionBindingForPath> leftExpanded(DimensionBindingForPath variantToExpand,
+                                                             Set<DimensionBindingForPath> variants) {
+        Set<DimensionBindingForPath> expanded = new HashSet<>();
+        for (var variant : variants) {
+            if ( ! variantToExpand.path().equals(variant.path())) continue;
+
+            DimensionBinding combined = variantToExpand.binding().combineWith(variant.binding);
+            if ( ! combined.isInvalid() )
+                expanded.add(new DimensionBindingForPath(combined, variantToExpand.path()));
+        }
+        return expanded;
+    }
+
 
     /** Generates a set of all the (legal) combinations of the variants in the given sets */
     private static Set<DimensionBindingForPath> combined(Set<DimensionBindingForPath> v1s,
