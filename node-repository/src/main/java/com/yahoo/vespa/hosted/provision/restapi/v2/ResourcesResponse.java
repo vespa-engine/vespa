@@ -10,7 +10,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URI;
 
-/** A response which lists a set of subresources as full urls */
+/**
+ * A response which lists a set of subresources as full urls
+ *
+ * @author bratseth
+ */
 public class ResourcesResponse extends HttpResponse {
 
     private final URI parentUrl;
