@@ -19,7 +19,6 @@ import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 import com.yahoo.docproc.proxy.SchemaMap;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.documentapi.ThroughputLimitQueue;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -33,7 +32,6 @@ import com.yahoo.statistics.Statistics;
 import java.util.TimerTask;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
@@ -96,29 +94,20 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                                      DocumentProcessingHandlerParameters params) {
         this(docprocServiceRegistry, documentProcessorComponentRegistry, docFactoryRegistry,
              new DocprocThreadPoolExecutor(params.getMaxNumThreads(),
-                                           chooseQueueType(params),
+                                           chooseQueueType(params.getMaxNumThreads()),
                                            new DocprocThreadManager(params.getMaxConcurrentFactor(),
                                                                     params.getDocumentExpansionFactor(),
-                                                                    params.getContainerCoreMemoryMb(),
-                                                                    params.getStatisticsManager(),
-                                                                    params.getMetric())),
+                                                                    params.getContainerCoreMemoryMb())),
              params.getDocumentTypeManager(), params.getChainsModel(), params.getSchemaMap(),
              params.getStatisticsManager(),
              params.getMetric(),
              params.getContainerDocConfig());
     }
 
-    private static BlockingQueue<Runnable> chooseQueueType(DocumentProcessingHandlerParameters params) {
-        if (params.getMaxQueueTimeMs() > 0) {
-            return new ThroughputLimitQueue<>(params.getMaxQueueTimeMs());
-        }
-        if (params.getMaxQueueTimeMs() == 0) {
-            return new PriorityBlockingQueue<>(); // Probably no need to bound this queue, see bug #4254537
-        }
-        if (params.getMaxNumThreads() > 0) {
-            return new LinkedBlockingQueue<>();
-        }
-        return new SynchronousQueue<>();
+    private static BlockingQueue<Runnable> chooseQueueType(int maxNumThreads) {
+        return (maxNumThreads > 0)
+                ? new LinkedBlockingQueue<>()
+                : new SynchronousQueue<>();
     }
 
     @Inject
@@ -138,7 +127,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
                      .setMaxConcurrentFactor(containerMbusConfig.maxConcurrentFactor())
                      .setDocumentExpansionFactor(containerMbusConfig.documentExpansionFactor())
                      .setContainerCoreMemoryMb(containerMbusConfig.containerCoreMemory())
-                     .setMaxQueueTimeMs(docprocConfig.maxqueuetimems())
                      .setDocumentTypeManager(new DocumentTypeManager(docManConfig))
                      .setChainsModel(buildFromConfig(chainsConfig)).setSchemaMap(configureMapping(mappingConfig))
                      .setStatisticsManager(manager)

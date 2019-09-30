@@ -21,7 +21,6 @@ public class DocumentProcessingHandlerParameters {
     private double maxConcurrentFactor = 0.2;
     private double documentExpansionFactor = 20.0;
     private int containerCoreMemoryMb = 50;
-    private long maxQueueTimeMs = 0;
     private DocumentTypeManager documentTypeManager = null;
     private ChainsModel chainsModel = null;
     private SchemaMap schemaMap = null;
@@ -82,21 +81,6 @@ public class DocumentProcessingHandlerParameters {
 
     public DocumentProcessingHandlerParameters setMaxConcurrentFactor(double maxConcurrentFactor) {
         this.maxConcurrentFactor = maxConcurrentFactor;
-        return this;
-    }
-
-    /**
-     * Returns the maximum time (in milliseconds) that a document may stay in the input queue.&nbsp;The default value
-     * of 0 disables this functionality.
-     *
-     * @return the maximum time (in milliseconds) that a document may stay in the input queue.
-     */
-    public long getMaxQueueTimeMs() {
-        return maxQueueTimeMs;
-    }
-
-    public DocumentProcessingHandlerParameters setMaxQueueTimeMs(long maxQueueTimeMs) {
-        this.maxQueueTimeMs = maxQueueTimeMs;
         return this;
     }
 
