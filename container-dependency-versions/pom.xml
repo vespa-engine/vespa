@@ -429,6 +429,7 @@
                                 <phase>verify</phase>
                                 <goals>
                                     <goal>display-property-updates</goal>
+                                    <goal>property-updates-report</goal>
                                 </goals>
                             </execution>
                         </executions>
