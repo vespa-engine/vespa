@@ -55,7 +55,7 @@ public class JobControllerApiHandlerHelperTest {
 
         // Revision 1 gets deployed everywhere.
         ApplicationVersion revision1 = tester.deployNewSubmission();
-        assertEquals(2, tester.instance().deploymentJobs().projectId().getAsLong());
+        assertEquals(2, tester.application().projectId().getAsLong());
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.

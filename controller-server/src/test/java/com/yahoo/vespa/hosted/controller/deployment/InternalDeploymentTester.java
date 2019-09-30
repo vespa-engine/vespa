@@ -152,8 +152,8 @@ public class InternalDeploymentTester {
 
         assertFalse(instance().deployments().values().stream()
                               .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
-        assertEquals(applicationVersion, instance().change().application().get());
-        assertFalse(instance().change().platform().isPresent());
+        assertEquals(applicationVersion, application().change().application().get());
+        assertFalse(application().change().platform().isPresent());
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
@@ -171,8 +171,8 @@ public class InternalDeploymentTester {
         tester.upgradeSystem(version);
         assertFalse(instance().deployments().values().stream()
                               .anyMatch(deployment -> deployment.version().equals(version)));
-        assertEquals(version, instance().change().platform().get());
-        assertFalse(instance().change().application().isPresent());
+        assertEquals(version, application().change().platform().get());
+        assertFalse(application().change().application().isPresent());
 
         runJob(JobType.systemTest);
         runJob(JobType.stagingTest);
@@ -190,7 +190,7 @@ public class InternalDeploymentTester {
         assertTrue(tester.configServer().nodeRepository()
                          .list(JobType.productionUsEast3.zone(tester.controller().system()), instanceId).stream()
                          .allMatch(node -> node.currentVersion().equals(version)));
-        assertFalse(instance().change().hasTargets());
+        assertFalse(application().change().hasTargets());
     }
 
     /**
@@ -282,7 +282,7 @@ public class InternalDeploymentTester {
      * Creates and submits a new application, and then starts the job of the given type.
      */
     public RunId newRun(JobType type) {
-        assertFalse(instance().deploymentJobs().deployedInternally()); // Use this only once per test.
+        assertFalse(application().internal()); // Use this only once per test.
         newSubmission();
         tester.readyJobTrigger().maintain();
 

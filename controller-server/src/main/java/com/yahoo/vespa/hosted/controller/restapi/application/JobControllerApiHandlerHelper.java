@@ -184,7 +184,7 @@ class JobControllerApiHandlerHelper {
             lastPlatformObject.setString("pending",
                                          application.change().isEmpty()
                                                  ? "Waiting for upgrade slot"
-                                                 : "Waiting for " + instance.change() + " to complete");
+                                                 : "Waiting for " + application.change() + " to complete");
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Instance instance, Change change, DeploymentSteps steps, Controller controller) {

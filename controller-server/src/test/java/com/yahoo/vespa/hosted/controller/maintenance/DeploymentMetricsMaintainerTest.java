@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -40,8 +41,9 @@ public class DeploymentMetricsMaintainerTest {
         deploy(application.id().defaultInstance(), Version.fromString("7.1"));
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
-        Supplier<Instance> app = () -> tester.defaultInstance(application.id());
-        Supplier<Deployment> deployment = () -> app.get().deployments().values().stream().findFirst().get();
+        Supplier<Application> app = () -> tester.application(application.id());
+        Supplier<Instance> instance = () -> tester.defaultInstance(application.id());
+        Supplier<Deployment> deployment = () -> instance.get().deployments().values().stream().findFirst().get();
 
         // No metrics gathered yet
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);

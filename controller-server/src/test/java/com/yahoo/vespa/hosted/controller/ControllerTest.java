@@ -141,8 +141,6 @@ public class ControllerTest {
         // Simulate restart
         tester.restartController();
 
-        applications = tester.controller().applications();
-
         assertNotNull(tester.controller().tenants().get(TenantName.from("tenant1")));
         assertNotNull(tester.defaultInstance(app1.id()));
         assertEquals(4, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
@@ -152,7 +150,7 @@ public class ControllerTest {
 
         // system and staging test job - succeeding
         tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        applicationVersion = tester.defaultInstance("app1").change().application().get();
+        applicationVersion = tester.application(app1.id()).change().application().get();
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, applicationVersion, Optional.of(tester.defaultInstance(app1.id()).deployments().get(productionUsWest1.zone(main))), "", tester.clock().instant().truncatedTo(MILLIS))
