@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.os.OsVersion;
 
@@ -45,16 +44,8 @@ public class OsVersionsSerializer {
         var versions = new TreeMap<NodeType, OsVersion>(); // Use TreeMap to sort by node type
         var inspector = SlimeUtils.jsonToSlime(data).get();
         inspector.traverse((ObjectTraverser) (key, value) -> {
-            Version version;
-            boolean active;
-            if (value.type() == Type.OBJECT) {
-                version = Version.fromString(value.field(VERSION_FIELD).asString());
-                active = value.field(ACTIVE_FIELD).asBool();
-            } else {
-                // TODO(mpolden): Remove support for legacy format after September 2019
-                version = Version.fromString(value.asString());
-                active = true;
-            }
+            var version = Version.fromString(value.field(VERSION_FIELD).asString());
+            var active = value.field(ACTIVE_FIELD).asBool();
             versions.put(NodeSerializer.nodeTypeFromString(key), new OsVersion(version, active));
         });
         return versions;
