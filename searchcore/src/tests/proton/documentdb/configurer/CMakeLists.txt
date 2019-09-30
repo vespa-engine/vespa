@@ -18,7 +18,6 @@ vespa_add_executable(searchcore_configurer_test_app TEST
     searchcore_grouping
     searchcore_proton_metrics
     searchcore_fconfig
-    searchcore_util
     searchlib_searchlib_uca
 )
 vespa_add_test(NAME searchcore_configurer_test_app COMMAND searchcore_configurer_test_app)
