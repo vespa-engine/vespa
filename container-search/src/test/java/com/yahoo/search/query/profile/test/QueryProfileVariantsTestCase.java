@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -65,6 +67,20 @@ public class QueryProfileVariantsTestCase {
         assertGet("a.1.*.5","a", new String[] {"x1","y?","z5"}, profile, cprofile);
         assertGet("a.1.5.*","a", new String[] {"x1","y5","z5"}, profile, cprofile); // Left dimension gets precedence
         assertGet("a.2.*.*","a", new String[] {"x2","y?","z?"}, profile, cprofile);
+    }
+
+    @Test
+    public void testMultipleMatchingVariantsAndDefault() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "a", "b" });
+        profile.set("property1", "property1_default", null);
+        profile.set("property1", "property1_variantB", new String[] { null, "b1" }, null);
+        profile.set("property2", "property2_variantA", new String[] { "a1", null }, null);
+        CompiledQueryProfile cProfile = profile.compile(null);
+
+        Query query = new Query("?a=a1&b=b1&b=b1", cProfile);
+        assertEquals("property1_variantB", query.properties().get("property1"));
+        assertEquals("property2_variantA", query.properties().get("property2"));
     }
 
     @Test
@@ -149,13 +165,13 @@ public class QueryProfileVariantsTestCase {
     @Test
     public void testVariantsOfExplicitCompound() {
         QueryProfile a1 = new QueryProfile("a1");
-        a1.set("b","a.b", null);
+        a1.set("b", "a.b", null);
 
-        QueryProfile profile=new QueryProfile("test");
+        QueryProfile profile = new QueryProfile("test");
         profile.setDimensions(new String[] {"x"});
-        profile.set("a",a1, null);
-        profile.set("a.b","a.b.x1",new String[] {"x1"}, null);
-        profile.set("a.b","a.b.x2",new String[] {"x2"}, null);
+        profile.set("a", a1, null);
+        profile.set("a.b", "a.b.x1", new String[] {"x1"}, null);
+        profile.set("a.b", "a.b.x2", new String[] {"x2"}, null);
 
         CompiledQueryProfile cprofile = profile.compile(null);
 
@@ -254,53 +270,53 @@ public class QueryProfileVariantsTestCase {
 
     @Test
     public void testVariantNotInBase() {
-        QueryProfile test=new QueryProfile("test");
+        QueryProfile test = new QueryProfile("test");
         test.setDimensions(new String[] {"x"});
-        test.set("InX1Only","x1",new String[] {"x1"}, null);
+        test.set("InX1Only", "x1", new String[] { "x1" }, null);
 
         CompiledQueryProfile ctest = test.compile(null);
-        assertEquals("x1",ctest.get("InX1Only", toMap("x=x1")));
-        assertEquals(null,ctest.get("InX1Only", toMap("x=x2")));
-        assertEquals(null,ctest.get("InX1Only"));
+        assertEquals("x1", ctest.get("InX1Only", toMap("x=x1")));
+        assertEquals(null, ctest.get("InX1Only", toMap("x=x2")));
+        assertEquals(null, ctest.get("InX1Only"));
     }
 
     @Test
     public void testVariantNotInBaseSpaceVariantValue() {
-        QueryProfile test=new QueryProfile("test");
-        test.setDimensions(new String[] {"x"});
-        test.set("InX1Only","x1",new String[] {"x 1"}, null);
+        QueryProfile test = new QueryProfile("test");
+        test.setDimensions(new String[] { "x" });
+        test.set("InX1Only", "x1", new String[] { "x 1" }, null);
 
         CompiledQueryProfile ctest = test.compile(null);
 
-        assertEquals("x1",ctest.get("InX1Only", toMap("x=x 1")));
-        assertEquals(null,ctest.get("InX1Only", toMap("x=x 2")));
-        assertEquals(null,ctest.get("InX1Only"));
+        assertEquals("x1", ctest.get("InX1Only", toMap("x=x 1")));
+        assertEquals(null, ctest.get("InX1Only", toMap("x=x 2")));
+        assertEquals(null, ctest.get("InX1Only"));
     }
 
     @Test
     public void testDimensionsInSuperType() {
-        QueryProfile parent=new QueryProfile("parent");
-        parent.setDimensions(new String[] {"x","y"});
-        QueryProfile child=new QueryProfile("child");
+        QueryProfile parent = new QueryProfile("parent");
+        parent.setDimensions(new String[] {"x", "y"});
+        QueryProfile child = new QueryProfile("child");
         child.addInherited(parent);
-        child.set("a","a.default", null);
-        child.set("a","a.x1.y1",new String[] {"x1","y1"}, null);
-        child.set("a","a.x1.y2",new String[] {"x1","y2"}, null);
+        child.set("a", "a.default", null);
+        child.set("a", "a.x1.y1", new String[] {"x1", "y1"}, null);
+        child.set("a", "a.x1.y2", new String[] {"x1", "y2"}, null);
 
         CompiledQueryProfile cchild = child.compile(null);
 
         assertEquals("a.default", cchild.get("a"));
-        assertEquals("a.x1.y1", cchild.get("a", toMap("x=x1","y=y1")));
-        assertEquals("a.x1.y2", cchild.get("a", toMap("x=x1","y=y2")));
+        assertEquals("a.x1.y1", cchild.get("a", toMap("x=x1", "y=y1")));
+        assertEquals("a.x1.y2", cchild.get("a", toMap("x=x1", "y=y2")));
     }
 
     @Test
     public void testDimensionsInSuperTypeRuntime() {
-        QueryProfile parent=new QueryProfile("parent");
-        parent.setDimensions(new String[] {"x","y"});
-        QueryProfile child=new QueryProfile("child");
+        QueryProfile parent = new QueryProfile("parent");
+        parent.setDimensions(new String[] { "x", "y" });
+        QueryProfile child = new QueryProfile("child");
         child.addInherited(parent);
-        child.set("a","a.default", null);
+        child.set("a", "a.default", null);
         child.set("a", "a.x1.y1", new String[]{"x1", "y1"}, null);
         child.set("a", "a.x1.y2", new String[]{"x1", "y2"}, null);
         Properties overridable=new QueryProfileProperties(child.compile(null));
@@ -1126,15 +1142,15 @@ public class QueryProfileVariantsTestCase {
     }
 
     public static Map<String,String> toMap(QueryProfile profile, String[] dimensionValues) {
-        Map<String,String> context=new HashMap<>();
+        Map<String, String> context = new HashMap<>();
         List<String> dimensions;
-        if (profile.getVariants()!=null)
-            dimensions=profile.getVariants().getDimensions();
+        if (profile.getVariants() != null)
+            dimensions = profile.getVariants().getDimensions();
         else
-            dimensions=((BackedOverridableQueryProfile)profile).getBacking().getVariants().getDimensions();
+            dimensions = ((BackedOverridableQueryProfile)profile).getBacking().getVariants().getDimensions();
 
-        for (int i=0; i<dimensionValues.length; i++)
-            context.put(dimensions.get(i),dimensionValues[i]); // Lookup dim. names to ease test...
+        for (int i = 0; i < dimensionValues.length; i++)
+            context.put(dimensions.get(i), dimensionValues[i]); // Lookup dim. names to ease test...
         return context;
     }
 

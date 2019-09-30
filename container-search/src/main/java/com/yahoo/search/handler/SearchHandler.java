@@ -353,9 +353,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    /**
-     * For internal use only
-     */
+    /** For internal use only */
     public Renderer<Result> getRendererCopy(ComponentSpecification spec) {
         Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(spec);
         return perRenderingCopy(renderer);
