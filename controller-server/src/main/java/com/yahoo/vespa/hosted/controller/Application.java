@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -27,6 +28,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -80,11 +82,7 @@ public class Application {
         this.pemDeployKey = Objects.requireNonNull(pemDeployKey, "pemDeployKey cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.internal = internal;
-        this.instances = ImmutableMap.copyOf((Iterable<Map.Entry<InstanceName, Instance>>)
-                                                     instances.stream()
-                                                              .map(instance -> Map.entry(instance.name(), instance))
-                                                              .sorted(Comparator.comparing(Map.Entry::getKey))
-                                                             ::iterator);
+        this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
     }
 
     public TenantAndApplicationId id() { return id; }

@@ -378,35 +378,6 @@ public class CuratorDb {
             writeApplication(application);
     }
 
-    /**
-     * Migration plan:
-     *
-     * Add filter for reading only Instance from old application path           RELEASED
-     * Write Instance to instance and old application path                      RELEASED
-     *
-     * Lock on application level for instance mutations                         RELEASED
-     *
-     * Write Instance to instance and application and old application paths     DONE    TO CHANGE   DONE
-     * Read Instance from instance path                                         DONE    TO REMOVE   DONE
-     * Duplicate Application from Instance, with helper classes                 DONE
-     * Write Application to instance and application and old application paths  DONE    TO CHANGE   DONE
-     * Read Application from instance path                                      DONE    TO REMOVE   DONE
-     * Use Application where applicable                                         DONE    !!!
-     * Lock instances and application on same level: tenant + application       DONE    TO CHANGE   DONE
-     * When reading an application, read all instances, and aggregate them      DONE
-     * Write application with instances to application path                     DONE
-     * Write all instances of an application to old application path            DONE
-     * Remove everything under instance root                                    DONE
-     * Stop locking applications on instance level                              DONE
-     *
-     * Read Application with instances from application path (with filter)      DONE
-     *
-     * Stop writing Instance to old application path                            DONE
-     * Remove unused parts of Instance (Used only for legacy serialization)
-     * Store new production application packages under non-instance path
-     * Read production packages from non-instance path, with fallback
-     */
-
     // -------------- Job Runs ------------------------------------------------
 
     public void writeLastRun(Run run) {
