@@ -415,6 +415,29 @@
         </dependencies>
     </dependencyManagement>
 
+    <profiles>
+        <profile>
+            <id>check-dependency-properties</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
+                        <version>${versions-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>display-property-updates</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
         <bouncycastle.version>1.58</bouncycastle.version>
@@ -447,6 +470,9 @@
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <jersey2.version>2.25</jersey2.version>
         <mimepull.version>1.9.6</mimepull.version>
+
+        <!-- Not a dependency. Only included to allow the versions-maven-plugin to check for updates of itself  -->
+        <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
     </properties>
 
 </project>
