@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/attribute/elementiterator.h>
+#include <vespa/vespalib/test/insertion_operators.h>
 
 using namespace search::fef;
 using namespace search::queryeval;
