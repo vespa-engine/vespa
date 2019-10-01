@@ -16,6 +16,8 @@ using search::IAttributeManager;
 
 namespace search::docsummary {
 
+static constexpr uint32_t SLIME_MAGIC_ID = 0x55555555;
+
 class IDocsumWriter
 {
 public:

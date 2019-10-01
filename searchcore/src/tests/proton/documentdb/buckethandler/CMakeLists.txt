@@ -12,7 +12,6 @@ vespa_add_executable(searchcore_buckethandler_test_app TEST
     searchcore_bucketdb
     searchcore_pcommon
     searchcore_grouping
-    searchcore_util
     searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_buckethandler_test_app COMMAND searchcore_buckethandler_test_app)

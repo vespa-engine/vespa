@@ -5,7 +5,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <vespa/searchlib/common/transport.h>
 
 namespace search::engine {
 
@@ -119,9 +118,7 @@ ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, Docsu
     if (proto.cache_query()) {
         request.propertiesMap.lookupCreate(MapNames::CACHES).add("query", "true");
     }
-    if (proto.dump_features()) {
-        request.queryFlags |= fs4transport::QFLAG_DUMP_FEATURES;
-    }
+    request.dumpFeatures = proto.dump_features();
     request.ranking = proto.rank_profile();
     if ((proto.feature_overrides_size() + proto.tensor_feature_overrides_size()) > 0) {
         auto &feature_overrides = request.propertiesMap.lookupCreate(MapNames::FEATURE);

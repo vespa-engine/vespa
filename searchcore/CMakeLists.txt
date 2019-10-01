@@ -40,7 +40,6 @@ vespa_define_module(
     src/vespa/searchcore/proton/server
     src/vespa/searchcore/proton/summaryengine
     src/vespa/searchcore/proton/test
-    src/vespa/searchcore/util
 
     APPS
     src/apps/proton

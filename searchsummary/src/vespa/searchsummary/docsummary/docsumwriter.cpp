@@ -4,7 +4,6 @@
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
 #include <vespa/searchcommon/common/undefinedvalues.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -20,7 +19,7 @@ uint32_t
 IDocsumWriter::slime2RawBuf(const Slime & slime, RawBuf & buf)
 {
     const uint32_t preUsed = buf.GetUsedLen();
-    const uint32_t magic = ::search::fs4transport::SLIME_MAGIC_ID;
+    const uint32_t magic = SLIME_MAGIC_ID;
     buf.append(&magic, sizeof(magic));
     SlimeOutputRawBufAdapter adapter(buf);
     vespalib::slime::BinaryFormat::encode(slime, adapter);

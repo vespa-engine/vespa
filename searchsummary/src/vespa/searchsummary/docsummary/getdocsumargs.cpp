@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "getdocsumargs.h"
-#include "resultconfig.h"
 
 namespace search::docsummary {
 
 GetDocsumArgs::GetDocsumArgs()
     : _ranking(),
-      _qflags(0),
       _resultClassName(),
+      _dumpFeatures(false),
       _stackItems(0),
       _stackDump(),
       _location(),
@@ -35,7 +34,7 @@ void
 GetDocsumArgs::initFromDocsumRequest(const search::engine::DocsumRequest &req)
 {
     _ranking           = req.ranking;
-    _qflags            = req.queryFlags;
+    _dumpFeatures      = req.dumpFeatures;
     _resultClassName   = req.resultClassName;
     _stackItems        = req.stackItems;
     _stackDump         = req.stackDump;

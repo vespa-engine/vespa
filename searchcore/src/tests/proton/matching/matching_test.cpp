@@ -18,7 +18,6 @@
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/docsumreply.h>
@@ -573,27 +572,22 @@ TEST("require that re-ranking is diverse with diversity = 1/10") {
 }
 
 TEST("require that sortspec can be used (multi-threaded)") {
-    for (bool drop_sort_data: {false, true}) {
-        for (size_t threads = 1; threads <= 16; ++threads) {
-            MyWorld world;
-            world.basicSetup();
-            world.basicResults();
-            SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
-            request->sortSpec = "+a1";
-            if (drop_sort_data) {
-                request->queryFlags |= fs4transport::QFLAG_DROP_SORTDATA;
-            }
-            SearchReply::UP reply = world.performSearch(request, threads);
-            ASSERT_EQUAL(9u, reply->hits.size());
-            EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::100").getGlobalId(),  reply->hits[0].gid);
-            EXPECT_EQUAL(zero_rank_value, reply->hits[0].metric);
-            EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::200").getGlobalId(),  reply->hits[1].gid);
-            EXPECT_EQUAL(zero_rank_value, reply->hits[1].metric);
-            EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::300").getGlobalId(),  reply->hits[2].gid);
-            EXPECT_EQUAL(zero_rank_value, reply->hits[2].metric);
-            EXPECT_EQUAL(drop_sort_data, reply->sortIndex.empty());
-            EXPECT_EQUAL(drop_sort_data, reply->sortData.empty());
-        }
+    for (size_t threads = 1; threads <= 16; ++threads) {
+        MyWorld world;
+        world.basicSetup();
+        world.basicResults();
+        SearchRequest::SP request = world.createSimpleRequest("f1", "spread");
+        request->sortSpec = "+a1";
+        SearchReply::UP reply = world.performSearch(request, threads);
+        ASSERT_EQUAL(9u, reply->hits.size());
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::100").getGlobalId(),  reply->hits[0].gid);
+        EXPECT_EQUAL(zero_rank_value, reply->hits[0].metric);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::200").getGlobalId(),  reply->hits[1].gid);
+        EXPECT_EQUAL(zero_rank_value, reply->hits[1].metric);
+        EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::300").getGlobalId(),  reply->hits[2].gid);
+        EXPECT_EQUAL(zero_rank_value, reply->hits[2].metric);
+        EXPECT_FALSE(reply->sortIndex.empty());
+        EXPECT_FALSE(reply->sortData.empty());
     }
 }
 

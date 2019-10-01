@@ -5,7 +5,6 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -50,7 +49,6 @@ DocsumContext::initState()
 {
     const DocsumRequest & req = _request;
     _docsumState._args.initFromDocsumRequest(req);
-    _docsumState._args.SetQueryFlags(req.queryFlags & ~search::fs4transport::QFLAG_DROP_SORTDATA);
     _docsumState._docsumcnt = req.hits.size();
 
     _docsumState._docsumbuf = (_docsumState._docsumcnt > 0)
@@ -176,7 +174,7 @@ DocsumContext::FillRankFeatures(search::docsummary::GetDocsumsState * state, sea
 {
     assert(&_docsumState == state);
     // check if we are allowed to run
-    if ((state->_args.GetQueryFlags() & search::fs4transport::QFLAG_DUMP_FEATURES) == 0) {
+    if ( ! state->_args.dumpFeatures()) {
         return;
     }
     state->_rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);

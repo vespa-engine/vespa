@@ -14,7 +14,6 @@ vespa_add_executable(searchcore_feedview_test_app TEST
     searchcore_pcommon
     searchcore_grouping
     searchcore_proton_metrics
-    searchcore_util
     searchcore_fconfig
 )
 vespa_add_test(NAME searchcore_feedview_test_app COMMAND searchcore_feedview_test_app)
