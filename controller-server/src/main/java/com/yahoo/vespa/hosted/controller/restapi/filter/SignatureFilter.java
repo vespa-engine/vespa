@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
@@ -56,7 +57,7 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                                                                                    request.getHeader("X-Authorization")));
 
                 if (verified) {
-                    Principal principal = () -> "buildService@" + id.tenant() + "." + id.application();
+                    Principal principal = new SimplePrincipal("buildService@" + id.tenant() + "." + id.application());
                     request.setUserPrincipal(principal);
                     request.setRemoteUser(principal.getName());
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME,

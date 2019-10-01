@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -50,21 +51,21 @@ public class Application {
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
-    private final List<String> pemDeployKeys;
+    private final Set<String> pemDeployKeys;
     private final Map<InstanceName, Instance> instances;
 
     /** Creates an empty application. */
     public Application(TenantAndApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(), Change.empty(),
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0), List.of(), OptionalLong.empty(), false, List.of());
+             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), false, List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                       OptionalInt majorVersion, ApplicationMetrics metrics, List<String> pemDeployKeys, OptionalLong projectId,
-                       boolean internal, Collection<Instance> instances) {
+                       OptionalInt majorVersion, ApplicationMetrics metrics, Set<String> pemDeployKeys,
+                       OptionalLong projectId, boolean internal, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -76,7 +77,7 @@ public class Application {
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
-        this.pemDeployKeys = Objects.requireNonNull(pemDeployKeys, "pemDeployKey cannot be null");
+        this.pemDeployKeys = Objects.requireNonNull(pemDeployKeys, "pemDeployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.internal = internal;
         this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
@@ -189,7 +190,8 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    public List<String> pemDeployKeys() { return pemDeployKeys; }
+    /** Returns the set of deploy keys for this application. */
+    public Set<String> pemDeployKeys() { return pemDeployKeys; }
 
     @Override
     public boolean equals(Object o) {

@@ -345,7 +345,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"majorVersion\":7}"),
                               "{\"message\":\"Set major version to 7\"}");
 
-        // PATCH in a pem deploy key
+        // POST a pem deploy key
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", POST)
+                                      .userIdentity(USER_ID)
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
+                              "{\"message\":\"Added deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+
+        // PATCH in a pem deploy key at deprecated path
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
                                       .userIdentity(USER_ID)
                                       .data("{\"pemDeployKey\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
@@ -362,16 +368,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{\"majorVersion\":null}"),
                               "{\"message\":\"Set major version to empty\"}");
 
-        // PATCH in removal of the pem deploy key
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", PATCH)
+        // DELETE the pem deploy key
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", DELETE)
                                       .userIdentity(USER_ID)
-                                      .data("{\"pemDeployKeyRemoval\":\"-----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Removed deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
-
-        // PATCH in removal of the pem deploy key on deprecated path
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
-                                      .userIdentity(USER_ID)
-                                      .data("{\"pemDeployKeyRemoval\":\"-----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}"),
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}"),
                               "{\"message\":\"Removed deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)

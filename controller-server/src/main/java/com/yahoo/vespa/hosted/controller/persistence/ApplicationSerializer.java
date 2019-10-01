@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -19,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -36,17 +39,20 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
+import java.security.Principal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -205,6 +211,7 @@ public class ApplicationSerializer {
     private void deployKeysToSlime(Stream<String> pemDeployKeys, Cursor array) {
         pemDeployKeys.forEach(array::addString);
     }
+
     private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
         for (Deployment deployment : deployments)
             deploymentToSlime(deployment, array.addObject());
@@ -377,7 +384,7 @@ public class ApplicationSerializer {
         OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
-        List<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeysField));
+        Set<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         boolean builtInternally = root.field(builtInternallyField).asBool();
@@ -404,11 +411,12 @@ public class ApplicationSerializer {
         return instances;
     }
 
-    private List<String> pemDeployKeysFromSlime(Inspector array) {
-        List<String> keys = new ArrayList<>();
+    private Set<String> pemDeployKeysFromSlime(Inspector array) {
+        Set<String> keys = new LinkedHashSet<>();
         array.traverse((ArrayTraverser) (__, key) -> keys.add(key.asString()));
         return keys;
     }
+
     private List<Deployment> deploymentsFromSlime(Inspector array) {
         List<Deployment> deployments = new ArrayList<>();
         array.traverse((ArrayTraverser) (int i, Inspector item) -> deployments.add(deploymentFromSlime(item)));

@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.curator.Lock;
@@ -13,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
+import java.security.Principal;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -123,23 +126,44 @@ public abstract class LockedTenant {
     public static class Cloud extends LockedTenant {
 
         private final BillingInfo billingInfo;
+        private final BiMap<String, Principal> pemDeveloperKeys;
 
-        private Cloud(TenantName name, BillingInfo billingInfo) {
+        private Cloud(TenantName name, BillingInfo billingInfo, BiMap<String, Principal> pemDeveloperKeys) {
             super(name);
             this.billingInfo = billingInfo;
+            this.pemDeveloperKeys = pemDeveloperKeys;
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.billingInfo());
+            this(tenant.name(), tenant.billingInfo(), tenant.pemDeveloperKeys());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, billingInfo);
+            return new CloudTenant(name, billingInfo, pemDeveloperKeys);
         }
 
         public Cloud with(BillingInfo billingInfo) {
-            return new Cloud(name, billingInfo);
+            return new Cloud(name, billingInfo, pemDeveloperKeys);
+        }
+
+        public Cloud withPemDeveloperKey(String pemKey, Principal principal) {
+            ImmutableBiMap.Builder<String, Principal> keys = ImmutableBiMap.builder();
+            pemDeveloperKeys.forEach((key, user) -> {
+                if ( ! user.equals(principal))
+                    keys.put(key, user);
+            });
+            keys.put(pemKey, principal);
+            return new Cloud(name, billingInfo, keys.build());
+        }
+
+        public Cloud withoutPemDeveloperKey(String pemKey) {
+            ImmutableBiMap.Builder<String, Principal> keys = ImmutableBiMap.builder();
+            pemDeveloperKeys.forEach((key, user) -> {
+                if ( ! key.equals(pemKey))
+                    keys.put(key, user);
+            });
+            return new Cloud(name, billingInfo, keys.build());
         }
 
     }

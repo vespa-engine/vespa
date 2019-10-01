@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -46,6 +48,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static java.util.Optional.empty;
@@ -131,7 +134,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
                                                new ApplicationMetrics(0.5, 0.9),
-                                               List.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
+                                               Set.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                projectId,
                                                true,
                                                instances);

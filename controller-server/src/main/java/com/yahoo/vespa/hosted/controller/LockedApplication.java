@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -43,7 +43,7 @@ public class LockedApplication {
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
-    private final List<String> pemDeployKeys;
+    private final Set<String> pemDeployKeys;
     private final OptionalLong projectId;
     private final boolean internal;
     private final Map<InstanceName, Instance> instances;
@@ -65,8 +65,9 @@ public class LockedApplication {
     private LockedApplication(Lock lock, TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec,
                               ValidationOverrides validationOverrides, Change change, Change outstandingChange,
                               Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                              OptionalInt majorVersion, ApplicationMetrics metrics, List<String> pemDeployKeys,
-                              OptionalLong projectId, boolean internal, Map<InstanceName, Instance> instances) {
+                              OptionalInt majorVersion, ApplicationMetrics metrics, Set<String> pemDeployKeys,
+                              OptionalLong projectId, boolean internal,
+                              Map<InstanceName, Instance> instances) {
         this.lock = lock;
         this.id = id;
         this.createdAt = createdAt;
@@ -185,8 +186,7 @@ public class LockedApplication {
     }
 
     public LockedApplication withPemDeployKey(String pemDeployKey) {
-        List<String> keys = new ArrayList<>(pemDeployKeys);
-        keys.remove(pemDeployKey);
+        Set<String> keys = new LinkedHashSet<>(pemDeployKeys);
         keys.add(pemDeployKey);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
                                      deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, keys,
@@ -194,7 +194,7 @@ public class LockedApplication {
     }
 
     public LockedApplication withoutPemDeployKey(String pemDeployKey) {
-        List<String> keys = new ArrayList<>(pemDeployKeys);
+        Set<String> keys = new LinkedHashSet<>(pemDeployKeys);
         keys.remove(pemDeployKey);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
                                      deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, keys,
