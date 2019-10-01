@@ -117,19 +117,19 @@ public class FelixFramework implements OsgiFramework {
         wiring.refreshBundles(null,
                               event -> {
                                   switch (event.getType()) {
-                                  case FrameworkEvent.PACKAGES_REFRESHED:
-                                      latch.countDown();
-                                      break;
-                                  case FrameworkEvent.ERROR:
-                                      log.log(Level.SEVERE, "ERROR FrameworkEvent received.", event.getThrowable());
-                                      break;
+                                      case FrameworkEvent.PACKAGES_REFRESHED:
+                                          latch.countDown();
+                                          break;
+                                      case FrameworkEvent.ERROR:
+                                          log.log(Level.SEVERE, "ERROR FrameworkEvent received.", event.getThrowable());
+                                          break;
                                   }
                               });
         try {
             long TIMEOUT_SECONDS = 60L;
-            if (!latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            if ( ! latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 log.warning("No PACKAGES_REFRESHED FrameworkEvent received within " + TIMEOUT_SECONDS +
-                                    " seconds of calling FrameworkWiring.refreshBundles()");
+                            " seconds of calling FrameworkWiring.refreshBundles()");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -176,9 +176,10 @@ public class FelixFramework implements OsgiFramework {
                 deleteDirContents(child);
                 boolean deleted = child.delete();
                 if (! deleted)
-                    throw new RuntimeException(
-                            "Could not delete file '" + child.getAbsolutePath() +"'. Please check file permissions!");
+                    throw new RuntimeException("Could not delete file '" + child.getAbsolutePath() +
+                                               "'. Please check file permissions!");
             }
         }
     }
+
 }
