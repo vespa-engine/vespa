@@ -16,7 +16,12 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * An indexed (dense) tensor backed by an array.
+ * An indexed (dense) tensor.
+ * <p>
+ * Some methods on indexed tensors make use of a <b>standard value order</b>: Cells are ordered by increasing
+ * index where dimensions to the right are incremented before indexes to the left, where the order of dimensions are
+ * alphabetical by name. In consequence, tensor value ordering is independent of the order in which dimensions are
+ * specified, and the values of the right-most dimension are adjacent.
  *
  * @author bratseth
  */
@@ -34,9 +39,7 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     /**
-     * Returns an iterator over the cells of this.
-     * Cells are returned in order of increasing indexes in each dimension, increasing
-     * indexes of later dimensions in the dimension type before earlier.
+     * Returns an iterator over the cells of this in the <i>standard value order</i>.
      */
     @Override
     public Iterator<Cell> cellIterator() {
@@ -58,11 +61,7 @@ public abstract class IndexedTensor implements Tensor {
         return new SubspaceIterator(iterateDimensions, startAddress, iterationSizes);
     }
 
-    /**
-     * Returns an iterator over the values of this.
-     * Values are returned in order of increasing indexes in each dimension, increasing
-     * indexes of later dimensions in the dimension type before earlier.
-     */
+    /** Returns an iterator over the values of this returned in the <i>standard value order</i> */
     @Override
     public Iterator<Double> valueIterator() {
         return new ValueIterator();
@@ -70,8 +69,8 @@ public abstract class IndexedTensor implements Tensor {
 
     /**
      * Returns an iterator over value iterators where the outer iterator is over each unique value of the dimensions
-     * given and the inner iterator is over each unique value of the rest of the dimensions, in the same order as
-     * other iterator.
+     * given and the inner iterator is over each unique value of the rest of the dimensions, in the
+     * <i>standard value order</i>
      *
      * @param dimensions the names of the dimensions of the superspace
      * @param sizes the size of each dimension in the space we are returning values for, containing
@@ -120,8 +119,7 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     /**
-     * Returns the value at the given index as a double by direct lookup. Only use
-     * if you know the underlying data layout.
+     * Returns the value at the given <i>standard value order</i> index as a double.
      *
      * @param valueIndex the direct index into the underlying data.
      * @throws IllegalArgumentException if index is out of bounds
@@ -129,8 +127,7 @@ public abstract class IndexedTensor implements Tensor {
     public abstract double get(long valueIndex);
 
     /**
-     * Returns the value at the given index as a float by direct lookup. Only use
-     * if you know the underlying data layout.
+     * Returns the value at the given <i>standard value order</i> index as a float.
      *
      * @param valueIndex the direct index into the underlying data.
      * @throws IllegalArgumentException if index is out of bounds
@@ -310,7 +307,8 @@ public abstract class IndexedTensor implements Tensor {
          * Creates a builder initialized with the given values
          *
          * @param type the type of the tensor to build
-         * @param values the initial values of the tensor. This <b>transfers ownership</b> of the value array - it
+         * @param values the initial values of the tensor in the <i>standard value order</i>.
+         *               This <b>transfers ownership</b> of the value array - it
          *               must not be further mutated by the caller
          */
         public static Builder of(TensorType type, DimensionSizes sizes, float[] values) {
@@ -329,7 +327,8 @@ public abstract class IndexedTensor implements Tensor {
          * Creates a builder initialized with the given values
          *
          * @param type the type of the tensor to build
-         * @param values the initial values of the tensor. This <b>transfers ownership</b> of the value array - it
+         * @param values the initial values of the tensor in the <i>standard value order</i>.
+         *               This <b>transfers ownership</b> of the value array - it
          *               must not be further mutated by the caller
          */
         public static Builder of(TensorType type, DimensionSizes sizes, double[] values) {
@@ -411,10 +410,10 @@ public abstract class IndexedTensor implements Tensor {
 
         DimensionSizes sizes() { return sizes; }
 
-        /** Sets a value by its right-adjacent traversal position */
+        /** Sets a value by its <i>standard value order</i> index */
         public abstract void cellByDirectIndex(long index, double value);
 
-        /** Sets a value by its right-adjacent traversal position */
+        /** Sets a value by its <i>standard value order</i> index */
         public abstract void cellByDirectIndex(long index, float value);
 
     }
@@ -672,7 +671,7 @@ public abstract class IndexedTensor implements Tensor {
          * @param iterateDimensions the dimensions to iterate over, given as indexes in the dimension order of the
          *                          type of the tensor this iterates over. This iterator will iterate over these
          *                          dimensions to exhaustion in the order given (the first dimension index given is
-         *                          incremented  to exhaustion first (i.e is etc.), while other dimensions will be held
+         *                          incremented  to exhaustion first etc., while other dimensions will be held
          *                          at a constant position.
          *                          This may be any subset of the dimensions given by address and dimensionSizes.
          *                          This is treated as immutable.
