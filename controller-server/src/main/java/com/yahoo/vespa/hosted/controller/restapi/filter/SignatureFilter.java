@@ -10,10 +10,12 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.Principal;
@@ -45,8 +47,8 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
             && request.getHeader("X-Authorization") != null)
             try {
                 ApplicationId id = ApplicationId.fromSerializedForm(request.getHeader("X-Key-Id"));
-                boolean verified = controller.applications().get(id)
-                                             .flatMap(Instance::pemDeployKey)
+                boolean verified = controller.applications().getApplication(TenantAndApplicationId.from(id))
+                                             .flatMap(Application::pemDeployKey)
                                              .map(key -> new RequestVerifier(key, controller.clock()))
                                              .map(verifier -> verifier.verify(Method.valueOf(request.getMethod()),
                                                                               request.getUri(),

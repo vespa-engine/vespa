@@ -31,7 +31,7 @@ class VespaLogHandler extends StreamHandler {
      *  <DD> Log to specified file in append mode
      * </DL>
      */
-    public VespaLogHandler(LogTarget logTarget,
+    VespaLogHandler(LogTarget logTarget,
                            LevelControllerRepo levelControllerRepo, String serviceName,
                            String applicationPrefix) {
         this.logTarget = logTarget;
@@ -62,8 +62,7 @@ class VespaLogHandler extends StreamHandler {
             // provokes rotation of target
             setOutputStream(logTarget.open());
         } catch (RuntimeException e) {
-            LogRecord r = new LogRecord(Level.SEVERE,
-                                            "Unable to open file target");
+            LogRecord r = new LogRecord(Level.SEVERE, "Unable to open file target");
             r.setThrown(e);
             emergencyLog(r);
             setOutputStream(System.err);
@@ -73,7 +72,7 @@ class VespaLogHandler extends StreamHandler {
         closeFileTarget();
     }
 
-    public LevelController getLevelControl(String component) {
+    LevelController getLevelControl(String component) {
         return repo.getLevelController(component);
     }
 
@@ -96,8 +95,7 @@ class VespaLogHandler extends StreamHandler {
             emergencyLog(r);
         }
         catch (RuntimeException e) {
-            LogRecord r = new LogRecord(Level.SEVERE,
-                    "Unable to open file target");
+            LogRecord r = new LogRecord(Level.SEVERE, "Unable to open file target");
             r.setThrown(e);
             emergencyLog(r);
             setOutputStream(System.err);
@@ -106,7 +104,7 @@ class VespaLogHandler extends StreamHandler {
 
 
     /** Closes the target log file, if there is one */
-    public void closeFileTarget() {
+    synchronized void closeFileTarget() {
         try {
             logTarget.close();
         }

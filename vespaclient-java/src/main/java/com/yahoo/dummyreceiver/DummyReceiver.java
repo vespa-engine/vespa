@@ -2,7 +2,6 @@
 package com.yahoo.dummyreceiver;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.documentapi.ThroughputLimitQueue;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
@@ -42,7 +41,6 @@ public class DummyReceiver implements MessageHandler {
     private boolean instant = false;
     private ThreadPoolExecutor executor = null;
     private int threads = 10;
-    private long maxQueueTime = -1;
     private BlockingQueue<Runnable> queue;
     private boolean verbose = false;
     private boolean helpOption = false;
@@ -76,7 +74,7 @@ public class DummyReceiver implements MessageHandler {
         params.getMessageBusParams().setMaxPendingCount(0);
         params.getMessageBusParams().setMaxPendingSize(0);
         da = new MessageBusDocumentAccess(params);
-        queue = (maxQueueTime < 0) ? new LinkedBlockingDeque<>() : new ThroughputLimitQueue<>(maxQueueTime);
+        queue = new LinkedBlockingDeque<>();
         session = da.getMessageBus().createDestinationSession("default", true, this);
         executor = new ThreadPoolExecutor(threads, threads, 5, TimeUnit.SECONDS, queue, new DaemonThreadFactory());
         System.out.println("Registered listener at " + name + "/default with 0 max pending and sleep time of " + sleepTime);
@@ -156,8 +154,6 @@ public class DummyReceiver implements MessageHandler {
                     instant = true;
                 } else if ("--silent".equals(arg)) {
                     silentNum = Long.parseLong(getParam(args, arg));
-                } else if ("--maxqueuetime".equals(arg)) {
-                    maxQueueTime = Long.parseLong(getParam(args, arg));
                 } else if ("--threads".equals(arg)) {
                     threads = Integer.parseInt(getParam(args, arg));
                 } else if ("--verbose".equals(arg)) {

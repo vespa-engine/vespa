@@ -87,6 +87,7 @@ public class Curator implements AutoCloseable {
                         .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
                         .connectString(connectionSpec)
                         .zookeeperFactory(new DNSResolvingFixerZooKeeperFactory(UNKNOWN_HOST_TIMEOUT_MILLIS))
+                        .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
                         .build());
     }
 

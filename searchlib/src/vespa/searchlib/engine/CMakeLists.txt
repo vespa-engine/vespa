@@ -14,11 +14,9 @@ vespa_add_library(searchlib_engine OBJECT
     docsumapi.cpp
     docsumreply.cpp
     docsumrequest.cpp
-    errorcodes.cpp
     lazy_source.cpp
     monitorreply.cpp
     monitorrequest.cpp
-    packetconverter.cpp
     propertiesmap.cpp
     proto_converter.cpp
     proto_rpc_adapter.cpp
@@ -27,8 +25,6 @@ vespa_add_library(searchlib_engine OBJECT
     searchreply.cpp
     searchrequest.cpp
     trace.cpp
-    transport_metrics.cpp
-    transportserver.cpp
     ${searchlib_engine_PROTOBUF_SRCS}
     DEPENDS
 )

@@ -11,10 +11,10 @@
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fnet/databuffer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
@@ -49,6 +49,11 @@ ForceWordfolderInit::ForceWordfolderInit()
 }
 
 static ForceWordfolderInit _G_forceNormWordFolderInit;
+
+// Leftovers from FS4 protocol with limited use here.
+enum queryflags {
+    QFLAG_DUMP_FEATURES        = 0x00040000
+};
 
 
 AttributeVector::SP
@@ -222,11 +227,11 @@ void SearchVisitor::init(const Parameters & params)
         LOG(debug, "Received rank profile: %s", _rankController.getRankProfile().c_str());
     }
 
-    if (params.lookup("queryflags", valueRef) ) {
-        vespalib::string tmp(valueRef.data(), valueRef.size());
-        LOG(debug, "Received query flags: 0x%lx", strtoul(tmp.c_str(), nullptr, 0));
-        uint32_t queryFlags = strtoul(tmp.c_str(), nullptr, 0);
-        _rankController.setDumpFeatures((queryFlags & search::fs4transport::QFLAG_DUMP_FEATURES) != 0);
+    int queryFlags = 0;
+    if (params.get("queryflags", queryFlags)) {
+        bool dumpFeatures = (queryFlags & QFLAG_DUMP_FEATURES) != 0;
+        _summaryGenerator.getDocsumState()._args.dumpFeatures(dumpFeatures);
+        _rankController.setDumpFeatures(dumpFeatures);
         LOG(debug, "QFLAG_DUMP_FEATURES: %s", _rankController.getDumpFeatures() ? "true" : "false");
     }
 
@@ -262,16 +267,11 @@ void SearchVisitor::init(const Parameters & params)
         _summaryGenerator.getDocsumState()._args.SetRankProfile(tmp);
     }
 
-    int queryFlags = 0;
-    if (params.get("queryflags", queryFlags)) {
-        _summaryGenerator.getDocsumState()._args.SetQueryFlags(queryFlags);
-    }
-
     vespalib::string location;
     if (params.lookup("location", valueRef)) {
         location = vespalib::string(valueRef.data(), valueRef.size());
         LOG(debug, "Location = '%s'", location.c_str());
-        _summaryGenerator.getDocsumState()._args.SetLocation(valueRef.size(), (const char*)valueRef.data());
+        _summaryGenerator.getDocsumState()._args.setLocation(valueRef);
     }
 
     Parameters::ValueRef searchClusterBlob;

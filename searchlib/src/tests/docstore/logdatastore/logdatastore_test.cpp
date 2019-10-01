@@ -131,6 +131,7 @@ checkStats(IDataStore &store,
 
 }
 
+#ifdef __linux__
 TEST("test that DirectIOPadding works accordng to spec") {
     constexpr ssize_t FILE_SIZE = 4096*3;
     FastOS_File file("directio.test");
@@ -199,6 +200,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
     EXPECT_TRUE(file.Close());
     FastOS_File::Delete(file.GetFileName());
 }
+#endif
 
 TEST("testGrowing") {
     FastOS_File::EmptyAndRemoveDirectory("growing");
@@ -287,6 +289,7 @@ TEST("testTruncatedIdxFile"){
     }
     const char * magic = "mumbo jumbo";
     {
+        truncate("bug-7257706-truncated/1422358701368384000.idx", 3830);
         LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQUAL(331ul, datastore.lastSyncToken());
@@ -843,7 +846,7 @@ struct Fixture {
     Fixture(const vespalib::string &dirName = "tmp",
             bool dirCleanup = true,
             size_t maxFileSize = 4096 * 2)
-        : executor(1, 0x10000),
+        : executor(1, 0x20000),
           dir(dirName),
           serialNum(0),
           fileHeaderCtx(),

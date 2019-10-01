@@ -11,7 +11,8 @@ namespace storage {
 
 DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
     : Process(configUri),
-      _activeFlag(DistributorNode::NO_NEED_FOR_ACTIVE_STATES)
+      _activeFlag(DistributorNode::NO_NEED_FOR_ACTIVE_STATES),
+      _use_btree_database(false)
 {
 }
 
@@ -29,19 +30,22 @@ DistributorProcess::shutdown()
 void
 DistributorProcess::setupConfig(uint64_t subscribeTimeout)
 {
-    std::unique_ptr<vespa::config::content::core::StorServerConfig> config =
-        config::ConfigGetter<vespa::config::content::core::StorServerConfig>::getConfig(_configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
-    if (config->persistenceProvider.type
-        != vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE)
-    {
+    using vespa::config::content::core::StorServerConfig;
+    using vespa::config::content::core::StorDistributormanagerConfig;
+    using vespa::config::content::core::StorVisitordispatcherConfig;
+
+    auto stor_config = config::ConfigGetter<StorServerConfig>::getConfig(
+            _configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
+    if (stor_config->persistenceProvider.type != StorServerConfig::PersistenceProvider::Type::STORAGE) {
         _activeFlag = DistributorNode::NEED_ACTIVE_BUCKET_STATES_SET;
     }
+    auto dist_config = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(
+            _configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
+    _use_btree_database = dist_config->useBtreeDatabase;
     _distributorConfigHandler
-            = _configSubscriber.subscribe<vespa::config::content::core::StorDistributormanagerConfig>(
-                    _configUri.getConfigId(), subscribeTimeout);
+            = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
     _visitDispatcherConfigHandler
-            = _configSubscriber.subscribe<vespa::config::content::core::StorVisitordispatcherConfig>(
-                    _configUri.getConfigId(), subscribeTimeout);
+            = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
 }
 
@@ -75,7 +79,7 @@ DistributorProcess::configUpdated()
 void
 DistributorProcess::createNode()
 {
-    _node.reset(new DistributorNode(_configUri, _context, *this, _activeFlag, StorageLink::UP()));
+    _node.reset(new DistributorNode(_configUri, _context, *this, _activeFlag, _use_btree_database, StorageLink::UP()));
     _node->handleConfigChange(*_distributorConfigHandler->getConfig());
     _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
 }

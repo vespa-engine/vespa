@@ -3,11 +3,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
-import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -42,16 +43,22 @@ public class RotationStatusUpdater extends Maintainer {
     @Override
     protected void maintain() {
         var failures = new AtomicInteger(0);
+        var attempts = new AtomicInteger(0);
         var lastException = new AtomicReference<Exception>(null);
-        var applicationList = InstanceList.from(applications.asList()).hasRotation();
+        var instancesWithRotations = ApplicationList.from(applications.asList()).hasRotation().asList().stream()
+                .flatMap(application -> application.instances().values().stream())
+                .filter(instance -> ! instance.rotations().isEmpty());
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         var pool = new ForkJoinPool(applicationsToUpdateInParallel);
 
         pool.submit(() -> {
-            applicationList.asList().parallelStream().forEach(application -> {
+            instancesWithRotations.parallel().forEach(instance -> {
+                attempts.incrementAndGet();
                 try {
-                    applications.lockIfPresent(application.id(), (app) -> applications.store(app.with(getStatus(app.get()))));
+                    RotationStatus status = getStatus(instance);
+                    applications.lockApplicationIfPresent(TenantAndApplicationId.from(instance.id()), app ->
+                            applications.store(app.with(instance.name(), locked -> locked.with(status))));
                 } catch (Exception e) {
                     failures.incrementAndGet();
                     lastException.set(e);
@@ -64,7 +71,7 @@ public class RotationStatusUpdater extends Maintainer {
             if (lastException.get() != null) {
                 log.log(LogLevel.WARNING, String.format("Failed to get global routing status of %d/%d applications. Retrying in %s. Last error: ",
                                                         failures.get(),
-                                                        applicationList.size(),
+                                                        attempts.get(),
                                                         maintenanceInterval()),
                         lastException.get());
             }

@@ -18,7 +18,6 @@ vespa_add_executable(searchcore_document_subdbs_test_app TEST
     searchcore_pcommon
     searchcore_grouping
     searchcore_proton_metrics
-    searchcore_util
     searchcore_fconfig
     searchlib_searchlib_uca
 )

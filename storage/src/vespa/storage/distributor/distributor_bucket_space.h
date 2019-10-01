@@ -30,7 +30,7 @@ class DistributorBucketSpace {
     std::shared_ptr<const lib::ClusterState> _clusterState;
     std::shared_ptr<const lib::Distribution> _distribution;
 public:
-    DistributorBucketSpace();
+    explicit DistributorBucketSpace(bool use_btree_db);
     ~DistributorBucketSpace();
 
     DistributorBucketSpace(const DistributorBucketSpace&) = delete;

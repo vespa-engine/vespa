@@ -15,6 +15,7 @@
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
@@ -240,6 +241,8 @@ private:
     testCompactLidSpace(const Config &config);
 
     void testCompactLidSpace();
+
+    void test_default_value_ref_count_is_updated_after_shrink_lid_space();
 
     template <typename AttributeType>
     void requireThatAddressSpaceUsageIsReported(const Config &config, bool fastSearch);
@@ -2019,6 +2022,43 @@ AttributeTest::testCompactLidSpace()
     TEST_DO(testCompactLidSpace(Config(BasicType::PREDICATE, CollectionType::SINGLE)));
 }
 
+namespace {
+
+uint32_t
+get_default_value_ref_count(AttributeVector &attr)
+{
+    auto *enum_store_base = attr.getEnumStoreBase();
+    auto &enum_store = dynamic_cast<EnumStoreT<int32_t> &>(*enum_store_base);
+    IAttributeVector::EnumHandle default_value_handle(0);
+    if (enum_store.find_enum(attr.getDefaultValue(), default_value_handle)) {
+        datastore::EntryRef default_value_ref(default_value_handle);
+        assert(default_value_ref.valid());
+        return enum_store.get_ref_count(default_value_ref);
+    } else {
+        return 0u;
+    }
+}
+
+}
+
+
+void
+AttributeTest::test_default_value_ref_count_is_updated_after_shrink_lid_space()
+{
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    cfg.setFastSearch(true);
+    vespalib::string name = "shrink";
+    AttributePtr attr = AttributeFactory::createAttribute(name, cfg);
+    attr->addReservedDoc();
+    attr->addDocs(10);
+    EXPECT_EQUAL(11u, get_default_value_ref_count(*attr));
+    attr->compactLidSpace(6);
+    EXPECT_EQUAL(11u, get_default_value_ref_count(*attr));
+    attr->shrinkLidSpace();
+    EXPECT_EQUAL(6u, attr->getNumDocs());
+    EXPECT_EQUAL(6u, get_default_value_ref_count(*attr));
+}
+
 template <typename AttributeType>
 void
 AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool fastSearch)
@@ -2223,6 +2263,7 @@ int AttributeTest::Main()
     testCreateSerialNum();
     testPredicateHeaderTags();
     TEST_DO(testCompactLidSpace());
+    TEST_DO(test_default_value_ref_count_is_updated_after_shrink_lid_space());
     TEST_DO(requireThatAddressSpaceUsageIsReported());
     testReaderDuringLastUpdate();
     TEST_DO(testPendingCompaction());

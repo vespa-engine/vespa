@@ -4,6 +4,7 @@
 
 #include "socket_handle.h"
 #include "socket_address.h"
+#include <atomic>
 
 namespace vespalib {
 
@@ -14,9 +15,9 @@ class ServerSocket
 private:
     SocketHandle _handle;
     vespalib::string _path;
+    bool _blocking;
+    std::atomic<bool> _shutdown;
 
-    explicit ServerSocket(SocketHandle handle);
-    static ServerSocket listen(const SocketSpec &spec);
     void cleanup();
 public:
     ServerSocket() : _handle(), _path() {}
@@ -30,7 +31,10 @@ public:
     int get_fd() const { return _handle.get(); }
     SocketAddress address() const;
     void shutdown();
-    bool set_blocking(bool value) { return _handle.set_blocking(value); }
+    bool set_blocking(bool value) {
+        _blocking = value;
+        return true;
+    }
     SocketHandle accept();
 };
 

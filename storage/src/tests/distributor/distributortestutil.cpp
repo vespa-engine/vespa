@@ -29,6 +29,7 @@ DistributorTestUtil::createLinks()
             *_threadPool,
             *this,
             true,
+            false, // TODO swap default
             _hostInfo,
             &_messageSender));
     _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));

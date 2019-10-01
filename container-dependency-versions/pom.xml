@@ -34,39 +34,12 @@
         <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
 
-
-    <!-- TODO: add pluginManagement for bundle-plugin and/or compiler-plugin?
-        <build>
-            <pluginManagement>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.6.1</version>
-                        <configuration>
-                            <source>1.8</source>
-                            <target>1.8</target>
-                            <optimize>true</optimize>
-                       </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>com.yahoo.vespa</groupId>
-                        <artifactId>bundle-plugin</artifactId>
-                        <version>${project.version}</version>
-                        <configuration>
-                            <configGenVersion>${project.version}</configGenVersion>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </pluginManagement>
-        </build>
-    -->
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>aopalliance</groupId>
                 <artifactId>aopalliance</artifactId>
-                <version>1.0</version>
+                <version>${aopalliance.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -144,12 +117,12 @@
             <dependency>
                 <groupId>commons-daemon</groupId>
                 <artifactId>commons-daemon</artifactId>
-                <version>1.0.3</version>
+                <version>${commons-daemon.version}</version>
             </dependency>
             <dependency>
-              <!-- This version is exported by jdisc via jcl-over-slf4j. -->
               <groupId>commons-logging</groupId>
               <artifactId>commons-logging</artifactId>
+                <!-- This version is exported by jdisc via jcl-over-slf4j. -->
               <version>1.1.1</version>
             </dependency>
             <dependency>
@@ -160,12 +133,12 @@
             <dependency>
                 <groupId>javax.inject</groupId>
                 <artifactId>javax.inject</artifactId>
-                <version>1</version>
+                <version>${javax.inject.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>
               <artifactId>javax.servlet-api</artifactId>
-              <version>3.1.0</version>
+              <version>${javax.servlet-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.validation</groupId>
@@ -213,7 +186,7 @@
             <dependency>
                 <groupId>net.jpountz.lz4</groupId>
                 <artifactId>lz4</artifactId>
-                <version>1.3.0</version>
+                <version>${lz4.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
@@ -223,7 +196,7 @@
             <dependency>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>org.apache.felix.log</artifactId>
-                <version>1.0.1</version>
+                <version>${felix.log.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.felix</groupId>
@@ -348,7 +321,7 @@
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
-                <version>20090211</version>
+                <version>${org.json.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.jvnet.mimepull</groupId>
@@ -378,7 +351,7 @@
             <dependency>
                 <groupId>xml-apis</groupId>
                 <artifactId>xml-apis</artifactId>
-                <version>1.4.01</version>
+                <version>${xml-apis.version}</version>
             </dependency>
 
             <!--  NOTE: The dependencies below are not provided from the jdisc container runtime, but had to be moved
@@ -442,15 +415,47 @@
         </dependencies>
     </dependencyManagement>
 
+    <profiles>
+        <profile>
+            <id>check-dependency-properties</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>versions-maven-plugin</artifactId>
+                        <version>${versions-maven-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>display-property-updates</goal>
+                                    <goal>property-updates-report</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
     <properties>
+        <aopalliance.version>1.0</aopalliance.version>
         <bouncycastle.version>1.58</bouncycastle.version>
+        <commons-daemon.version>1.0.3</commons-daemon.version>
         <felix.version>6.0.3</felix.version>
+        <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>1.3.9</findbugs.version>
         <guava.version>20.0</guava.version>
         <guice.version>3.0</guice.version>
+        <javax.inject.version>1</javax.inject.version>
+        <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.20.v20190813</jetty.version>
+        <lz4.version>1.3.0</lz4.version>
+        <org.json.version>20090211</org.json.version>
         <slf4j.version>1.7.5</slf4j.version>
+        <xml-apis.version>1.4.01</xml-apis.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
         <!-- MUST be updated each time jersey2 is upgraded! -->
@@ -466,6 +471,9 @@
         <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <jersey2.version>2.25</jersey2.version>
         <mimepull.version>1.9.6</mimepull.version>
+
+        <!-- Not a dependency. Only included to allow the versions-maven-plugin to check for updates of itself  -->
+        <versions-maven-plugin.version>2.7</versions-maven-plugin.version>
     </properties>
 
 </project>

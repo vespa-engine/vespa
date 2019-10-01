@@ -980,6 +980,12 @@ public class YqlParserTestCase {
         assertUrlQuery("urlfield", yql, false, false, false);
     }
 
+    @Test
+    public void testReservedWordInSource() {
+        parse("select * from sources like where text contains \"test\";");
+        // success: parsed without exception
+    }
+
     private void assertUrlQuery(String field, Query query, boolean startAnchor, boolean endAnchor, boolean endAnchorIsDefault) {
         boolean startAnchorIsDefault = false; // Always
 

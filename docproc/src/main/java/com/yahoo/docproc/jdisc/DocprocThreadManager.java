@@ -1,11 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.jdisc;
 
-import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.document.DocumentUtil;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.log.LogLevel;
-import com.yahoo.statistics.*;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
@@ -22,12 +19,6 @@ class DocprocThreadManager {
     private final AtomicLong bytesFinished = new AtomicLong(0);
 
     DocprocThreadManager(double maxConcurrentFactor, double documentExpansionFactor, int containerCoreMemoryMb) {
-        this(maxConcurrentFactor, documentExpansionFactor, containerCoreMemoryMb, Statistics.nullImplementation,
-             new NullMetric());
-    }
-
-    DocprocThreadManager(double maxConcurrentFactor, double documentExpansionFactor, int containerCoreMemoryMb,
-                         Statistics statistics, Metric metric) {
         this((long) (((double) DocumentUtil.calculateMaxPendingSize(maxConcurrentFactor, documentExpansionFactor,
                                                       containerCoreMemoryMb)) * maxConcurrentFactor));
     }

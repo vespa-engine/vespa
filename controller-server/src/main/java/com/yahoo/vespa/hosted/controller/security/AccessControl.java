@@ -2,7 +2,7 @@ package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.util.List;
@@ -33,10 +33,10 @@ public interface AccessControl {
      * @param tenantSpec specification for the tenant to update
      * @param credentials the credentials for the entity requesting the update
      * @param existing list of existing tenants, to check for conflicts
-     * @param instances list of applications this tenant already owns
+     * @param applications list of applications this tenant already owns
      * @return the updated tenant, for keeping
      */
-    Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Instance> instances);
+    Tenant updateTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing, List<Application> applications);
 
     /**
      * Deletes access control for the given tenant.

@@ -216,9 +216,12 @@ public:
             fprintf(stderr, "Config system is not up. Verify that vespa is started.");
             return 3;
         }
-
-        initRPC();
-
+        try {
+            initRPC();
+        } catch (vespalib::Exception &e) {
+            fprintf(stderr, "Exception in network initialization: %s", e.what());
+            return 2;
+        }
         int port = 0;
         std::string spec = _argv[1];
 

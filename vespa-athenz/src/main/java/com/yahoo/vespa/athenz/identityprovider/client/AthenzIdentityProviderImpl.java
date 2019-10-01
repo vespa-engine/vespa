@@ -1,5 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
 import com.google.common.cache.CacheBuilder;
@@ -67,7 +66,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
 
     // TODO Make path to trust store config
-    private static final Path DEFAULT_TRUST_STORE = Paths.get(Defaults.getDefaults().underVespaHome("share/ssl/certs/yahoo_certificate_bundle.jks"));
+    private static final Path DEFAULT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.jks");
 
     public static final String CERTIFICATE_EXPIRY_METRIC_NAME = "athenz-tenant-cert.expiry.seconds";
 
@@ -78,7 +77,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     private final ScheduledExecutorService scheduler;
     private final Clock clock;
     private final AthenzService identity;
-    private final String dnsSuffix;
     private final URI ztsEndpoint;
 
     private final MutableX509KeyManager identityKeyManager = new MutableX509KeyManager();
@@ -102,7 +100,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     }
 
     // Test only
-
     AthenzIdentityProviderImpl(IdentityConfig config,
                                Metric metric,
                                Path trustStore,
@@ -115,7 +112,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         this.scheduler = scheduler;
         this.clock = clock;
         this.identity = new AthenzService(config.domain(), config.service());
-        this.dnsSuffix = config.athenzDnsSuffix();
         this.ztsEndpoint = URI.create(config.ztsUrl());
         roleSslContextCache = createCache(ROLE_SSL_CONTEXT_EXPIRY, this::createRoleSslContext);
         roleSpecificRoleTokenCache = createCache(ROLE_TOKEN_EXPIRY, this::createRoleToken);

@@ -80,6 +80,12 @@ public class Flags {
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
             HOSTNAME, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag INCLUDE_SIS_IN_TRUSTSTORE = defineFeatureFlag(
+            "include-sis-in-truststore", false,
+            "Whether to use the trust store backed by Athenz and Service Identity certificates.",
+            "Takes effect on next tick, but may get throttled due to orchestration.",
+            HOSTNAME);
+
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
             "tls-insecure-mixed-mode", "tls_client_mixed_server",
             "TLS insecure mixed mode. Allowed values: ['plaintext_client_mixed_server', 'tls_client_mixed_server', 'tls_client_tls_server']",
@@ -152,6 +158,12 @@ public class Flags {
             "Whether to enable host hardening Linux baseline.",
             "Takes effect on next tick or on host-admin restart (may vary where used).",
             HOSTNAME);
+
+    public static final UnboundBooleanFlag USE_INTERNAL_ZTS = defineFeatureFlag(
+            "use-internal-zts", false,
+            "Decides if certificate in public should be requested from 'zts' configserver or mapped in",
+            "Takes effect on next tick or on host-admin restart.",
+            APPLICATION_ID);
 
     public static final UnboundBooleanFlag DYNAMIC_UPSTREAM_CONNECTION_CACHE = defineFeatureFlag(
             "dynamic-upstream-connection-cache", false,

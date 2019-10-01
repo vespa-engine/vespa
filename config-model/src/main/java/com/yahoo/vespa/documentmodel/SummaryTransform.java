@@ -20,7 +20,9 @@ public enum SummaryTransform {
     SUMMARYFEATURES("summaryfeatures"),
     TEXTEXTRACTOR("textextractor"),
     GEOPOS("geopos"),
-    ATTRIBUTECOMBINER("attributecombiner");
+    ATTRIBUTECOMBINER("attributecombiner"),
+    MATCHED_ELEMENTS_FILTER("matchedelementsfilter"),
+    MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter");
 
     private String name;
 
@@ -88,6 +90,7 @@ public enum SummaryTransform {
         case RANKFEATURES:
         case SUMMARYFEATURES:
         case ATTRIBUTECOMBINER:
+        case MATCHED_ATTRIBUTE_ELEMENTS_FILTER:
             return true;
 
         default:

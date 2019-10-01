@@ -9,9 +9,8 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -57,6 +56,7 @@ import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -151,18 +151,32 @@ public class ApplicationController {
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = clock.instant();
             int count = 0;
-            for (Instance instance : curator.readInstances()) {
-                lockIfPresent(instance.id(), this::store);
+            for (Application application : curator.readApplications()) {
+                lockApplicationIfPresent(application.id(), this::store);
                 count++;
             }
             log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
                                               Duration.between(start, clock.instant())));
         });
+
+        // TODO jonmv: Do the above for applications as well when they split writes.
     }
 
     /** Returns the application with the given id, or null if it is not present */
-    public Optional<Instance> get(ApplicationId id) {
-        return curator.readInstance(id);
+    public Optional<Application> getApplication(TenantAndApplicationId id) {
+        return curator.readApplication(id);
+    }
+
+    /** Returns the application with the given id, or null if it is not present */
+    // TODO jonmv: remove
+    public Optional<Application> getApplication(ApplicationId id) {
+        return getApplication(TenantAndApplicationId.from(id));
+    }
+
+    /** Returns the instance with the given id, or null if it is not present */
+    // TODO jonmv: remove or inline
+    public Optional<Instance> getInstance(ApplicationId id) {
+        return getApplication(id).flatMap(application -> application.get(id.instance()));
     }
 
     /**
@@ -170,18 +184,28 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if it does not exist
      */
-    public Instance require(ApplicationId id) {
-        return get(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
+    public Application requireApplication(TenantAndApplicationId id) {
+        return getApplication(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
+    }
+
+    /**
+     * Returns the instance with the given id
+     *
+     * @throws IllegalArgumentException if it does not exist
+     */
+    // TODO jonvm: remove or inline
+    public Instance requireInstance(ApplicationId id) {
+        return getInstance(id).orElseThrow(() -> new IllegalArgumentException(id + " not found"));
     }
 
     /** Returns a snapshot of all applications */
-    public List<Instance> asList() {
-        return sort(curator.readInstances());
+    public List<Application> asList() {
+        return curator.readApplications();
     }
 
-    /** Returns all applications of a tenant */
-    public List<Instance> asList(TenantName tenant) {
-        return sort(curator.readInstances(tenant));
+    /** Returns a snapshot of all applications of a tenant */
+    public List<Application> asList(TenantName tenant) {
+        return curator.readApplications(tenant);
     }
 
     public ArtifactRepository artifacts() { return artifactRepository; }
@@ -189,13 +213,17 @@ public class ApplicationController {
     public ApplicationStore applicationStore() {  return applicationStore; }
 
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
-    public Version oldestInstalledPlatform(ApplicationId id) {
-        return get(id).flatMap(application -> application.productionDeployments().keySet().stream()
-                                                         .flatMap(zone -> configServer.nodeRepository().list(zone, id, EnumSet.of(active, reserved)).stream())
-                                                         .map(Node::currentVersion)
-                                                         .filter(version -> ! version.isEmpty())
-                                                         .min(naturalOrder()))
-                      .orElse(controller.systemVersion());
+    public Version oldestInstalledPlatform(TenantAndApplicationId id) {
+        return requireApplication(id).instances().values().stream()
+                                     .flatMap(instance -> instance.productionDeployments().keySet().stream()
+                                                                  .flatMap(zone -> configServer.nodeRepository().list(zone,
+                                                                                                                      id.instance(instance.name()),
+                                                                                                                      EnumSet.of(active, reserved))
+                                                                                               .stream())
+                                                                  .map(Node::currentVersion)
+                                                                  .filter(version -> ! version.isEmpty()))
+                                     .min(naturalOrder())
+                                     .orElse(controller.systemVersion());
     }
 
     /** Change the global endpoint status for given deployment */
@@ -234,20 +262,21 @@ public class ApplicationController {
      *
      * @throws IllegalArgumentException if the application already exists
      */
-    public Instance createApplication(ApplicationId id, Optional<Credentials> credentials) {
+    // TODO jonmv: split in create application and create instance
+    public Application createApplication(ApplicationId id, Optional<Credentials> credentials) {
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
-        try (Lock lock = lock(id)) {
+        try (Lock lock = lock(TenantAndApplicationId.from(id))) {
             // Validate only application names which do not already exist.
-            if (asList(id.tenant()).stream().noneMatch(application -> application.id().application().equals(id.application())))
+            if (getApplication(TenantAndApplicationId.from(id)).isEmpty())
                 com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId.validate(id.application().value());
 
             Optional<Tenant> tenant = controller.tenants().get(id.tenant());
             if (tenant.isEmpty())
                 throw new IllegalArgumentException("Could not create '" + id + "': This tenant does not exist");
-            if (get(id).isPresent())
+            if (getInstance(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
-            if (get(dashToUnderscore(id)).isPresent()) // VESPA-1945
+            if (getInstance(dashToUnderscore(id)).isPresent()) // VESPA-1945
                 throw new IllegalArgumentException("Could not create '" + id + "': Application " + dashToUnderscore(id) + " already exists");
             if (tenant.get().type() != Tenant.Type.user) {
                 if (credentials.isEmpty())
@@ -256,7 +285,11 @@ public class ApplicationController {
                 if ( ! id.instance().isTester()) // Only store the application permits for non-user applications.
                     accessControl.createApplication(id, credentials.get());
             }
-            LockedInstance application = new LockedInstance(new Instance(id, clock.instant()), lock);
+            List<Instance> instances = getApplication(TenantAndApplicationId.from(id)).map(application -> application.instances().values())
+                                                                                      .map(ArrayList::new)
+                                                                                      .orElse(new ArrayList<>());
+            instances.add(new Instance(id, clock.instant()));
+            LockedApplication application = new LockedApplication(Application.aggregate(instances).get(), lock);
             store(application);
             log.info("Created " + application);
             return application.get();
@@ -280,8 +313,9 @@ public class ApplicationController {
         if (applicationId.instance().isTester())
             throw new IllegalArgumentException("'" + applicationId + "' is a tester application!");
 
+        // TODO jonmv: Change this to create instances on demand.
         Tenant tenant = controller.tenants().require(applicationId.tenant());
-        if (tenant.type() == Tenant.Type.user && get(applicationId).isEmpty())
+        if (tenant.type() == Tenant.Type.user && getInstance(applicationId).isEmpty())
             createApplication(applicationId, Optional.empty());
 
         try (Lock deploymentLock = lockForDeployment(applicationId, zone)) {
@@ -291,8 +325,9 @@ public class ApplicationController {
             Set<ContainerEndpoint> endpoints;
             Optional<ApplicationCertificate> applicationCertificate;
 
-            try (Lock lock = lock(applicationId)) {
-                LockedInstance application = new LockedInstance(require(applicationId), lock);
+            try (Lock lock = lock(TenantAndApplicationId.from(applicationId))) {
+                LockedApplication application = new LockedApplication(requireApplication(TenantAndApplicationId.from(applicationId)), lock);
+                InstanceName instance = applicationId.instance();
 
                 boolean manuallyDeployed = options.deployDirectly || zone.environment().isManuallyDeployed();
                 boolean preferOldestVersion = options.deployCurrentVersion;
@@ -302,14 +337,15 @@ public class ApplicationController {
                     applicationVersion = applicationVersionFromDeployer.orElse(ApplicationVersion.unknown);
                     applicationPackage = applicationPackageFromDeployer.orElseThrow(
                             () -> new IllegalArgumentException("Application package must be given when deploying to " + zone));
-                    platformVersion = options.vespaVersion.map(Version::new).orElse(applicationPackage.deploymentSpec().majorVersion()
-                                                                                                      .flatMap(this::lastCompatibleVersion)
-                                                                                                      .orElseGet(controller::systemVersion));
+                    platformVersion = options.vespaVersion.map(Version::new)
+                                                          .orElse(applicationPackage.deploymentSpec().majorVersion()
+                                                                                    .flatMap(this::lastCompatibleVersion)
+                                                                                    .orElseGet(controller::systemVersion));
                 }
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
                                              .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
-                    Optional<JobStatus> job = Optional.ofNullable(application.get().deploymentJobs().jobStatus().get(jobType));
+                    Optional<JobStatus> job = Optional.ofNullable(application.get().require(instance).deploymentJobs().jobStatus().get(jobType));
                     if (   job.isEmpty()
                         || job.get().lastTriggered().isEmpty()
                         || job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
@@ -320,32 +356,33 @@ public class ApplicationController {
                     applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
                                                              : triggered.application();
 
-                    applicationPackage = getApplicationPackage(application.get(), applicationVersion);
+                    applicationPackage = getApplicationPackage(applicationId, application.get().internal(), applicationVersion);
                     applicationPackage = withTesterCertificate(applicationPackage, applicationId, jobType);
-                    validateRun(application.get(), zone, platformVersion, applicationVersion);
+                    validateRun(application.get(), instance, zone, platformVersion, applicationVersion);
                 }
 
                 // TODO jonmv: Remove this when all packages are validated upon submission, as in ApplicationApiHandler.submit(...).
                 verifyApplicationIdentityConfiguration(applicationId.tenant(), applicationPackage, deployingIdentity);
 
-                // Assign and register endpoints
-                application = withRotation(application, zone);
-                endpoints = registerEndpointsInDns(application.get(), zone);
+                if (zone.environment().isProduction()) // Assign and register endpoints
+                    application = withRotation(application, instance);
+
+                endpoints = registerEndpointsInDns(application.get().deploymentSpec(), application.get().require(applicationId.instance()), zone);
+
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
-                    // Get application certificate (provisions a new certificate if missing)
-                    List<? extends ZoneApi> zones = controller.zoneRegistry().zones().all().zones();
-                    applicationCertificate = getApplicationCertificate(application.get());
+                    // Provisions a new certificate if missing
+                    applicationCertificate = getApplicationCertificate(application.get().require(instance));
                 } else {
                     applicationCertificate = Optional.empty();
                 }
 
-                // Update application with information from application package
+                // TODO jonmv: REMOVE! This is now irrelevant for non-CD-test deployments and non-unit tests.
                 if (   ! preferOldestVersion
-                    && ! application.get().deploymentJobs().deployedInternally()
-                    && ! zone.environment().isManuallyDeployed())
-                    // TODO(jvenstad): Store only on submissions
+                    && ! application.get().internal()
+                    && ! zone.environment().isManuallyDeployed()) {
                     storeWithUpdatedConfig(application, applicationPackage);
+                }
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -353,9 +390,10 @@ public class ApplicationController {
             ActivateResult result = deploy(applicationId, applicationPackage, zone, options, endpoints,
                                            applicationCertificate.orElse(null));
 
-            lockOrThrow(applicationId, application ->
-                    store(application.withNewDeployment(zone, applicationVersion, platformVersion, clock.instant(),
-                                                        warningsFrom(result))));
+            lockApplicationOrThrow(TenantAndApplicationId.from(applicationId), application ->
+                    store(application.with(applicationId.instance(),
+                                           instance -> instance.withNewDeployment(zone, applicationVersion, platformVersion,
+                                                                                  clock.instant(), warningsFrom(result)))));
             return result;
         }
     }
@@ -374,19 +412,19 @@ public class ApplicationController {
     }
 
     /** Fetches the requested application package from the artifact store(s). */
-    public ApplicationPackage getApplicationPackage(Instance instance, ApplicationVersion version) {
+    public ApplicationPackage getApplicationPackage(ApplicationId id, boolean internal, ApplicationVersion version) {
         try {
-            return instance.deploymentJobs().deployedInternally()
-                    ? new ApplicationPackage(applicationStore.get(instance.id(), version))
-                    : new ApplicationPackage(artifactRepository.getApplicationPackage(instance.id(), version.id()));
+            return internal
+                    ? new ApplicationPackage(applicationStore.get(id, version))
+                    : new ApplicationPackage(artifactRepository.getApplicationPackage(id, version.id()));
         }
         catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
             try {
-                log.info("Fetching application package for " + instance.id() + " from alternate repository; it is now deployed "
-                         + (instance.deploymentJobs().deployedInternally() ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
-                return instance.deploymentJobs().deployedInternally()
-                        ? new ApplicationPackage(artifactRepository.getApplicationPackage(instance.id(), version.id()))
-                        : new ApplicationPackage(applicationStore.get(instance.id(), version));
+                log.info("Fetching application package for " + id + " from alternate repository; it is now deployed "
+                         + (internal ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
+                return internal
+                        ? new ApplicationPackage(artifactRepository.getApplicationPackage(id, version.id()))
+                        : new ApplicationPackage(applicationStore.get(id, version));
             }
             catch (RuntimeException s) { // If this fails, too, the first failure is most likely the relevant one.
                 e.addSuppressed(s);
@@ -396,7 +434,7 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public LockedInstance storeWithUpdatedConfig(LockedInstance application, ApplicationPackage applicationPackage) {
+    public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
         deploymentSpecValidator.validate(applicationPackage.deploymentSpec());
 
         application = application.with(applicationPackage.deploymentSpec());
@@ -405,13 +443,14 @@ public class ApplicationController {
         // Delete zones not listed in DeploymentSpec, if allowed
         // We do this at deployment time for externally built applications, and at submission time
         // for internally built ones, to be able to return a validation failure message when necessary
-        application = withoutDeletedDeployments(application);
+        for (InstanceName instanceName : application.get().instances().keySet()) {
+                application = withoutDeletedDeployments(application, instanceName);
 
-        // Clean up deployment jobs that are no longer referenced by deployment spec
-        application = withoutUnreferencedDeploymentJobs(application);
-
+                // Clean up deployment jobs that are no longer referenced by deployment spec
+            DeploymentSpec deploymentSpec = application.get().deploymentSpec();
+            application = application.with(instanceName, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
+        }
         store(application);
-        return application;
     }
 
     /** Deploy a system application to given zone */
@@ -459,13 +498,13 @@ public class ApplicationController {
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
-    private LockedInstance withRotation(LockedInstance application, ZoneId zone) {
-        if (zone.environment() == Environment.prod) {
-            try (RotationLock rotationLock = rotationRepository.lock()) {
-                var rotations = rotationRepository.getOrAssignRotations(application.get(), rotationLock);
-                application = application.with(rotations);
-                store(application); // store assigned rotation even if deployment fails
-            }
+    private LockedApplication withRotation(LockedApplication application, InstanceName instanceName) {
+        try (RotationLock rotationLock = rotationRepository.lock()) {
+            var rotations = rotationRepository.getOrAssignRotations(application.get().deploymentSpec(),
+                                                                    application.get().require(instanceName),
+                                                                    rotationLock);
+            application = application.with(instanceName, instance -> instance.with(rotations));
+            store(application); // store assigned rotation even if deployment fails
         }
         return application;
     }
@@ -475,9 +514,9 @@ public class ApplicationController {
      *
      * @return the registered endpoints
      */
-    private Set<ContainerEndpoint> registerEndpointsInDns(Instance instance, ZoneId zone) {
+    private Set<ContainerEndpoint> registerEndpointsInDns(DeploymentSpec deploymentSpec, Instance instance, ZoneId zone) {
         var containerEndpoints = new HashSet<ContainerEndpoint>();
-        var registerLegacyNames = instance.deploymentSpec().globalServiceId().isPresent();
+        var registerLegacyNames = deploymentSpec.globalServiceId().isPresent();
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
             var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId())
@@ -566,16 +605,17 @@ public class ApplicationController {
         return new ActivateResult(new RevisionId("0"), prepareResponse, 0);
     }
 
-    private LockedInstance withoutDeletedDeployments(LockedInstance application) {
-        List<Deployment> deploymentsToRemove = application.get().productionDeployments().values().stream()
-                .filter(deployment -> ! application.get().deploymentSpec().includes(deployment.zone().environment(),
-                                                                                    Optional.of(deployment.zone().region())))
-                .collect(Collectors.toList());
+    private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {
+        DeploymentSpec deploymentSpec = application.get().deploymentSpec();
+        List<Deployment> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
+                                                          .filter(deployment -> ! deploymentSpec.includes(deployment.zone().environment(),
+                                                                                                          Optional.of(deployment.zone().region())))
+                                                          .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty()) return application;
 
         if ( ! application.get().validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
-            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application.get() +
+            throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application.get().require(instance) +
                                                " is deployed in " +
                                                deploymentsToRemove.stream()
                                                                    .map(deployment -> deployment.zone().region().value())
@@ -585,20 +625,19 @@ public class ApplicationController {
                                                " in deployment.xml. " +
                                                ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
 
-        LockedInstance applicationWithRemoval = application;
         for (Deployment deployment : deploymentsToRemove)
-            applicationWithRemoval = deactivate(applicationWithRemoval, deployment.zone());
-        return applicationWithRemoval;
+            application = deactivate(application, instance, deployment.zone());
+        return application;
     }
 
-    private LockedInstance withoutUnreferencedDeploymentJobs(LockedInstance application) {
-        for (JobType job : JobList.from(application.get()).production().mapToList(JobStatus::type)) {
+    private Instance withoutUnreferencedDeploymentJobs(DeploymentSpec deploymentSpec, Instance instance) {
+        for (JobType job : JobList.from(instance).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
-            if (application.get().deploymentSpec().includes(zone.environment(), Optional.of(zone.region())))
+            if (deploymentSpec.includes(zone.environment(), Optional.of(zone.region())))
                 continue;
-            application = application.withoutDeploymentJob(job);
+            instance = instance.withoutDeploymentJob(job);
         }
-        return application;
+        return instance;
     }
 
     private DeployOptions withVersion(Version version, DeployOptions options) {
@@ -610,7 +649,7 @@ public class ApplicationController {
 
     /** Returns the endpoints of the deployment, or empty if the request fails */
     public List<URI> getDeploymentEndpoints(DeploymentId deploymentId) {
-        if ( ! get(deploymentId.applicationId())
+        if ( ! getInstance(deploymentId.applicationId())
                 .map(application -> application.deployments().containsKey(deploymentId.zoneId()))
                 .orElse(deploymentId.applicationId().instance().isTester()))
             throw new NotExistsException("Deployment", deploymentId.toString());
@@ -629,7 +668,7 @@ public class ApplicationController {
 
     /** Returns the non-empty endpoints per cluster in the given deployment, or empty if endpoints can't be found. */
     public Map<ClusterSpec.Id, URI> clusterEndpoints(DeploymentId id) {
-        if ( ! get(id.applicationId())
+        if ( ! getInstance(id.applicationId())
                 .map(application -> application.deployments().containsKey(id.zoneId()))
                 .orElse(id.applicationId().instance().isTester()))
             throw new NotExistsException("Deployment", id.toString());
@@ -671,15 +710,16 @@ public class ApplicationController {
             throw new IllegalArgumentException("Could not delete application '" + tenantName + "." + applicationName + "': No credentials provided");
 
         // Find all instances of the application
-        List<ApplicationId> instances = asList(tenantName).stream()
-                                                          .map(Instance::id)
-                                                          .filter(id -> id.application().equals(applicationName))
-                                                          .collect(Collectors.toList());
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        List<ApplicationId> instances = requireApplication(id).instances().keySet().stream()
+                                                              .map(id::instance)
+                                                              .collect(Collectors.toUnmodifiableList());
         if (instances.size() > 1)
             throw new IllegalArgumentException("Could not delete application; more than one instance present: " + instances);
 
         // TODO: Make this one transaction when database is moved to ZooKeeper
-        instances.forEach(id -> deleteInstance(id, credentials));
+        for (ApplicationId instance : instances)
+            deleteInstance(instance, credentials);
     }
 
     /**
@@ -693,37 +733,34 @@ public class ApplicationController {
         if (tenant.type() != Tenant.Type.user && credentials.isEmpty())
                 throw new IllegalArgumentException("Could not delete application '" + applicationId + "': No credentials provided");
 
-        if (controller.applications().get(applicationId).isEmpty()) {
+        if (getInstance(applicationId).isEmpty())
             throw new NotExistsException("Could not delete application '" + applicationId + "': Application not found");
-        }
 
-        lockOrThrow(applicationId, application -> {
-            if ( ! application.get().deployments().isEmpty())
+        lockApplicationOrThrow(TenantAndApplicationId.from(applicationId), application -> {
+            if ( ! application.get().require(applicationId.instance()).deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments in: " +
-                                                   application.get().deployments().keySet().stream().map(ZoneId::toString)
+                                                   application.get().require(applicationId.instance()).deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
 
-            curator.removeInstance(applicationId);
             applicationStore.removeAll(applicationId);
             applicationStore.removeAll(TesterId.of(applicationId));
 
-            application.get().rotations().forEach(assignedRotation -> {
-                var endpoints = application.get().endpointsIn(controller.system(), assignedRotation.endpointId());
+            Instance instance = application.get().require(applicationId.instance());
+            instance.rotations().forEach(assignedRotation -> {
+                var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId());
                 endpoints.asList().stream()
                          .map(Endpoint::dnsName)
                          .forEach(name -> {
                              controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
                          });
             });
+            curator.storeWithoutInstance(application.without(applicationId.instance()).get(), applicationId);
 
             log.info("Deleted " + application);
         });
 
 
-        if (   tenant.type() != Tenant.Type.user
-            && controller.applications().asList(applicationId.tenant()).stream()
-                         .map(application -> application.id().application())
-                         .noneMatch(applicationId.application()::equals))
+        if (tenant.type() != Tenant.Type.user && getApplication(applicationId).isEmpty())
             // TODO jonmv: Implementations ignore the instance — refactor to provide tenant and application names only.
             accessControl.deleteApplication(applicationId, credentials.get());
     }
@@ -733,8 +770,8 @@ public class ApplicationController {
      *
      * @param application a locked application to store
      */
-    public void store(LockedInstance application) {
-        curator.writeInstance(application.get());
+    public void store(LockedApplication application) {
+        curator.writeApplication(application.get());
     }
 
     /**
@@ -743,9 +780,9 @@ public class ApplicationController {
      * @param applicationId ID of the application to lock and get.
      * @param action Function which acts on the locked application.
      */
-    public void lockIfPresent(ApplicationId applicationId, Consumer<LockedInstance> action) {
+    public void lockApplicationIfPresent(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
         try (Lock lock = lock(applicationId)) {
-            get(applicationId).map(application -> new LockedInstance(application, lock)).ifPresent(action);
+            getApplication(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
         }
     }
 
@@ -756,9 +793,9 @@ public class ApplicationController {
      * @param action Function which acts on the locked application.
      * @throws IllegalArgumentException when application does not exist.
      */
-    public void lockOrThrow(ApplicationId applicationId, Consumer<LockedInstance> action) {
+    public void lockApplicationOrThrow(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
         try (Lock lock = lock(applicationId)) {
-            action.accept(new LockedInstance(require(applicationId), lock));
+            action.accept(new LockedApplication(requireApplication(applicationId), lock));
         }
     }
 
@@ -787,8 +824,9 @@ public class ApplicationController {
     }
 
     /** Deactivate application in the given zone */
-    public void deactivate(ApplicationId application, ZoneId zone) {
-        lockOrThrow(application, lockedInstance -> store(deactivate(lockedInstance, zone)));
+    public void deactivate(ApplicationId id, ZoneId zone) {
+        lockApplicationOrThrow(TenantAndApplicationId.from(id),
+                               application -> store(deactivate(application, id.instance(), zone)));
     }
 
     /**
@@ -796,15 +834,15 @@ public class ApplicationController {
      *
      * @return the application with the deployment in the given zone removed
      */
-    private LockedInstance deactivate(LockedInstance application, ZoneId zone) {
+    private LockedApplication deactivate(LockedApplication application, InstanceName instanceName, ZoneId zone) {
         try {
-            configServer.deactivate(new DeploymentId(application.get().id(), zone));
+            configServer.deactivate(new DeploymentId(application.get().id().instance(instanceName), zone));
         } catch (NotFoundException ignored) {
             // ok; already gone
         } finally {
-            routingPolicies.refresh(application.get().id(), application.get().deploymentSpec(), zone);
+            routingPolicies.refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
         }
-        return application.withoutDeploymentIn(zone);
+        return application.with(instanceName, instance -> instance.withoutDeploymentIn(zone));
     }
 
     public DeploymentTrigger deploymentTrigger() { return deploymentTrigger; }
@@ -820,7 +858,7 @@ public class ApplicationController {
      * Any operation which stores an application need to first acquire this lock, then read, modify
      * and store the application, and finally release (close) the lock.
      */
-    Lock lock(ApplicationId application) {
+    Lock lock(TenantAndApplicationId application) {
         return curator.lock(application);
     }
 
@@ -832,14 +870,14 @@ public class ApplicationController {
     }
 
     /** Verify that we don't downgrade an existing production deployment. */
-    private void validateRun(Instance instance, ZoneId zone, Version platformVersion, ApplicationVersion applicationVersion) {
-        Deployment deployment = instance.deployments().get(zone);
+    private void validateRun(Application application, InstanceName instance, ZoneId zone, Version platformVersion, ApplicationVersion applicationVersion) {
+        Deployment deployment = application.require(instance).deployments().get(zone);
         if (   zone.environment().isProduction() && deployment != null
-            && (   platformVersion.compareTo(deployment.version()) < 0 && ! instance.change().isPinned()
+            && (   platformVersion.compareTo(deployment.version()) < 0 && ! application.change().isPinned()
                 || applicationVersion.compareTo(deployment.applicationVersion()) < 0))
-            throw new IllegalArgumentException(String.format("Rejecting deployment of %s to %s, as the requested versions (platform: %s, application: %s)" +
+            throw new IllegalArgumentException(String.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
                                                              " are older than the currently deployed (platform: %s, application: %s).",
-                                                             instance, zone, platformVersion, applicationVersion, deployment.version(), deployment.applicationVersion()));
+                                                             application.id().instance(instance), zone, platformVersion, applicationVersion, deployment.version(), deployment.applicationVersion()));
     }
 
     /** Returns the rotation repository, used for managing global rotation assignments */
@@ -849,11 +887,6 @@ public class ApplicationController {
 
     public RoutingPolicies routingPolicies() {
         return routingPolicies;
-    }
-
-    /** Sort given list of applications by application ID */
-    private static List<Instance> sort(List<Instance> instances) {
-        return instances.stream().sorted(Comparator.comparing(Instance::id)).collect(Collectors.toList());
     }
 
     /**

@@ -22,7 +22,6 @@ vespa_add_executable(searchcore_docsummary_test_app TEST
     searchcore_grouping
     searchcore_proton_metrics
     searchcore_fconfig
-    searchcore_util
     searchlib_searchlib_uca
 )
 vespa_add_executable(searchcore_summaryfieldconverter_test_app

@@ -15,7 +15,7 @@ import java.util.Map;
 public class DimensionBinding {
 
     /** The dimensions of this */
-    private List<String> dimensions=null;
+    private List<String> dimensions;
 
     /** The values matching those dimensions */
     private DimensionValues values;
@@ -24,30 +24,32 @@ public class DimensionBinding {
     private Map<String,String> context;
 
     public static final DimensionBinding nullBinding =
-        new DimensionBinding(Collections.<String>unmodifiableList(Collections.<String>emptyList()), DimensionValues.empty, null);
+        new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
 
     public static final DimensionBinding invalidBinding =
-        new DimensionBinding(Collections.<String>unmodifiableList(Collections.<String>emptyList()), DimensionValues.empty, null);
+        new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
 
     /** Whether the value array contains only nulls */
     private boolean containsAllNulls;
 
     /** Creates a binding from a variant and a context. Any of the arguments may be null. */
     public static DimensionBinding createFrom(List<String> dimensions, Map<String,String> context) {
-        if (dimensions==null || dimensions.size()==0) {
-            if (context==null) return nullBinding;
-            if (dimensions==null) return new DimensionBinding(null,DimensionValues.empty,context); // Null, but must preserve context
+        if (dimensions == null || dimensions.size() == 0) {
+            if (context == null) return nullBinding;
+            if (dimensions == null) return new DimensionBinding(null, DimensionValues.empty, context); // Null, but must preserve context
         }
 
-        return new DimensionBinding(dimensions,extractDimensionValues(dimensions,context),context);
+        return new DimensionBinding(dimensions, extractDimensionValues(dimensions, context), context);
     }
 
     /** Creates a binding from a variant and a context. Any of the arguments may be null. */
     public static DimensionBinding createFrom(List<String> dimensions, DimensionValues dimensionValues) {
-        if (dimensionValues==null || dimensionValues==DimensionValues.empty) return nullBinding;
-        if (dimensions==null) return new DimensionBinding(null,dimensionValues,null); // Null, but preserve raw material for creating a context later (in createFor)
+        if (dimensionValues==null || dimensionValues == DimensionValues.empty) return nullBinding;
 
-        return new DimensionBinding(dimensions,dimensionValues,null);
+        // If null, preserve raw material for creating a context later (in createFor)
+        if (dimensions == null) return new DimensionBinding(null, dimensionValues, null);
+
+        return new DimensionBinding(dimensions, dimensionValues, null);
     }
 
     /** Returns a binding for a (possibly) new set of variants. Variants may be null, but not bindings */

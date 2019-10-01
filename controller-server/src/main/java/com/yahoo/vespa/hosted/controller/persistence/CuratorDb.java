@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -13,11 +14,12 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -74,7 +76,6 @@ public class CuratorDb {
     private static final Path lockRoot = root.append("locks");
     private static final Path tenantRoot = root.append("tenants");
     private static final Path applicationRoot = root.append("applications");
-    private static final Path instanceRoot = root.append("instances");
     private static final Path jobRoot = root.append("jobs");
     private static final Path controllerRoot = root.append("controllers");
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
@@ -85,6 +86,7 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
+    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
@@ -135,7 +137,7 @@ public class CuratorDb {
         return lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
-    public Lock lock(ApplicationId id) {
+    public Lock lock(TenantAndApplicationId id) {
         return lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
@@ -331,44 +333,80 @@ public class CuratorDb {
         curator.delete(tenantPath(name));
     }
 
-    // -------------- Application ---------------------------------------------
+    // -------------- Applications ---------------------------------------------
 
-    public void writeInstance(Instance instance) {
-        curator.set(applicationPath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
-        curator.set(instancePath(instance.id()), asJson(instanceSerializer.toSlime(instance)));
+    public void writeApplication(Application application) {
+        curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
+        for (InstanceName name : application.instances().keySet()) {
+            curator.set(oldApplicationPath(application.id().instance(name)),
+                        asJson(instanceSerializer.toSlime(application.legacy(name))));
+        }
     }
 
-    public Optional<Instance> readInstance(ApplicationId application) {
-        return readSlime(applicationPath(application)).map(instanceSerializer::fromSlime);
+    public Optional<Application> readApplication(TenantAndApplicationId application) {
+        return readSlime(applicationPath(application)).map(applicationSerializer::fromSlime);
     }
 
-    public List<Instance> readInstances() {
-        return readInstances(ignored -> true);
+    public List<Application> readApplications() {
+        return readApplications(ignored -> true);
     }
 
-    public List<Instance> readInstances(TenantName name) {
-        return readInstances(application -> application.tenant().equals(name));
+    public List<Application> readApplications(TenantName name) {
+        return readApplications(application -> application.tenant().equals(name));
     }
 
-    private Stream<ApplicationId> readInstanceIds() {
+    private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter) {
+        return readApplicationIds().filter(applicationFilter)
+                                   .sorted()
+                                   .map(this::readApplication)
+                                   .flatMap(Optional::stream)
+                                   .collect(Collectors.toUnmodifiableList());
+    }
+
+    // TODO jonmv: Clear out old instance data here
+    private Stream<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
-                      .filter(id -> id.split(":").length == 3)
-                      .distinct()
-                      .map(ApplicationId::fromSerializedForm);
+                      .filter(id -> id.split(":").length == 2)
+                      .map(TenantAndApplicationId::fromSerialized);
     }
 
-    private List<Instance> readInstances(Predicate<ApplicationId> instanceFilter) {
-        return readInstanceIds().filter(instanceFilter)
-                                .map(this::readInstance)
-                                .flatMap(Optional::stream)
-                                .collect(Collectors.toUnmodifiableList());
+    // TODO jonmv: Refactor when instance split operation is done
+    public void storeWithoutInstance(Application application, ApplicationId instanceId) {
+        curator.delete(oldApplicationPath(instanceId));
+        if (application.instances().isEmpty())
+                curator.delete(applicationPath(application.id()));
+        else
+            writeApplication(application);
     }
 
-    public void removeInstance(ApplicationId id) {
-        // WARNING: This is part of a multi-step data move operation, so don't touch!!!
-        curator.delete(applicationPath(id));
-        curator.delete(instancePath(id));
-    }
+    /**
+     * Migration plan:
+     *
+     * Add filter for reading only Instance from old application path           RELEASED
+     * Write Instance to instance and old application path                      RELEASED
+     *
+     * Lock on application level for instance mutations                         MERGED
+     *
+     * Write Instance to instance and application and old application paths     DONE    TO CHANGE   DONE
+     * Read Instance from instance path                                         DONE    TO REMOVE   DONE
+     * Duplicate Application from Instance, with helper classes                 DONE
+     * Write Application to instance and application and old application paths  DONE    TO CHANGE   DONE
+     * Read Application from instance path                                      DONE    TO REMOVE   DONE
+     * Use Application where applicable                                         DONE    !!!
+     * Lock instances and application on same level: tenant + application       DONE    TO CHANGE   DONE
+     * When reading an application, read all instances, and aggregate them      DONE
+     * Write application with instances to application path                     DONE
+     * Write all instances of an application to old application path            DONE
+     * Remove everything under instance root                                    DONE
+     * Stop locking applications on instance level                              DONE
+     *
+     * Read Application with instances from application path (with filter)      DONE
+     *
+     * Stop writing Instance to old application path
+     * Remove unused parts of Instance (Used only for legacy serialization)
+     * Store new production application packages under non-instance path
+     * Read production packages from non-instance path, with fallback
+     */
 
     // -------------- Job Runs ------------------------------------------------
 
@@ -505,25 +543,29 @@ public class CuratorDb {
                 .append(tenant.value());
     }
 
-    private Path lockPath(ApplicationId application) {
+    private Path lockPath(TenantAndApplicationId application) {
         return lockPath(application.tenant())
-                .append(application.application().value())
-                .append(application.instance().value());
+                .append(application.application().value());
     }
 
-    private Path lockPath(ApplicationId application, ZoneId zone) {
-        return lockPath(application)
+    private Path lockPath(ApplicationId instance) {
+        return lockPath(TenantAndApplicationId.from(instance))
+                .append(instance.instance().value());
+    }
+
+    private Path lockPath(ApplicationId instance, ZoneId zone) {
+        return lockPath(instance)
                 .append(zone.environment().value())
                 .append(zone.region().value());
     }
 
-    private Path lockPath(ApplicationId application, JobType type) {
-        return lockPath(application)
+    private Path lockPath(ApplicationId instance, JobType type) {
+        return lockPath(instance)
                 .append(type.jobName());
     }
 
-    private Path lockPath(ApplicationId application, JobType type, Step step) {
-        return lockPath(application, type)
+    private Path lockPath(ApplicationId instance, JobType type, Step step) {
+        return lockPath(instance, type)
                 .append(step.name());
     }
 
@@ -585,12 +627,12 @@ public class CuratorDb {
         return tenantRoot.append(name.value());
     }
 
-    private static Path applicationPath(ApplicationId application) {
-        return applicationRoot.append(application.serializedForm());
+    private static Path applicationPath(TenantAndApplicationId id) {
+        return applicationRoot.append(id.serialized());
     }
 
-    private static Path instancePath(ApplicationId id) {
-        return instanceRoot.append(id.serializedForm());
+    private static Path oldApplicationPath(ApplicationId application) {
+        return applicationRoot.append(application.serializedForm());
     }
 
     private static Path runsPath(ApplicationId id, JobType type) {

@@ -102,7 +102,7 @@ public class Const extends IntermediateOperation {
 
     @Override
     public String toFullString() {
-        return "\t" + lazyGetType() + ":\tConst(" + type + ")";
+        return "\t" + type + ":\tConst(" + getConstantValue().get() + ")";
     }
 
 }

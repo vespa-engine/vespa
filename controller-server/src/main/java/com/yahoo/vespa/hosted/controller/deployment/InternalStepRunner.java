@@ -19,8 +19,9 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -37,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
 import javax.security.auth.x500.X500Principal;
@@ -294,13 +296,13 @@ public class InternalStepRunner implements StepRunner {
                     return Optional.of(running);
                 }
             }
-            else if (timedOut(deployment.get(), endpointTimeout)) {
+            else if (timedOut(id, deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Endpoints failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return Optional.of(error);
             }
         }
 
-        if (timedOut(deployment.get(), installationTimeout)) {
+        if (timedOut(id, deployment.get(), installationTimeout)) {
             logger.log(INFO, "Installation failed to complete within " + installationTimeout.toMinutes() + " minutes!");
             return Optional.of(installationFailed);
         }
@@ -326,13 +328,13 @@ public class InternalStepRunner implements StepRunner {
                     return Optional.of(running);
                 }
             }
-            else if (timedOut(deployment.get(), endpointTimeout)) {
+            else if (timedOut(id, deployment.get(), endpointTimeout)) {
                 logger.log(WARNING, "Tester failed to show up within " + endpointTimeout.toMinutes() + " minutes!");
                 return Optional.of(error);
             }
         }
 
-        if (timedOut(deployment.get(), testerTimeout)) {
+        if (timedOut(id, deployment.get(), testerTimeout)) {
             logger.log(WARNING, "Installation of tester failed to complete within " + testerTimeout.toMinutes() + " minutes of real deployment!");
             return Optional.of(error);
         }
@@ -443,14 +445,14 @@ public class InternalStepRunner implements StepRunner {
 
         logger.log("Attempting to find endpoints ...");
         var endpoints = controller.applications().clusterEndpoints(id.application(), zones);
-        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(deployment.get(), endpointTimeout)) {
+        if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(id, deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
         }
         logEndpoints(endpoints, logger);
 
         Optional<URI> testerEndpoint = controller.jobController().testerEndpoint(id);
-        if (testerEndpoint.isEmpty() && timedOut(deployment.get(), endpointTimeout)) {
+        if (testerEndpoint.isEmpty() && timedOut(id, deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the tester container vanished again, while it was still active!");
             return Optional.of(error);
         }
@@ -573,9 +575,9 @@ public class InternalStepRunner implements StepRunner {
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
     private void sendNotification(Run run, DualLogger logger) {
-        Instance instance = controller.applications().require(run.id().application());
-        Notifications notifications = instance.deploymentSpec().notifications();
-        boolean newCommit = instance.change().application()
+        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
+        Notifications notifications = application.deploymentSpec().notifications();
+        boolean newCommit = application.change().application()
                                     .map(run.versions().targetApplication()::equals)
                                     .orElse(false);
         When when = newCommit ? failingCommit : failing;
@@ -611,8 +613,8 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the real application with the given id. */
     private Instance application(ApplicationId id) {
-        controller.applications().lockOrThrow(id, __ -> { }); // Memory fence.
-        return controller.applications().require(id);
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), __ -> { }); // Memory fence.
+        return controller.applications().requireInstance(id);
     }
 
     /**
@@ -622,7 +624,13 @@ public class InternalStepRunner implements StepRunner {
      * to be able to collect the Vespa log from the deployment. Thus, the lower of the zone's deployment expiry,
      * and the given default installation timeout, minus one minute, is used as a timeout threshold.
      */
-    private boolean timedOut(Deployment deployment, Duration defaultTimeout) {
+    private boolean timedOut(RunId id, Deployment deployment, Duration defaultTimeout) {
+        // TODO jonmv: This is a workaround for new deployment writes not yet being visible in spite of Curator locking.
+        // TODO Investigate what's going on here, and remove this workaround.
+        Run run = controller.jobController().run(id).get();
+        if (run.start().isAfter(deployment.at()))
+            return false;
+
         Duration timeout = controller.zoneRegistry().getDeploymentTimeToLive(deployment.zone())
                                      .filter(zoneTimeout -> zoneTimeout.compareTo(defaultTimeout) < 0)
                                      .orElse(defaultTimeout);
@@ -632,7 +640,7 @@ public class InternalStepRunner implements StepRunner {
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
         ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
-        DeploymentSpec spec = controller.applications().require(id.application()).deploymentSpec();
+        DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
         boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();

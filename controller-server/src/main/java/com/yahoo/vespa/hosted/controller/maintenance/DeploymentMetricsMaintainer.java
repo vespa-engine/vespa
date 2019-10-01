@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -41,40 +42,40 @@ public class DeploymentMetricsMaintainer extends Maintainer {
     @Override
     protected void maintain() {
         AtomicInteger failures = new AtomicInteger(0);
+        AtomicInteger attempts = new AtomicInteger(0);
         AtomicReference<Exception> lastException = new AtomicReference<>(null);
-        List<Instance> instanceList = applications.asList();
 
         // Run parallel stream inside a custom ForkJoinPool so that we can control the number of threads used
         ForkJoinPool pool = new ForkJoinPool(applicationsToUpdateInParallel);
         pool.submit(() ->
-            instanceList.parallelStream().forEach(application -> {
-                applications.lockIfPresent(application.id(), locked ->
-                        applications.store(locked.with(controller().metrics().getApplicationMetrics(application.id()))));
+            applications.asList().parallelStream().forEach(application -> {
+                for (Instance instance : application.instances().values())
+                    for (Deployment deployment : instance.deployments().values()) {
+                        attempts.incrementAndGet();
+                        try {
+                            if (deployment.version().getMajor() < 7) continue;
+                            var collectedMetrics = controller().metrics().getDeploymentMetrics(instance.id(), deployment.zone());
+                            var now = controller().clock().instant();
+                            applications.lockApplicationIfPresent(application.id(), locked -> {
+                                Deployment existingDeployment = locked.get().require(instance.name()).deployments().get(deployment.zone());
+                                if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
+                                DeploymentMetrics newMetrics = existingDeployment.metrics()
+                                                                                 .withQueriesPerSecond(collectedMetrics.queriesPerSecond())
+                                                                                 .withWritesPerSecond(collectedMetrics.writesPerSecond())
+                                                                                 .withDocumentCount(collectedMetrics.documentCount())
+                                                                                 .withQueryLatencyMillis(collectedMetrics.queryLatencyMillis())
+                                                                                 .withWriteLatencyMillis(collectedMetrics.writeLatencyMillis())
+                                                                                 .at(now);
+                                applications.store(locked.with(instance.name(),
+                                                               lockedInstance -> lockedInstance.with(existingDeployment.zone(), newMetrics)
+                                                                                               .recordActivityAt(now, existingDeployment.zone())));
 
-                for (Deployment deployment : application.deployments().values()) {
-                    try {
-                        if (deployment.version().getMajor() < 7) continue;
-                        var collectedMetrics = controller().metrics().getDeploymentMetrics(application.id(), deployment.zone());
-                        var now = controller().clock().instant();
-                        applications.lockIfPresent(application.id(), locked -> {
-                            Deployment existingDeployment = locked.get().deployments().get(deployment.zone());
-                            if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
-                            DeploymentMetrics newMetrics = existingDeployment.metrics()
-                                                                             .withQueriesPerSecond(collectedMetrics.queriesPerSecond())
-                                                                             .withWritesPerSecond(collectedMetrics.writesPerSecond())
-                                                                             .withDocumentCount(collectedMetrics.documentCount())
-                                                                             .withQueryLatencyMillis(collectedMetrics.queryLatencyMillis())
-                                                                             .withWriteLatencyMillis(collectedMetrics.writeLatencyMillis())
-                                                                             .at(now);
-                            applications.store(locked.with(existingDeployment.zone(), newMetrics)
-                                                     .recordActivityAt(now, existingDeployment.zone()));
-
-                        });
-                    } catch (Exception e) {
-                        failures.incrementAndGet();
-                        lastException.set(e);
+                            });
+                        } catch (Exception e) {
+                            failures.incrementAndGet();
+                            lastException.set(e);
+                        }
                     }
-                }
             })
         );
         pool.shutdown();
@@ -84,7 +85,7 @@ public class DeploymentMetricsMaintainer extends Maintainer {
                 log.log(LogLevel.WARNING,
                         String.format("Failed to gather metrics for %d/%d applications. Retrying in %s. Last error: %s",
                                       failures.get(),
-                                      instanceList.size(),
+                                      attempts.get(),
                                       maintenanceInterval(),
                                       Exceptions.toMessageString(lastException.get())));
             }

@@ -353,9 +353,7 @@ public class SearchHandler extends LoggingRequestHandler {
         }
     }
 
-    /**
-     * For internal use only
-     */
+    /** For internal use only */
     public Renderer<Result> getRendererCopy(ComponentSpecification spec) {
         Renderer<Result> renderer = executionFactory.rendererRegistry().getRenderer(spec);
         return perRenderingCopy(renderer);
@@ -394,27 +392,29 @@ public class SearchHandler extends LoggingRequestHandler {
             log.log(LogLevel.DEBUG, () -> error.getDetailedMessage());
             return new Result(query, error);
         } catch (IllegalArgumentException e) {
-            ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
-                                                               + Exceptions.toMessageString(e));
-            log.log(LogLevel.DEBUG, () -> error.getDetailedMessage());
-            return new Result(query, error);
-        } catch (LinkageError e) {
-            // Should have been an Exception in an OSGi world - typical bundle dependency issue problem
-            ErrorMessage error = ErrorMessage.createErrorInPluginSearcher(
-                            "Error executing " + searchChain + "]: " + Exceptions.toMessageString(e), e);
-            log(request, query, e);
-            return new Result(query, error);
-        } catch (StackOverflowError e) { // Also recoverable
-            ErrorMessage error = ErrorMessage.createErrorInPluginSearcher(
-                            "Error executing " + searchChain + "]: " + Exceptions.toMessageString(e), e);
+            if ("Comparison method violates its general contract!".equals(e.getMessage())) {
+                // This is an error in application components or Vespa code
+                log(request, query, e);
+                return new Result(query, ErrorMessage.createUnspecifiedError("Failed searching: " +
+                                                                             Exceptions.toMessageString(e), e));
+            }
+            else {
+                ErrorMessage error = ErrorMessage.createBadRequest("Invalid search request [" + request + "]: "
+                                                                   + Exceptions.toMessageString(e));
+                log.log(LogLevel.DEBUG, () -> error.getDetailedMessage());
+                return new Result(query, error);
+            }
+        } catch (LinkageError | StackOverflowError e) {
+            // LinkageError should have been an Exception in an OSGi world - typical bundle dependency issue problem
+            // StackOverflowError is recoverable
+            ErrorMessage error = ErrorMessage.createErrorInPluginSearcher("Error executing " + searchChain + "]: " +
+                                                                          Exceptions.toMessageString(e), e);
             log(request, query, e);
             return new Result(query, error);
         } catch (Exception e) {
-            Result result = new Result(query);
             log(request, query, e);
-            result.hits().addError(
-                    ErrorMessage.createUnspecifiedError("Failed searching: " + Exceptions.toMessageString(e), e));
-            return result;
+            return new Result(query, ErrorMessage.createUnspecifiedError("Failed searching: " +
+                                                                         Exceptions.toMessageString(e), e));
         }
     }
 
@@ -448,12 +448,10 @@ public class SearchHandler extends LoggingRequestHandler {
     private void log(String request, Query query, Throwable e) {
         // Attempted workaround for missing stack traces
         if (e.getStackTrace().length == 0) {
-            log.log(LogLevel.ERROR,
-                    "Failed executing " + query.toDetailString() + " [" + request
-                            + "], received exception with no context", e);
+            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() +
+                                    " [" + request + "], received exception with no context", e);
         } else {
-            log.log(LogLevel.ERROR,
-                    "Failed executing " + query.toDetailString() + " [" + request + "]", e);
+            log.log(LogLevel.ERROR, "Failed executing " + query.toDetailString() + " [" + request + "]", e);
         }
     }
 

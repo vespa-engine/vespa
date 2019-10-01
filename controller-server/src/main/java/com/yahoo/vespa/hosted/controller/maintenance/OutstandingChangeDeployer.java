@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 
@@ -19,11 +20,11 @@ public class OutstandingChangeDeployer extends Maintainer {
 
     @Override
     protected void maintain() {
-        for (Instance instance : controller().applications().asList()) {
-            if (instance.outstandingChange().hasTargets()
-                && instance.deploymentSpec().canChangeRevisionAt(controller().clock().instant())) {
-                controller().applications().deploymentTrigger().triggerChange(instance.id(),
-                                                                              instance.outstandingChange());
+        for (Application application : controller().applications().asList()) {
+            if (application.outstandingChange().hasTargets()
+                && application.deploymentSpec().canChangeRevisionAt(controller().clock().instant())) {
+                controller().applications().deploymentTrigger().triggerChange(application.id(),
+                                                                              application.outstandingChange());
             }
         }
     }

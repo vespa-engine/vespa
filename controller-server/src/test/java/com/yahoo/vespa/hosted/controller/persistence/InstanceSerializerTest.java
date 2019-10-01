@@ -46,7 +46,6 @@ import java.util.OptionalLong;
 import java.util.Set;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.ControllerTester.writable;
 import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
 
@@ -182,30 +181,6 @@ public class InstanceSerializerTest {
         assertEquals(original.deployments().get(zone2).metrics().writeLatencyMillis(), serialized.deployments().get(zone2).metrics().writeLatencyMillis(), Double.MIN_VALUE);
         assertEquals(original.deployments().get(zone2).metrics().instant(), serialized.deployments().get(zone2).metrics().instant());
         assertEquals(original.deployments().get(zone2).metrics().warnings(), serialized.deployments().get(zone2).metrics().warnings());
-        { // test more deployment serialization cases
-            Instance original2 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 42))).get();
-            Instance serialized2 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original2));
-            assertEquals(original2.change(), serialized2.change());
-            assertEquals(serialized2.change().application().get().source(),
-                         original2.change().application().get().source());
-
-            Instance original3 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Instance serialized3 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original3));
-            assertEquals(original3.change(), serialized3.change());
-            assertEquals(serialized3.change().application().get().source(),
-                         original3.change().application().get().source());
-            Instance original4 = writable(original).withChange(Change.empty()).get();
-            Instance serialized4 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original4));
-            assertEquals(original4.change(), serialized4.change());
-
-            Instance original5 = writable(original).withChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Instance serialized5 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original5));
-            assertEquals(original5.change(), serialized5.change());
-
-            Instance original6 = writable(original).withOutstandingChange(Change.of(ApplicationVersion.from(new SourceRevision("a", "b", "c"), 42))).get();
-            Instance serialized6 = INSTANCE_SERIALIZER.fromSlime(INSTANCE_SERIALIZER.toSlime(original6));
-            assertEquals(original6.outstandingChange(), serialized6.outstandingChange());
-        }
     }
 
     private Map<ClusterSpec.Id, ClusterInfo> createClusterInfo(int clusters, int hosts) {
@@ -240,7 +215,7 @@ public class InstanceSerializerTest {
 
     @Test
     public void testCompleteApplicationDeserialization() throws Exception {
-        byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
+        byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-instance.json"));
         INSTANCE_SERIALIZER.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
         // ok if no error
     }

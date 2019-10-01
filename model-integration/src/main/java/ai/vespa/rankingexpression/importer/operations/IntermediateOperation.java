@@ -226,7 +226,7 @@ public abstract class IntermediateOperation {
     }
 
     public String toFullString() {
-        return "\t" + lazyGetType() + ":\t" + operationName() + "(" +
+        return "\t" + type + ":\t" + operationName() + "(" +
                inputs().stream().map(input -> input.toFullString()).collect(Collectors.joining(", ")) +
                ")";
     }

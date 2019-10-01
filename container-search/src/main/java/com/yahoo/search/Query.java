@@ -464,8 +464,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             trace("No query profile is used", false, 1);
         else
             trace("Using " + profile.toString(), false, 1);
-        if (traceLevel < 4) return;
 
+        if (traceLevel < 4) return;
         StringBuilder b = new StringBuilder("Resolved properties:\n");
         Set<String> mentioned = new HashSet<>();
         for (Map.Entry<String,String> requestProperty : requestProperties().entrySet() ) {
@@ -495,10 +495,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         return httpRequest.propertyMap();
     }
 
-    private void appendQueryProfileProperties(CompiledQueryProfile profile,Set<String> mentioned,StringBuilder b) {
-        for (Map.Entry<String,Object> property : profile.listValues("", requestProperties()).entrySet()) {
+    private void appendQueryProfileProperties(CompiledQueryProfile profile, Set<String> mentioned, StringBuilder b) {
+        for (Map.Entry<String,Object> property : profile.listValues(CompoundName.empty, requestProperties(), properties()).entrySet()) {
             if ( ! mentioned.contains(property.getKey()))
-                b.append(property.getKey()).append("=").append(property.getValue()).append(" (value from query profile)<br/>\n");
+                b.append(property.getKey()).append("=").append(property.getValue()).append(" (value from query profile)\n");
         }
     }
 

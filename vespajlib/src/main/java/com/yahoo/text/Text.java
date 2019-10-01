@@ -143,9 +143,8 @@ public final class Text {
         sb.append(' ');
         return sb;
     }
-    /**
-     * Returns a string where any invalid characters in the input string is replaced by spaces
-     */
+
+    /** Returns a string where any invalid characters in the input string is replaced by spaces */
     public static String stripInvalidCharacters(String string) {
         StringBuilder stripped = null; // lazy, as most string will not need stripping
         for (int i = 0; i < string.length();) {

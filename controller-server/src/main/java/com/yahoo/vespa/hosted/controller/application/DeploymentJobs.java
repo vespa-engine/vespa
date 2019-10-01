@@ -55,13 +55,13 @@ public class DeploymentJobs {
     }
 
     /** Return a new instance with the given completion */
-    public DeploymentJobs withCompletion(long projectId, JobType jobType, JobStatus.JobRun completion, Optional<JobError> jobError) {
+    public DeploymentJobs withCompletion(JobType jobType, JobStatus.JobRun completion, Optional<JobError> jobError) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
         status.compute(jobType, (type, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
             return job.withCompletion(completion, jobError);
         });
-        return new DeploymentJobs(jobType == JobType.component ? OptionalLong.of(projectId) : this.projectId, status, issueId, builtInternally);
+        return new DeploymentJobs(projectId, status, issueId, builtInternally);
     }
 
     public DeploymentJobs withTriggering(JobType jobType, JobStatus.JobRun jobRun) {

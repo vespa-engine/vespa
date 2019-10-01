@@ -10,12 +10,14 @@ import java.util.Map;
  * An immutable set of dimension values.
  * Note that this may contain more or fewer values than needed given a set of dimensions.
  * Any missing values are treated as null.
+ *
+ * @author bratseth
  */
 public class DimensionValues implements Comparable<DimensionValues> {
 
     private final String[] values;
 
-    public static final DimensionValues empty=new DimensionValues(new String[] {});
+    public static final DimensionValues empty = new DimensionValues(new String[] {});
 
     public static DimensionValues createFrom(String[] values) {
         if (values==null || values.length==0 || containsAllNulls(values)) return empty;
@@ -27,7 +29,7 @@ public class DimensionValues implements Comparable<DimensionValues> {
      * the right size, and where no copying is done.
      *
      * @param values the dimension values. This need not be normalized to the right size.
-     *        The input array is copied by this.
+     *               The input array is copied by this.
      */
     private DimensionValues(String[] values) {
         if (values==null) throw new NullPointerException("Dimension values cannot be null");
@@ -115,26 +117,25 @@ public class DimensionValues implements Comparable<DimensionValues> {
     }
 
     public Map<String,String> asContext(List<String> dimensions) {
-        Map<String,String> context=new HashMap<>();
-        if (dimensions==null) return context;
-        for (int i=0; i<dimensions.size(); i++) {
-            context.put(dimensions.get(i),get(i));
-        }
+        Map<String,String> context = new HashMap<>();
+        if (dimensions == null) return context;
+        for (int i = 0; i < dimensions.size(); i++)
+            context.put(dimensions.get(i), get(i));
         return context;
     }
 
-    /** Returns the string at the given index, <b>or null if it has no value at this index.</b> */
+    /** Returns the string at the given index, or null if it has no value at this index */
     public String get(int index) {
-        if (index>=values.length) return null;
+        if (index >= values.length) return null;
         return values[index];
     }
 
     /** Returns the number of values in this (some of which may be null) */
     public int size() { return values.length; }
 
-    /** Returns  copy of the values in this in an array */
+    /** Returns a copy of the values in this in an array */
     public String[] getValues() {
-        return Arrays.copyOf(values,values.length);
+        return Arrays.copyOf(values, values.length);
     }
 
 }

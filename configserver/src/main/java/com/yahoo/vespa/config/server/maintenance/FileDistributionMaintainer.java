@@ -20,6 +20,7 @@ public class FileDistributionMaintainer extends Maintainer {
 
     private final ApplicationRepository applicationRepository;
     private final File fileReferencesDir;
+    private final ConfigserverConfig configserverConfig;
 
     FileDistributionMaintainer(ApplicationRepository applicationRepository,
                                Curator curator,
@@ -27,11 +28,13 @@ public class FileDistributionMaintainer extends Maintainer {
                                ConfigserverConfig configserverConfig) {
         super(applicationRepository, curator, interval);
         this.applicationRepository = applicationRepository;
+        this.configserverConfig = configserverConfig;
         this.fileReferencesDir = new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir()));
     }
 
     @Override
     protected void maintain() {
-        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir);
+        applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir,
+                                                                     Duration.ofHours(configserverConfig.keepUnusedFileReferencesHours()));
     }
 }

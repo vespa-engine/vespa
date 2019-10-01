@@ -9,6 +9,7 @@ import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -590,6 +591,25 @@ public class QueryProfileTestCase {
                                                           "7d/3h&clustering.timeline.tophit=false&clustering.timeli" +
                                                           "ne=true", Method.GET), p.compile(null));
         assertTrue(q.properties().getBoolean("clustering.timeline", false));
+    }
+
+    @Test
+    public void testSubstitutionInTrace() {
+        QueryProfile profile = new QueryProfile("test");
+        profile.set("property", "%{foo}", null);
+        CompiledQueryProfile cProfile = profile.compile(null);
+
+        Query query = new Query("?foo=value&tracelevel=4", cProfile);
+        assertEquals("value", query.properties().get("property"));
+        assertTrue(traceContains("foo=value", query));
+    }
+
+    // NB: NOT RECURSIVE
+    private boolean traceContains(String string, Query query) {
+        for (TraceNode node : query.getContext(true).getTrace().traceNode().children())
+            if (node.payload().toString().contains(string))
+                return true;
+        return false;
     }
 
 }

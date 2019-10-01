@@ -28,8 +28,6 @@ public:
         return vespalib::stringref(&stackDump[0], stackDump.size());
     }
 
-    bool should_drop_sort_data() const;
-
     void setTraceLevel(uint32_t level, uint32_t minLevel) const {
         _trace.setLevel(level);
         _trace.start(minLevel);
@@ -43,7 +41,7 @@ private:
     fastos::TimeStamp       _timeOfDoom;
 public:
     /// Everything here should move up to private section and have accessors
-    uint32_t           queryFlags;
+    bool               dumpFeatures;
     vespalib::string   ranking;
     vespalib::string   location;
     PropertiesMap      propertiesMap;

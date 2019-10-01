@@ -16,8 +16,6 @@ SearchReply::SearchReply()
       coverage(),
       useWideHits(false),
       hits(),
-      errorCode(0),
-      errorMessage(),
       request()
 { }
 
@@ -35,8 +33,6 @@ SearchReply::SearchReply(const SearchReply &rhs) :
     coverage     (rhs.coverage),
     useWideHits  (rhs.useWideHits),
     hits         (rhs.hits),
-    errorCode    (rhs.errorCode),
-    errorMessage (rhs.errorMessage),
     request() // NB not copied
 { }
 

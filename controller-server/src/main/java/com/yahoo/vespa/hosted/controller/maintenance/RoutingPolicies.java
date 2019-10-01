@@ -51,7 +51,7 @@ public class RoutingPolicies {
         }
     }
 
-    /** Read all known routing policies for given application */
+    /** Read all known routing policies for given instance */
     public Set<RoutingPolicy> get(ApplicationId application) {
         return db.readRoutingPolicies(application);
     }

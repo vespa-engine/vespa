@@ -9,6 +9,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -26,6 +27,7 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
@@ -63,6 +65,7 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
@@ -260,8 +263,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePATCH(Path path, HttpRequest request) {
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return patchApplication(path.get("tenant"), path.get("application"), "default", request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return patchApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return patchApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return patchApplication(path.get("tenant"), path.get("application"), request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -348,24 +351,25 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
         Cursor array = slime.setArray();
-        for (Instance instance : controller.applications().asList(tenant)) {
-            if (applicationName.isPresent() && ! instance.id().application().toString().equals(applicationName.get()))
-                continue;
-            toSlime(instance, array.addObject(), request);
+        for (Application application : controller.applications().asList(tenant)) {
+            if (applicationName.map(application.id().application().value()::equals).orElse(true))
+                for (InstanceName instance : application.instances().keySet())
+                    toSlime(application.id().instance(instance), array.addObject(), request);
         }
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse application(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Slime slime = new Slime();
-        toSlime(slime.setObject(), getApplication(tenantName, applicationName, instanceName), request);
+        toSlime(slime.setObject(), getInstance(tenantName, applicationName, instanceName),
+                getApplication(tenantName, applicationName, instanceName), request);
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse patchApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+    private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
-        controller.applications().lockOrThrow(ApplicationId.from(tenantName, applicationName, instanceName), application -> {
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
             Inspector majorVersionField = requestObject.field("majorVersion");
             if (majorVersionField.valid()) {
                 Integer majorVersion = majorVersionField.asLong() == 0 ? null : (int) majorVersionField.asLong();
@@ -379,15 +383,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 application = application.withPemDeployKey(pemDeployKey);
                 messageBuilder.add("Set pem deploy key to " + (pemDeployKey == null ? "empty" : pemDeployKey));
             }
-
             controller.applications().store(application);
         });
         return new MessageResponse(messageBuilder.toString());
     }
 
-    private Instance getApplication(String tenantName, String applicationName, String instanceName) {
+    private Application getApplication(String tenantName, String applicationName, String instanceName) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        return controller.applications().get(applicationId)
+        return controller.applications().getApplication(applicationId)
+                         .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
+    }
+
+    private Instance getInstance(String tenantName, String applicationName, String instanceName) {
+        ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
+        return controller.applications().getInstance(applicationId)
                           .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
     }
 
@@ -475,7 +484,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(type.jobName() + " for " + id + " paused for " + DeploymentTrigger.maxPause);
     }
 
-    private void toSlime(Cursor object, Instance instance, HttpRequest request) {
+    private void toSlime(Cursor object, Instance instance, Application application, HttpRequest request) {
         object.setString("tenant", instance.id().tenant().value());
         object.setString("application", instance.id().application().value());
         object.setString("instance", instance.id().instance().value());
@@ -490,25 +499,24 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .map(run -> run.application().source())
                 .ifPresent(source -> sourceRevisionToSlime(source, object.setObject("source")));
 
-        instance.deploymentJobs().projectId()
-                .ifPresent(id -> object.setLong("projectId", id));
+        application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
         // Currently deploying change
-        if ( ! instance.change().isEmpty()) {
-            toSlime(object.setObject("deploying"), instance.change());
+        if ( ! application.change().isEmpty()) {
+            toSlime(object.setObject("deploying"), application.change());
         }
 
         // Outstanding change
-        if ( ! instance.outstandingChange().isEmpty()) {
-            toSlime(object.setObject("outstandingChange"), instance.outstandingChange());
+        if ( ! application.outstandingChange().isEmpty()) {
+            toSlime(object.setObject("outstandingChange"), application.outstandingChange());
         }
 
         // Jobs sorted according to deployment spec
         List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                .steps(instance.deploymentSpec())
+                .steps(application.deploymentSpec())
                 .sortedJobs(instance.deploymentJobs().jobStatus().values());
 
-        object.setBool("deployedInternally", instance.deploymentJobs().deployedInternally());
+        object.setBool("deployedInternally", application.internal());
         Cursor deploymentsArray = object.setArray("deploymentJobs");
         for (JobStatus job : jobStatus) {
             Cursor jobObject = deploymentsArray.addObject();
@@ -523,7 +531,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Change blockers
         Cursor changeBlockers = object.setArray("changeBlockers");
-        instance.deploymentSpec().changeBlocker().forEach(changeBlocker -> {
+        application.deploymentSpec().changeBlocker().forEach(changeBlocker -> {
             Cursor changeBlockerObject = changeBlockers.addObject();
             changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
             changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
@@ -535,9 +543,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         });
 
         // Compile version. The version that should be used when building an application
-        object.setString("compileVersion", compileVersion(instance.id()).toFullString());
+        object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
-        instance.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
+        application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
@@ -565,7 +573,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = controller.applications().deploymentTrigger()
-                .steps(instance.deploymentSpec())
+                .steps(application.deploymentSpec())
                 .sortedDeployments(instance.deployments().values());
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
@@ -600,28 +608,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
 
-        instance.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
+        application.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
-        metricsObject.setDouble("queryServiceQuality", instance.metrics().queryServiceQuality());
-        metricsObject.setDouble("writeServiceQuality", instance.metrics().writeServiceQuality());
+        metricsObject.setDouble("queryServiceQuality", application.metrics().queryServiceQuality());
+        metricsObject.setDouble("writeServiceQuality", application.metrics().writeServiceQuality());
 
         // Activity
         Cursor activity = object.setObject("activity");
-        instance.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried", instant.toEpochMilli()));
-        instance.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten", instant.toEpochMilli()));
-        instance.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
-        instance.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
+        application.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried", instant.toEpochMilli()));
+        application.activity().lastWritten().ifPresent(instant -> activity.setLong("lastWritten", instant.toEpochMilli()));
+        application.activity().lastQueriesPerSecond().ifPresent(value -> activity.setDouble("lastQueriesPerSecond", value));
+        application.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
-        instance.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
-        instance.owner().ifPresent(owner -> object.setString("owner", owner.username()));
-        instance.deploymentJobs().issueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
+        application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
+        application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
+        application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
     private HttpResponse deployment(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        Instance instance = controller.applications().get(id)
+        Instance instance = controller.applications().getInstance(id)
                                       .orElseThrow(() -> new NotExistsException(id + " not found"));
 
         DeploymentId deploymentId = new DeploymentId(instance.id(),
@@ -675,7 +683,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                 .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", deployment.at().plus(deploymentTimeToLive).toEpochMilli()));
 
-        controller.applications().require(deploymentId.applicationId()).deploymentJobs().projectId()
+        controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId())).projectId()
                   .ifPresent(i -> response.setString("screwdriverId", String.valueOf(i)));
         sourceRevisionToSlime(deployment.applicationVersion().source(), response);
 
@@ -741,7 +749,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
      * If no known version is applicable, the newest version at least as old as the oldest platform is selected,
      * among all versions released for this system. If no such versions exists, throws an IllegalStateException.
      */
-    private Version compileVersion(ApplicationId id) {
+    private Version compileVersion(TenantAndApplicationId id) {
         Version oldestPlatform = controller.applications().oldestInstalledPlatform(id);
         return controller.versionStatus().versions().stream()
                          .filter(version -> version.confidence().equalOrHigherThan(VespaVersion.Confidence.low))
@@ -760,7 +768,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse setGlobalRotationOverride(String tenantName, String applicationName, String instanceName, String environment, String region, boolean inService, HttpRequest request) {
-        Instance instance = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
+        Instance instance = controller.applications().requireInstance(ApplicationId.from(tenantName, applicationName, instanceName));
         ZoneId zone = ZoneId.from(environment, region);
         Deployment deployment = instance.deployments().get(zone);
         if (deployment == null) {
@@ -805,7 +813,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse rotationStatus(String tenantName, String applicationName, String instanceName, String environment, String region, Optional<String> endpointId) {
         ApplicationId applicationId = ApplicationId.from(tenantName, applicationName, instanceName);
-        Instance instance = controller.applications().require(applicationId);
+        Instance instance = controller.applications().requireInstance(applicationId);
         ZoneId zone = ZoneId.from(environment, region);
         RotationId rotation = findRotationId(instance, endpointId);
         Deployment deployment = instance.deployments().get(zone);
@@ -883,7 +891,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deploying(String tenant, String application, String instance, HttpRequest request) {
-        Instance app = controller.applications().require(ApplicationId.from(tenant, application, instance));
+        Application app = controller.applications().requireApplication(TenantAndApplicationId.from(tenant, application));
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         if ( ! app.change().isEmpty()) {
@@ -968,10 +976,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                     ? Optional.empty()
                     : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
-            Instance instance = controller.applications().createApplication(id, credentials);
+            Application application = controller.applications().createApplication(id, credentials);
 
             Slime slime = new Slime();
-            toSlime(instance, slime.setObject(), request);
+            toSlime(id, slime.setObject(), request);
             return new SlimeJsonResponse(slime);
         }
         catch (ZmsClientException e) { // TODO: Push conversion down
@@ -986,9 +994,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
         request = controller.auditLogger().log(request);
         String versionString = readToString(request.getData());
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         StringBuilder response = new StringBuilder();
-        controller.applications().lockOrThrow(id, application -> {
+        controller.applications().lockApplicationOrThrow(id, application -> {
             Version version = Version.fromString(versionString);
             if (version.equals(Version.emptyVersion))
                 version = controller.systemVersion();
@@ -1013,10 +1021,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     /** Trigger deployment to the last known application package for the given application. */
     private HttpResponse deployApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         controller.auditLogger().log(request);
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         StringBuilder response = new StringBuilder();
-        controller.applications().lockOrThrow(id, application -> {
-            Change change = Change.of(application.get().deploymentJobs().statusOf(JobType.component).get().lastSuccess().get().application());
+        controller.applications().lockApplicationOrThrow(id, application -> {
+            Change change = Change.of(application.get().require(InstanceName.from(instanceName)).deploymentJobs().statusOf(JobType.component).get().lastSuccess().get().application());
             controller.applications().deploymentTrigger().forceChange(id, change);
             response.append("Triggered " + change + " for " + id);
         });
@@ -1025,9 +1033,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */
     private HttpResponse cancelDeploy(String tenantName, String applicationName, String instanceName, String choice) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         StringBuilder response = new StringBuilder();
-        controller.applications().lockOrThrow(id, application -> {
+        controller.applications().lockApplicationOrThrow(id, application -> {
             Change change = application.get().change();
             if (change.isEmpty()) {
                 response.append("No deployment in progress for " + application + " at this time");
@@ -1037,7 +1045,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             ChangesToCancel cancel = ChangesToCancel.valueOf(choice.toUpperCase());
             controller.applications().deploymentTrigger().cancelChange(id, cancel);
             response.append("Changed deployment from '" + change + "' to '" +
-                            controller.applications().require(id).change() + "' for " + application);
+                            controller.applications().requireApplication(id).change() + "' for " + application);
         });
 
         return new MessageResponse(response.toString());
@@ -1122,6 +1130,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
+        Optional<Application> application = controller.applications().getApplication(TenantAndApplicationId.from(applicationId));
 
         Inspector sourceRevision = deployOptions.field("sourceRevision");
         Inspector buildNumber = deployOptions.field("buildNumber");
@@ -1135,7 +1144,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
             applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision),
                                                                      buildNumber.asLong()));
-            applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
+            applicationPackage = Optional.of(controller.applications().getApplicationPackage(applicationId,
+                                                                                             application.get().internal(),
+                                                                                             applicationVersion.get()));
         }
 
         boolean deployDirectly = deployOptions.field("deployDirectly").asBool();
@@ -1144,7 +1155,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
 
             // Redeploy the existing deployment with the same versions.
-            Optional<Deployment> deployment = controller.applications().get(applicationId)
+            Optional<Deployment> deployment = controller.applications().getInstance(applicationId)
                     .map(Instance::deployments)
                     .flatMap(deployments -> Optional.ofNullable(deployments.get(zone)));
 
@@ -1157,7 +1168,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
             applicationVersion = Optional.of(version);
             vespaVersion = Optional.of(deployment.get().version());
-            applicationPackage = Optional.of(controller.applications().getApplicationPackage(controller.applications().require(applicationId), applicationVersion.get()));
+            applicationPackage = Optional.of(controller.applications().getApplicationPackage(applicationId,
+                                                                                             application.get().internal(),
+                                                                                             applicationVersion.get()));
         }
 
         // TODO: get rid of the json object
@@ -1213,7 +1226,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
-        Instance instance = controller.applications().require(ApplicationId.from(tenantName, applicationName, instanceName));
+        Instance instance = controller.applications().requireInstance(ApplicationId.from(tenantName, applicationName, instanceName));
 
         // Attempt to deactivate application even if the deployment is not known by the controller
         DeploymentId deploymentId = new DeploymentId(instance.id(), ZoneId.from(environment, region));
@@ -1226,7 +1239,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         try {
             DeploymentJobs.JobReport report = toJobReport(tenant, application, toSlime(request.getData()).get());
             if (   report.jobType() == JobType.component
-                && controller.applications().require(report.applicationId()).deploymentJobs().deployedInternally())
+                && controller.applications().requireApplication(TenantAndApplicationId.from(report.applicationId())).internal())
                 throw new IllegalArgumentException(report.applicationId() + " is set up to be deployed from internally, and no " +
                                                    "longer accepts submissions from Screwdriver v3 jobs. If you need to revert " +
                                                    "to the old pipeline, please file a ticket at yo/vespa-support and request this.");
@@ -1305,14 +1318,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         Cursor applicationArray = object.setArray("applications");
-        for (Instance instance : controller.applications().asList(tenant.name())) {
-            if ( ! instance.id().instance().isTester()) {
+        for (Application application : controller.applications().asList(tenant.name()))
+            for (Instance instance : application.instances().values())
                 if (recurseOverApplications(request))
-                    toSlime(applicationArray.addObject(), instance, request);
+                    toSlime(applicationArray.addObject(), instance, application, request);
                 else
-                    toSlime(instance, applicationArray.addObject(), request);
-            }
-        }
+                    toSlime(instance.id(), applicationArray.addObject(), request);
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
@@ -1391,14 +1402,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return Joiner.on("/").join(elements);
     }
 
-    private void toSlime(Instance instance, Cursor object, HttpRequest request) {
-        object.setString("tenant", instance.id().tenant().value());
-        object.setString("application", instance.id().application().value());
-        object.setString("instance", instance.id().instance().value());
+    private void toSlime(ApplicationId id, Cursor object, HttpRequest request) {
+        object.setString("tenant", id.tenant().value());
+        object.setString("application", id.application().value());
+        object.setString("instance", id.instance().value());
         object.setString("url", withPath("/application/v4" +
-                                         "/tenant/" + instance.id().tenant().value() +
-                                         "/application/" + instance.id().application().value() +
-                                         "/instance/" + instance.id().instance().value(),
+                                         "/tenant/" + id.tenant().value() +
+                                         "/application/" + id.application().value() +
+                                         "/instance/" + id.instance().value(),
                                          request.getUri()).toString());
     }
 

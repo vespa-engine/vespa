@@ -11,7 +11,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * This is a helper class for rendering grouping results.
+ * A helper for rendering grouping results.
  *
  * @author Simon Thoresen Hult
  */
@@ -94,4 +94,5 @@ public abstract class HitRenderer {
     private static void renderContinuation(String id, Continuation continuation, XMLWriter writer) {
         writer.openTag(TAG_CONTINUATION).attribute(TAG_CONTINUATION_ID, id).content(continuation, false).closeTag();
     }
+
 }

@@ -88,7 +88,6 @@ private:
     const vespalib::string                &_sortSpec;
     size_t                                 _offset;
     size_t                                 _hits;
-    bool                                   _drop_sort_data;
     bool                                   _wasMerged;
 
 public:
@@ -98,8 +97,7 @@ public:
                     GroupingContext & groupingContext,
                     const vespalib::string & sessionId,
                     const vespalib::string & sortSpec,
-                    size_t offset, size_t hits,
-                    bool drop_sort_data);
+                    size_t offset, size_t hits);
     ~ResultProcessor();
 
     size_t countFS4Hits();

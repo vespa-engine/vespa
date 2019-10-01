@@ -49,13 +49,11 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
      * or logging without a logcontrol file)
      **/
     private LevelController defaultLevelCtrl;
-    private String defaultLogLevel;
 
     public VespaLevelControllerRepo(String logCtlFn, String logLevel, String applicationPrefix) {
         this.logControlFilename = logCtlFn;
-        this.defaultLogLevel = logLevel;
         this.appPrefix = applicationPrefix;
-        defaultLevelCtrl = new DefaultLevelController(defaultLogLevel);
+        defaultLevelCtrl = new DefaultLevelController(logLevel);
         openCtlFile();
     }
 
@@ -158,7 +156,7 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
                 if (ctlFile == null) {
                     return defaultLevelCtrl;
                 }
-                LevelController inherit = null;
+                LevelController inherit;
 
                 int lastdot = suffix.lastIndexOf('.');
                 if (lastdot != -1) {
@@ -173,18 +171,18 @@ public class VespaLevelControllerRepo implements LevelControllerRepo {
                 }
                 try {
                     long len = ctlFile.length();
-                    String append;
+                    StringBuilder sb = new StringBuilder();
                     if (suffix.equals("")) {
-                        append = "default" + ": ";
+                        sb.append("default: ");
                     } else {
-                        append = "." + suffix + ": ";
+                        sb.append(".").append(suffix).append(": ");
                     }
-                    while ((len + append.length()) % 4 != 0) {
-                        append = append + " ";
+                    while ((len + sb.length()) % 4 != 0) {
+                        sb.append(" ");
                     }
-                    append = append + inherit.getOnOffString() + "\n";
+                    sb.append(inherit.getOnOffString()).append("\n");
                     ctlFile.seek(ctlFile.length());
-                    ctlFile.writeBytes(append);
+                    ctlFile.writeBytes(sb.toString());
                     extendMapping();
                     ctrl = levelControllerRepo.getLevelController(suffix);
                 } catch(java.nio.channels.ClosedByInterruptException e) {

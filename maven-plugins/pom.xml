@@ -9,8 +9,7 @@
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>bundle-plugins</artifactId>
-    <name>bundle-plugins</name>
+    <artifactId>maven-plugins</artifactId>
     <packaging>pom</packaging>
     <version>7-SNAPSHOT</version>
     <description>Parent artifact for Vespa maven plugins.</description>

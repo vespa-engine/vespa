@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
+ * A 200 ok response with a message in JSON.
+ *
  * @author bratseth
  */
 public class MessageResponse extends HttpResponse {

@@ -2,13 +2,16 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -16,6 +19,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -44,12 +50,12 @@ public class ApplicationOwnershipConfirmerTest {
         Optional<Contact> contact = Optional.of(tester.controllerTester().serviceRegistry().contactRetrieverMock().contact());
         TenantName property = tester.controllerTester().createTenant("property", "domain", 1L, contact);
         tester.createAndDeploy(property, "application", 1, "default");
-        Supplier<Instance> propertyApp = () -> tester.controller().applications().require(ApplicationId.from("property", "application", "default"));
+        Supplier<Application> propertyApp = () -> tester.controller().applications().requireApplication(TenantAndApplicationId.from("property", "application"));
 
         UserTenant user = UserTenant.create("by-user", contact);
         tester.controller().tenants().createUser(user);
         tester.createAndDeploy(user.name(), "application", 2, "default");
-        Supplier<Instance> userApp = () -> tester.controller().applications().require(ApplicationId.from("by-user", "application", "default"));
+        Supplier<Application> userApp = () -> tester.controller().applications().requireApplication(TenantAndApplicationId.from("by-user", "application"));
 
         assertFalse("No issue is initially stored for a new application.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is initially stored for a new application.", userApp.get().ownershipIssueId().isPresent());
@@ -80,9 +86,15 @@ public class ApplicationOwnershipConfirmerTest {
 
         // The user deletes all production deployments — see that the issue is forgotten.
         assertEquals("Confirmation issue for user is sitll open.", issueId, userApp.get().ownershipIssueId());
-        tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
-        tester.controller().applications().deactivate(userApp.get().id(), userApp.get().productionDeployments().keySet().stream().findAny().get());
-        assertTrue("No production deployments are listed for user.", userApp.get().productionDeployments().isEmpty());
+        tester.controller().applications().deactivate(userApp.get().id().defaultInstance(),
+                                                      userApp.get().productionDeployments().values().stream()
+                                                             .flatMap(List::stream)
+                                                             .findAny().get().zone());
+        tester.controller().applications().deactivate(userApp.get().id().defaultInstance(),
+                                                      userApp.get().productionDeployments().values().stream()
+                                                             .flatMap(List::stream)
+                                                             .findAny().get().zone());
+        assertTrue("No production deployments are listed for user.", userApp.get().require(InstanceName.defaultName()).productionDeployments().isEmpty());
         confirmer.maintain();
 
         // Time has passed, and a new confirmation issue is in order for the property which is still in production.

@@ -285,6 +285,7 @@ class ResultBuilder {
             page.putContinuations(hitList.continuations());
             return hitList;
         }
+
     }
 
     private class GroupListBuilder {
@@ -341,6 +342,7 @@ class ResultBuilder {
             }
             return ret;
         }
+
     }
 
     private class PageInfo {
@@ -381,16 +383,17 @@ class ResultBuilder {
                 }
             }
         }
+
     }
 
     /**
-     * Defines a helper interface to convert Vespa style grouping hits into corresponding instances of {@link Hit}. It
-     * is an interface to simplify testing.
-     *
-     * @author Simon Thoresen Hult
+     * Defines a helper interface to convert Vespa style grouping hits into corresponding instances of {@link Hit}.
+     * It is an interface to simplify testing.
      */
     public interface HitConverter {
 
-        public com.yahoo.search.result.Hit toSearchHit(String summaryClass, com.yahoo.searchlib.aggregation.Hit hit);
+        com.yahoo.search.result.Hit toSearchHit(String summaryClass, com.yahoo.searchlib.aggregation.Hit hit);
+
     }
+
 }

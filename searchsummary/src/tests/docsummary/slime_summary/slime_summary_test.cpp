@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 
 using namespace vespalib::slime::convenience;
 using namespace search::docsummary;
+using search::MatchingElements;
 
 namespace {
 
@@ -41,7 +42,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
         ASSERT_GREATER(buf.GetUsedLen(), sizeof(classId));
         memcpy(&classId, buf.GetDrainPos(), sizeof(classId));
         buf.Drain(sizeof(classId));
-        EXPECT_EQUAL(classId, ::search::fs4transport::SLIME_MAGIC_ID);
+        EXPECT_EQUAL(classId, SLIME_MAGIC_ID);
         EXPECT_GREATER(vespalib::slime::BinaryFormat
                        ::decode(Memory(buf.GetDrainPos(), buf.GetUsedLen()), slime), 0u);
     }
@@ -77,6 +78,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
+    std::unique_ptr<MatchingElements> fill_matching_elements() override { abort(); }
 };
 
 

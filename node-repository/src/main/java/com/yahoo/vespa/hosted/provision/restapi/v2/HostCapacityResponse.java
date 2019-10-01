@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Cursor;
@@ -16,6 +15,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * @author mgimle
+ */
 public class HostCapacityResponse extends HttpResponse {
     private final StringBuilder text;
     private final Slime slime;

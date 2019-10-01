@@ -23,7 +23,6 @@
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchlib/common/gatecallback.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -359,7 +358,7 @@ Test::assertTensor(const Tensor::UP & exp, const std::string & fieldName,
     uint32_t classId;
     ASSERT_LESS_EQUAL(sizeof(classId), docsum.data.size());
     memcpy(&classId, docsum.data.c_str(), sizeof(classId));
-    ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
+    ASSERT_EQUAL(::search::docsummary::SLIME_MAGIC_ID, classId);
     vespalib::Slime slime;
     vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
                                 docsum.data.size() - sizeof(classId));
@@ -384,7 +383,7 @@ getSlime(const DocsumReply &reply, uint32_t id, bool relaxed)
     uint32_t classId;
     ASSERT_LESS_EQUAL(sizeof(classId), docsum.data.size());
     memcpy(&classId, docsum.data.c_str(), sizeof(classId));
-    ASSERT_EQUAL(::search::fs4transport::SLIME_MAGIC_ID, classId);
+    ASSERT_EQUAL(search::docsummary::SLIME_MAGIC_ID, classId);
     vespalib::Slime slime;
     vespalib::Memory serialized(docsum.data.c_str() + sizeof(classId),
                                 docsum.data.size() - sizeof(classId));

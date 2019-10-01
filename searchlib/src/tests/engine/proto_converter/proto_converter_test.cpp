@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/engine/proto_converter.h>
-#include <vespa/searchlib/common/transport.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 
@@ -343,14 +342,14 @@ TEST_F(DocsumRequestTest, require_that_cache_query_is_converted) {
     proto.set_cache_query(true);
     convert();
     EXPECT_TRUE(request.propertiesMap.cacheProperties().lookup("query").found());
-    EXPECT_FALSE((request.queryFlags & search::fs4transport::QFLAG_DUMP_FEATURES) != 0);
+    EXPECT_FALSE(request.dumpFeatures);
 }
 
 TEST_F(DocsumRequestTest, require_that_dump_features_is_converted) {
     proto.set_dump_features(true);
     convert();
     EXPECT_FALSE(request.propertiesMap.cacheProperties().lookup("query").found());
-    EXPECT_TRUE((request.queryFlags & search::fs4transport::QFLAG_DUMP_FEATURES) != 0);
+    EXPECT_TRUE(request.dumpFeatures);
 }
 
 TEST_F(DocsumRequestTest, require_that_rank_profile_is_converted) {

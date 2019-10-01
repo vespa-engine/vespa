@@ -41,6 +41,7 @@ void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
                     prev = value.getValue();
                     prevRefCount = 1;
                 } else {
+                    assert(prevRefCount < std::numeric_limits<uint32_t>::max());
                     prevRefCount++;
                 }
                 value.setEidx(index);

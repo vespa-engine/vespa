@@ -19,7 +19,6 @@ vespa_add_executable(searchcore_persistenceconformance_test_app TEST
     searchcore_grouping
     searchcore_proton_metrics
     searchcore_fconfig
-    searchcore_util
     vdstestlib
     persistence_persistence_conformancetest
     searchlib_searchlib_uca

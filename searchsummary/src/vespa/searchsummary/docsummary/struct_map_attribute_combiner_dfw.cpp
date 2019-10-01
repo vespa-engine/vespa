@@ -5,7 +5,9 @@
 #include "attribute_field_writer.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <cassert>
 
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
@@ -22,23 +24,32 @@ class StructMapAttributeFieldWriterState : public DocsumFieldWriterState
 {
     std::unique_ptr<AttributeFieldWriter> _keyWriter;
     std::vector<std::unique_ptr<AttributeFieldWriter>> _valueWriters;
+    const vespalib::string&                            _field_name; 
+    const MatchingElements* const                      _matching_elements;
 
 public:
     StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
                                        const std::vector<vespalib::string> &valueFieldNames,
                                        const std::vector<vespalib::string> &valueAttributeNames,
-                                       IAttributeContext &context);
+                                       IAttributeContext &context,
+                                       const vespalib::string &field_name,
+                                       const MatchingElements* matching_elements);
     ~StructMapAttributeFieldWriterState() override;
+    void insert_element(uint32_t element_index, Cursor &array);
     void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
 };
 
 StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
                                                                        const std::vector<vespalib::string> &valueFieldNames,
                                                                        const std::vector<vespalib::string> &valueAttributeNames,
-                                                                       IAttributeContext &context)
+                                                                       IAttributeContext &context,
+                                                                       const vespalib::string& field_name, 
+                                                                       const MatchingElements *matching_elements)
     : DocsumFieldWriterState(),
       _keyWriter(),
-      _valueWriters()
+      _valueWriters(),
+      _field_name(field_name),
+      _matching_elements(matching_elements)
 {
     const IAttributeVector *attr = context.getAttribute(keyAttributeName);
     if (attr != nullptr) {
@@ -55,6 +66,19 @@ StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const ves
 }
 
 StructMapAttributeFieldWriterState::~StructMapAttributeFieldWriterState() = default;
+
+void
+StructMapAttributeFieldWriterState::insert_element(uint32_t element_index, Cursor &array)
+{
+    Cursor &keyValueObj = array.addObject();
+    if (_keyWriter) {
+        _keyWriter->print(element_index, keyValueObj);
+    }
+    Cursor &obj = keyValueObj.setObject(valueName);
+    for (auto &valueWriter : _valueWriters) {
+        valueWriter->print(element_index, obj);
+    }
+}
 
 void
 StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Inserter &target)
@@ -76,14 +100,19 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
         return;
     }
     Cursor &arr = target.insertArray();
-    for (uint32_t idx = 0; idx < elems; ++idx) {
-        Cursor &keyValueObj = arr.addObject();
-        if (_keyWriter) {
-            _keyWriter->print(idx, keyValueObj);
+    if (_matching_elements != nullptr) {
+        auto &elements = _matching_elements->get_matching_elements(docId, _field_name);
+        auto elements_iterator = elements.cbegin();
+        for (uint32_t idx = 0; idx < elems && elements_iterator != elements.cend(); ++idx) {
+            assert(*elements_iterator >= idx);
+            if (*elements_iterator == idx) {
+                insert_element(idx, arr);
+                ++elements_iterator;
+            }
         }
-        Cursor &obj = keyValueObj.setObject(valueName);
-        for (auto &valueWriter : _valueWriters) {
-            valueWriter->print(idx, obj);
+    } else {
+        for (uint32_t idx = 0; idx < elems; ++idx) {
+            insert_element(idx, arr);
         }
     }
 }
@@ -91,8 +120,9 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 }
 
 StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
-                                                             const std::vector<vespalib::string> &valueFields)
-    : AttributeCombinerDFW(fieldName),
+                                                             const std::vector<vespalib::string> &valueFields,
+                                                             bool filter_elements)
+    : AttributeCombinerDFW(fieldName, filter_elements),
       _keyAttributeName(),
       _valueFields(valueFields),
       _valueAttributeNames()
@@ -108,9 +138,9 @@ StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::str
 StructMapAttributeCombinerDFW::~StructMapAttributeCombinerDFW() = default;
 
 std::unique_ptr<DocsumFieldWriterState>
-StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context)
+StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, const MatchingElements* matching_elements)
 {
-    return std::make_unique<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context);
+    return std::make_unique<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, _fieldName, matching_elements);
 }
 
 }

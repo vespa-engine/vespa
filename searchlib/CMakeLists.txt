@@ -101,7 +101,6 @@ vespa_define_module(
     src/tests/common/foregroundtaskexecutor
     src/tests/common/location
     src/tests/common/matching_elements
-    src/tests/common/packets
     src/tests/common/resultset
     src/tests/common/sequencedtaskexecutor
     src/tests/common/struct_field_mapper
@@ -119,12 +118,8 @@ vespa_define_module(
     src/tests/docstore/lid_info
     src/tests/docstore/logdatastore
     src/tests/docstore/store_by_bucket
-    src/tests/engine/docsumapi
-    src/tests/engine/monitorapi
     src/tests/engine/proto_converter
     src/tests/engine/proto_rpc_adapter
-    src/tests/engine/searchapi
-    src/tests/engine/transportserver
     src/tests/expression/attributenode
     src/tests/features
     src/tests/features/beta

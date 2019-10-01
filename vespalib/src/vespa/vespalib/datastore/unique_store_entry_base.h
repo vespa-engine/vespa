@@ -4,6 +4,8 @@
 
 #include <cstring>
 #include <cstdint>
+#include <cassert>
+#include <limits>
 
 namespace search::datastore {
 
@@ -20,8 +22,14 @@ protected:
 public:
     uint32_t get_ref_count() const { return _ref_count; }
     void set_ref_count(uint32_t ref_count) const { _ref_count = ref_count; }
-    void inc_ref_count() const { ++_ref_count; }
-    void dec_ref_count() const { --_ref_count; }
+    void inc_ref_count() const {
+        assert(_ref_count < std::numeric_limits<uint32_t>::max());
+        ++_ref_count;
+    }
+    void dec_ref_count() const {
+        assert(_ref_count > 0u);
+        --_ref_count;
+    }
 };
 
 }
