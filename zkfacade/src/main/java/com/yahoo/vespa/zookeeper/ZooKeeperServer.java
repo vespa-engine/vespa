@@ -30,7 +30,8 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, boolean startServer) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
-        System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, "" + zookeeperServerConfig.juteMaxBuffer());
+        System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
+        System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
 
         writeConfigToDisk(zookeeperServerConfig);
         zkServerThread = new Thread(this, "zookeeper server");
@@ -113,7 +114,7 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
     public void run() {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         String[] args = new String[]{getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile())};
-        log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config: " + args[0]);
+        log.log(LogLevel.DEBUG, "Starting ZooKeeper server with config file " + args[0]);
         log.log(LogLevel.INFO, "Trying to establish ZooKeeper quorum (from " + zookeeperServerHostnames(zookeeperServerConfig) + ")");
         org.apache.zookeeper.server.quorum.QuorumPeerMain.main(args);
     }
