@@ -6,6 +6,7 @@
 #include "distributorcomponent.h"
 #include "distributormessagesender.h"
 #include "pendingclusterstate.h"
+#include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
 #include <vespa/document/bucket/bucket.h>
 #include <vespa/storageapi/messageapi/returncode.h>
@@ -15,7 +16,9 @@
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
+#include <atomic>
 #include <list>
+#include <mutex>
 
 namespace vespalib::xml {
 class XmlOutputStream;
@@ -25,6 +28,7 @@ class XmlAttribute;
 namespace storage::distributor {
 
 class Distributor;
+class ClusterDistributionContext;
 
 class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
@@ -70,7 +74,14 @@ public:
         return ((_pendingClusterState.get() != nullptr)
                 && _pendingClusterState->hasBucketOwnershipTransfer());
     }
+    void set_stale_reads_enabled(bool enabled) noexcept {
+        _stale_reads_enabled.store(enabled, std::memory_order_relaxed);
+    }
+    bool stale_reads_enabled() const noexcept {
+        return _stale_reads_enabled.load(std::memory_order_relaxed);
+    }
 
+    OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const;
 private:
     DistributorComponent _distributorComponent;
     class MergeReplyGuard {
@@ -166,8 +177,11 @@ private:
 
     void updateState(const lib::ClusterState& oldState, const lib::ClusterState& newState);
 
+    void update_read_snapshot_before_db_pruning();
     void removeSuperfluousBuckets(const lib::ClusterStateBundle& newState,
                                   bool is_distribution_config_change);
+    void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state);
+    void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state);
 
     void replyToPreviousPendingClusterStateIfAny();
     void replyToActivationWithActualVersion(
@@ -235,6 +249,16 @@ private:
     std::set<EnqueuedBucketRecheck> _enqueuedRechecks;
     OutdatedNodesMap         _outdatedNodesMap;
     framework::MilliSecTimer _transitionTimer;
+    std::atomic<bool> _stale_reads_enabled;
+    using DistributionContexts = std::unordered_map<document::BucketSpace,
+                                                    std::shared_ptr<ClusterDistributionContext>,
+                                                    document::BucketSpace::hash>;
+    DistributionContexts _active_distribution_contexts;
+    using DbGuards = std::unordered_map<document::BucketSpace,
+                                        std::shared_ptr<BucketDatabase::ReadGuard>,
+                                        document::BucketSpace::hash>;
+    DbGuards _explicit_transition_read_guard;
+    mutable std::mutex _distribution_context_mutex;
 };
 
 }
