@@ -39,13 +39,14 @@ public class VespaFormatter extends SimpleFormatter {
     }
 
     private String serviceName;
-    private String componentPrefix;
+    private final String componentPrefix;
 
     /**
      * Default constructor
      */
     public VespaFormatter() {
         this.serviceName = serviceNameUnsetValue;
+        this.componentPrefix = null;
     }
 
     /**
@@ -193,9 +194,6 @@ public class VespaFormatter extends SimpleFormatter {
         String message = t.getMessage();
         if (t.getCause() == null) {
             if (message == null) return t.getClass().getSimpleName();
-        } else {
-            if (message == null) return null;
-            //if (message.equals(t.getCause().getClass().getName() + ": " + t.getCause().getMessage())) return null;
         }
         return message;
     }
