@@ -23,6 +23,8 @@ enum PathGroup {
     operator("/controller/v1/{*}",
              "/flags/v1/{*}",
              "/nodes/v2/{*}",
+             "/loadbalancers/v1/{*}",
+             "/routing/v1/{*}",
              "/orchestrator/v1/{*}",
              "/os/v1/{*}",
              "/provision/v2/{*}",
