@@ -39,9 +39,9 @@ public class StandaloneMain {
             // We're not logging at this point since the application is responsible
             // for setting up logging.
             System.out.println("debug\tInitializing application without privileges.");
+            setupSignalHandlers();
             loader.init(bundleLocation, false);
             loader.start();
-            setupSignalHandlers();
             waitForShutdown();
             System.out.println("debug\tTrying to shutdown in a controlled manner.");
             log.log(Level.INFO, "JDisc shutting down");
