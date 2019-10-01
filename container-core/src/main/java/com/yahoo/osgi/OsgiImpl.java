@@ -2,17 +2,17 @@
 package com.yahoo.osgi;
 
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.component.Version;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.application.OsgiFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
-import org.osgi.framework.ServiceReference;
 
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * @author Tony Vaagenes
+ * @author bratseth
  */
 public class OsgiImpl implements Osgi {
 
@@ -62,13 +62,13 @@ public class OsgiImpl implements Osgi {
     }
 
     private static void ensureBundleActive(Bundle bundle) throws IllegalStateException {
-        final int state = bundle.getState();
+        int state = bundle.getState();
         Throwable cause = null;
         if (state != Bundle.ACTIVE) {
             try {
-                //Get the reason why the bundle isn't active.
-                //Do not change this method to not fail if start is successful without carefully analyzing
-                //why there are non-active bundles.
+                // Get the reason why the bundle isn't active.
+                // Do not change this method to not fail if start is successful without carefully analyzing
+                // why there are non-active bundles.
                 bundle.start();
             } catch (BundleException e) {
                 cause = e;
@@ -81,29 +81,29 @@ public class OsgiImpl implements Osgi {
      * Returns the bundle of a given name having the highest matching version
      *
      * @param id the id of the component to return. May not include a version, or include
-     *        an underspecified version, in which case the highest (mathcing) version which
+     *        an underspecified version, in which case the highest (matching) version which
      *        does not contain a qualifier is returned
      * @return the bundle match having the highest version, or null if there was no matches
      */
     public Bundle getBundle(ComponentSpecification id) {
-        Bundle highestMatch=null;
+        Bundle highestMatch = null;
         for (Bundle bundle : getBundles()) {
             assert bundle.getSymbolicName() != null : "ensureHasBundleSymbolicName not called during installation";
 
             if ( ! bundle.getSymbolicName().equals(id.getName())) continue;
             if ( ! id.getVersionSpecification().matches(versionOf(bundle))) continue;
 
-            if (highestMatch==null || versionOf(highestMatch).compareTo(versionOf(bundle))<0)
-                highestMatch=bundle;
+            if (highestMatch == null || versionOf(highestMatch).compareTo(versionOf(bundle)) < 0)
+                highestMatch = bundle;
         }
         return highestMatch;
     }
 
-    /** returns the version of a bundle, as specified by Bundle-Version in the manifest */
-    private static com.yahoo.component.Version versionOf(Bundle bundle) {
-        Object bundleVersion=bundle.getHeaders().get("Bundle-Version");
-        if (bundleVersion==null) return com.yahoo.component.Version.emptyVersion;
-        return new com.yahoo.component.Version(bundleVersion.toString());
+    /** Returns the version of a bundle, as specified by Bundle-Version in the manifest */
+    private static Version versionOf(Bundle bundle) {
+        Object bundleVersion = bundle.getHeaders().get("Bundle-Version");
+        if (bundleVersion == null) return Version.emptyVersion;
+        return new Version(bundleVersion.toString());
     }
 
     @Override
@@ -116,8 +116,8 @@ public class OsgiImpl implements Osgi {
     }
 
     private static String normalizeLocation(String location) {
-        if (location.indexOf(':')<0)
-            location="file:" + location;
+        if (location.indexOf(':') < 0)
+            location = "file:" + location;
         return location;
     }
 
@@ -134,4 +134,5 @@ public class OsgiImpl implements Osgi {
     public void refreshPackages() {
         jdiscOsgi.refreshPackages();
     }
+
 }

@@ -63,13 +63,13 @@ public final class BundleInstantiationSpecification {
                 new ComponentSpecification(idSpec),
                 (classSpec == null || classSpec.isEmpty())?  null  : new ComponentSpecification(classSpec),
                 (bundleSpec == null || bundleSpec.isEmpty())? null : new ComponentSpecification(bundleSpec));
-
     }
 
     /**
      * Return a new instance of the specification with bundle name altered
-     * @param bundleName New name of bundle
-     * @return the new instance of the specification.
+     *
+     * @param bundleName the new name of the bundle
+     * @return the new instance of the specification
      */
     public BundleInstantiationSpecification inBundle(String bundleName) {
         return new BundleInstantiationSpecification(this.id, this.classId, new ComponentSpecification(bundleName));
