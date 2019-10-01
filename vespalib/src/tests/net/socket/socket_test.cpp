@@ -324,6 +324,15 @@ TEST("require that sockets can be set blocking and non-blocking") {
     TEST_DO(verifier.verify_blocking(false));
 }
 
+TEST("require that server sockets use non-blocking underlying socket") {
+    ServerSocket tcp_server("tcp/0");
+    ServerSocket ipc_server("ipc/file:my_socket");
+    test::SocketOptionsVerifier tcp_verifier(tcp_server.get_fd());
+    test::SocketOptionsVerifier ipc_verifier(ipc_server.get_fd());
+    TEST_DO(tcp_verifier.verify_blocking(false));
+    TEST_DO(ipc_verifier.verify_blocking(false));
+}
+
 TEST("require that tcp nodelay can be enabled and disabled") {
     SocketHandle handle(socket(my_inet(), SOCK_STREAM, 0));
     test::SocketOptionsVerifier verifier(handle.get());
