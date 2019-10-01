@@ -14,10 +14,10 @@ public interface LevelControllerRepo {
      * @param component The component name string.
      * @return The LevelController corresponding to that component. Return null if not found.
      */
-    public LevelController getLevelController(String component);
+    LevelController getLevelController(String component);
 
     /**
      * Close down the level controller repository. Cleanup should be done here.
      */
-    public void close();
+    void close();
 }
