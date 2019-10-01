@@ -114,7 +114,7 @@ public class LockedApplication {
                                      projectId, internal, instances);
     }
 
-    private LockedApplication without(InstanceName instance) {
+    public LockedApplication without(InstanceName instance) {
         var instances = new HashMap<>(this.instances);
         instances.remove(instance);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,

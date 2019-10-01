@@ -141,8 +141,6 @@ public class ControllerTest {
         // Simulate restart
         tester.restartController();
 
-        applications = tester.controller().applications();
-
         assertNotNull(tester.controller().tenants().get(TenantName.from("tenant1")));
         assertNotNull(tester.defaultInstance(app1.id()));
         assertEquals(4, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
@@ -152,7 +150,7 @@ public class ControllerTest {
 
         // system and staging test job - succeeding
         tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        applicationVersion = tester.defaultInstance("app1").change().application().get();
+        applicationVersion = tester.application(app1.id()).change().application().get();
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, systemTest);
         assertStatus(JobStatus.initial(systemTest)
                               .withTriggering(version1, applicationVersion, Optional.of(tester.defaultInstance(app1.id()).deployments().get(productionUsWest1.zone(main))), "", tester.clock().instant().truncatedTo(MILLIS))
@@ -853,18 +851,19 @@ public class ControllerTest {
         MockCuratorDb newDb = new MockCuratorDb();
         OldMockCuratorDb oldDb = new OldMockCuratorDb(newDb.curator());
 
-        oldDb.writeInstance(old1);
-        oldDb.writeInstance(old2);
+        oldDb.writeApplication(Application.aggregate(List.of(old1, old2)).orElseThrow());
 
-        Application application = newDb.readApplication(TenantAndApplicationId.from("t1", "a1")).orElseThrow();
+        Application application = oldDb.readApplication(TenantAndApplicationId.from("t1", "a1")).orElseThrow();
         Instance new1 = application.legacy(InstanceName.defaultName());
         String new1Serialized = new String(JsonFormat.toJsonBytes(instanceSerializer.toSlime(new1)), UTF_8);
         assertEquals(old1Serialized, new1Serialized);
 
         LockedApplication locked = new LockedApplication(application, newDb.lock(application.id()));
-        newDb.writeApplication(locked.with(new ApplicationMetrics(8, 9)).get());
-        Instance mod1 = oldDb.readInstance(old1.id()).orElseThrow();
-        Instance mod2 = oldDb.readInstance(old2.id()).orElseThrow();
+        oldDb.writeApplication(locked.with(new ApplicationMetrics(8, 9)).get());
+
+        Application newApp = newDb.readApplication(application.id()).orElseThrow();
+        Instance mod1 = newApp.legacy(old1.name());
+        Instance mod2 = newApp.legacy(old2.name());
 
         old1 = old1.with(new ApplicationMetrics(8, 9));
         old1Serialized = new String(JsonFormat.toJsonBytes(instanceSerializer.toSlime(old1)), UTF_8);
@@ -878,12 +877,14 @@ public class ControllerTest {
         assertEquals(old2.deployments(), mod2.deployments());
         assertEquals(old2.deploymentJobs().jobStatus(), mod2.deploymentJobs().jobStatus());
 
-        newDb.removeApplication(old1.id());
+        application = new LockedApplication(application, newDb.lock(application.id())).without(old1.name()).get();
+        newDb.storeWithoutInstance(application, old1.id());
         assertEquals(1, newDb.readApplication(application.id()).orElseThrow().instances().size());
-        newDb.removeApplication(old2.id());
+        assertEquals(1, oldDb.readApplication(application.id()).orElseThrow().instances().size());
+        application = new LockedApplication(application, newDb.lock(application.id())).without(old2.name()).get();
+        newDb.storeWithoutInstance(application, old2.id());
         assertTrue(newDb.readApplication(application.id()).isEmpty());
-        assertTrue(oldDb.readInstance(old1.id()).isEmpty());
-        assertTrue(oldDb.readInstance(old2.id()).isEmpty());
+        assertTrue(oldDb.readApplication(application.id()).isEmpty());
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

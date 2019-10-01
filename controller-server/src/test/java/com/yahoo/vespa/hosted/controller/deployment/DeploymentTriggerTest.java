@@ -177,7 +177,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance.id(), Optional.empty(), false, systemTest);
         tester.deployAndNotify(instance.id(), Optional.empty(), false, stagingTest);
         tester.deployAndNotify(instance.id(), Optional.empty(), false, productionUsCentral1);
-        assertEquals(Change.empty(), tester.instance(instance.id()).change());
+        assertEquals(Change.empty(), tester.application(application.id()).change());
         tester.assertNotRunning(systemTest, instance.id());
         tester.assertNotRunning(stagingTest, instance.id());
         tester.assertNotRunning(productionUsCentral1, instance.id());
@@ -203,7 +203,7 @@ public class DeploymentTriggerTest {
         tester.readyJobTrigger().maintain();
         iTester.runJob(JobType.productionUsWest1);
         iTester.runJob(JobType.productionUsEast3);
-        assertEquals(Change.empty(), iTester.instance().change());
+        assertEquals(Change.empty(), iTester.application().change());
 
         tester.upgradeSystem(new Version("8.9"));
         iTester.runJob(JobType.systemTest);
@@ -542,7 +542,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsWest1);
         assertEquals(BuildJob.defaultBuildNumber, tester.defaultInstance(application.id()).deploymentJobs().jobStatus()
                                                         .get(productionUsWest1).lastSuccess().get().application().buildNumber().getAsLong());
-        assertEquals((BuildJob.defaultBuildNumber + 1), tester.defaultInstance(application.id()).outstandingChange().application().get().buildNumber().getAsLong());
+        assertEquals((BuildJob.defaultBuildNumber + 1), tester.application(application.id()).outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.readyJobTrigger().maintain();
         // Platform upgrade keeps rolling, since it has already deployed in a production zone, and tests for the new revision have also started.
@@ -551,23 +551,23 @@ public class DeploymentTriggerTest {
         assertEquals(2, tester.buildService().jobs().size());
 
         // Upgrade is done, and oustanding change rolls out when block window ends.
-        assertEquals(Change.empty(), tester.defaultInstance(application.id()).change());
-        assertFalse(tester.defaultInstance(application.id()).change().hasTargets());
-        assertTrue(tester.defaultInstance(application.id()).outstandingChange().hasTargets());
+        assertEquals(Change.empty(), tester.application(application.id()).change());
+        assertFalse(tester.application(application.id()).change().hasTargets());
+        assertTrue(tester.application(application.id()).outstandingChange().hasTargets());
 
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, stagingTest);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, systemTest);
         tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
-        assertTrue(tester.defaultInstance(application.id()).change().hasTargets());
-        assertFalse(tester.defaultInstance(application.id()).outstandingChange().hasTargets());
+        assertTrue(tester.application(application.id()).change().hasTargets());
+        assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
 
         tester.readyJobTrigger().run();
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsWest1);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsEast3);
 
-        assertFalse(tester.defaultInstance(application.id()).change().hasTargets());
-        assertFalse(tester.defaultInstance(application.id()).outstandingChange().hasTargets());
+        assertFalse(tester.application(application.id()).change().hasTargets());
+        assertFalse(tester.application(application.id()).outstandingChange().hasTargets());
     }
 
     @Test
@@ -622,7 +622,8 @@ public class DeploymentTriggerTest {
     public void applicationVersionIsNotDowngraded() {
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
         Instance instance = tester.defaultInstance(application.id());
-        Supplier<Instance> app = () -> tester.defaultInstance(application.id());
+        Supplier<Application> apps = () -> tester.application(application.id());
+        Supplier<Instance> instances = () -> tester.defaultInstance(application.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -639,15 +640,15 @@ public class DeploymentTriggerTest {
         tester.deploy(productionUsCentral1, instance.id(), Optional.empty(), false);
 
         ApplicationVersion appVersion1 = ApplicationVersion.from(BuildJob.defaultSourceRevision, BuildJob.defaultBuildNumber + 1);
-        assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
+        assertEquals(appVersion1, instances.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
 
         // Verify the application change is not removed when change is cancelled.
         tester.deploymentTrigger().cancelChange(application.id(), PLATFORM);
-        assertEquals(Change.of(appVersion1), app.get().change());
+        assertEquals(Change.of(appVersion1), apps.get().change());
 
         // Now cancel the change as is done through the web API.
         tester.deploymentTrigger().cancelChange(application.id(), ALL);
-        assertEquals(Change.empty(), app.get().change());
+        assertEquals(Change.empty(), apps.get().change());
 
         // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
         Version version1 = new Version("6.2");
@@ -665,7 +666,7 @@ public class DeploymentTriggerTest {
         // Finally, the two production jobs complete, in order.
         tester.deployAndNotify(instance.id(), Optional.empty(), true, productionUsCentral1);
         tester.deployAndNotify(instance.id(), Optional.empty(), true, productionEuWest1);
-        assertEquals(appVersion1, app.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
+        assertEquals(appVersion1, instances.get().deployments().get(ZoneId.from("prod.us-central-1")).applicationVersion());
     }
 
     @Test
@@ -673,8 +674,8 @@ public class DeploymentTriggerTest {
         Application application1 = tester.createApplication("app1", "tenant1", 1, 1L);
         Application application2 = tester.createApplication("app2", "tenant2", 2, 2L);
         Instance instance1 = tester.defaultInstance(application1.id());
-        Instance instance2 = tester.defaultInstance(application2.id());
-        Supplier<Instance> app1 = () -> tester.defaultInstance(application1.id());
+        Supplier<Application> app1s = () -> tester.application(application1.id());
+        Supplier<Instance> instance1s = () -> tester.defaultInstance(application1.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-central-1")
@@ -701,21 +702,21 @@ public class DeploymentTriggerTest {
         tester.completeUpgradeWithError(application1, version2, applicationPackage, productionUsCentral1);
         tester.deploy(productionUsCentral1, instance1.id(), applicationPackage);
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), false, productionUsCentral1);
-        assertEquals(version2, app1.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(version2, instance1s.get().deployments().get(productionUsCentral1.zone(main)).version());
 
         // version2 becomes broken and upgrade targets latest non-broken
         tester.upgrader().overrideConfidence(version2, VespaVersion.Confidence.broken);
         tester.computeVersionStatus();
         tester.upgrader().maintain(); // Cancel upgrades to broken version
-        assertEquals("Change becomes latest non-broken version", Change.of(version1), app1.get().change());
+        assertEquals("Change becomes latest non-broken version", Change.of(version1), app1s.get().change());
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), false, productionUsCentral1);
-        Instant triggered = app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
+        Instant triggered = instance1s.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
         tester.clock().advance(Duration.ofHours(1));
 
         // version1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, systemTest);
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, stagingTest);
-        assertEquals(triggered, app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
+        assertEquals(triggered, instance1s.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), false, productionEuWest1);
 
         //Eagerly triggered system and staging tests complete.
@@ -729,15 +730,15 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, stagingTest);
 
         tester.assertRunning(productionUsCentral1, instance1.id());
-        assertEquals(version2, app1.get().deployments().get(productionUsCentral1.zone(main)).version());
-        assertEquals(42, app1.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
-        assertNotEquals(triggered, app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
+        assertEquals(version2, instance1s.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(42, instance1s.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
+        assertNotEquals(triggered, instance1s.get().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), false, productionUsCentral1);
         tester.deploy(productionUsCentral1, instance1.id(), applicationPackage);
-        assertEquals(version2, app1.get().deployments().get(productionUsCentral1.zone(main)).version());
-        assertEquals(43, app1.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
+        assertEquals(version2, instance1s.get().deployments().get(productionUsCentral1.zone(main)).version());
+        assertEquals(43, instance1s.get().deployments().get(productionUsCentral1.zone(main)).applicationVersion().buildNumber().getAsLong());
 
         // Change is again strictly dominated, and us-central-1 is skipped, even though it is still failing.
         tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1))); // Enough time for retry
@@ -749,8 +750,8 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance1.id(), Optional.empty(), true, systemTest);
         tester.deployAndNotify(instance1.id(), Optional.empty(), true, stagingTest);
         tester.deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, productionEuWest1);
-        assertFalse(app1.get().change().hasTargets());
-        assertFalse(app1.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
+        assertFalse(app1s.get().change().hasTargets());
+        assertFalse(instance1s.get().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
     }
 
     @Test
@@ -805,7 +806,7 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance.id(), Optional.empty(), false, productionUsEast3);
         tester.deployAndNotify(instance.id(), Optional.empty(), true, productionUsEast3);
         tester.deployAndNotify(instance.id(), Optional.empty(), true, productionEuWest1);
-        assertFalse(app.get().change().hasTargets());
+        assertFalse(tester.application(application.id()).change().hasTargets());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().getAsLong());
         assertEquals(43, app.get().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().getAsLong());
     }
@@ -941,7 +942,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofSeconds(1)); // Advance time so that we can detect jobs in progress
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, JobType.productionUsEast3);
         assertEquals("Production job is retried", 1, tester.buildService().jobs().size());
-        assertEquals("Application has pending upgrade to " + version, version, tester.defaultInstance(app.id()).change().platform().get());
+        assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Another version is released, which cancels any pending upgrades to lower versions
         version = Version.fromString("6.4");
@@ -949,7 +950,7 @@ public class DeploymentTriggerTest {
         tester.upgrader().maintain();
         tester.jobCompletion(JobType.productionUsEast3).application(app).unsuccessful().submit();
         assertEquals("Application starts upgrading to new version", 2, tester.buildService().jobs().size());
-        assertEquals("Application has pending upgrade to " + version, version, tester.defaultInstance(app.id()).change().platform().get());
+        assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Failure re-deployer did not retry failing job for prod.us-east-3, since it no longer had an available change
         assertFalse("Job is not retried", tester.buildService().jobs().stream()
@@ -992,7 +993,7 @@ public class DeploymentTriggerTest {
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
-        assertEquals("Application has pending upgrade to " + version, version, tester.defaultInstance(app.id()).change().platform().get());
+        assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // system-test fails and is left with a retry
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, JobType.systemTest);
@@ -1005,7 +1006,7 @@ public class DeploymentTriggerTest {
         tester.buildService().remove(buildJob(instance.id(), systemTest));
         tester.upgrader().maintain();
         tester.readyJobTrigger().maintain();
-        assertEquals("Application has pending upgrade to " + version, version, tester.defaultInstance(app.id()).change().platform().get());
+        assertEquals("Application has pending upgrade to " + version, version, tester.application(app.id()).change().platform().get());
 
         // Cancellation of outdated version and triggering on a new version is done by the upgrader.
         assertEquals(version, tester.defaultInstance(app.id()).deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
