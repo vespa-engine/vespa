@@ -41,7 +41,8 @@
     ],
     "methods": [
       "public abstract java.lang.String getSecret(java.lang.String)",
-      "public abstract java.lang.String getSecret(java.lang.String, int)"
+      "public abstract java.lang.String getSecret(java.lang.String, int)",
+      "public java.util.List listSecretVersions(java.lang.String)"
     ],
     "fields": []
   }
