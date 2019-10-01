@@ -227,8 +227,8 @@ void SearchVisitor::init(const Parameters & params)
         LOG(debug, "Received rank profile: %s", _rankController.getRankProfile().c_str());
     }
 
-    int queryFlags = 0;
-    if (params.get("queryflags", queryFlags)) {
+    int queryFlags = params.get("queryflags", 0);
+    if (queryFlags) {
         bool dumpFeatures = (queryFlags & QFLAG_DUMP_FEATURES) != 0;
         _summaryGenerator.getDocsumState()._args.dumpFeatures(dumpFeatures);
         _rankController.setDumpFeatures(dumpFeatures);

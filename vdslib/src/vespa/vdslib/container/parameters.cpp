@@ -9,7 +9,7 @@
 
 using namespace vdslib;
 
-Parameters::Parameters() : _parameters() { }
+Parameters::Parameters() = default;
 
 Parameters::Parameters(const document::DocumentTypeRepo &repo, document::ByteBuffer& buffer)
     : _parameters()
@@ -17,9 +17,7 @@ Parameters::Parameters(const document::DocumentTypeRepo &repo, document::ByteBuf
     deserialize(repo, buffer);
 }
 
-Parameters::~Parameters()
-{
-}
+Parameters::~Parameters() = default;
 
 size_t Parameters::getSerializedSize() const
 {
@@ -73,23 +71,6 @@ Parameters::printXml(document::XmlOutputStream& xos) const
     }
     xos << XmlEndTag();
 }
-
-/*
-void
-Parameters::deserializeXml(const document::XmlElement & xml)
-{
-    ParametersMap params;
-    for(document::XmlElement::ElementList::const_iterator it = xml.elements().begin(), mt = xml.elements().end(); it != mt; it++) {
-        const document::XmlElement & elem = *it;
-        assert( elem.elements().size() == 2);
-
-        const document::XmlElement & name = (*it).elements()[0];
-        const document::XmlElement & value = (*it).elements()[1];
-        params[name.value()]  = Value(value.value().c_str(), value.value().size());
-    }
-    _parameters.swap(params);
-}
-*/
 
 bool
 Parameters::operator==(const Parameters &other) const
