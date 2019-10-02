@@ -1,12 +1,6 @@
 {
   "tenant": "my-tenant",
   "type": "CLOUD",
-  "pemDeployKeys": [
-    {
-      "key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\nz/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n-----END PUBLIC KEY-----\n",
-      "application": "my-app"
-    }
-  ],
   "pemDeveloperKeys": [
     {
       "key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\nz/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n-----END PUBLIC KEY-----\n",

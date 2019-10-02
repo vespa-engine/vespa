@@ -1373,14 +1373,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case cloud: {
                 CloudTenant cloudTenant = (CloudTenant) tenant;
 
-                Cursor pemDeployKeysArray = object.setArray("pemDeployKeys");
-                for (Application application : applications)
-                    for (PublicKey key : application.deployKeys()) {
-                        Cursor keyObject = pemDeployKeysArray.addObject();
-                        keyObject.setString("key", KeyUtils.toPem(key));
-                        keyObject.setString("application", application.id().application().value());
-                    }
-
                 Cursor pemDeveloperKeysArray = object.setArray("pemDeveloperKeys");
                 cloudTenant.developerKeys().forEach((key, user) -> {
                     Cursor keyObject = pemDeveloperKeysArray.addObject();
