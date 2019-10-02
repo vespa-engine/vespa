@@ -7,7 +7,7 @@ vespa_add_library(storage_distributor
     bucket_db_prune_elision.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
-    cluster_distribution_context.cpp
+    bucket_space_distribution_context.cpp
     clusterinformation.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp

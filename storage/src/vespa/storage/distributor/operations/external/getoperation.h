@@ -24,7 +24,7 @@ class GetOperation  : public Operation
 {
 public:
     GetOperation(DistributorComponent& manager,
-                 DistributorBucketSpace &bucketSpace,
+                 const DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                  std::shared_ptr<api::GetCommand> msg,
                  PersistenceOperationMetricSet& metric);
@@ -77,7 +77,7 @@ private:
     std::map<GroupId, GroupVector> _responses;
 
     DistributorComponent& _manager;
-    DistributorBucketSpace &_bucketSpace;
+    const DistributorBucketSpace &_bucketSpace;
 
     std::shared_ptr<api::GetCommand> _msg;
 

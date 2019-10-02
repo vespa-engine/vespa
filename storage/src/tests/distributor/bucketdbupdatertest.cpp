@@ -2,7 +2,7 @@
 
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
-#include <vespa/storage/distributor/cluster_distribution_context.h>
+#include <vespa/storage/distributor/bucket_space_distribution_context.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/pending_bucket_space_db_transition.h>
 #include <vespa/storage/distributor/outdated_nodes_map.h>
@@ -2758,11 +2758,11 @@ struct BucketDBUpdaterSnapshotTest : BucketDBUpdaterTest {
 
     // Assumes that the distributor owns all buckets, so it may choose any arbitrary bucket in the bucket space
     uint32_t buckets_in_snapshot_matching_current_db(DistributorBucketSpaceRepo& repo, BucketSpace bucket_space) {
-        auto def_rs = getBucketDBUpdater().read_snapshot_for_bucket(Bucket(bucket_space, BucketId(16, 1234)));
-        if (!def_rs.is_routable()) {
+        auto rs = getBucketDBUpdater().read_snapshot_for_bucket(Bucket(bucket_space, BucketId(16, 1234)));
+        if (!rs.is_routable()) {
             return 0;
         }
-        auto guard = def_rs.steal_read_guard();
+        auto guard = rs.steal_read_guard();
         uint32_t found_buckets = 0;
         for_each_bucket(repo, [&](const auto& space, const auto& entry) {
             if (space == bucket_space) {
@@ -2795,13 +2795,13 @@ TEST_F(BucketDBUpdaterSnapshotTest, read_snapshot_returns_appropriate_cluster_st
 
     auto def_rs = getBucketDBUpdater().read_snapshot_for_bucket(default_bucket);
     EXPECT_EQ(def_rs.context().active_cluster_state()->toString(), empty_state.toString());
-    EXPECT_EQ(def_rs.context().baseline_active_cluster_state()->toString(), empty_state.toString());
+    EXPECT_EQ(def_rs.context().default_active_cluster_state()->toString(), empty_state.toString());
     ASSERT_TRUE(def_rs.context().has_pending_state_transition());
     EXPECT_EQ(def_rs.context().pending_cluster_state()->toString(), initial_default->toString());
 
     auto global_rs = getBucketDBUpdater().read_snapshot_for_bucket(global_bucket);
     EXPECT_EQ(global_rs.context().active_cluster_state()->toString(), empty_state.toString());
-    EXPECT_EQ(global_rs.context().baseline_active_cluster_state()->toString(), empty_state.toString());
+    EXPECT_EQ(global_rs.context().default_active_cluster_state()->toString(), empty_state.toString());
     ASSERT_TRUE(global_rs.context().has_pending_state_transition());
     EXPECT_EQ(global_rs.context().pending_cluster_state()->toString(), initial_baseline->toString());
 
@@ -2810,12 +2810,12 @@ TEST_F(BucketDBUpdaterSnapshotTest, read_snapshot_returns_appropriate_cluster_st
 
     def_rs = getBucketDBUpdater().read_snapshot_for_bucket(default_bucket);
     EXPECT_EQ(def_rs.context().active_cluster_state()->toString(), initial_default->toString());
-    EXPECT_EQ(def_rs.context().baseline_active_cluster_state()->toString(), initial_baseline->toString());
+    EXPECT_EQ(def_rs.context().default_active_cluster_state()->toString(), initial_default->toString());
     EXPECT_FALSE(def_rs.context().has_pending_state_transition());
 
     global_rs = getBucketDBUpdater().read_snapshot_for_bucket(global_bucket);
     EXPECT_EQ(global_rs.context().active_cluster_state()->toString(), initial_baseline->toString());
-    EXPECT_EQ(global_rs.context().baseline_active_cluster_state()->toString(), initial_baseline->toString());
+    EXPECT_EQ(global_rs.context().default_active_cluster_state()->toString(), initial_default->toString());
     EXPECT_FALSE(global_rs.context().has_pending_state_transition());
 }
 
@@ -2861,13 +2861,5 @@ TEST_F(BucketDBUpdaterSnapshotTest, snapshot_is_unroutable_if_stale_reads_disabl
     auto def_rs = getBucketDBUpdater().read_snapshot_for_bucket(default_bucket);
     EXPECT_FALSE(def_rs.is_routable());
 }
-
-
-/*
- * TODO test
- *  - is_routable for pending/no pending
- *  - explicit guard (how?)
- *  - snapshots for pending/no pending
- */
 
 }

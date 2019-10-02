@@ -28,7 +28,7 @@ class XmlAttribute;
 namespace storage::distributor {
 
 class Distributor;
-class ClusterDistributionContext;
+class BucketSpaceDistributionContext;
 
 class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
@@ -140,6 +140,12 @@ private:
         }
     };
 
+    friend class DistributorTestUtil;
+    // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
+    // components agree on the currently active cluster state bundle.
+    // Transitively invokes Distributor::enableClusterStateBundle
+    void simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state);
+
     bool shouldDeferStateEnabling() const noexcept;
     bool hasPendingClusterState() const;
     bool pendingClusterStateAccepted(const std::shared_ptr<api::RequestBucketInfoReply>& repl);
@@ -196,9 +202,6 @@ private:
     void maybe_inject_simulated_db_pruning_delay();
     void maybe_inject_simulated_db_merging_delay();
 
-    friend class BucketDBUpdater_Test;
-    friend class MergeOperation_Test;
-
     /**
        Removes all copies of buckets that are on nodes that are down.
     */
@@ -251,7 +254,7 @@ private:
     framework::MilliSecTimer _transitionTimer;
     std::atomic<bool> _stale_reads_enabled;
     using DistributionContexts = std::unordered_map<document::BucketSpace,
-                                                    std::shared_ptr<ClusterDistributionContext>,
+                                                    std::shared_ptr<BucketSpaceDistributionContext>,
                                                     document::BucketSpace::hash>;
     DistributionContexts _active_distribution_contexts;
     using DbGuards = std::unordered_map<document::BucketSpace,

@@ -77,7 +77,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
-      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, _idealStateManager, compReg),
+      _externalOperationHandler(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo,
+                                _idealStateManager, compReg, use_btree_database),
       _threadPool(threadPool),
       _initializingIsUp(true),
       _doneInitializeHandler(doneInitHandler),
@@ -322,9 +323,7 @@ bool
 Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (msg->getType().isReply()) {
-        std::shared_ptr<api::StorageReply> reply =
-            std::dynamic_pointer_cast<api::StorageReply>(msg);
-
+        auto reply = std::dynamic_pointer_cast<api::StorageReply>(msg);
         if (handleReply(reply)) {
             return true;
         }
@@ -398,6 +397,10 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
         _externalOperationHandler.rejectFeedBeforeTimeReached(
                 _ownershipSafeTimeCalc->safeTimePoint(now));
     }
+}
+
+OperationRoutingSnapshot Distributor::read_snapshot_for_bucket(const document::Bucket& bucket) const {
+    return _bucketDBUpdater.read_snapshot_for_bucket(bucket);
 }
 
 void
