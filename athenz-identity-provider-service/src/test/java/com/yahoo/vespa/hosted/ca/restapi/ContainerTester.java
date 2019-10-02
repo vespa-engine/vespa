@@ -56,9 +56,16 @@ public class ContainerTester {
         return "<container version='1.0'>\n" +
                "  <config name=\"container.handler.threadpool\">\n" +
                "    <maxthreads>10</maxthreads>\n" +
-               "  </config> \n" +
-               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors'/>\n" +
-               "  <component id='com.yahoo.config.provision.Zone'/>\n" +
+               "  </config>\n" +
+               "  <config name='vespa.hosted.athenz.instanceproviderservice.config.athenz-provider-service'>\n" +
+               "    <athenzCaTrustStore>/path/to/file</athenzCaTrustStore>\n" +
+               "    <domain>vespa.external</domain>\n" +
+               "    <serviceName>servicename</serviceName>\n" +
+               "    <secretName>secretname</secretName>\n" +
+               "    <secretVersion>0</secretVersion>\n" +
+               "    <certDnsSuffix>suffix</certDnsSuffix>\n" +
+               "    <ztsUrl>https://localhost:123/</ztsUrl>\n" +
+               "  </config>\n" +
                "  <component id='com.yahoo.vespa.hosted.ca.restapi.mock.SecretStoreMock'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.ca.restapi.CertificateAuthorityApiHandler'>\n" +
                "    <binding>http://*/ca/v1/*</binding>\n" +

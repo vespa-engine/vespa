@@ -46,9 +46,7 @@ public class BundleLoader {
         return osgi.install(file.getAbsolutePath());
     }
 
-    /**
-     * @return the number of bundles installed by this call.
-     */
+    /** Returns the number of bundles installed by this call. */
     private int install(List<FileReference> references) {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
         bundlesToInstall.removeAll(reference2Bundles.keySet());
@@ -115,12 +113,12 @@ public class BundleLoader {
         }
     }
 
-    //all bundles must have been started first to ensure correct package resolution.
+    // All bundles must have been started first to ensure correct package resolution.
     private void startBundles() {
         for (List<Bundle> bundles : reference2Bundles.values()) {
             for (Bundle bundle : bundles) {
                 try {
-                    if (!isFragment(bundle))
+                    if ( ! isFragment(bundle))
                         bundle.start();
                 } catch(Exception e) {
                     throw new RuntimeException("Could not start bundle '" + bundle.getSymbolicName() + "'", e);
@@ -129,18 +127,15 @@ public class BundleLoader {
         }
     }
 
-    // The OSGi APIs are just getting worse...
     private boolean isFragment(Bundle bundle) {
         BundleRevision bundleRevision = bundle.adapt(BundleRevision.class);
         if (bundleRevision == null)
             throw new NullPointerException("Null bundle revision means that bundle has probably been uninstalled: " +
-                                                   bundle.getSymbolicName() + ":" + bundle.getVersion());
+                                           bundle.getSymbolicName() + ":" + bundle.getVersion());
         return (bundleRevision.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0;
     }
 
-    /**
-     * Returns the number of uninstalled bundles
-     */
+    /** Returns the number of uninstalled bundles */
     private int retainOnly(List<FileReference> newReferences) {
         Set<Bundle> bundlesToRemove = new HashSet<>(Arrays.asList(osgi.getBundles()));
 
@@ -182,4 +177,5 @@ public class BundleLoader {
         sb.append("}");
         return sb.toString();
     }
+
 }

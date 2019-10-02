@@ -295,21 +295,16 @@ public interface Tensor {
     // ----------------- serialization
 
     /**
-     * Returns this tensor on the form
-     * <code>{address1:value1,address2:value2,...}</code>
-     * where each address is on the form <code>{dimension1:label1,dimension2:label2,...}</code>,
-     * and values are numbers.
-     * <p>
-     * Cells are listed in the natural order of tensor addresses: Increasing size primarily
-     * and by element lexical order secondarily.
-     * <p>
-     * Note that while this is suggestive of JSON, it is not JSON.
+     * Returns this tensor on the
+     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>
+     * with type included.
      */
     @Override
     String toString();
 
     /**
-     * Call this from toString in implementations to return the standard string format.
+     * Call this from toString in implementations to return this tensor on the
+     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      * (toString cannot be a default method because default methods cannot override super methods).
      *
      * @param tensor the tensor to return the standard string format of
@@ -345,6 +340,7 @@ public interface Tensor {
      * Returns whether this tensor and the given tensor is mathematically equal:
      * That they have the same dimension *names* and the same content.
      */
+    @Override
     boolean equals(Object o);
 
     /**
@@ -381,7 +377,8 @@ public interface Tensor {
     // ----------------- Factories
 
     /**
-     * Returns a tensor instance containing the given data on the standard string format returned by toString
+     * Returns a tensor instance containing the given data on the
+     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      *
      * @param type the type of the tensor to return
      * @param tensorString the tensor on the standard tensor string format
@@ -391,7 +388,8 @@ public interface Tensor {
     }
 
     /**
-     * Returns a tensor instance containing the given data on the standard string format returned by toString
+     * Returns a tensor instance containing the given data on the
+     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      *
      * @param tensorType the type of the tensor to return, as a string on the tensor type format, given in
      *        {@link TensorType#fromSpec}
@@ -402,8 +400,8 @@ public interface Tensor {
     }
 
     /**
-     * Returns a tensor instance containing the given data on the standard string format returned by toString.
-     * If a type is not specified it is derived from the first cell of the tensor
+     * Returns a tensor instance containing the given data on the
+     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
      */
     static Tensor from(String tensorString) {
         return TensorParser.tensorFrom(tensorString, Optional.empty());

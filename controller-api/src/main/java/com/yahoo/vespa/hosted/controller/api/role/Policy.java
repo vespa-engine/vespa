@@ -83,6 +83,11 @@ enum Policy {
                                    .on(PathGroup.applicationInfo, PathGroup.productionRestart)
                                    .in(SystemName.all())),
 
+    /** Access to create and delete developer and deploy keys under a tenant. */
+    keyManagement(Privilege.grant(Action.write())
+                           .on(PathGroup.tenantKeys, PathGroup.applicationKeys)
+                           .in(SystemName.all())),
+
     /** Full access to application development deployments. */
     developmentDeployment(Privilege.grant(Action.all())
                                    .on(PathGroup.developmentDeployment, PathGroup.developmentRestart)

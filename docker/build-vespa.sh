@@ -11,7 +11,7 @@ DIR=$(cd $(dirname "${BASH_SOURCE[0]}") && pwd)
 cd $DIR
 
 VESPA_VERSION=$1
-DOCKER_IMAGE="centos:latest"
+DOCKER_IMAGE="centos:7"
 
 docker pull ${DOCKER_IMAGE}
 

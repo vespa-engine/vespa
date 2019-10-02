@@ -4,6 +4,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -78,7 +79,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
 
         public RequestBuilder data(byte[] data) { this.data = data; return this; }
         public RequestBuilder data(String data) { this.data = data.getBytes(StandardCharsets.UTF_8); return this; }
-        public RequestBuilder user(String user) { this.user = () -> user; return this; }
+        public RequestBuilder user(String user) { this.user = new SimplePrincipal(user); return this; }
         public RequestBuilder roles(Set<Role> roles) { this.roles = roles; return this; }
 
         @Override

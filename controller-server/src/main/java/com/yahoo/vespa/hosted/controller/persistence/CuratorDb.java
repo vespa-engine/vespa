@@ -87,7 +87,6 @@ public class CuratorDb {
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
-    private final InstanceSerializer instanceSerializer = new InstanceSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
@@ -337,10 +336,6 @@ public class CuratorDb {
 
     public void writeApplication(Application application) {
         curator.set(applicationPath(application.id()), asJson(applicationSerializer.toSlime(application)));
-        for (InstanceName name : application.instances().keySet()) {
-            curator.set(oldApplicationPath(application.id().instance(name)),
-                        asJson(instanceSerializer.toSlime(application.legacy(name))));
-        }
     }
 
     public Optional<Application> readApplication(TenantAndApplicationId application) {
@@ -363,50 +358,25 @@ public class CuratorDb {
                                    .collect(Collectors.toUnmodifiableList());
     }
 
-    // TODO jonmv: Clear out old instance data here
     private Stream<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
                       .filter(id -> id.split(":").length == 2)
                       .map(TenantAndApplicationId::fromSerialized);
     }
 
+    public void deleteOldApplicationData() {
+        curator.getChildren(applicationRoot).stream()
+               .filter(id -> id.split(":").length == 3)
+               .forEach(id -> curator.delete(applicationRoot.append(id)));
+    }
+
     // TODO jonmv: Refactor when instance split operation is done
-    public void storeWithoutInstance(Application application, ApplicationId instanceId) {
-        curator.delete(oldApplicationPath(instanceId));
+    public void storeWithoutInstance(Application application) {
         if (application.instances().isEmpty())
                 curator.delete(applicationPath(application.id()));
         else
             writeApplication(application);
     }
-
-    /**
-     * Migration plan:
-     *
-     * Add filter for reading only Instance from old application path           RELEASED
-     * Write Instance to instance and old application path                      RELEASED
-     *
-     * Lock on application level for instance mutations                         MERGED
-     *
-     * Write Instance to instance and application and old application paths     DONE    TO CHANGE   DONE
-     * Read Instance from instance path                                         DONE    TO REMOVE   DONE
-     * Duplicate Application from Instance, with helper classes                 DONE
-     * Write Application to instance and application and old application paths  DONE    TO CHANGE   DONE
-     * Read Application from instance path                                      DONE    TO REMOVE   DONE
-     * Use Application where applicable                                         DONE    !!!
-     * Lock instances and application on same level: tenant + application       DONE    TO CHANGE   DONE
-     * When reading an application, read all instances, and aggregate them      DONE
-     * Write application with instances to application path                     DONE
-     * Write all instances of an application to old application path            DONE
-     * Remove everything under instance root                                    DONE
-     * Stop locking applications on instance level                              DONE
-     *
-     * Read Application with instances from application path (with filter)      DONE
-     *
-     * Stop writing Instance to old application path
-     * Remove unused parts of Instance (Used only for legacy serialization)
-     * Store new production application packages under non-instance path
-     * Read production packages from non-instance path, with fallback
-     */
 
     // -------------- Job Runs ------------------------------------------------
 
@@ -629,10 +599,6 @@ public class CuratorDb {
 
     private static Path applicationPath(TenantAndApplicationId id) {
         return applicationRoot.append(id.serialized());
-    }
-
-    private static Path oldApplicationPath(ApplicationId application) {
-        return applicationRoot.append(application.serializedForm());
     }
 
     private static Path runsPath(ApplicationId id, JobType type) {

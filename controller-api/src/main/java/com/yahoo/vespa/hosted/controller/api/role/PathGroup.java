@@ -46,6 +46,15 @@ enum PathGroup {
                Optional.of("/api"),
                "/application/v4/tenant/{tenant}/application/"),
 
+    tenantKeys(Matcher.tenant,
+               Optional.of("/api"),
+               "/application/v4/tenant/{tenant}/key/"),
+
+    applicationKeys(Matcher.tenant,
+                    Matcher.application,
+                    Optional.of("/api"),
+                    "/application/v4/tenant/{tenant}/application/{application}/key/"),
+
     /** Path for the base application resource. */
     application(Matcher.tenant,
                 Matcher.application,

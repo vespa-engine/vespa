@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -46,6 +48,7 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static java.util.Optional.empty;
@@ -101,7 +104,7 @@ public class ApplicationSerializerTest {
                                 .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
                                 .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
 
-        DeploymentJobs deploymentJobs = new DeploymentJobs(OptionalLong.empty(), statusList, empty(), true);
+        DeploymentJobs deploymentJobs = new DeploymentJobs(statusList);
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                                                         Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
@@ -116,7 +119,7 @@ public class ApplicationSerializerTest {
                                                         rotationStatus),
                                            new Instance(id3,
                                                         List.of(),
-                                                        new DeploymentJobs(OptionalLong.empty(), List.of(), empty(), true),
+                                                        new DeploymentJobs(List.of()),
                                                         List.of(),
                                                         RotationStatus.EMPTY));
 
@@ -131,7 +134,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
                                                new ApplicationMetrics(0.5, 0.9),
-                                               Optional.of("-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
+                                               Set.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
                                                projectId,
                                                true,
                                                instances);
@@ -163,7 +166,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get());
         assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get());
 
-        assertEquals(original.require(id1.instance()).deploymentJobs().projectId(), serialized.require(id1.instance()).deploymentJobs().projectId());
         assertEquals(original.require(id1.instance()).deploymentJobs().jobStatus().size(), serialized.require(id1.instance()).deploymentJobs().jobStatus().size());
         assertEquals(  original.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.systemTest),
                      serialized.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.systemTest));
@@ -176,7 +178,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.owner(), serialized.owner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
         assertEquals(original.change(), serialized.change());
-        assertEquals(original.pemDeployKey(), serialized.pemDeployKey());
+        assertEquals(original.pemDeployKeys(), serialized.pemDeployKeys());
 
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());
         assertEquals(original.require(id1.instance()).rotationStatus(), serialized.require(id1.instance()).rotationStatus());

@@ -11,6 +11,7 @@ import java.io.File;
 import java.util.Set;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
+import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertEquals;
@@ -110,9 +111,48 @@ public class UserApiTest extends ControllerContainerCloudTest {
                         .roles(Set.of(Role.developer(id.tenant()))),
                 new File("application-roles.json"));
 
+        // POST a pem deploy key
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app/key", POST)
+                                      .roles(Set.of(Role.developer(id.tenant())))
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
+                              "{\"message\":\"Added deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+
+        // POST a pem developer key
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
+                                      .user("joe@dev")
+                                      .roles(Set.of(Role.developer(id.tenant())))
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
+                              "{\"message\":\"Set developer key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY----- for joe@dev\"}");
+
+        // POST the same pem developer key for a different user is forbidden
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
+                                      .user("operator@tenant")
+                                      .roles(Set.of(Role.developer(id.tenant())))
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Multiple entries with same key: -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----=operator@tenant and -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----=joe@dev\"}",
+                              400);
+
+        // PATCH in a different pem developer key
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
+                                      .user("operator@tenant")
+                                      .roles(Set.of(Role.developer(id.tenant())))
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n-----END PUBLIC KEY-----\"}"),
+                              "{\"message\":\"Set developer key -----BEGIN PUBLIC KEY-----\\nƪ(`▿▿▿▿´ƪ)\\n-----END PUBLIC KEY----- for operator@tenant\"}");
+
+        // GET tenant information with keys
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/")
+                                      .roles(Set.of(Role.headless(id.tenant(), id.application()))),
+                              new File("tenant-with-keys.json"));
+
+        // DELETE a pem developer key
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/key", DELETE)
+                                      .roles(Set.of(Role.developer(id.tenant())))
+                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}"),
+                              "{\"message\":\"Removed developer key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY----- for joe@dev\"}");
+
         // DELETE a tenant role is available to tenant admins.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
-                        .roles(Set.of(Role.administrator(id.tenant())))
+                        .roles(Set.of(Role.developer(id.tenant())))
                         .data("{\"user\":\"developer@tenant\",\"roleName\":\"developer\"}"),
                 "{\"message\":\"user 'developer@tenant' is no longer a member of role 'developer' of 'my-tenant'\"}");
 

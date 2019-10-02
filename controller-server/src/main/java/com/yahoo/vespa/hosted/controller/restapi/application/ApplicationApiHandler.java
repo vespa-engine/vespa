@@ -20,7 +20,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -30,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
@@ -79,6 +79,7 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -238,11 +239,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return addDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
@@ -270,9 +273,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default",  "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"), "default");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
@@ -366,6 +371,44 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse addDeveloperKey(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        Principal user = request.getJDiscRequest().getUserPrincipal();
+        String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
+                controller.tenants().store(tenant.withPemDeveloperKey(pemDeveloperKey, user)));
+        return new MessageResponse("Set developer key " + pemDeveloperKey + " for " + user);
+    }
+
+    private HttpResponse removeDeveloperKey(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
+        Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).pemDeveloperKeys().get(pemDeveloperKey);
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
+                controller.tenants().store(tenant.withoutPemDeveloperKey(pemDeveloperKey)));
+        return new MessageResponse("Removed developer key " + pemDeveloperKey + " for " + user);
+    }
+
+    private HttpResponse addDeployKey(String tenantName, String applicationName, HttpRequest request) {
+        String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
+            controller.applications().store(application.withPemDeployKey(pemDeployKey));
+        });
+        return new MessageResponse("Added deploy key " + pemDeployKey);
+    }
+
+    private HttpResponse removeDeployKey(String tenantName, String applicationName, HttpRequest request) {
+        String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
+            controller.applications().store(application.withoutPemDeployKey(pemDeployKey));
+        });
+        return new MessageResponse("Removed deploy key " + pemDeployKey);
+    }
+
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
         StringJoiner messageBuilder = new StringJoiner("\n").setEmptyValue("No applicable changes.");
@@ -377,12 +420,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 messageBuilder.add("Set major version to " + (majorVersion == null ? "empty" : majorVersion));
             }
 
+            // TODO jonmv: Remove when clients are updated.
             Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
             if (pemDeployKeyField.valid()) {
-                String pemDeployKey = pemDeployKeyField.type() == Type.NIX ? null : pemDeployKeyField.asString();
+                String pemDeployKey = pemDeployKeyField.asString();
                 application = application.withPemDeployKey(pemDeployKey);
-                messageBuilder.add("Set pem deploy key to " + (pemDeployKey == null ? "empty" : pemDeployKey));
+                messageBuilder.add("Added deploy key " + pemDeployKey);
             }
+
             controller.applications().store(application);
         });
         return new MessageResponse(messageBuilder.toString());
@@ -608,7 +653,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }
         }
 
-        application.pemDeployKey().ifPresent(key -> object.setString("pemDeployKey", key));
+        // TODO jonmv: Remove when clients are updated
+        application.pemDeployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", key));
+
+        application.pemDeployKeys().forEach(object.setArray("pemDeployKeys")::addString);
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
@@ -1296,6 +1344,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tenantType(tenant));
+        List<Application> applications = controller.applications().asList(tenant.name());
         switch (tenant.type()) {
             case athenz:
                 AthenzTenant athenzTenant = (AthenzTenant) tenant;
@@ -1314,11 +1363,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 });
                 break;
             case user: break;
-            case cloud: break;
+            case cloud: {
+                CloudTenant cloudTenant = (CloudTenant) tenant;
+
+                Cursor pemDeployKeysArray = object.setArray("pemDeployKeys");
+                for (Application application : applications)
+                    for (String key : application.pemDeployKeys()) {
+                        Cursor keyObject = pemDeployKeysArray.addObject();
+                        keyObject.setString("key", key);
+                        keyObject.setString("application", application.id().application().value());
+                    }
+
+                Cursor pemDeveloperKeysArray = object.setArray("pemDeveloperKeys");
+                cloudTenant.pemDeveloperKeys().forEach((key, user) -> {
+                    Cursor keyObject = pemDeveloperKeysArray.addObject();
+                    keyObject.setString("key", key);
+                    keyObject.setString("user", user.getName());
+                });
+
+                break;
+            }
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         Cursor applicationArray = object.setArray("applications");
-        for (Application application : controller.applications().asList(tenant.name()))
+        for (Application application : applications)
             for (Instance instance : application.instances().values())
                 if (recurseOverApplications(request))
                     toSlime(applicationArray.addObject(), instance, application, request);

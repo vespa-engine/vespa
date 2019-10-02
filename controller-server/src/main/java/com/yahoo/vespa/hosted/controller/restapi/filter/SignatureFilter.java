@@ -11,10 +11,10 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
@@ -47,18 +47,17 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
             && request.getHeader("X-Authorization") != null)
             try {
                 ApplicationId id = ApplicationId.fromSerializedForm(request.getHeader("X-Key-Id"));
-                boolean verified = controller.applications().getApplication(TenantAndApplicationId.from(id))
-                                             .flatMap(Application::pemDeployKey)
+                boolean verified = controller.applications().getApplication(TenantAndApplicationId.from(id)).stream()
+                                             .flatMap(application -> application.pemDeployKeys().stream())
                                              .map(key -> new RequestVerifier(key, controller.clock()))
-                                             .map(verifier -> verifier.verify(Method.valueOf(request.getMethod()),
-                                                                              request.getUri(),
-                                                                              request.getHeader("X-Timestamp"),
-                                                                              request.getHeader("X-Content-Hash"),
-                                                                              request.getHeader("X-Authorization")))
-                                             .orElse(false);
+                                             .anyMatch(verifier -> verifier.verify(Method.valueOf(request.getMethod()),
+                                                                                   request.getUri(),
+                                                                                   request.getHeader("X-Timestamp"),
+                                                                                   request.getHeader("X-Content-Hash"),
+                                                                                   request.getHeader("X-Authorization")));
 
                 if (verified) {
-                    Principal principal = () -> "buildService@" + id.tenant() + "." + id.application();
+                    Principal principal = new SimplePrincipal("buildService@" + id.tenant() + "." + id.application());
                     request.setUserPrincipal(principal);
                     request.setRemoteUser(principal.getName());
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME,

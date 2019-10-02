@@ -26,12 +26,14 @@ public enum JobType {
     systemTest             ("system-test",
                             Map.of(main    , ZoneId.from("test", "us-east-1"),
                                    cd      , ZoneId.from("test", "cd-us-central-1"),
-                                   PublicCd, ZoneId.from("test", "aws-us-east-1c"))),
+                                   PublicCd, ZoneId.from("test", "aws-us-east-1c"),
+                                   Public  , ZoneId.from("test", "aws-us-east-1c"))),
 
     stagingTest            ("staging-test",
                             Map.of(main    , ZoneId.from("staging", "us-east-3"),
                                    cd      , ZoneId.from("staging", "cd-us-central-1"),
-                                   PublicCd, ZoneId.from("staging", "aws-us-east-1c"))),
+                                   PublicCd, ZoneId.from("staging", "aws-us-east-1c"),
+                                   Public  , ZoneId.from("staging", "aws-us-east-1c"))),
 
     productionUsEast3      ("production-us-east-3",
                             Map.of(main, ZoneId.from("prod"   , "us-east-3"))),
@@ -58,7 +60,8 @@ public enum JobType {
                             Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a"))),
 
     productionAwsUsEast1c  ("production-aws-us-east-1c",
-                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"))),
+                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"),
+                                   Public,   ZoneId.from("prod", "aws-us-east-1c"))),
 
     productionAwsUsWest2a  ("production-aws-us-west-2a",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a"))),

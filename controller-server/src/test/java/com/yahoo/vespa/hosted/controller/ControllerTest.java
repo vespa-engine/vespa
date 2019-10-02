@@ -7,16 +7,12 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.slime.JsonFormat;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -24,17 +20,12 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificate;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
-import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
@@ -43,25 +34,15 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.persistence.InstanceSerializer;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import com.yahoo.vespa.hosted.controller.persistence.OldMockCuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -72,7 +53,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -788,103 +768,6 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint 'foo' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
-    }
-
-
-    @Test
-    public void testInstanceDataMigration() throws IOException {
-        /*
-        Set up initial state, using old DB:
-        Create two instances of an application; the default will be the base.
-
-        Read, modify and write the application using the new DB.
-        Verify results using both old and new DBs.
-         */
-
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().allow(ValidationId.contentClusterRemoval)
-                                                                               .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
-                                                                               .endpoint("endpoint", "container", "us-east-1")
-                                                                               .region("us-east-1")
-                                                                               .build();
-        ApplicationId defaultId = ApplicationId.from("t1", "a1", "default");
-        Instance old1 = new Instance(defaultId,
-                                     Instant.ofEpochMilli(123),
-                                     applicationPackage.deploymentSpec(),
-                                     applicationPackage.validationOverrides(),
-                                     List.of(new Deployment(ZoneId.from("prod", "us-east-1"),
-                                                            ApplicationVersion.from(new SourceRevision("repo", "branch", "commit"), 3),
-                                                            Version.fromString("7.8.9"),
-                                                            Instant.ofEpochMilli(321))),
-                                     new DeploymentJobs(OptionalLong.of(72),
-                                                        List.of(new JobStatus(JobType.productionAwsUsEast1a,
-                                                                              Optional.empty(),
-                                                                              Optional.of(new JobStatus.JobRun(32,
-                                                                                                               Version.fromString("7.8.9"),
-                                                                                                               ApplicationVersion.unknown,
-                                                                                                               Optional.empty(),
-                                                                                                               Optional.empty(),
-                                                                                                               "make the job great again",
-                                                                                                               Instant.ofEpochMilli(200))),
-                                                                              Optional.empty(),
-                                                                              Optional.empty(),
-                                                                              Optional.empty(),
-                                                                              OptionalLong.empty())),
-                                                        Optional.of(IssueId.from("issue")),
-                                                        true),
-                                     Change.of(Version.fromString("9")),
-                                     Change.empty(),
-                                     Optional.of(IssueId.from("tissue")),
-                                     Optional.of(User.from("user")),
-                                     OptionalInt.of(3),
-                                     new ApplicationMetrics(2, 3),
-                                     Optional.of("key"),
-                                     List.of(AssignedRotation.fromStrings("container", "endpoint", "rot13", List.of("us-east-1"))),
-                                     RotationStatus.from(Map.of(new RotationId("rot13"), Map.of(ZoneId.from("prod", "us-east-1"), RotationState.in))));
-
-        Instance old2 = new Instance(ApplicationId.from("t1", "a1", "i1"),
-                                     Instant.ofEpochMilli(400));
-
-
-        InstanceSerializer instanceSerializer = new InstanceSerializer();
-        String old1Serialized = new String(JsonFormat.toJsonBytes(instanceSerializer.toSlime(old1)), UTF_8);
-
-        MockCuratorDb newDb = new MockCuratorDb();
-        OldMockCuratorDb oldDb = new OldMockCuratorDb(newDb.curator());
-
-        oldDb.writeApplication(Application.aggregate(List.of(old1, old2)).orElseThrow());
-
-        Application application = oldDb.readApplication(TenantAndApplicationId.from("t1", "a1")).orElseThrow();
-        Instance new1 = application.legacy(InstanceName.defaultName());
-        String new1Serialized = new String(JsonFormat.toJsonBytes(instanceSerializer.toSlime(new1)), UTF_8);
-        assertEquals(old1Serialized, new1Serialized);
-
-        LockedApplication locked = new LockedApplication(application, newDb.lock(application.id()));
-        oldDb.writeApplication(locked.with(new ApplicationMetrics(8, 9)).get());
-
-        Application newApp = newDb.readApplication(application.id()).orElseThrow();
-        Instance mod1 = newApp.legacy(old1.name());
-        Instance mod2 = newApp.legacy(old2.name());
-
-        old1 = old1.with(new ApplicationMetrics(8, 9));
-        old1Serialized = new String(JsonFormat.toJsonBytes(instanceSerializer.toSlime(old1)), UTF_8);
-        String mod1Serialized = new String(JsonFormat.toJsonBytes(instanceSerializer.toSlime(mod1)), UTF_8);
-        assertEquals(old1Serialized, mod1Serialized);
-
-        assertEquals(old1.createdAt(), mod2.createdAt());
-        assertEquals(old1.change(), mod2.change());
-        assertEquals(old1.outstandingChange(), mod2.outstandingChange());
-        assertEquals(old1.deploymentSpec(), mod2.deploymentSpec());
-        assertEquals(old2.deployments(), mod2.deployments());
-        assertEquals(old2.deploymentJobs().jobStatus(), mod2.deploymentJobs().jobStatus());
-
-        application = new LockedApplication(application, newDb.lock(application.id())).without(old1.name()).get();
-        newDb.storeWithoutInstance(application, old1.id());
-        assertEquals(1, newDb.readApplication(application.id()).orElseThrow().instances().size());
-        assertEquals(1, oldDb.readApplication(application.id()).orElseThrow().instances().size());
-        application = new LockedApplication(application, newDb.lock(application.id())).without(old2.name()).get();
-        newDb.storeWithoutInstance(application, old2.id());
-        assertTrue(newDb.readApplication(application.id()).isEmpty());
-        assertTrue(oldDb.readApplication(application.id()).isEmpty());
     }
 
     private void runUpgrade(DeploymentTester tester, ApplicationId application, ApplicationVersion version) {

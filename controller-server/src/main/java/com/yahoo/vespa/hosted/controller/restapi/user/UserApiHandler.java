@@ -13,6 +13,8 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -22,17 +24,22 @@ import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.yolean.Exceptions;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * API for user management related to access control.
@@ -46,11 +53,13 @@ public class UserApiHandler extends LoggingRequestHandler {
     private static final String optionalPrefix = "/api";
 
     private final UserManagement users;
+    private final Controller controller;
 
     @Inject
-    public UserApiHandler(Context parentCtx, UserManagement users) {
+    public UserApiHandler(Context parentCtx, UserManagement users, Controller controller) {
         super(parentCtx);
         this.users = users;
+        this.controller = controller;
     }
 
     @Override
@@ -183,11 +192,17 @@ public class UserApiHandler extends LoggingRequestHandler {
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
-        List<User> currentUsers = users.listUsers(role);
-        if (role.definition() == RoleDefinition.administrator
-                && currentUsers.size() == 1
-                && currentUsers.get(0).email().equals(user.value()))
-            throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
+
+        if (   role.definition() == RoleDefinition.administrator
+            && Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet())))
+        throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
+
+        if (role.definition().equals(RoleDefinition.developer))
+            controller.tenants().lockIfPresent(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
+                String key = tenant.get().pemDeveloperKeys().inverse().get(new SimplePrincipal(user.value()));
+                if (key != null)
+                    controller.tenants().store(tenant.withoutPemDeveloperKey(key));
+            });
 
         users.removeUsers(role, List.of(user));
         return new MessageResponse(user+" is no longer a member of "+role);

@@ -72,6 +72,7 @@ public enum RoleDefinition {
                       Policy.applicationUpdate,
                       Policy.applicationDelete,
                       Policy.applicationOperations,
+                      Policy.keyManagement,
                       Policy.developmentDeployment);
 
     private final Set<RoleDefinition> parents;

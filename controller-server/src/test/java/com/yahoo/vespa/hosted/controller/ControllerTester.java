@@ -33,7 +33,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.persistence.InstanceSerializer;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
@@ -180,15 +179,6 @@ public final class ControllerTester {
     /** Creates the given tenant and application and deploys it */
     public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
         createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
-    }
-
-    /** Create application from slime */
-    public void createApplication(Slime slime) {
-        Instance instance = new InstanceSerializer().fromSlime(slime);
-        Application application = Application.aggregate(List.of(instance)).get();
-        try (Lock lock = controller().applications().lock(application.id())) {
-            controller().applications().store(new LockedApplication(application, lock));
-        }
     }
 
     public ZoneId toZone(Environment environment) {

@@ -2,9 +2,7 @@
 package com.yahoo.osgi;
 
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.ServiceReference;
 
 import java.util.List;
 

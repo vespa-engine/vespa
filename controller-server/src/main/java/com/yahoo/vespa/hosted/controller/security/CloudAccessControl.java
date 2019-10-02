@@ -35,7 +35,7 @@ public class CloudAccessControl implements AccessControl {
     @Override
     public CloudTenant createTenant(TenantSpec tenantSpec, Credentials credentials, List<Tenant> existing) {
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
-        CloudTenant tenant = new CloudTenant(spec.tenant(), defaultBillingInfo);
+        CloudTenant tenant = CloudTenant.create(spec.tenant(), defaultBillingInfo);
 
         for (Role role : Roles.tenantRoles(spec.tenant())) {
             userManagement.createRole(role);

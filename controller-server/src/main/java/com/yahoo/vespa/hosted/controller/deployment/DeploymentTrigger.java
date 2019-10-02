@@ -4,17 +4,17 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
-import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.disabled;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.idle;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.queued;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.running;
@@ -70,6 +69,14 @@ import static java.util.stream.Collectors.toList;
  * @author jonmv
  */
 public class DeploymentTrigger {
+
+    /*
+     * Instance orchestration TODO jonmv.
+     * Store new production application packages under non-instance path
+     * Read production packages from non-instance path, with fallback
+     * Deprecate and redirect some instance qualified paths in application/v4
+     * Orchestrate deployment across instances.
+     */
 
     public static final Duration maxPause = Duration.ofDays(3);
 
