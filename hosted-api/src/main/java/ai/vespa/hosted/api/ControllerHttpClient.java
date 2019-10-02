@@ -97,7 +97,7 @@ public abstract class ControllerHttpClient {
     /** Sends the given deployment to the given application in the given zone, or throws if this fails. */
     public DeploymentResult deploy(Deployment deployment, ApplicationId id, ZoneId zone) {
         return toDeploymentResult(send(request(HttpRequest.newBuilder(deploymentJobPath(id, zone))
-                                                          .timeout(Duration.ofMinutes(60)),
+                                                          .timeout(Duration.ofMinutes(20)),
                                                POST,
                                                toDataStream(deployment))));
     }
@@ -105,7 +105,7 @@ public abstract class ControllerHttpClient {
     /** Deactivates the deployment of the given application in the given zone. */
     public String deactivate(ApplicationId id, ZoneId zone) {
         return toMessage(send(request(HttpRequest.newBuilder(deploymentPath(id, zone))
-                                                 .timeout(Duration.ofSeconds(30)),
+                                                 .timeout(Duration.ofMinutes(3)),
                                       DELETE)));
     }
 
@@ -127,7 +127,9 @@ public abstract class ControllerHttpClient {
 
     /** Returns the test config for functional and verification tests of the indicated Vespa deployment. */
     public TestConfig testConfig(ApplicationId id, ZoneId zone) {
-        return TestConfig.fromJson(send(request(HttpRequest.newBuilder(testConfigPath(id, zone)), GET)).body());
+        return TestConfig.fromJson(send(request(HttpRequest.newBuilder(testConfigPath(id, zone))
+                                                           .timeout(Duration.ofSeconds(10)),
+                                                GET)).body());
     }
 
     /** Returns the sorted list of log entries after the given after from the deployment job of the given ids. */
@@ -218,10 +220,10 @@ public abstract class ControllerHttpClient {
         return zone.environment().value() + "-" + zone.region().value();
     }
 
-    /** Returns a response with a 2XX status code, with up to 3 attempts, or throws. */
+    /** Returns a response with a 2XX status code, with up to 10 attempts, or throws. */
     private HttpResponse<byte[]> send(HttpRequest request) {
         UncheckedIOException thrown = null;
-        for (int retry = 0; retry < 3; retry++) {
+        for (int attempt = 1; attempt <= 10; attempt++) {
             try {
                 HttpResponse<byte[]> response = client.send(request, ofByteArray());
                 if (response.statusCode() / 100 == 2)
@@ -243,6 +245,14 @@ public abstract class ControllerHttpClient {
                     thrown = new UncheckedIOException(e);
                 else
                     thrown.addSuppressed(e);
+
+                if (attempt < 10)
+                    try {
+                        Thread.sleep(100 << attempt);
+                    }
+                    catch (InterruptedException f) {
+                        throw new RuntimeException(f);
+                    }
             }
             catch (InterruptedException e) {
                 throw new RuntimeException(e);
@@ -294,12 +304,12 @@ public abstract class ControllerHttpClient {
         return new String(response.body(), UTF_8);
     }
 
-    /** Returns an {@link Inspector} for the assumed JSON formatted response, or throws if the status code is non-2XX. */
+    /** Returns an {@link Inspector} for the assumed JSON formatted response. */
     private static Inspector toInspector(HttpResponse<byte[]> response) {
         return toSlime(response.body()).get();
     }
 
-    /** Returns the "message" element contained in the JSON formatted response, if 2XX status code, or throws otherwise. */
+    /** Returns the "message" element contained in the JSON formatted response. */
     private static String toMessage(HttpResponse<byte[]> response) {
         return toInspector(response).field("message").asString();
     }
