@@ -9,15 +9,18 @@ namespace search::fef { class TermFieldMatchData; }
 
 namespace search::queryeval {
 
+class SameElementSearch;
+
 class SameElementBlueprint : public ComplexLeafBlueprint
 {
 private:
     HitEstimate                _estimate;
     fef::MatchDataLayout       _layout;
     std::vector<Blueprint::UP> _terms;
+    vespalib::string           _struct_field_name;
 
 public:
-    SameElementBlueprint(bool expensive);
+    SameElementBlueprint(const vespalib::string &struct_field_name_in, bool expensive);
     SameElementBlueprint(const SameElementBlueprint &) = delete;
     SameElementBlueprint &operator=(const SameElementBlueprint &) = delete;
     ~SameElementBlueprint();
@@ -34,10 +37,12 @@ public:
     void optimize_self() override;
     void fetchPostings(bool strict) override;
 
+    std::unique_ptr<SameElementSearch> create_same_element_search(bool strict) const;
     SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
                                       bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<Blueprint::UP> &terms() const { return _terms; }
+    const vespalib::string &struct_field_name() const { return _struct_field_name; }
 };
 
 }

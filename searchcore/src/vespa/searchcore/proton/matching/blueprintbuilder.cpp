@@ -102,7 +102,7 @@ private:
     }
 
     void buildSameElement(ProtonSameElement &n) {
-        SameElementBuilder builder(_requestContext, _context, n.is_expensive());
+        SameElementBuilder builder(_requestContext, _context, n.getView(), n.is_expensive());
         for (search::query::Node *node : n.getChildren()) {
             builder.add_child(*node);
         }
