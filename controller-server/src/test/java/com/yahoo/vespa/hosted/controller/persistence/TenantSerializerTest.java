@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;// Copyright 2018 Yahoo Ho
 
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -15,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Test;
 
 import java.net.URI;
+import java.security.PublicKey;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,14 @@ import static org.junit.Assert.assertTrue;
 public class TenantSerializerTest {
 
     private static final TenantSerializer serializer = new TenantSerializer();
+    private static final PublicKey publicKey = KeyUtils.fromPemEncodedPublicKey("-----BEGIN PUBLIC KEY-----\n" +
+                                                                                "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
+                                                                                "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
+                                                                                "-----END PUBLIC KEY-----\n");
+    private static final PublicKey otherPublicKey = KeyUtils.fromPemEncodedPublicKey("-----BEGIN PUBLIC KEY-----\n" +
+                                                                                     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\n" +
+                                                                                     "pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n" +
+                                                                                     "-----END PUBLIC KEY-----\n");
 
     @Test
     public void athenz_tenant() {
@@ -78,12 +88,12 @@ public class TenantSerializerTest {
     public void cloud_tenant() {
         CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
                                              new BillingInfo("old cat lady", "vespa"),
-                                             ImmutableBiMap.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", new SimplePrincipal("joe"),
-                                                               "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----", new SimplePrincipal("jane")));
+                                             ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                                                               otherPublicKey, new SimplePrincipal("jane")));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.billingInfo(), serialized.billingInfo());
-        assertEquals(tenant.pemDeveloperKeys(), serialized.pemDeveloperKeys());
+        assertEquals(tenant.developerKeys(), serialized.developerKeys());
     }
 
     private Contact contact() {

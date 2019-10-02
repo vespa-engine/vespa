@@ -11,11 +11,10 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 
+import java.security.PublicKey;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,7 +42,7 @@ public class LockedApplication {
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
-    private final Set<String> pemDeployKeys;
+    private final Set<PublicKey> deployKeys;
     private final OptionalLong projectId;
     private final boolean internal;
     private final Map<InstanceName, Instance> instances;
@@ -58,14 +57,14 @@ public class LockedApplication {
         this(Objects.requireNonNull(lock, "lock cannot be null"), application.id(), application.createdAt(),
              application.deploymentSpec(), application.validationOverrides(), application.change(),
              application.outstandingChange(), application.deploymentIssueId(), application.ownershipIssueId(),
-             application.owner(), application.majorVersion(), application.metrics(), application.pemDeployKeys(),
+             application.owner(), application.majorVersion(), application.metrics(), application.deployKeys(),
              application.projectId(), application.internal(), application.instances());
     }
 
     private LockedApplication(Lock lock, TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec,
                               ValidationOverrides validationOverrides, Change change, Change outstandingChange,
                               Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                              OptionalInt majorVersion, ApplicationMetrics metrics, Set<String> pemDeployKeys,
+                              OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys,
                               OptionalLong projectId, boolean internal,
                               Map<InstanceName, Instance> instances) {
         this.lock = lock;
@@ -80,7 +79,7 @@ public class LockedApplication {
         this.owner = owner;
         this.majorVersion = majorVersion;
         this.metrics = metrics;
-        this.pemDeployKeys = pemDeployKeys;
+        this.deployKeys = deployKeys;
         this.projectId = projectId;
         this.internal = internal;
         this.instances = Map.copyOf(instances);
@@ -89,7 +88,7 @@ public class LockedApplication {
     /** Returns a read-only copy of this */
     public Application get() {
         return new Application(id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                               deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                               deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                projectId, internal, instances.values());
     }
 
@@ -97,7 +96,7 @@ public class LockedApplication {
         var instances = new HashMap<>(this.instances);
         instances.put(instance, new Instance(id.instance(instance)));
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
@@ -105,7 +104,7 @@ public class LockedApplication {
         var instances = new HashMap<>(this.instances);
         instances.put(instance, modification.apply(instances.get(instance)));
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
@@ -113,61 +112,61 @@ public class LockedApplication {
         var instances = new HashMap<>(this.instances);
         instances.remove(instance);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication withBuiltInternally(boolean builtInternally) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, builtInternally, instances);
     }
 
     public LockedApplication withProjectId(OptionalLong projectId) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication withDeploymentIssueId(IssueId issueId) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     Optional.ofNullable(issueId), ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     Optional.ofNullable(issueId), ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication with(DeploymentSpec deploymentSpec) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication with(ValidationOverrides validationOverrides) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication withChange(Change change) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication withOutstandingChange(Change outstandingChange) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication withOwnershipIssueId(IssueId issueId) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, Optional.of(issueId), owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, Optional.of(issueId), owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
     public LockedApplication withOwner(User owner) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, Optional.of(owner), majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, Optional.of(owner), majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
@@ -176,25 +175,25 @@ public class LockedApplication {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
                                      deploymentIssueId, ownershipIssueId, owner,
                                      majorVersion == null ? OptionalInt.empty() : OptionalInt.of(majorVersion),
-                                     metrics, pemDeployKeys, projectId, internal, instances);
+                                     metrics, deployKeys, projectId, internal, instances);
     }
 
     public LockedApplication with(ApplicationMetrics metrics) {
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
-                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, pemDeployKeys,
+                                     deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, deployKeys,
                                      projectId, internal, instances);
     }
 
-    public LockedApplication withPemDeployKey(String pemDeployKey) {
-        Set<String> keys = new LinkedHashSet<>(pemDeployKeys);
+    public LockedApplication withDeployKey(PublicKey pemDeployKey) {
+        Set<PublicKey> keys = new LinkedHashSet<>(deployKeys);
         keys.add(pemDeployKey);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
                                      deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, keys,
                                      projectId, internal, instances);
     }
 
-    public LockedApplication withoutPemDeployKey(String pemDeployKey) {
-        Set<String> keys = new LinkedHashSet<>(pemDeployKeys);
+    public LockedApplication withoutDeployKey(PublicKey pemDeployKey) {
+        Set<PublicKey> keys = new LinkedHashSet<>(deployKeys);
         keys.remove(pemDeployKey);
         return new LockedApplication(lock, id, createdAt, deploymentSpec, validationOverrides, change, outstandingChange,
                                      deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics, keys,

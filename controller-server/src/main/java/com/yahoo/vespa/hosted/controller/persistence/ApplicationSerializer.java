@@ -1,14 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -21,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -39,7 +37,7 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
-import java.security.Principal;
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,7 +52,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -192,7 +189,7 @@ public class ApplicationSerializer {
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
-        deployKeysToSlime(application.pemDeployKeys().stream(), root.setArray(pemDeployKeysField));
+        deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -208,8 +205,8 @@ public class ApplicationSerializer {
         }
     }
 
-    private void deployKeysToSlime(Stream<String> pemDeployKeys, Cursor array) {
-        pemDeployKeys.forEach(array::addString);
+    private void deployKeysToSlime(Set<PublicKey> deployKeys, Cursor array) {
+        deployKeys.forEach(key -> array.addString(KeyUtils.toPem(key)));
     }
 
     private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
@@ -384,14 +381,14 @@ public class ApplicationSerializer {
         OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
-        Set<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeysField));
+        Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKeys, projectId, builtInternally, instances);
+                               deployKeys, projectId, builtInternally, instances);
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
@@ -411,9 +408,9 @@ public class ApplicationSerializer {
         return instances;
     }
 
-    private Set<String> pemDeployKeysFromSlime(Inspector array) {
-        Set<String> keys = new LinkedHashSet<>();
-        array.traverse((ArrayTraverser) (__, key) -> keys.add(key.asString()));
+    private Set<PublicKey> deployKeysFromSlime(Inspector array) {
+        Set<PublicKey> keys = new LinkedHashSet<>();
+        array.traverse((ArrayTraverser) (__, key) -> keys.add(KeyUtils.fromPemEncodedPublicKey(key.asString())));
         return keys;
     }
 

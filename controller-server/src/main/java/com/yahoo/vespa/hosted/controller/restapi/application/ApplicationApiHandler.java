@@ -17,6 +17,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.Path;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -96,6 +97,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.DigestInputStream;
 import java.security.Principal;
+import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
@@ -377,8 +379,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Principal user = request.getJDiscRequest().getUserPrincipal();
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
+        PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
-                controller.tenants().store(tenant.withPemDeveloperKey(pemDeveloperKey, user)));
+                controller.tenants().store(tenant.withDeveloperKey(developerKey, user)));
         return new MessageResponse("Set developer key " + pemDeveloperKey + " for " + user);
     }
 
@@ -387,25 +390,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
-        Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).pemDeveloperKeys().get(pemDeveloperKey);
+        PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
+        Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).developerKeys().get(developerKey);
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
-                controller.tenants().store(tenant.withoutPemDeveloperKey(pemDeveloperKey)));
+                controller.tenants().store(tenant.withoutDeveloperKey(developerKey)));
         return new MessageResponse("Removed developer key " + pemDeveloperKey + " for " + user);
     }
 
     private HttpResponse addDeployKey(String tenantName, String applicationName, HttpRequest request) {
         String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
-        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
-            controller.applications().store(application.withPemDeployKey(pemDeployKey));
-        });
+        PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application ->
+                controller.applications().store(application.withDeployKey(deployKey)));
+
         return new MessageResponse("Added deploy key " + pemDeployKey);
     }
 
     private HttpResponse removeDeployKey(String tenantName, String applicationName, HttpRequest request) {
         String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
-        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
-            controller.applications().store(application.withoutPemDeployKey(pemDeployKey));
-        });
+        PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application ->
+                controller.applications().store(application.withoutDeployKey(deployKey)));
+
         return new MessageResponse("Removed deploy key " + pemDeployKey);
     }
 
@@ -424,7 +430,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
             if (pemDeployKeyField.valid()) {
                 String pemDeployKey = pemDeployKeyField.asString();
-                application = application.withPemDeployKey(pemDeployKey);
+                PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
+                application = application.withDeployKey(deployKey);
                 messageBuilder.add("Added deploy key " + pemDeployKey);
             }
 
@@ -654,9 +661,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // TODO jonmv: Remove when clients are updated
-        application.pemDeployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", key));
+        application.deployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", KeyUtils.toPem(key)));
 
-        application.pemDeployKeys().forEach(object.setArray("pemDeployKeys")::addString);
+        application.deployKeys().stream().map(KeyUtils::toPem).forEach(object.setArray("pemDeployKeys")::addString);
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
@@ -1368,16 +1375,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
                 Cursor pemDeployKeysArray = object.setArray("pemDeployKeys");
                 for (Application application : applications)
-                    for (String key : application.pemDeployKeys()) {
+                    for (PublicKey key : application.deployKeys()) {
                         Cursor keyObject = pemDeployKeysArray.addObject();
-                        keyObject.setString("key", key);
+                        keyObject.setString("key", KeyUtils.toPem(key));
                         keyObject.setString("application", application.id().application().value());
                     }
 
                 Cursor pemDeveloperKeysArray = object.setArray("pemDeveloperKeys");
-                cloudTenant.pemDeveloperKeys().forEach((key, user) -> {
+                cloudTenant.developerKeys().forEach((key, user) -> {
                     Cursor keyObject = pemDeveloperKeysArray.addObject();
-                    keyObject.setString("key", key);
+                    keyObject.setString("key", KeyUtils.toPem(key));
                     keyObject.setString("user", user.getName());
                 });
 
