@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.google.inject.Inject;
@@ -110,7 +110,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                 List<Node> nodes = IntStream.rangeClosed(1, 3)
                                             .mapToObj(i -> new Node(
                                                     HostName.from("node-" + i + "-" + application.id().application()
-                                                                                                 .value()),
+                                                                                                 .value()
+                                                                  + "-" + zone.value()),
                                                     Node.State.active, application.nodeType(),
                                                     Optional.of(application.id()),
                                                     initialVersion,

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.ImmutableMap;
@@ -18,7 +18,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,8 +33,11 @@ public class MetricsReporter extends Maintainer {
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
+    public static final String NODES_FAILING_SYSTEM_UPGRADE = "deployment.nodesFailingSystemUpgrade";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
+
+    private static final Duration NODE_UPGRADE_TIMEOUT = Duration.ofHours(1);
 
     private final Metric metric;
     private final Clock clock;
@@ -51,12 +53,13 @@ public class MetricsReporter extends Maintainer {
         reportDeploymentMetrics();
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
+        reportNodesFailingSystemUpgrade();
     }
 
     private void reportRemainingRotations() {
         try (RotationLock lock = controller().applications().rotationRepository().lock()) {
             int availableRotations = controller().applications().rotationRepository().availableRotations(lock).size();
-            metric.set(REMAINING_ROTATIONS, availableRotations, metric.createContext(Collections.emptyMap()));
+            metric.set(REMAINING_ROTATIONS, availableRotations, metric.createContext(Map.of()));
         }
     }
 
@@ -66,7 +69,7 @@ public class MetricsReporter extends Maintainer {
                                                   .flatMap(application -> application.instances().values().stream())
                                                   .collect(Collectors.toUnmodifiableList());
 
-        metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(instances) * 100, metric.createContext(Collections.emptyMap()));
+        metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(instances) * 100, metric.createContext(Map.of()));
 
         averageDeploymentDurations(instances, clock.instant()).forEach((application, duration) -> {
             metric.set(DEPLOYMENT_AVERAGE_DURATION, duration.getSeconds(), metric.createContext(dimensions(application)));
@@ -92,6 +95,20 @@ public class MetricsReporter extends Maintainer {
     private void reportQueuedNameServiceRequests() {
         metric.set(NAME_SERVICE_REQUESTS_QUEUED, controller().curator().readNameServiceQueue().requests().size(),
                    metric.createContext(Map.of()));
+    }
+
+    private void reportNodesFailingSystemUpgrade() {
+        metric.set(NODES_FAILING_SYSTEM_UPGRADE, nodesFailingSystemUpgrade(), metric.createContext(Map.of()));
+    }
+
+    private int nodesFailingSystemUpgrade() {
+        if (!controller().versionStatus().isUpgrading()) return 0;
+        var nodesFailingUpgrade = 0;
+        var timeoutInstant = clock.instant().minus(NODE_UPGRADE_TIMEOUT);
+        for (var vespaVersion : controller().versionStatus().versions()) {
+            nodesFailingUpgrade += vespaVersion.nodeVersions().changedBefore(timeoutInstant).size();
+        }
+        return nodesFailingUpgrade;
     }
     
     private static double deploymentFailRatio(List<Instance> instances) {

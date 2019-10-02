@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
@@ -213,6 +215,43 @@ public class MetricsReporterTest {
         assertEquals("Queue consumed", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
     }
 
+    @Test
+    public void test_nodes_failing_system_upgrade() {
+        var tester = new DeploymentTester();
+        var reporter = createReporter(tester.controller());
+
+        // System on initial version
+        var version0 = Version.fromString("7.0");
+        tester.upgradeSystem(version0);
+        reporter.maintain();
+        assertEquals(0, getNodesFailingUpgrade());
+
+        // System starts upgrading to next version
+        var version1 = Version.fromString("7.1");
+        tester.upgradeController(version1);
+        reporter.maintain();
+        assertEquals(0, getNodesFailingUpgrade());
+
+        // Some time passes, but only a subset of nodes upgrade within timeout
+        tester.clock().advance(Duration.ofMinutes(30));
+        tester.upgradeSystemApplications(version1, List.of(SystemApplication.configServerHost));
+        reporter.maintain();
+        assertEquals(0, getNodesFailingUpgrade());
+        tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+        reporter.maintain();
+        assertEquals(48, getNodesFailingUpgrade());
+
+        // Some nodes are repaired and upgrade
+        tester.upgradeSystemApplications(version1, List.of(SystemApplication.configServer));
+        reporter.maintain();
+        assertEquals(36, getNodesFailingUpgrade());
+
+        // All nodes are repaired and system upgrades
+        tester.upgradeSystem(version1);
+        reporter.maintain();
+        assertEquals(0, getNodesFailingUpgrade());
+    }
+
     private Duration getAverageDeploymentDuration(ApplicationId id) {
         return Duration.ofSeconds(getMetric(MetricsReporter.DEPLOYMENT_AVERAGE_DURATION, id).longValue());
     }
@@ -223,6 +262,10 @@ public class MetricsReporterTest {
 
     private int getDeploymentWarnings(ApplicationId id) {
         return getMetric(MetricsReporter.DEPLOYMENT_WARNINGS, id).intValue();
+    }
+
+    private int getNodesFailingUpgrade() {
+        return metrics.getMetric(MetricsReporter.NODES_FAILING_SYSTEM_UPGRADE).intValue();
     }
 
     private Number getMetric(String name, ApplicationId id) {

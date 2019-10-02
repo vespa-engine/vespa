@@ -6,12 +6,10 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -23,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +69,8 @@ public class VersionStatus {
     /** Returns whether the system is currently upgrading */
     public boolean isUpgrading() {
         return systemVersion().map(VespaVersion::versionNumber).orElse(Version.emptyVersion)
-                              .isBefore(controllerVersion().map(VespaVersion::versionNumber).orElse(Version.emptyVersion));
+                              .isBefore(controllerVersion().map(VespaVersion::versionNumber)
+                                                           .orElse(Version.emptyVersion));
     }
 
     /** 
@@ -91,14 +91,14 @@ public class VersionStatus {
 
     /** Create a full, updated version status. This is expensive and should be done infrequently */
     public static VersionStatus compute(Controller controller) {
-        ListMultimap<Version, HostName> systemApplicationVersions = findSystemApplicationVersions(controller);
-        ListMultimap<ControllerVersion, HostName> controllerVersions = findControllerVersions(controller);
+        var systemApplicationVersions = findSystemApplicationVersions(controller);
+        var controllerVersions = findControllerVersions(controller);
 
-        ListMultimap<Version, HostName> infrastructureVersions = ArrayListMultimap.create();
+        var infrastructureVersions = ArrayListMultimap.<Version, HostName>create();
         for (var kv : controllerVersions.asMap().entrySet()) {
             infrastructureVersions.putAll(kv.getKey().version(), kv.getValue());
         }
-        infrastructureVersions.putAll(systemApplicationVersions);
+        infrastructureVersions.putAll(systemApplicationVersions.asVersionMap());
 
         // The controller version is the lowest controller version of all controllers
         ControllerVersion controllerVersion = controllerVersions.keySet().stream()
@@ -138,7 +138,7 @@ public class VersionStatus {
                                                           controllerVersion,
                                                           systemVersion,
                                                           isReleased,
-                                                          systemApplicationVersions.get(statistics.version()),
+                                                          systemApplicationVersions.matching(statistics.version()),
                                                           controller);
                 versions.add(vespaVersion);
             } catch (IllegalArgumentException e) {
@@ -152,29 +152,33 @@ public class VersionStatus {
         return new VersionStatus(versions);
     }
 
-    private static ListMultimap<Version, HostName> findSystemApplicationVersions(Controller controller) {
-        ListMultimap<Version, HostName> versions = ArrayListMultimap.create();
-        for (ZoneApi zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
-            for (SystemApplication application : SystemApplication.all()) {
-                List<Node> eligibleForUpgradeApplicationNodes = controller.serviceRegistry().configServer().nodeRepository()
-                        .list(zone.getId(), application.id()).stream()
-                        .filter(SystemUpgrader::eligibleForUpgrade)
-                        .collect(Collectors.toList());
-                if (eligibleForUpgradeApplicationNodes.isEmpty())
-                    continue;
-
-                boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
+    private static NodeVersions findSystemApplicationVersions(Controller controller) {
+        var nodeVersions = controller.versionStatus().systemVersion()
+                                     .map(VespaVersion::nodeVersions)
+                                     .orElse(NodeVersions.EMPTY);
+        var hostnames = new HashSet<HostName>();
+        for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
+            for (var application : SystemApplication.all()) {
+                var nodes = controller.serviceRegistry().configServer().nodeRepository()
+                                      .list(zone.getId(), application.id()).stream()
+                                      .filter(SystemUpgrader::eligibleForUpgrade)
+                                      .collect(Collectors.toList());
+                if (nodes.isEmpty()) continue;
+                var configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {
-                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone.getId() + " has not converged");
+                    log.log(LogLevel.WARNING, "Config for " + application.id() + " in " + zone.getId() +
+                                              " has not converged");
                 }
-                for (Node node : eligibleForUpgradeApplicationNodes) {
+                var now = controller.clock().instant();
+                for (var node : nodes) {
                     // Only use current node version if config has converged
-                    Version nodeVersion = configConverged ? node.currentVersion() : controller.systemVersion();
-                    versions.put(nodeVersion, node.hostname());
+                    Version version = configConverged ? node.currentVersion() : controller.systemVersion();
+                    nodeVersions = nodeVersions.with(new NodeVersion(node.hostname(), version, now));
+                    hostnames.add(node.hostname());
                 }
             }
         }
-        return versions;
+        return nodeVersions.retainAll(hostnames);
     }
 
     private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {
@@ -241,7 +245,7 @@ public class VersionStatus {
                                               ControllerVersion controllerVersion,
                                               Version systemVersion,
                                               boolean isReleased,
-                                              Collection<HostName> configServerHostnames,
+                                              NodeVersions nodeVersions,
                                               Controller controller) {
         var isSystemVersion = statistics.version().equals(systemVersion);
         var isControllerVersion = statistics.version().equals(controllerVersion.version());
@@ -279,7 +283,7 @@ public class VersionStatus {
                                 isControllerVersion,
                                 isSystemVersion,
                                 isReleased,
-                                configServerHostnames,
+                                nodeVersions,
                                 confidence);
     }
 

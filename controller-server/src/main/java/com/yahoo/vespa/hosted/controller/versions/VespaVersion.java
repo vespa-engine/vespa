@@ -1,16 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.versions;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.Collection;
-import java.util.Set;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 
@@ -30,12 +26,12 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private final boolean isSystemVersion;
     private final boolean isReleased;
     private final DeploymentStatistics statistics;
-    private final ImmutableSet<HostName> systemApplicationHostnames;
+    private final NodeVersions nodeVersions;
     private final Confidence confidence;
 
     public VespaVersion(DeploymentStatistics statistics, String releaseCommit, Instant committedAt,
                         boolean isControllerVersion, boolean isSystemVersion, boolean isReleased,
-                        Collection<HostName> systemApplicationHostnames,
+                        NodeVersions nodeVersions,
                         Confidence confidence) {
         this.statistics = statistics;
         this.releaseCommit = releaseCommit;
@@ -43,7 +39,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
         this.isControllerVersion = isControllerVersion;
         this.isSystemVersion = isSystemVersion;
         this.isReleased = isReleased;
-        this.systemApplicationHostnames = ImmutableSet.copyOf(systemApplicationHostnames);
+        this.nodeVersions = nodeVersions;
         this.confidence = confidence;
     }
 
@@ -108,9 +104,11 @@ public class VespaVersion implements Comparable<VespaVersion> {
     /** Returns whether the artifacts of this release are available in the configured maven repository. */
     public boolean isReleased() { return isReleased; }
 
-    /** Returns the hosts allocated to system applications (across all zones) which are currently of this version */
-    public Set<HostName> systemApplicationHostnames() { return systemApplicationHostnames; }
-    
+    /** Returns the versions of nodes allocated to system applications (across all zones) */
+    public NodeVersions nodeVersions() {
+        return nodeVersions;
+    }
+
     /** Returns the confidence we have in this versions suitability for production */
     public Confidence confidence() { return confidence; }
 
