@@ -98,8 +98,8 @@ public class CertificateAuthorityApiTest extends ContainerTester {
         var keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         var caCertificatePem = X509CertificateUtils.toPem(CertificateTester.createCertificate("Vespa CA", keyPair));
         var privateKeyPem = KeyUtils.toPem(keyPair.getPrivate());
-        secretStore().setSecret("vespa.external.ca.cert", caCertificatePem)
-                     .setSecret("secretname", privateKeyPem);
+        secretStore().setSecret("vespa.external.main.configserver.ca.cert.cert", caCertificatePem)
+                     .setSecret("vespa.external.main.configserver.ca.key.key", privateKeyPem);
     }
 
     private void assertIdentityResponse(Request request) {
