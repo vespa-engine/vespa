@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.ca.restapi;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -15,6 +13,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.ca.Certificates;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.yolean.Exceptions;
@@ -42,18 +41,20 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
 
     private final SecretStore secretStore;
     private final Certificates certificates;
-    private final SystemName system;
+    private final String caPrivateKeySecretName;
+    private final String caCertificateSecretName;
 
     @Inject
-    public CertificateAuthorityApiHandler(Context ctx, SecretStore secretStore, Zone zone) {
-        this(ctx, secretStore, new Certificates(Clock.systemUTC()), zone.system());
+    public CertificateAuthorityApiHandler(Context ctx, SecretStore secretStore, AthenzProviderServiceConfig athenzProviderServiceConfig) {
+        this(ctx, secretStore, new Certificates(Clock.systemUTC()), athenzProviderServiceConfig);
     }
 
-    CertificateAuthorityApiHandler(Context ctx, SecretStore secretStore, Certificates certificates, SystemName system) {
+    CertificateAuthorityApiHandler(Context ctx, SecretStore secretStore, Certificates certificates, AthenzProviderServiceConfig athenzProviderServiceConfig) {
         super(ctx);
         this.secretStore = secretStore;
         this.certificates = certificates;
-        this.system = system;
+        this.caPrivateKeySecretName = athenzProviderServiceConfig.secretName();
+        this.caCertificateSecretName = athenzProviderServiceConfig.domain() + ".ca.cert";
     }
 
     @Override
@@ -101,14 +102,12 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
 
     /** Returns CA certificate from secret store */
     private X509Certificate caCertificate() {
-        var keyName = String.format("vespa.external.%s.configserver.ca.cert.cert", system.value().toLowerCase());
-        return X509CertificateUtils.fromPem(secretStore.getSecret(keyName));
+        return X509CertificateUtils.fromPem(secretStore.getSecret(caCertificateSecretName));
     }
 
     /** Returns CA private key from secret store */
     private PrivateKey caPrivateKey() {
-        var keyName = String.format("vespa.external.%s.configserver.ca.key.key", system.value().toLowerCase());
-        return KeyUtils.fromPemEncodedPrivateKey(secretStore.getSecret(keyName));
+        return KeyUtils.fromPemEncodedPrivateKey(secretStore.getSecret(caPrivateKeySecretName));
     }
 
     private static <T> T deserializeRequest(HttpRequest request, Function<Slime, T> serializer) {
