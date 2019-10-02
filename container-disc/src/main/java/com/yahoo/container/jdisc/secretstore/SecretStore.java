@@ -2,6 +2,8 @@
 
 package com.yahoo.container.jdisc.secretstore;
 
+import java.util.List;
+
 /**
  * @author mortent
  */
@@ -11,4 +13,9 @@ public interface SecretStore {
 
     /** Returns the secret for this key and version */
     String getSecret(String key, int version);
+
+    /** Lists the existing versions of this secret (nonnegative integers) */
+    default List<Integer> listSecretVersions(String key) {
+        throw new UnsupportedOperationException("Secret store does not support listing versions");
+    }
 }
