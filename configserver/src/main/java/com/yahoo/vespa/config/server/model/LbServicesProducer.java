@@ -13,6 +13,7 @@ import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,11 +37,13 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
     private final BooleanFlag healthCheckOn4081;
+    private final IntFlag nginxUpstreamKeepaliveMultiplier;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
         this.healthCheckOn4081 = Flags.HEALTH_CHECK_ON_4081.bindTo(flagSource);
+        this.nginxUpstreamKeepaliveMultiplier = Flags.NGINX_UPSTREAM_KEEPALIVE_MULTIPLIER.bindTo(flagSource);
     }
 
     @Override
@@ -68,6 +71,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
         ab.healthCheckOn4081(healthCheckOn4081.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
+        ab.nginxUpstreamKeepaliveMultiplier(nginxUpstreamKeepaliveMultiplier.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value());
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
