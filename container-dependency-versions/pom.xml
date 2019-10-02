@@ -441,7 +441,7 @@
 
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <bouncycastle.version>1.58</bouncycastle.version>
+        <bouncycastle.version>1.63</bouncycastle.version>
         <commons-daemon.version>1.0.3</commons-daemon.version>
         <felix.version>6.0.3</felix.version>
         <felix.log.version>1.0.1</felix.log.version>
