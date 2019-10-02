@@ -1,43 +1,61 @@
 {
   "tenant": "my-tenant",
   "roleNames": [
-    "tenantOwner",
-    "tenantAdmin",
-    "tenantOperator"
+    "reader",
+    "developer",
+    "administrator"
   ],
   "users": [
     {
-      "name": "owner@tenant",
-      "email":"owner@tenant",
+      "name": "administrator@tenant",
+      "email": "administrator@tenant",
       "roles": {
-        "tenantOwner": {
+        "reader": {
+          "explicit": true,
+          "implied": true
+        },
+        "developer": {
           "explicit": true,
           "implied": false
         },
-        "tenantAdmin": {
-          "explicit": false,
-          "implied": true
-        },
-        "tenantOperator": {
-          "explicit": false,
-          "implied": true
+        "administrator": {
+          "explicit": true,
+          "implied": false
         }
       }
     },
     {
-      "name": "operator@tenant",
-      "email":"operator@tenant",
+      "name": "reader@tenant",
+      "email": "reader@tenant",
       "roles": {
-        "tenantOwner": {
-          "explicit": false,
-          "implied": false
-        },
-        "tenantAdmin": {
-          "explicit": false,
-          "implied": false
-        },
-        "tenantOperator": {
+        "reader": {
           "explicit": true,
+          "implied": false
+        },
+        "developer": {
+          "explicit": false,
+          "implied": false
+        },
+        "administrator": {
+          "explicit": false,
+          "implied": false
+        }
+      }
+    },
+    {
+      "name": "developer@tenant",
+      "email": "developer@tenant",
+      "roles": {
+        "reader": {
+          "explicit": false,
+          "implied": true
+        },
+        "developer": {
+          "explicit": true,
+          "implied": false
+        },
+        "administrator": {
+          "explicit": false,
           "implied": false
         }
       }
