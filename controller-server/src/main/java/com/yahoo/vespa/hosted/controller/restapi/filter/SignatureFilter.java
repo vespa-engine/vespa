@@ -54,42 +54,11 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
         if (   request.getAttribute(SecurityContext.ATTRIBUTE_NAME) == null
             && request.getHeader("X-Authorization") != null)
             try {
-                ApplicationId id = ApplicationId.fromSerializedForm(request.getHeader("X-Key-Id"));
-                SecurityContext securityContext = null;
-                if (request.getHeader("X-Key") != null) {
-                    PublicKey key = KeyUtils.fromPemEncodedPublicKey(new String(Base64.getDecoder().decode(request.getHeader("X-Key")), UTF_8));
-                    if (keyVerifies(key, request)) {
-                        Principal principal = null;
-                        Set<Role> roles = new HashSet<>();
-                        Optional <Application> application = controller.applications().getApplication(TenantAndApplicationId.from(id));
-                        if (application.isPresent() && application.get().deployKeys().contains(key)) {
-                            principal = new SimplePrincipal("headless@" + id.tenant() + "." + id.application());
-                            roles.add(Role.reader(id.tenant()));
-                            roles.add(Role.headless(id.tenant(), id.application()));
-                        }
-
-                        Optional<CloudTenant> tenant = controller.tenants().get(id.tenant())
-                                                                 .filter(CloudTenant.class::isInstance)
-                                                                 .map(CloudTenant.class::cast);
-                        if (tenant.isPresent() && tenant.get().developerKeys().containsKey(key)) {
-                            principal = tenant.get().developerKeys().get(key); // Precedence over headless user.
-                            roles.add(Role.reader(id.tenant()));
-                            roles.add(Role.developer(id.tenant()));
-                        }
-
-                        if (principal != null)
-                            securityContext = new SecurityContext(principal, roles);
-                    }
-                }
-                else if (anyDeployKeyMatches(TenantAndApplicationId.from(id), request))
-                    securityContext = new SecurityContext(new SimplePrincipal("buildService@" + id.tenant() + "." + id.application()),
-                                                          Set.of(Role.buildService(id.tenant(), id.application())));
-
-                if (securityContext != null) {
+                getSecurityContext(request).ifPresent(securityContext -> {
                     request.setUserPrincipal(securityContext.principal());
                     request.setRemoteUser(securityContext.principal().getName());
                     request.setAttribute(SecurityContext.ATTRIBUTE_NAME, securityContext);
-                }
+                });
             }
             catch (Exception e) {
                 logger.log(LogLevel.DEBUG, () -> "Exception verifying signed request: " + Exceptions.toMessageString(e));
@@ -113,7 +82,31 @@ public class SignatureFilter extends JsonSecurityRequestFilterBase {
                                                                    request.getHeader("X-Authorization"));
     }
 
-    private Optional<Principal> getPrincipal(CloudTenant tenant, PublicKey key) {
+    private Optional<SecurityContext> getSecurityContext(DiscFilterRequest request) {
+        ApplicationId id = ApplicationId.fromSerializedForm(request.getHeader("X-Key-Id"));
+        if (request.getHeader("X-Key") != null) { // TODO jonmv: Remove check and else branch after Oct 2019.
+            PublicKey key = KeyUtils.fromPemEncodedPublicKey(new String(Base64.getDecoder().decode(request.getHeader("X-Key")), UTF_8));
+            if (keyVerifies(key, request)) {
+                Optional<CloudTenant> tenant = controller.tenants().get(id.tenant())
+                                                         .filter(CloudTenant.class::isInstance)
+                                                         .map(CloudTenant.class::cast);
+                if (tenant.isPresent() && tenant.get().developerKeys().containsKey(key))
+                    return Optional.of(new SecurityContext(tenant.get().developerKeys().get(key),
+                                                           Set.of(Role.reader(id.tenant()),
+                                                                  Role.developer(id.tenant()))));
+
+                Optional <Application> application = controller.applications().getApplication(TenantAndApplicationId.from(id));
+                if (application.isPresent() && application.get().deployKeys().contains(key))
+                    return Optional.of(new SecurityContext(new SimplePrincipal("headless@" + id.tenant() + "." + id.application()),
+                                                           Set.of(Role.reader(id.tenant()),
+                                                                  Role.developer(id.tenant())))); // TODO jonmv: Change to headless after Oct 10 2019.
+            }
+        }
+        else if (anyDeployKeyMatches(TenantAndApplicationId.from(id), request))
+            return Optional.of(new SecurityContext(new SimplePrincipal("headless@" + id.tenant() + "." + id.application()),
+                                                   Set.of(Role.reader(id.tenant()),
+                                                          Role.developer(id.tenant()))));
+
         return Optional.empty();
     }
 

@@ -81,7 +81,9 @@ public enum RoleDefinition {
               Policy.applicationUpdate,
               Policy.applicationDelete,
               Policy.applicationOperations,
-              Policy.developmentDeployment),
+              Policy.developmentDeployment,
+              Policy.keyManagement,
+              Policy.submission),
 
     /** Admin — the administrative function for user management etc. */
     administrator(Policy.tenantUpdate,

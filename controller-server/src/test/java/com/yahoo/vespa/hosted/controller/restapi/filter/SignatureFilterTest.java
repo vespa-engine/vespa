@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.restapi.ApplicationRequestToDiscFilterRequestWrapper;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -76,63 +77,57 @@ public class SignatureFilterTest {
         // Unsigned request gets no role.
         HttpRequest.Builder request = HttpRequest.newBuilder(URI.create("https://host:123/path/./..//..%2F?query=empty&%3F=%26"));
         byte[] emptyBody = new byte[0];
-        DiscFilterRequest unsigned = requestOf(request.copy().method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody);
-        filter.filter(unsigned);
-        assertNull(unsigned.getAttribute(SecurityContext.ATTRIBUTE_NAME));
+        verifySecurityContext(requestOf(request.copy().method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody),
+                              null);
 
         // Signed request gets no role when no key is stored for the application.
-        DiscFilterRequest signed = requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody);
-        filter.filter(signed);
-        assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
+        verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
+                null);
 
         // Signed request gets no role when only non-matching keys are stored for the application.
         applications.lockApplicationOrThrow(appId, application -> applications.store(application.withDeployKey(otherPublicKey)));
-        filter.filter(signed);
-        assertNull(signed.getAttribute(SecurityContext.ATTRIBUTE_NAME));
+        // Signed request gets no role when no key is stored for the application.
+        verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
+                              null);
 
         // Signed request gets a headless role when a matching key is stored for the application.
         applications.lockApplicationOrThrow(appId, application -> applications.store(application.withDeployKey(publicKey)));
-        assertTrue(filter.filter(signed).isEmpty());
-        SecurityContext securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
-        assertEquals("headless@my-tenant.my-app", securityContext.principal().getName());
-        assertEquals(Set.of(Role.headless(id.tenant(), id.application()),
-                            Role.reader(id.tenant())),
-                     securityContext.roles());
+        verifySecurityContext(requestOf(signer.signed(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
+                              new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
+                                                  Set.of(Role.reader(id.tenant()),
+                                                         Role.developer(id.tenant())))); // TODO jonmv: Change to headless.
 
+        // TODO jonmv: remove after Oct 2019.
         // Signed request gets a build service role when a matching key is stored for the application and no X-Key header is provided.
-        signed = requestOf(signer.legacySigned(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody);
-        assertTrue(filter.filter(signed).isEmpty());
-        securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
-        assertEquals("buildService@my-tenant.my-app", securityContext.principal().getName());
-        assertEquals(Set.of(Role.buildService(id.tenant(), id.application())),
-                     securityContext.roles());
+        verifySecurityContext(requestOf(signer.legacySigned(request.copy(), Method.GET, InputStream::nullInputStream), emptyBody),
+                              new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
+                                                  Set.of(Role.reader(id.tenant()),
+                                                         Role.developer(id.tenant()))));
 
         // Signed POST request with X-Key header gets a headless role.
         byte[] hiBytes = new byte[]{0x48, 0x69};
-        signed = requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes);
-        assertTrue(filter.filter(signed).isEmpty());
-        securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
-        assertEquals("headless@my-tenant.my-app", securityContext.principal().getName());
-        assertEquals(Set.of(Role.headless(id.tenant(), id.application()),
-                            Role.reader(id.tenant())),
-                     securityContext.roles());
+        verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
+                              new SecurityContext(new SimplePrincipal("headless@my-tenant.my-app"),
+                                                  Set.of(Role.reader(id.tenant()),
+                                                         Role.developer(id.tenant())))); // TODO jonmv: Change to headless.
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
         tester.curator().writeTenant(new CloudTenant(appId.tenant(),
                                                      new BillingInfo("id", "code"),
                                                      ImmutableBiMap.of(publicKey, () -> "user")));
-        signed = requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes);
-        assertTrue(filter.filter(signed).isEmpty());
-        securityContext = (SecurityContext) signed.getAttribute(SecurityContext.ATTRIBUTE_NAME);
-        assertEquals("user", securityContext.principal().getName());
-        assertEquals(Set.of(Role.developer(id.tenant()),
-                            Role.headless(id.tenant(), id.application()),
-                            Role.reader(id.tenant())),
-                     securityContext.roles());
+        verifySecurityContext(requestOf(signer.signed(request.copy(), Method.POST, () -> new ByteArrayInputStream(hiBytes)), hiBytes),
+                              new SecurityContext(new SimplePrincipal("user"),
+                                                  Set.of(Role.reader(id.tenant()),
+                                                         Role.developer(id.tenant()))));
 
         // Unsigned requests still get no roles.
-        filter.filter(unsigned);
-        assertNull(unsigned.getAttribute(SecurityContext.ATTRIBUTE_NAME));
+        verifySecurityContext(requestOf(request.copy().method("GET", HttpRequest.BodyPublishers.ofByteArray(emptyBody)).build(), emptyBody),
+                              null);
+    }
+
+    private void verifySecurityContext(DiscFilterRequest request, SecurityContext securityContext) {
+        assertTrue(filter.filter(request).isEmpty());
+        assertEquals(securityContext, request.getAttribute(SecurityContext.ATTRIBUTE_NAME));
     }
 
     private static DiscFilterRequest requestOf(HttpRequest request, byte[] body) {
