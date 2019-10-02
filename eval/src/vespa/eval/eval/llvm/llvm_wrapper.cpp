@@ -12,7 +12,14 @@
 #include <llvm/Analysis/Passes.h>
 #include <llvm/IR/DataLayout.h>
 #include <llvm/Transforms/Scalar.h>
+#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
+// Avoid reference to undefined symbol llvm::cfg::Update<llvm::BasicBlock*>::dump() const
+#define NDEBUG
+#endif
 #include <llvm/LinkAllPasses.h>
+#if LLVM_VERSION_MAJOR == 9 && defined(__clang__)
+#undef NDEBUG
+#endif
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 #include <vespa/eval/eval/check_type.h>
 #include <vespa/vespalib/stllike/hash_set.h>
@@ -329,11 +336,24 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::Value *a = pop_double();
         push(builder.CreateCall(fun, a));
     }
+#if LLVM_VERSION_MAJOR >= 9
+    void make_call_1(llvm::FunctionCallee fun) {
+        if (!fun || fun.getFunctionType()->getNumParams() != 1) {
+            return make_error(1);
+        }
+        llvm::Value *a = pop_double();
+        push(builder.CreateCall(fun, a));
+    }
+#endif
     void make_call_1(const llvm::Intrinsic::ID &id) {
         make_call_1(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_1(const char *name) {
+#if LLVM_VERSION_MAJOR >= 9
+        make_call_1(module.getOrInsertFunction(name, make_call_1_fun_t()));
+#else
         make_call_1(llvm::dyn_cast<llvm::Function>(module.getOrInsertFunction(name, make_call_1_fun_t())));
+#endif
     }
 
     void make_call_2(llvm::Function *fun) {
@@ -344,11 +364,25 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::Value *a = pop_double();
         push(builder.CreateCall(fun, {a, b}));
     }
+#if LLVM_VERSION_MAJOR >= 9
+    void make_call_2(llvm::FunctionCallee fun) {
+        if (!fun || fun.getFunctionType()->getNumParams() != 2) {
+            return make_error(2);
+        }
+        llvm::Value *b = pop_double();
+        llvm::Value *a = pop_double();
+        push(builder.CreateCall(fun, {a, b}));
+    }
+#endif
     void make_call_2(const llvm::Intrinsic::ID &id) {
         make_call_2(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_2(const char *name) {
+#if LLVM_VERSION_MAJOR >= 9
+        make_call_2(module.getOrInsertFunction(name, make_call_2_fun_t()));
+#else
         make_call_2(llvm::dyn_cast<llvm::Function>(module.getOrInsertFunction(name, make_call_2_fun_t())));
+#endif
     }
 
     //-------------------------------------------------------------------------
