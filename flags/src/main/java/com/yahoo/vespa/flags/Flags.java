@@ -165,11 +165,6 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DYNAMIC_UPSTREAM_CONNECTION_CACHE = defineFeatureFlag(
-            "dynamic-upstream-connection-cache", false,
-            "Scale upstream connection cache with number of upstream servers",
-            "Takes effect on routing container redeployment");
-
     public static final UnboundBooleanFlag HEALTH_CHECK_ON_4081 = defineFeatureFlag(
             "health-check-on-4081", false,
             "Change nginx to send health check requests on port 4081 instead of 4080.",
