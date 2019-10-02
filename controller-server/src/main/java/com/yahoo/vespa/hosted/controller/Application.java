@@ -1,11 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -13,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -27,6 +25,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -51,21 +51,21 @@ public class Application {
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
-    private final Optional<String> pemDeployKey;
+    private final Set<String> pemDeployKeys;
     private final Map<InstanceName, Instance> instances;
 
     /** Creates an empty application. */
     public Application(TenantAndApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(), Change.empty(),
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0), Optional.empty(), OptionalLong.empty(), true, List.of());
+             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), false, List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                OptionalInt majorVersion, ApplicationMetrics metrics, Optional<String> pemDeployKey, OptionalLong projectId,
-                boolean internal, Collection<Instance> instances) {
+                       Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+                       OptionalInt majorVersion, ApplicationMetrics metrics, Set<String> pemDeployKeys,
+                       OptionalLong projectId, boolean internal, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -77,41 +77,10 @@ public class Application {
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
-        this.pemDeployKey = Objects.requireNonNull(pemDeployKey, "pemDeployKey cannot be null");
+        this.pemDeployKeys = Objects.requireNonNull(pemDeployKeys, "pemDeployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.internal = internal;
-        this.instances = ImmutableMap.copyOf((Iterable<Map.Entry<InstanceName, Instance>>)
-                                                     instances.stream()
-                                                              .map(instance -> Map.entry(instance.name(), instance))
-                                                              .sorted(Comparator.comparing(Map.Entry::getKey))
-                                                             ::iterator);
-    }
-
-    /** Returns an aggregate application, from the given instances, if at least one. */
-    public static Optional<Application> aggregate(List<Instance> instances) {
-        if (instances.isEmpty())
-            return Optional.empty();
-
-        Instance base = instances.stream()
-                                 .filter(instance -> instance.id().instance().isDefault())
-                                 .findFirst()
-                                 .orElse(instances.iterator().next());
-
-        return Optional.of(new Application(TenantAndApplicationId.from(base.id()), base.createdAt(), base.deploymentSpec(),
-                                           base.validationOverrides(), base.change(), base.outstandingChange(),
-                                           base.deploymentJobs().issueId(), base.ownershipIssueId(), base.owner(),
-                                           base.majorVersion(), base.metrics(), base.pemDeployKey(),
-                                           base.deploymentJobs().projectId(), base.deploymentJobs().deployedInternally(), instances));
-    }
-
-    /** Returns an old Instance representation of this and the given instance, for serialisation. */
-    public Instance legacy(InstanceName instance) {
-        Instance base = require(instance);
-
-        return new Instance(base.id(), createdAt, deploymentSpec, validationOverrides, base.deployments(),
-                            new DeploymentJobs(projectId, base.deploymentJobs().jobStatus().values(), deploymentIssueId, internal),
-                            change, outstandingChange, ownershipIssueId, owner,
-                            majorVersion, metrics, pemDeployKey, base.rotations(), base.rotationStatus());
+        this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
     }
 
     public TenantAndApplicationId id() { return id; }
@@ -221,7 +190,8 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    public Optional<String> pemDeployKey() { return pemDeployKey; }
+    /** Returns the set of deploy keys for this application. */
+    public Set<String> pemDeployKeys() { return pemDeployKeys; }
 
     @Override
     public boolean equals(Object o) {

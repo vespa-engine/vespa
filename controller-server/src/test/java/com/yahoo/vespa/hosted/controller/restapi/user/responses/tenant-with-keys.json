@@ -1,0 +1,27 @@
+{
+  "tenant": "my-tenant",
+  "type": "CLOUD",
+  "pemDeployKeys": [
+    {
+      "key": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----",
+      "application": "my-app"
+    }
+  ],
+  "pemDeveloperKeys": [
+    {
+      "key": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----",
+      "user": "joe@dev"
+    },
+    {
+      "key": "-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n-----END PUBLIC KEY-----",
+      "user": "operator@tenant"
+    }],
+  "applications": [
+    {
+      "tenant":"my-tenant",
+      "application":"my-app",
+      "instance":"default",
+      "url":"http://localhost:8080/application/v4/tenant/my-tenant/application/my-app/instance/default"
+    }
+  ]
+}

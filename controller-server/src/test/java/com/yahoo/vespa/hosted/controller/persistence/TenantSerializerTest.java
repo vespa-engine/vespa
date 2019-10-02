@@ -1,14 +1,15 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
-import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Test;
@@ -75,17 +76,14 @@ public class TenantSerializerTest {
 
     @Test
     public void cloud_tenant() {
-        CloudTenant tenant = CloudTenant.create(TenantName.from("elderly-lady"),
-                                                new BillingInfo("old cat lady", "vespa"));
+        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                                             new BillingInfo("old cat lady", "vespa"),
+                                             ImmutableBiMap.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", new SimplePrincipal("joe"),
+                                                               "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----", new SimplePrincipal("jane")));
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.billingInfo(), serialized.billingInfo());
-    }
-
-    @Test
-    public void legacy_deserialization() {
-        UserTenant legayUserTenant = (UserTenant) serializer.tenantFrom(SlimeUtils.jsonToSlime("{\"name\":\"by-someone\"}"));
-        assertTrue(legayUserTenant.is("someone"));
+        assertEquals(tenant.pemDeveloperKeys(), serialized.pemDeveloperKeys());
     }
 
     private Contact contact() {

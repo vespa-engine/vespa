@@ -226,6 +226,7 @@
     @include(dev-us-east-1.json),
     @include(prod-us-central-1.json)
   ],
+  "pemDeployKeys": [],
   "metrics": {
     "queryServiceQuality": 0.5,
     "writeServiceQuality": 0.7

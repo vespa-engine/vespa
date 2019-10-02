@@ -149,6 +149,7 @@ public class ApplicationController {
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
+            curator.deleteOldApplicationData();
             Instant start = clock.instant();
             int count = 0;
             for (Application application : curator.readApplications()) {
@@ -285,14 +286,12 @@ public class ApplicationController {
                 if ( ! id.instance().isTester()) // Only store the application permits for non-user applications.
                     accessControl.createApplication(id, credentials.get());
             }
-            List<Instance> instances = getApplication(TenantAndApplicationId.from(id)).map(application -> application.instances().values())
-                                                                                      .map(ArrayList::new)
-                                                                                      .orElse(new ArrayList<>());
-            instances.add(new Instance(id, clock.instant()));
-            LockedApplication application = new LockedApplication(Application.aggregate(instances).get(), lock);
-            store(application);
-            log.info("Created " + application);
-            return application.get();
+            Application application = getApplication(TenantAndApplicationId.from(id)).orElse(new Application(TenantAndApplicationId.from(id),
+                                                                                                             clock.instant()));
+            LockedApplication locked = new LockedApplication(application, lock).withNewInstance(id.instance());
+            store(locked);
+            log.info("Created " + locked);
+            return locked.get();
         }
     }
 
@@ -754,7 +753,7 @@ public class ApplicationController {
                              controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
                          });
             });
-            curator.storeWithoutInstance(application.without(applicationId.instance()).get(), applicationId);
+            curator.storeWithoutInstance(application.without(applicationId.instance()).get());
 
             log.info("Deleted " + application);
         });

@@ -79,6 +79,7 @@
   "compileVersion": "6.1.0",
   "globalRotations": [],
   "instances": [],
+  "pemDeployKeys": [],
   "metrics": {
     "queryServiceQuality": 0.0,
     "writeServiceQuality": 0.0

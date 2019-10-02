@@ -43,7 +43,7 @@ public class MockUserManagement implements UserManagement {
 
     @Override
     public void removeUsers(Role role, Collection<UserId> users) {
-        memberships.get(role).removeAll(users);
+        memberships.get(role).removeIf(user -> users.contains(new UserId(user.email())));
     }
 
     @Override

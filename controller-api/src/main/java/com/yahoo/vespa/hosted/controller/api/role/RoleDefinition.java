@@ -56,7 +56,8 @@ public enum RoleDefinition {
     /** Tenant operator with access to create application under a tenant, and to read the tenant's and public data. */
     tenantOperator(everyone,
                    Policy.tenantRead,
-                   Policy.applicationCreate),
+                   Policy.applicationCreate,
+                   Policy.keyManagement),
 
     /** Tenant admin with full access to all tenant resources, except deleting the tenant. */
     tenantAdmin(tenantOperator,
@@ -84,6 +85,7 @@ public enum RoleDefinition {
                       Policy.applicationUpdate,
                       Policy.applicationDelete,
                       Policy.applicationOperations,
+                      Policy.keyManagement,
                       Policy.developmentDeployment);
 
     private final Set<RoleDefinition> parents;

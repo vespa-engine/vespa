@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -10,6 +12,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
@@ -18,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.net.URI;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +56,7 @@ public class TenantSerializer {
     private static final String billingInfoField = "billingInfo";
     private static final String customerIdField = "customerId";
     private static final String productCodeField = "productCode";
+    private static final String pemDeveloperKeysField = "pemDeveloperKeys";
 
     public Slime toSlime(Tenant tenant) {
         Slime slime = new Slime();
@@ -86,7 +91,16 @@ public class TenantSerializer {
     }
 
     private void toSlime(CloudTenant tenant, Cursor root) {
+        pemDeveloperKeysToSlime(tenant.pemDeveloperKeys(), root.setArray(pemDeveloperKeysField));
         toSlime(tenant.billingInfo(), root.setObject(billingInfoField));
+    }
+
+    private void pemDeveloperKeysToSlime(BiMap<String, Principal> keys, Cursor array) {
+        keys.forEach((key, user) -> {
+            Cursor object = array.addObject();
+            object.setString("key", key);
+            object.setString("user", user.getName());
+        });
     }
 
     private void toSlime(BillingInfo billingInfo, Cursor billingInfoObject) {
@@ -97,10 +111,7 @@ public class TenantSerializer {
     public Tenant tenantFrom(Slime slime) {
         Inspector tenantObject = slime.get();
         Tenant.Type type;
-        if (tenantObject.field(typeField).valid())
-            type = typeOf(tenantObject.field(typeField).asString());
-        else // TODO jvenstad: Remove once all tenants are stored on updated format.
-            type = tenantObject.field(nameField).asString().startsWith(Tenant.userPrefix) ? Tenant.Type.user : Tenant.Type.athenz;
+        type = typeOf(tenantObject.field(typeField).asString());
 
         switch (type) {
             case athenz: return athenzTenantFrom(tenantObject);
@@ -128,7 +139,16 @@ public class TenantSerializer {
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
         BillingInfo billingInfo = billingInfoFrom(tenantObject.field(billingInfoField));
-        return new CloudTenant(name, billingInfo);
+        BiMap<String, Principal> pemDeveloperKeys = pemDeveloperKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
+        return new CloudTenant(name, billingInfo, pemDeveloperKeys);
+    }
+
+    private BiMap<String, Principal> pemDeveloperKeysFromSlime(Inspector array) {
+        ImmutableBiMap.Builder<String, Principal> keys = ImmutableBiMap.builder();
+        array.traverse((ArrayTraverser) (__, keyObject) -> {
+            keys.put(keyObject.field("key").asString(), new SimplePrincipal(keyObject.field("user").asString()));
+        });
+        return keys.build();
     }
 
     private Optional<Contact> contactFrom(Inspector object) {

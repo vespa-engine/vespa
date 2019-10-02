@@ -19,6 +19,12 @@
   "pemDeployKeys": [
     "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"
   ],
+  "pemDeveloperKeys": [
+    {
+      "key": "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----",
+      "user": "joe@dev"
+    }
+  ],
   "instances": [
     {
       "instanceName": "default",

@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -109,6 +110,12 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.systemTest);
 
         tester.assertRunning(productionUsWest1, app.id().defaultInstance());
+
+        // system-test fails again, but the app loses its projectId, and the job isn't retried.
+        tester.applications().lockApplicationOrThrow(app.id(), locked ->
+                tester.applications().store(locked.withProjectId(OptionalLong.empty())));
+        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, productionUsWest1);
+        assertEquals("Job is not triggered when no projectId is present", 0, tester.buildService().jobs().size());
     }
 
     @Test
@@ -1058,23 +1065,6 @@ public class DeploymentTriggerTest {
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, systemTest);
         assertEquals("Failure age is right at second consecutive failure",
                      initialFailure, tester.firstFailing(instance, systemTest).get().at());
-    }
-
-    @Test
-    public void applicationWithoutProjectIdIsNotTriggered() throws Exception {
-        // Current system version, matches version in test data
-        Version version = Version.fromString("6.42.1");
-        tester.upgradeSystem(version);
-        assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
-
-        // Load test data data
-        byte[] json = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/maintenance/testdata/application-without-project-id.json"));
-        Slime slime = SlimeUtils.jsonToSlime(json);
-        tester.controllerTester().createApplication(slime);
-
-        // Failure redeployer does not restart deployment
-        tester.readyJobTrigger().maintain();
-        assertTrue("No jobs scheduled", tester.buildService().jobs().isEmpty());
     }
 
     @Test
