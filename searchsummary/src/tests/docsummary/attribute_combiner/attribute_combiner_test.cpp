@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
@@ -165,7 +166,7 @@ public:
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
-    std::unique_ptr<MatchingElements> fill_matching_elements() override { return std::make_unique<MatchingElements>(_matching_elements); }
+    std::unique_ptr<MatchingElements> fill_matching_elements(const search::StructFieldMapper &) override { return std::make_unique<MatchingElements>(_matching_elements); }
     ~DummyStateCallback() override { }
 };
 
@@ -211,7 +212,11 @@ AttributeCombinerTest::~AttributeCombinerTest() = default;
 void
 AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter_elements)
 {
-    writer = AttributeCombinerDFW::create(field_name, attrs.mgr, filter_elements);
+    std::shared_ptr<search::StructFieldMapper> struct_field_mapper;
+    if (filter_elements) {
+        struct_field_mapper = std::make_shared<search::StructFieldMapper>();
+    }
+    writer = AttributeCombinerDFW::create(field_name, attrs.mgr, filter_elements, struct_field_mapper);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
 }

@@ -14,7 +14,7 @@ public:
 private:
     std::unique_ptr<search::docsummary::IDocsumFieldWriter>
         createFieldWriter(const string & fieldName, const string & overrideName,
-                          const string & cf, bool & rc) override;
+                          const string & cf, bool & rc, std::shared_ptr<search::StructFieldMapper> struct_field_mapper) override;
 };
 
 }

@@ -9,6 +9,7 @@
 #include "positionsdfw.h"
 #include "juniperdfw.h"
 #include "attribute_combiner_dfw.h"
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -23,7 +24,7 @@ DynamicDocsumConfig::getResultConfig() const {
 }
 
 IDocsumFieldWriter::UP
-DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc)
+DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<StructFieldMapper> struct_field_mapper)
 {
     const ResultConfig & resultConfig = getResultConfig();
     rc = false;
@@ -94,13 +95,13 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         }
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
-            fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager(), false);
+            fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager(), false, std::shared_ptr<StructFieldMapper>());
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedattributeelementsfilter") {
         string source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
-            fieldWriter = AttributeCombinerDFW::create(source_field, *getEnvironment()->getAttributeManager(), true);
+            fieldWriter = AttributeCombinerDFW::create(source_field, *getEnvironment()->getAttributeManager(), true, struct_field_mapper);
             rc = static_cast<bool>(fieldWriter);
         }
     } else {
@@ -113,13 +114,14 @@ void
 DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cfg)
 {
     std::vector<string> strCfg;
+    auto struct_field_mapper = std::make_shared<StructFieldMapper>();
     if ((cfg.defaultoutputclass != -1) && !_writer->SetDefaultOutputClass(cfg.defaultoutputclass)) {
         throw IllegalArgumentException(make_string("could not set default output class to %d", cfg.defaultoutputclass));
     }
     for (size_t i = 0; i < cfg.override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
         bool rc(false);
-        IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc);
+        IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, struct_field_mapper);
         if (rc && fieldWriter.get() != NULL) {
             rc = _writer->Override(o.field.c_str(), fieldWriter.release()); // OBJECT HAND-OVER
         }

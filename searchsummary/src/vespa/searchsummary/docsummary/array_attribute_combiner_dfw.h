@@ -23,7 +23,8 @@ class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
 public:
     ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
                               const std::vector<vespalib::string> &fields,
-                              bool filter_elements);
+                              bool filter_elements,
+                              std::shared_ptr<StructFieldMapper> struct_field_mapper);
     ~ArrayAttributeCombinerDFW() override;
 };
 
