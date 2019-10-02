@@ -141,7 +141,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // GET tenant information with keys
         tester.assertResponse(request("/application/v4/tenant/my-tenant/")
-                                      .roles(Set.of(Role.headless(id.tenant(), id.application()))),
+                                      .roles(Set.of(Role.reader(id.tenant()))),
                               new File("tenant-with-keys.json"));
 
         // DELETE a pem developer key
@@ -152,7 +152,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // DELETE a tenant role is available to tenant admins.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
-                        .roles(Set.of(Role.developer(id.tenant())))
+                        .roles(Set.of(Role.administrator(id.tenant())))
                         .data("{\"user\":\"developer@tenant\",\"roleName\":\"developer\"}"),
                 "{\"message\":\"user 'developer@tenant' is no longer a member of role 'developer' of 'my-tenant'\"}");
 
