@@ -187,7 +187,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         if (role.definition() == RoleDefinition.administrator
                 && currentUsers.size() == 1
                 && currentUsers.get(0).email().equals(user.value()))
-            throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
+            throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
 
         users.removeUsers(role, List.of(user));
         return new MessageResponse(user+" is no longer a member of "+role);
@@ -214,7 +214,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     public static String valueOf(Role role) {
         switch (role.definition()) {
             case administrator:  return "administrator";
-            case developer:      return "user";
+            case developer:      return "developer";
             case reader:         return "reader";
             case headless:       return "headless";
             default: throw new IllegalArgumentException("Unexpected role type '" + role.definition() + "'.");

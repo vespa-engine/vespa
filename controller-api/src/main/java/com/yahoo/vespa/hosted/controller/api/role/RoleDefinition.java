@@ -30,6 +30,7 @@ public enum RoleDefinition {
 
     /** User - the dev.ops. role for normal Vespa tenant users */
     developer(
+            reader,
             Policy.applicationCreate,
             Policy.applicationUpdate,
             Policy.applicationDelete,
@@ -39,6 +40,7 @@ public enum RoleDefinition {
 
     /** Admin - the administrative function for user management etc. */
     administrator(
+            reader,
             Policy.tenantUpdate,
             Policy.tenantManager,
             Policy.applicationManager

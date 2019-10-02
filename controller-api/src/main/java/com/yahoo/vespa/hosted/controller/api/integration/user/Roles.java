@@ -45,7 +45,7 @@ public class Roles {
     public static Role toRole(TenantName tenant, String roleName) {
         switch (roleName) {
             case "reader": return Role.reader(tenant);
-            case "user": return Role.developer(tenant);
+            case "developer": return Role.developer(tenant);
             case "administrator": return Role.administrator(tenant);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
@@ -91,7 +91,7 @@ public class Roles {
     public static String valueOf(RoleDefinition role) {
         switch (role) {
             case administrator:  return "administrator";
-            case developer:      return "user";
+            case developer:      return "developer";
             case reader:         return "reader";
             case headless:       return "headless";
             default: throw new IllegalArgumentException("No value defined for role '" + role + "'.");
