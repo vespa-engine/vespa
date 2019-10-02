@@ -7,6 +7,7 @@
 #include <vespa/eval/eval/operator_nodes.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/vm_forest.h>
+#include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
@@ -191,6 +192,7 @@ struct FunctionInfo {
                 fprintf(stderr, "    WARNING: checks are not tuned (expected path length to be ignored)\n");
             }
             fprintf(stderr, "    largest set membership check: %zu\n", forest.max_set_size);
+            fprintf(stderr, "    number of inverted checks: %zu\n", forest.total_inverted_checks);
             for (const auto &item: forest.tree_sizes) {
                 fprintf(stderr, "    forest contains %zu GBD tree%s of size %zu\n",
                         item.count, maybe_s(item.count), item.size);
@@ -264,7 +266,17 @@ struct State {
     void benchmark_option(const vespalib::string &opt_name, Optimize::Chain optimizer_chain) {
         options.push_back(opt_name);
         options_us.push_back(CompiledFunction(function, PassParams::ARRAY, optimizer_chain).estimate_cost_us(fun_info.params));
-        fprintf(stderr, "  LLVM(%s) execute time: %g us\n", opt_name.c_str(), options_us.back());
+        fprintf(stderr, "  option '%s' execute time: %g us\n", opt_name.c_str(), options_us.back());
+    }
+
+    void maybe_benchmark_fast_forest() {
+        auto ff = FastForest::try_convert(function);
+        if (ff) {
+            vespalib::string opt_name("ff");
+            options.push_back(opt_name);
+            options_us.push_back(ff->estimate_cost_us(fun_info.params));
+            fprintf(stderr, "  option '%s' execute time: %g us\n", opt_name.c_str(), options_us.back());
+        }
     }
 
     void report(bool verbose) {
@@ -282,12 +294,13 @@ struct State {
         if (!vmforest_used(compiled_function->get_forests()) && !fun_info.forests.empty()) {
             benchmark_option("vmforest", VMForest::optimize_chain);
         }
+        maybe_benchmark_fast_forest();
         fprintf(stdout, "[compile: %.3fs][execute: %.3fus]", llvm_compile_s, llvm_execute_us);
         for (size_t i = 0; i < options.size(); ++i) {
             double rel_speed = (llvm_execute_us / options_us[i]);
             fprintf(stdout, "[%s: %zu%%]", options[i].c_str(), as_percent(rel_speed));
             if (rel_speed >= 1.1) {
-                fprintf(stderr, "  WARNING: LLVM(%s) faster than default choice\n",
+                fprintf(stderr, "  WARNING: option '%s' faster than default choice\n",
                         options[i].c_str());
             }
         }
