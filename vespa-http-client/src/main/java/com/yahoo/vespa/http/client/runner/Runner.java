@@ -61,7 +61,7 @@ public class Runner {
     public static void main(String[] args) throws IOException {
         CommandLineArguments commandLineArgs = CommandLineArguments.build(args);
         if (commandLineArgs == null) {
-            System.exit(-1);
+            System.exit(1);
         }
 
         FormatInputStream formatInputStream = new FormatInputStream(
