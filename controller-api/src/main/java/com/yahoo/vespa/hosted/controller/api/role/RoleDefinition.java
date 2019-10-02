@@ -70,6 +70,27 @@ public enum RoleDefinition {
     tenantOwner(tenantAdmin,
                 Policy.tenantDelete),
 
+    /** Reader — the base role for all tenant users */
+    reader(Policy.tenantRead,
+           Policy.applicationRead,
+           Policy.deploymentRead,
+           Policy.publicRead),
+
+    /** User — the dev.ops. role for normal Vespa tenant users */
+    developer(Policy.applicationCreate,
+              Policy.applicationUpdate,
+              Policy.applicationDelete,
+              Policy.applicationOperations,
+              Policy.developmentDeployment),
+
+    /** Admin — the administrative function for user management etc. */
+    administrator(Policy.tenantUpdate,
+                  Policy.tenantManager,
+                  Policy.applicationManager),
+
+    /** Headless — the application specific role identified by deployment keys for production */
+    headless(Policy.submission),
+
     /** Build and continuous delivery service. */ // TODO replace with buildService, when everyone is on new pipeline.
     tenantPipeline(everyone,
                    Policy.submission,
