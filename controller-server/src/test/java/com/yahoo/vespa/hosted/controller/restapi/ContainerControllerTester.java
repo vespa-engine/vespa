@@ -79,8 +79,10 @@ public class ContainerControllerTester {
                                                            Optional.of(new PropertyId("1234")));
         controller().tenants().create(tenantSpec, credentials);
 
-        ApplicationId app = ApplicationId.from(tenant, application, instance);
-        return controller().applications().createApplication(app, Optional.of(credentials));
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenant, application);
+        controller().applications().createApplication(id, Optional.of(credentials));
+        controller().applications().createInstance(id.instance(instance));
+        return controller().applications().requireApplication(id);
     }
 
     public void deploy(ApplicationId id, ApplicationPackage applicationPackage, ZoneId zone) {

@@ -360,22 +360,11 @@ public class CuratorDb {
 
     private Stream<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
-                      .filter(id -> id.split(":").length == 2)
                       .map(TenantAndApplicationId::fromSerialized);
     }
 
-    public void deleteOldApplicationData() {
-        curator.getChildren(applicationRoot).stream()
-               .filter(id -> id.split(":").length == 3)
-               .forEach(id -> curator.delete(applicationRoot.append(id)));
-    }
-
-    // TODO jonmv: Refactor when instance split operation is done
-    public void storeWithoutInstance(Application application) {
-        if (application.instances().isEmpty())
-                curator.delete(applicationPath(application.id()));
-        else
-            writeApplication(application);
+    public void removeApplication(TenantAndApplicationId id) {
+        curator.delete(applicationPath(id));
     }
 
     // -------------- Job Runs ------------------------------------------------

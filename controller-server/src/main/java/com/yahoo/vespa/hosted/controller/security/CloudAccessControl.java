@@ -1,10 +1,8 @@
 package com.yahoo.vespa.hosted.controller.security;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
@@ -12,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.ApplicationRole;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -58,14 +57,14 @@ public class CloudAccessControl implements AccessControl {
     }
 
     @Override
-    public void createApplication(ApplicationId id, Credentials credentials) {
+    public void createApplication(TenantAndApplicationId id, Credentials credentials) {
         for (Role role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.createRole(role);
         userManagement.addUsers(Role.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
     }
 
     @Override
-    public void deleteApplication(ApplicationId id, Credentials credentials) {
+    public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
         for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.deleteRole(role);
     }

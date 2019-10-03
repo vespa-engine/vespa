@@ -10,12 +10,5 @@
       "key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\npDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n-----END PUBLIC KEY-----\n",
       "user": "operator@tenant"
     }],
-  "applications": [
-    {
-      "tenant":"my-tenant",
-      "application":"my-app",
-      "instance":"default",
-      "url":"http://localhost:8080/application/v4/tenant/my-tenant/application/my-app/instance/default"
-    }
-  ]
+  "applications": []
 }

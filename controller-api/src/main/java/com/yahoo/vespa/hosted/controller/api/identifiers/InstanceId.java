@@ -16,4 +16,9 @@ public class InstanceId extends SerializedIdentifier {
         validateNoUpperCase();
     }
 
+    public static void validate(String id) {
+        if ( ! strictPattern.matcher(id).matches())
+            throwInvalidId(id, strictPatternExplanation);
+    }
+
 }

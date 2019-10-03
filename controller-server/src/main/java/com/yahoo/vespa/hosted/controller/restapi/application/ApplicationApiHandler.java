@@ -242,14 +242,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return addDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), "default", request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), true, request);
@@ -1024,25 +1024,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
-    private HttpResponse createApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+    private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        try {
-            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                    ? Optional.empty()
-                    : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
-            Application application = controller.applications().createApplication(id, credentials);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                                            ? Optional.empty()
+                                            : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
+        Application application = controller.applications().createApplication(id, credentials);
 
-            Slime slime = new Slime();
-            toSlime(id, slime.setObject(), request);
-            return new SlimeJsonResponse(slime);
-        }
-        catch (ZmsClientException e) { // TODO: Push conversion down
-            if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
-                throw new ForbiddenException("Not authorized to create application", e);
-            else
-                throw e;
-        }
+        Slime slime = new Slime();
+        toSlime(id, slime.setObject(), request);
+        return new SlimeJsonResponse(slime);
+    }
+
+    // TODO jonmv: Remove when clients are updated.
+    private HttpResponse createInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenantName, applicationName);
+        if (controller.applications().getApplication(applicationId).isEmpty())
+            createApplication(tenantName, applicationName, request);
+
+        controller.applications().createInstance(applicationId.instance(instanceName));
+
+        Slime slime = new Slime();
+        toSlime(applicationId.instance(instanceName), slime.setObject(), request);
+        return new SlimeJsonResponse(slime);
     }
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
@@ -1234,12 +1239,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
 
+        applicationPackage.ifPresent(aPackage -> controller.applications().verifyApplicationIdentityConfiguration(applicationId.tenant(),
+                                                                                                                  aPackage,
+                                                                                                                  Optional.of(requireUserPrincipal(request))));
+
         ActivateResult result = controller.applications().deploy(applicationId,
                                                                  zone,
                                                                  applicationPackage,
                                                                  applicationVersion,
-                                                                 deployOptionsJsonClass,
-                                                                 Optional.of(requireUserPrincipal(request)));
+                                                                 deployOptionsJsonClass);
 
         return new SlimeJsonResponse(toSlime(result));
     }
@@ -1262,22 +1270,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
-        TenantName tenant = TenantName.from(tenantName);
-        ApplicationName application = ApplicationName.from(applicationName);
-        Optional<Credentials> credentials = controller.tenants().require(tenant).type() == Tenant.Type.user
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                                             ? Optional.empty()
-                                            : Optional.of(accessControlRequests.credentials(tenant, toSlime(request.getData()).get(), request.getJDiscRequest()));
-        controller.applications().deleteApplication(tenant, application, credentials);
-        return new MessageResponse("Deleted application " + tenant + "." + application);
+                                            : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+        controller.applications().deleteApplication(id, credentials);
+        return new MessageResponse("Deleted application " + id);
     }
 
     private HttpResponse deleteInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
-        controller.applications().deleteInstance(id, credentials);
-        return new MessageResponse("Deleted instance " + id.toFullString());
+        controller.applications().deleteInstance(id.instance(instanceName));
+        if (controller.applications().requireApplication(id).instances().isEmpty())
+            controller.applications().deleteApplication(id, credentials);
+        return new MessageResponse("Deleted instance " + id.instance(instanceName).toFullString());
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
@@ -1467,6 +1476,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static String path(Object... elements) {
         return Joiner.on("/").join(elements);
+    }
+
+    private void toSlime(TenantAndApplicationId id, Cursor object, HttpRequest request) {
+        object.setString("tenant", id.tenant().value());
+        object.setString("application", id.application().value());
+        object.setString("url", withPath("/application/v4" +
+                                         "/tenant/" + id.tenant().value() +
+                                         "/application/" + id.application().value(),
+                                         request.getUri()).toString());
     }
 
     private void toSlime(ApplicationId id, Cursor object, HttpRequest request) {
