@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
@@ -91,7 +91,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             versionObject.setBool("systemVersion", version.isSystemVersion());
 
             Cursor configServerArray = versionObject.setArray("configServers");
-            for (HostName hostname : version.systemApplicationHostnames()) {
+            for (HostName hostname : version.nodeVersions().hostnames()) {
                 Cursor configServerObject = configServerArray.addObject();
                 configServerObject.setString("hostname", hostname.value());
             }

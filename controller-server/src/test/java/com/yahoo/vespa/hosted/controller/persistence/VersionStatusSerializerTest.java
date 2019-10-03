@@ -1,20 +1,23 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
@@ -36,9 +39,11 @@ public class VersionStatusSerializerTest {
                         ApplicationId.from("tenant2", "success2", "default"))
         );
         vespaVersions.add(new VespaVersion(statistics, "dead", Instant.now(), false, false,
-                                           true, asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
+                                           true, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
+                                                              Instant.ofEpochMilli(123), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         vespaVersions.add(new VespaVersion(statistics, "cafe", Instant.now(), true, true,
-                                           false, asHostnames("cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
+                                           false, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
+                                                               Instant.ofEpochMilli(456), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         VersionStatus status = new VersionStatus(vespaVersions);
         VersionStatusSerializer serializer = new VersionStatusSerializer();
         VersionStatus deserialized = serializer.fromSlime(serializer.toSlime(status));
@@ -53,14 +58,48 @@ public class VersionStatusSerializerTest {
             assertEquals(a.isSystemVersion(), b.isSystemVersion());
             assertEquals(a.isReleased(), b.isReleased());
             assertEquals(a.statistics(), b.statistics());
-            assertEquals(a.systemApplicationHostnames(), b.systemApplicationHostnames());
+            assertEquals(a.nodeVersions(), b.nodeVersions());
             assertEquals(a.confidence(), b.confidence());
         }
 
     }
 
-    private static List<HostName> asHostnames(String... hostname) {
-        return Arrays.stream(hostname).map(HostName::from).collect(Collectors.toList());
+    @Test
+    public void testLegacySerialization() throws Exception {
+        var data = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/version-status-legacy-format.json"));
+        var serializer = new VersionStatusSerializer();
+        var deserializedStatus = serializer.fromSlime(SlimeUtils.jsonToSlime(data));
+
+        var statistics = new DeploymentStatistics(
+                Version.fromString("7.0"),
+                List.of(),
+                List.of(),
+                List.of()
+        );
+        var vespaVersion = new VespaVersion(statistics, "badc0ffee",
+                                            Instant.ofEpochMilli(123), true,
+                                            true, true,
+                                            nodeVersions(Version.emptyVersion, Version.emptyVersion,
+                                                         Instant.EPOCH, "cfg1", "cfg2", "cfg3"),
+                                            VespaVersion.Confidence.normal);
+
+        VespaVersion deserialized = deserializedStatus.versions().get(0);
+        assertEquals(vespaVersion.releaseCommit(), deserialized.releaseCommit());
+        assertEquals(vespaVersion.committedAt().truncatedTo(MILLIS), deserialized.committedAt());
+        assertEquals(vespaVersion.isControllerVersion(), deserialized.isControllerVersion());
+        assertEquals(vespaVersion.isSystemVersion(), deserialized.isSystemVersion());
+        assertEquals(vespaVersion.isReleased(), deserialized.isReleased());
+        assertEquals(vespaVersion.statistics(), deserialized.statistics());
+        assertEquals(vespaVersion.nodeVersions(), deserialized.nodeVersions());
+        assertEquals(vespaVersion.confidence(), deserialized.confidence());
+    }
+
+    private static NodeVersions nodeVersions(Version version, Version wantedVersion, Instant changedAt, String... hostnames) {
+        var nodeVersions = new ArrayList<NodeVersion>();
+        for (var hostname : hostnames) {
+            nodeVersions.add(new NodeVersion(HostName.from(hostname), version, wantedVersion, changedAt));
+        }
+        return NodeVersions.EMPTY.with(nodeVersions);
     }
 
 }

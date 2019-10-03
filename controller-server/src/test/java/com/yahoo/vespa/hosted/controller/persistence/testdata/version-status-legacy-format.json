@@ -1,0 +1,23 @@
+{
+  "versions": [
+    {
+      "releaseCommit": "badc0ffee",
+      "releasedAt": 123,
+      "isCurrentControllerVersion": true,
+      "isCurrentSystemVersion": true,
+      "isReleased": true,
+      "deploymentStatistics": {
+        "version": "7.0",
+        "failing": [],
+        "production": [],
+        "deploying": []
+      },
+      "confidence": "normal",
+      "configServerHostnames": [
+        "cfg1",
+        "cfg2",
+        "cfg3"
+      ]
+    }
+  ]
+}
