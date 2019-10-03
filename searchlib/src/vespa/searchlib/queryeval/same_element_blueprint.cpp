@@ -10,11 +10,12 @@
 
 namespace search::queryeval {
 
-SameElementBlueprint::SameElementBlueprint(bool expensive)
+SameElementBlueprint::SameElementBlueprint(const vespalib::string &struct_field_name_in, bool expensive)
     : ComplexLeafBlueprint(FieldSpecBaseList()),
       _estimate(),
       _layout(),
-      _terms()
+      _terms(),
+      _struct_field_name(struct_field_name_in)
 {
     if (expensive) {
         set_cost_tier(State::COST_TIER_EXPENSIVE);
@@ -60,13 +61,9 @@ SameElementBlueprint::fetchPostings(bool strict)
     }
 }
 
-SearchIterator::UP
-SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
-                                       bool strict) const
+std::unique_ptr<SameElementSearch>
+SameElementBlueprint::create_same_element_search(bool strict) const
 {
-    (void) tfmda;
-    assert(!tfmda.valid());
-
     fef::MatchDataLayout my_layout = _layout;
     std::vector<fef::TermFieldHandle> extra_handles;
     for (size_t i = 0; i < _terms.size(); ++i) {
@@ -91,6 +88,15 @@ SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArra
         }
     }
     return std::make_unique<SameElementSearch>(std::move(md), std::move(children), childMatch, strict);
+}
+
+SearchIterator::UP
+SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
+                                       bool strict) const
+{
+    (void) tfmda;
+    assert(!tfmda.valid());
+    return create_same_element_search(strict);
 }
 
 void

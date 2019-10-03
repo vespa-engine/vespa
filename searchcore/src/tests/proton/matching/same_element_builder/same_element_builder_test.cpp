@@ -90,7 +90,7 @@ struct BuilderFixture {
     FakeRequestContext req_ctx;
     FakeSearchContext  ctx;
     SameElementBuilder builder;
-    BuilderFixture() : req_ctx(), ctx(), builder(req_ctx, ctx, false) {
+    BuilderFixture() : req_ctx(), ctx(), builder(req_ctx, ctx, "foo", false) {
         ctx.attr().tag("attr");
         ctx.addIdx(0).idx(0).getFake().tag("idx");
     }

@@ -16,7 +16,8 @@ private:
     ISearchContext                                          &_context;
     std::unique_ptr<search::queryeval::SameElementBlueprint> _result;
 public:
-    SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context, bool expensive);
+    SameElementBuilder(const search::queryeval::IRequestContext &requestContext, ISearchContext &context,
+                       const vespalib::string &struct_field_name, bool expensive);
     void add_child(search::query::Node &node);
     search::queryeval::Blueprint::UP build();
 };

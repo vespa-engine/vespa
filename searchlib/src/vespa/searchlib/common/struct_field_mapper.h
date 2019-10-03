@@ -22,6 +22,7 @@ private:
 public:
     StructFieldMapper();
     ~StructFieldMapper();
+    bool empty() const { return _struct_fields.empty(); }
     void add_mapping(const vespalib::string &struct_field_name,
                      const vespalib::string &struct_subfield_name)
     {
