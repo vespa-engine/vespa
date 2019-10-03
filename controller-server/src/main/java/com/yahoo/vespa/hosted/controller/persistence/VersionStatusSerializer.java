@@ -95,7 +95,6 @@ public class VersionStatusSerializer {
         for (NodeVersion nodeVersion : nodeVersions.asMap().values()) {
             var nodeVersionObject = array.addObject();
             nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
-            nodeVersionObject.setString(versionField, nodeVersion.version().toFullString());
             nodeVersionObject.setLong(changedAtField, nodeVersion.changedAt().toEpochMilli());
         }
     }
@@ -123,24 +122,24 @@ public class VersionStatusSerializer {
     }
 
     private VespaVersion vespaVersionFromSlime(Inspector object) {
-        return new VespaVersion(deploymentStatisticsFromSlime(object.field(deploymentStatisticsField)),
+        var deploymentStatistics = deploymentStatisticsFromSlime(object.field(deploymentStatisticsField));
+        return new VespaVersion(deploymentStatistics,
                                 object.field(releaseCommitField).asString(),
                                 Instant.ofEpochMilli(object.field(committedAtField).asLong()),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),
-                                nodeVersionsFromSlime(object),
+                                nodeVersionsFromSlime(object, deploymentStatistics.version()),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
     }
 
-    private NodeVersions nodeVersionsFromSlime(Inspector root) {
+    private NodeVersions nodeVersionsFromSlime(Inspector root, Version version) {
         var nodeVersions = new LinkedHashMap<HostName, NodeVersion>();
         var nodeVersionsRoot = root.field(nodeVersionsField);
         if (nodeVersionsRoot.valid()) {
             nodeVersionsRoot.traverse((ArrayTraverser) (i, entry) -> {
                 var hostname = HostName.from(entry.field(hostnameField).asString());
-                var version = Version.fromString(entry.field(versionField).asString());
                 var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
                 nodeVersions.put(hostname, new NodeVersion(hostname, version, changedAt));
             });
