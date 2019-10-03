@@ -58,6 +58,26 @@ public abstract class Role {
         return new TenantRole(RoleDefinition.tenantOperator, tenant);
     }
 
+    /** Returns a {@link RoleDefinition#reader} for the current system and given tenant. */
+    public static TenantRole reader(TenantName tenant) {
+        return new TenantRole(RoleDefinition.reader, tenant);
+    }
+
+    /** Returns a {@link RoleDefinition#developer} for the current system and given tenant. */
+    public static TenantRole developer(TenantName tenant) {
+        return new TenantRole(RoleDefinition.developer, tenant);
+    }
+
+    /** Returns a {@link RoleDefinition#administrator} for the current system and given tenant. */
+    public static TenantRole administrator(TenantName tenant) {
+        return new TenantRole(RoleDefinition.administrator, tenant);
+    }
+
+    /** Returns a {@link RoleDefinition#headless} for the current system, given tenant, and application */
+    public static ApplicationRole headless(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.headless, tenant, application);
+    }
+
     /** Returns a {@link RoleDefinition#applicationAdmin} for the current system and given tenant and application. */
     public static ApplicationRole applicationAdmin(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(RoleDefinition.applicationAdmin, tenant, application);

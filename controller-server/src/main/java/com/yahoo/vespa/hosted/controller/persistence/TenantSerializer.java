@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 
 import java.net.URI;
 import java.security.Principal;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -91,14 +93,14 @@ public class TenantSerializer {
     }
 
     private void toSlime(CloudTenant tenant, Cursor root) {
-        pemDeveloperKeysToSlime(tenant.pemDeveloperKeys(), root.setArray(pemDeveloperKeysField));
+        developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
         toSlime(tenant.billingInfo(), root.setObject(billingInfoField));
     }
 
-    private void pemDeveloperKeysToSlime(BiMap<String, Principal> keys, Cursor array) {
+    private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
         keys.forEach((key, user) -> {
             Cursor object = array.addObject();
-            object.setString("key", key);
+            object.setString("key", KeyUtils.toPem(key));
             object.setString("user", user.getName());
         });
     }
@@ -139,15 +141,16 @@ public class TenantSerializer {
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
         BillingInfo billingInfo = billingInfoFrom(tenantObject.field(billingInfoField));
-        BiMap<String, Principal> pemDeveloperKeys = pemDeveloperKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
-        return new CloudTenant(name, billingInfo, pemDeveloperKeys);
+        BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
+        return new CloudTenant(name, billingInfo, developerKeys);
     }
 
-    private BiMap<String, Principal> pemDeveloperKeysFromSlime(Inspector array) {
-        ImmutableBiMap.Builder<String, Principal> keys = ImmutableBiMap.builder();
-        array.traverse((ArrayTraverser) (__, keyObject) -> {
-            keys.put(keyObject.field("key").asString(), new SimplePrincipal(keyObject.field("user").asString()));
-        });
+    private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
+        ImmutableBiMap.Builder<PublicKey, Principal> keys = ImmutableBiMap.builder();
+        array.traverse((ArrayTraverser) (__, keyObject) ->
+                keys.put(KeyUtils.fromPemEncodedPublicKey(keyObject.field("key").asString()),
+                         new SimplePrincipal(keyObject.field("user").asString())));
+
         return keys.build();
     }
 

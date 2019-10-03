@@ -29,6 +29,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -49,11 +52,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -111,6 +111,11 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
+    private static final String pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+                                               "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
+                                               "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
+                                               "-----END PUBLIC KEY-----\n";
+    private static final String quotedPemPublicKey = pemPublicKey.replaceAll("\\n", "\\\\n");
 
     private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
             .environment(Environment.prod)
@@ -348,14 +353,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST a pem deploy key
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", POST)
                                       .userIdentity(USER_ID)
-                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Added deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                              "{\"message\":\"Added deploy key " + quotedPemPublicKey + "\"}");
 
         // PATCH in a pem deploy key at deprecated path
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
                                       .userIdentity(USER_ID)
-                                      .data("{\"pemDeployKey\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Added deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+                                      .data("{\"pemDeployKey\":\"" + pemPublicKey + "\"}"),
+                              "{\"message\":\"Added deploy key " + quotedPemPublicKey + "\"}");
 
         // GET an application with a major version override
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
@@ -371,8 +376,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE the pem deploy key
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", DELETE)
                                       .userIdentity(USER_ID)
-                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Removed deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                              "{\"message\":\"Removed deploy key " + quotedPemPublicKey + "\"}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
