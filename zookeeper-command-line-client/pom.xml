@@ -25,6 +25,11 @@
        <artifactId>slf4j-api</artifactId>
        <version>1.7.25</version>
     </dependency>
+    <dependency>
+        <groupId>jline</groupId>
+        <artifactId>jline</artifactId>
+        <version>0.9.94</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
