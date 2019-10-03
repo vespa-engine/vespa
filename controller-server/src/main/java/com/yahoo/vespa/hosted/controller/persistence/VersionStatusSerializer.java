@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -18,7 +19,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,6 +55,7 @@ public class VersionStatusSerializer {
 
     // NodeVersion fields
     private static final String hostnameField = "hostname";
+    private static final String wantedVersionField = "wantedVersion";
     private static final String changedAtField = "changedAt";
 
     // DeploymentStatistics fields
@@ -95,6 +96,7 @@ public class VersionStatusSerializer {
         for (NodeVersion nodeVersion : nodeVersions.asMap().values()) {
             var nodeVersionObject = array.addObject();
             nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
+            nodeVersionObject.setString(wantedVersionField, nodeVersion.wantedVersion().toFullString());
             nodeVersionObject.setLong(changedAtField, nodeVersion.changedAt().toEpochMilli());
         }
     }
@@ -135,13 +137,14 @@ public class VersionStatusSerializer {
     }
 
     private NodeVersions nodeVersionsFromSlime(Inspector root, Version version) {
-        var nodeVersions = new LinkedHashMap<HostName, NodeVersion>();
+        var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
         var nodeVersionsRoot = root.field(nodeVersionsField);
         if (nodeVersionsRoot.valid()) {
             nodeVersionsRoot.traverse((ArrayTraverser) (i, entry) -> {
                 var hostname = HostName.from(entry.field(hostnameField).asString());
+                var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
                 var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
-                nodeVersions.put(hostname, new NodeVersion(hostname, version, changedAt));
+                nodeVersions.put(hostname, new NodeVersion(hostname, version, wantedVersion, changedAt));
             });
         } else {
             // TODO(mpolden): Remove after October 2019
@@ -150,7 +153,7 @@ public class VersionStatusSerializer {
                 nodeVersions.put(hostname, NodeVersion.empty(hostname));
             }
         }
-        return new NodeVersions(nodeVersions);
+        return new NodeVersions(nodeVersions.build());
     }
 
     private Set<HostName> configServersFromSlime(Inspector array) {

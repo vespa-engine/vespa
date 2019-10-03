@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -13,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ * This calculates and reports system-wide metrics based on data from a {@link Controller}.
+ *
  * @author mortent
  * @author mpolden
  */
@@ -104,9 +106,13 @@ public class MetricsReporter extends Maintainer {
     private int nodesFailingSystemUpgrade() {
         if (!controller().versionStatus().isUpgrading()) return 0;
         var nodesFailingUpgrade = 0;
-        var timeoutInstant = clock.instant().minus(NODE_UPGRADE_TIMEOUT);
+        var acceptableInstant = clock.instant().minus(NODE_UPGRADE_TIMEOUT);
         for (var vespaVersion : controller().versionStatus().versions()) {
-            nodesFailingUpgrade += vespaVersion.nodeVersions().changedBefore(timeoutInstant).size();
+            if (vespaVersion.confidence() == VespaVersion.Confidence.broken) continue;
+            for (var nodeVersion : vespaVersion.nodeVersions().asMap().values()) {
+                if (!nodeVersion.changing()) continue;
+                if (nodeVersion.changedAt().isBefore(acceptableInstant)) nodesFailingUpgrade++;
+            }
         }
         return nodesFailingUpgrade;
     }
@@ -166,10 +172,8 @@ public class MetricsReporter extends Maintainer {
     }
 
     private static Map<String, String> dimensions(ApplicationId application) {
-        return ImmutableMap.of(
-                "tenant", application.tenant().value(),
-                "app",application.application().value() + "." + application.instance().value()
-        );
+        return Map.of("tenant", application.tenant().value(),
+                      "app",application.application().value() + "." + application.instance().value());
     }
 
 }

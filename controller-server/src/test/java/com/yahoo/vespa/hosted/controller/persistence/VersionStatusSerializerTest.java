@@ -39,9 +39,11 @@ public class VersionStatusSerializerTest {
                         ApplicationId.from("tenant2", "success2", "default"))
         );
         vespaVersions.add(new VespaVersion(statistics, "dead", Instant.now(), false, false,
-                                           true, nodeVersions(Version.fromString("5.0"), Instant.ofEpochMilli(123), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
+                                           true, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
+                                                              Instant.ofEpochMilli(123), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         vespaVersions.add(new VespaVersion(statistics, "cafe", Instant.now(), true, true,
-                                           false, nodeVersions(Version.fromString("5.0"), Instant.ofEpochMilli(456), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
+                                           false, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
+                                                               Instant.ofEpochMilli(456), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         VersionStatus status = new VersionStatus(vespaVersions);
         VersionStatusSerializer serializer = new VersionStatusSerializer();
         VersionStatus deserialized = serializer.fromSlime(serializer.toSlime(status));
@@ -77,7 +79,8 @@ public class VersionStatusSerializerTest {
         var vespaVersion = new VespaVersion(statistics, "badc0ffee",
                                             Instant.ofEpochMilli(123), true,
                                             true, true,
-                                            nodeVersions(Version.emptyVersion, Instant.EPOCH, "cfg1", "cfg2", "cfg3"),
+                                            nodeVersions(Version.emptyVersion, Version.emptyVersion,
+                                                         Instant.EPOCH, "cfg1", "cfg2", "cfg3"),
                                             VespaVersion.Confidence.normal);
 
         VespaVersion deserialized = deserializedStatus.versions().get(0);
@@ -91,12 +94,12 @@ public class VersionStatusSerializerTest {
         assertEquals(vespaVersion.confidence(), deserialized.confidence());
     }
 
-    private static NodeVersions nodeVersions(Version version, Instant changedAt, String... hostnames) {
-        var nodeVersions = NodeVersions.EMPTY;
+    private static NodeVersions nodeVersions(Version version, Version wantedVersion, Instant changedAt, String... hostnames) {
+        var nodeVersions = new ArrayList<NodeVersion>();
         for (var hostname : hostnames) {
-            nodeVersions = nodeVersions.with(new NodeVersion(HostName.from(hostname), version, changedAt));
+            nodeVersions.add(new NodeVersion(HostName.from(hostname), version, wantedVersion, changedAt));
         }
-        return nodeVersions;
+        return NodeVersions.EMPTY.with(nodeVersions);
     }
 
 }

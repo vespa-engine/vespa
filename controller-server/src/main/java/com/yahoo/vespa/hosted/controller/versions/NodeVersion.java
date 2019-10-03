@@ -17,12 +17,14 @@ import java.util.Objects;
 public class NodeVersion {
 
     private final HostName hostname;
-    private final Version version;
+    private final Version currentVersion;
+    private final Version wantedVersion;
     private final Instant changedAt;
 
-    public NodeVersion(HostName hostname, Version version, Instant changedAt) {
+    public NodeVersion(HostName hostname, Version currentVersion, Version wantedVersion, Instant changedAt) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
-        this.version = Objects.requireNonNull(version, "version must be non-null");
+        this.currentVersion = Objects.requireNonNull(currentVersion, "version must be non-null");
+        this.wantedVersion = Objects.requireNonNull(wantedVersion, "wantedVersion must be non-null");
         this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
     }
 
@@ -32,8 +34,18 @@ public class NodeVersion {
     }
 
     /** Current version of this */
-    public Version version() {
-        return version;
+    public Version currentVersion() {
+        return currentVersion;
+    }
+
+    /** Wanted version of this */
+    public Version wantedVersion() {
+        return wantedVersion;
+    }
+
+    /** Returns whether this is changing (upgrading or downgrading) */
+    public boolean changing() {
+        return !currentVersion.equals(wantedVersion);
     }
 
     /** The most recent time the version of this changed */
@@ -41,9 +53,21 @@ public class NodeVersion {
         return changedAt;
     }
 
+    /** Returns a copy of this with current version set to given version */
+    public NodeVersion withCurrentVersion(Version version, Instant changedAt) {
+        if (currentVersion.equals(version)) return this;
+        return new NodeVersion(hostname, version, wantedVersion, changedAt);
+    }
+
+    /** Returns a copy of this with wanted version set to given version */
+    public NodeVersion withWantedVersion(Version version) {
+        if (wantedVersion.equals(version)) return this;
+        return new NodeVersion(hostname, currentVersion, version, changedAt);
+    }
+
     @Override
     public String toString() {
-        return hostname + " on " + version + " [changed at " + changedAt + "]";
+        return hostname + ": " + currentVersion + " -> " + wantedVersion + " [changedAt=" + changedAt + "]";
     }
 
     @Override
@@ -52,17 +76,18 @@ public class NodeVersion {
         if (o == null || getClass() != o.getClass()) return false;
         NodeVersion that = (NodeVersion) o;
         return hostname.equals(that.hostname) &&
-               version.equals(that.version) &&
+               currentVersion.equals(that.currentVersion) &&
+               wantedVersion.equals(that.wantedVersion) &&
                changedAt.equals(that.changedAt);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, version, changedAt);
+        return Objects.hash(hostname, currentVersion, wantedVersion, changedAt);
     }
 
     public static NodeVersion empty(HostName hostname) {
-        return new NodeVersion(hostname, Version.emptyVersion, Instant.EPOCH);
+        return new NodeVersion(hostname, Version.emptyVersion, Version.emptyVersion, Instant.EPOCH);
     }
 
 }

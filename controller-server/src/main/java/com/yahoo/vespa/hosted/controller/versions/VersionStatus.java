@@ -21,7 +21,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -156,7 +155,7 @@ public class VersionStatus {
         var nodeVersions = controller.versionStatus().systemVersion()
                                      .map(VespaVersion::nodeVersions)
                                      .orElse(NodeVersions.EMPTY);
-        var hostnames = new HashSet<HostName>();
+        var newNodeVersions = new ArrayList<NodeVersion>();
         for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
             for (var application : SystemApplication.all()) {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
@@ -173,12 +172,11 @@ public class VersionStatus {
                 for (var node : nodes) {
                     // Only use current node version if config has converged
                     Version version = configConverged ? node.currentVersion() : controller.systemVersion();
-                    nodeVersions = nodeVersions.with(new NodeVersion(node.hostname(), version, now));
-                    hostnames.add(node.hostname());
+                    newNodeVersions.add(new NodeVersion(node.hostname(), version, node.wantedVersion(), now));
                 }
             }
         }
-        return nodeVersions.retainAll(hostnames);
+        return nodeVersions.with(newNodeVersions);
     }
 
     private static ListMultimap<ControllerVersion, HostName> findControllerVersions(Controller controller) {

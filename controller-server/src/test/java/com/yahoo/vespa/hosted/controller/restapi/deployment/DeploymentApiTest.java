@@ -76,8 +76,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
                                            version.isReleased(),
-                                           NodeVersions.EMPTY.with(new NodeVersion(HostName.from("config1.test"), version.versionNumber(), Instant.EPOCH))
-                                                             .with(new NodeVersion(HostName.from("config2.test"), version.versionNumber(), Instant.EPOCH)),
+                                           NodeVersions.EMPTY.with(List.of(new NodeVersion(HostName.from("config1.test"), version.versionNumber(), version.versionNumber(), Instant.EPOCH),
+                                                                           new NodeVersion(HostName.from("config2.test"), version.versionNumber(), version.versionNumber(), Instant.EPOCH))),
                                            VespaVersion.confidenceFrom(version.statistics(), controller)
                 );
             }

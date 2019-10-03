@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
@@ -219,6 +221,11 @@ public class MetricsReporterTest {
     public void test_nodes_failing_system_upgrade() {
         var tester = new DeploymentTester();
         var reporter = createReporter(tester.controller());
+        var zone1 = ZoneApiMock.fromId("prod.eu-west-1");
+        tester.controllerTester().zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone1));
+        var systemUpgrader = new SystemUpgrader(tester.controller(), Duration.ofDays(1),
+                                                new JobControl(tester.controllerTester().curator()));
+        tester.configServer().bootstrap(List.of(zone1.getId()), SystemApplication.configServer);
 
         // System on initial version
         var version0 = Version.fromString("7.0");
@@ -226,30 +233,33 @@ public class MetricsReporterTest {
         reporter.maintain();
         assertEquals(0, getNodesFailingUpgrade());
 
-        // System starts upgrading to next version
-        var version1 = Version.fromString("7.1");
-        tester.upgradeController(version1);
-        reporter.maintain();
-        assertEquals(0, getNodesFailingUpgrade());
+        for (var version : List.of(Version.fromString("7.1"), Version.fromString("7.2"))) {
+            // System starts upgrading to next version
+            tester.upgradeController(version);
+            reporter.maintain();
+            assertEquals(0, getNodesFailingUpgrade());
+            systemUpgrader.maintain();
 
-        // Some time passes, but only a subset of nodes upgrade within timeout
-        tester.clock().advance(Duration.ofMinutes(30));
-        tester.upgradeSystemApplications(version1, List.of(SystemApplication.configServerHost));
-        reporter.maintain();
-        assertEquals(0, getNodesFailingUpgrade());
-        tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
-        reporter.maintain();
-        assertEquals(48, getNodesFailingUpgrade());
+            // 30 minutes pass and nothing happens
+            tester.clock().advance(Duration.ofMinutes(30));
+            tester.computeVersionStatus();
+            reporter.maintain();
+            assertEquals(0, getNodesFailingUpgrade());
 
-        // Some nodes are repaired and upgrade
-        tester.upgradeSystemApplications(version1, List.of(SystemApplication.configServer));
-        reporter.maintain();
-        assertEquals(36, getNodesFailingUpgrade());
+            // 1/3 nodes upgrade within timeout
+            tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version, 1);
+            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            tester.computeVersionStatus();
+            reporter.maintain();
+            assertEquals(2, getNodesFailingUpgrade());
 
-        // All nodes are repaired and system upgrades
-        tester.upgradeSystem(version1);
-        reporter.maintain();
-        assertEquals(0, getNodesFailingUpgrade());
+            // 3/3 nodes upgrade
+            tester.configServer().setVersion(SystemApplication.configServer.id(), zone1.getId(), version);
+            tester.computeVersionStatus();
+            reporter.maintain();
+            assertEquals(0, getNodesFailingUpgrade());
+            assertEquals(version, tester.controller().systemVersion());
+        }
     }
 
     private Duration getAverageDeploymentDuration(ApplicationId id) {
