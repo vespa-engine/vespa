@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -68,6 +69,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final ServiceIdentityProvider hostIdentityProvider;
     private final IdentityDocumentClient identityDocumentClient;
     private final CsrGenerator csrGenerator;
+    private final boolean useInternalZts;
 
     // Used as an optimization to ensure ZTS is not DDoS'ed on continuously failing refresh attempts
     private final Map<ContainerName, Instant> lastRefreshAttempt = new ConcurrentHashMap<>();
@@ -76,7 +78,8 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        Path trustStorePath,
                                        ConfigServerInfo configServerInfo,
                                        String certificateDnsSuffix,
-                                       ServiceIdentityProvider hostIdentityProvider) {
+                                       ServiceIdentityProvider hostIdentityProvider,
+                                       boolean useInternalZts) {
         this.ztsEndpoint = ztsEndpoint;
         this.trustStorePath = trustStorePath;
         this.configserverIdentity = configServerInfo.getConfigServerIdentity();
@@ -87,6 +90,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                 hostIdentityProvider,
                 new AthenzIdentityVerifier(singleton(configserverIdentity)));
         this.clock = Clock.systemUTC();
+        this.useInternalZts = useInternalZts;
     }
 
     public boolean converge(NodeAgentContext context) {
@@ -157,7 +161,12 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         SignedIdentityDocument signedIdentityDocument = identityDocumentClient.getNodeIdentityDocument(context.hostname().value());
         Pkcs10Csr csr = csrGenerator.generateInstanceCsr(
                 context.identity(), signedIdentityDocument.providerUniqueId(), signedIdentityDocument.ipAddresses(), keyPair);
-        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider)) {
+
+        // Set up a hostname verified for zts if this is configured to use the config server (internal zts) apis
+        HostnameVerifier ztsHostNameVerifier = useInternalZts
+                ? new AthenzIdentityVerifier(singleton(configserverIdentity))
+                : null;
+        try (ZtsClient ztsClient = new DefaultZtsClient(ztsEndpoint, hostIdentityProvider, ztsHostNameVerifier)) {
             InstanceIdentity instanceIdentity =
                     ztsClient.registerInstance(
                             configserverIdentity,

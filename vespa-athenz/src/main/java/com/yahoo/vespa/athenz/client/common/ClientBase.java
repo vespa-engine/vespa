@@ -36,9 +36,10 @@ public abstract class ClientBase implements AutoCloseable {
 
     protected ClientBase(String userAgent,
                          Supplier<SSLContext> sslContextSupplier,
-                         ClientExceptionFactory exceptionFactory) {
+                         ClientExceptionFactory exceptionFactory,
+                         HostnameVerifier hostnameVerifier) {
         this.exceptionFactory = exceptionFactory;
-        this.client = createHttpClient(userAgent, sslContextSupplier);
+        this.client = createHttpClient(userAgent, sslContextSupplier, hostnameVerifier);
     }
 
     protected  <T> T execute(HttpUriRequest request, ResponseHandler<T> responseHandler) {
@@ -74,11 +75,11 @@ public abstract class ClientBase implements AutoCloseable {
         return statusCode>=200 && statusCode<300;
     }
 
-    private static CloseableHttpClient createHttpClient(String userAgent, Supplier<SSLContext> sslContextSupplier) {
+    private static CloseableHttpClient createHttpClient(String userAgent, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier) {
         return HttpClientBuilder.create()
                 .setRetryHandler(new DefaultHttpRequestRetryHandler(3, /*requestSentRetryEnabled*/true))
                 .setUserAgent(userAgent)
-                .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), (HostnameVerifier)null))
+                .setSSLSocketFactory(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(sslContextSupplier), hostnameVerifier))
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
                                                  .setConnectionRequestTimeout((int)Duration.ofSeconds(10).toMillis())
