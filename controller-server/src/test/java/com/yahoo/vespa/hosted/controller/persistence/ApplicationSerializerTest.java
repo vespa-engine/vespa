@@ -193,10 +193,7 @@ public class ApplicationSerializerTest {
 
         // Test cluster utilization
         assertEquals(0, serialized.require(id1.instance()).deployments().get(zone1).clusterUtils().size());
-        assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().size());
-        assertEquals(0.4, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id2")).getCpu(), 0.01);
-        assertEquals(0.2, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id1")).getCpu(), 0.01);
-        assertEquals(0.2, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id1")).getMemory(), 0.01);
+        assertEquals(0, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().size());
 
         // Test cluster info
         assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());
