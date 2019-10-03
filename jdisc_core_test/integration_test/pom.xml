@@ -301,7 +301,6 @@
                         </java.util.logging.config.file>
                         <jdisc.bundle.path>${project.build.directory}/dependency</jdisc.bundle.path>
                         <jdisc.cache.path>${project.build.directory}/bundlecache</jdisc.cache.path>
-                        <jdisc.config.file>src/test/resources/config.properties</jdisc.config.file>
                         <jdisc.logger.level>ALL</jdisc.logger.level>
                     </systemPropertyVariables>
                 </configuration>
