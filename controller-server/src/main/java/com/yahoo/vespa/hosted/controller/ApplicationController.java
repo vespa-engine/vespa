@@ -743,7 +743,7 @@ public class ApplicationController {
      */
     public void deleteInstance(ApplicationId instanceId) {
         if (getInstance(instanceId).isEmpty())
-            throw new NotExistsException("Could not delete application '" + instanceId + "': Application not found");
+            throw new NotExistsException("Could not delete instance '" + instanceId + "': Instance not found");
 
         lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
             if ( ! application.get().require(instanceId.instance()).deployments().isEmpty())
