@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api.xml;
 
+import com.yahoo.config.application.api.DeploymentInstancesSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
@@ -14,6 +15,7 @@ import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
@@ -38,27 +40,32 @@ import java.util.stream.Collectors;
  */
 public class DeploymentSpecXmlReader {
 
+    private static final String instanceTag = "instance";
     private static final String majorVersionTag = "major-version";
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
+    private static final String regionTag = "region";
+    private static final String delayTag = "delay";
+    private static final String parallelTag = "parallel";
     private static final String endpointsTag = "endpoints";
     private static final String endpointTag = "endpoint";
 
+    private static final String athenzServiceAttribute = "athenz-service";
+    private static final String testerFlavorAttribute = "tester-flavor";
+
     private final boolean validate;
 
-    /**
-     * Creates a validating reader
-     */
+    /** Creates a validating reader */
     public DeploymentSpecXmlReader() {
         this(true);
     }
 
     /**
-     * Creates a reader
+     * Creates a deployment spec reader
      *
-     * @param validate true to validate the input, false to accept any input which can be unabiguously parsed
+     * @param validate true to validate the input, false to accept any input which can be unambiguously parsed
      */
     public DeploymentSpecXmlReader(boolean validate) {
         this.validate = validate;
@@ -73,63 +80,102 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    /**
-     * Reads a deployment spec from XML
-     */
+    /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
-        List<Step> steps = new ArrayList<>();
-        Optional<String> globalServiceId = Optional.empty();
         Element root = XML.getDocument(xmlForm).getDocumentElement();
-        if (validate)
-            validateTagOrder(root);
-        for (Element environmentTag : XML.getChildren(root)) {
-            if (!isEnvironmentName(environmentTag.getTagName())) continue;
 
-            Environment environment = Environment.from(environmentTag.getTagName());
-            Optional<AthenzService> athenzService = stringAttribute("athenz-service", environmentTag).map(AthenzService::from);
-            Optional<String> testerFlavor = stringAttribute("tester-flavor", environmentTag);
-
-            if (environment == Environment.prod) {
-                for (Element stepTag : XML.getChildren(environmentTag)) {
-                    if (stepTag.getTagName().equals("delay")) {
-                        steps.add(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
-                                                               longAttribute("minutes", stepTag) * 60 +
-                                                               longAttribute("seconds", stepTag))));
-                    }
-                    else if (stepTag.getTagName().equals("parallel")) {
-                        List<DeclaredZone> zones = new ArrayList<>();
-                        for (Element regionTag : XML.getChildren(stepTag)) {
-                            zones.add(readDeclaredZone(environment, athenzService, testerFlavor, regionTag));
-                        }
-                        steps.add(new ParallelZones(zones));
-                    }
-                    else { // a region: deploy step
-                        steps.add(readDeclaredZone(environment, athenzService, testerFlavor, stepTag));
-                    }
-                }
-            }
-            else {
-                steps.add(new DeclaredZone(environment, Optional.empty(), false, athenzService, testerFlavor));
-            }
-
-            if (environment == Environment.prod)
-                globalServiceId = readGlobalServiceId(environmentTag);
-            else if (readGlobalServiceId(environmentTag).isPresent())
-                throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
-
+        List<Step> steps = new ArrayList<>();
+        if ( ! hasChildTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
+            steps.add(readInstanceContent("default", root));
         }
-        Optional<AthenzDomain> athenzDomain = stringAttribute("athenz-domain", root).map(AthenzDomain::from);
-        Optional<AthenzService> athenzService = stringAttribute("athenz-service", root).map(AthenzService::from);
-        return new DeploymentSpec(globalServiceId,
-                                  readUpgradePolicy(root),
+        else {
+            if (hasChildTag(prodTag, root))
+                throw new IllegalArgumentException("A deployment spec cannot have both a <prod> tag and an " +
+                                                   "<instance> tag under the root: " +
+                                                   "Wrap the prod tags inside the appropriate instance");
+
+            for (Element topLevelTag : XML.getChildren(root)) {
+                if (topLevelTag.getTagName().equals(instanceTag))
+                    steps.add(readInstanceContent(topLevelTag.getAttribute("id"), topLevelTag));
+                else
+                    steps.addAll(readNonInstanceSteps(topLevelTag, new MutableOptional<>(), topLevelTag)); // (No global service id here)
+            }
+        }
+
+        return new DeploymentSpec(steps,
                                   optionalIntegerAttribute(majorVersionTag, root),
-                                  readChangeBlockers(root),
-                                  steps,
-                                  xmlForm,
-                                  athenzDomain,
-                                  athenzService,
-                                  readNotifications(root),
-                                  readEndpoints(root));
+                                  xmlForm);
+    }
+
+    /**
+     * Reads the content of an (implicit or explicit) instance tag producing an instances step
+     *
+     * @param instanceIdString a comma-separated list of the ids of the instance id(s) this is for
+     * @param instanceElement the element having the content of this instance
+     */
+    private DeploymentInstancesSpec readInstanceContent(String instanceIdString, Element instanceElement) {
+        if (validate)
+            validateTagOrder(instanceElement);
+
+        List<InstanceName> instanceNames = Arrays.stream(instanceIdString.split("'"))
+                                                 .map(InstanceName::from)
+                                                 .collect(Collectors.toList());
+        MutableOptional<String> globalServiceId = new MutableOptional<>(); // Deprecated: Set of prod, but belongs to instance
+        Optional<AthenzDomain> athenzDomain = stringAttribute("athenz-domain", instanceElement).map(AthenzDomain::from);
+        Optional<AthenzService> athenzService = stringAttribute("athenz-service", instanceElement).map(AthenzService::from);
+
+        List<Step> steps = new ArrayList<>();
+        for (Element instanceChild : XML.getChildren(instanceElement))
+            steps.addAll(readNonInstanceSteps(instanceChild, globalServiceId, instanceChild));
+
+        return new DeploymentInstancesSpec(instanceNames,
+                                          steps,
+                                          readUpgradePolicy(instanceElement),
+                                          readChangeBlockers(instanceElement),
+                                          globalServiceId.asOptional(),
+                                          athenzDomain,
+                                          athenzService,
+                                          readNotifications(instanceElement),
+                                          readEndpoints(instanceElement));
+    }
+
+    // Consume the give tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
+    private List<Step> readNonInstanceSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
+        Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, stepTag)
+                                                        .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
+                                                        .map(AthenzService::from);
+        Optional<String> testerFlavor = stringAttribute(testerFlavorAttribute, stepTag)
+                                                .or(() -> stringAttribute(testerFlavorAttribute, parentTag));
+
+        if (prodTag.equals(stepTag.getTagName()))
+            globalServiceId.set(readGlobalServiceId(stepTag));
+        else if (readGlobalServiceId(stepTag).isPresent())
+            throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
+
+        switch (stepTag.getTagName()) {
+            case testTag: case stagingTag:
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor));
+            case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
+                return XML.getChildren(stepTag).stream()
+                                               .flatMap(child -> readNonInstanceSteps(child, globalServiceId, stepTag).stream())
+                                               .collect(Collectors.toList());
+            case delayTag:
+                return List.of(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
+                                                            longAttribute("minutes", stepTag) * 60 +
+                                                            longAttribute("seconds", stepTag))));
+            case parallelTag: // regions and instances may be nested within
+                return List.of(new ParallelZones(XML.getChildren(stepTag).stream()
+                                                                         .flatMap(child -> readNonInstanceSteps(child, globalServiceId, stepTag).stream())
+                                                                         .collect(Collectors.toList())));
+            case regionTag:
+                return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
+            default:
+                return List.of();
+        }
+    }
+
+    private boolean hasChildTag(String childTagName, Element parent) {
+        return XML.getChildren(parent).stream().anyMatch(child -> child.getTagName().equals(childTagName));
     }
 
     private Notifications readNotifications(Element root) {
@@ -159,15 +205,15 @@ public class DeploymentSpecXmlReader {
     }
 
     private List<Endpoint> readEndpoints(Element root) {
-        final var endpointsElement = XML.getChild(root, endpointsTag);
+        var endpointsElement = XML.getChild(root, endpointsTag);
         if (endpointsElement == null) { return Collections.emptyList(); }
 
-        final var endpoints = new LinkedHashMap<String, Endpoint>();
+        var endpoints = new LinkedHashMap<String, Endpoint>();
 
         for (var endpointElement : XML.getChildren(endpointsElement, endpointTag)) {
-            final Optional<String> rotationId = stringAttribute("id", endpointElement);
-            final Optional<String> containerId = stringAttribute("container-id", endpointElement);
-            final var regions = new HashSet<String>();
+            Optional<String> rotationId = stringAttribute("id", endpointElement);
+            Optional<String> containerId = stringAttribute("container-id", endpointElement);
+            var regions = new HashSet<String>();
 
             if (containerId.isEmpty()) {
                 throw new IllegalArgumentException("Missing 'container-id' from 'endpoint' tag.");
@@ -255,10 +301,6 @@ public class DeploymentSpecXmlReader {
         return Optional.ofNullable(value).filter(s -> !s.equals(""));
     }
 
-    private boolean isEnvironmentName(String tagName) {
-        return tagName.equals(testTag) || tagName.equals(stagingTag) || tagName.equals(prodTag);
-    }
-
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
@@ -322,6 +364,16 @@ public class DeploymentSpecXmlReader {
         if ("false".equals(activeValue)) return false;
         throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
                                            "to control whether the region should receive production traffic");
+    }
+
+    private static class MutableOptional<T> {
+
+        private Optional<T> value = Optional.empty();
+
+        public void set(Optional<T> value) { this.value = value; }
+
+        public Optional<T> asOptional() { return value; }
+
     }
 
 }

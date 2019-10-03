@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class DeploymentInstancesSpec extends DeploymentSpec.Step {
 
     /** The instances deployed in this step */
-    private final List<InstanceName> names;
+    private final List<InstanceName> ids;
 
     private final List<DeploymentSpec.Step> steps;
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
@@ -33,30 +33,33 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
     private final Optional<String> globalServiceId;
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<AthenzService> athenzService;
+    private final Notifications notifications;
     private final List<Endpoint> endpoints;
 
-    public DeploymentInstancesSpec(List<InstanceName> names,
+    public DeploymentInstancesSpec(List<InstanceName> ids,
                                    List<DeploymentSpec.Step> steps,
                                    DeploymentSpec.UpgradePolicy upgradePolicy,
                                    List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                    Optional<String> globalServiceId,
                                    Optional<AthenzDomain> athenzDomain,
                                    Optional<AthenzService> athenzService,
+                                   Notifications notifications,
                                    List<Endpoint> endpoints) {
-        this.names = List.copyOf(names);
+        this.ids = List.copyOf(ids);
         this.steps = List.copyOf(completeSteps(new ArrayList<>(steps)));
         this.upgradePolicy = upgradePolicy;
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
+        this.notifications = notifications;
         this.endpoints = List.copyOf(validateEndpoints(endpoints, this.steps));
         validateZones(this.steps);
         validateEndpoints(this.steps, globalServiceId, this.endpoints);
         validateAthenz();
     }
 
-    public List<InstanceName> names() { return names; }
+    public List<InstanceName> names() { return ids; }
 
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<DeploymentSpec.Step> completeSteps(List<DeploymentSpec.Step> steps) {
@@ -222,9 +225,6 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
         return false;
     }
 
-    /** Returns the rotations configuration of these instances */
-    public List<Endpoint> endpoints() { return endpoints; }
-
     /** Returns the athenz domain if configured */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
@@ -237,6 +237,13 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
                                              .orElse(this.athenzService.orElse(null));
         return Optional.ofNullable(athenzService);
     }
+
+    /** Returns the notification configuration of these instances */
+    public Notifications notifications() { return notifications; }
+
+    /** Returns the rotations configuration of these instances */
+    public List<Endpoint> endpoints() { return endpoints; }
+
     /** Returns whether this instances deployment specifies the given zone, either implicitly or explicitly */
     public boolean includes(Environment environment, Optional<RegionName> region) {
         for (DeploymentSpec.Step step : steps)
@@ -254,12 +261,19 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
                changeBlockers.equals(other.changeBlockers) &&
                steps.equals(other.steps) &&
                athenzDomain.equals(other.athenzDomain) &&
-               athenzService.equals(other.athenzService);
+               athenzService.equals(other.athenzService) &&
+               notifications.equals(other.notifications) &&
+               endpoints.equals(other.endpoints);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, changeBlockers, steps, athenzDomain, athenzService);
+        return Objects.hash(globalServiceId, upgradePolicy, changeBlockers, steps, athenzDomain, athenzService, notifications, endpoints);
+    }
+
+    @Override
+    public String toString() {
+        return "instance" + ( ids.size() < 1 ? " " : "s " ) + ids;
     }
 
 }

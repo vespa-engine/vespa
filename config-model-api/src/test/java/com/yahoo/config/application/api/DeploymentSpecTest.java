@@ -32,9 +32,9 @@ public class DeploymentSpecTest {
     @Test
     public void testSpec() {
         String specXml = "<deployment version='1.0'>" +
-                         "   <instances name='default'>" +
+                         "   <instance id='default'>" +
                          "      <test/>" +
-                         "   </instances>" +
+                         "   </instance>" +
                          "</deployment>";
 
         StringReader r = new StringReader(specXml);
@@ -53,9 +53,9 @@ public class DeploymentSpecTest {
     @Test
     public void testSpecPinningMajorVersion() {
         String specXml = "<deployment version='1.0' major-version='6'>" +
-                         "   <instances name='default'>" +
+                         "   <instance id='default'>" +
                          "      <test/>" +
-                         "   </instances>" +
+                         "   </instance>" +
                          "</deployment>";
 
         StringReader r = new StringReader(specXml);
@@ -70,9 +70,9 @@ public class DeploymentSpecTest {
     public void stagingSpec() {
         StringReader r = new StringReader(
         "<deployment version='1.0'>" +
-        "   <instances name='default'>" +
+        "   <instance id='default'>" +
         "      <staging/>" +
-        "   </instances>" +
+        "   </instance>" +
         "</deployment>"
         );
 
@@ -91,12 +91,12 @@ public class DeploymentSpecTest {
     public void minimalProductionSpec() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <prod>" +
                 "         <region active='false'>us-east1</region>" +
                 "         <region active='true'>us-west1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
 
@@ -128,7 +128,7 @@ public class DeploymentSpecTest {
     public void maximalProductionSpec() {
         StringReader r = new StringReader(
         "<deployment version='1.0'>" +
-        "   <instances name='default'>" +
+        "   <instance id='default'>" +
         "      <test/>" +
         "      <staging/>" +
         "      <prod>" +
@@ -136,7 +136,7 @@ public class DeploymentSpecTest {
         "         <delay hours='3' minutes='30'/>" +
         "         <region active='true'>us-west1</region>" +
         "      </prod>" +
-        "   </instances>" +
+        "   </instance>" +
         "</deployment>"
         );
 
@@ -170,12 +170,12 @@ public class DeploymentSpecTest {
     public void productionSpecWithGlobalServiceId() {
         StringReader r = new StringReader(
             "<deployment version='1.0'>" +
-            "   <instances name='default'>" +
+            "   <instance id='default'>" +
             "      <prod global-service-id='query'>" +
             "         <region active='true'>us-east-1</region>" +
             "         <region active='true'>us-west-1</region>" +
             "      </prod>" +
-            "   </instances>" +
+            "   </instance>" +
             "</deployment>"
         );
 
@@ -187,9 +187,9 @@ public class DeploymentSpecTest {
     public void globalServiceIdInTest() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <test global-service-id='query' />" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -199,9 +199,9 @@ public class DeploymentSpecTest {
     public void globalServiceIdInStaging() {
         StringReader r = new StringReader(
                 "<deployment version='1.0'>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <staging global-service-id='query' />" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -211,7 +211,7 @@ public class DeploymentSpecTest {
     public void productionSpecWithGlobalServiceIdBeforeStaging() {
         StringReader r = new StringReader(
             "<deployment>" +
-            "   <instances name='default'>" +
+            "   <instance id='default'>" +
             "      <test/>" +
             "      <prod global-service-id='qrs'>" +
             "         <region active='true'>us-west-1</region>" +
@@ -219,7 +219,7 @@ public class DeploymentSpecTest {
             "         <region active='true'>us-east-3</region>" +
             "      </prod>" +
             "      <staging/>" +
-            "   </instances>" +
+            "   </instance>" +
             "</deployment>"
         );
 
@@ -231,14 +231,14 @@ public class DeploymentSpecTest {
     public void productionSpecWithUpgradePolicy() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <upgrade policy='canary'/>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "         <region active='true'>us-central-1</region>" +
                 "         <region active='true'>us-east-3</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
 
@@ -251,7 +251,7 @@ public class DeploymentSpecTest {
         try {
             StringReader r = new StringReader(
                     "<deployment>" +
-                    "   <instances name='default'>" +
+                    "   <instance id='default'>" +
                     "      <upgrade policy='canary'/>" +
                     "      <prod>" +
                     "         <region active='true'>us-west-1</region>" +
@@ -260,7 +260,7 @@ public class DeploymentSpecTest {
                     "         <delay minutes='59' seconds='61'/>" +
                     "         <region active='true'>us-east-3</region>" +
                     "      </prod>" +
-                    "   </instances>" +
+                    "   </instance>" +
                     "</deployment>"
             );
             DeploymentSpec.fromXml(r);
@@ -284,7 +284,7 @@ public class DeploymentSpecTest {
     public void productionSpecWithParallelDeployments() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "         <parallel>" +
@@ -292,7 +292,7 @@ public class DeploymentSpecTest {
                 "            <region active='true'>us-east-3</region>" +
                 "         </parallel>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -306,7 +306,7 @@ public class DeploymentSpecTest {
     public void productionSpecWithDuplicateRegions() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "         <parallel>" +
@@ -315,7 +315,7 @@ public class DeploymentSpecTest {
                 "             <region active='true'>us-east-3</region>" +
                 "         </parallel>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         try {
@@ -330,13 +330,13 @@ public class DeploymentSpecTest {
     public void deploymentSpecWithIllegallyOrderedDeploymentSpec1() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
                 "      <block-change days='mon,tue' hours='15-16'/>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -346,13 +346,13 @@ public class DeploymentSpecTest {
     public void deploymentSpecWithIllegallyOrderedDeploymentSpec2() {
         StringReader r = new StringReader(
                 "<deployment>\n" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
                 "      <test/>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -362,13 +362,13 @@ public class DeploymentSpecTest {
     public void deploymentSpecWithChangeBlocker() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <block-change revision='false' days='mon,tue' hours='15-16'/>" +
                 "      <block-change days='sat' hours='10' time-zone='CET'/>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -395,11 +395,11 @@ public class DeploymentSpecTest {
     public void athenz_config_is_disallowed_on_deployment_if_instances() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service''>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -408,12 +408,12 @@ public class DeploymentSpecTest {
     @Test
     public void athenz_config_is_read_from_instance() {
         StringReader r = new StringReader(
-                "<deployment'>" +
-                "   <instances name='default' athenz-domain='domain' athenz-service='service'>" +
+                "<deployment>" +
+                "   <instance id='default' athenz-domain='domain' athenz-service='service'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -425,12 +425,12 @@ public class DeploymentSpecTest {
     public void athenz_service_is_overridden_from_environment() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
-                "   <instances name='default' athenz-domain='domain' athenz-service='service'>" +
+                "   <instance id='default' athenz-domain='domain' athenz-service='service'>" +
                 "      <test/>" +
                 "      <prod athenz-service='prod-service'>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -442,11 +442,11 @@ public class DeploymentSpecTest {
     public void it_fails_when_athenz_service_is_not_defined() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default' athenz-domain='domain'>" +
+                "   <instance id='default' athenz-domain='domain'>" +
                 "      <prod>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -456,11 +456,11 @@ public class DeploymentSpecTest {
     public void it_fails_when_athenz_service_is_configured_but_not_athenz_domain() {
         StringReader r = new StringReader(
                 "<deployment>" +
-                "   <instances name='default'>" +
+                "   <instance id='default'>" +
                 "      <prod athenz-service='service'>" +
                 "         <region active='true'>us-west-1</region>" +
                 "      </prod>" +
-                "   </instances>" +
+                "   </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
@@ -470,16 +470,16 @@ public class DeploymentSpecTest {
     public void noNotifications() {
         assertEquals(Notifications.none(),
                      DeploymentSpec.fromXml("<deployment>" +
-                                            "   <instances name='default'/>" +
+                                            "   <instance id='default'/>" +
                                             "</deployment>").notifications());
     }
 
     @Test
     public void emptyNotifications() {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>" +
-                                                     "   <instances name='default'>" +
+                                                     "   <instance id='default'>" +
                                                      "      <notifications/>" +
-                                                     "   </instances>" +
+                                                     "   </instance>" +
                                                      "</deployment>");
         assertEquals(Notifications.none(),
                      spec.notifications());
@@ -488,13 +488,13 @@ public class DeploymentSpecTest {
     @Test
     public void someNotifications() {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
-                                                     "   <instances name='default'>" +
+                                                     "   <instance id='default'>" +
                                                      "      <notifications when=\"failing\">" +
                                                      "         <email role=\"author\"/>" +
                                                      "         <email address=\"john@dev\" when=\"failing-commit\"/>" +
                                                      "         <email address=\"jane@dev\"/>" +
                                                      "      </notifications>" +
-                                                     "   </instances>" +
+                                                     "   </instance>" +
                                                      "</deployment>");
         assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failing));
         assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failingCommit));
@@ -505,12 +505,12 @@ public class DeploymentSpecTest {
     @Test
     public void customTesterFlavor() {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>" +
-                                                     "   <instances name='default'>" +
+                                                     "   <instance id='default'>" +
                                                      "      <test tester-flavor=\"d-1-4-20\" />" +
                                                      "      <prod tester-flavor=\"d-2-8-50\">" +
                                                      "         <region active=\"false\">us-north-7</region>" +
                                                      "      </prod>" +
-                                                     "   </instances>" +
+                                                     "   </instance>" +
                                                      "</deployment>");
         assertEquals(Optional.of("d-1-4-20"), spec.steps().get(0).zones().get(0).testerFlavor());
         assertEquals(Optional.empty(), spec.steps().get(1).zones().get(0).testerFlavor());
@@ -521,16 +521,16 @@ public class DeploymentSpecTest {
     public void noEndpoints() {
         assertEquals(Collections.emptyList(),
                      DeploymentSpec.fromXml("<deployment>" +
-                                            "   <instances name='default'/>" +
+                                            "   <instance id='default'/>" +
                                             "</deployment>").endpoints());
     }
 
     @Test
     public void emptyEndpoints() {
         var spec = DeploymentSpec.fromXml("<deployment>" +
-                                          "   <instances name='default'>" +
+                                          "   <instance id='default'>" +
                                           "      <endpoints/>" +
-                                          "   </instances>" +
+                                          "   </instance>" +
                                           "</deployment>");
         assertEquals(Collections.emptyList(), spec.endpoints());
     }
@@ -539,7 +539,7 @@ public class DeploymentSpecTest {
     public void someEndpoints() {
         var spec = DeploymentSpec.fromXml("" +
                                           "<deployment>" +
-                                          "   <instances name='default'>" +
+                                          "   <instance id='default'>" +
                                           "      <prod>" +
                                           "         <region active=\"true\">us-east</region>" +
                                           "      </prod>" +
@@ -550,7 +550,7 @@ public class DeploymentSpecTest {
                                           "         <endpoint id=\"nalle\" container-id=\"frosk\" />" +
                                           "         <endpoint container-id=\"quux\" />" +
                                           "      </endpoints>" +
-                                          "   </instances>" +
+                                          "   </instance>" +
                                           "</deployment>");
 
         assertEquals(
@@ -593,7 +593,7 @@ public class DeploymentSpecTest {
     public void endpointDefaultRegions() {
         var spec = DeploymentSpec.fromXml("" +
                                           "<deployment>" +
-                                          "   <instances name='default'>" +
+                                          "   <instance id='default'>" +
                                           "      <prod>" +
                                           "         <region active=\"true\">us-east</region>" +
                                           "         <region active=\"true\">us-west</region>" +
@@ -605,7 +605,7 @@ public class DeploymentSpecTest {
                                           "      <endpoint id=\"nalle\" container-id=\"frosk\" />" +
                                           "         <endpoint container-id=\"quux\" />" +
                                           "      </endpoints>" +
-                                          "   </instances>" +
+                                          "   </instance>" +
                                           "</deployment>");
 
         assertEquals(Set.of("us-east"), endpointRegions("foo", spec));
@@ -630,14 +630,14 @@ public class DeploymentSpecTest {
 
     private static List<String> endpointIds(String endpointTag) {
         var xml = "<deployment>" +
-                  "   <instances name='default'>" +
+                  "   <instance id='default'>" +
                   "      <prod>" +
                   "         <region active=\"true\">us-east</region>" +
                   "      </prod>" +
                   "      <endpoints>" +
                   endpointTag +
                   "      </endpoints>" +
-                  "   </instances>" +
+                  "   </instance>" +
                   "</deployment>";
 
         return DeploymentSpec.fromXml(xml).endpoints().stream()

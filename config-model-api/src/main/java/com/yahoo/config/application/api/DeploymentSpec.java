@@ -49,16 +49,13 @@ public class DeploymentSpec {
                                                                   List.of());
 
     private final List<Step> steps;
-    private final Notifications notifications;
     private final Optional<Integer> majorVersion;
     private final String xmlForm;
 
     public DeploymentSpec(List<Step> steps,
-                          Notifications notifications,
                           Optional<Integer> majorVersion,
                           String xmlForm) {
         this.steps = steps;
-        this.notifications = notifications;
         this.majorVersion = majorVersion;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
@@ -77,8 +74,8 @@ public class DeploymentSpec {
                                                  globalServiceId,
                                                  athenzDomain,
                                                  athenzService,
+                                                 notifications,
                                                  endpoints)),
-             notifications,
              majorVersion,
              xmlForm);
     }
@@ -95,7 +92,8 @@ public class DeploymentSpec {
     private DeploymentInstancesSpec defaultInstance() {
         if (hasDefaultInstanceStepOnly()) return (DeploymentInstancesSpec)steps.get(0);
         throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
-                                           "as it does not consist only of a default instance");
+                                           "as it does not consist only of a default instance. Content: " +
+                                           steps.stream().map(Step::toString).collect(Collectors.joining(",")));
     }
 
     // TODO: Remove after October 2019
@@ -136,30 +134,27 @@ public class DeploymentSpec {
                                        .collect(Collectors.toList());
     }
 
-    /** Returns the notification configuration */
-    public Notifications notifications() { return notifications; }
-
-    /** Returns the rotations configuration */
-    // TODO: Remove after October 2019
-    public List<Endpoint> endpoints() { return defaultInstance().endpoints(); }
-
-    /** Returns the athenz domain if configured */
     // TODO: Remove after October 2019
     public Optional<AthenzDomain> athenzDomain() { return defaultInstance().athenzDomain(); }
 
-    /** Returns the athenz service for environment/region if configured */
     // TODO: Remove after October 2019
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         return defaultInstance().athenzService(environment, region);
     }
 
     // TODO: Remove after October 2019
-    public boolean includes(Environment environment, Optional<RegionName> region) {
-        return defaultInstance().deploysTo(environment, region);
-    }
+    public Notifications notifications() { return defaultInstance().notifications(); }
+
+    // TODO: Remove after October 2019
+    public List<Endpoint> endpoints() { return defaultInstance().endpoints(); }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
+
+    // TODO: Remove after October 2019
+    public boolean includes(Environment environment, Optional<RegionName> region) {
+        return defaultInstance().deploysTo(environment, region);
+    }
 
     /**
      * Creates a deployment spec from XML.
@@ -212,13 +207,12 @@ public class DeploymentSpec {
         DeploymentSpec other = (DeploymentSpec) o;
         return majorVersion.equals(other.majorVersion) &&
                steps.equals(other.steps) &&
-               xmlForm.equals(other.xmlForm) &&
-               notifications.equals(other.notifications);
+               xmlForm.equals(other.xmlForm);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(majorVersion, steps, xmlForm, notifications);
+        return Objects.hash(majorVersion, steps, xmlForm);
     }
 
     /** This may be invoked by a continuous build */
@@ -361,21 +355,30 @@ public class DeploymentSpec {
 
     }
 
-    /** A deployment step which is to run deployment to multiple zones in parallel */
+    /** A deployment step which is to run multiple steps (zones or instances) in parallel */
     public static class ParallelZones extends Step {
 
-        private final List<DeclaredZone> zones;
+        private final List<Step> steps;
 
-        public ParallelZones(List<DeclaredZone> zones) {
-            this.zones = List.copyOf(zones);
+        public ParallelZones(List<Step> steps) {
+            this.steps = List.copyOf(steps);
         }
 
+        /** Returns the steps inside this which are zones */
         @Override
-        public List<DeclaredZone> zones() { return this.zones; }
+        public List<DeclaredZone> zones() {
+            return this.steps.stream()
+                             .filter(step -> step instanceof DeclaredZone)
+                             .map(DeclaredZone.class::cast)
+                             .collect(Collectors.toList());
+        }
+
+        /** Returns all the steps nested in this */
+        public List<Step> steps() { return steps; }
 
         @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-            return zones.stream().anyMatch(zone -> zone.deploysTo(environment, region));
+            return zones().stream().anyMatch(zone -> zone.deploysTo(environment, region));
         }
 
         @Override
@@ -383,13 +386,14 @@ public class DeploymentSpec {
             if (this == o) return true;
             if (!(o instanceof ParallelZones)) return false;
             ParallelZones that = (ParallelZones) o;
-            return Objects.equals(zones, that.zones);
+            return Objects.equals(steps, that.steps);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(zones);
+            return Objects.hash(steps);
         }
+
     }
 
     /** Controls when this application will be upgraded to new Vespa versions */
