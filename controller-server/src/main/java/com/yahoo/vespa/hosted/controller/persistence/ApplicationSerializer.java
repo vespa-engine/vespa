@@ -425,7 +425,7 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
+                              Map.of(),
                               clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
@@ -479,21 +479,6 @@ public class ApplicationSerializer {
         Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
         object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(value)));
         return map;
-    }
-
-    private Map<ClusterSpec.Id, ClusterUtilization> clusterUtilsMapFromSlime(Inspector object) {
-        Map<ClusterSpec.Id, ClusterUtilization> map = new HashMap<>();
-        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterUtililzationFromSlime(value)));
-        return map;
-    }
-
-    private ClusterUtilization clusterUtililzationFromSlime(Inspector object) {
-        double cpu = object.field(clusterUtilsCpuField).asDouble();
-        double mem = object.field(clusterUtilsMemField).asDouble();
-        double disk = object.field(clusterUtilsDiskField).asDouble();
-        double diskBusy = object.field(clusterUtilsDiskBusyField).asDouble();
-
-        return new ClusterUtilization(mem, cpu, disk, diskBusy);
     }
 
     private ClusterInfo clusterInfoFromSlime(Inspector inspector) {
