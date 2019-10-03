@@ -104,6 +104,7 @@
             </exclusions>
         </dependency>
         <dependency>
+            <!-- TODO: Remove, we don't use commons-daemon anymore, and should not provide it.  -->
             <groupId>commons-daemon</groupId>
             <artifactId>commons-daemon</artifactId>
             <scope>compile</scope>
