@@ -133,8 +133,6 @@ public class CertificateK {
     private final javax.xml.xpath.XPath xPath = null;
     private final org.aopalliance.intercept.Joinpoint jointpoint = null;
     private final org.aopalliance.aop.Advice advice = null;
-    private final org.apache.commons.daemon.Daemon daemon = null;
-    private final org.apache.commons.daemon.support.DaemonLoader daemonLoader = null;
     private final org.apache.commons.logging.LogFactory logFactory = null;
     private final org.apache.commons.logging.impl.SimpleLog simpleLog = null;
     private final org.apache.log4j.Appender appender = null;
