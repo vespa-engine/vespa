@@ -6,6 +6,7 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <cassert>
 
@@ -100,8 +101,9 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
 
 ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
                                                      const std::vector<vespalib::string> &fields,
-                                                     bool filter_elements)
-    : AttributeCombinerDFW(fieldName, filter_elements),
+                                                     bool filter_elements,
+                                                     std::shared_ptr<StructFieldMapper> struct_field_mapper)
+    : AttributeCombinerDFW(fieldName, filter_elements, std::move(struct_field_mapper)),
       _fields(fields),
       _attributeNames()
 {
@@ -109,6 +111,11 @@ ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fie
     vespalib::string prefix = fieldName + ".";
     for (const auto &field : _fields) {
         _attributeNames.emplace_back(prefix + field);
+    }
+    if (filter_elements && _struct_field_mapper && !_struct_field_mapper->is_struct_field(fieldName)) {
+        for (const auto &sub_field : _attributeNames) {
+            _struct_field_mapper->add_mapping(fieldName, sub_field);
+        }
     }
 }
 

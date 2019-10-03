@@ -9,7 +9,7 @@ using search::docsummary::EmptyDFW;
 namespace vsm {
 
 IDocsumFieldWriter::UP
-DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc)
+DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<search::StructFieldMapper> struct_field_mapper)
 {
     IDocsumFieldWriter::UP fieldWriter;
     if ((overrideName == "staticrank") ||
@@ -27,7 +27,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             (overrideName == "geopos")) {
         rc = true;
     } else {
-        fieldWriter = search::docsummary::DynamicDocsumConfig::createFieldWriter(fieldName, overrideName, argument, rc);
+        fieldWriter = search::docsummary::DynamicDocsumConfig::createFieldWriter(fieldName, overrideName, argument, rc, struct_field_mapper);
     }
     return fieldWriter;
 }

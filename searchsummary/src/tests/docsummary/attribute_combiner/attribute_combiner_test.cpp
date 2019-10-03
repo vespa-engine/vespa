@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
@@ -165,7 +166,7 @@ public:
     void FillSummaryFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void FillRankFeatures(GetDocsumsState *, IDocsumEnvironment *) override { }
     void ParseLocation(GetDocsumsState *) override { }
-    std::unique_ptr<MatchingElements> fill_matching_elements() override { return std::make_unique<MatchingElements>(_matching_elements); }
+    std::unique_ptr<MatchingElements> fill_matching_elements(const search::StructFieldMapper &) override { return std::make_unique<MatchingElements>(_matching_elements); }
     ~DummyStateCallback() override { }
 };
 
@@ -190,6 +191,7 @@ struct AttributeCombinerTest : public ::testing::Test
     std::unique_ptr<IDocsumFieldWriter> writer;
     DummyStateCallback                  stateCallback;
     GetDocsumsState                     state;
+    std::shared_ptr<search::StructFieldMapper> _struct_field_mapper;
 
     AttributeCombinerTest();
     ~AttributeCombinerTest();
@@ -201,7 +203,8 @@ AttributeCombinerTest::AttributeCombinerTest()
     : attrs(),
       writer(),
       stateCallback(),
-      state(stateCallback)
+      state(stateCallback),
+      _struct_field_mapper()
 {
     state._attrCtx = attrs.mgr.createContext();
 }
@@ -211,7 +214,10 @@ AttributeCombinerTest::~AttributeCombinerTest() = default;
 void
 AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter_elements)
 {
-    writer = AttributeCombinerDFW::create(field_name, attrs.mgr, filter_elements);
+    if (filter_elements) {
+        _struct_field_mapper = std::make_shared<search::StructFieldMapper>();
+    }
+    writer = AttributeCombinerDFW::create(field_name, attrs.mgr, filter_elements, _struct_field_mapper);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
 }
@@ -295,6 +301,45 @@ TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_corr
     assertWritten("[ { key: \"k3.1\", value: \"n3.1\" } ]", 3);
     assertWritten("[ { key: \"k4.2\", value: \"n4.2\" } ]", 4);
     assertWritten("null", 5);
+}
+
+TEST_F(AttributeCombinerTest, require_that_struct_field_mapper_is_setup_for_filtered_array_of_struct)
+{
+    set_field("array", true);
+    EXPECT_TRUE(_struct_field_mapper);
+    EXPECT_TRUE(_struct_field_mapper->is_struct_field("array"));
+    EXPECT_FALSE(_struct_field_mapper->is_struct_field("map"));
+    EXPECT_FALSE(_struct_field_mapper->is_struct_field("smap"));
+    EXPECT_EQ("", _struct_field_mapper->get_struct_field("array.foo"));
+    EXPECT_EQ("array", _struct_field_mapper->get_struct_field("array.name"));
+    EXPECT_EQ("array", _struct_field_mapper->get_struct_field("array.val"));
+    EXPECT_EQ("array", _struct_field_mapper->get_struct_field("array.fval"));
+}
+
+TEST_F(AttributeCombinerTest, require_that_struct_field_mapper_is_setup_for_filtered_map_of_struct)
+{
+    set_field("smap", true);
+    EXPECT_TRUE(_struct_field_mapper);
+    EXPECT_FALSE(_struct_field_mapper->is_struct_field("array"));
+    EXPECT_FALSE(_struct_field_mapper->is_struct_field("map"));
+    EXPECT_TRUE(_struct_field_mapper->is_struct_field("smap"));
+    EXPECT_EQ("", _struct_field_mapper->get_struct_field("smap.foo"));
+    EXPECT_EQ("smap", _struct_field_mapper->get_struct_field("smap.key"));
+    EXPECT_EQ("smap", _struct_field_mapper->get_struct_field("smap.value.name"));
+    EXPECT_EQ("smap", _struct_field_mapper->get_struct_field("smap.value.val"));
+    EXPECT_EQ("smap", _struct_field_mapper->get_struct_field("smap.value.fval"));
+}
+
+TEST_F(AttributeCombinerTest, require_that_struct_field_mapper_is_setup_for_filtered_map_of_string)
+{
+    set_field("map", true);
+    EXPECT_TRUE(_struct_field_mapper);
+    EXPECT_FALSE(_struct_field_mapper->is_struct_field("array"));
+    EXPECT_TRUE(_struct_field_mapper->is_struct_field("map"));
+    EXPECT_FALSE(_struct_field_mapper->is_struct_field("smap"));
+    EXPECT_EQ("", _struct_field_mapper->get_struct_field("map.foo"));
+    EXPECT_EQ("map", _struct_field_mapper->get_struct_field("map.key"));
+    EXPECT_EQ("map", _struct_field_mapper->get_struct_field("map.value"));
 }
 
 }

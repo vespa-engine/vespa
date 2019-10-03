@@ -13,7 +13,10 @@ namespace juniper {
     class Result;
 }
 
-namespace search { class MatchingElements; }
+namespace search {
+class MatchingElements;
+class StructFieldMapper;
+}
 namespace search::common { class Location; }
 namespace search::attribute {
     class IAttributeContext;
@@ -32,7 +35,7 @@ public:
     virtual void FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void FillRankFeatures(GetDocsumsState * state, IDocsumEnvironment * env) = 0;
     virtual void ParseLocation(GetDocsumsState * state) = 0;
-    virtual std::unique_ptr<MatchingElements> fill_matching_elements() = 0;
+    virtual std::unique_ptr<MatchingElements> fill_matching_elements(const StructFieldMapper &struct_field_mapper) = 0;
     virtual ~GetDocsumsStateCallback(void) { }
     GetDocsumsStateCallback(const GetDocsumsStateCallback &) = delete;
     GetDocsumsStateCallback & operator = (const GetDocsumsStateCallback &) = delete;
@@ -93,7 +96,7 @@ public:
     GetDocsumsState& operator=(const GetDocsumsState &) = delete;
     GetDocsumsState(GetDocsumsStateCallback &callback);
     ~GetDocsumsState();
-    const MatchingElements &get_matching_elements();
+    const MatchingElements &get_matching_elements(const StructFieldMapper &struct_field_mapper);
 };
 
 }

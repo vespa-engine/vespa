@@ -48,7 +48,7 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
 }
 
 std::unique_ptr<MatchingElements>
-GetDocsumsStateCallback::fill_matching_elements()
+GetDocsumsStateCallback::fill_matching_elements(const search::StructFieldMapper &)
 {
     return std::make_unique<MatchingElements>();
 }

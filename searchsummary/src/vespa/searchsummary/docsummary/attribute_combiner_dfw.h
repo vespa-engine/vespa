@@ -4,7 +4,10 @@
 
 #include "docsumfieldwriter.h"
 
-namespace search { class MatchingElements; }
+namespace search {
+class MatchingElements;
+class StructFieldMapper;
+}
 namespace search::attribute { class IAttributeContext; }
 
 namespace search::docsummary {
@@ -22,14 +25,15 @@ protected:
     uint32_t _stateIndex;
     const bool _filter_elements;
     vespalib::string _fieldName;
-    AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements);
+    std::shared_ptr<StructFieldMapper> _struct_field_mapper;
+    AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper);
 protected:
     virtual std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context, const MatchingElements* matching_elements) = 0;
 public:
     ~AttributeCombinerDFW() override;
     bool IsGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    static std::unique_ptr<IDocsumFieldWriter> create(const vespalib::string &fieldName, IAttributeManager &attrMgr, bool filter_elements);
+    static std::unique_ptr<IDocsumFieldWriter> create(const vespalib::string &fieldName, IAttributeManager &attrMgr, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper);
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 

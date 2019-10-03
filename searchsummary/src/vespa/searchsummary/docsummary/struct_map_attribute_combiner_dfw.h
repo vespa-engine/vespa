@@ -24,7 +24,8 @@ class StructMapAttributeCombinerDFW : public AttributeCombinerDFW
 public:
     StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
                                   const std::vector<vespalib::string> &valueFields,
-                                  bool filter_elements);
+                                  bool filter_elements,
+                                  std::shared_ptr<StructFieldMapper> struct_field_mapper);
     ~StructMapAttributeCombinerDFW() override;
 };
 
