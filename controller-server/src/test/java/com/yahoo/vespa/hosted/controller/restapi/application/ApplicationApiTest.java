@@ -313,7 +313,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
 
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
                               new File("application-reference-2.json"));
@@ -1048,7 +1048,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .oktaAccessToken(OKTA_AT)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1.instance1': Application already exists\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1.instance1': Instance already exists\"}",
                               400);
 
         ConfigServerMock configServer = serviceRegistry().configServerMock();
@@ -1098,7 +1098,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .oktaAccessToken(OKTA_AT)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete application 'tenant1.application1.instance1': Application not found\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete instance 'tenant1.application1.instance1': Instance not found\"}",
                               404);
 
         // DELETE tenant

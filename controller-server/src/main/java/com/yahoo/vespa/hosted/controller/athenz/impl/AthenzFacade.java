@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.athenz.impl;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
@@ -15,10 +14,12 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
+import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
@@ -142,7 +143,7 @@ public class AthenzFacade implements AccessControl {
     }
 
     @Override
-    public void createApplication(ApplicationId id, Credentials credentials) {
+    public void createApplication(TenantAndApplicationId id, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         createApplication(athenzCredentials.domain(), id.application(), athenzCredentials.token());
     }
@@ -152,11 +153,19 @@ public class AthenzFacade implements AccessControl {
         log("createProviderResourceGroup(" +
             "tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s, roleActions=%s)",
             domain, service.getDomain().getName(), service.getName(), application, tenantRoleActions);
-        zmsClient.createProviderResourceGroup(domain, service, application.value(), tenantRoleActions, token);
+        try {
+            zmsClient.createProviderResourceGroup(domain, service, application.value(), tenantRoleActions, token);
+        }
+        catch (ZmsClientException e) {
+            if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
+                throw new ForbiddenException("Not authorized to create application", e);
+            else
+                throw e;
+        }
     }
 
     @Override
-    public void deleteApplication(ApplicationId id, Credentials credentials) {
+    public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
         AthenzCredentials athenzCredentials = (AthenzCredentials) credentials;
         log("deleteProviderResourceGroup(tenantDomain=%s, providerDomain=%s, service=%s, resourceGroup=%s)",
             athenzCredentials.domain(), service.getDomain().getName(), service.getName(), id.application());

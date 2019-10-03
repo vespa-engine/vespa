@@ -64,6 +64,9 @@ import static java.util.stream.Collectors.toMap;
  *
  * @see JobController
  * @see ApplicationApiHandler
+ *
+ * @author smorgrav
+ * @author jonmv
  */
 class JobControllerApiHandlerHelper {
 

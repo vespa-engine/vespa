@@ -10,10 +10,6 @@ public class ApplicationId extends NonDefaultIdentifier {
         super(id);
     }
 
-    public static boolean isLegal(String id) {
-        return strictPattern.matcher(id).matches();
-    }
-    
     @Override
     public void validate() {
         super.validate();
@@ -21,9 +17,8 @@ public class ApplicationId extends NonDefaultIdentifier {
     }
 
     public static void validate(String id) {
-        if (!isLegal(id)) {
+        if ( ! strictPattern.matcher(id).matches())
             throwInvalidId(id, strictPatternExplanation);
-        }
     }
 
 }

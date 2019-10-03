@@ -233,11 +233,12 @@ public final class ControllerTester {
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
-        ApplicationId applicationId = ApplicationId.from(tenant.value(), applicationName, instanceName);
-        controller().applications().createApplication(applicationId, credentialsFor(TenantAndApplicationId.from(applicationId)));
-        controller().applications().lockApplicationOrThrow(TenantAndApplicationId.from(applicationId), application ->
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenant.value(), applicationName);
+        controller().applications().createApplication(applicationId, credentialsFor(applicationId));
+        controller().applications().lockApplicationOrThrow(applicationId, application ->
                 controller().applications().store(application.withProjectId(OptionalLong.of(projectId))));
-        Application application = controller().applications().requireApplication(TenantAndApplicationId.from(applicationId));
+        controller().applications().createInstance(applicationId.instance(instanceName));
+        Application application = controller().applications().requireApplication(applicationId);
         assertTrue(application.projectId().isPresent());
         return application;
     }
