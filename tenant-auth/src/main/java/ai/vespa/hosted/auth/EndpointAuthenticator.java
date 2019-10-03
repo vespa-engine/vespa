@@ -15,6 +15,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
 
@@ -24,6 +25,8 @@ import static ai.vespa.hosted.api.Properties.getNonBlankProperty;
  * @author jonmv
  */
 public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthenticator {
+
+    private static final Logger logger = Logger.getLogger(EndpointAuthenticator.class.getName());
 
     /** Don't touch. */
     public EndpointAuthenticator(@SuppressWarnings("unused") SystemName __) { }
@@ -35,22 +38,39 @@ public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthen
     @Override
     public SSLContext sslContext() {
         try {
+            Path certificateFile = null;
+            Path privateKeyFile = null;
             Optional<String> credentialsRootProperty = getNonBlankProperty("vespa.test.credentials.root");
-            if (credentialsRootProperty.isEmpty())
-                return SSLContext.getDefault();
+            if (credentialsRootProperty.isPresent()) {
+                Path credentialsRoot = Path.of(credentialsRootProperty.get());
+                certificateFile = credentialsRoot.resolve("cert");
+                privateKeyFile = credentialsRoot.resolve("key");
+            }
+            else {
+                Optional<String> certificateFileProperty = getNonBlankProperty("dataPlaneCertificateFile");
+                if (certificateFileProperty.isPresent())
+                    certificateFile = Path.of(certificateFileProperty.get());
+                Optional<String> privateKeyFileProperty = getNonBlankProperty("dataPlaneKeyFile");
+                if (privateKeyFileProperty.isPresent())
+                    privateKeyFile = Path.of(privateKeyFileProperty.get());
+            }
+            if (certificateFile != null && privateKeyFile != null) {
+                X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));
+                if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
+                    || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
+                    throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
+                                                    certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
 
-            Path credentialsRoot = Path.of(credentialsRootProperty.get());
-            Path certificateFile = credentialsRoot.resolve("cert");
-            Path privateKeyFile = credentialsRoot.resolve("key");
-
-            X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));
-            if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
-                || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
-                throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
-                                                certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
-
-            PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
-            return new SslContextBuilder().withKeyStore(privateKey, certificate).build();
+                PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile)));
+                return new SslContextBuilder().withKeyStore(privateKey, certificate).build();
+            }
+            logger.warning(  "##################################################################################\n"
+                           + "# Data plane key and/or certificate missing; please specify                      #\n"
+                           + "# '-DdataPlaneCertificateFile=/path/to/certificate' and                          #\n"
+                           + "# '-DdataPlaneKeyFile=/path/to/private_key.                                      #\n"
+                           + "# Trying the default SSLContext, but this will most likely cause HTTP error 401. #\n"
+                           + "##################################################################################");
+            return SSLContext.getDefault();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
