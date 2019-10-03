@@ -156,6 +156,17 @@ public class DeploymentSpec {
         return defaultInstance().deploysTo(environment, region);
     }
 
+    /** Returns the instance step containing the given instance name, or null if not present */
+    public DeploymentInstancesSpec instance(String name) {
+        for (Step step : steps) {
+            if ( ! (step instanceof DeploymentInstancesSpec)) continue;
+            DeploymentInstancesSpec instanceStep = (DeploymentInstancesSpec)step;
+            if (instanceStep.names().contains(InstanceName.from(name)))
+                return instanceStep;
+        }
+        return null;
+    }
+
     /**
      * Creates a deployment spec from XML.
      *
