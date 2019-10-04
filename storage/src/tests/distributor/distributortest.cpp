@@ -974,4 +974,28 @@ TEST_F(DistributorTest, pending_to_no_pending_global_merges_edge_immediately_sen
     do_test_pending_merge_getnodestate_reply_edge(FixedBucketSpaces::global_space());
 }
 
+TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_handler) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    ConfigBuilder builder;
+    builder.allowStaleReadsDuringClusterStateTransitions = true;
+    configureDistributor(builder);
+    EXPECT_TRUE(getExternalOperationHandler().concurrent_gets_enabled());
+
+    builder.allowStaleReadsDuringClusterStateTransitions = false;
+    configureDistributor(builder);
+    EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
+}
+
+TEST_F(DistributorTest, concurrent_reads_not_enabled_if_btree_db_is_not_enabled) {
+    createLinks(false);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    ConfigBuilder builder;
+    builder.allowStaleReadsDuringClusterStateTransitions = true;
+    configureDistributor(builder);
+    EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
+}
+
 }

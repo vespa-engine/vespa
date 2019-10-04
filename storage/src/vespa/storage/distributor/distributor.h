@@ -328,6 +328,7 @@ private:
     DistributorHostInfoReporter _hostInfoReporter;
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
     bool _must_send_updated_host_info;
+    bool _use_btree_database;
 };
 
 } // distributor

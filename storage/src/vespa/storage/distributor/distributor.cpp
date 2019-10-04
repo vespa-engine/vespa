@@ -102,7 +102,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _ownershipSafeTimeCalc(
             std::make_unique<OwnershipTransferSafeTimePointCalculator>(
                 std::chrono::seconds(0))), // Set by config later
-      _must_send_updated_host_info(false)
+      _must_send_updated_host_info(false),
+      _use_btree_database(use_btree_database)
 {
     if (use_btree_database) {
         LOG(info, "Using new B-tree bucket database implementation instead of legacy implementation"); // TODO remove this once default is swapped
@@ -244,6 +245,9 @@ Distributor::sendDown(const std::shared_ptr<api::StorageMessage>& msg)
 bool
 Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
+    if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
+        return true;
+    }
     framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
     MBUS_TRACE(msg->getTrace(), 9,
                "Distributor: Added to message queue. Thread state: "
@@ -837,6 +841,9 @@ Distributor::enableNextConfig()
     _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());
     _pendingMessageTracker.setNodeBusyDuration(getConfig().getInhibitMergesOnBusyNodeDuration());
     _bucketDBUpdater.set_stale_reads_enabled(getConfig().allowStaleReadsDuringClusterStateTransitions());
+    // Concurrent reads are only safe if the B-tree DB implementation is used.
+    _externalOperationHandler.set_concurrent_gets_enabled(
+            _use_btree_database && getConfig().allowStaleReadsDuringClusterStateTransitions());
 }
 
 void
