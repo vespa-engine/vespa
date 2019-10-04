@@ -65,8 +65,10 @@
         <module>cert-j-priv</module>
         <module>cert-k-pkgs</module>
         <module>cert-l1</module>
+        <module>cert-l1-dup</module>
         <module>cert-l2</module>
         <module>cert-ml</module>
+        <module>cert-ml-dup</module>
         <module>cert-nac</module>
         <module>cert-oa-path</module>
         <module>cert-p-jar</module>

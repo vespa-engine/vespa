@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yahoo.vespa.jdisc_core</groupId>
+        <artifactId>test_bundles</artifactId>
+        <version>7-SNAPSHOT</version>
+    </parent>
+    <artifactId>cert-l1-dup</artifactId>
+    <version>7-SNAPSHOT</version>
+    <packaging>bundle</packaging>
+    <name>${project.artifactId}</name>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <Bundle-SymbolicName>
+                            ${project.groupId}.cert-l1
+                        </Bundle-SymbolicName>
+                        <Export-Package>
+                            com.yahoo.jdisc.bundle.l
+                        </Export-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
