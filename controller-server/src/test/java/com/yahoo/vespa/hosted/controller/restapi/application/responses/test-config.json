@@ -1,0 +1,20 @@
+{
+  "application": "tenant1:application1:instance1",
+  "zone": "prod.us-central-1",
+  "system": "main",
+  "endpoints": {
+    "prod.us-central-1": [
+      "http://old-endpoint.vespa.yahooapis.com:4080"
+    ]
+  },
+  "zoneEndpoints": {
+    "prod.us-central-1": {
+      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+    }
+  },
+  "clusters": {
+    "prod.us-central-1": [
+      "music"
+    ]
+  }
+}
