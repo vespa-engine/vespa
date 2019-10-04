@@ -9,7 +9,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,9 +28,9 @@ public class ClusterMonitor<T> {
 
     private static Logger log = Logger.getLogger(ClusterMonitor.class.getName());
 
-    private NodeManager<T> nodeManager;
+    private final NodeManager<T> nodeManager;
 
-    private MonitorThread monitorThread;
+    private final MonitorThread monitorThread;
 
     private volatile boolean shutdown = false;
 
@@ -119,28 +121,35 @@ public class ClusterMonitor<T> {
         }
 
         public void run() {
-            log.fine("Starting cluster monitor thread");
+            log.info("Starting cluster monitor thread " + getName());
             // Pings must happen in a separate thread from this to handle timeouts
             // By using a cached thread pool we ensured that 1) a single thread will be used
             // for all pings when there are no problems (important because it ensures that
             // any thread local connections are reused) 2) a new thread will be started to execute
             // new pings when a ping is not responding
-            Executor pingExecutor=Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
+            ExecutorService pingExecutor=Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
             while (!isInterrupted()) {
                 try {
                     Thread.sleep(configuration.getCheckInterval());
                     log.finest("Activating ping");
                     ping(pingExecutor);
                 }
-                catch (Exception e) {
+                catch (Throwable e) {
                     if (shutdown && e instanceof InterruptedException) {
                         break;
+                    } else if ( ! (e instanceof Exception) ) {
+                        log.log(Level.WARNING,"Error in monitor thread, will quit", e);
+                        break;
                     } else {
-                        log.log(Level.WARNING,"Error in monitor thread",e);
+                        log.log(Level.WARNING,"Exception in monitor thread", e);
                     }
                 }
             }
-            log.fine("Stopped cluster monitor thread");
+            pingExecutor.shutdown();
+            try {
+                pingExecutor.awaitTermination(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) { }
+            log.info("Stopped cluster monitor thread " + getName());
         }
 
     }

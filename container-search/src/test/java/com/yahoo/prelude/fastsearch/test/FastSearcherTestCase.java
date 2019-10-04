@@ -81,7 +81,7 @@ public class FastSearcherTestCase {
     @Test
     public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                                                     MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 123, 0))),
+                                                     MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 0))),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
                                                      documentdbInfoConfig);
@@ -102,7 +102,7 @@ public class FastSearcherTestCase {
 
     @Test
     public void testSinglePassGroupingIsNotForcedWithSingleNodeGroups() {
-        MockDispatcher dispatcher = MockDispatcher.create(ImmutableList.of(new Node(0, "host0", 123, 0), new Node(2, "host1", 123, 0)));
+        MockDispatcher dispatcher = MockDispatcher.create(ImmutableList.of(new Node(0, "host0", 0), new Node(2, "host1", 0)));
 
         FastSearcher fastSearcher = new FastSearcher("container.0",
                                                      dispatcher,
