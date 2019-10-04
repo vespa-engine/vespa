@@ -549,6 +549,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT),
                               new File("delete-with-active-deployments.json"), 400);
 
+        // GET test-config for local tests against a prod deployment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/test-config", GET)
+                                      .userIdentity(USER_ID),
+                              new File("test-config.json"));
+
         // DELETE (deactivate) a deployment - dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID),

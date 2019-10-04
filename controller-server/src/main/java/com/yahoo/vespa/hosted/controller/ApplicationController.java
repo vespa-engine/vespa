@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
@@ -211,6 +212,14 @@ public class ApplicationController {
     public ArtifactRepository artifacts() { return artifactRepository; }
 
     public ApplicationStore applicationStore() {  return applicationStore; }
+
+    /** Returns all content clusters in all current deployments of the given application. */
+    public Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
+        ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
+        for (ZoneId zone : zones)
+            clusters.put(zone, ImmutableList.copyOf(configServer.getContentClusters(new DeploymentId(id, zone))));
+        return clusters.build();
+    }
 
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
     public Version oldestInstalledPlatform(TenantAndApplicationId id) {

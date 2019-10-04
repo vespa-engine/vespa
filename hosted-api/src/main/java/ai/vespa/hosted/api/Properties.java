@@ -38,8 +38,8 @@ public class Properties {
         return Paths.get(requireNonBlankProperty("privateKeyFile"));
     }
 
-    public static Path certificateFile() {
-        return Paths.get(requireNonBlankProperty("certificateFile"));
+    public static Optional<Path> certificateFile() {
+        return getNonBlankProperty("certificateFile").map(Paths::get);
     }
 
     /** Returns the system property with the given name if it is set, or empty. */

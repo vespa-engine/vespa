@@ -468,7 +468,7 @@ public class InternalStepRunner implements StepRunner {
                                                       testConfigSerializer.configJson(id.application(),
                                                                                       id.type(),
                                                                                       endpoints,
-                                                                                      listClusters(id.application(), zones)));
+                                                                                      controller.applications().listClusters(id.application(), zones)));
         return Optional.of(running);
     }
 
@@ -688,14 +688,6 @@ public class InternalStepRunner implements StepRunner {
                 return step.zones().get(0).testerFlavor();
 
         throw new IllegalStateException("No step deploys to the zone this run is for!");
-    }
-
-    /** Returns all content clusters in all current deployments of the given real application. */
-    private Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
-        ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
-        for (ZoneId zone : zones)
-            clusters.put(zone, ImmutableList.copyOf(controller.serviceRegistry().configServer().getContentClusters(new DeploymentId(id, zone))));
-        return clusters.build();
     }
 
     /** Returns the generated services.xml content for the tester application. */
