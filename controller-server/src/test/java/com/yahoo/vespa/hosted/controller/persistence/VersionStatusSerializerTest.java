@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
@@ -97,7 +98,7 @@ public class VersionStatusSerializerTest {
     private static NodeVersions nodeVersions(Version version, Version wantedVersion, Instant changedAt, String... hostnames) {
         var nodeVersions = new ArrayList<NodeVersion>();
         for (var hostname : hostnames) {
-            nodeVersions.add(new NodeVersion(HostName.from(hostname), version, wantedVersion, changedAt));
+            nodeVersions.add(new NodeVersion(HostName.from(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, changedAt));
         }
         return NodeVersions.EMPTY.with(nodeVersions);
     }

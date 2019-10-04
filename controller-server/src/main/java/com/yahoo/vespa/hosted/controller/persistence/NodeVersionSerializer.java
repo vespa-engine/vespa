@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -30,6 +31,7 @@ public class NodeVersionSerializer {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     private static final String hostnameField = "hostname";
+    private static final String zoneField = "zone";
     private static final String currentVersionField = "currentVersion";
     private static final String wantedVersionField = "wantedVersion";
     private static final String changedAtField = "changedAt";
@@ -38,6 +40,7 @@ public class NodeVersionSerializer {
         for (var nodeVersion : nodeVersions) {
             var nodeVersionObject = array.addObject();
             nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
+            nodeVersionObject.setString(zoneField, nodeVersion.zone().value());
             if (writeCurrentVersion) {
                 nodeVersionObject.setString(currentVersionField, nodeVersion.currentVersion().toFullString());
             }
@@ -50,10 +53,14 @@ public class NodeVersionSerializer {
         var nodeVersions = new ArrayList<NodeVersion>();
         object.traverse((ArrayTraverser) (i, entry) -> {
             var hostname = HostName.from(entry.field(hostnameField).asString());
+            // TODO(mpolden): Make non-optional after September 2019
+            var zone = Serializers.optionalString(entry.field(zoneField))
+                                  .map(ZoneId::from)
+                                  .orElseGet(ZoneId::defaultId);
             var currentVersion = version.orElseGet(() -> Version.fromString(entry.field(currentVersionField).asString()));
             var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
             var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
-            nodeVersions.add(new NodeVersion(hostname, currentVersion, wantedVersion, changedAt));
+            nodeVersions.add(new NodeVersion(hostname, zone, currentVersion, wantedVersion, changedAt));
         });
         return Collections.unmodifiableList(nodeVersions);
     }
