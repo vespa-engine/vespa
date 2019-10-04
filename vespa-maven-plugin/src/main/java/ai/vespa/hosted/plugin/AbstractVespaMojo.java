@@ -70,7 +70,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         instance = firstNonBlank(instance, project.getProperties().getProperty("instance", "default"));
         id = ApplicationId.from(tenant, application, instance);
 
-        if (privateKey == null) {
+        if (privateKey == null || privateKey.isEmpty()) {
             if (privateKeyFile == null || privateKeyFile.isEmpty()) {
                 throw new IllegalArgumentException("Missing 'privateKey' or 'privateKeyFile' properties.");
             }
