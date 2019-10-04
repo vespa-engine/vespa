@@ -41,7 +41,7 @@ public class TestConfig {
     /**
      * Parses the given test config JSON and returns a new config instance.
      *
-     * If the given JSON has a "clusters" element, a config object with default values
+     * If the given JSON has a "localEndpoints" element, a config object with default values
      * is returned, using {@link #fromEndpointsOnly}. Otherwise, all config attributes are parsed.
      */
     public static TestConfig fromJson(byte[] jsonBytes) {

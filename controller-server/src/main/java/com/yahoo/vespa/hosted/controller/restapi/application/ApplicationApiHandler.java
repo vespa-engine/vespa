@@ -133,6 +133,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
+    private final TestConfigSerializer testConfigSerializer;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -141,6 +142,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         super(parentCtx);
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
+        this.testConfigSerializer = new TestConfigSerializer(controller.system());
     }
 
     @Override
@@ -1315,11 +1317,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse testConfig(ApplicationId id, JobType type) {
-        var endpoints = controller.applications().clusterEndpoints(id, controller.jobController().testedZoneAndProductionZones(id, type));
-        return new SlimeJsonResponse(new TestConfigSerializer(controller.system()).configSlime(id,
-                                                                                               type,
-                                                                                               endpoints,
-                                                                                               Collections.emptyMap()));
+        Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id, type);
+        return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
+                                                                      type,
+                                                                      controller.applications().clusterEndpoints(id, zones),
+                                                                      controller.applications().listClusters(id, zones)));
     }
 
     private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {
