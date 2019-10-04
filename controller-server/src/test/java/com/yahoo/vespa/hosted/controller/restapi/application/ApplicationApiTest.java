@@ -45,7 +45,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClien
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -1742,14 +1741,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         clusterInfo.put(ClusterSpec.Id.from("cluster1"),
                                         new ClusterInfo("flavor1", 37, 2, 4, 50,
                                                         ClusterSpec.Type.content, hostnames));
-                        Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
-                        clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                         DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
                                                                           Optional.of(Instant.ofEpochMilli(123123)), Map.of());
 
                         lockedApplication = lockedApplication.with(instance.name(),
                                                                    lockedInstance -> lockedInstance.withClusterInfo(deployment.zone(), clusterInfo)
-                                                                                                   .withClusterUtilization(deployment.zone(), clusterUtils)
                                                                                                    .with(deployment.zone(), metrics)
                                                                                                    .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone()));
                     }

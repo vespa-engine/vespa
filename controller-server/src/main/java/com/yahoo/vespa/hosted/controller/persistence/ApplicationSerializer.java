@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -146,13 +145,6 @@ public class ApplicationSerializer {
     private static final String clusterInfoTypeField = "clusterType";
     private static final String clusterInfoHostnamesField = "hostnames";
 
-    // ClusterUtils fields
-    private static final String clusterUtilsField = "clusterUtils";
-    private static final String clusterUtilsCpuField = "cpu";
-    private static final String clusterUtilsMemField = "mem";
-    private static final String clusterUtilsDiskField = "disk";
-    private static final String clusterUtilsDiskBusyField = "diskbusy";
-
     // Deployment metrics fields
     private static final String deploymentMetricsField = "metrics";
     private static final String deploymentMetricsQPSField = "queriesPerSecond";
@@ -219,7 +211,6 @@ public class ApplicationSerializer {
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
         clusterInfoToSlime(deployment.clusterInfo(), object);
-        clusterUtilsToSlime(deployment.clusterUtils(), object);
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
@@ -259,20 +250,6 @@ public class ApplicationSerializer {
         for (String host : info.getHostnames()) {
             array.addString(host);
         }
-    }
-
-    private void clusterUtilsToSlime(Map<ClusterSpec.Id, ClusterUtilization> clusters, Cursor object) {
-        Cursor root = object.setObject(clusterUtilsField);
-        for (Map.Entry<ClusterSpec.Id, ClusterUtilization> entry : clusters.entrySet()) {
-            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
-        }
-    }
-
-    private void toSlime(ClusterUtilization utils, Cursor object) {
-        object.setDouble(clusterUtilsCpuField, utils.getCpu());
-        object.setDouble(clusterUtilsMemField, utils.getMemory());
-        object.setDouble(clusterUtilsDiskField, utils.getDisk());
-        object.setDouble(clusterUtilsDiskBusyField, utils.getDiskBusy());
     }
 
     private void zoneIdToSlime(ZoneId zone, Cursor object) {
@@ -424,7 +401,6 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              Map.of(),
                               clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
