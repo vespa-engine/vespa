@@ -3,13 +3,16 @@ package ai.vespa.hosted.api;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -26,8 +29,10 @@ public class TestConfig {
     private final ZoneId zone;
     private final SystemName system;
     private final Map<ZoneId, Map<String, URI>> deployments;
+    private final Map<ZoneId, List<String>> contentClusters;
 
-    public TestConfig(ApplicationId application, ZoneId zone, SystemName system, Map<ZoneId, Map<String, URI>> deployments) {
+    public TestConfig(ApplicationId application, ZoneId zone, SystemName system, Map<ZoneId, Map<String, URI>> deployments,
+                      Map<ZoneId, List<String>> contentClusters) {
         if ( ! deployments.containsKey(zone))
             throw new IllegalArgumentException("Config must contain a deployment for its zone, but only does for " + deployments.keySet());
         this.application = requireNonNull(application);
@@ -36,6 +41,9 @@ public class TestConfig {
         this.deployments = deployments.entrySet().stream()
                                       .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                                             entry -> Map.copyOf(entry.getValue())));
+        this.contentClusters = contentClusters.entrySet().stream()
+                                              .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
+                                                                                    entry -> List.copyOf(entry.getValue())));
     }
 
     /**
@@ -56,7 +64,13 @@ public class TestConfig {
         config.field("zoneEndpoints").traverse((ObjectTraverser) (zoneId, clustersObject) -> {
             deployments.put(ZoneId.from(zoneId), toClusterMap(clustersObject));
         });
-        return new TestConfig(application, zone, system, deployments);
+        Map<ZoneId, List<String>> contentClusters = new HashMap<>();
+        config.field("clusters").traverse(((ObjectTraverser) (zoneId, clustersArray) -> {
+            List<String> clusters = new ArrayList<>();
+            clustersArray.traverse((ArrayTraverser) (__, cluster) -> clusters.add(cluster.asString()));
+            contentClusters.put(ZoneId.from(zoneId), clusters);
+        }));
+        return new TestConfig(application, zone, system, deployments, contentClusters);
     }
 
     static Map<String, URI> toClusterMap(Inspector clustersObject) {
@@ -73,7 +87,8 @@ public class TestConfig {
         return new TestConfig(ApplicationId.defaultId(),
                               ZoneId.defaultId(),
                               SystemName.defaultSystem(),
-                              Map.of(ZoneId.defaultId(), endpoints));
+                              Map.of(ZoneId.defaultId(), endpoints),
+                              Map.of());
     }
 
     /** Returns the full id of the application to test. */
@@ -84,6 +99,9 @@ public class TestConfig {
 
     /** Returns an immutable view of deployments, per zone, of the application to test. */
     public Map<ZoneId, Map<String, URI>> deployments() { return deployments; }
+
+    /** Returns an immutable view of content clusters, per zone, of the application to test. */
+    public Map<ZoneId, List<String>> contentClusters() { return contentClusters; }
 
     /** Returns the hosted Vespa system this is run against. */
     public SystemName system() { return system; }
