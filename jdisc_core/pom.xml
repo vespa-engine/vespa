@@ -104,12 +104,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <!-- TODO: Remove, we don't use commons-daemon anymore, and should not provide it.  -->
-            <groupId>commons-daemon</groupId>
-            <artifactId>commons-daemon</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.framework</artifactId>
             <scope>compile</scope>
@@ -244,7 +238,6 @@
                                 <classpath />
                                 <argument>com.yahoo.jdisc.core.ExportPackages</argument>
                                 <argument>${exportPackagesFile}</argument>
-                                <argument>${project.build.directory}/dependency/commons-daemon.jar</argument>
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-no_aop.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-assistedinject.jar</argument>
