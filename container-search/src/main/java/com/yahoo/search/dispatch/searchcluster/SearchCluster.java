@@ -425,7 +425,7 @@ public class SearchCluster implements NodeManager<Node> {
                         missing.append('\n').append(node.toString());
                     }
                 }
-                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs)\nFailed nodes are:\n%s",
+                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
                         index, group.workingNodes(), groupSize(), requiredNodes, group.getActiveDocuments(), averageDocuments, missing.toString()));
             }
         }

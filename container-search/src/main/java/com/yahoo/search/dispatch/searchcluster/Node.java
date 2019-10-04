@@ -83,6 +83,6 @@ public class Node {
 
     @Override
     public String toString() { return "search node key = " + key + " hostname = "+ hostname + " path = " + pathIndex + " in group " + group +
-            " statusIsKnown = " + statusIsKnown.get() + " working" + working.get() + " activeDocs = " + activeDocuments.get(); }
+            " statusIsKnown = " + statusIsKnown.get() + " working = " + working.get() + " activeDocs = " + activeDocuments.get(); }
 
 }
