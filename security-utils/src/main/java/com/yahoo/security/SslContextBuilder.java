@@ -122,7 +122,7 @@ public class SslContextBuilder {
 
     public SSLContext build() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             TrustManager[] trustManagers = new TrustManager[] { trustManagerFactory.createTrustManager(trustStoreSupplier.get()) };
             X509ExtendedKeyManager keyManager = this.keyManager != null
                     ? this.keyManager
