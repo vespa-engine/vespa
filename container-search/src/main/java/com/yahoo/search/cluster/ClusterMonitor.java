@@ -137,12 +137,11 @@ public class ClusterMonitor<T> {
                 catch (Throwable e) {
                     if (shutdown && e instanceof InterruptedException) {
                         break;
+                    } else if ( ! (e instanceof Exception) ) {
+                        log.log(Level.WARNING,"Error in monitor thread, will quit", e);
+                        break;
                     } else {
                         log.log(Level.WARNING,"Exception in monitor thread", e);
-                        if ( ! (e instanceof Exception) ) {
-                            log.log(Level.WARNING,"Error in monitor thread, will quit", e);
-                            break;
-                        }
                     }
                 }
             }
