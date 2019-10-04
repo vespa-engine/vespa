@@ -392,4 +392,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         return getLogger().isLoggable(Level.FINE);
     }
 
+    public void shutDown() { }
+
 }

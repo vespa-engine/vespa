@@ -36,7 +36,7 @@ public class RpcSearchInvokerTest {
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
         var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
         @SuppressWarnings("resource")
-        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 77, 1), mockPool);
+        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         invoker.sendSearchRequest(q);

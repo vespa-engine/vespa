@@ -63,7 +63,7 @@ public class SearchClusterTest {
             for (String name : nodeNames) {
                 int key = nodes.size() % nodesPergroup;
                 int group = nodes.size() / nodesPergroup;
-                nodes.add(new Node(key, name, 13333, group));
+                nodes.add(new Node(key, name, group));
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
@@ -132,7 +132,7 @@ public class SearchClusterTest {
 
             @Override
             public Callable<Pong> createPinger(Node node, ClusterMonitor<Node> monitor) {
-                int index = node.group*numPerGroup + node.key();
+                int index = node.group() * numPerGroup + node.key();
                 return new Pinger(activeDocs.get(index), pingCounts.get(index));
             }
         }
