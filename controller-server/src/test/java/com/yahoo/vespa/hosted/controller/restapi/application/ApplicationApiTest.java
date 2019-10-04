@@ -65,8 +65,6 @@ import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -84,7 +82,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1769,17 +1766,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
         new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
-    }
-
-    private RotationStatus rotationStatus(Instance instance) {
-        return controllerTester.controller().applications().rotationRepository().getRotation(instance)
-                .map(rotation -> {
-                    var rotationStatus = controllerTester.controller().serviceRegistry().globalRoutingService().getHealthStatus(rotation.name());
-                    var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                    rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
-                    return RotationStatus.from(Map.of(rotation.id(), statusMap));
-                })
-                .orElse(RotationStatus.EMPTY);
     }
 
     private void updateContactInformation() {

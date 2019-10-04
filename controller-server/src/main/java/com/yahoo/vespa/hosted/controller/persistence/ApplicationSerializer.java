@@ -88,7 +88,6 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
-    private static final String applicationCertificateField = "applicationCertificate";
 
     // Instance fields
     private static final String instanceNameField = "instanceName";
