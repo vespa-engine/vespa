@@ -14,6 +14,7 @@ namespace vespalib::slime {
     struct Cursor;
     struct Inserter;
 }
+namespace search::attribute { class ISearchContext; }
 
 namespace search::queryeval {
 
@@ -198,6 +199,7 @@ public:
     virtual bool isEquiv() const { return false; }
     virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
+    virtual const attribute::ISearchContext *get_attribute_search_context() const { return nullptr; }
 };
 
 namespace blueprint {
