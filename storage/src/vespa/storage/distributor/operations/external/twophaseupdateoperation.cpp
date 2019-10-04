@@ -178,7 +178,8 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
     document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), document::BucketId(0));
     auto get = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(),"[all]");
     copyMessageSettings(*_updateCmd, *get);
-    auto getOperation = std::make_shared<GetOperation>(_manager, _bucketSpace, get, _getMetric);
+    auto getOperation = std::make_shared<GetOperation>(
+            _manager, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(), get, _getMetric);
     GetOperation & op = *getOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(getOperation), sender);
     op.start(intermediate, _manager.getClock().getTimeInMillis());

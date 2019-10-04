@@ -48,12 +48,18 @@ public:
     void setClusterState(std::shared_ptr<const lib::ClusterState> clusterState);
 
     const lib::ClusterState &getClusterState() const noexcept { return *_clusterState; }
+    const std::shared_ptr<const lib::ClusterState>& cluster_state_sp() const noexcept {
+        return _clusterState;
+    }
 
     void setDistribution(std::shared_ptr<const lib::Distribution> distribution);
 
     // Precondition: setDistribution has been called at least once prior.
     const lib::Distribution& getDistribution() const noexcept {
         return *_distribution;
+    }
+    const std::shared_ptr<const lib::Distribution>& distribution_sp() const noexcept {
+        return _distribution;
     }
 
 };

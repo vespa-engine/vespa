@@ -148,7 +148,9 @@ Entry BTreeBucketDatabase::entry_from_iterator(const BTree::ConstIterator& iter)
     if (!iter.valid()) {
         return Entry::createInvalid();
     }
-    return entry_from_value(iter.getKey(), iter.getData());
+    const auto value = iter.getData();
+    std::atomic_thread_fence(std::memory_order_acquire);
+    return entry_from_value(iter.getKey(), value);
 }
 
 ConstEntryRef BTreeBucketDatabase::const_entry_ref_from_iterator(const BTree::ConstIterator& iter) const {
@@ -156,6 +158,7 @@ ConstEntryRef BTreeBucketDatabase::const_entry_ref_from_iterator(const BTree::Co
         return ConstEntryRef::createInvalid();
     }
     const auto value = iter.getData();
+    std::atomic_thread_fence(std::memory_order_acquire);
     const auto replicas_ref = _store.get(entry_ref_from_value(value));
     const auto bucket = BucketId(BucketId::keyToBucketId(iter.getKey()));
     return const_entry_ref_from_replica_array_ref(bucket, gc_timestamp_from_value(value), replicas_ref);

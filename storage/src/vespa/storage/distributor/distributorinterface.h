@@ -4,6 +4,7 @@
 #include "bucketgctimecalculator.h"
 #include "distributormessagesender.h"
 #include "bucketownership.h"
+#include "operation_routing_snapshot.h"
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/document/bucket/bucket.h>
 
@@ -48,6 +49,8 @@ public:
      * @return Returns the current cluster state bundle.
      */
     virtual const lib::ClusterStateBundle& getClusterStateBundle() const = 0;
+
+    virtual OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const = 0;
 
     /**
      * Returns true if the node is currently initializing.
