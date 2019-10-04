@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -34,8 +34,8 @@
     <properties>
         <vespaversion>${project.version}</vespaversion>
         <target_jdk_version>11</target_jdk_version>
-        <compiler_plugin_version>3.8.0</compiler_plugin_version>
-        <surefire_version>2.22.0</surefire_version>
+        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
         <test.categories>!integration</test.categories>
     </properties>
@@ -224,7 +224,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${surefire_version}</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <groups>${test.categories}</groups>
                         <redirectTestOutputToFile>false</redirectTestOutputToFile>
@@ -243,7 +243,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>${surefire_version}</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <reportsDirectory>${env.TEST_DIR}</reportsDirectory>
                     </configuration>
@@ -279,7 +279,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>${compiler_plugin_version}</version>
+                <version>${maven-compiler-plugin.version}</version>
                 <configuration>
                     <source>${target_jdk_version}</source>
                     <target>${target_jdk_version}</target>
