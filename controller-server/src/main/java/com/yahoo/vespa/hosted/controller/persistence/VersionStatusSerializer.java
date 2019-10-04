@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -60,7 +61,11 @@ public class VersionStatusSerializer {
     private static final String productionField = "production";
     private static final String deployingField = "deploying";
 
-    private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
+    private final NodeVersionSerializer nodeVersionSerializer;
+
+    public VersionStatusSerializer(NodeVersionSerializer nodeVersionSerializer) {
+        this.nodeVersionSerializer = Objects.requireNonNull(nodeVersionSerializer, "nodeVersionSerializer must be non-null");
+    }
 
     public Slime toSlime(VersionStatus status) {
         Slime slime = new Slime();
@@ -86,17 +91,11 @@ public class VersionStatusSerializer {
         object.setBool(isReleasedField, version.isReleased());
         deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
-        configServersToSlime(version.nodeVersions().hostnames(), object.setArray(configServersField));
         nodeVersionsToSlime(version.nodeVersions(), object.setArray(nodeVersionsField));
     }
 
     private void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
         nodeVersionSerializer.nodeVersionsToSlime(nodeVersions.asMap().values(), array, false);
-    }
-
-    // TODO(mpolden): Remove after October 2019
-    private void configServersToSlime(Set<HostName> configServerHostnames, Cursor array) {
-        configServerHostnames.stream().map(HostName::value).forEach(array::addString);
     }
 
     private void deploymentStatisticsToSlime(DeploymentStatistics statistics, Cursor object) {
@@ -124,24 +123,15 @@ public class VersionStatusSerializer {
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),
-                                nodeVersionsFromSlime(object, deploymentStatistics.version()),
+                                nodeVersionsFromSlime(object.field(nodeVersionsField), deploymentStatistics.version()),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
     }
 
-    private NodeVersions nodeVersionsFromSlime(Inspector root, Version version) {
+    private NodeVersions nodeVersionsFromSlime(Inspector object, Version version) {
         var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
-        var nodeVersionsRoot = root.field(nodeVersionsField);
-        if (nodeVersionsRoot.valid()) {
-            for (var nodeVersion : nodeVersionSerializer.nodeVersionsFromSlime(nodeVersionsRoot, Optional.of(version))) {
-                nodeVersions.put(nodeVersion.hostname(), nodeVersion);
-            }
-        } else {
-            // TODO(mpolden): Remove after October 2019
-            var configServerHostnames = configServersFromSlime(root.field(configServersField));
-            for (var hostname : configServerHostnames) {
-                nodeVersions.put(hostname, NodeVersion.empty(hostname));
-            }
+        for (var nodeVersion : nodeVersionSerializer.nodeVersionsFromSlime(object, Optional.of(version))) {
+            nodeVersions.put(nodeVersion.hostname(), nodeVersion);
         }
         return new NodeVersions(nodeVersions.build());
     }

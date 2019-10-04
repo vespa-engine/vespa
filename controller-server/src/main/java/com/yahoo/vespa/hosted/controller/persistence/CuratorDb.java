@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -82,7 +81,8 @@ public class CuratorDb {
     private static final Path applicationCertificateRoot = root.append("applicationCertificates");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
-    private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
+    private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
+    private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
