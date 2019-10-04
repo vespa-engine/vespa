@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -66,27 +67,27 @@ public class ResourceMeterMaintainer extends Maintainer {
                 .ofCloud(CloudName.from("aws"))
                 .reachable().zones().stream()
                 .map(ZoneApi::getId)
-                .map(zoneId -> {
-                    List<Node> nodes = nodeRepository.list(zoneId).stream()
-                        .filter(node -> node.owner().isPresent())
-                        .filter(node -> ! node.owner().get().tenant().value().equals("hosted-vespa"))
-                        .collect(Collectors.toList());
-                    return createResourceSnapshotsFromNodes(zoneId, nodes);
-                })
+                .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId)))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
     private Collection<ResourceSnapshot> createResourceSnapshotsFromNodes(ZoneId zoneId, List<Node> nodes) {
         return nodes.stream()
-                    .collect(Collectors.groupingBy(node ->
-                                    node.owner().get(),
-                                    Collectors.collectingAndThen(Collectors.toList(),
-                                            nodeList -> ResourceSnapshot.from(
-                                                    nodeList,
-                                                    clock.instant(),
-                                                    zoneId))
-                                    )).values();
+                .filter(unlessNodeOwnerIsHostedVespa())
+                .collect(Collectors.groupingBy(node ->
+                                node.owner().get(),
+                                Collectors.collectingAndThen(Collectors.toList(),
+                                        nodeList -> ResourceSnapshot.from(
+                                                nodeList,
+                                                clock.instant(),
+                                                zoneId))
+                                )).values();
     }
 
+    private Predicate<Node> unlessNodeOwnerIsHostedVespa() {
+        return node -> node.owner().map(owner ->
+                !owner.tenant().value().equals("hosted-vespa")
+        ).orElse(false);
+    }
 }
