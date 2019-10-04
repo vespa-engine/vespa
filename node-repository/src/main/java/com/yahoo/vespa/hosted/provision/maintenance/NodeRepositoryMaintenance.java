@@ -168,7 +168,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             loadBalancerExpirerInterval = Duration.ofMinutes(10);
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             dynamicProvisionerInterval = Duration.ofMinutes(5);
-            osUpgradeActivatorInterval = Duration.ofMinutes(5);
+            osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
