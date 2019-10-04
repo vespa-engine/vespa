@@ -4,29 +4,30 @@ vespa_add_library(searchsummary_docsummary OBJECT
     array_attribute_combiner_dfw.cpp
     attribute_combiner_dfw.cpp
     attribute_field_writer.cpp
+    attributedfw.cpp
+    docsumconfig.cpp
+    docsumfieldwriter.cpp
+    docsumstate.cpp
+    docsumwriter.cpp
+    dynamicteaserdfw.cpp
+    geoposdfw.cpp
+    getdocsumargs.cpp
+    juniperproperties.cpp
+    keywordextractor.cpp
+    linguisticsannotation.cpp
+    matched_elements_filter_dfw.cpp
+    positionsdfw.cpp
+    rankfeaturesdfw.cpp
     resultclass.cpp
     resultconfig.cpp
     resultpacker.cpp
-    urlresult.cpp
-    getdocsumargs.cpp
-    docsumstate.cpp
-    docsumfieldwriter.cpp
-    docsumwriter.cpp
-    keywordextractor.cpp
-    attributedfw.cpp
-    dynamicteaserdfw.cpp
-    docsumconfig.cpp
-    rankfeaturesdfw.cpp
-    summaryfeaturesdfw.cpp
-    juniperproperties.cpp
-    textextractordfw.cpp
-    geoposdfw.cpp
-    tokenizer.cpp
-    positionsdfw.cpp
-    linguisticsannotation.cpp
     searchdatatype.cpp
     struct_map_attribute_combiner_dfw.cpp
+    summaryfeaturesdfw.cpp
     summaryfieldconverter.cpp
+    textextractordfw.cpp
+    tokenizer.cpp
+    urlresult.cpp
     AFTER
     searchsummary_config
 )
