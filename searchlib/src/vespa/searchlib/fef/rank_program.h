@@ -59,6 +59,7 @@ public:
     ~RankProgram();
 
     size_t num_executors() const { return _executors.size(); }
+    const FeatureExecutor &get_executor(size_t i) const { return *_executors[i]; }
 
     /**
      * Set up this rank program by creating the needed feature

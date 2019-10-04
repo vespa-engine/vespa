@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchlib/fef/blueprint.h>
+#include <vespa/eval/eval/fast_forest.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/searchlib/features/rankingexpression/expression_replacer.h>
@@ -19,6 +20,7 @@ class RankingExpressionBlueprint : public fef::Blueprint
 private:
     rankingexpression::ExpressionReplacer::SP  _expression_replacer;
     rankingexpression::IntrinsicExpression::UP _intrinsic_expression;
+    vespalib::eval::gbdt::FastForest::UP       _fast_forest;
     vespalib::eval::InterpretedFunction::UP    _interpreted_function;
     vespalib::eval::CompileCache::Token::UP    _compile_token;
     std::vector<char>                          _input_is_object;

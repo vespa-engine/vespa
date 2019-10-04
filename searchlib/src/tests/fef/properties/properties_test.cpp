@@ -226,6 +226,14 @@ TEST("test stuff") {
             EXPECT_TRUE(!eval::LazyExpressions::check(p, true));
             EXPECT_TRUE(!eval::LazyExpressions::check(p, false));
         }
+        { // vespa.eval.use_fast_forest
+            EXPECT_EQUAL(eval::UseFastForest::NAME, vespalib::string("vespa.eval.use_fast_forest"));
+            EXPECT_EQUAL(eval::UseFastForest::DEFAULT_VALUE, false);
+            Properties p;
+            EXPECT_EQUAL(eval::UseFastForest::check(p), false);
+            p.add("vespa.eval.use_fast_forest", "true");
+            EXPECT_EQUAL(eval::UseFastForest::check(p), true);
+        }
         { // vespa.rank.firstphase
             EXPECT_EQUAL(rank::FirstPhase::NAME, vespalib::string("vespa.rank.firstphase"));
             EXPECT_EQUAL(rank::FirstPhase::DEFAULT_VALUE, vespalib::string("nativeRank"));

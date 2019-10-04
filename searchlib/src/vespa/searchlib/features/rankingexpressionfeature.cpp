@@ -11,20 +11,21 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".features.rankingexpression");
 
-using vespalib::eval::Function;
-using vespalib::eval::PassParams;
-using vespalib::eval::CompileCache;
-using vespalib::eval::CompiledFunction;
-using vespalib::eval::InterpretedFunction;
-using vespalib::eval::LazyParams;
-using vespalib::eval::ValueType;
-using vespalib::eval::Value;
-using vespalib::eval::DoubleValue;
-using vespalib::eval::NodeTypes;
-using vespalib::tensor::DefaultTensorEngine;
 using search::fef::FeatureType;
 using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
+using vespalib::eval::CompileCache;
+using vespalib::eval::CompiledFunction;
+using vespalib::eval::DoubleValue;
+using vespalib::eval::Function;
+using vespalib::eval::InterpretedFunction;
+using vespalib::eval::LazyParams;
+using vespalib::eval::NodeTypes;
+using vespalib::eval::PassParams;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
+using vespalib::eval::gbdt::FastForest;
+using vespalib::tensor::DefaultTensorEngine;
 
 namespace search::features {
 
@@ -39,6 +40,23 @@ vespalib::string list_issues(const std::vector<vespalib::string> &issues) {
 }
 
 } // namespace search::features::<unnamed>
+
+//-----------------------------------------------------------------------------
+
+/**
+ * Implements the executor for fast forest gbdt evaluation
+ **/
+class FastForestExecutor : public fef::FeatureExecutor
+{
+private:
+    const FastForest &_forest;
+    FastForest::Context _ctx;
+
+public:
+    FastForestExecutor(const FastForest &forest);
+    bool isPure() override { return true; }
+    void execute(uint32_t docId) override;
+};
 
 //-----------------------------------------------------------------------------
 
@@ -110,6 +128,22 @@ public:
 
 //-----------------------------------------------------------------------------
 
+FastForestExecutor::FastForestExecutor(const FastForest &forest)
+    : _forest(forest),
+      _ctx(_forest)
+{
+}
+
+void
+FastForestExecutor::execute(uint32_t)
+{
+    const auto &params = inputs();
+    double result = _forest.eval(_ctx, [&params](size_t p){ return params.get_number(p); });
+    outputs().set_number(0, result);
+}
+
+//-----------------------------------------------------------------------------
+
 CompiledRankingExpressionExecutor::CompiledRankingExpressionExecutor(const CompiledFunction &compiled_function)
     : _ranking_function(compiled_function.get_function()),
       _params(compiled_function.num_params(), 0.0)
@@ -178,6 +212,7 @@ RankingExpressionBlueprint::RankingExpressionBlueprint(rankingexpression::Expres
     : fef::Blueprint("rankingExpression"),
       _expression_replacer(std::move(replacer)),
       _intrinsic_expression(),
+      _fast_forest(),
       _interpreted_function(),
       _compile_token(),
       _input_is_object()
@@ -259,11 +294,17 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     // avoid costly compilation when only verifying setup
     if (env.getFeatureMotivation() != env.FeatureMotivation::VERIFY_SETUP) {
         if (do_compile) {
-            bool suggest_lazy = CompiledFunction::should_use_lazy_params(rank_function);
-            if (fef::indexproperties::eval::LazyExpressions::check(env.getProperties(), suggest_lazy)) {
-                _compile_token = CompileCache::compile(rank_function, PassParams::LAZY);
-            } else {
-                _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);
+            // fast forest evaluation is a possible replacement for compiled tree models
+            if (fef::indexproperties::eval::UseFastForest::check(env.getProperties())) {
+                _fast_forest = FastForest::try_convert(rank_function);
+            }
+            if (!_fast_forest) {
+                bool suggest_lazy = CompiledFunction::should_use_lazy_params(rank_function);
+                if (fef::indexproperties::eval::LazyExpressions::check(env.getProperties(), suggest_lazy)) {
+                    _compile_token = CompileCache::compile(rank_function, PassParams::LAZY);
+                } else {
+                    _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);
+                }
             }
         } else {
             _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), rank_function, node_types));
@@ -299,6 +340,9 @@ RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, ve
     if (_interpreted_function) {
         ConstArrayRef<char> input_is_object = stash.copy_array<char>(_input_is_object);
         return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function, input_is_object);
+    }
+    if (_fast_forest) {
+        return stash.create<FastForestExecutor>(*_fast_forest);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
     if (_compile_token->get().pass_params() == PassParams::ARRAY) {
