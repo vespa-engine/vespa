@@ -46,6 +46,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
     private PingFactory pingFactory;
+    private long nextLogTime = 0;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -413,7 +414,8 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
-        if (changed || !fullCoverage) {
+        if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
+            nextLogTime = System.currentTimeMillis() + 30 * 1000;
             int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
                 log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)",
