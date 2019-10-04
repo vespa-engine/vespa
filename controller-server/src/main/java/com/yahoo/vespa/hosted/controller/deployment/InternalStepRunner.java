@@ -1,8 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -468,7 +466,7 @@ public class InternalStepRunner implements StepRunner {
                                                       testConfigSerializer.configJson(id.application(),
                                                                                       id.type(),
                                                                                       endpoints,
-                                                                                      controller.applications().listClusters(id.application(), zones)));
+                                                                                      controller.applications().contentClustersByZone(id.application(), zones)));
         return Optional.of(running);
     }
 

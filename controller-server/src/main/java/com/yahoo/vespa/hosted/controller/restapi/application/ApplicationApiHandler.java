@@ -102,7 +102,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -1321,7 +1320,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       controller.applications().clusterEndpoints(id, zones),
-                                                                      controller.applications().listClusters(id, zones)));
+                                                                      controller.applications().contentClustersByZone(id, zones)));
     }
 
     private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {

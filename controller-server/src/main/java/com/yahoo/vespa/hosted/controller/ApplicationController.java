@@ -214,7 +214,7 @@ public class ApplicationController {
     public ApplicationStore applicationStore() {  return applicationStore; }
 
     /** Returns all content clusters in all current deployments of the given application. */
-    public Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
+    public Map<ZoneId, List<String>> contentClustersByZone(ApplicationId id, Iterable<ZoneId> zones) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
         for (ZoneId zone : zones)
             clusters.put(zone, ImmutableList.copyOf(configServer.getContentClusters(new DeploymentId(id, zone))));
