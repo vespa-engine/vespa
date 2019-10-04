@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -53,16 +54,13 @@ public class VersionStatusSerializer {
     // NodeVersions fields
     private static final String nodeVersionsField = "nodeVersions";
 
-    // NodeVersion fields
-    private static final String hostnameField = "hostname";
-    private static final String wantedVersionField = "wantedVersion";
-    private static final String changedAtField = "changedAt";
-
     // DeploymentStatistics fields
     private static final String versionField = "version";
     private static final String failingField = "failing";
     private static final String productionField = "production";
     private static final String deployingField = "deploying";
+
+    private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
 
     public Slime toSlime(VersionStatus status) {
         Slime slime = new Slime();
@@ -93,12 +91,7 @@ public class VersionStatusSerializer {
     }
 
     private void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
-        for (NodeVersion nodeVersion : nodeVersions.asMap().values()) {
-            var nodeVersionObject = array.addObject();
-            nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
-            nodeVersionObject.setString(wantedVersionField, nodeVersion.wantedVersion().toFullString());
-            nodeVersionObject.setLong(changedAtField, nodeVersion.changedAt().toEpochMilli());
-        }
+        nodeVersionSerializer.nodeVersionsToSlime(nodeVersions.asMap().values(), array, false);
     }
 
     // TODO(mpolden): Remove after October 2019
@@ -140,12 +133,9 @@ public class VersionStatusSerializer {
         var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
         var nodeVersionsRoot = root.field(nodeVersionsField);
         if (nodeVersionsRoot.valid()) {
-            nodeVersionsRoot.traverse((ArrayTraverser) (i, entry) -> {
-                var hostname = HostName.from(entry.field(hostnameField).asString());
-                var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
-                var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
-                nodeVersions.put(hostname, new NodeVersion(hostname, version, wantedVersion, changedAt));
-            });
+            for (var nodeVersion : nodeVersionSerializer.nodeVersionsFromSlime(nodeVersionsRoot, Optional.of(version))) {
+                nodeVersions.put(nodeVersion.hostname(), nodeVersion);
+            }
         } else {
             // TODO(mpolden): Remove after October 2019
             var configServerHostnames = configServersFromSlime(root.field(configServersField));
