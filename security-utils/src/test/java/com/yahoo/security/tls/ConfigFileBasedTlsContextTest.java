@@ -63,7 +63,7 @@ public class ConfigFileBasedTlsContextTest {
             assertThat(enabledCiphers).isSubsetOf(TlsContext.ALLOWED_CIPHER_SUITES.toArray(new String[0]));
 
             String[] enabledProtocols = sslEngine.getEnabledProtocols();
-            assertThat(enabledProtocols).containsOnly(TlsContext.ALLOWED_PROTOCOLS.toArray(new String[0]));
+            assertThat(enabledProtocols).contains("TLSv1.2");
         }
     }
 
