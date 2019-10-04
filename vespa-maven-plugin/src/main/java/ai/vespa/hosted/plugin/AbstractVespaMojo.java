@@ -34,7 +34,10 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     @Parameter(property = "instance")
     protected String instance;
 
-    @Parameter(property = "privateKeyFile", required = true)
+    @Parameter(property = "privateKey")
+    protected String privateKey;
+
+    @Parameter(property = "privateKeyFile")
     protected String privateKeyFile;
 
     @Parameter(property = "certificateFile")
@@ -67,8 +70,15 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         instance = firstNonBlank(instance, project.getProperties().getProperty("instance", "default"));
         id = ApplicationId.from(tenant, application, instance);
 
+        if (privateKey == null) {
+            if (privateKeyFile == null || privateKeyFile.isEmpty()) {
+                throw new IllegalArgumentException("Missing 'privateKey' or 'privateKeyFile' properties.");
+            }
+            privateKey = Paths.get(privateKeyFile);
+        }
+
         controller = certificateFile == null
-                ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(privateKeyFile), id)
+                ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), privateKey, id)
                 : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(privateKeyFile), Paths.get(certificateFile));
     }
 
