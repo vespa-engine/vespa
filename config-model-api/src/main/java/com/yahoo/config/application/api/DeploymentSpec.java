@@ -13,13 +13,10 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -67,15 +64,15 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService,
                           Notifications notifications,
                           List<Endpoint> endpoints) {
-        this(List.of(new DeploymentInstancesSpec(List.of(InstanceName.from("default")),
-                                                 steps,
-                                                 upgradePolicy,
-                                                 changeBlockers,
-                                                 globalServiceId,
-                                                 athenzDomain,
-                                                 athenzService,
-                                                 notifications,
-                                                 endpoints)),
+        this(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
+                                                steps,
+                                                upgradePolicy,
+                                                changeBlockers,
+                                                globalServiceId,
+                                                athenzDomain,
+                                                athenzService,
+                                                notifications,
+                                                endpoints)),
              majorVersion,
              xmlForm);
     }
@@ -89,18 +86,11 @@ public class DeploymentSpec {
     }
 
     // TODO: Remove after October 2019
-    private DeploymentInstancesSpec defaultInstance() {
-        if (hasDefaultInstanceStepOnly()) return (DeploymentInstancesSpec)steps.get(0);
+    private DeploymentInstanceSpec defaultInstance() {
+        if (instances().size() == 1) return (DeploymentInstanceSpec)steps.get(0);
         throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
-                                           "as it does not consist only of a default instance. Content: " +
-                                           steps.stream().map(Step::toString).collect(Collectors.joining(",")));
-    }
-
-    // TODO: Remove after October 2019
-    private boolean hasDefaultInstanceStepOnly() {
-        return steps.size() == 1
-               && (steps.get(0) instanceof DeploymentInstancesSpec)
-               && ((DeploymentInstancesSpec)steps.get(0)).names().equals(List.of(InstanceName.from("default")));
+                                           "as it has multiple instances: " +
+                                           instances().stream().map(Step::toString).collect(Collectors.joining(",")));
     }
 
     // TODO: Remove after October 2019
@@ -112,59 +102,84 @@ public class DeploymentSpec {
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public boolean canUpgradeAt(Instant instant) { return defaultInstance().canUpgradeAt(instant); }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public boolean canChangeRevisionAt(Instant instant) { return defaultInstance().canChangeRevisionAt(instant); }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public List<ChangeBlocker> changeBlocker() { return defaultInstance().changeBlocker(); }
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
-        if (hasDefaultInstanceStepOnly()) return defaultInstance().steps(); // TODO: Remove line after October 2019
+        if (steps.size() == 1) return defaultInstance().steps(); // TODO: Remove line after November 2019
         return steps;
     }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public List<DeclaredZone> zones() {
         return defaultInstance().steps().stream()
                                        .flatMap(step -> step.zones().stream())
                                        .collect(Collectors.toList());
     }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public Optional<AthenzDomain> athenzDomain() { return defaultInstance().athenzDomain(); }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         return defaultInstance().athenzService(environment, region);
     }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public Notifications notifications() { return defaultInstance().notifications(); }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public List<Endpoint> endpoints() { return defaultInstance().endpoints(); }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
-    // TODO: Remove after October 2019
+    // TODO: Remove after November 2019
     public boolean includes(Environment environment, Optional<RegionName> region) {
         return defaultInstance().deploysTo(environment, region);
     }
 
     /** Returns the instance step containing the given instance name, or null if not present */
-    public DeploymentInstancesSpec instance(String name) {
+    public DeploymentInstanceSpec instance(String name) {
+        return instance(InstanceName.from(name));
+    }
+
+    /** Returns the instance step containing the given instance name, or null if not present */
+    public DeploymentInstanceSpec instance(InstanceName name) {
         for (Step step : steps) {
-            if ( ! (step instanceof DeploymentInstancesSpec)) continue;
-            DeploymentInstancesSpec instanceStep = (DeploymentInstancesSpec)step;
-            if (instanceStep.names().contains(InstanceName.from(name)))
+            if ( ! (step instanceof DeploymentInstanceSpec)) continue;
+            DeploymentInstanceSpec instanceStep = (DeploymentInstanceSpec)step;
+            if (instanceStep.name().equals(name))
                 return instanceStep;
         }
         return null;
+    }
+
+    /** Returns the instance step containing the given instance name, or throws an IllegalArgumentException if not present */
+    public DeploymentInstanceSpec requireInstance(String name) {
+        return requireInstance(InstanceName.from(name));
+    }
+
+    public DeploymentInstanceSpec requireInstance(InstanceName name) {
+        DeploymentInstanceSpec instance = instance(name);
+        if (instance == null)
+            throw new IllegalArgumentException("No instance '" + name + "' in deployment.xml'. Instances: " +
+                                               instances().stream().map(spec -> spec.name().toString()).collect(Collectors.joining(",")));
+        return instance;
+    }
+
+    /** Returns the steps of this which are instances */
+    public List<DeploymentInstanceSpec> instances() {
+        return steps.stream()
+                    .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
+                    .collect(Collectors.toList());
     }
 
     /**

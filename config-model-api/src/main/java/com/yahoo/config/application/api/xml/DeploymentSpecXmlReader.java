@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api.xml;
 
-import com.yahoo.config.application.api.DeploymentInstancesSpec;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
@@ -53,6 +53,7 @@ public class DeploymentSpecXmlReader {
     private static final String endpointTag = "endpoint";
 
     private static final String athenzServiceAttribute = "athenz-service";
+    private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
 
     private final boolean validate;
@@ -86,7 +87,7 @@ public class DeploymentSpecXmlReader {
 
         List<Step> steps = new ArrayList<>();
         if ( ! hasChildTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
-            steps.add(readInstanceContent("default", root));
+            steps.addAll(readInstanceContent("default", root, root));
         }
         else {
             if (hasChildTag(prodTag, root))
@@ -96,7 +97,7 @@ public class DeploymentSpecXmlReader {
 
             for (Element topLevelTag : XML.getChildren(root)) {
                 if (topLevelTag.getTagName().equals(instanceTag))
-                    steps.add(readInstanceContent(topLevelTag.getAttribute("id"), topLevelTag));
+                    steps.addAll(readInstanceContent(topLevelTag.getAttribute("id"), topLevelTag, root));
                 else
                     steps.addAll(readNonInstanceSteps(topLevelTag, new MutableOptional<>(), topLevelTag)); // (No global service id here)
             }
@@ -110,33 +111,38 @@ public class DeploymentSpecXmlReader {
     /**
      * Reads the content of an (implicit or explicit) instance tag producing an instances step
      *
-     * @param instanceIdString a comma-separated list of the ids of the instance id(s) this is for
-     * @param instanceElement the element having the content of this instance
+     * @param instanceNameString a comma-separated list of the names of the instances this is for
+     * @param instanceTag the element having the content of this instance
+     * @param parentTag the parent of instanceTag (or the same, if this instances is implicitly defined which means instanceTag is the root)
+     * @return the instances specified, one for each instance name element
      */
-    private DeploymentInstancesSpec readInstanceContent(String instanceIdString, Element instanceElement) {
+    private List<DeploymentInstanceSpec> readInstanceContent(String instanceNameString, Element instanceTag, Element parentTag) {
         if (validate)
-            validateTagOrder(instanceElement);
+            validateTagOrder(instanceTag);
 
-        List<InstanceName> instanceNames = Arrays.stream(instanceIdString.split("'"))
-                                                 .map(InstanceName::from)
-                                                 .collect(Collectors.toList());
         MutableOptional<String> globalServiceId = new MutableOptional<>(); // Deprecated: Set of prod, but belongs to instance
-        Optional<AthenzDomain> athenzDomain = stringAttribute("athenz-domain", instanceElement).map(AthenzDomain::from);
-        Optional<AthenzService> athenzService = stringAttribute("athenz-service", instanceElement).map(AthenzService::from);
+        Optional<AthenzDomain> athenzDomain = stringAttribute(athenzDomainAttribute, instanceTag)
+                                                        .or(() -> stringAttribute(athenzDomainAttribute, parentTag))
+                                                        .map(AthenzDomain::from);
+        Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, instanceTag)
+                                                        .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
+                                                        .map(AthenzService::from);
 
         List<Step> steps = new ArrayList<>();
-        for (Element instanceChild : XML.getChildren(instanceElement))
+        for (Element instanceChild : XML.getChildren(instanceTag))
             steps.addAll(readNonInstanceSteps(instanceChild, globalServiceId, instanceChild));
 
-        return new DeploymentInstancesSpec(instanceNames,
-                                          steps,
-                                          readUpgradePolicy(instanceElement),
-                                          readChangeBlockers(instanceElement),
-                                          globalServiceId.asOptional(),
-                                          athenzDomain,
-                                          athenzService,
-                                          readNotifications(instanceElement),
-                                          readEndpoints(instanceElement));
+        return Arrays.stream(instanceNameString.split("'"))
+                     .map(name -> new DeploymentInstanceSpec(InstanceName.from(name),
+                                                             steps,
+                                                             readUpgradePolicy(instanceTag),
+                                                             readChangeBlockers(instanceTag),
+                                                             globalServiceId.asOptional(),
+                                                             athenzDomain,
+                                                             athenzService,
+                                                             readNotifications(instanceTag),
+                                                             readEndpoints(instanceTag)))
+                     .collect(Collectors.toList());
     }
 
     // Consume the give tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened

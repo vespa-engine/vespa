@@ -18,14 +18,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * The deployment spec for some specified application instances
+ * The deployment spec for an application instance
  *
  * @author bratseth
  */
-public class DeploymentInstancesSpec extends DeploymentSpec.Step {
+public class DeploymentInstanceSpec extends DeploymentSpec.Step {
 
-    /** The instances deployed in this step */
-    private final List<InstanceName> ids;
+    /** The name of the instance this step deploys */
+    private final InstanceName name;
 
     private final List<DeploymentSpec.Step> steps;
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
@@ -36,16 +36,16 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
 
-    public DeploymentInstancesSpec(List<InstanceName> ids,
-                                   List<DeploymentSpec.Step> steps,
-                                   DeploymentSpec.UpgradePolicy upgradePolicy,
-                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
-                                   Optional<String> globalServiceId,
-                                   Optional<AthenzDomain> athenzDomain,
-                                   Optional<AthenzService> athenzService,
-                                   Notifications notifications,
-                                   List<Endpoint> endpoints) {
-        this.ids = List.copyOf(ids);
+    public DeploymentInstanceSpec(InstanceName name,
+                                  List<DeploymentSpec.Step> steps,
+                                  DeploymentSpec.UpgradePolicy upgradePolicy,
+                                  List<DeploymentSpec.ChangeBlocker> changeBlockers,
+                                  Optional<String> globalServiceId,
+                                  Optional<AthenzDomain> athenzDomain,
+                                  Optional<AthenzService> athenzService,
+                                  Notifications notifications,
+                                  List<Endpoint> endpoints) {
+        this.name = name;
         this.steps = List.copyOf(completeSteps(new ArrayList<>(steps)));
         this.upgradePolicy = upgradePolicy;
         this.changeBlockers = changeBlockers;
@@ -59,7 +59,7 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
         validateAthenz();
     }
 
-    public List<InstanceName> names() { return ids; }
+    public InstanceName name() { return name; }
 
     /** Adds missing required steps and reorders steps to a permissible order */
     private static List<DeploymentSpec.Step> completeSteps(List<DeploymentSpec.Step> steps) {
@@ -255,7 +255,7 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeploymentInstancesSpec other = (DeploymentInstancesSpec) o;
+        DeploymentInstanceSpec other = (DeploymentInstanceSpec) o;
         return globalServiceId.equals(other.globalServiceId) &&
                upgradePolicy == other.upgradePolicy &&
                changeBlockers.equals(other.changeBlockers) &&
@@ -273,7 +273,7 @@ public class DeploymentInstancesSpec extends DeploymentSpec.Step {
 
     @Override
     public String toString() {
-        return "instance" + ( ids.size() < 1 ? " " : "s " ) + ids;
+        return "instance '" + name + "'";
     }
 
 }

@@ -141,7 +141,7 @@ public class DeploymentSpecWithoutInstanceTest {
         assertFalse(((DeploymentSpec.DeclaredZone)spec.instance("default").steps().get(2)).active());
 
         assertTrue(spec.instance("default").steps().get(3) instanceof DeploymentSpec.Delay);
-        assertEquals(3 * 60 * 60 + 30 * 60, ((DeploymentSpec.Delay)spec.instance("default").steps().get(3)).duration().getSeconds());
+        assertEquals(3 * 60 * 60 + 30 * 60, spec.instance("default").steps().get(3).delay().getSeconds());
 
         assertTrue(spec.instance("default").steps().get(4).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.instance("default").steps().get(4)).active());
@@ -251,7 +251,7 @@ public class DeploymentSpecWithoutInstanceTest {
 
     @Test
     public void testEmpty() {
-        assertFalse(DeploymentSpec.empty.globalServiceId().isPresent());
+        assertFalse(DeploymentSpec.empty.instance("default").globalServiceId().isPresent());
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, DeploymentSpec.empty.upgradePolicy());
         assertTrue(DeploymentSpec.empty.steps().isEmpty());
         assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
@@ -414,7 +414,7 @@ public class DeploymentSpecWithoutInstanceTest {
     @Test
     public void noNotifications() {
         assertEquals(Notifications.none(),
-                     DeploymentSpec.fromXml("<deployment />").notifications());
+                     DeploymentSpec.fromXml("<deployment />").instance("default").notifications());
     }
 
     @Test
@@ -455,7 +455,7 @@ public class DeploymentSpecWithoutInstanceTest {
 
     @Test
     public void noEndpoints() {
-        assertEquals(Collections.emptyList(), DeploymentSpec.fromXml("<deployment />").endpoints());
+        assertEquals(Collections.emptyList(), DeploymentSpec.fromXml("<deployment />").instance("default").endpoints());
     }
 
     @Test
