@@ -953,9 +953,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ResourceAllocation lastMonth = new ResourceAllocation(24, 48, 2000);
         ApplicationId applicationId = ApplicationId.from("doesnotexist", "doesnotexist", "default");
         Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory = Map.of(applicationId, List.of(
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123)),
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246)),
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492))));
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123), ZoneId.defaultId()),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246), ZoneId.defaultId()),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492), ZoneId.defaultId())));
 
         mockMeteringClient.setMeteringInfo(new MeteringInfo(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
 
