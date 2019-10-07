@@ -40,8 +40,7 @@ public:
                              DistributorBucketSpaceRepo& bucketSpaceRepo,
                              DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                              const MaintenanceOperationGenerator&,
-                             DistributorComponentRegister& compReg,
-                             bool enable_concurrent_gets);
+                             DistributorComponentRegister& compReg);
 
     ~ExternalOperationHandler() override;
 
@@ -59,7 +58,6 @@ private:
     TimePoint _rejectFeedBeforeTimeReached;
     mutable std::mutex _non_main_thread_ops_mutex;
     OperationOwner _non_main_thread_ops_owner;
-    bool _enable_concurrent_gets;
 
     template <typename Func>
     void bounce_or_invoke_read_only_op(api::StorageCommand& cmd,
