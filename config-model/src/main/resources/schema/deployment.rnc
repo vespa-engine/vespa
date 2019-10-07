@@ -19,7 +19,7 @@ StepExceptInstance =
     ParallelInstances* &
     Upgrade? &
     BlockChange* &
-    Notifications* &
+    Notifications? &
     Endpoints? &
     Test? &
     Staging? &
