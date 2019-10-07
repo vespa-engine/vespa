@@ -40,13 +40,18 @@ public class CertificatesTest {
     public void add_san_from_csr() throws Exception {
         var certificates = new Certificates(new ManualClock());
         var dnsName = "host.example.com";
-        var csr = CertificateTester.createCsr(dnsName);
+        var ip = "192.0.2.42";
+        var csr = CertificateTester.createCsr(dnsName, ip);
         var certificate = certificates.create(csr, caCertificate, keyPair.getPrivate());
 
         assertNotNull(certificate.getSubjectAlternativeNames());
-        assertEquals(1, certificate.getSubjectAlternativeNames().size());
+        assertEquals(2, certificate.getSubjectAlternativeNames().size());
+
+        var subjectAlternativeNames = List.copyOf(certificate.getSubjectAlternativeNames());
         assertEquals(List.of(SubjectAlternativeName.Type.DNS_NAME.getTag(), dnsName),
-                     certificate.getSubjectAlternativeNames().iterator().next());
+                     subjectAlternativeNames.get(0));
+        assertEquals(List.of(SubjectAlternativeName.Type.IP_ADDRESS.getTag(), ip),
+                     subjectAlternativeNames.get(1));
     }
 
 }
