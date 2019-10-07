@@ -143,14 +143,14 @@ public class UserApiTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app/key", POST)
                                       .roles(Set.of(Role.tenantOperator(id.tenant())))
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Added deploy key " + quotedPemPublicKey + "\"}");
+                              new File("first-deploy-key.json"));
 
         // POST a pem developer key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
                                       .user("joe@dev")
                                       .roles(Set.of(Role.tenantOperator(id.tenant())))
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Set developer key " + quotedPemPublicKey + " for joe@dev\"}");
+                              new File("first-developer-key.json"));
 
         // POST the same pem developer key for a different user is forbidden
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
@@ -165,7 +165,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .user("operator@tenant")
                                       .roles(Set.of(Role.tenantOperator(id.tenant())))
                                       .data("{\"key\":\"" + otherPemPublicKey + "\"}"),
-                              "{\"message\":\"Set developer key " + otherQuotedPemPublicKey + " for operator@tenant\"}");
+                              new File("both-developer-keys.json"));
 
         // GET tenant information with keys
         tester.assertResponse(request("/application/v4/tenant/my-tenant/")
@@ -176,7 +176,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", DELETE)
                                       .roles(Set.of(Role.tenantOperator(id.tenant())))
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Removed developer key " + quotedPemPublicKey + " for joe@dev\"}");
+                              new File("second-developer-key.json"));
 
         // DELETE an application role is allowed for an application admin.
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app", DELETE)

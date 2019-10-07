@@ -354,7 +354,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Added deploy key " + quotedPemPublicKey + "\"}");
+                              "{\"keys\":[\"-----BEGIN PUBLIC KEY-----\\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\\nz/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\\n-----END PUBLIC KEY-----\\n\"]}");
 
         // PATCH in a pem deploy key at deprecated path
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
@@ -377,7 +377,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Removed deploy key " + quotedPemPublicKey + "\"}");
+                              "{\"keys\":[]}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),

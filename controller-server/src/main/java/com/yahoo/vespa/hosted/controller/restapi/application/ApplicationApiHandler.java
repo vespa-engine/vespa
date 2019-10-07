@@ -380,9 +380,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Principal user = request.getJDiscRequest().getUserPrincipal();
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
         PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
-        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
-                controller.tenants().store(tenant.withDeveloperKey(developerKey, user)));
-        return new MessageResponse("Set developer key " + pemDeveloperKey + " for " + user);
+        Slime root = new Slime();
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
+            tenant = tenant.withDeveloperKey(developerKey, user);
+            toSlime(root.setObject().setArray("keys"), tenant.get().developerKeys());
+            controller.tenants().store(tenant);
+        });
+        return new SlimeJsonResponse(root);
     }
 
     private HttpResponse removeDeveloperKey(String tenantName, HttpRequest request) {
@@ -392,27 +396,49 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
         PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
         Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).developerKeys().get(developerKey);
-        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
-                controller.tenants().store(tenant.withoutDeveloperKey(developerKey)));
-        return new MessageResponse("Removed developer key " + pemDeveloperKey + " for " + user);
+        Slime root = new Slime();
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
+            tenant = tenant.withoutDeveloperKey(developerKey);
+            toSlime(root.setObject().setArray("keys"), tenant.get().developerKeys());
+            controller.tenants().store(tenant);
+        });
+        return new SlimeJsonResponse(root);
+    }
+
+    private void toSlime(Cursor keysArray, Map<PublicKey, Principal> keys) {
+        keys.forEach((key, principal) -> {
+            Cursor keyObject = keysArray.addObject();
+            keyObject.setString("key", KeyUtils.toPem(key));
+            keyObject.setString("user", principal.getName());
+        });
     }
 
     private HttpResponse addDeployKey(String tenantName, String applicationName, HttpRequest request) {
         String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
         PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
-        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application ->
-                controller.applications().store(application.withDeployKey(deployKey)));
-
-        return new MessageResponse("Added deploy key " + pemDeployKey);
+        Slime root = new Slime();
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
+            application = application.withDeployKey(deployKey);
+            application.get().deployKeys().stream()
+                       .map(KeyUtils::toPem)
+                       .forEach(root.setObject().setArray("keys")::addString);
+            controller.applications().store(application);
+        });
+        return new SlimeJsonResponse(root);
     }
 
     private HttpResponse removeDeployKey(String tenantName, String applicationName, HttpRequest request) {
         String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
         PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
-        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application ->
-                controller.applications().store(application.withoutDeployKey(deployKey)));
-
-        return new MessageResponse("Removed deploy key " + pemDeployKey);
+        Slime root = new Slime();
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
+            application = application.withoutDeployKey(deployKey);
+            application.get().deployKeys().stream()
+                       .map(KeyUtils::toPem)
+                       .forEach(root.setObject().setArray("keys")::addString);
+            controller.applications().store(application);
+        });
+        return new SlimeJsonResponse(root);
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
