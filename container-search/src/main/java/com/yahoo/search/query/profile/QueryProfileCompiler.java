@@ -33,31 +33,36 @@ public class QueryProfileCompiler {
     }
 
     public static CompiledQueryProfile compile(QueryProfile in, CompiledQueryProfileRegistry registry) {
-        DimensionalMap.Builder<CompoundName, Object> values = new DimensionalMap.Builder<>();
-        DimensionalMap.Builder<CompoundName, QueryProfileType> types = new DimensionalMap.Builder<>();
-        DimensionalMap.Builder<CompoundName, Object> references = new DimensionalMap.Builder<>();
-        DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
+        try {
+            DimensionalMap.Builder<CompoundName, Object> values = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<CompoundName, QueryProfileType> types = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<CompoundName, Object> references = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
 
-        // Resolve values for each existing variant and combine into a single data structure
-        Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
-        variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
-        log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
-        for (DimensionBindingForPath variant : variants) {
-            log.finer(() -> "  Compiling variant " + variant);
-            for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet()) {
-                values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
+            // Resolve values for each existing variant and combine into a single data structure
+            Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
+            variants.add(new DimensionBindingForPath(DimensionBinding.nullBinding, CompoundName.empty)); // if this contains no variants
+            log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
+            for (DimensionBindingForPath variant : variants) {
+                log.finer(() -> "  Compiling variant " + variant);
+                for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet()) {
+                    values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
+                }
+                for (Map.Entry<CompoundName, QueryProfileType> entry : in.listTypes(variant.path(), variant.binding().getContext()).entrySet())
+                    types.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
+                for (CompoundName reference : in.listReferences(variant.path(), variant.binding().getContext()))
+                    references.put(variant.path().append(reference), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
+                for (CompoundName name : in.listUnoverridable(variant.path(), variant.binding().getContext()))
+                    unoverridables.put(variant.path().append(name), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
             }
-            for (Map.Entry<CompoundName, QueryProfileType> entry : in.listTypes(variant.path(), variant.binding().getContext()).entrySet())
-                types.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
-            for (CompoundName reference : in.listReferences(variant.path(), variant.binding().getContext()))
-                references.put(variant.path().append(reference), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
-            for (CompoundName name : in.listUnoverridable(variant.path(), variant.binding().getContext()))
-                unoverridables.put(variant.path().append(name), variant.binding(), Boolean.TRUE); // Used as a set; value is ignored
-        }
 
-        return new CompiledQueryProfile(in.getId(), in.getType(),
-                                        values.build(), types.build(), references.build(), unoverridables.build(),
-                                        registry);
+            return new CompiledQueryProfile(in.getId(), in.getType(),
+                                            values.build(), types.build(), references.build(), unoverridables.build(),
+                                            registry);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid " + in, e);
+        }
     }
 
     /**

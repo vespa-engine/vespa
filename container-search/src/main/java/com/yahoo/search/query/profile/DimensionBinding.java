@@ -21,7 +21,7 @@ public class DimensionBinding {
     private DimensionValues values;
 
     /** The binding from those dimensions to values, and possibly other values */
-    private Map<String,String> context;
+    private Map<String, String> context;
 
     public static final DimensionBinding nullBinding =
         new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
@@ -195,11 +195,11 @@ public class DimensionBinding {
     @Override
     public String toString() {
         if (isInvalid()) return "Invalid DimensionBinding";
-        if (dimensions==null) return "DimensionBinding []";
-        StringBuilder b=new StringBuilder("DimensionBinding [");
-        for (int i=0; i<dimensions.size(); i++) {
+        if (dimensions == null) return "DimensionBinding []";
+        StringBuilder b = new StringBuilder("DimensionBinding [");
+        for (int i = 0; i < dimensions.size(); i++) {
             b.append(dimensions.get(i)).append("=").append(values.get(i));
-            if (i<dimensions.size()-1)
+            if (i < dimensions.size()-1)
                 b.append(", ");
         }
         b.append("]");
