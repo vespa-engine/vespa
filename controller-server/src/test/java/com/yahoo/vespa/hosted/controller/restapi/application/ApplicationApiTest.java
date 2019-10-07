@@ -45,7 +45,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClien
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -65,8 +64,6 @@ import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -84,7 +81,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1745,14 +1741,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         clusterInfo.put(ClusterSpec.Id.from("cluster1"),
                                         new ClusterInfo("flavor1", 37, 2, 4, 50,
                                                         ClusterSpec.Type.content, hostnames));
-                        Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
-                        clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                         DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
                                                                           Optional.of(Instant.ofEpochMilli(123123)), Map.of());
 
                         lockedApplication = lockedApplication.with(instance.name(),
                                                                    lockedInstance -> lockedInstance.withClusterInfo(deployment.zone(), clusterInfo)
-                                                                                                   .withClusterUtilization(deployment.zone(), clusterUtils)
                                                                                                    .with(deployment.zone(), metrics)
                                                                                                    .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone()));
                     }
@@ -1769,17 +1762,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
         new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
-    }
-
-    private RotationStatus rotationStatus(Instance instance) {
-        return controllerTester.controller().applications().rotationRepository().getRotation(instance)
-                .map(rotation -> {
-                    var rotationStatus = controllerTester.controller().serviceRegistry().globalRoutingService().getHealthStatus(rotation.name());
-                    var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                    rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
-                    return RotationStatus.from(Map.of(rotation.id(), statusMap));
-                })
-                .orElse(RotationStatus.EMPTY);
     }
 
     private void updateContactInformation() {
