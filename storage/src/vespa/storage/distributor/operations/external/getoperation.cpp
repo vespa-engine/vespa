@@ -182,31 +182,32 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
     }
 }
 
+void GetOperation::update_internal_metrics() {
+    auto metric = _metric.locked();
+    if (_returnCode.success()) {
+        metric->ok.inc();
+    } else if (_returnCode.getResult() == api::ReturnCode::TIMEOUT) {
+        metric->failures.timeout.inc();
+    } else if (_returnCode.isBusy()) {
+        metric->failures.busy.inc();
+    } else if (_returnCode.isNodeDownOrNetwork()) {
+        metric->failures.notconnected.inc();
+    } else {
+        metric->failures.storagefailure.inc();
+    }
+    if (!_doc.get()) {
+        metric->failures.notfound.inc();
+    }
+    metric->latency.addValue(_operationTimer.getElapsedTimeAsDouble());
+}
+
 void
 GetOperation::sendReply(DistributorMessageSender& sender)
 {
     if (_msg.get()) {
         auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified);
         repl->setResult(_returnCode);
-
-        if (_returnCode.success()) {
-            _metric.ok.inc();
-        } else if (_returnCode.getResult() == api::ReturnCode::TIMEOUT) {
-            _metric.failures.timeout.inc();
-        } else if (_returnCode.isBusy()) {
-            _metric.failures.busy.inc();
-        } else if (_returnCode.isNodeDownOrNetwork()) {
-            _metric.failures.notconnected.inc();
-        } else {
-            _metric.failures.storagefailure.inc();
-        }
-
-        if (!_doc.get()) {
-            _metric.failures.notfound.inc();
-        }
-
-        _metric.latency.addValue(_operationTimer.getElapsedTimeAsDouble());
-
+        update_internal_metrics();
         sender.sendReply(repl);
         _msg.reset();
     }

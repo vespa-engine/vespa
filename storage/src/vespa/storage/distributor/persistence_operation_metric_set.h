@@ -4,6 +4,7 @@
 
 #include <vespa/metrics/metrics.h>
 #include <vespa/documentapi/loadtypes/loadtypeset.h>
+#include <mutex>
 
 namespace storage {
 
@@ -36,6 +37,7 @@ public:
 
 class PersistenceOperationMetricSet : public metrics::MetricSet
 {
+    mutable std::mutex _mutex;
 public:
     metrics::DoubleAverageMetric latency;
     metrics::LongCountMetric ok;
@@ -54,6 +56,24 @@ public:
      * Does _not_ update latency metric.
      */
     void updateFromResult(const api::ReturnCode& result);
+
+    friend class LockWrapper;
+    class LockWrapper {
+        std::unique_lock<std::mutex> _lock;
+        PersistenceOperationMetricSet& _self;
+    public:
+        explicit LockWrapper(PersistenceOperationMetricSet& self)
+            : _lock(self._mutex),
+              _self(self)
+        {}
+
+        PersistenceOperationMetricSet* operator->() noexcept {
+            return &_self;
+        }
+    };
+    LockWrapper locked() noexcept {
+        return LockWrapper(*this);
+    }
 };
 
 }

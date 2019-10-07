@@ -302,7 +302,7 @@ std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(
                                                      *ctx.pending_cluster_state());
         } else {
             bounce_with_wrong_distribution(*cmd, *snapshot.context().default_active_cluster_state());
-            metrics.failures.wrongdistributor.inc(); // TODO thread safety for updates
+            metrics.locked()->failures.wrongdistributor.inc();
         }
         return std::shared_ptr<Operation>();
     }
@@ -366,6 +366,8 @@ bool ExternalOperationHandler::try_handle_message_outside_main_thread(const std:
         std::lock_guard g(_non_main_thread_ops_mutex);
         // The Get for which this reply was created may have been sent by someone outside
         // the ExternalOperationHandler, such as TwoPhaseUpdateOperation. Pass it on if so.
+        // It is undefined which thread actually invokes this, so mutex protection of reply
+        // handling is crucial!
         return _non_main_thread_ops_owner.handleReply(std::dynamic_pointer_cast<api::StorageReply>(msg));
     }
     return false;
