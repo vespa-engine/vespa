@@ -30,16 +30,24 @@ public class Properties {
         return getNonBlankProperty("region").map(RegionName::from);
     }
 
-    public static URI endpoint() {
+    public static URI apiEndpoint() {
         return URI.create(requireNonBlankProperty("endpoint"));
     }
 
-    public static Path privateKeyFile() {
+    public static Path apiPrivateKeyFile() {
         return Paths.get(requireNonBlankProperty("privateKeyFile"));
     }
 
-    public static Optional<Path> certificateFile() {
+    public static Optional<Path> apiCertificateFile() {
         return getNonBlankProperty("certificateFile").map(Paths::get);
+    }
+
+    public static Optional<Path> dataPlaneCertificateFile() {
+        return getNonBlankProperty("dataPlaneCertificateFile").map(Paths::get);
+    }
+
+    public static Optional<Path> dataPlanePrivateKeyFile() {
+        return getNonBlankProperty("dataPlaneKeyFile").map(Paths::get);
     }
 
     /** Returns the system property with the given name if it is set, or empty. */

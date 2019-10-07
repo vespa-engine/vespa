@@ -1,5 +1,6 @@
 package ai.vespa.hosted.auth;
 
+import ai.vespa.hosted.api.Properties;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
@@ -47,12 +48,10 @@ public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthen
                 privateKeyFile = credentialsRoot.resolve("key");
             }
             else {
-                Optional<String> certificateFileProperty = getNonBlankProperty("dataPlaneCertificateFile");
-                if (certificateFileProperty.isPresent())
-                    certificateFile = Path.of(certificateFileProperty.get());
-                Optional<String> privateKeyFileProperty = getNonBlankProperty("dataPlaneKeyFile");
-                if (privateKeyFileProperty.isPresent())
-                    privateKeyFile = Path.of(privateKeyFileProperty.get());
+                if (Properties.dataPlaneCertificateFile().isPresent())
+                    certificateFile = Properties.dataPlaneCertificateFile().get();
+                if (Properties.dataPlanePrivateKeyFile().isPresent())
+                    privateKeyFile = Properties.dataPlanePrivateKeyFile().get();
             }
             if (certificateFile != null && privateKeyFile != null) {
                 X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));
@@ -67,7 +66,7 @@ public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthen
             logger.warning(  "##################################################################################\n"
                            + "# Data plane key and/or certificate missing; please specify                      #\n"
                            + "# '-DdataPlaneCertificateFile=/path/to/certificate' and                          #\n"
-                           + "# '-DdataPlaneKeyFile=/path/to/private_key.                                      #\n"
+                           + "# '-DdataPlaneKeyFile=/path/to/private_key'.                                     #\n"
                            + "# Trying the default SSLContext, but this will most likely cause HTTP error 401. #\n"
                            + "##################################################################################");
             return SSLContext.getDefault();
