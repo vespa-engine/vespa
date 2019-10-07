@@ -151,15 +151,44 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     /** Set version for an application in a given zone */
     public void setVersion(ApplicationId application, ZoneId zone, Version version) {
-        setVersion(application, zone, version, -1);
+        setVersion(application, zone, version, -1, false);
     }
 
     /** Set version for nodeCount number of nodes in application in a given zone */
     public void setVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount) {
+        setVersion(application, zone, version, nodeCount, false);
+    }
+
+    /** Set OS version for an application in a given zone */
+    public void setOsVersion(ApplicationId application, ZoneId zone, Version version) {
+        setOsVersion(application, zone, version, -1);
+    }
+
+    /** Set OS version for an application in a given zone */
+    public void setOsVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount) {
+        setVersion(application, zone, version, nodeCount, true);
+    }
+
+    private void setVersion(ApplicationId application, ZoneId zone, Version version, int nodeCount, boolean osVersion) {
         int n = 0;
         for (Node node : nodeRepository().list(zone, application)) {
-            nodeRepository().putByHostname(zone, new Node(node.hostname(), node.state(), node.type(), node.owner(),
-                                                          version, version));
+            Node newNode;
+            if (osVersion) {
+                newNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
+                                   node.wantedVersion(), version, version, node.serviceState(),
+                                   node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
+                                   node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
+                                   node.bandwidthGbps(), node.fastDisk(), node.cost(), node.canonicalFlavor(),
+                                   node.clusterId(), node.clusterType());
+            } else {
+                newNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), version,
+                                   version, node.currentOsVersion(), node.wantedOsVersion(), node.serviceState(),
+                                   node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
+                                   node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
+                                   node.bandwidthGbps(), node.fastDisk(), node.cost(), node.canonicalFlavor(),
+                                   node.clusterId(), node.clusterType());
+            }
+            nodeRepository().putByHostname(zone, newNode);
             if (++n == nodeCount) break;
         }
     }

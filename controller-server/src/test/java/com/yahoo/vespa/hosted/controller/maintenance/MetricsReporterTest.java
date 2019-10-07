@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -262,6 +263,57 @@ public class MetricsReporterTest {
         }
     }
 
+    @Test
+    public void test_nodes_failing_os_upgrade() {
+        var tester = new DeploymentTester();
+        var reporter = createReporter(tester.controller());
+        var zone = ZoneApiMock.fromId("prod.eu-west-1");
+        var cloud = CloudName.defaultName();
+        tester.controllerTester().zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(zone));
+        var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
+                                        new JobControl(tester.controllerTester().curator()), CloudName.defaultName());;
+        var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
+                                                       new JobControl(tester.controller().curator()));
+        tester.configServer().bootstrap(List.of(zone.getId()), SystemApplication.tenantHost);
+
+        // All nodes upgrade to initial OS version
+        var version0 = Version.fromString("8.0");
+        tester.controller().upgradeOsIn(cloud, version0, false);
+        osUpgrader.maintain();
+        tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version0);
+        statusUpdater.maintain();
+        reporter.maintain();
+        assertEquals(0, getNodesFailingOsUpgrade());
+
+        for (var version : List.of(Version.fromString("8.1"), Version.fromString("8.2"))) {
+            // System starts upgrading to next OS version
+            tester.controller().upgradeOsIn(cloud, version, false);
+            osUpgrader.maintain();
+            statusUpdater.maintain();
+            reporter.maintain();
+            assertEquals(0, getNodesFailingOsUpgrade());
+
+            // 30 minutes pass and nothing happens
+            tester.clock().advance(Duration.ofMinutes(30));
+            statusUpdater.maintain();
+            reporter.maintain();
+            assertEquals(0, getNodesFailingOsUpgrade());
+
+            // 1/3 nodes upgrade within timeout
+            tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version, 1);
+            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            statusUpdater.maintain();
+            reporter.maintain();
+            assertEquals(2, getNodesFailingOsUpgrade());
+
+            // 3/3 nodes upgrade
+            tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version);
+            statusUpdater.maintain();
+            reporter.maintain();
+            assertEquals(0, getNodesFailingOsUpgrade());
+        }
+    }
+
     private Duration getAverageDeploymentDuration(ApplicationId id) {
         return Duration.ofSeconds(getMetric(MetricsReporter.DEPLOYMENT_AVERAGE_DURATION, id).longValue());
     }
@@ -276,6 +328,10 @@ public class MetricsReporterTest {
 
     private int getNodesFailingUpgrade() {
         return metrics.getMetric(MetricsReporter.NODES_FAILING_SYSTEM_UPGRADE).intValue();
+    }
+
+    private int getNodesFailingOsUpgrade() {
+        return metrics.getMetric(MetricsReporter.NODES_FAILING_OS_UPGRADE).intValue();
     }
 
     private Number getMetric(String name, ApplicationId id) {
