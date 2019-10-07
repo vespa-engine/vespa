@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -10,7 +9,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -22,7 +20,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -95,7 +92,7 @@ public class VersionStatusSerializer {
     }
 
     private void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
-        nodeVersionSerializer.nodeVersionsToSlime(nodeVersions.asMap().values(), array, false);
+        nodeVersionSerializer.nodeVersionsToSlime(nodeVersions, array);
     }
 
     private void deploymentStatisticsToSlime(DeploymentStatistics statistics, Cursor object) {
@@ -123,17 +120,9 @@ public class VersionStatusSerializer {
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),
-                                nodeVersionsFromSlime(object.field(nodeVersionsField), deploymentStatistics.version()),
+                                nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), deploymentStatistics.version()),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
-    }
-
-    private NodeVersions nodeVersionsFromSlime(Inspector object, Version version) {
-        var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
-        for (var nodeVersion : nodeVersionSerializer.nodeVersionsFromSlime(object, Optional.of(version))) {
-            nodeVersions.put(nodeVersion.hostname(), nodeVersion);
-        }
-        return new NodeVersions(nodeVersions.build());
     }
 
     private Set<HostName> configServersFromSlime(Inspector array) {

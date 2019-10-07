@@ -89,7 +89,7 @@ public class CuratorDb {
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
-    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
+    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();

@@ -4,9 +4,7 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
@@ -14,11 +12,11 @@ import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,25 +27,25 @@ import java.util.stream.Collectors;
  */
 public class OsVersionStatus {
 
-    public static final OsVersionStatus empty = new OsVersionStatus(Collections.emptyMap());
+    public static final OsVersionStatus empty = new OsVersionStatus(ImmutableMap.of());
 
-    private final Map<OsVersion, List<Node>> versions;
+    private final Map<OsVersion, NodeVersions> versions;
 
     /** Public for serialization purpose only. Use {@link OsVersionStatus#compute(Controller)} for an up-to-date status */
-    public OsVersionStatus(Map<OsVersion, List<Node>> versions) {
+    public OsVersionStatus(ImmutableMap<OsVersion, NodeVersions> versions) {
         this.versions = ImmutableMap.copyOf(Objects.requireNonNull(versions, "versions must be non-null"));
     }
 
     /** All known OS versions and their nodes */
-    public Map<OsVersion, List<Node>> versions() {
+    public Map<OsVersion, NodeVersions> versions() {
         return versions;
     }
 
     /** Returns nodes eligible for OS upgrades that exist in given cloud */
-    public List<Node> nodesIn(CloudName cloud) {
+    public List<NodeVersion> nodesIn(CloudName cloud) {
         return versions.entrySet().stream()
                        .filter(entry -> entry.getKey().cloud().equals(cloud))
-                       .flatMap(entry -> entry.getValue().stream())
+                       .flatMap(entry -> entry.getValue().asMap().values().stream())
                        .collect(Collectors.toUnmodifiableList());
     }
 
@@ -61,28 +59,52 @@ public class OsVersionStatus {
 
     /** Compute the current OS versions in this system. This is expensive and should be called infrequently */
     public static OsVersionStatus compute(Controller controller) {
-        Map<OsVersion, List<Node>> versions = new HashMap<>();
+        var osVersionStatus = controller.osVersionStatus();
+        var osVersions = new HashMap<OsVersion, List<NodeVersion>>();
+        var now = controller.clock().instant();
+        controller.osVersions().forEach(osVersion -> osVersions.put(osVersion, new ArrayList<>()));
 
-        // Always include all target versions
-        controller.osVersions().forEach(osVersion -> versions.put(osVersion, new ArrayList<>()));
-
-        for (SystemApplication application : SystemApplication.all()) {
-            if (!application.isEligibleForOsUpgrades()) {
-                continue; // Avoid querying applications that are not eligible for OS upgrades
-            }
-            for (ZoneApi zone : zonesToUpgrade(controller)) {
-                controller.serviceRegistry().configServer().nodeRepository().list(zone.getId(), application.id()).stream()
+        for (var application : SystemApplication.all()) {
+            if (!application.isEligibleForOsUpgrades()) continue;
+            for (var zone : zonesToUpgrade(controller)) {
+                var targetOsVersion = controller.serviceRegistry().configServer().nodeRepository()
+                                                .targetVersionsOf(zone.getId())
+                                                .osVersion(application.nodeType())
+                                                .orElse(Version.emptyVersion);
+                controller.serviceRegistry().configServer().nodeRepository()
+                          .list(zone.getId(), application.id()).stream()
                           .filter(node -> OsUpgrader.eligibleForUpgrade(node, application))
-                          .map(node -> new Node(node.hostname(), node.currentOsVersion(), zone.getEnvironment(), zone.getRegionName()))
-                          .forEach(node -> {
-                              var version = new OsVersion(node.version(), zone.getCloudName());
-                              versions.putIfAbsent(version, new ArrayList<>());
-                              versions.get(version).add(node);
+                          .map(node -> new NodeVersion(node.hostname(), zone.getId(), node.currentOsVersion(), targetOsVersion, now))
+                          .forEach(nodeVersion -> {
+                              var newNodeVersion = osVersionStatus.of(nodeVersion.hostname())
+                                                                  .map(nv -> nv.withCurrentVersion(nodeVersion.currentVersion(), now)
+                                                                               .withWantedVersion(nodeVersion.wantedVersion()))
+                                                                  .orElse(nodeVersion);
+                              var version = new OsVersion(newNodeVersion.currentVersion(), zone.getCloudName());
+                              osVersions.putIfAbsent(version, new ArrayList<>());
+                              osVersions.get(version).add(newNodeVersion);
                           });
             }
         }
 
-        return new OsVersionStatus(versions);
+        var newOsVersions = ImmutableMap.<OsVersion, NodeVersions>builder();
+        for (var osVersion : osVersions.entrySet()) {
+            var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
+            for (var nodeVersion : osVersion.getValue()) {
+                nodeVersions.put(nodeVersion.hostname(), nodeVersion);
+            }
+            newOsVersions.put(osVersion.getKey(), new NodeVersions(nodeVersions.build()));
+        }
+        return new OsVersionStatus(newOsVersions.build());
+    }
+
+    /** Returns version of node identified by given host name */
+    private Optional<NodeVersion> of(HostName hostname) {
+        return versions.values().stream()
+                       .map(nodeVersions -> nodeVersions.asMap().get(hostname))
+                       .map(Optional::ofNullable)
+                       .flatMap(Optional::stream)
+                       .findFirst();
     }
 
     private static List<ZoneApi> zonesToUpgrade(Controller controller) {
@@ -90,54 +112,6 @@ public class OsVersionStatus {
                          .flatMap(upgradePolicy -> upgradePolicy.asList().stream())
                          .flatMap(Collection::stream)
                          .collect(Collectors.toUnmodifiableList());
-    }
-
-    /** A node in this system and its current OS version */
-    public static class Node {
-
-        private final HostName hostname;
-        private final Version version;
-        private final Environment environment;
-        private final RegionName region;
-
-        public Node(HostName hostname, Version version, Environment environment, RegionName region) {
-            this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
-            this.version = Objects.requireNonNull(version, "version must be non-null");
-            this.environment = Objects.requireNonNull(environment, "environment must be non-null");
-            this.region = Objects.requireNonNull(region, "region must be non-null");
-        }
-
-        public HostName hostname() {
-            return hostname;
-        }
-
-        public Version version() {
-            return version;
-        }
-
-        public Environment environment() {
-            return environment;
-        }
-
-        public RegionName region() {
-            return region;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Node node = (Node) o;
-            return Objects.equals(hostname, node.hostname) &&
-                   Objects.equals(version, node.version) &&
-                   environment == node.environment &&
-                   Objects.equals(region, node.region);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(hostname, version, environment, region);
-        }
     }
 
 }
