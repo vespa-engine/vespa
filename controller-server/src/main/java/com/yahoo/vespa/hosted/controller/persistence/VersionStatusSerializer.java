@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -17,10 +16,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Serializer for {@link VersionStatus}.
@@ -123,12 +120,6 @@ public class VersionStatusSerializer {
                                 nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), deploymentStatistics.version()),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
-    }
-
-    private Set<HostName> configServersFromSlime(Inspector array) {
-        Set<HostName> configServerHostnames = new LinkedHashSet<>();
-        array.traverse((ArrayTraverser) (i, entry) -> configServerHostnames.add(HostName.from(entry.asString())));
-        return Collections.unmodifiableSet(configServerHostnames);
     }
 
     private DeploymentStatistics deploymentStatisticsFromSlime(Inspector object) {
