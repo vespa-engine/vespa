@@ -25,6 +25,10 @@ cmd="java -jar $jar target/generated-sources/trang/resources/schema/deployment.r
 echo $cmd
 $cmd
 
+cmd="java -jar $jar target/generated-sources/trang/resources/schema/deployment.rng src/test/schema-test-files/deployment-with-instances.xml"
+echo $cmd
+$cmd
+
 cmd="java -jar $jar target/generated-sources/trang/resources/schema/validation-overrides.rng src/test/schema-test-files/validation-overrides.xml"
 echo $cmd
 $cmd
