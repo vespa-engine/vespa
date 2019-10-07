@@ -17,13 +17,34 @@ import static org.junit.Assert.fail;
 public class QueryProfileSubstitutionTestCase {
 
     @Test
+    public void testSubstitutionOnly() {
+        QueryProfile p = new QueryProfile("test");
+        p.set("message","%{world}", null);
+        p.set("world", "world", null);
+        assertEquals("world", p.compile(null).get("message"));
+    }
+
+    @Test
     public void testSingleSubstitution() {
         QueryProfile p = new QueryProfile("test");
         p.set("message","Hello %{world}!", null);
         p.set("world", "world", null);
-        assertEquals("Hello world!",p.compile(null).get("message"));
+        assertEquals("Hello world!", p.compile(null).get("message"));
 
-        QueryProfile p2=new QueryProfile("test2");
+        QueryProfile p2 = new QueryProfile("test2");
+        p2.addInherited(p);
+        p2.set("world", "universe", null);
+        assertEquals("Hello universe!", p2.compile(null).get("message"));
+    }
+
+    @Test
+    public void testRelativeSubstitution() {
+        QueryProfile p = new QueryProfile("test");
+        p.set("message","Hello %{.world}!", null);
+        p.set("world", "world", null);
+        assertEquals("Hello world!", p.compile(null).get("message"));
+
+        QueryProfile p2 = new QueryProfile("test2");
         p2.addInherited(p);
         p2.set("world", "universe", null);
         assertEquals("Hello universe!", p2.compile(null).get("message"));
@@ -31,12 +52,12 @@ public class QueryProfileSubstitutionTestCase {
 
     @Test
     public void testMultipleSubstitutions() {
-        QueryProfile p=new QueryProfile("test");
+        QueryProfile p = new QueryProfile("test");
         p.set("message","%{greeting} %{entity}%{exclamation}", null);
         p.set("greeting","Hola", null);
         p.set("entity","local group", null);
         p.set("exclamation","?", null);
-        assertEquals("Hola local group?",p.compile(null).get("message"));
+        assertEquals("Hola local group?", p.compile(null).get("message"));
 
         QueryProfile p2 = new QueryProfile("test2");
         p2.addInherited(p);

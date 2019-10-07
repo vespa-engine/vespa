@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile.compiled;
 
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.DimensionBinding;
+import com.yahoo.search.query.profile.SubstituteString;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +60,15 @@ public class DimensionalValue<VALUE> {
         /** The minimal set of variants needed to capture all values at this key */
         private Map<VALUE, Value.Builder<VALUE>> buildableVariants = new HashMap<>();
 
+        /** Returns the value for the given binding, or null if none */
+        public VALUE valueFor(DimensionBinding variantBinding) {
+            for (var entry : buildableVariants.entrySet()) {
+                if (entry.getValue().variants.contains(variantBinding))
+                    return entry.getKey();
+            }
+            return null;
+        }
+
         public void add(VALUE value, DimensionBinding variantBinding) {
             // Note: We know we can index by the value because its possible types are constrained
             // to what query profiles allow: String, primitives and query profiles
@@ -69,10 +80,10 @@ public class DimensionalValue<VALUE> {
             variant.addVariant(variantBinding);
         }
 
-        public DimensionalValue<VALUE> build() {
+        public DimensionalValue<VALUE> build(Map<?, DimensionalValue.Builder<VALUE>> entries) {
             List<Value> variants = new ArrayList<>();
             for (Value.Builder buildableVariant : buildableVariants.values()) {
-                variants.addAll(buildableVariant.build());
+                variants.addAll(buildableVariant.build(entries));
             }
             return new DimensionalValue(variants);
         }
@@ -139,14 +150,17 @@ public class DimensionalValue<VALUE> {
             }
 
             /** Build a separate value object for each dimension combination which has this value */
-            public List<Value<VALUE>> build() {
+            public List<Value<VALUE>> build(Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
                 // Shortcut for efficiency of the normal case
-                if (variants.size()==1)
-                    return Collections.singletonList(new Value<>(value, Binding.createFrom(variants.iterator().next())));
+                if (variants.size() == 1) {
+                    return Collections.singletonList(new Value<>(substituteIfRelative(value, variants.iterator().next(), entries),
+                                                                 Binding.createFrom(variants.iterator().next())));
+                }
 
                 List<Value<VALUE>> values = new ArrayList<>(variants.size());
-                for (DimensionBinding variant : variants)
-                    values.add(new Value<>(value, Binding.createFrom(variant)));
+                for (DimensionBinding variant : variants) {
+                    values.add(new Value<>(substituteIfRelative(value, variant, entries), Binding.createFrom(variant)));
+                }
                 return values;
             }
 
@@ -154,6 +168,42 @@ public class DimensionalValue<VALUE> {
                 return value;
             }
 
+            @SuppressWarnings("unchecked")
+            private VALUE substituteIfRelative(VALUE value,
+                                               DimensionBinding variant,
+                                               Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
+                if (value instanceof SubstituteString) {
+                    SubstituteString substitute = (SubstituteString)value;
+                    if (substitute.hasRelative()) {
+                        List<SubstituteString.Component> resolvedComponents = new ArrayList<>(substitute.components().size());
+                        for (SubstituteString.Component component : substitute.components()) {
+                            if (component instanceof SubstituteString.RelativePropertyComponent) {
+                                SubstituteString.RelativePropertyComponent relativeComponent = (SubstituteString.RelativePropertyComponent)component;
+                                var substituteValues = lookupByLocalName(relativeComponent.fieldName(), entries);
+                                String resolved = substituteValues == null ? "(null)" : substituteValues.valueFor(variant).toString();
+                                resolvedComponents.add(new SubstituteString.StringComponent(resolved));
+                            }
+                            else {
+                                resolvedComponents.add(component);
+                            }
+                        }
+                        return (VALUE)new SubstituteString(resolvedComponents, substitute.stringValue());
+                    }
+                }
+                return value;
+            }
+
+            private DimensionalValue.Builder<VALUE> lookupByLocalName(String localName,
+                                                                      Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
+                for (var entry : entries.entrySet()) {
+                    if (entry.getKey().last().equals(localName))
+                        return entry.getValue();
+                }
+                return null;
+            }
+
         }
+
     }
+
 }

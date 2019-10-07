@@ -45,7 +45,8 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     /**
      * Creates a new query profile from an id.
      */
-    public CompiledQueryProfile(ComponentId id, QueryProfileType type,
+    public CompiledQueryProfile(ComponentId id,
+                                QueryProfileType type,
                                 DimensionalMap<CompoundName, Object> entries,
                                 DimensionalMap<CompoundName, QueryProfileType> types,
                                 DimensionalMap<CompoundName, Object> references,
