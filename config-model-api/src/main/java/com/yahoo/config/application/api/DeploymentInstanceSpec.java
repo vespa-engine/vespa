@@ -46,7 +46,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
                                   Notifications notifications,
                                   List<Endpoint> endpoints) {
         this.name = name;
-        this.steps = List.copyOf(completeSteps(new ArrayList<>(steps)));
+        this.steps = steps;
         this.upgradePolicy = upgradePolicy;
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
@@ -60,44 +60,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
     }
 
     public InstanceName name() { return name; }
-
-    /** Adds missing required steps and reorders steps to a permissible order */
-    private static List<DeploymentSpec.Step> completeSteps(List<DeploymentSpec.Step> steps) {
-        // Add staging if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
-            steps.add(new DeploymentSpec.DeclaredZone(Environment.staging));
-        }
-
-        // Add test if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
-            steps.add(new DeploymentSpec.DeclaredZone(Environment.test));
-        }
-
-        // Enforce order test, staging, prod
-        DeploymentSpec.DeclaredZone testStep = remove(Environment.test, steps);
-        if (testStep != null)
-            steps.add(0, testStep);
-        DeploymentSpec.DeclaredZone stagingStep = remove(Environment.staging, steps);
-        if (stagingStep != null)
-            steps.add(1, stagingStep);
-
-        return steps;
-    }
-
-    /**
-     * Removes the first occurrence of a deployment step to the given environment and returns it.
-     *
-     * @return the removed step, or null if it is not present
-     */
-    private static DeploymentSpec.DeclaredZone remove(Environment environment, List<DeploymentSpec.Step> steps) {
-        for (int i = 0; i < steps.size(); i++) {
-            if (steps.get(i).deploysTo(environment))
-                return (DeploymentSpec.DeclaredZone)steps.remove(i);
-        }
-        return null;
-    }
 
     /** Throw an IllegalArgumentException if any production zone is declared multiple times */
     private void validateZones(List<DeploymentSpec.Step> steps) {
@@ -187,6 +149,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
     }
 
     /** Returns the deployment steps inside this in the order they will be performed */
+    @Override
     public List<DeploymentSpec.Step> steps() { return steps; }
 
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
@@ -210,7 +173,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
                              .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns all the DeclaredZone deployment steps in the order they are declared */
+    /** Returns all the deployment steps which are zones in the order they are declared */
     public List<DeploymentSpec.DeclaredZone> zones() {
         return steps.stream()
                     .flatMap(step -> step.zones().stream())
@@ -249,6 +212,18 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
         for (DeploymentSpec.Step step : steps)
             if (step.deploysTo(environment, region)) return true;
         return false;
+    }
+
+    DeploymentInstanceSpec withSteps(List<DeploymentSpec.Step> steps) {
+        return new DeploymentInstanceSpec(name,
+                                          steps,
+                                          upgradePolicy,
+                                          changeBlockers,
+                                          globalServiceId,
+                                          athenzDomain,
+                                          athenzService,
+                                          notifications,
+                                          endpoints);
     }
 
     @Override

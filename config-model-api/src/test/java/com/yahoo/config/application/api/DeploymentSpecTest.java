@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
@@ -127,43 +126,79 @@ public class DeploymentSpecTest {
     @Test
     public void maximalProductionSpec() {
         StringReader r = new StringReader(
-        "<deployment version='1.0'>" +
-        "   <instance id='default'>" +
-        "      <test/>" +
-        "      <staging/>" +
-        "      <prod>" +
-        "         <region active='false'>us-east1</region>" +
-        "         <delay hours='3' minutes='30'/>" +
-        "         <region active='true'>us-west1</region>" +
-        "      </prod>" +
-        "   </instance>" +
-        "</deployment>"
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" + // The block checked by assertCorrectFirstInstance
+                "      <test/>" +
+                "      <staging/>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <delay hours='3' minutes='30'/>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(5, spec.instance("default").steps().size());
-        assertEquals(4, spec.instance("default").zones().size());
+        assertCorrectFirstInstance(spec.instance("default"));
+    }
 
-        assertTrue(spec.instance("default").steps().get(0).deploysTo(Environment.test));
+    @Test
+    public void maximalProductionSpecMultipleInstances() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='instance1'>" + // The block checked by assertCorrectFirstInstance
+                "      <test/>" +
+                "      <staging/>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <delay hours='3' minutes='30'/>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "   <instance id='instance2'>" +
+                "      <prod>" +
+                "         <region active='true'>us-central1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
 
-        assertTrue(spec.instance("default").steps().get(1).deploysTo(Environment.staging));
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
 
-        assertTrue(spec.instance("default").steps().get(2).deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertFalse(((DeploymentSpec.DeclaredZone)spec.instance("default").steps().get(2)).active());
+        assertCorrectFirstInstance(spec.instance("instance1"));
 
-        assertTrue(spec.instance("default").steps().get(3) instanceof DeploymentSpec.Delay);
-        assertEquals(3 * 60 * 60 + 30 * 60, spec.instance("default").steps().get(3).delay().getSeconds());
+        DeploymentInstanceSpec instance2 = spec.instance("instance2");
+        assertEquals(1, instance2.steps().size());
+        assertEquals(1, instance2.zones().size());
 
-        assertTrue(spec.instance("default").steps().get(4).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertTrue(((DeploymentSpec.DeclaredZone)spec.instance("default").steps().get(4)).active());
+        assertTrue(instance2.steps().get(0).deploysTo(Environment.prod, Optional.of(RegionName.from("us-central1"))));
+    }
 
-        assertTrue(spec.instance("default").includes(Environment.test, Optional.empty()));
-        assertFalse(spec.instance("default").includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertTrue(spec.instance("default").includes(Environment.staging, Optional.empty()));
-        assertTrue(spec.instance("default").includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.instance("default").includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.instance("default").includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
-        assertFalse(spec.instance("default").globalServiceId().isPresent());
+    private void assertCorrectFirstInstance(DeploymentInstanceSpec instance) {
+        assertEquals(5, instance.steps().size());
+        assertEquals(4, instance.zones().size());
+
+        assertTrue(instance.steps().get(0).deploysTo(Environment.test));
+
+        assertTrue(instance.steps().get(1).deploysTo(Environment.staging));
+
+        assertTrue(instance.steps().get(2).deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertFalse(((DeploymentSpec.DeclaredZone)instance.steps().get(2)).active());
+
+        assertTrue(instance.steps().get(3) instanceof DeploymentSpec.Delay);
+        assertEquals(3 * 60 * 60 + 30 * 60, instance.steps().get(3).delay().getSeconds());
+
+        assertTrue(instance.steps().get(4).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(((DeploymentSpec.DeclaredZone)instance.steps().get(4)).active());
+
+        assertTrue(instance.includes(Environment.test, Optional.empty()));
+        assertFalse(instance.includes(Environment.test, Optional.of(RegionName.from("region1"))));
+        assertTrue(instance.includes(Environment.staging, Optional.empty()));
+        assertTrue(instance.includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(instance.includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(instance.includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(instance.globalServiceId().isPresent());
     }
 
     @Test
@@ -247,6 +282,24 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void upgradePolicyDefault() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <upgrade policy='canary'/>" +
+                "   <instance id='instance1'>" +
+                "      <upgrade policy='conservative'/>" +
+                "   </instance>" +
+                "   <instance id='instance2'>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("conservative", spec.instance("instance1").upgradePolicy().toString());
+        assertEquals("canary", spec.instance("instance2").upgradePolicy().toString());
+    }
+
+    @Test
     public void maxDelayExceeded() {
         try {
             StringReader r = new StringReader(
@@ -300,6 +353,105 @@ public class DeploymentSpecTest {
         assertEquals(2, parallelZones.zones().size());
         assertEquals(RegionName.from("us-central-1"), parallelZones.zones().get(0).region().get());
         assertEquals(RegionName.from("us-east-3"), parallelZones.zones().get(1).region().get());
+    }
+
+    @Test
+    public void testTestAndStagingOutsideAndInsideInstance() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <test/>" +
+                "   <staging/>" +
+                "   <instance id='instance0'>" +
+                "      <prod>" +
+                "         <region active='true'>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "   <instance id='instance1'>" +
+                "      <test/>" +
+                "      <staging/>" +
+                "      <prod>" +
+                "         <region active='true'>us-west-1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        List<DeploymentSpec.Step> steps = spec.steps();
+        assertEquals(4, steps.size());
+        assertEquals("test", steps.get(0).toString());
+        assertEquals("staging", steps.get(1).toString());
+        assertEquals("instance 'instance0'", steps.get(2).toString());
+        assertEquals("instance 'instance1'", steps.get(3).toString());
+
+        List<DeploymentSpec.Step> instance0Steps = ((DeploymentInstanceSpec)steps.get(2)).steps();
+        assertEquals(1, instance0Steps.size());
+        assertEquals("prod.us-west-1", instance0Steps.get(0).toString());
+
+        List<DeploymentSpec.Step> instance1Steps = ((DeploymentInstanceSpec)steps.get(3)).steps();
+        assertEquals(3, instance1Steps.size());
+        assertEquals("test", instance1Steps.get(0).toString());
+        assertEquals("staging", instance1Steps.get(1).toString());
+        assertEquals("prod.us-west-1", instance1Steps.get(2).toString());
+    }
+
+    @Test
+    public void testParallelInstances() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "   <parallel>" +
+                "      <instance id='instance0'>" +
+                "         <prod>" +
+                "            <region active='true'>us-west-1</region>" +
+                "         </prod>" +
+                "      </instance>" +
+                "      <instance id='instance1'>" +
+                "         <prod>" +
+                "            <region active='true'>us-east-3</region>" +
+                "         </prod>" +
+                "      </instance>" +
+                "   </parallel>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        List<DeploymentSpec.Step> steps = spec.steps();
+        assertEquals(3, steps.size());
+        assertEquals("test", steps.get(0).toString());
+        assertEquals("staging", steps.get(1).toString());
+        assertEquals("2 parallel steps", steps.get(2).toString());
+
+        List<DeploymentSpec.Step> parallelSteps = steps.get(2).steps();
+        assertEquals("instance 'instance0'", parallelSteps.get(0).toString());
+        assertEquals("instance 'instance1'", parallelSteps.get(1).toString());
+    }
+
+    @Test
+    public void testInstancesWithDelay() {
+        StringReader r = new StringReader(
+                "<deployment>" +
+                "    <instance id='instance0'>" +
+                "       <prod>" +
+                "          <region active='true'>us-west-1</region>" +
+                "       </prod>" +
+                "    </instance>" +
+                "    <delay hours='12'/>" +
+                "    <instance id='instance1'>" +
+                "       <prod>" +
+                "          <region active='true'>us-east-3</region>" +
+                "       </prod>" +
+                "    </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        List<DeploymentSpec.Step> steps = spec.steps();
+        assertEquals(5, steps.size());
+        assertEquals("test", steps.get(0).toString());
+        assertEquals("staging", steps.get(1).toString());
+        assertEquals("instance 'instance0'", steps.get(2).toString());
+        assertEquals("delay PT12H", steps.get(3).toString());
+        assertEquals("instance 'instance1'", steps.get(4).toString());
     }
 
     @Test
@@ -389,6 +541,32 @@ public class DeploymentSpecTest {
         assertTrue(spec.instance("default").canUpgradeAt(Instant.parse("2017-09-23T09:15:30.00Z")));
         assertFalse(spec.instance("default").canUpgradeAt(Instant.parse("2017-09-23T08:15:30.00Z"))); // 10 in CET
         assertTrue(spec.instance("default").canUpgradeAt(Instant.parse("2017-09-23T10:15:30.00Z")));
+    }
+
+    @Test
+    public void testChangeBlockerInheritance() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <block-change revision='false' days='mon,tue' hours='15-16'/>" +
+                "   <instance id='instance1'>" +
+                "      <block-change days='sat' hours='10' time-zone='CET'/>" +
+                "   </instance>" +
+                "   <instance id='instance2'>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        String inheritedChangeBlocker = "change blocker revision=false version=true window=time window for hour(s) [15, 16] on [monday, tuesday] in UTC";
+
+        assertEquals(2, spec.instance("instance1").changeBlocker().size());
+        assertEquals(inheritedChangeBlocker, spec.instance("instance1").changeBlocker().get(0).toString());
+        assertEquals("change blocker revision=true version=true window=time window for hour(s) [10] on [saturday] in CET",
+                     spec.instance("instance1").changeBlocker().get(1).toString());
+
+        assertEquals(1, spec.instance("instance2").changeBlocker().size());
+        assertEquals(inheritedChangeBlocker, spec.instance("instance2").changeBlocker().get(0).toString());
     }
 
     @Test
@@ -501,6 +679,64 @@ public class DeploymentSpecTest {
         assertEquals(ImmutableSet.of(author), spec.instance("default").notifications().emailRolesFor(failingCommit));
         assertEquals(ImmutableSet.of("john@dev", "jane@dev"), spec.instance("default").notifications().emailAddressesFor(failingCommit));
         assertEquals(ImmutableSet.of("jane@dev"), spec.instance("default").notifications().emailAddressesFor(failing));
+    }
+
+    @Test
+    public void notificationsWithMultipleInstances() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='instance1'>" +
+                "      <notifications when=\"failing\">" +
+                "         <email role=\"author\"/>" +
+                "         <email address=\"john@operator\"/>" +
+                "      </notifications>" +
+                "   </instance>" +
+                "   <instance id='instance2'>" +
+                "      <notifications when=\"failing-commit\">" +
+                "         <email role=\"author\"/>" +
+                "         <email address=\"mary@dev\"/>" +
+                "      </notifications>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        DeploymentInstanceSpec instance1 = spec.instance("instance1");
+        assertEquals(Set.of(author), instance1.notifications().emailRolesFor(failing));
+        assertEquals(Set.of("john@operator"), instance1.notifications().emailAddressesFor(failing));
+
+        DeploymentInstanceSpec instance2 = spec.instance("instance2");
+        assertEquals(Set.of(author), instance2.notifications().emailRolesFor(failingCommit));
+        assertEquals(Set.of("mary@dev"), instance2.notifications().emailAddressesFor(failingCommit));
+    }
+
+    @Test
+    public void notificationsDefault() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <notifications when=\"failing-commit\">" +
+                "      <email role=\"author\"/>" +
+                "      <email address=\"mary@dev\"/>" +
+                "   </notifications>" +
+                "   <instance id='instance1'>" +
+                "      <notifications when=\"failing\">" +
+                "         <email role=\"author\"/>" +
+                "         <email address=\"john@operator\"/>" +
+                "      </notifications>" +
+                "   </instance>" +
+                "   <instance id='instance2'>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        DeploymentInstanceSpec instance1 = spec.instance("instance1");
+        assertEquals(Set.of(author), instance1.notifications().emailRolesFor(failing));
+        assertEquals(Set.of("john@operator"), instance1.notifications().emailAddressesFor(failing));
+
+        DeploymentInstanceSpec instance2 = spec.instance("instance2");
+        assertEquals(Set.of(author), instance2.notifications().emailRolesFor(failingCommit));
+        assertEquals(Set.of("mary@dev"), instance2.notifications().emailAddressesFor(failingCommit));
     }
 
     @Test

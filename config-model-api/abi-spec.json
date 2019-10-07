@@ -226,7 +226,8 @@
       "public void <init>(boolean, boolean, com.yahoo.config.application.api.TimeWindow)",
       "public boolean blocksRevisions()",
       "public boolean blocksVersions()",
-      "public com.yahoo.config.application.api.TimeWindow window()"
+      "public com.yahoo.config.application.api.TimeWindow window()",
+      "public java.lang.String toString()"
     ],
     "fields": []
   },
@@ -264,7 +265,8 @@
       "public void <init>(java.time.Duration)",
       "public java.time.Duration duration()",
       "public java.time.Duration delay()",
-      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)"
+      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
+      "public java.lang.String toString()"
     ],
     "fields": []
   },
@@ -280,7 +282,8 @@
       "public java.util.List steps()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public java.lang.String toString()"
     ],
     "fields": []
   },
@@ -296,7 +299,8 @@
       "public final boolean deploysTo(com.yahoo.config.provision.Environment)",
       "public abstract boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.util.List zones()",
-      "public java.time.Duration delay()"
+      "public java.time.Duration delay()",
+      "public java.util.List steps()"
     ],
     "fields": []
   },

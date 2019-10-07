@@ -894,9 +894,9 @@ public class ApplicationController {
      * 2. If the principal is given, verify that the principal is tenant admin or admin of the tenant domain
      * 3. If the principal is not given, verify that the Athenz domain of the tenant equals Athenz domain given in deployment.xml
      *
-     * @param tenantName Tenant where application should be deployed
-     * @param applicationPackage Application package
-     * @param deployer Principal initiating the deployment, possibly empty
+     * @param tenantName tenant where application should be deployed
+     * @param applicationPackage application package
+     * @param deployer principal initiating the deployment, possibly empty
      */
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
         verifyAllowedLaunchAthenzService(applicationPackage.deploymentSpec());

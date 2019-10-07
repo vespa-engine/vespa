@@ -44,6 +44,7 @@ public class DeploymentSpecXmlReader {
     private static final String majorVersionTag = "major-version";
     private static final String testTag = "test";
     private static final String stagingTag = "staging";
+    private static final String upgradeTag = "upgrade";
     private static final String blockChangeTag = "block-change";
     private static final String prodTag = "prod";
     private static final String regionTag = "region";
@@ -51,7 +52,9 @@ public class DeploymentSpecXmlReader {
     private static final String parallelTag = "parallel";
     private static final String endpointsTag = "endpoints";
     private static final String endpointTag = "endpoint";
+    private static final String notificationsTag = "notifications";
 
+    private static final String idAttribute = "id";
     private static final String athenzServiceAttribute = "athenz-service";
     private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
@@ -86,18 +89,18 @@ public class DeploymentSpecXmlReader {
         Element root = XML.getDocument(xmlForm).getDocumentElement();
 
         List<Step> steps = new ArrayList<>();
-        if ( ! hasChildTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
-            steps.addAll(readInstanceContent("default", root, root));
+        if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
+            steps.addAll(readInstanceContent("default", root, new MutableOptional<>(), root));
         }
         else {
-            if (hasChildTag(prodTag, root))
+            if (XML.getChildren(root).stream().anyMatch(child -> child.getTagName().equals(prodTag)))
                 throw new IllegalArgumentException("A deployment spec cannot have both a <prod> tag and an " +
                                                    "<instance> tag under the root: " +
                                                    "Wrap the prod tags inside the appropriate instance");
 
             for (Element topLevelTag : XML.getChildren(root)) {
                 if (topLevelTag.getTagName().equals(instanceTag))
-                    steps.addAll(readInstanceContent(topLevelTag.getAttribute("id"), topLevelTag, root));
+                    steps.addAll(readInstanceContent(topLevelTag.getAttribute(idAttribute), topLevelTag, new MutableOptional<>(), root));
                 else
                     steps.addAll(readNonInstanceSteps(topLevelTag, new MutableOptional<>(), topLevelTag)); // (No global service id here)
             }
@@ -116,36 +119,53 @@ public class DeploymentSpecXmlReader {
      * @param parentTag the parent of instanceTag (or the same, if this instances is implicitly defined which means instanceTag is the root)
      * @return the instances specified, one for each instance name element
      */
-    private List<DeploymentInstanceSpec> readInstanceContent(String instanceNameString, Element instanceTag, Element parentTag) {
+    private List<DeploymentInstanceSpec> readInstanceContent(String instanceNameString,
+                                                             Element instanceTag,
+                                                             MutableOptional<String> globalServiceId,
+                                                             Element parentTag) {
         if (validate)
             validateTagOrder(instanceTag);
 
-        MutableOptional<String> globalServiceId = new MutableOptional<>(); // Deprecated: Set of prod, but belongs to instance
+        // Values where the parent may provide a default
+        DeploymentSpec.UpgradePolicy upgradePolicy = readUpgradePolicy(instanceTag, parentTag);
+        List<DeploymentSpec.ChangeBlocker> changeBlockers = readChangeBlockers(instanceTag, parentTag);
         Optional<AthenzDomain> athenzDomain = stringAttribute(athenzDomainAttribute, instanceTag)
                                                         .or(() -> stringAttribute(athenzDomainAttribute, parentTag))
                                                         .map(AthenzDomain::from);
         Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, instanceTag)
                                                         .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
                                                         .map(AthenzService::from);
+        Notifications notifications = readNotifications(instanceTag, parentTag);
 
+        // Values where there is no default
         List<Step> steps = new ArrayList<>();
         for (Element instanceChild : XML.getChildren(instanceTag))
             steps.addAll(readNonInstanceSteps(instanceChild, globalServiceId, instanceChild));
+        List<Endpoint> endpoints = readEndpoints(instanceTag);
 
+        // Build and return instances with these values
         return Arrays.stream(instanceNameString.split("'"))
                      .map(name -> new DeploymentInstanceSpec(InstanceName.from(name),
                                                              steps,
-                                                             readUpgradePolicy(instanceTag),
-                                                             readChangeBlockers(instanceTag),
+                                                             upgradePolicy,
+                                                             changeBlockers,
                                                              globalServiceId.asOptional(),
                                                              athenzDomain,
                                                              athenzService,
-                                                             readNotifications(instanceTag),
-                                                             readEndpoints(instanceTag)))
+                                                             notifications,
+                                                             endpoints))
                      .collect(Collectors.toList());
     }
 
-    // Consume the give tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
+    private List<Step> readSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
+        if (stepTag.getTagName().equals(instanceTag))
+            return new ArrayList<>(readInstanceContent(stepTag.getAttribute(idAttribute), stepTag, globalServiceId, parentTag));
+        else
+            return readNonInstanceSteps(stepTag, globalServiceId, parentTag);
+
+    }
+
+    // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
     private List<Step> readNonInstanceSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
         Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, stepTag)
                                                         .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
@@ -171,8 +191,8 @@ public class DeploymentSpecXmlReader {
                                                             longAttribute("seconds", stepTag))));
             case parallelTag: // regions and instances may be nested within
                 return List.of(new ParallelZones(XML.getChildren(stepTag).stream()
-                                                                         .flatMap(child -> readNonInstanceSteps(child, globalServiceId, stepTag).stream())
-                                                                         .collect(Collectors.toList())));
+                                                    .flatMap(child -> readSteps(child, globalServiceId, stepTag).stream())
+                                                    .collect(Collectors.toList())));
             case regionTag:
                 return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
             default:
@@ -180,12 +200,18 @@ public class DeploymentSpecXmlReader {
         }
     }
 
-    private boolean hasChildTag(String childTagName, Element parent) {
-        return XML.getChildren(parent).stream().anyMatch(child -> child.getTagName().equals(childTagName));
+    private boolean containsTag(String childTagName, Element parent) {
+        for (Element child : XML.getChildren(parent)) {
+            if (child.getTagName().equals(childTagName) || containsTag(childTagName, child))
+                return true;
+        }
+        return false;
     }
 
-    private Notifications readNotifications(Element root) {
-        Element notificationsElement = XML.getChild(root, "notifications");
+    private Notifications readNotifications(Element parent, Element fallbackParent) {
+        Element notificationsElement = XML.getChild(parent, notificationsTag);
+        if (notificationsElement == null)
+            notificationsElement = XML.getChild(fallbackParent, notificationsTag);
         if (notificationsElement == null)
             return Notifications.none();
 
@@ -210,9 +236,10 @@ public class DeploymentSpecXmlReader {
         return Notifications.of(emailAddresses, emailRoles);
     }
 
-    private List<Endpoint> readEndpoints(Element root) {
-        var endpointsElement = XML.getChild(root, endpointsTag);
-        if (endpointsElement == null) { return Collections.emptyList(); }
+    private List<Endpoint> readEndpoints(Element parent) {
+        var endpointsElement = XML.getChild(parent, endpointsTag);
+        if (endpointsElement == null)
+            return Collections.emptyList();
 
         var endpoints = new LinkedHashMap<String, Endpoint>();
 
@@ -315,44 +342,44 @@ public class DeploymentSpecXmlReader {
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
         String globalServiceId = environmentTag.getAttribute("global-service-id");
-        if (globalServiceId == null || globalServiceId.isEmpty()) {
-            return Optional.empty();
-        }
-        else {
-            return Optional.of(globalServiceId);
-        }
+        if (globalServiceId == null || globalServiceId.isEmpty()) return Optional.empty();
+        return Optional.of(globalServiceId);
     }
 
-    private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element root) {
+    private List<DeploymentSpec.ChangeBlocker> readChangeBlockers(Element parent, Element globalBlockersParent) {
         List<DeploymentSpec.ChangeBlocker> changeBlockers = new ArrayList<>();
-        for (Element tag : XML.getChildren(root)) {
-            if (!blockChangeTag.equals(tag.getTagName())) continue;
-
-            boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
-            boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
-
-            String daySpec = tag.getAttribute("days");
-            String hourSpec = tag.getAttribute("hours");
-            String zoneSpec = tag.getAttribute("time-zone");
-            if (zoneSpec.isEmpty()) { // Default to UTC time zone
-                zoneSpec = "UTC";
-            }
-            changeBlockers.add(new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions,
-                                                                TimeWindow.from(daySpec, hourSpec, zoneSpec)));
+        if (globalBlockersParent != parent) {
+            for (Element tag : XML.getChildren(globalBlockersParent, blockChangeTag))
+                changeBlockers.add(readChangeBlocker(tag));
         }
+        for (Element tag : XML.getChildren(parent, blockChangeTag))
+            changeBlockers.add(readChangeBlocker(tag));
         return Collections.unmodifiableList(changeBlockers);
     }
 
-    /**
-     * Returns true if the given value is "true", or if it is missing
-     */
+    private DeploymentSpec.ChangeBlocker readChangeBlocker(Element tag) {
+        boolean blockVersions = trueOrMissing(tag.getAttribute("version"));
+        boolean blockRevisions = trueOrMissing(tag.getAttribute("revision"));
+
+        String daySpec = tag.getAttribute("days");
+        String hourSpec = tag.getAttribute("hours");
+        String zoneSpec = tag.getAttribute("time-zone");
+        if (zoneSpec.isEmpty()) zoneSpec = "UTC"; // default
+        return new DeploymentSpec.ChangeBlocker(blockRevisions, blockVersions,
+                                                TimeWindow.from(daySpec, hourSpec, zoneSpec));
+    }
+
+    /** Returns true if the given value is "true", or if it is missing */
     private boolean trueOrMissing(String value) {
         return value == null || value.isEmpty() || value.equals("true");
     }
 
-    private DeploymentSpec.UpgradePolicy readUpgradePolicy(Element root) {
-        Element upgradeElement = XML.getChild(root, "upgrade");
-        if (upgradeElement == null) return DeploymentSpec.UpgradePolicy.defaultPolicy;
+    private DeploymentSpec.UpgradePolicy readUpgradePolicy(Element parent, Element fallbackParent) {
+        Element upgradeElement = XML.getChild(parent, upgradeTag);
+        if (upgradeElement == null)
+            upgradeElement = XML.getChild(fallbackParent, upgradeTag);
+        if (upgradeElement == null)
+            return DeploymentSpec.UpgradePolicy.defaultPolicy;
 
         String policy = upgradeElement.getAttribute("policy");
         switch (policy) {

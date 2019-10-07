@@ -13,6 +13,7 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -52,7 +53,13 @@ public class DeploymentSpec {
     public DeploymentSpec(List<Step> steps,
                           Optional<Integer> majorVersion,
                           String xmlForm) {
-        this.steps = steps;
+        if (singleInstance(steps)) { // TODO: Remove this clause after November 2019
+            var singleInstance = (DeploymentInstanceSpec)steps.get(0);
+            this.steps = List.of(singleInstance.withSteps(completeSteps(singleInstance.steps())));
+        }
+        else {
+            this.steps = List.copyOf(completeSteps(steps));
+        }
         this.majorVersion = majorVersion;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
@@ -77,6 +84,50 @@ public class DeploymentSpec {
              xmlForm);
     }
 
+    /** Adds missing required steps and reorders steps to a permissible order */
+    private static List<DeploymentSpec.Step> completeSteps(List<DeploymentSpec.Step> inputSteps) {
+        List<Step> steps = new ArrayList<>(inputSteps);
+
+        // Add staging if required and missing
+        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
+            steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
+            steps.add(new DeploymentSpec.DeclaredZone(Environment.staging));
+        }
+
+        // Add test if required and missing
+        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
+            steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
+            steps.add(new DeploymentSpec.DeclaredZone(Environment.test));
+        }
+
+        // Enforce order test, staging, prod
+        DeploymentSpec.DeclaredZone testStep = remove(Environment.test, steps);
+        if (testStep != null)
+            steps.add(0, testStep);
+        DeploymentSpec.DeclaredZone stagingStep = remove(Environment.staging, steps);
+        if (stagingStep != null)
+            steps.add(1, stagingStep);
+
+        return steps;
+    }
+
+    /**
+     * Removes the first occurrence of a deployment step to the given environment and returns it.
+     *
+     * @return the removed step, or null if it is not present
+     */
+    private static DeploymentSpec.DeclaredZone remove(Environment environment, List<DeploymentSpec.Step> steps) {
+        for (int i = 0; i < steps.size(); i++) {
+            if ( ! (steps.get(i) instanceof DeploymentSpec.DeclaredZone)) continue;
+            DeploymentSpec.DeclaredZone zoneStep = (DeploymentSpec.DeclaredZone)steps.get(i);
+            if (zoneStep.environment() == environment) {
+                steps.remove(i);
+                return zoneStep;
+            }
+        }
+        return null;
+    }
+
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
         long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();
@@ -87,7 +138,7 @@ public class DeploymentSpec {
 
     // TODO: Remove after October 2019
     private DeploymentInstanceSpec defaultInstance() {
-        if (instances().size() == 1) return (DeploymentInstanceSpec)steps.get(0);
+        if (singleInstance(steps)) return (DeploymentInstanceSpec)steps.get(0);
         throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
                                            "as it has multiple instances: " +
                                            instances().stream().map(Step::toString).collect(Collectors.joining(",")));
@@ -113,7 +164,7 @@ public class DeploymentSpec {
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
-        if (steps.size() == 1) return defaultInstance().steps(); // TODO: Remove line after November 2019
+        if (singleInstance(steps)) return defaultInstance().steps(); // TODO: Remove line after November 2019
         return steps;
     }
 
@@ -144,6 +195,11 @@ public class DeploymentSpec {
     // TODO: Remove after November 2019
     public boolean includes(Environment environment, Optional<RegionName> region) {
         return defaultInstance().deploysTo(environment, region);
+    }
+
+    // TODO: Remove after November 2019
+    private static boolean singleInstance(List<DeploymentSpec.Step> steps) {
+        return steps.size() == 1 && steps.get(0) instanceof DeploymentInstanceSpec;
     }
 
     /** Returns the instance step containing the given instance name, or null if not present */
@@ -281,6 +337,9 @@ public class DeploymentSpec {
         /** The delay introduced by this step (beyond the time it takes to execute the step). Default is zero. */
         public Duration delay() { return Duration.ZERO; }
 
+        /** Returns all the steps nested in this. This default implementatiino returns an empty list. */
+        public List<Step> steps() { return List.of(); }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -300,6 +359,11 @@ public class DeploymentSpec {
 
         @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) { return false; }
+
+        @Override
+        public String toString() {
+            return "delay " + duration;
+        }
 
     }
 
@@ -400,11 +464,12 @@ public class DeploymentSpec {
         }
 
         /** Returns all the steps nested in this */
+        @Override
         public List<Step> steps() { return steps; }
 
         @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-            return zones().stream().anyMatch(zone -> zone.deploysTo(environment, region));
+            return steps().stream().anyMatch(zone -> zone.deploysTo(environment, region));
         }
 
         @Override
@@ -418,6 +483,11 @@ public class DeploymentSpec {
         @Override
         public int hashCode() {
             return Objects.hash(steps);
+        }
+
+        @Override
+        public String toString() {
+            return steps.size() + " parallel steps";
         }
 
     }
@@ -448,6 +518,11 @@ public class DeploymentSpec {
         public boolean blocksRevisions() { return revision; }
         public boolean blocksVersions() { return version; }
         public TimeWindow window() { return window; }
+
+        @Override
+        public String toString() {
+            return "change blocker revision=" + revision + " version=" + version + " window=" + window;
+        }
         
     }
 
