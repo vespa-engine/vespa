@@ -47,7 +47,6 @@ public class ApplicationPackageBuilder {
     private final List<X509Certificate> trustedCertificates = new ArrayList<>();
 
     private OptionalInt majorVersion = OptionalInt.empty();
-    private String instances = "default";
     private String upgradePolicy = null;
     private Environment environment = Environment.prod;
     private String globalServiceId = null;
@@ -56,11 +55,6 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
-        return this;
-    }
-
-    public ApplicationPackageBuilder instances(String instances) {
-        this.instances = instances;
         return this;
     }
 
@@ -96,7 +90,7 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(String regionName) {
-        environmentBody.append("      <region active='true'>");
+        environmentBody.append("    <region active='true'>");
         environmentBody.append(regionName);
         environmentBody.append("</region>\n");
         return this;
@@ -118,7 +112,7 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder blockChange(boolean revision, boolean version, String daySpec, String hourSpec,
                                                  String zoneSpec) {
-        blockChange.append("    <block-change");
+        blockChange.append("  <block-change");
         blockChange.append(" revision='").append(revision).append("'");
         blockChange.append(" version='").append(version).append("'");
         blockChange.append(" days='").append(daySpec).append("'");
@@ -172,15 +166,14 @@ public class ApplicationPackageBuilder {
             xml.append(athenzIdentityAttributes);
         }
         xml.append(">\n");
-        xml.append("  <instance id='").append(instances).append("'>\n");
         if (upgradePolicy != null) {
-            xml.append("    <upgrade policy='");
+            xml.append("<upgrade policy='");
             xml.append(upgradePolicy);
             xml.append("'/>\n");
         }
         xml.append(notifications);
         xml.append(blockChange);
-        xml.append("    <");
+        xml.append("  <");
         xml.append(environment.value());
         if (globalServiceId != null) {
             xml.append(" global-service-id='");
@@ -189,14 +182,13 @@ public class ApplicationPackageBuilder {
         }
         xml.append(">\n");
         xml.append(environmentBody);
-        xml.append("    </");
+        xml.append("  </");
         xml.append(environment.value());
         xml.append(">\n");
-        xml.append("    <endpoints>\n");
+        xml.append("  <endpoints>\n");
         xml.append(endpointsBody);
-        xml.append("    </endpoints>\n");
-        xml.append("  </instance>\n");
-        xml.append("</deployment>\n");
+        xml.append("  </endpoints>\n");
+        xml.append("</deployment>");
         return xml.toString().getBytes(UTF_8);
     }
     
