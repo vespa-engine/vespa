@@ -197,6 +197,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
+
         addAthensCopperArgos(cluster, context);  // Must be added after nodes.
     }
 
@@ -227,15 +228,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<Rotation> rotations, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
-        Optional<String> globalServiceId = spec.requireInstance(app.getApplicationId().instance()).globalServiceId();
         cluster.getContainers().forEach(container -> {
-            setRotations(container, rotations, endpoints, globalServiceId, cluster.getName());
+            setRotations(container, rotations, endpoints, spec.globalServiceId(), cluster.getName());
             container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
         });
     }
 
     private boolean zoneHasActiveRotation(Zone zone, DeploymentSpec spec) {
-        return spec.requireInstance(app.getApplicationId().instance()).zones().stream()
+        return spec.zones().stream()
                    .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
                                              declaredZone.active());
     }
@@ -893,8 +893,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                      Zone zone,
                                      DeploymentSpec spec) {
         spec.athenzDomain().ifPresent(domain -> {
-            AthenzService service = spec.requireInstance(app.getApplicationId().instance()).athenzService(zone.environment(), zone.region())
-                    .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration in instance '" + app.getApplicationId().instance() + "'"));
+            AthenzService service = spec.athenzService(zone.environment(), zone.region())
+                    .orElseThrow(() -> new RuntimeException("Missing Athenz service configuration"));
             String zoneDnsSuffix = zone.environment().value() + "-" + zone.region().value() + "." + athenzDnsSuffix;
             IdentityProvider identityProvider = new IdentityProvider(domain, service, getLoadBalancerName(loadBalancerName, configServerSpecs), ztsUrl, zoneDnsSuffix, zone);
             cluster.addComponent(identityProvider);

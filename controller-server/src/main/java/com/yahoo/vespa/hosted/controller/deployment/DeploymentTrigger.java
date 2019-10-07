@@ -372,8 +372,9 @@ public class DeploymentTrigger {
                         }
                         else { // All jobs are complete; find the time of completion of this step.
                             if (stepJobs.isEmpty()) { // No jobs means this is a delay step.
-                                completedAt = completedAt.map(at -> at.plus(step.delay())).filter(at -> !at.isAfter(clock.instant()));
-                                reason += " after a delay of " + step.delay();
+                                Duration delay = ((DeploymentSpec.Delay) step).duration();
+                                completedAt = completedAt.map(at -> at.plus(delay)).filter(at -> !at.isAfter(clock.instant()));
+                                reason += " after a delay of " + delay;
                             }
                             else {
                                 completedAt = stepJobs.stream().map(job -> instance.deploymentJobs().statusOf(job).get().lastCompleted().get().at()).max(naturalOrder());

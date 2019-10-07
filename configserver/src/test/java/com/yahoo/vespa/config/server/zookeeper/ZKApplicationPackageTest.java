@@ -81,7 +81,7 @@ public class ZKApplicationPackageTest {
         assertThat(readInfo.getHosts().iterator().next().flavor(), is(TEST_FLAVOR));
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
         assertTrue(zkApp.getDeployment().isPresent());
-        assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).instance("default").globalServiceId().get());
+        assertThat(DeploymentSpec.fromXml(zkApp.getDeployment().get()).globalServiceId().get(), is("mydisc"));
     }
 
     private void feed(ConfigCurator zk, File dirToFeed) throws IOException {
