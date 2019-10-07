@@ -28,6 +28,7 @@ public:
     metrics::LongCountMetric inconsistent_bucket;
     metrics::LongCountMetric notfound;
     metrics::LongCountMetric concurrent_mutations;
+    metrics::LongCountMetric test_and_set_failed;
 
     MetricSet * clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
                       metrics::MetricSet* owner, bool includeUnused) const override;
