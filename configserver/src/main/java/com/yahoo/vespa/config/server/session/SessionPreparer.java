@@ -175,7 +175,7 @@ public class SessionPreparer {
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
             this.rotationsSet = getRotations(params.rotations());
             this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath, secretStore);
-            this.tlsSecrets = tlsSecretsKeys.getTlsSecrets(params.tlsSecretsKeyName(), applicationId);
+            this.tlsSecrets = tlsSecretsKeys.getTlsSecrets(params.tlsSecretsKeyName(), params.tlsSecretsKeyVersion(), applicationId);
             this.endpointsSet = getEndpoints(params.containerEndpoints());
 
             this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
@@ -252,7 +252,7 @@ public class SessionPreparer {
         }
 
         void writeTlsZK() {
-            tlsSecretsKeys.writeTlsSecretsKeyToZooKeeper(applicationId, params.tlsSecretsKeyName().orElse(null));
+            tlsSecretsKeys.writeTlsSecretsKeyToZooKeeper(applicationId, params.tlsSecretsKeyName().orElse(null), params.tlsSecretsKeyVersion().orElse(0));
             checkTimeout("write tlsSecretsKey to zookeeper");
         }
 

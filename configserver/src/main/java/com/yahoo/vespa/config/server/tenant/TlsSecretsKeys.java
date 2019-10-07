@@ -35,34 +35,40 @@ public class TlsSecretsKeys {
             Optional<byte[]> data = curator.getData(tlsSecretsKeyOf(application));
             if (data.isEmpty() || data.get().length == 0) return Optional.empty();
             String tlsSecretsKey = new ObjectMapper().readValue(data.get(), new TypeReference<String>() {});
-            return readFromSecretStore(Optional.ofNullable(tlsSecretsKey));
+            Optional<byte[]> versionData = curator.getData(tlsSecretsKeyVersionOf(application));
+            Integer tlsSecretsKeyVersion =
+                    versionData.isEmpty() ? null :
+                    new ObjectMapper().readValue(versionData.get(), new TypeReference<Integer>() {});
+            return readFromSecretStore(Optional.ofNullable(tlsSecretsKey), Optional.ofNullable(tlsSecretsKeyVersion));
         } catch (Exception e) {
             throw new RuntimeException("Error reading TLS secret key of " + application, e);
         }
     }
 
-    public void writeTlsSecretsKeyToZooKeeper(ApplicationId application, String tlsSecretsKey) {
+    public void writeTlsSecretsKeyToZooKeeper(ApplicationId application, String tlsSecretsKey, Integer tlsSecretsKeyVersion) {
         if (tlsSecretsKey == null) return;
         try {
             byte[] data = new ObjectMapper().writeValueAsBytes(tlsSecretsKey);
             curator.set(tlsSecretsKeyOf(application), data);
+            byte[] versionData = new ObjectMapper().writeValueAsBytes(tlsSecretsKeyVersion);
+            curator.set(tlsSecretsKeyVersionOf(application), versionData);
         } catch (Exception e) {
             throw new RuntimeException("Could not write TLS secret key of " + application, e);
         }
     }
 
-    public Optional<TlsSecrets> getTlsSecrets(Optional<String> secretKeyname, ApplicationId applicationId) {
-        if (secretKeyname == null || secretKeyname.isEmpty()) {
+    public Optional<TlsSecrets> getTlsSecrets(Optional<String> secretKeyname, Optional<Integer> secretKeyVersion, ApplicationId applicationId) {
+        if (secretKeyname == null || secretKeyname.isEmpty() || secretKeyname.get().isEmpty()) {
             return readTlsSecretsKeyFromZookeeper(applicationId);
         }
-        return readFromSecretStore(secretKeyname);
+        return readFromSecretStore(secretKeyname, secretKeyVersion);
     }
 
-    private Optional<TlsSecrets> readFromSecretStore(Optional<String> secretKeyname) {
+    private Optional<TlsSecrets> readFromSecretStore(Optional<String> secretKeyname, Optional<Integer> secretKeyVersion) {
         if (secretKeyname.isEmpty()) return Optional.empty();
         try {
-            String cert = secretStore.getSecret(secretKeyname.get() + "-cert");
-            String key = secretStore.getSecret(secretKeyname.get() + "-key");
+            String cert = secretStore.getSecret(secretKeyname.get() + "-cert", secretKeyVersion.orElse(0));
+            String key = secretStore.getSecret(secretKeyname.get() + "-key", secretKeyVersion.orElse(0));
             return Optional.of(new TlsSecrets(cert, key));
         } catch (RuntimeException e) {
             // Assume not ready yet
@@ -81,4 +87,8 @@ public class TlsSecretsKeys {
         return path.append(application.serializedForm());
     }
 
+    /** Returns the path storing the tls secrets key for an application */
+    private Path tlsSecretsKeyVersionOf(ApplicationId application) {
+        return path.append(application.serializedForm()).append(".version");
+    }
 }

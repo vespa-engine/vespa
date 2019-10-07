@@ -36,6 +36,7 @@ public final class PrepareParams {
     static final String ROTATIONS_PARAM_NAME = "rotations";
     static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
     static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
+    static final String TLS_SECRETS_KEY_VERSION_PARAM_NAME = "tlsSecretsKeyVersion";
 
     private final ApplicationId applicationId;
     private final TimeoutBudget timeoutBudget;
@@ -47,10 +48,11 @@ public final class PrepareParams {
     private final Set<Rotation> rotations;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
+    private final Optional<Integer> tlsSecretsKeyVersion;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion, Set<Rotation> rotations,
-			  List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName) {
+			  List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName, Optional<Integer> tlsSecretsKeyVersion) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -64,6 +66,7 @@ public final class PrepareParams {
             throw new IllegalArgumentException("Cannot set both rotations and containerEndpoints");
         }
         this.tlsSecretsKeyName = tlsSecretsKeyName;
+        this.tlsSecretsKeyVersion = tlsSecretsKeyVersion;
     }
 
     public static class Builder {
@@ -78,6 +81,7 @@ public final class PrepareParams {
         private Set<Rotation> rotations;
         private List<ContainerEndpoint> containerEndpoints = List.of();
         private Optional<String> tlsSecretsKeyName = Optional.empty();
+        private Optional<Integer> tlsSecretsKeyVersion = Optional.empty();
 
         public Builder() { }
 
@@ -149,9 +153,20 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder tlsSecretsKeyVersion(String tlsSecretsKeyVersion) {
+            Optional<Integer> version = Optional.ofNullable(tlsSecretsKeyVersion).map(Integer::parseInt);
+            version.ifPresent(v -> {
+                if (v < 0) {
+                    throw new IllegalArgumentException("TLS secret key version cannot be a negative number!");
+                }
+            });
+            this.tlsSecretsKeyVersion = version;
+            return this;
+        }
+
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     verbose, isBootstrap, vespaVersion, rotations, containerEndpoints, tlsSecretsKeyName);
+                                     verbose, isBootstrap, vespaVersion, rotations, containerEndpoints, tlsSecretsKeyName, tlsSecretsKeyVersion);
         }
 
     }
@@ -166,6 +181,7 @@ public final class PrepareParams {
                             .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
                             .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
+                            .tlsSecretsKeyVersion(request.getProperty(TLS_SECRETS_KEY_VERSION_PARAM_NAME))
                             .build();
     }
 
@@ -225,5 +241,9 @@ public final class PrepareParams {
 
     public Optional<String> tlsSecretsKeyName() {
         return tlsSecretsKeyName;
+    }
+
+    public Optional<Integer> tlsSecretsKeyVersion() {
+        return tlsSecretsKeyVersion;
     }
 }
