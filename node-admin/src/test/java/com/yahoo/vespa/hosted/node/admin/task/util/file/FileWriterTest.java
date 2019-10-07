@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 
 public class FileWriterTest {
     private final FileSystem fileSystem = TestFileSystem.create();
+    private final TaskContext context = mock(TaskContext.class);
 
     @Test
     public void testWrite() {
@@ -35,7 +36,6 @@ public class FileWriterTest {
                 .withOwner(owner)
                 .withGroup(group)
                 .onlyIfFileDoesNotAlreadyExist();
-        TaskContext context = mock(TaskContext.class);
         assertTrue(writer.converge(context));
         verify(context, times(1)).recordSystemModification(any(), eq("Creating file " + path));
 
@@ -49,5 +49,16 @@ public class FileWriterTest {
         // Second time is a no-op.
         assertFalse(writer.converge(context));
         assertEquals(fileTime, unixPath.getLastModifiedTime());
+    }
+
+    @Test
+    public void testAtomicWrite() {
+        FileWriter writer = new FileWriter(fileSystem.getPath("/foo/bar"))
+                .atomicWrite(true);
+
+        assertTrue(writer.converge(context, "content"));
+
+        verify(context).recordSystemModification(any(), eq("Creating file /foo/bar"));
+        assertEquals("content", new UnixPath(writer.path()).readUtf8File());
     }
 }

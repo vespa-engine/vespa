@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,6 +20,7 @@ public class FileWriter {
     private final PartialFileData.Builder fileDataBuilder = PartialFileData.builder();
     private final Optional<ByteArraySupplier> contentProducer;
 
+    private boolean atomicWrite = false;
     private boolean overwriteExistingFile = true;
 
     public FileWriter(Path path) {
@@ -58,6 +58,11 @@ public class FileWriter {
         return this;
     }
 
+    public FileWriter atomicWrite(boolean atomicWrite) {
+        this.atomicWrite = atomicWrite;
+        return this;
+    }
+
     public FileWriter onlyIfFileDoesNotAlreadyExist() {
         overwriteExistingFile = false;
         return this;
@@ -78,7 +83,7 @@ public class FileWriter {
 
         fileDataBuilder.withContent(content);
         PartialFileData fileData = fileDataBuilder.create();
-        return fileSync.convergeTo(context, fileData);
+        return fileSync.convergeTo(context, fileData, atomicWrite);
     }
 
     @FunctionalInterface
