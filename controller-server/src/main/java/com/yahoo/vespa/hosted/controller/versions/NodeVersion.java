@@ -75,7 +75,7 @@ public class NodeVersion {
 
     @Override
     public String toString() {
-        return hostname + ": " + currentVersion + " -> " + wantedVersion + " [changedAt=" + changedAt + "]";
+        return hostname + ": " + currentVersion + " -> " + wantedVersion + " [zone=" + zone + ", changedAt=" + changedAt + "]";
     }
 
     @Override
@@ -84,6 +84,7 @@ public class NodeVersion {
         if (o == null || getClass() != o.getClass()) return false;
         NodeVersion that = (NodeVersion) o;
         return hostname.equals(that.hostname) &&
+               zone.equals(that.zone) &&
                currentVersion.equals(that.currentVersion) &&
                wantedVersion.equals(that.wantedVersion) &&
                changedAt.equals(that.changedAt);
@@ -91,7 +92,7 @@ public class NodeVersion {
 
     @Override
     public int hashCode() {
-        return Objects.hash(hostname, currentVersion, wantedVersion, changedAt);
+        return Objects.hash(hostname, zone, currentVersion, wantedVersion, changedAt);
     }
 
     public static NodeVersion empty(HostName hostname) {

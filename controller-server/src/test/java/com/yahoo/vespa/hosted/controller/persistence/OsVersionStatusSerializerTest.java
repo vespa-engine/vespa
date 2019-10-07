@@ -55,7 +55,7 @@ public class OsVersionStatusSerializerTest {
                 new OsVersion(Version.fromString("7.42"), CloudName.from("yahoo")),
                 NodeVersions.EMPTY.with(List.of(new NodeVersion(HostName.from("node1"), ZoneId.from("prod", "us-north-1"),
                                                                 Version.fromString("7.42"), Version.emptyVersion, Instant.EPOCH),
-                                                new NodeVersion(HostName.from("node2"), ZoneId.from("prod", "us-north-2"),
+                                                new NodeVersion(HostName.from("node2"), ZoneId.from("test", "us-north-2"),
                                                                 Version.fromString("7.42"), Version.emptyVersion, Instant.EPOCH))));
 
         var deserialized = serializer.fromSlime(SlimeUtils.jsonToSlime(data));
@@ -63,7 +63,7 @@ public class OsVersionStatusSerializerTest {
 
 
         var serialized = new String(SlimeUtils.toJsonBytes(serializer.toSlime(new OsVersionStatus(versions))), StandardCharsets.UTF_8);
-        assertEquals("{\"versions\":[{\"version\":\"7.42.0\",\"cloud\":\"yahoo\",\"nodeVersions\":[{\"hostname\":\"node1\",\"zone\":\"prod.us-north-1\",\"wantedVersion\":\"0.0.0\",\"changedAt\":0},{\"hostname\":\"node2\",\"zone\":\"prod.us-north-2\",\"wantedVersion\":\"0.0.0\",\"changedAt\":0}],\"nodes\":[{\"hostname\":\"node1\",\"version\":\"7.42.0\",\"region\":\"us-north-1\",\"environment\":\"prod\"},{\"hostname\":\"node2\",\"version\":\"7.42.0\",\"region\":\"us-north-2\",\"environment\":\"prod\"}]}]}",
+        assertEquals("{\"versions\":[{\"version\":\"7.42.0\",\"cloud\":\"yahoo\",\"nodeVersions\":[{\"hostname\":\"node1\",\"zone\":\"prod.us-north-1\",\"wantedVersion\":\"0.0.0\",\"changedAt\":0},{\"hostname\":\"node2\",\"zone\":\"test.us-north-2\",\"wantedVersion\":\"0.0.0\",\"changedAt\":0}],\"nodes\":[{\"hostname\":\"node1\",\"version\":\"7.42.0\",\"region\":\"us-north-1\",\"environment\":\"prod\"},{\"hostname\":\"node2\",\"version\":\"7.42.0\",\"region\":\"us-north-2\",\"environment\":\"test\"}]}]}",
                      serialized);
     }
 
