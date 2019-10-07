@@ -30,14 +30,12 @@ ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
                                                    DistributorBucketSpaceRepo& bucketSpaceRepo,
                                                    DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                                    const MaintenanceOperationGenerator& gen,
-                                                   DistributorComponentRegister& compReg,
-                                                   bool enable_concurrent_gets)
+                                                   DistributorComponentRegister& compReg)
     : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch
       _non_main_thread_ops_mutex(),
-      _non_main_thread_ops_owner(owner, getClock()),
-      _enable_concurrent_gets(enable_concurrent_gets)
+      _non_main_thread_ops_owner(owner, getClock())
 {
 }
 
