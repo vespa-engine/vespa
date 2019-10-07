@@ -175,6 +175,28 @@ public class DeploymentSpecTest {
         assertTrue(instance2.steps().get(0).deploysTo(Environment.prod, Optional.of(RegionName.from("us-central1"))));
     }
 
+    @Test
+    public void testMultipleInstancesShortForm() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='instance1, instance2'>" + // The block checked by assertCorrectFirstInstance
+                "      <test/>" +
+                "      <staging/>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <delay hours='3' minutes='30'/>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+
+        assertCorrectFirstInstance(spec.instance("instance1"));
+        assertCorrectFirstInstance(spec.instance("instance2"));
+    }
+
     private void assertCorrectFirstInstance(DeploymentInstanceSpec instance) {
         assertEquals(5, instance.steps().size());
         assertEquals(4, instance.zones().size());

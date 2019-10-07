@@ -144,7 +144,8 @@ public class DeploymentSpecXmlReader {
         List<Endpoint> endpoints = readEndpoints(instanceTag);
 
         // Build and return instances with these values
-        return Arrays.stream(instanceNameString.split("'"))
+        return Arrays.stream(instanceNameString.split(","))
+                     .map(name -> name.trim())
                      .map(name -> new DeploymentInstanceSpec(InstanceName.from(name),
                                                              steps,
                                                              upgradePolicy,
