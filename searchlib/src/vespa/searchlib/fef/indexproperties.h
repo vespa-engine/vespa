@@ -26,6 +26,13 @@ struct LazyExpressions {
     static bool check(const Properties &props, bool default_value);
 };
 
+// use fast-forest evaluation for gbdt expressions. affects rank/summary/dump
+struct UseFastForest {
+    static const vespalib::string NAME;
+    static const bool DEFAULT_VALUE;
+    static bool check(const Properties &props);
+};
+
 } // namespace eval
 
 namespace rank {
