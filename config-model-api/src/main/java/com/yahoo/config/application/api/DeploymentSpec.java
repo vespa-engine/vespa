@@ -209,11 +209,9 @@ public class DeploymentSpec {
 
     /** Returns the instance step containing the given instance name, or null if not present */
     public DeploymentInstanceSpec instance(InstanceName name) {
-        for (Step step : steps) {
-            if ( ! (step instanceof DeploymentInstanceSpec)) continue;
-            DeploymentInstanceSpec instanceStep = (DeploymentInstanceSpec)step;
-            if (instanceStep.name().equals(name))
-                return instanceStep;
+        for (DeploymentInstanceSpec instance : instances()) {
+            if (instance.name().equals(name))
+                return instance;
         }
         return null;
     }
