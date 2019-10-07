@@ -273,17 +273,20 @@ public class SessionPreparerTest {
     @Test
     public void require_that_tlssecretkey_is_written() throws IOException {
         var tlskey = "vespa.tlskeys.tenant1--app1";
+        var tlskeyVersion = "3";
         var applicationId = applicationId("test");
-        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
-        secretStore.put(tlskey+"-cert", "CERT");
-        secretStore.put(tlskey+"-key", "KEY");
+        var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).tlsSecretsKeyVersion(tlskeyVersion).build();
+        secretStore.put(tlskey+"-cert", 0, "CERT");
+        secretStore.put(tlskey+"-key", 0, "KEY");
+        secretStore.put(tlskey+"-cert", 3, "NEWCERT");
+        secretStore.put(tlskey+"-key", 3, "NEWKEY");
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
 
         // Read from zk and verify cert and key are available
         Optional<TlsSecrets> tlsSecrets = new TlsSecretsKeys(curator, tenantPath, secretStore).readTlsSecretsKeyFromZookeeper(applicationId);
         assertTrue(tlsSecrets.isPresent());
-        assertEquals("KEY", tlsSecrets.get().key());
-        assertEquals("CERT", tlsSecrets.get().certificate());
+        assertEquals("NEWKEY", tlsSecrets.get().key());
+        assertEquals("NEWCERT", tlsSecrets.get().certificate());
     }
 
     @Test(expected = CertificateNotReadyException.class)
@@ -299,7 +302,7 @@ public class SessionPreparerTest {
         var tlskey = "vespa.tlskeys.tenant1--app1";
         var applicationId = applicationId("test");
         var params = new PrepareParams.Builder().applicationId(applicationId).tlsSecretsKeyName(tlskey).build();
-        secretStore.put(tlskey+"-key", "KEY");
+        secretStore.put(tlskey+"-key", 0, "KEY");
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
     }
 
