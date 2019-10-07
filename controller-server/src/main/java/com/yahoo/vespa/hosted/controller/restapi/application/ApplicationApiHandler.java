@@ -100,6 +100,9 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -198,6 +201,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/cost")) return tenantCost(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
@@ -351,6 +356,51 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse tenant(Tenant tenant, HttpRequest request) {
         Slime slime = new Slime();
         toSlime(slime.setObject(), tenant, request);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse tenantCost(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .map(tenant -> tenantCost(tenant, request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+    }
+
+    private HttpResponse tenantCost(Tenant tenant, HttpRequest request) {
+        var slime = new Slime();
+        var objectCursor = slime.setObject();
+        var monthsCursor = objectCursor.setArray("months");
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse tenantCost(String tenantName, String monthString, HttpRequest request) {
+        Optional<Tenant> tenant = controller.tenants().get(TenantName.from(tenantName));
+        Optional<LocalDate> month = tenantCostParseMonth(monthString);
+
+        if (tenant.isEmpty()){
+            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
+        }
+
+        if (month.isEmpty()) {
+            return ErrorResponse.badRequest("Could not parse month '" + monthString + "'");
+        }
+
+        return tenantCost(tenant.get(), month.get(), request);
+    }
+
+    private Optional<LocalDate> tenantCostParseMonth(String monthString) {
+        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        try {
+            return Optional.of(LocalDate.parse(monthString, formatter).withDayOfMonth(1));
+        } catch (DateTimeParseException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private HttpResponse tenantCost(Tenant tenant, LocalDate month, HttpRequest request) {
+        var slime = new Slime();
+        slime.setObject();
         return new SlimeJsonResponse(slime);
     }
 
