@@ -42,12 +42,12 @@ std::unique_ptr<IDocsumFieldWriter>
 AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeManager &attrMgr, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper)
 {
     StructFieldsResolver structFields(fieldName, attrMgr);
-    if (structFields.getError()) {
+    if (structFields.has_error()) {
         return std::unique_ptr<IDocsumFieldWriter>();
-    } else if (!structFields.getMapFields().empty()) {
-        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields.getMapFields(), filter_elements, std::move(struct_field_mapper));
+    } else if (structFields.is_map_of_struct()) {
+        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(struct_field_mapper));
     }
-    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields.getArrayFields(), filter_elements, std::move(struct_field_mapper));
+    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(struct_field_mapper));
 }
 
 void

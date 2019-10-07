@@ -2,6 +2,7 @@
 
 #include "struct_fields_resolver.h"
 #include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -11,47 +12,58 @@ using search::attribute::CollectionType;
 
 namespace search::docsummary {
 
-StructFieldsResolver::StructFieldsResolver(const vespalib::string& fieldName, const IAttributeManager& attrMgr)
-    : _mapFields(),
-      _arrayFields(),
-      _hasMapKey(false),
+StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, const IAttributeManager& attr_mgr)
+    : _field_name(field_name),
+      _map_key_attribute(),
+      _map_value_fields(),
+      _map_value_attributes(),
+      _array_fields(),
+      _array_attributes(),
+      _has_map_key(false),
       _error(false)
 {
     std::vector<const search::attribute::IAttributeVector *> attrs;
-    auto attrCtx = attrMgr.createContext();
-    attrCtx->getAttributeList(attrs);
-    vespalib::string prefix = fieldName + ".";
-    vespalib::string keyName = prefix + "key";
-    vespalib::string valuePrefix = prefix + "value.";
+    auto attr_ctx = attr_mgr.createContext();
+    attr_ctx->getAttributeList(attrs);
+    vespalib::string prefix = field_name + ".";
+    _map_key_attribute = prefix + "key";
+    vespalib::string value_prefix = prefix + "value.";
     for (const auto attr : attrs) {
         vespalib::string name = attr->getName();
         if (name.substr(0, prefix.size()) != prefix) {
             continue;
         }
-        auto collType = attr->getCollectionType();
-        if (collType != CollectionType::Type::ARRAY) {
-            LOG(warning, "Attribute %s is not an array attribute", name.c_str());
+        if (attr->getCollectionType() != CollectionType::Type::ARRAY) {
+            LOG(warning, "Attribute '%s' is not an array attribute", name.c_str());
             _error = true;
             break;
         }
-        if (name.substr(0, valuePrefix.size()) == valuePrefix) {
-            _mapFields.emplace_back(name.substr(valuePrefix.size()));
+        if (name.substr(0, value_prefix.size()) == value_prefix) {
+            _map_value_fields.emplace_back(name.substr(value_prefix.size()));
         } else {
-            _arrayFields.emplace_back(name.substr(prefix.size()));
-            if (name == keyName) {
-                _hasMapKey = true;
+            _array_fields.emplace_back(name.substr(prefix.size()));
+            if (name == _map_key_attribute) {
+                _has_map_key = true;
             }
         }
     }
     if (!_error) {
-        std::sort(_arrayFields.begin(), _arrayFields.end());
-        std::sort(_mapFields.begin(), _mapFields.end());
-        if (!_mapFields.empty()) {
-            if (!_hasMapKey) {
-                LOG(warning, "Missing key attribute '%s', have value attributes for map", keyName.c_str());
+        std::sort(_map_value_fields.begin(), _map_value_fields.end());
+        for (const auto& field : _map_value_fields) {
+            _map_value_attributes.emplace_back(value_prefix + field);
+        }
+
+        std::sort(_array_fields.begin(), _array_fields.end());
+        for (const auto& field : _array_fields) {
+            _array_attributes.emplace_back(prefix + field);
+        }
+
+        if (!_map_value_fields.empty()) {
+            if (!_has_map_key) {
+                LOG(warning, "Missing key attribute '%s', have value attributes for map", _map_key_attribute.c_str());
                 _error = true;
-            } else if (_arrayFields.size() != 1u) {
-                LOG(warning, "Could not determine if field '%s' is array or map of struct", fieldName.c_str());
+            } else if (_array_fields.size() != 1u) {
+                LOG(warning, "Could not determine if field '%s' is array or map of struct", field_name.c_str());
                 _error = true;
             }
         }
@@ -59,6 +71,21 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& fieldName, co
 }
 
 StructFieldsResolver::~StructFieldsResolver() = default;
+
+void
+StructFieldsResolver::apply_to(StructFieldMapper& mapper) const
+{
+    if (is_map_of_struct()) {
+        mapper.add_mapping(_field_name, _map_key_attribute);
+        for (const auto& sub_field : _map_value_attributes) {
+            mapper.add_mapping(_field_name, sub_field);
+        }
+    } else {
+        for (const auto& sub_field : _array_attributes) {
+            mapper.add_mapping(_field_name, sub_field);
+        }
+    }
+}
 
 }
 

@@ -9,10 +9,12 @@ namespace search::attribute { class IAttributeContext; }
 namespace search::docsummary {
 
 class DocsumFieldWriterState;
+class StructFieldsResolver;
 
-/*
- * This class reads values from multiple struct field attributes and
- * inserts them as an array of struct.
+/**
+ * This class reads values from multiple struct field attributes and inserts them as an array of struct.
+ *
+ * Used to write both array of struct fields and map of primitives fields.
  */
 class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
 {
@@ -22,7 +24,7 @@ class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
     std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context, const MatchingElements* matching_elements) override;
 public:
     ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
-                              const std::vector<vespalib::string> &fields,
+                              const StructFieldsResolver& fields_resolver,
                               bool filter_elements,
                               std::shared_ptr<StructFieldMapper> struct_field_mapper);
     ~ArrayAttributeCombinerDFW() override;

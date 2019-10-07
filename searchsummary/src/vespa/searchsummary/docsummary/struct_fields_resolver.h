@@ -5,7 +5,10 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace search { class IAttributeManager; }
+namespace search {
+class IAttributeManager;
+class StructFieldMapper;
+}
 
 namespace search::docsummary {
 
@@ -15,17 +18,27 @@ namespace search::docsummary {
  */
 class StructFieldsResolver {
 private:
-    std::vector<vespalib::string> _mapFields;
-    std::vector<vespalib::string> _arrayFields;
-    bool _hasMapKey;
+    using StringVector = std::vector<vespalib::string>;
+    vespalib::string _field_name;
+    vespalib::string _map_key_attribute;
+    StringVector _map_value_fields;
+    StringVector _map_value_attributes;
+    StringVector _array_fields;
+    StringVector _array_attributes;
+    bool _has_map_key;
     bool _error;
 
 public:
-    StructFieldsResolver(const vespalib::string& fieldName, const IAttributeManager& attrMgr);
+    StructFieldsResolver(const vespalib::string& field_name, const IAttributeManager& attr_mgr);
     ~StructFieldsResolver();
-    const std::vector<vespalib::string>& getMapFields() const { return _mapFields; }
-    const std::vector<vespalib::string>& getArrayFields() const { return _arrayFields; }
-    bool getError() const { return _error; }
+    bool is_map_of_struct() const { return !_map_value_fields.empty(); }
+    const vespalib::string& get_map_key_attribute() const { return _map_key_attribute; }
+    const StringVector& get_map_value_fields() const { return _map_value_fields; }
+    const StringVector& get_map_value_attributes() const { return _map_value_attributes; }
+    const StringVector& get_array_fields() const { return _array_fields; }
+    const StringVector& get_array_attributes() const { return _array_attributes; }
+    bool has_error() const { return _error; }
+    void apply_to(StructFieldMapper& mapper) const;
 };
 
 }

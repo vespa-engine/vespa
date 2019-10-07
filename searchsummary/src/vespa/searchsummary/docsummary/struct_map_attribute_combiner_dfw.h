@@ -9,6 +9,7 @@ namespace search::attribute { class IAttributeContext; }
 namespace search::docsummary {
 
 class DocsumFieldWriterState;
+class StructFieldsResolver;
 
 /*
  * This class reads values from multiple struct field attributes and
@@ -23,7 +24,7 @@ class StructMapAttributeCombinerDFW : public AttributeCombinerDFW
     std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context, const MatchingElements* matching_elements) override;
 public:
     StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
-                                  const std::vector<vespalib::string> &valueFields,
+                                  const StructFieldsResolver& fields_resolver,
                                   bool filter_elements,
                                   std::shared_ptr<StructFieldMapper> struct_field_mapper);
     ~StructMapAttributeCombinerDFW() override;
