@@ -180,7 +180,11 @@ public class DimensionalValue<VALUE> {
                             if (component instanceof SubstituteString.RelativePropertyComponent) {
                                 SubstituteString.RelativePropertyComponent relativeComponent = (SubstituteString.RelativePropertyComponent)component;
                                 var substituteValues = lookupByLocalName(relativeComponent.fieldName(), entries);
-                                String resolved = substituteValues == null ? "(null)" : substituteValues.valueFor(variant).toString();
+                                if (substituteValues == null)
+                                    throw new IllegalArgumentException("Could not resolve local substitution '" +
+                                                                       relativeComponent.fieldName() + "' in variant " +
+                                                                       variant);
+                                String resolved = substituteValues.valueFor(variant).toString();
                                 resolvedComponents.add(new SubstituteString.StringComponent(resolved));
                             }
                             else {

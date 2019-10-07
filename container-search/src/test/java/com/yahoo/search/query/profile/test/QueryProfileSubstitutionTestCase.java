@@ -43,11 +43,20 @@ public class QueryProfileSubstitutionTestCase {
         p.set("message","Hello %{.world}!", null);
         p.set("world", "world", null);
         assertEquals("Hello world!", p.compile(null).get("message"));
+    }
 
-        QueryProfile p2 = new QueryProfile("test2");
-        p2.addInherited(p);
-        p2.set("world", "universe", null);
-        assertEquals("Hello universe!", p2.compile(null).get("message"));
+    @Test
+    public void testRelativeSubstitutionNotFound() {
+        try {
+            QueryProfile p = new QueryProfile("test");
+            p.set("message", "Hello %{.world}!", null);
+            assertEquals("Hello world!", p.compile(null).get("message"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Invalid query profile 'test': Could not resolve local substitution 'world' in variant DimensionBinding []",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test
