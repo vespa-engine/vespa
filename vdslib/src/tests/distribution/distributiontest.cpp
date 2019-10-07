@@ -13,7 +13,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/util/regexp.h>
 #include <chrono>
 #include <thread>
 #include <fstream>
