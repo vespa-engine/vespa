@@ -25,6 +25,7 @@ vespa_define_module(
     src/tests/docsumformat
     src/tests/docsummary
     src/tests/docsummary/attribute_combiner
+    src/tests/docsummary/matched_elements_filter
     src/tests/docsummary/slime_summary
     src/tests/extractkeywords
 )

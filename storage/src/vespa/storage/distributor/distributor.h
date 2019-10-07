@@ -170,6 +170,8 @@ public:
         return *_readOnlyBucketSpaceRepo;
     }
 
+    OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const override;
+
     class Status;
     class MetricUpdateHook : public framework::MetricUpdateHook
     {

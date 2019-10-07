@@ -1,10 +1,9 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -59,6 +58,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         assertCurrentVersion(SystemApplication.configServer, version1, zone1, zone2, zone3, zone4);
         assertCurrentVersion(SystemApplication.proxy, version1, zone1, zone2, zone3, zone4);
+        assertSystemVersion(version1);
 
         // Controller upgrades
         Version version2 = Version.fromString("6.6");

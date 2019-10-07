@@ -29,6 +29,9 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.UserId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -49,11 +52,8 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -111,6 +111,11 @@ import static org.junit.Assert.assertTrue;
 public class ApplicationApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/application/responses/";
+    private static final String pemPublicKey = "-----BEGIN PUBLIC KEY-----\n" +
+                                               "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
+                                               "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
+                                               "-----END PUBLIC KEY-----\n";
+    private static final String quotedPemPublicKey = pemPublicKey.replaceAll("\\n", "\\\\n");
 
     private static final ApplicationPackage applicationPackageDefault = new ApplicationPackageBuilder()
             .instances("default")
@@ -320,7 +325,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
 
-        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
                               new File("application-reference-2.json"));
@@ -360,14 +365,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST a pem deploy key
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", POST)
                                       .userIdentity(USER_ID)
-                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Added deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                              "{\"keys\":[\"-----BEGIN PUBLIC KEY-----\\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\\nz/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\\n-----END PUBLIC KEY-----\\n\"]}");
 
         // PATCH in a pem deploy key at deprecated path
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
                                       .userIdentity(USER_ID)
-                                      .data("{\"pemDeployKey\":\"-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Added deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+                                      .data("{\"pemDeployKey\":\"" + pemPublicKey + "\"}"),
+                              "{\"message\":\"Added deploy key " + quotedPemPublicKey + "\"}");
 
         // GET an application with a major version override
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
@@ -383,8 +388,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE the pem deploy key
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", DELETE)
                                       .userIdentity(USER_ID)
-                                      .data("{\"key\":\"-----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}"),
-                              "{\"message\":\"Removed deploy key -----BEGIN PUBLIC KEY-----\\n∠( ᐛ 」∠)＿\\n-----END PUBLIC KEY-----\"}");
+                                      .data("{\"key\":\"" + pemPublicKey + "\"}"),
+                              "{\"keys\":[]}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
@@ -555,6 +560,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
                               new File("delete-with-active-deployments.json"), 400);
+
+        // GET test-config for local tests against a prod deployment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/test-config", GET)
+                                      .userIdentity(USER_ID),
+                              new File("test-config.json"));
 
         // DELETE (deactivate) a deployment - dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1", DELETE)
@@ -1061,7 +1071,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .oktaAccessToken(OKTA_AT)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1.instance1': Application already exists\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not create 'tenant1.application1.instance1': Instance already exists\"}",
                               400);
 
         ConfigServerMock configServer = serviceRegistry().configServerMock();
@@ -1111,7 +1121,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .oktaAccessToken(OKTA_AT)
                                       .userIdentity(USER_ID),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete application 'tenant1.application1.instance1': Application not found\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not delete instance 'tenant1.application1.instance1': Instance not found\"}",
                               404);
 
         // DELETE tenant

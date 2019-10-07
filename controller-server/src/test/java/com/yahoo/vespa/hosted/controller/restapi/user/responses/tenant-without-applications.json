@@ -1,7 +1,6 @@
 {
   "tenant": "my-tenant",
   "type": "CLOUD",
-  "pemDeployKeys": [],
   "pemDeveloperKeys": [],
   "applications": []
 }

@@ -1,13 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
@@ -37,6 +36,7 @@ import org.junit.Test;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.PublicKey;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -48,7 +48,6 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static java.util.Optional.empty;
@@ -64,6 +63,15 @@ public class ApplicationSerializerTest {
     private static final Path testData = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private static final ZoneId zone2 = ZoneId.from("prod", "us-east-3");
+    private static final PublicKey publicKey = KeyUtils.fromPemEncodedPublicKey("-----BEGIN PUBLIC KEY-----\n" +
+                                                                                "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\n" +
+                                                                                "z/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\n" +
+                                                                                "-----END PUBLIC KEY-----\n");
+    private static final PublicKey otherPublicKey = KeyUtils.fromPemEncodedPublicKey("-----BEGIN PUBLIC KEY-----\n" +
+                                                                                     "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\n" +
+                                                                                     "pDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n" +
+                                                                                     "-----END PUBLIC KEY-----\n");
+
 
     @Test
     public void testSerialization() {
@@ -134,7 +142,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(User.from("by-username")),
                                                OptionalInt.of(7),
                                                new ApplicationMetrics(0.5, 0.9),
-                                               Set.of("-----BEGIN PUBLIC KEY-----\nƪ(`▿▿▿▿´ƪ)\n\n-----END PUBLIC KEY-----", "-----BEGIN PUBLIC KEY-----\n∠( ᐛ 」∠)＿\n-----END PUBLIC KEY-----"),
+                                               Set.of(publicKey, otherPublicKey),
                                                projectId,
                                                true,
                                                instances);
@@ -178,17 +186,14 @@ public class ApplicationSerializerTest {
         assertEquals(original.owner(), serialized.owner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
         assertEquals(original.change(), serialized.change());
-        assertEquals(original.pemDeployKeys(), serialized.pemDeployKeys());
+        assertEquals(original.deployKeys(), serialized.deployKeys());
 
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());
         assertEquals(original.require(id1.instance()).rotationStatus(), serialized.require(id1.instance()).rotationStatus());
 
         // Test cluster utilization
         assertEquals(0, serialized.require(id1.instance()).deployments().get(zone1).clusterUtils().size());
-        assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().size());
-        assertEquals(0.4, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id2")).getCpu(), 0.01);
-        assertEquals(0.2, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id1")).getCpu(), 0.01);
-        assertEquals(0.2, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().get(ClusterSpec.Id.from("id1")).getMemory(), 0.01);
+        assertEquals(0, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().size());
 
         // Test cluster info
         assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());

@@ -1,6 +1,7 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -9,6 +10,8 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -47,6 +50,14 @@ public class VersionStatusSerializer {
     private static final String confidenceField = "confidence";
     private static final String configServersField = "configServerHostnames";
 
+    // NodeVersions fields
+    private static final String nodeVersionsField = "nodeVersions";
+
+    // NodeVersion fields
+    private static final String hostnameField = "hostname";
+    private static final String wantedVersionField = "wantedVersion";
+    private static final String changedAtField = "changedAt";
+
     // DeploymentStatistics fields
     private static final String versionField = "version";
     private static final String failingField = "failing";
@@ -77,9 +88,20 @@ public class VersionStatusSerializer {
         object.setBool(isReleasedField, version.isReleased());
         deploymentStatisticsToSlime(version.statistics(), object.setObject(deploymentStatisticsField));
         object.setString(confidenceField, version.confidence().name());
-        configServersToSlime(version.systemApplicationHostnames(), object.setArray(configServersField));
+        configServersToSlime(version.nodeVersions().hostnames(), object.setArray(configServersField));
+        nodeVersionsToSlime(version.nodeVersions(), object.setArray(nodeVersionsField));
     }
 
+    private void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
+        for (NodeVersion nodeVersion : nodeVersions.asMap().values()) {
+            var nodeVersionObject = array.addObject();
+            nodeVersionObject.setString(hostnameField, nodeVersion.hostname().value());
+            nodeVersionObject.setString(wantedVersionField, nodeVersion.wantedVersion().toFullString());
+            nodeVersionObject.setLong(changedAtField, nodeVersion.changedAt().toEpochMilli());
+        }
+    }
+
+    // TODO(mpolden): Remove after October 2019
     private void configServersToSlime(Set<HostName> configServerHostnames, Cursor array) {
         configServerHostnames.stream().map(HostName::value).forEach(array::addString);
     }
@@ -102,15 +124,36 @@ public class VersionStatusSerializer {
     }
 
     private VespaVersion vespaVersionFromSlime(Inspector object) {
-        return new VespaVersion(deploymentStatisticsFromSlime(object.field(deploymentStatisticsField)),
+        var deploymentStatistics = deploymentStatisticsFromSlime(object.field(deploymentStatisticsField));
+        return new VespaVersion(deploymentStatistics,
                                 object.field(releaseCommitField).asString(),
                                 Instant.ofEpochMilli(object.field(committedAtField).asLong()),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
-                                object.field(isReleasedField).valid() ? object.field(isReleasedField).asBool() : true,
-                                configServersFromSlime(object.field(configServersField)),
+                                object.field(isReleasedField).asBool(),
+                                nodeVersionsFromSlime(object, deploymentStatistics.version()),
                                 VespaVersion.Confidence.valueOf(object.field(confidenceField).asString())
         );
+    }
+
+    private NodeVersions nodeVersionsFromSlime(Inspector root, Version version) {
+        var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
+        var nodeVersionsRoot = root.field(nodeVersionsField);
+        if (nodeVersionsRoot.valid()) {
+            nodeVersionsRoot.traverse((ArrayTraverser) (i, entry) -> {
+                var hostname = HostName.from(entry.field(hostnameField).asString());
+                var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
+                var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
+                nodeVersions.put(hostname, new NodeVersion(hostname, version, wantedVersion, changedAt));
+            });
+        } else {
+            // TODO(mpolden): Remove after October 2019
+            var configServerHostnames = configServersFromSlime(root.field(configServersField));
+            for (var hostname : configServerHostnames) {
+                nodeVersions.put(hostname, NodeVersion.empty(hostname));
+            }
+        }
+        return new NodeVersions(nodeVersions.build());
     }
 
     private Set<HostName> configServersFromSlime(Inspector array) {

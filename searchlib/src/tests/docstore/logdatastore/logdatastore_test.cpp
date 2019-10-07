@@ -289,7 +289,8 @@ TEST("testTruncatedIdxFile"){
     }
     const char * magic = "mumbo jumbo";
     {
-        truncate("bug-7257706-truncated/1422358701368384000.idx", 3830);
+        int truncate_result = truncate("bug-7257706-truncated/1422358701368384000.idx", 3830);
+        EXPECT_EQUAL(0, truncate_result);
         LogDataStore datastore(executor, "bug-7257706-truncated", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
         EXPECT_EQUAL(331ul, datastore.lastSyncToken());

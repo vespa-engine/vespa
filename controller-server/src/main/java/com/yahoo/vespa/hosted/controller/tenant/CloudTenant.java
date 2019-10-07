@@ -6,6 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
 
 import java.security.Principal;
+import java.security.PublicKey;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -17,13 +18,13 @@ import java.util.Optional;
 public class CloudTenant extends Tenant {
 
     private final BillingInfo billingInfo;
-    private final BiMap<String, Principal> pemDeveloperKeys;
+    private final BiMap<PublicKey, Principal> developerKeys;
 
     /** Public for the serialization layer — do not use! */
-    public CloudTenant(TenantName name, BillingInfo info, BiMap<String, Principal> pemDeveloperKeys) {
+    public CloudTenant(TenantName name, BillingInfo info, BiMap<PublicKey, Principal> developerKeys) {
         super(name, Optional.empty());
         billingInfo = info;
-        this.pemDeveloperKeys = pemDeveloperKeys;
+        this.developerKeys = developerKeys;
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
@@ -37,7 +38,7 @@ public class CloudTenant extends Tenant {
     public BillingInfo billingInfo() { return billingInfo; }
 
     /** Returns the set of developer keys and their corresponding developers for this tenant. */
-    public BiMap<String, Principal> pemDeveloperKeys() { return pemDeveloperKeys; }
+    public BiMap<PublicKey, Principal> developerKeys() { return developerKeys; }
 
     @Override
     public Type type() {

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.security;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.util.List;
@@ -52,7 +53,7 @@ public interface AccessControl {
      * @param id the ID of the application to create
      * @param credentials the credentials for the entity requesting the creation
      */
-    void createApplication(ApplicationId id, Credentials credentials);
+    void createApplication(TenantAndApplicationId id, Credentials credentials);
 
     /**
      * Deletes access control for the given tenant.
@@ -60,7 +61,7 @@ public interface AccessControl {
      * @param id the ID of the application to delete
      * @param credentials the credentials for the entity requesting the deletion
      */
-    void deleteApplication(ApplicationId id, Credentials credentials);
+    void deleteApplication(TenantAndApplicationId id, Credentials credentials);
 
     /**
      * Returns the list of tenants to which a user has access.

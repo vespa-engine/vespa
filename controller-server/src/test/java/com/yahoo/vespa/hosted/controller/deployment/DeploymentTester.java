@@ -148,8 +148,13 @@ public class DeploymentTester {
 
     /** Upgrade system applications in all zones to given version */
     public void upgradeSystemApplications(Version version) {
+        upgradeSystemApplications(version, SystemApplication.all());
+    }
+
+    /** Upgrade given system applications in all zones to version */
+    public void upgradeSystemApplications(Version version, List<SystemApplication> systemApplications) {
         for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
-            for (SystemApplication application : SystemApplication.all()) {
+            for (SystemApplication application : systemApplications) {
                 tester.configServer().setVersion(application.id(), zone.getId(), version);
                 tester.configServer().convergeServices(application.id(), zone.getId());
             }

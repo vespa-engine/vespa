@@ -2,6 +2,7 @@
 
 #include "bucketdbupdater.h"
 #include "bucket_db_prune_elision.h"
+#include "bucket_space_distribution_context.h"
 #include "distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
@@ -30,11 +31,43 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
       _sender(sender),
-      _transitionTimer(_distributorComponent.getClock())
+      _transitionTimer(_distributorComponent.getClock()),
+      _active_distribution_contexts(),
+      _distribution_context_mutex()
 {
+    for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
+        _active_distribution_contexts.emplace(
+                elem.first,
+                BucketSpaceDistributionContext::make_not_yet_initialized(_distributorComponent.getIndex()));
+        _explicit_transition_read_guard.emplace(elem.first, std::shared_ptr<BucketDatabase::ReadGuard>());
+    }
 }
 
 BucketDBUpdater::~BucketDBUpdater() = default;
+
+OperationRoutingSnapshot BucketDBUpdater::read_snapshot_for_bucket(const document::Bucket& bucket) const {
+    const auto bucket_space = bucket.getBucketSpace();
+    std::lock_guard lock(_distribution_context_mutex);
+    auto active_state_iter = _active_distribution_contexts.find(bucket_space);
+    assert(active_state_iter != _active_distribution_contexts.cend());
+    auto& state = *active_state_iter->second;
+    if (!state.bucket_owned_in_active_state(bucket.getBucketId())) {
+        return OperationRoutingSnapshot::make_not_routable_in_state(active_state_iter->second);
+    }
+    const bool bucket_present_in_mutable_db = state.bucket_owned_in_pending_state(bucket.getBucketId());
+    if (!bucket_present_in_mutable_db && !stale_reads_enabled()) {
+        return OperationRoutingSnapshot::make_not_routable_in_state(active_state_iter->second);
+    }
+    const auto& space_repo = bucket_present_in_mutable_db
+            ? _distributorComponent.getBucketSpaceRepo()
+            : _distributorComponent.getReadOnlyBucketSpaceRepo();
+    auto existing_guard_iter = _explicit_transition_read_guard.find(bucket_space);
+    assert(existing_guard_iter != _explicit_transition_read_guard.cend());
+    auto db_guard = existing_guard_iter->second
+            ? existing_guard_iter-> second
+            : space_repo.get(bucket_space).getBucketDatabase().acquire_read_guard();
+    return OperationRoutingSnapshot::make_routable_with_guard(active_state_iter->second, std::move(db_guard), space_repo);
+}
 
 void
 BucketDBUpdater::flush()
@@ -59,8 +92,7 @@ BucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& inden
 bool
 BucketDBUpdater::shouldDeferStateEnabling() const noexcept
 {
-    return _distributorComponent.getDistributor().getConfig()
-            .allowStaleReadsDuringClusterStateTransitions();
+    return stale_reads_enabled();
 }
 
 bool
@@ -258,6 +290,61 @@ BucketDBUpdater::replyToActivationWithActualVersion(
     _distributorComponent.sendUp(reply); // TODO let API accept rvalues
 }
 
+void BucketDBUpdater::update_read_snapshot_before_db_pruning() {
+    std::lock_guard lock(_distribution_context_mutex);
+    for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
+        // At this point, we're still operating with a distribution context _without_ a
+        // pending state, i.e. anyone using the context will expect to find buckets
+        // in the DB that correspond to how the database looked like prior to pruning
+        // buckets from the DB. To ensure this is not violated, take a snapshot of the
+        // _mutable_ DB and expose this. This snapshot only lives until we atomically
+        // flip to expose a distribution context that includes the new, pending state.
+        // At that point, the read-only DB is known to contain the buckets that have
+        // been pruned away, so we can release the mutable DB snapshot safely.
+        // TODO test for, and handle, state preemption case!
+        _explicit_transition_read_guard[elem.first] = elem.second->getBucketDatabase().acquire_read_guard();
+    }
+}
+
+
+void BucketDBUpdater::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) {
+    std::lock_guard lock(_distribution_context_mutex);
+    const auto old_default_state = _distributorComponent.getBucketSpaceRepo().get(
+            document::FixedBucketSpaces::default_space()).cluster_state_sp();
+    for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
+        auto new_distribution  = elem.second->distribution_sp();
+        auto old_cluster_state = elem.second->cluster_state_sp();
+        auto new_cluster_state = new_state.getDerivedClusterState(elem.first);
+        _active_distribution_contexts.insert_or_assign(
+                elem.first,
+                BucketSpaceDistributionContext::make_state_transition(
+                        std::move(old_cluster_state),
+                        old_default_state,
+                        std::move(new_cluster_state),
+                        std::move(new_distribution),
+                        _distributorComponent.getIndex()));
+        // We can now remove the explicit mutable DB snapshot, as the buckets that have been
+        // pruned away are visible in the read-only DB.
+        _explicit_transition_read_guard[elem.first] = std::shared_ptr<BucketDatabase::ReadGuard>();
+    }
+}
+
+void BucketDBUpdater::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) {
+    std::lock_guard lock(_distribution_context_mutex);
+    const auto& default_cluster_state = activated_state.getDerivedClusterState(document::FixedBucketSpaces::default_space());
+    for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
+        auto new_distribution  = elem.second->distribution_sp();
+        auto new_cluster_state = activated_state.getDerivedClusterState(elem.first);
+        _active_distribution_contexts.insert_or_assign(
+                elem.first,
+                BucketSpaceDistributionContext::make_stable_state(
+                        std::move(new_cluster_state),
+                        default_cluster_state,
+                        std::move(new_distribution),
+                        _distributorComponent.getIndex()));
+    }
+}
+
 bool
 BucketDBUpdater::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& cmd)
@@ -275,8 +362,10 @@ BucketDBUpdater::onSetSystemState(
     ensureTransitionTimerStarted();
     // Separate timer since _transitionTimer might span multiple pending states.
     framework::MilliSecTimer process_timer(_distributorComponent.getClock());
-    
-    removeSuperfluousBuckets(cmd->getClusterStateBundle(), false);
+    update_read_snapshot_before_db_pruning();
+    const auto& bundle = cmd->getClusterStateBundle();
+    removeSuperfluousBuckets(bundle, false);
+    update_read_snapshot_after_db_pruning(bundle);
     replyToPreviousPendingClusterStateIfAny();
 
     ClusterInformation::CSP clusterInfo(
@@ -642,6 +731,7 @@ BucketDBUpdater::activatePendingClusterState()
         _distributorComponent.getDistributor().notifyDistributionChangeEnabled();
     }
 
+    update_read_snapshot_after_activation(_pendingClusterState->getNewClusterStateBundle());
     _pendingClusterState.reset();
     _outdatedNodesMap.clear();
     sendAllQueuedBucketRechecks();
@@ -663,6 +753,11 @@ BucketDBUpdater::enableCurrentClusterStateBundleInDistributor()
         state.getBaselineClusterState()->toString().c_str());
 
     _distributorComponent.getDistributor().enableClusterStateBundle(state);
+}
+
+void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state) {
+    update_read_snapshot_after_activation(activated_state);
+    _distributorComponent.getDistributor().enableClusterStateBundle(activated_state);
 }
 
 void

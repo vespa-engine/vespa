@@ -16,17 +16,15 @@ public class Node {
     private final int key;
     private int pathIndex;
     private final String hostname;
-    private final int fs4port;
-    final int group;
+    private final int group;
 
     private final AtomicBoolean statusIsKnown = new AtomicBoolean(false);
     private final AtomicBoolean working = new AtomicBoolean(true);
     private final AtomicLong activeDocuments = new AtomicLong(0);
 
-    public Node(int key, String hostname, int fs4port, int group) {
+    public Node(int key, String hostname, int group) {
         this.key = key;
         this.hostname = hostname;
-        this.fs4port = fs4port;
         this.group = group;
     }
 
@@ -41,14 +39,15 @@ public class Node {
 
     public String hostname() { return hostname; }
 
-    public int fs4port() { return fs4port; }
-
     /** Returns the id of this group this node belongs to */
     public int group() { return group; }
 
     public void setWorking(boolean working) {
         this.statusIsKnown.lazySet(true);
         this.working.lazySet(working);
+        if ( ! working ) {
+            activeDocuments.set(0);
+        }
     }
 
     /** Returns whether this node is currently responding to requests, or null if status is not known */
@@ -57,17 +56,17 @@ public class Node {
     }
 
     /** Updates the active documents on this node */
-    public void setActiveDocuments(long activeDocuments) {
+    void setActiveDocuments(long activeDocuments) {
         this.activeDocuments.set(activeDocuments);
     }
 
     /** Returns the active documents on this node. If unknown, 0 is returned. */
-    public long getActiveDocuments() {
-        return this.activeDocuments.get();
+    long getActiveDocuments() {
+        return activeDocuments.get();
     }
 
     @Override
-    public int hashCode() { return Objects.hash(hostname, fs4port); }
+    public int hashCode() { return Objects.hash(hostname, key, pathIndex, group); }
 
     @Override
     public boolean equals(Object o) {
@@ -75,11 +74,15 @@ public class Node {
         if ( ! (o instanceof Node)) return false;
         Node other = (Node)o;
         if ( ! Objects.equals(this.hostname, other.hostname)) return false;
-        if ( ! Objects.equals(this.fs4port, other.fs4port)) return false;
+        if ( ! Objects.equals(this.key, other.key)) return false;
+        if ( ! Objects.equals(this.pathIndex, other.pathIndex)) return false;
+        if ( ! Objects.equals(this.group, other.group)) return false;
+
         return true;
     }
 
     @Override
-    public String toString() { return "search node " + hostname + ":" + fs4port + " in group " + group; }
+    public String toString() { return "search node key = " + key + " hostname = "+ hostname + " path = " + pathIndex + " in group " + group +
+            " statusIsKnown = " + statusIsKnown.get() + " working = " + working.get() + " activeDocs = " + activeDocuments.get(); }
 
 }

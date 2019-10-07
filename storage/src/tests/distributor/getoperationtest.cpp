@@ -3,6 +3,8 @@
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
+#include <vespa/storage/bucketdb/bucketdatabase.h>
+#include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
@@ -31,7 +33,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
     std::unique_ptr<Operation> op;
 
     GetOperationTest();
-    ~GetOperationTest();
+    ~GetOperationTest() override;
 
     void SetUp() override {
         _repo.reset(
@@ -53,6 +55,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
         auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(document::BucketId(0)), docId, "[all]");
         op = std::make_unique<GetOperation>(
                 getExternalOperationHandler(), getDistributorBucketSpace(),
+                getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
                 msg, getDistributor().getMetrics(). gets[msg->getLoadType()]);
         op->start(_sender, framework::MilliSecTime(0));
     }

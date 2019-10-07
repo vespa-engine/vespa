@@ -1,8 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -468,7 +466,7 @@ public class InternalStepRunner implements StepRunner {
                                                       testConfigSerializer.configJson(id.application(),
                                                                                       id.type(),
                                                                                       endpoints,
-                                                                                      listClusters(id.application(), zones)));
+                                                                                      controller.applications().contentClustersByZone(id.application(), zones)));
         return Optional.of(running);
     }
 
@@ -688,14 +686,6 @@ public class InternalStepRunner implements StepRunner {
                 return step.zones().get(0).testerFlavor();
 
         throw new IllegalStateException("No step deploys to the zone this run is for!");
-    }
-
-    /** Returns all content clusters in all current deployments of the given real application. */
-    private Map<ZoneId, List<String>> listClusters(ApplicationId id, Iterable<ZoneId> zones) {
-        ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
-        for (ZoneId zone : zones)
-            clusters.put(zone, ImmutableList.copyOf(controller.serviceRegistry().configServer().getContentClusters(new DeploymentId(id, zone))));
-        return clusters.build();
     }
 
     /** Returns the generated services.xml content for the tester application. */

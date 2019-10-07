@@ -9,5 +9,10 @@
     "prod.aws-us-east-1a": {
       "default": "https://prod.endpoint:443/"
     }
+  },
+  "clusters": {
+    "prod.aws-us-east-1c": [
+      "documents"
+    ]
   }
 }

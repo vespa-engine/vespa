@@ -26,6 +26,7 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.methods.RequestBuilder;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URI;
@@ -49,15 +50,19 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     private final URI ztsUrl;
 
     public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
-        this(ztsUrl, () -> sslContext);
+        this(ztsUrl, () -> sslContext, null);
     }
 
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
-        this(ztsUrl, identityProvider::getIdentitySslContext);
+        this(ztsUrl, identityProvider::getIdentitySslContext, null);
     }
 
-    private DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier) {
-        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new);
+    public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider, HostnameVerifier hostnameVerifier) {
+        this(ztsUrl, identityProvider::getIdentitySslContext, hostnameVerifier);
+    }
+
+    private DefaultZtsClient(URI ztsUrl, Supplier<SSLContext> sslContextSupplier, HostnameVerifier hostnameVerifier) {
+        super("vespa-zts-client", sslContextSupplier, ZtsClientException::new, hostnameVerifier);
         this.ztsUrl = addTrailingSlash(ztsUrl);
     }
 

@@ -173,4 +173,9 @@ public class FastSearcher extends VespaBackEndSearcher {
         return getLogger().isLoggable(Level.FINE);
     }
 
+    @Override
+    public void shutDown() {
+        super.shutDown();
+        dispatcher.shutDown();
+    }
 }
