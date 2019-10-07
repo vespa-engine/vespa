@@ -8,13 +8,13 @@ public class ApiAuthenticator implements ai.vespa.hosted.api.ApiAuthenticator {
     /** Returns a controller client using mTLS if a key and certificate pair is provided, or signed requests otherwise. */
     @Override
     public ControllerHttpClient controller() {
-        return Properties.certificateFile()
-                         .map(certificateFile -> ControllerHttpClient.withKeyAndCertificate(Properties.endpoint(),
-                                                                                            Properties.privateKeyFile(),
+        return Properties.apiCertificateFile()
+                         .map(certificateFile -> ControllerHttpClient.withKeyAndCertificate(Properties.apiEndpoint(),
+                                                                                            Properties.apiPrivateKeyFile(),
                                                                                             certificateFile))
                          .orElseGet(() ->
-                                            ControllerHttpClient.withSignatureKey(Properties.endpoint(),
-                                                                                  Properties.privateKeyFile(),
+                                            ControllerHttpClient.withSignatureKey(Properties.apiEndpoint(),
+                                                                                  Properties.apiPrivateKeyFile(),
                                                                                   Properties.application()));
     }
 
