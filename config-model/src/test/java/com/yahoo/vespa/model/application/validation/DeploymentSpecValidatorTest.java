@@ -18,7 +18,7 @@ import static org.junit.Assert.fail;
 /**
  * @author hmusum
  */
-public class DeploymentFileValidatorTest {
+public class DeploymentSpecValidatorTest {
 
     @Test
     public void testDeploymentWithNonExistentGlobalId() throws IOException, SAXException {
@@ -58,7 +58,7 @@ public class DeploymentFileValidatorTest {
         try {
             final DeployState deployState = builder.build();
             VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
-            new DeploymentFileValidator().validate(model, deployState);
+            new DeploymentSpecValidator().validate(model, deployState);
             fail("Did not get expected exception");
         } catch (IllegalArgumentException e) {
             assertThat(e.getMessage(), containsString("specified in deployment.xml does not match any container cluster id"));

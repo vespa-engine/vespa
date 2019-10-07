@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
 import java.io.BufferedReader;
@@ -14,11 +15,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -46,218 +45,195 @@ public class DeploymentSpec {
                                                                   Optional.empty(),
                                                                   Notifications.none(),
                                                                   List.of());
-    
-    private final Optional<String> globalServiceId;
-    private final UpgradePolicy upgradePolicy;
-    private final Optional<Integer> majorVersion;
-    private final List<ChangeBlocker> changeBlockers;
-    private final List<Step> steps;
-    private final String xmlForm;
-    private final Optional<AthenzDomain> athenzDomain;
-    private final Optional<AthenzService> athenzService;
-    private final Notifications notifications;
-    private final List<Endpoint> endpoints;
 
+    private final List<Step> steps;
+    private final Optional<Integer> majorVersion;
+    private final String xmlForm;
+
+    public DeploymentSpec(List<Step> steps,
+                          Optional<Integer> majorVersion,
+                          String xmlForm) {
+        if (singleInstance(steps)) { // TODO: Remove this clause after November 2019
+            var singleInstance = (DeploymentInstanceSpec)steps.get(0);
+            this.steps = List.of(singleInstance.withSteps(completeSteps(singleInstance.steps())));
+        }
+        else {
+            this.steps = List.copyOf(completeSteps(steps));
+        }
+        this.majorVersion = majorVersion;
+        this.xmlForm = xmlForm;
+        validateTotalDelay(steps);
+    }
+
+    // TODO: Remove after October 2019
     public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
                           List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService, Notifications notifications,
+                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService,
+                          Notifications notifications,
                           List<Endpoint> endpoints) {
-        validateTotalDelay(steps);
-        this.globalServiceId = globalServiceId;
-        this.upgradePolicy = upgradePolicy;
-        this.majorVersion = majorVersion;
-        this.changeBlockers = changeBlockers;
-        this.steps = List.copyOf(completeSteps(new ArrayList<>(steps)));
-        this.xmlForm = xmlForm;
-        this.athenzDomain = athenzDomain;
-        this.athenzService = athenzService;
-        this.notifications = notifications;
-        this.endpoints = List.copyOf(validateEndpoints(endpoints, this.steps));
-        validateZones(this.steps);
-        validateAthenz();
-        validateEndpoints(this.steps, globalServiceId, this.endpoints);
+        this(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
+                                                steps,
+                                                upgradePolicy,
+                                                changeBlockers,
+                                                globalServiceId,
+                                                athenzDomain,
+                                                athenzService,
+                                                notifications,
+                                                endpoints)),
+             majorVersion,
+             xmlForm);
     }
 
-    /** Validates the endpoints and makes sure default values are respected */
-    private List<Endpoint> validateEndpoints(List<Endpoint> endpoints, List<Step> steps) {
-        Objects.requireNonNull(endpoints, "Missing endpoints parameter");
+    /** Adds missing required steps and reorders steps to a permissible order */
+    private static List<DeploymentSpec.Step> completeSteps(List<DeploymentSpec.Step> inputSteps) {
+        List<Step> steps = new ArrayList<>(inputSteps);
 
-        var productionRegions = steps.stream()
-                .filter(step -> step.deploysTo(Environment.prod))
-                .flatMap(step -> step.zones().stream())
-                .flatMap(zone -> zone.region().stream())
-                .map(RegionName::value)
-                .collect(Collectors.toSet());
-
-        var rebuiltEndpointsList = new ArrayList<Endpoint>();
-
-        for (var endpoint : endpoints) {
-            if (endpoint.regions().isEmpty()) {
-                var rebuiltEndpoint = endpoint.withRegions(productionRegions);
-                rebuiltEndpointsList.add(rebuiltEndpoint);
-            } else {
-                rebuiltEndpointsList.add(endpoint);
-            }
+        // Add staging if required and missing
+        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
+            steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
+            steps.add(new DeploymentSpec.DeclaredZone(Environment.staging));
         }
 
-        return List.copyOf(rebuiltEndpointsList);
+        // Add test if required and missing
+        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
+            steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
+            steps.add(new DeploymentSpec.DeclaredZone(Environment.test));
+        }
+
+        // Enforce order test, staging, prod
+        DeploymentSpec.DeclaredZone testStep = remove(Environment.test, steps);
+        if (testStep != null)
+            steps.add(0, testStep);
+        DeploymentSpec.DeclaredZone stagingStep = remove(Environment.staging, steps);
+        if (stagingStep != null)
+            steps.add(1, stagingStep);
+
+        return steps;
     }
-    
+
+    /**
+     * Removes the first occurrence of a deployment step to the given environment and returns it.
+     *
+     * @return the removed step, or null if it is not present
+     */
+    private static DeploymentSpec.DeclaredZone remove(Environment environment, List<DeploymentSpec.Step> steps) {
+        for (int i = 0; i < steps.size(); i++) {
+            if ( ! (steps.get(i) instanceof DeploymentSpec.DeclaredZone)) continue;
+            DeploymentSpec.DeclaredZone zoneStep = (DeploymentSpec.DeclaredZone)steps.get(i);
+            if (zoneStep.environment() == environment) {
+                steps.remove(i);
+                return zoneStep;
+            }
+        }
+        return null;
+    }
+
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */
     private void validateTotalDelay(List<Step> steps) {
-        long totalDelaySeconds = steps.stream().filter(step -> step instanceof Delay)
-                                               .mapToLong(delay -> ((Delay)delay).duration().getSeconds())
-                                               .sum();
+        long totalDelaySeconds = steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum();
         if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
                                                " but max 24 hours is allowed");
     }
 
-    /** Throw an IllegalArgumentException if any production zone is declared multiple times */
-    private void validateZones(List<Step> steps) {
-        Set<DeclaredZone> zones = new HashSet<>();
-
-        for (Step step : steps)
-            for (DeclaredZone zone : step.zones())
-                ensureUnique(zone, zones);
+    // TODO: Remove after October 2019
+    private DeploymentInstanceSpec defaultInstance() {
+        if (singleInstance(steps)) return (DeploymentInstanceSpec)steps.get(0);
+        throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
+                                           "as it has multiple instances: " +
+                                           instances().stream().map(Step::toString).collect(Collectors.joining(",")));
     }
 
-    /** Throw an IllegalArgumentException if an endpoint refers to a region that is not declared in 'prod' */
-    private void validateEndpoints(List<Step> steps, Optional<String> globalServiceId, List<Endpoint> endpoints) {
-        if (globalServiceId.isPresent() && ! endpoints.isEmpty()) {
-            throw new IllegalArgumentException("Providing both 'endpoints' and 'global-service-id'. Use only 'endpoints'.");
-        }
+    // TODO: Remove after October 2019
+    public Optional<String> globalServiceId() { return defaultInstance().globalServiceId(); }
 
-        var stepZones = steps.stream()
-                .flatMap(s -> s.zones().stream())
-                .flatMap(z -> z.region.stream())
-                .collect(Collectors.toSet());
-
-        for (var endpoint : endpoints){
-            for (var endpointRegion : endpoint.regions()) {
-                if (! stepZones.contains(endpointRegion)) {
-                    throw new IllegalArgumentException("Region used in endpoint that is not declared in 'prod': " + endpointRegion);
-                }
-            }
-        }
-    }
-
-    /*
-     * Throw an IllegalArgumentException if Athenz configuration violates:
-     * domain not configured -> no zone can configure service
-     * domain configured -> all zones must configure service
-     */
-    private void validateAthenz() {
-        // If athenz domain is not set, athenz service cannot be set on any level
-        if (athenzDomain.isEmpty()) {
-            for (DeclaredZone zone : zones()) {
-                if(zone.athenzService().isPresent()) {
-                    throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
-                }
-            }
-        // if athenz domain is not set, athenz service must be set implicitly or directly on all zones.
-        } else if (athenzService.isEmpty()) {
-            for (DeclaredZone zone : zones()) {
-                if (zone.athenzService().isEmpty()) {
-                    throw new IllegalArgumentException("Athenz domain is configured, but Athenz service not configured for zone: " + zone);
-                }
-            }
-        }
-    }
-
-    private void ensureUnique(DeclaredZone zone, Set<DeclaredZone> zones) {
-        if ( ! zones.add(zone))
-            throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
-    }
-
-    /** Adds missing required steps and reorders steps to a permissible order */
-    private static List<Step> completeSteps(List<Step> steps) {
-        // Add staging if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
-            steps.add(new DeclaredZone(Environment.staging));
-        }
-        
-        // Add test if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
-            steps.add(new DeclaredZone(Environment.test));
-        }
-        
-        // Enforce order test, staging, prod
-        DeclaredZone testStep = remove(Environment.test, steps);
-        if (testStep != null)
-            steps.add(0, testStep);
-        DeclaredZone stagingStep = remove(Environment.staging, steps);
-        if (stagingStep != null)
-            steps.add(1, stagingStep);
-        
-        return steps;
-    }
-
-    /** 
-     * Removes the first occurrence of a deployment step to the given environment and returns it.
-     * 
-     * @return the removed step, or null if it is not present
-     */
-    private static DeclaredZone remove(Environment environment, List<Step> steps) {
-        for (int i = 0; i < steps.size(); i++) {
-            if (steps.get(i).deploysTo(environment))
-                return (DeclaredZone)steps.remove(i);
-        }
-        return null;
-    }
-
-    /** Returns the ID of the service to expose through global routing, if present */
-    public Optional<String> globalServiceId() {
-        return globalServiceId;
-    }
-
-    /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
-    public UpgradePolicy upgradePolicy() { return upgradePolicy; }
+    // TODO: Remove after October 2019
+    public UpgradePolicy upgradePolicy() { return defaultInstance().upgradePolicy(); }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
-    /** Returns whether upgrade can occur at the given instant */
-    public boolean canUpgradeAt(Instant instant) {
-        return changeBlockers.stream().filter(block -> block.blocksVersions())
-                                      .noneMatch(block -> block.window().includes(instant));
-    }
+    // TODO: Remove after November 2019
+    public boolean canUpgradeAt(Instant instant) { return defaultInstance().canUpgradeAt(instant); }
 
-    /** Returns whether an application revision change can occur at the given instant */
-    public boolean canChangeRevisionAt(Instant instant) {
-        return changeBlockers.stream().filter(block -> block.blocksRevisions())
-                                      .noneMatch(block -> block.window().includes(instant));
-    }
+    // TODO: Remove after November 2019
+    public boolean canChangeRevisionAt(Instant instant) { return defaultInstance().canChangeRevisionAt(instant); }
 
-    /** Returns time windows where upgrades are disallowed */
-    public List<ChangeBlocker> changeBlocker() { return changeBlockers; }
+    // TODO: Remove after November 2019
+    public List<ChangeBlocker> changeBlocker() { return defaultInstance().changeBlocker(); }
 
     /** Returns the deployment steps of this in the order they will be performed */
-    public List<Step> steps() { return steps; }
-
-    /** Returns all the DeclaredZone deployment steps in the order they are declared */
-    public List<DeclaredZone> zones() {
-        return steps.stream()
-                .flatMap(step -> step.zones().stream())
-                .collect(Collectors.toList());
+    public List<Step> steps() {
+        if (singleInstance(steps)) return defaultInstance().steps(); // TODO: Remove line after November 2019
+        return steps;
     }
 
-    /** Returns the notification configuration */
-    public Notifications notifications() { return notifications; }
+    // TODO: Remove after November 2019
+    public List<DeclaredZone> zones() {
+        return defaultInstance().steps().stream()
+                                       .flatMap(step -> step.zones().stream())
+                                       .collect(Collectors.toList());
+    }
 
-    /** Returns the rotations configuration */
-    public List<Endpoint> endpoints() { return endpoints; }
+    // TODO: Remove after November 2019
+    public Optional<AthenzDomain> athenzDomain() { return defaultInstance().athenzDomain(); }
+
+    // TODO: Remove after November 2019
+    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
+        return defaultInstance().athenzService(environment, region);
+    }
+
+    // TODO: Remove after November 2019
+    public Notifications notifications() { return defaultInstance().notifications(); }
+
+    // TODO: Remove after November 2019
+    public List<Endpoint> endpoints() { return defaultInstance().endpoints(); }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
-    /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
+    // TODO: Remove after November 2019
     public boolean includes(Environment environment, Optional<RegionName> region) {
-        for (Step step : steps)
-            if (step.deploysTo(environment, region)) return true;
-        return false;
+        return defaultInstance().deploysTo(environment, region);
+    }
+
+    // TODO: Remove after November 2019
+    private static boolean singleInstance(List<DeploymentSpec.Step> steps) {
+        return steps.size() == 1 && steps.get(0) instanceof DeploymentInstanceSpec;
+    }
+
+    /** Returns the instance step containing the given instance name, or null if not present */
+    public DeploymentInstanceSpec instance(String name) {
+        return instance(InstanceName.from(name));
+    }
+
+    /** Returns the instance step containing the given instance name, or null if not present */
+    public DeploymentInstanceSpec instance(InstanceName name) {
+        for (DeploymentInstanceSpec instance : instances()) {
+            if (instance.name().equals(name))
+                return instance;
+        }
+        return null;
+    }
+
+    /** Returns the instance step containing the given instance name, or throws an IllegalArgumentException if not present */
+    public DeploymentInstanceSpec requireInstance(String name) {
+        return requireInstance(InstanceName.from(name));
+    }
+
+    public DeploymentInstanceSpec requireInstance(InstanceName name) {
+        DeploymentInstanceSpec instance = instance(name);
+        if (instance == null)
+            throw new IllegalArgumentException("No instance '" + name + "' in deployment.xml'. Instances: " +
+                                               instances().stream().map(spec -> spec.name().toString()).collect(Collectors.joining(",")));
+        return instance;
+    }
+
+    /** Returns the steps of this which are instances */
+    public List<DeploymentInstanceSpec> instances() {
+        return steps.stream()
+                    .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
+                    .collect(Collectors.toList());
     }
 
     /**
@@ -304,40 +280,19 @@ public class DeploymentSpec {
         return b.toString();
     }
 
-    /** Returns the athenz domain if configured */
-    public Optional<AthenzDomain> athenzDomain() {
-        return athenzDomain;
-    }
-
-    /** Returns the athenz service for environment/region if configured */
-    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
-        AthenzService athenzService = zones().stream()
-                .filter(zone -> zone.deploysTo(environment, Optional.of(region)))
-                .findFirst()
-                .flatMap(DeclaredZone::athenzService)
-                .orElse(this.athenzService.orElse(null));
-        return Optional.ofNullable(athenzService);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeploymentSpec that = (DeploymentSpec) o;
-        return globalServiceId.equals(that.globalServiceId) &&
-               upgradePolicy == that.upgradePolicy &&
-               majorVersion.equals(that.majorVersion) &&
-               changeBlockers.equals(that.changeBlockers) &&
-               steps.equals(that.steps) &&
-               xmlForm.equals(that.xmlForm) &&
-               athenzDomain.equals(that.athenzDomain) &&
-               athenzService.equals(that.athenzService) &&
-               notifications.equals(that.notifications);
+        DeploymentSpec other = (DeploymentSpec) o;
+        return majorVersion.equals(other.majorVersion) &&
+               steps.equals(other.steps) &&
+               xmlForm.equals(other.xmlForm);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, majorVersion, changeBlockers, steps, xmlForm, athenzDomain, athenzService, notifications);
+        return Objects.hash(majorVersion, steps, xmlForm);
     }
 
     /** This may be invoked by a continuous build */
@@ -365,7 +320,7 @@ public class DeploymentSpec {
 
     /** A deployment step */
     public abstract static class Step {
-        
+
         /** Returns whether this step deploys to the given region */
         public final boolean deploysTo(Environment environment) {
             return deploysTo(environment, Optional.empty());
@@ -377,6 +332,12 @@ public class DeploymentSpec {
         /** Returns the zones deployed to in this step */
         public List<DeclaredZone> zones() { return Collections.emptyList(); }
 
+        /** The delay introduced by this step (beyond the time it takes to execute the step). Default is zero. */
+        public Duration delay() { return Duration.ZERO; }
+
+        /** Returns all the steps nested in this. This default implementatiino returns an empty list. */
+        public List<Step> steps() { return List.of(); }
+
     }
 
     /** A deployment step which is to wait for some time before progressing to the next step */
@@ -387,11 +348,20 @@ public class DeploymentSpec {
         public Delay(Duration duration) {
             this.duration = duration;
         }
-        
+
+        // TODO: Remove after October 2019
         public Duration duration() { return duration; }
 
         @Override
+        public Duration delay() { return duration; }
+
+        @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) { return false; }
+
+        @Override
+        public String toString() {
+            return "delay " + duration;
+        }
 
     }
 
@@ -473,21 +443,31 @@ public class DeploymentSpec {
 
     }
 
-    /** A deployment step which is to run deployment to multiple zones in parallel */
+    /** A deployment step which is to run multiple steps (zones or instances) in parallel */
     public static class ParallelZones extends Step {
 
-        private final List<DeclaredZone> zones;
+        private final List<Step> steps;
 
-        public ParallelZones(List<DeclaredZone> zones) {
-            this.zones = List.copyOf(zones);
+        public ParallelZones(List<Step> steps) {
+            this.steps = List.copyOf(steps);
         }
 
+        /** Returns the steps inside this which are zones */
         @Override
-        public List<DeclaredZone> zones() { return this.zones; }
+        public List<DeclaredZone> zones() {
+            return this.steps.stream()
+                             .filter(step -> step instanceof DeclaredZone)
+                             .map(DeclaredZone.class::cast)
+                             .collect(Collectors.toList());
+        }
+
+        /** Returns all the steps nested in this */
+        @Override
+        public List<Step> steps() { return steps; }
 
         @Override
         public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-            return zones.stream().anyMatch(zone -> zone.deploysTo(environment, region));
+            return steps().stream().anyMatch(zone -> zone.deploysTo(environment, region));
         }
 
         @Override
@@ -495,13 +475,19 @@ public class DeploymentSpec {
             if (this == o) return true;
             if (!(o instanceof ParallelZones)) return false;
             ParallelZones that = (ParallelZones) o;
-            return Objects.equals(zones, that.zones);
+            return Objects.equals(steps, that.steps);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(zones);
+            return Objects.hash(steps);
         }
+
+        @Override
+        public String toString() {
+            return steps.size() + " parallel steps";
+        }
+
     }
 
     /** Controls when this application will be upgraded to new Vespa versions */
@@ -530,6 +516,11 @@ public class DeploymentSpec {
         public boolean blocksRevisions() { return revision; }
         public boolean blocksVersions() { return version; }
         public TimeWindow window() { return window; }
+
+        @Override
+        public String toString() {
+            return "change blocker revision=" + revision + " version=" + version + " window=" + window;
+        }
         
     }
 
