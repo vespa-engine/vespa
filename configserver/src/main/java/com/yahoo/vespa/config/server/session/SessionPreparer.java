@@ -122,7 +122,7 @@ public class SessionPreparer {
                 preparation.writeTlsZK();
                 var globalServiceId = context.getApplicationPackage().getDeployment()
                                              .map(DeploymentSpec::fromXml)
-                                             .map(spec -> spec.requireInstance(context.getApplicationPackage().getApplicationId().instance()))
+                                             .flatMap(spec -> spec.instance(context.getApplicationPackage().getApplicationId().instance()))
                                              .flatMap(DeploymentInstanceSpec::globalServiceId);
                 preparation.writeContainerEndpointsZK(globalServiceId);
                 preparation.distribute();
