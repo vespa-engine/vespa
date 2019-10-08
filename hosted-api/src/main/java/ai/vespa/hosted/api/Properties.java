@@ -42,6 +42,10 @@ public class Properties {
         return getNonBlankProperty("certificateFile").map(Paths::get);
     }
 
+    public static Optional<String> privateKey() {
+        return getNonBlankProperty("privateKey");
+    }
+
     /** Returns the system property with the given name if it is set, or empty. */
     public static Optional<String> getNonBlankProperty(String name) {
         return Optional.ofNullable(System.getProperty(name)).filter(value -> ! value.isBlank());
