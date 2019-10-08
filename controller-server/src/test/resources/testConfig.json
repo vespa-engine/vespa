@@ -2,6 +2,7 @@
   "application": "tenant:application:default",
   "zone": "test.aws-us-east-1c",
   "system": "publiccd",
+  "isCI": true,
   "endpoints": {
     "test.aws-us-east-1c": [
       "https://server/"

@@ -28,16 +28,18 @@ public class TestConfig {
     private final ApplicationId application;
     private final ZoneId zone;
     private final SystemName system;
+    private final boolean isCI;
     private final Map<ZoneId, Map<String, URI>> deployments;
     private final Map<ZoneId, List<String>> contentClusters;
 
-    public TestConfig(ApplicationId application, ZoneId zone, SystemName system, Map<ZoneId, Map<String, URI>> deployments,
-                      Map<ZoneId, List<String>> contentClusters) {
+    public TestConfig(ApplicationId application, ZoneId zone, SystemName system, boolean isCI,
+                      Map<ZoneId, Map<String, URI>> deployments, Map<ZoneId, List<String>> contentClusters) {
         if ( ! deployments.containsKey(zone))
             throw new IllegalArgumentException("Config must contain a deployment for its zone, but only does for " + deployments.keySet());
         this.application = requireNonNull(application);
         this.zone = requireNonNull(zone);
         this.system = requireNonNull(system);
+        this.isCI = isCI;
         this.deployments = deployments.entrySet().stream()
                                       .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                                             entry -> Map.copyOf(entry.getValue())));
@@ -60,6 +62,7 @@ public class TestConfig {
         ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
         ZoneId zone = ZoneId.from(config.field("zone").asString());
         SystemName system = SystemName.from(config.field("system").asString());
+        boolean isCI = config.field("isCI").asBool();
         Map<ZoneId, Map<String, URI>> deployments = new HashMap<>();
         config.field("zoneEndpoints").traverse((ObjectTraverser) (zoneId, clustersObject) -> {
             deployments.put(ZoneId.from(zoneId), toClusterMap(clustersObject));
@@ -70,7 +73,7 @@ public class TestConfig {
             clustersArray.traverse((ArrayTraverser) (__, cluster) -> clusters.add(cluster.asString()));
             contentClusters.put(ZoneId.from(zoneId), clusters);
         }));
-        return new TestConfig(application, zone, system, deployments, contentClusters);
+        return new TestConfig(application, zone, system, isCI, deployments, contentClusters);
     }
 
     static Map<String, URI> toClusterMap(Inspector clustersObject) {
@@ -87,6 +90,7 @@ public class TestConfig {
         return new TestConfig(ApplicationId.defaultId(),
                               ZoneId.defaultId(),
                               SystemName.defaultSystem(),
+                              false,
                               Map.of(ZoneId.defaultId(), endpoints),
                               Map.of());
     }
@@ -97,13 +101,16 @@ public class TestConfig {
     /** Returns the zone of the deployment to test. */
     public ZoneId zone() { return zone; }
 
+    /** Returns the Vespa cloud system this is run against. */
+    public SystemName system() { return system; }
+
+    /** Returns whether this is a CI job (or a local developer environment). */
+    public boolean isCI() { return isCI; }
+
     /** Returns an immutable view of deployments, per zone, of the application to test. */
     public Map<ZoneId, Map<String, URI>> deployments() { return deployments; }
 
     /** Returns an immutable view of content clusters, per zone, of the application to test. */
     public Map<ZoneId, List<String>> contentClusters() { return contentClusters; }
-
-    /** Returns the hosted Vespa system this is run against. */
-    public SystemName system() { return system; }
 
 }

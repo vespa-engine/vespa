@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author jonmv
@@ -28,6 +30,7 @@ public class TestConfigTest {
                      config.zone());
         assertEquals(SystemName.PublicCd,
                      config.system());
+        assertTrue(config.isCI());
         assertEquals(Map.of(ZoneId.from("dev", "aws-us-east-1c"),
                             Map.of("default", URI.create("https://dev.endpoint:443/")),
                             ZoneId.from("prod", "aws-us-east-1a"),

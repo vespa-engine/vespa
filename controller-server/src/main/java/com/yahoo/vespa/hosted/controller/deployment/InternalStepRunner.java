@@ -465,6 +465,7 @@ public class InternalStepRunner implements StepRunner {
                                                       TesterCloud.Suite.of(id.type()),
                                                       testConfigSerializer.configJson(id.application(),
                                                                                       id.type(),
+                                                                                      true,
                                                                                       endpoints,
                                                                                       controller.applications().contentClustersByZone(id.application(), zones)));
         return Optional.of(running);
