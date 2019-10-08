@@ -143,7 +143,9 @@ public class DeploymentTrigger {
 
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(report.applicationId()), application -> {
             if (report.jobType() == component) {
-                notifyOfSubmission(application.get().id(), report.version().get(), report.projectId());
+                if (report.success())
+                    notifyOfSubmission(application.get().id(), report.version().get(), report.projectId());
+
                 return;
             }
             JobRun triggering;

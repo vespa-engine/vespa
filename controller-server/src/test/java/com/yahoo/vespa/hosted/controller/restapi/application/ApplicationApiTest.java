@@ -1479,7 +1479,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // ... and assert it was recorded
         JobStatus recordedStatus =
-                tester.controller().applications().getInstance(app.id().defaultInstance()).get().deploymentJobs().jobStatus().get(JobType.component);
+                tester.controller().applications().getInstance(app.id().defaultInstance()).get().deploymentJobs().jobStatus().get(JobType.systemTest);
 
         assertNotNull("Status was recorded", recordedStatus);
         assertTrue(recordedStatus.isSuccess());

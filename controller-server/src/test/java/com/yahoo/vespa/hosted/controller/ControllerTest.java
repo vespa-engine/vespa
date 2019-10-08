@@ -89,7 +89,7 @@ public class ControllerTest {
                      tester.application(app1.id()).change().application().get());
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, systemTest);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, stagingTest);
-        assertEquals(4, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
+        assertEquals(3, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
 
         ApplicationVersion applicationVersion = tester.application(app1.id()).change().application().get();
         assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
@@ -105,7 +105,7 @@ public class ControllerTest {
         // production job (failing) after deployment
         tester.deploy(productionUsWest1, instance.id(), applicationPackage);
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, productionUsWest1);
-        assertEquals(4, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
+        assertEquals(3, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
 
         JobStatus expectedJobStatus = JobStatus.initial(productionUsWest1)
                                                .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)) // Triggered first without application version info
@@ -123,7 +123,7 @@ public class ControllerTest {
 
         assertNotNull(tester.controller().tenants().get(TenantName.from("tenant1")));
         assertNotNull(tester.defaultInstance(app1.id()));
-        assertEquals(4, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
+        assertEquals(3, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
 
 
         tester.clock().advance(Duration.ofHours(1));
@@ -153,7 +153,7 @@ public class ControllerTest {
                      app1.id().defaultInstance(), tester.controller());
         tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, productionUsEast3);
 
-        assertEquals(5, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
+        assertEquals(4, tester.defaultInstance(app1.id()).deploymentJobs().jobStatus().size());
 
         // Production zone for which there is no JobType is not allowed.
         applicationPackage = new ApplicationPackageBuilder()

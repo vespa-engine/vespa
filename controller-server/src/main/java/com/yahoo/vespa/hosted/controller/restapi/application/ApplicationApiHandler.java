@@ -572,10 +572,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                  "/instance/" + instance.id().instance().value() + "/job/",
                                                  request.getUri()).toString());
 
-        instance.deploymentJobs().statusOf(JobType.component)
-                .flatMap(JobStatus::lastSuccess)
-                .map(run -> run.application().source())
-                .ifPresent(source -> sourceRevisionToSlime(source, object.setObject("source")));
+        application.latestVersion().ifPresent(version -> sourceRevisionToSlime(version.source(), object.setObject("source")));
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
