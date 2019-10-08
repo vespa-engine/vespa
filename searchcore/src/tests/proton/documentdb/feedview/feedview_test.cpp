@@ -1146,7 +1146,7 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 5, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(7, 5, 4, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
