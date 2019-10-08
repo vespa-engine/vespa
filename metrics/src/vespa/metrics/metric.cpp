@@ -13,6 +13,7 @@
 #include <cassert>
 #include <algorithm>
 #include <ostream>
+#include <regex>
 
 namespace metrics {
 
@@ -39,9 +40,8 @@ MetricVisitor::visitMetric(const Metric&, bool)
 
 namespace {
     std::string namePattern = "[a-zA-Z][_a-zA-Z0-9]*";
+    std::regex name_pattern_regex(namePattern);
 }
-
-vespalib::Regexp Metric::_namePattern(namePattern);
 
 Tag::Tag(vespalib::stringref k)
     : _key(NameRepo::tagKeyId(k)),
@@ -143,7 +143,8 @@ Metric::verifyConstructionParameters()
         throw vespalib::IllegalArgumentException(
                 "Metric cannot have empty name", VESPA_STRLOC);
     }
-    if (!_namePattern.match(getName())) {
+    const auto &name = getName();
+    if (!std::regex_search(name.c_str(), name.c_str() + name.size(), name_pattern_regex)) {
         throw vespalib::IllegalArgumentException(
                 "Illegal metric name '" + getName() + "'. Names must match pattern "
                 + namePattern, VESPA_STRLOC);

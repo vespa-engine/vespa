@@ -46,6 +46,7 @@ public class SearchCluster implements NodeManager<Node> {
     private final ClusterMonitor<Node> clusterMonitor;
     private final VipStatus vipStatus;
     private PingFactory pingFactory;
+    private long nextLogTime = 0;
 
     /**
      * A search node on this local machine having the entire corpus, which we therefore
@@ -73,7 +74,7 @@ public class SearchCluster implements NodeManager<Node> {
         }
         this.groups = groupsBuilder.build();
         LinkedHashMap<Integer, Group> groupIntroductionOrder = new LinkedHashMap<>();
-        nodes.forEach(node -> groupIntroductionOrder.put(node.group(), groups.get(node.group)));
+        nodes.forEach(node -> groupIntroductionOrder.put(node.group(), groups.get(node.group())));
         this.orderedGroups = ImmutableList.<Group>builder().addAll(groupIntroductionOrder.values()).build();
 
         // Index nodes by host
@@ -89,6 +90,10 @@ public class SearchCluster implements NodeManager<Node> {
                                                                        groups);
 
         this.clusterMonitor = new ClusterMonitor<>(this);
+    }
+
+    public void shutDown() {
+        clusterMonitor.shutdown();
     }
 
     public void startClusterMonitoring(PingFactory pingFactory) {
@@ -141,7 +146,7 @@ public class SearchCluster implements NodeManager<Node> {
         }
         for (DispatchConfig.Node node : dispatchConfig.node()) {
             if (filter.test(node)) {
-                nodesBuilder.add(new Node(node.key(), node.host(), node.fs4port(), node.group()));
+                nodesBuilder.add(new Node(node.key(), node.host(), node.group()));
             }
         }
         return nodesBuilder.build();
@@ -409,14 +414,21 @@ public class SearchCluster implements NodeManager<Node> {
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
-        if (changed) {
+        if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
+            nextLogTime = System.currentTimeMillis() + 30 * 1000;
             int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
                 log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)",
                                              index, group.getActiveDocuments(), averageDocuments, group.workingNodes(), groupSize()));
             } else {
-                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d)",
-                                                index, group.workingNodes(), groupSize(), requiredNodes));
+                StringBuilder missing = new StringBuilder();
+                for (var node : group.nodes()) {
+                    if (node.isWorking() != Boolean.TRUE) {
+                        missing.append('\n').append(node.toString());
+                    }
+                }
+                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
+                        index, group.workingNodes(), groupSize(), requiredNodes, group.getActiveDocuments(), averageDocuments, missing.toString()));
             }
         }
     }

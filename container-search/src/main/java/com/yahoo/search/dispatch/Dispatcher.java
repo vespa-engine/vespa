@@ -195,6 +195,10 @@ public class Dispatcher extends AbstractComponent {
         return Optional.empty();
     }
 
+    public void shutDown() {
+        searchCluster.shutDown();
+    }
+
     private void emitDispatchMetric(Optional<SearchInvoker> invoker) {
         if (invoker.isEmpty()) {
             metric.add(FDISPATCH_METRIC, 1, metricContext);

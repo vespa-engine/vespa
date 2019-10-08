@@ -3,7 +3,8 @@
 #pragma once
 
 #include "metric.h"
-#include <vespa/vespalib/util/regexp.h>
+#include <regex>
+#include <optional>
 
 namespace metrics {
 
@@ -11,7 +12,7 @@ class TextWriter : public MetricVisitor {
     uint32_t _period;
     std::ostream& _out;
     std::vector<std::string> _path;
-    vespalib::Regexp _regex;
+    std::optional<std::regex> _regex;
     bool _verbose;
 
 public:

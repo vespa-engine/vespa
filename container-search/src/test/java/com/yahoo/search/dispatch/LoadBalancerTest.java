@@ -28,7 +28,7 @@ import static org.junit.Assert.assertThat;
 public class LoadBalancerTest {
     @Test
     public void requireThatLoadBalancerServesSingleNodeSetups() {
-        Node n1 = new Node(0, "test-node1", 0, 0);
+        Node n1 = new Node(0, "test-node1", 0);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1), 1, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
@@ -41,8 +41,8 @@ public class LoadBalancerTest {
 
     @Test
     public void requireThatLoadBalancerServesMultiGroupSetups() {
-        Node n1 = new Node(0, "test-node1", 0, 0);
-        Node n2 = new Node(1, "test-node2", 1, 1);
+        Node n1 = new Node(0, "test-node1", 0);
+        Node n2 = new Node(1, "test-node2", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), 1, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
@@ -55,10 +55,10 @@ public class LoadBalancerTest {
 
     @Test
     public void requireThatLoadBalancerServesClusteredGroups() {
-        Node n1 = new Node(0, "test-node1", 0, 0);
-        Node n2 = new Node(1, "test-node2", 1, 0);
-        Node n3 = new Node(0, "test-node3", 0, 1);
-        Node n4 = new Node(1, "test-node4", 1, 1);
+        Node n1 = new Node(0, "test-node1", 0);
+        Node n2 = new Node(1, "test-node2", 0);
+        Node n3 = new Node(0, "test-node3", 1);
+        Node n4 = new Node(1, "test-node4", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2, n3, n4), 2, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 
@@ -68,8 +68,8 @@ public class LoadBalancerTest {
 
     @Test
     public void requireThatLoadBalancerReturnsDifferentGroups() {
-        Node n1 = new Node(0, "test-node1", 0, 0);
-        Node n2 = new Node(1, "test-node2", 1, 1);
+        Node n1 = new Node(0, "test-node1", 0);
+        Node n2 = new Node(1, "test-node2", 1);
         SearchCluster cluster = new SearchCluster("a", createDispatchConfig(n1, n2), 1, null);
         LoadBalancer lb = new LoadBalancer(cluster, true);
 

@@ -1,6 +1,7 @@
 package ai.vespa.hosted.plugin;
 
 import ai.vespa.hosted.api.ControllerHttpClient;
+import ai.vespa.hosted.api.Properties;
 import com.yahoo.config.provision.ApplicationId;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -69,7 +70,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     protected void setup() {
         tenant = firstNonBlank(tenant, project.getProperties().getProperty("tenant"));
         application = firstNonBlank(application, project.getProperties().getProperty("application"));
-        instance = firstNonBlank(instance, project.getProperties().getProperty("instance", "default"));
+        instance = firstNonBlank(instance, project.getProperties().getProperty("instance", Properties.user()));
         id = ApplicationId.from(tenant, application, instance);
 
         if (privateKey != null) {

@@ -17,7 +17,7 @@ public class DeploymentCost {
 
     private final Map<String, ClusterCost> clusters;
 
-    DeploymentCost(Map<String, ClusterCost> clusterCosts) {
+    public DeploymentCost(Map<String, ClusterCost> clusterCosts) {
         clusters = new HashMap<>(clusterCosts);
 
         double tco = 0;

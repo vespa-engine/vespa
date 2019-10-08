@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -87,17 +86,10 @@ public class Instance {
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
                                                                                       version, instant));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
-                                                  previousDeployment.clusterUtils(),
                                                   previousDeployment.clusterInfo(),
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity());
         return with(newDeployment);
-    }
-
-    public Instance withClusterUtilization(ZoneId zone, Map<ClusterSpec.Id, ClusterUtilization> clusterUtilization) {
-        Deployment deployment = deployments.get(zone);
-        if (deployment == null) return this;    // No longer deployed in this zone.
-        return with(deployment.withClusterUtils(clusterUtilization));
     }
 
     public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {

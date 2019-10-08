@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -92,7 +91,7 @@ public class ApplicationSerializerTest {
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
         deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
-                                       createClusterUtils(3, 0.2), createClusterInfo(3, 4),
+                                       createClusterInfo(3, 4),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
                                                              Map.of(DeploymentMetrics.Warning.all, 3)),
@@ -191,10 +190,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());
         assertEquals(original.require(id1.instance()).rotationStatus(), serialized.require(id1.instance()).rotationStatus());
 
-        // Test cluster utilization
-        assertEquals(0, serialized.require(id1.instance()).deployments().get(zone1).clusterUtils().size());
-        assertEquals(0, serialized.require(id1.instance()).deployments().get(zone2).clusterUtils().size());
-
         // Test cluster info
         assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());
         assertEquals(10, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().get(ClusterSpec.Id.from("id2")).getFlavorCost());
@@ -228,21 +223,6 @@ public class ApplicationSerializerTest {
 
             result.put(ClusterSpec.Id.from("id" + cluster), new ClusterInfo("flavor" + cluster, 10,
                 2, 4, 50, ClusterSpec.Type.content, hostnames));
-        }
-        return result;
-    }
-
-    private Map<ClusterSpec.Id, ClusterUtilization> createClusterUtils(int clusters, double inc) {
-        Map<ClusterSpec.Id, ClusterUtilization> result = new HashMap<>();
-
-        ClusterUtilization util = new ClusterUtilization(0,0,0,0);
-        for (int cluster = 0; cluster < clusters; cluster++) {
-            double agg = cluster*inc;
-            result.put(ClusterSpec.Id.from("id" + cluster), new ClusterUtilization(
-                    util.getMemory()+ agg,
-                    util.getCpu()+ agg,
-                    util.getDisk() + agg,
-                    util.getDiskBusy() + agg));
         }
         return result;
     }

@@ -42,7 +42,8 @@ struct UpdateOperationTest : Test, DistributorTestUtil {
     }
 
     void replyToMessage(UpdateOperation& callback, DistributorMessageSenderStub& sender, uint32_t index,
-                        uint64_t oldTimestamp, const api::BucketInfo& info = api::BucketInfo(2,4,6));
+                        uint64_t oldTimestamp, const api::BucketInfo& info = api::BucketInfo(2,4,6),
+                        const api::ReturnCode& result = api::ReturnCode());
 
     std::shared_ptr<UpdateOperation>
     sendUpdate(const std::string& bucketState);
@@ -72,7 +73,7 @@ UpdateOperationTest::sendUpdate(const std::string& bucketState)
 
 void
 UpdateOperationTest::replyToMessage(UpdateOperation& callback, DistributorMessageSenderStub& sender, uint32_t index,
-                                     uint64_t oldTimestamp, const api::BucketInfo& info)
+                                     uint64_t oldTimestamp, const api::BucketInfo& info, const api::ReturnCode& result)
 {
     std::shared_ptr<api::StorageMessage> msg2  = sender.command(index);
     auto* updatec = dynamic_cast<UpdateCommand*>(msg2.get());
@@ -80,6 +81,7 @@ UpdateOperationTest::replyToMessage(UpdateOperation& callback, DistributorMessag
     auto* updateR = static_cast<api::UpdateReply*>(reply.get());
     updateR->setOldTimestamp(oldTimestamp);
     updateR->setBucketInfo(info);
+    updateR->setResult(result);
 
     callback.onReceive(sender, std::shared_ptr<StorageReply>(reply.release()));
 }
@@ -161,5 +163,23 @@ TEST_F(UpdateOperationTest, multi_node_inconsistent_timestamp) {
 
     auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
     EXPECT_EQ(1, metrics.diverging_timestamp_updates.getValue());
+}
+
+TEST_F(UpdateOperationTest, test_and_set_failures_increment_tas_metric) {
+    setupDistributor(2, 2, "distributor:1 storage:1");
+    std::shared_ptr<UpdateOperation> cb(sendUpdate("0=1/2/3"));
+    DistributorMessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
+    ASSERT_EQ("Update => 0", sender.getCommands(true));
+    api::ReturnCode result(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, "bork bork");
+    replyToMessage(*cb, sender, 0, 1234, api::BucketInfo(), result);
+
+    ASSERT_EQ("UpdateReply(id:ns:text/html::1, BucketId(0x0000000000000000), "
+              "timestamp 100, timestamp of updated doc: 0) "
+              "ReturnCode(TEST_AND_SET_CONDITION_FAILED, bork bork)",
+              sender.getLastReply(true));
+
+    auto& metrics = getDistributor().getMetrics().updates[documentapi::LoadType::DEFAULT];
+    EXPECT_EQ(1, metrics.failures.test_and_set_failed.getValue());
 }
 

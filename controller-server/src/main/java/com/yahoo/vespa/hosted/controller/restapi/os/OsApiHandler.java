@@ -160,17 +160,17 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Set<OsVersion> osVersions = controller.osVersions();
 
         Cursor versions = root.setArray("versions");
-        controller.osVersionStatus().versions().forEach((osVersion, nodes) -> {
+        controller.osVersionStatus().versions().forEach((osVersion, nodeVersions) -> {
             Cursor currentVersionObject = versions.addObject();
             currentVersionObject.setString("version", osVersion.version().toFullString());
             currentVersionObject.setBool("targetVersion", osVersions.contains(osVersion));
             currentVersionObject.setString("cloud", osVersion.cloud().value());
             Cursor nodesArray = currentVersionObject.setArray("nodes");
-            nodes.forEach(node -> {
+            nodeVersions.asMap().values().forEach(nodeVersion -> {
                 Cursor nodeObject = nodesArray.addObject();
-                nodeObject.setString("hostname", node.hostname().value());
-                nodeObject.setString("environment", node.environment().value());
-                nodeObject.setString("region", node.region().value());
+                nodeObject.setString("hostname", nodeVersion.hostname().value());
+                nodeObject.setString("environment", nodeVersion.zone().environment().value());
+                nodeObject.setString("region", nodeVersion.zone().region().value());
             });
         });
 

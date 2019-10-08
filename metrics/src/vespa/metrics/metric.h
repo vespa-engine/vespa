@@ -3,7 +3,6 @@
 
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/regexp.h>
 #include "name_repo.h"
 
 namespace metrics {
@@ -109,8 +108,6 @@ public:
     using UP = std::unique_ptr<Metric>;
     using SP = std::shared_ptr<Metric>;
     using Tags = std::vector<Tag>;
-
-    static vespalib::Regexp _namePattern;
 
     Metric(const String& name,
            Tags dimensions,

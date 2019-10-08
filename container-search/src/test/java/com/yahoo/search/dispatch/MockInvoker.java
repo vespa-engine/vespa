@@ -19,7 +19,7 @@ class MockInvoker extends SearchInvoker {
     private List<Hit> hits;
 
     protected MockInvoker(int key, Coverage coverage) {
-        super(Optional.of(new Node(key, "?", 0, 0)));
+        super(Optional.of(new Node(key, "?", 0)));
         this.coverage = coverage;
     }
 

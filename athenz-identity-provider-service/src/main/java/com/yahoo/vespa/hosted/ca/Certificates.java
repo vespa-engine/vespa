@@ -43,7 +43,7 @@ public class Certificates {
                                               SHA256_WITH_ECDSA,
                                               X509CertificateBuilder.generateRandomSerialNumber());
         for (var san : csr.getSubjectAlternativeNames()) {
-            builder = builder.addSubjectAlternativeName(san.getValue());
+            builder = builder.addSubjectAlternativeName(san.decode());
         }
         return builder.build();
     }

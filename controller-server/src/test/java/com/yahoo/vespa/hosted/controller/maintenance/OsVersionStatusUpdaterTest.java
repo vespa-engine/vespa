@@ -3,18 +3,15 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.config.provision.zone.UpgradePolicy;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -47,10 +44,10 @@ public class OsVersionStatusUpdaterTest {
         tester.controller().upgradeOsIn(cloud, version1, false);
         statusUpdater.maintain();
 
-        Map<OsVersion, List<OsVersionStatus.Node>> osVersions = tester.controller().osVersionStatus().versions();
+        var osVersions = tester.controller().osVersionStatus().versions();
         assertEquals(2, osVersions.size());
-        assertFalse("All nodes on unknown version", osVersions.get(new OsVersion(Version.emptyVersion, cloud)).isEmpty());
-        assertTrue("No nodes on current target", osVersions.get(new OsVersion(version1, cloud)).isEmpty());
+        assertFalse("All nodes on unknown version", osVersions.get(new OsVersion(Version.emptyVersion, cloud)).asMap().isEmpty());
+        assertTrue("No nodes on current target", osVersions.get(new OsVersion(version1, cloud)).asMap().isEmpty());
     }
 
 }

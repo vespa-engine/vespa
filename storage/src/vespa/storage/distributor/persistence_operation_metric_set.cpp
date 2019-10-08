@@ -28,7 +28,9 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
                           "being in an inconsistent state or not found", this),
       notfound("notfound", {}, "The number of operations that failed because the document did not exist", this),
       concurrent_mutations("concurrent_mutations", {}, "The number of operations that were transiently failed due "
-                           "to a mutating operation already being in progress for its document ID", this)
+                           "to a mutating operation already being in progress for its document ID", this),
+      test_and_set_failed("test_and_set_failed", {}, "The number of mutating operations that failed because "
+                          "they specified a test-and-set condition that did not match the existing document", this)
 {
     sum.addMetricToSum(notready);
     sum.addMetricToSum(notconnected);
@@ -39,6 +41,8 @@ PersistenceFailuresMetricSet::PersistenceFailuresMetricSet(MetricSet* owner)
     sum.addMetricToSum(busy);
     sum.addMetricToSum(inconsistent_bucket);
     sum.addMetricToSum(notfound);
+    // TaS/concurrent mutation failures not added to the main failure metric, as they're not "failures" as per se.
+    // TODO introduce separate aggregate for such metrics
 }
 
 PersistenceFailuresMetricSet::~PersistenceFailuresMetricSet() = default;
@@ -61,7 +65,7 @@ PersistenceOperationMetricSet::PersistenceOperationMetricSet(const std::string& 
       failures(this)
 { }
 
-PersistenceOperationMetricSet::~PersistenceOperationMetricSet() { }
+PersistenceOperationMetricSet::~PersistenceOperationMetricSet() = default;
 
 MetricSet *
 PersistenceOperationMetricSet::clone(std::vector<Metric::UP>& ownerList, CopyType copyType,
@@ -84,6 +88,8 @@ PersistenceOperationMetricSet::updateFromResult(const api::ReturnCode& result)
         failures.wrongdistributor.inc();
     } else if (result.getResult() == api::ReturnCode::TIMEOUT) {
         failures.timeout.inc();
+    } else if (result.getResult() == api::ReturnCode::TEST_AND_SET_CONDITION_FAILED) {
+        failures.test_and_set_failed.inc();
     } else if (result.isBusy()) {
         failures.busy.inc();
     } else if (result.isBucketDisappearance()) {

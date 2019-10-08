@@ -206,7 +206,7 @@ public class UnixPath {
 
     /** This path must be on the same file system as the to-path. Returns UnixPath of 'to'. */
     public UnixPath atomicMove(Path to) {
-        uncheck(() -> Files.move(path, to, StandardCopyOption.ATOMIC_MOVE));
+        uncheck(() -> Files.move(path, to, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING));
         return new UnixPath(to);
     }
 

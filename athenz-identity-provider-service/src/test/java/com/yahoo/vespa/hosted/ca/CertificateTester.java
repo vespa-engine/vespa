@@ -47,12 +47,15 @@ public class CertificateTester {
         return createCsr(null);
     }
 
-    public static Pkcs10Csr createCsr(String dnsName) {
+    public static Pkcs10Csr createCsr(String dnsName, String... ipAddresses) {
         X500Principal subject = new X500Principal("CN=subject");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         var builder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA512_WITH_ECDSA);
         if (dnsName != null) {
             builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.DNS_NAME, dnsName);
+        }
+        for (var ipAddress : ipAddresses) {
+            builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.IP_ADDRESS, ipAddress);
         }
         return builder.build();
     }

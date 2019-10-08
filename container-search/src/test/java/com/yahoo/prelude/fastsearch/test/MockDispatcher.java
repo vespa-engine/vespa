@@ -39,7 +39,6 @@ class MockDispatcher extends Dispatcher {
         for (Node node : nodes) {
             DispatchConfig.Node.Builder dispatchConfigNodeBuilder = new DispatchConfig.Node.Builder();
             dispatchConfigNodeBuilder.host(node.hostname());
-            dispatchConfigNodeBuilder.fs4port(node.fs4port());
             dispatchConfigNodeBuilder.port(0); // Mandatory, but currently not used here
             dispatchConfigNodeBuilder.group(node.group());
             dispatchConfigNodeBuilder.key(key++); // not used

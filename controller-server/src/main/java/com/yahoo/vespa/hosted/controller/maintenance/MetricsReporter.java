@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Clock;
@@ -20,6 +21,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +38,7 @@ public class MetricsReporter extends Maintainer {
     public static final String DEPLOYMENT_BUILD_AGE_SECONDS = "deployment.buildAgeSeconds";
     public static final String DEPLOYMENT_WARNINGS = "deployment.warnings";
     public static final String NODES_FAILING_SYSTEM_UPGRADE = "deployment.nodesFailingSystemUpgrade";
+    public static final String NODES_FAILING_OS_UPGRADE = "deployment.nodesFailingOsUpgrade";
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
 
@@ -56,6 +59,7 @@ public class MetricsReporter extends Maintainer {
         reportRemainingRotations();
         reportQueuedNameServiceRequests();
         reportNodesFailingSystemUpgrade();
+        reportNodesFailingOsUpgrade();
     }
 
     private void reportRemainingRotations() {
@@ -103,13 +107,31 @@ public class MetricsReporter extends Maintainer {
         metric.set(NODES_FAILING_SYSTEM_UPGRADE, nodesFailingSystemUpgrade(), metric.createContext(Map.of()));
     }
 
+    private void reportNodesFailingOsUpgrade() {
+        metric.set(NODES_FAILING_OS_UPGRADE, nodesFailingOsUpgrade(), metric.createContext(Map.of()));
+    }
+
     private int nodesFailingSystemUpgrade() {
         if (!controller().versionStatus().isUpgrading()) return 0;
+        return nodesFailingUpgrade(controller().versionStatus().versions(), (vespaVersion) -> {
+            if (vespaVersion.confidence() == VespaVersion.Confidence.broken) return NodeVersions.EMPTY;
+            return vespaVersion.nodeVersions();
+        });
+    }
+
+    private int nodesFailingOsUpgrade() {
+        return nodesFailingUpgrade(controller().osVersionStatus().versions().entrySet(), (kv) -> {
+            var osVersion = kv.getKey();
+            if (osVersion.version().isEmpty()) return NodeVersions.EMPTY;
+            return kv.getValue();
+        });
+    }
+
+    private <V> int nodesFailingUpgrade(Collection<V> collection, Function<V, NodeVersions> nodeVersionsFunction) {
         var nodesFailingUpgrade = 0;
         var acceptableInstant = clock.instant().minus(NODE_UPGRADE_TIMEOUT);
-        for (var vespaVersion : controller().versionStatus().versions()) {
-            if (vespaVersion.confidence() == VespaVersion.Confidence.broken) continue;
-            for (var nodeVersion : vespaVersion.nodeVersions().asMap().values()) {
+        for (var object : collection) {
+            for (var nodeVersion : nodeVersionsFunction.apply(object).asMap().values()) {
                 if (!nodeVersion.changing()) continue;
                 if (nodeVersion.changedAt().isBefore(acceptableInstant)) nodesFailingUpgrade++;
             }

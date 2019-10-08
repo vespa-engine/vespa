@@ -38,7 +38,7 @@ public class MockSearchCluster extends SearchCluster {
         for (int group = 0; group < groups; group++) {
             List<Node> nodes = new ArrayList<>();
             for (int node = 0; node < nodesPerGroup; node++) {
-                Node n = new Node(dk, "host" + dk, -1, group);
+                Node n = new Node(dk, "host" + dk, group);
                 n.setWorking(true);
                 nodes.add(n);
                 hostBuilder.put(n.hostname(), n);
@@ -124,8 +124,9 @@ public class MockSearchCluster extends SearchCluster {
             builder.minWaitAfterCoverageFactor(0);
             builder.maxWaitAfterCoverageFactor(0.5);
         }
+        int port = 10000;
         for (Node n : nodes) {
-            builder.node(new DispatchConfig.Node.Builder().key(n.key()).host(n.hostname()).port(n.fs4port()).group(n.group()));
+            builder.node(new DispatchConfig.Node.Builder().key(n.key()).host(n.hostname()).port(port++).group(n.group()));
         }
         return new DispatchConfig(builder);
     }

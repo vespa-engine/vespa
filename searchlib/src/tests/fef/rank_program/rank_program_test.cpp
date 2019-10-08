@@ -90,6 +90,10 @@ struct Fixture {
                                      value ? "true" : "false");
         return *this;
     }
+    Fixture &use_fast_forest() {
+        indexEnv.getProperties().add(indexproperties::eval::UseFastForest::NAME, "true");
+        return *this;
+    }
     Fixture &add_expr(const vespalib::string &name, const vespalib::string &expr) {
         vespalib::string feature_name = expr_feature(name);
         vespalib::string expr_name = feature_name + ".rankingScript";
@@ -112,6 +116,11 @@ struct Fixture {
         match_data = mdl.createMatchData();
         program.setup(*match_data, queryEnv, overrides);
         return *this;
+    }
+    vespalib::string final_executor_name() const {
+        size_t n = program.num_executors();
+        ASSERT_TRUE(n > 0);
+        return program.get_executor(n-1).getClassName();
     }
     double get(uint32_t docid = default_docid) {
         auto result = program.get_seeds();
@@ -358,6 +367,28 @@ TEST_F("require that interpreted ranking expressions are pure", Fixture()) {
     EXPECT_EQUAL(4u, count_features(f1.program));
     EXPECT_EQUAL(4u, count_const_features(f1.program));
     EXPECT_EQUAL(f1.get(), 7.0);
+}
+
+const vespalib::string tree_expr = "if(value(1)<2,1,2)+if(value(2)<1,10,20)";
+
+TEST_F("require that fast-forest gbdt evaluation can be enabled", Fixture()) {
+    f1.use_fast_forest().add_expr("rank", tree_expr).compile();
+    EXPECT_EQUAL(f1.get(), 21.0);
+    EXPECT_EQUAL(f1.final_executor_name(), "search::features::FastForestExecutor");
+}
+
+TEST_F("require that fast-forest gbdt evaluation is disabled by default", Fixture()) {
+    f1.add_expr("rank", tree_expr).compile();
+    EXPECT_EQUAL(f1.get(), 21.0);
+    EXPECT_EQUAL(f1.final_executor_name(), "search::features::CompiledRankingExpressionExecutor");
+}
+
+TEST_F("require that fast-forest gbdt evaluation is pure", Fixture()) {
+    f1.use_fast_forest().add_expr("rank", tree_expr).compile();
+    EXPECT_EQUAL(3u, count_features(f1.program));
+    EXPECT_EQUAL(3u, count_const_features(f1.program));
+    EXPECT_EQUAL(f1.get(), 21.0);
+    EXPECT_EQUAL(f1.final_executor_name(), "search::features::FastForestExecutor");
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

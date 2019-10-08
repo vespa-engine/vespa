@@ -7,7 +7,6 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.net.HostName;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -27,8 +26,6 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 import org.apache.commons.lang.StringUtils;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -371,6 +368,10 @@ public class ClusterSearcher extends Searcher {
     }
 
     @Override
-    public void deconstruct() { }
+    public void deconstruct() {
+        if (server != null) {
+            server.shutDown();
+        }
+    }
 
 }

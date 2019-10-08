@@ -58,7 +58,7 @@ public class DimensionalMap<KEY, VALUE> {
         public DimensionalMap<KEY, VALUE> build() {
             Map<KEY, DimensionalValue<VALUE>> map = new HashMap<>();
             for (Map.Entry<KEY, DimensionalValue.Builder<VALUE>> entry : entries.entrySet()) {
-                map.put(entry.getKey(), entry.getValue().build());
+                map.put(entry.getKey(), entry.getValue().build(entries));
             }
             return new DimensionalMap<>(map);
         }

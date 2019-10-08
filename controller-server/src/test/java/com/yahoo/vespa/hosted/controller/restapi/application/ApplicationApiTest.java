@@ -45,7 +45,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClien
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -65,8 +64,6 @@ import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
-import com.yahoo.vespa.hosted.controller.rotation.RotationState;
-import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -84,7 +81,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,7 +113,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                "-----END PUBLIC KEY-----\n";
     private static final String quotedPemPublicKey = pemPublicKey.replaceAll("\\n", "\\\\n");
 
-    private static final ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+    private static final ApplicationPackage applicationPackageDefault = new ApplicationPackageBuilder()
+            .instances("default")
+            .environment(Environment.prod)
+            .globalServiceId("foo")
+            .region("us-central-1")
+            .region("us-east-3")
+            .region("us-west-1")
+            .blockChange(false, true, "mon-fri", "0-8", "UTC")
+            .build();
+
+    private static final ApplicationPackage applicationPackageInstance1 = new ApplicationPackageBuilder()
+            .instances("instance1")
             .environment(Environment.prod)
             .globalServiceId("foo")
             .region("us-central-1")
@@ -225,7 +232,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
         // POST (deploy) an application to a zone - manual user deployment (includes a content hash for verification)
-        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(entity::data)))
@@ -245,7 +252,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         controllerTester.jobCompletion(JobType.component)
                         .application(id)
                         .projectId(screwdriverProjectId)
-                        .uploadArtifact(applicationPackage)
+                        .uploadArtifact(applicationPackageInstance1)
                         .submit();
 
         // ... systemtest
@@ -309,6 +316,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST (create) another application
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
@@ -354,7 +362,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", POST)
                                       .userIdentity(USER_ID)
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Added deploy key " + quotedPemPublicKey + "\"}");
+                              "{\"keys\":[\"-----BEGIN PUBLIC KEY-----\\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\\nz/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\\n-----END PUBLIC KEY-----\\n\"]}");
 
         // PATCH in a pem deploy key at deprecated path
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", PATCH)
@@ -377,7 +385,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/key", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
-                              "{\"message\":\"Removed deploy key " + quotedPemPublicKey + "\"}");
+                              "{\"keys\":[]}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
@@ -585,6 +593,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Second attempt has a service under a different domain than the tenant of the application, and fails.
         ApplicationPackage packageWithServiceForWrongDomain = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN_2.getName()), AthenzService.from("service"))
                 .region("us-west-1")
@@ -597,6 +606,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Third attempt finally has a service under the domain of the tenant, and succeeds.
         ApplicationPackage packageWithService = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN.getName()), AthenzService.from("service"))
                 .region("us-west-1")
@@ -710,6 +720,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .globalServiceId("foo")
                 .region("us-west-1")
                 .region("us-east-3")
@@ -718,7 +729,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         ApplicationId id = createTenantAndApplication();
         long projectId = 1;
-        MultiPartStreamer deployData = createApplicationDeployData(Optional.empty(), false);
+        MultiPartStreamer deployData = createApplicationDeployData(Optional.of(applicationPackage), false);
         startAndTestChange(controllerTester, id, projectId, applicationPackage, deployData, 100);
 
         // us-west-1
@@ -781,6 +792,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .region("us-west-1")
                 .region("us-east-3")
                 .region("eu-west-1")
@@ -857,7 +869,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 
         // POST (deploy) an application to a prod zone - allowed when project ID is not specified
-        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
@@ -889,6 +901,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Deploy
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .region("us-east-3")
                 .build();
         ApplicationId id = createTenantAndApplication();
@@ -908,6 +921,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // New zone is added before us-east-3
         applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1")
                 .globalServiceId("foo")
                 // These decides the ordering of deploymentJobs and instances in the response
                 .region("us-west-1")
@@ -953,9 +967,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         ResourceAllocation lastMonth = new ResourceAllocation(24, 48, 2000);
         ApplicationId applicationId = ApplicationId.from("doesnotexist", "doesnotexist", "default");
         Map<ApplicationId, List<ResourceSnapshot>> snapshotHistory = Map.of(applicationId, List.of(
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123)),
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246)),
-                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492))));
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(123), ZoneId.defaultId()),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(246), ZoneId.defaultId()),
+                new ResourceSnapshot(applicationId, 1, 2,3, Instant.ofEpochMilli(492), ZoneId.defaultId())));
 
         mockMeteringClient.setMeteringInfo(new MeteringInfo(thisMonth, lastMonth, currentSnapshot, snapshotHistory));
 
@@ -1060,7 +1074,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE, null));
         
         // POST (deploy) an application with an invalid application package
-        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -1180,7 +1194,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               200);
 
         // Deploy to an authorized zone by a user tenant is disallowed
-        MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
+        MultiPartStreamer entity = createApplicationDeployData(applicationPackageDefault, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
@@ -1593,7 +1607,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     private MultiPartStreamer createApplicationDeployData(Optional<ApplicationPackage> applicationPackage,
-                                                   Optional<ApplicationVersion> applicationVersion, boolean deployDirectly) {
+                                                          Optional<ApplicationVersion> applicationVersion, boolean deployDirectly) {
         MultiPartStreamer streamer = new MultiPartStreamer();
         streamer.addJson("deployOptions", deployOptions(deployDirectly, applicationVersion));
         applicationPackage.ifPresent(ap -> streamer.addBytes("applicationZip", ap.zippedContent()));
@@ -1745,14 +1759,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         clusterInfo.put(ClusterSpec.Id.from("cluster1"),
                                         new ClusterInfo("flavor1", 37, 2, 4, 50,
                                                         ClusterSpec.Type.content, hostnames));
-                        Map<ClusterSpec.Id, ClusterUtilization> clusterUtils = new HashMap<>();
-                        clusterUtils.put(ClusterSpec.Id.from("cluster1"), new ClusterUtilization(0.3, 0.6, 0.4, 0.3));
                         DeploymentMetrics metrics = new DeploymentMetrics(1, 2, 3, 4, 5,
                                                                           Optional.of(Instant.ofEpochMilli(123123)), Map.of());
 
                         lockedApplication = lockedApplication.with(instance.name(),
                                                                    lockedInstance -> lockedInstance.withClusterInfo(deployment.zone(), clusterInfo)
-                                                                                                   .withClusterUtilization(deployment.zone(), clusterUtils)
                                                                                                    .with(deployment.zone(), metrics)
                                                                                                    .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone()));
                     }
@@ -1769,17 +1780,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void setZoneInRotation(String rotationName, ZoneId zone) {
         serviceRegistry().globalRoutingServiceMock().setStatus(rotationName, zone, com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus.IN);
         new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator())).run();
-    }
-
-    private RotationStatus rotationStatus(Instance instance) {
-        return controllerTester.controller().applications().rotationRepository().getRotation(instance)
-                .map(rotation -> {
-                    var rotationStatus = controllerTester.controller().serviceRegistry().globalRoutingService().getHealthStatus(rotation.name());
-                    var statusMap = new LinkedHashMap<ZoneId, RotationState>();
-                    rotationStatus.forEach((zone, status) -> statusMap.put(zone, RotationState.in));
-                    return RotationStatus.from(Map.of(rotation.id(), statusMap));
-                })
-                .orElse(RotationStatus.EMPTY);
     }
 
     private void updateContactInformation() {
