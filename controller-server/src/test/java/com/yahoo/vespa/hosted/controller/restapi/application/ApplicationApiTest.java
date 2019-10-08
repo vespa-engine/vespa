@@ -188,7 +188,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 "{\"months\":[]}");
 
         // GET cost for a month for a tenant
-        tester.assertResponse(request("/application/v4/tenant/tenant1/cost/2018-01-01", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT),
+        tester.assertResponse(request("/application/v4/tenant/tenant1/cost/2018-01", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT),
                 "{}");
 
         // Add another Athens domain, so we can try to create more tenants
@@ -1122,7 +1122,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET cost with invalid date string
         tester.assertResponse(request("/application/v4/tenant/tenant1/cost/not-a-valid-date", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not parse month 'not-a-valid-date'\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not parse year-month 'not-a-valid-date'\"}", 400);
 
         // DELETE tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)

@@ -113,6 +113,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
@@ -380,14 +381,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private LocalDate tenantCostParseDate(String dateString) {
-        var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        var monthPattern = Pattern.compile("^(?<year>[0-9]{4})-(?<month>[0-9]{2})$");
+        var matcher = monthPattern.matcher(dateString);
 
-        try {
-            // Always set the date to the first of the month as we only care about
-            // year and month in this API.
-            return LocalDate.parse(dateString, formatter).withDayOfMonth(1);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Could not parse date parameter: " + Exceptions.toMessageString(e));
+        if (matcher.matches()) {
+            var year  = Integer.parseInt(matcher.group("year"));
+            var month = Integer.parseInt(matcher.group("month"));
+            return LocalDate.of(year, month, 1);
+        } else {
+            throw new IllegalArgumentException("Could not parse year-month '" + dateString + "'");
         }
     }
 

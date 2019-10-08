@@ -46,7 +46,7 @@ enum PathGroup {
                Optional.of("/api"),
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/cost",
-               "/application/v4/tenant/{tenant}/cost/{*}"),
+               "/application/v4/tenant/{tenant}/cost/{date}"),
 
     tenantKeys(Matcher.tenant,
                Optional.of("/api"),
