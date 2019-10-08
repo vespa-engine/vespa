@@ -32,7 +32,9 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
       _sender(sender),
       _transitionTimer(_distributorComponent.getClock()),
+      _stale_reads_enabled(false),
       _active_distribution_contexts(),
+      _explicit_transition_read_guard(),
       _distribution_context_mutex()
 {
     for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
@@ -159,6 +161,43 @@ BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
     sendRequestBucketInfo(nodeIdx, bucket, std::shared_ptr<MergeReplyGuard>());
 }
 
+namespace {
+
+class ReadOnlyDbMergingInserter : public BucketDatabase::MergingProcessor {
+    using NewEntries = std::vector<BucketDatabase::Entry>;
+    NewEntries::const_iterator _current;
+    const NewEntries::const_iterator _last;
+public:
+    explicit ReadOnlyDbMergingInserter(const NewEntries& new_entries)
+        : _current(new_entries.cbegin()),
+          _last(new_entries.cend())
+    {}
+
+    Result merge(BucketDatabase::Merger& m) override {
+        const auto key = m.bucket_key();
+        while (_current != _last && (_current->getBucketId().toKey() < key)) {
+            m.insert_before_current(*_current);
+            ++_current;
+        }
+        if (_current != _last && _current->getBucketId().toKey() == key) {
+            // If we encounter a bucket that already exists, replace value wholesale.
+            // Don't try to cleverly merge replicas, as the values we currently hold
+            // in the read-only DB may be stale.
+            m.current_entry() = *_current;
+            return Result::Update;
+        }
+        return Result::KeepUnchanged;
+    }
+
+    void insert_remaining_at_end(BucketDatabase::TrailingInserter& inserter) override {
+        for (; _current != _last; ++_current) {
+            inserter.insert_at_end(*_current);
+        }
+    }
+};
+
+}
+
 void
 BucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState,
@@ -196,10 +235,9 @@ BucketDBUpdater::removeSuperfluousBuckets(
                 move_to_read_only_db);
 
         bucketDb.merge(proc);
-        // Non-owned entries vector only has contents if move_to_read_only_db is true.
-        // TODO either rewrite in terms of merge() or remove entirely
-        for (const auto& db_entry : proc.getNonOwnedEntries()) {
-            readOnlyDb.update(db_entry); // TODO Entry move support
+        if (move_to_read_only_db) {
+            ReadOnlyDbMergingInserter read_only_merger(proc.getNonOwnedEntries());
+            readOnlyDb.merge(read_only_merger);
         }
         maybe_inject_simulated_db_pruning_delay();
     }

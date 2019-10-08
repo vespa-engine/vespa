@@ -219,7 +219,6 @@ private:
         void logRemove(const document::BucketId& bucketId, const char* msg) const;
         bool distributorOwnsBucket(const document::BucketId&) const;
 
-        // TODO this is temporary until explicit DB snapshotting replaces read-only DB usage
         const std::vector<BucketDatabase::Entry>& getNonOwnedEntries() const noexcept {
             return _nonOwnedBuckets;
         }
