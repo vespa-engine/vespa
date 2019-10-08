@@ -76,9 +76,12 @@ public class JsonFormat {
     }
 
     private static void decodeCells(Inspector cells, Tensor.Builder builder) {
-        if ( cells.type() != Type.ARRAY)
-            throw new IllegalArgumentException("Excepted 'cells' to contain an array, not " + cells.type());
-        cells.traverse((ArrayTraverser) (__, cell) -> decodeCell(cell, builder));
+        if ( cells.type() == Type.ARRAY)
+            cells.traverse((ArrayTraverser) (__, cell) -> decodeCell(cell, builder));
+        else if (cells.type() == Type.OBJECT)
+            cells.traverse((ObjectTraverser) (key, value) -> decodeSingleDimensionCell(key, value, builder));
+        else
+            throw new IllegalArgumentException("Excepted 'cells' to contain an array or obejct, not " + cells.type());
     }
 
     private static void decodeCell(Inspector cell, Tensor.Builder builder) {
@@ -89,6 +92,10 @@ public class JsonFormat {
             throw new IllegalArgumentException("Excepted a cell to contain a numeric value called 'value'");
 
         builder.cell(address, value.asDouble());
+    }
+
+    private static void decodeSingleDimensionCell(String key, Inspector value, Tensor.Builder builder) {
+        builder.cell(asAddress(key, builder.type()), decodeNumeric(value));
     }
 
     private static void decodeValues(Inspector values, Tensor.Builder builder) {
@@ -111,27 +118,36 @@ public class JsonFormat {
         if ( ! (builder instanceof MixedTensor.BoundBuilder))
             throw new IllegalArgumentException("The 'blocks' field can only be used with mixed tensors with bound dimensions. " +
                                                "Use 'cells' or 'values' instead");
-        if (values.type() != Type.ARRAY)
-            throw new IllegalArgumentException("Excepted 'blocks' to contain an array, not " + values.type());
-
         MixedTensor.BoundBuilder mixedBuilder = (MixedTensor.BoundBuilder) builder;
 
-        values.traverse((ArrayTraverser) (__, value) -> decodeBlock(value, mixedBuilder));
+        if (values.type() == Type.ARRAY)
+            values.traverse((ArrayTraverser) (__, value) -> decodeBlock(value, mixedBuilder));
+        else if (values.type() == Type.OBJECT)
+            values.traverse((ObjectTraverser) (key, value) -> decodeSingleDimensionBlock(key, value, mixedBuilder));
+        else
+            throw new IllegalArgumentException("Excepted 'blocks' to contain an array or object, not " + values.type());
     }
 
     private static void decodeBlock(Inspector block, MixedTensor.BoundBuilder mixedBuilder) {
         if (block.type() != Type.OBJECT)
             throw new IllegalArgumentException("Expected an item in a 'blocks' array to be an object, not " + block.type());
+        mixedBuilder.block(decodeAddress(block.field("address"), mixedBuilder.type().mappedSubtype()),
+                           decodeValues(block.field("values"), mixedBuilder));
+    }
 
-        TensorAddress mappedAddress = decodeAddress(block.field("address"), mixedBuilder.type().mappedSubtype());
+    private static void decodeSingleDimensionBlock(String key, Inspector value, MixedTensor.BoundBuilder mixedBuilder) {
+        if (value.type() != Type.ARRAY)
+            throw new IllegalArgumentException("Expected an item in a 'blocks' array to be an object, not " + value.type());
+        mixedBuilder.block(asAddress(key, mixedBuilder.type().mappedSubtype()),
+                           decodeValues(value, mixedBuilder));
+    }
 
-        Inspector valuesField = block.field("values");
+    private static double[] decodeValues(Inspector valuesField, MixedTensor.BoundBuilder mixedBuilder) {
         if (valuesField.type() != Type.ARRAY)
             throw new IllegalArgumentException("Expected a block to contain a 'values' array");
         double[] values = new double[(int)mixedBuilder.denseSubspaceSize()];
         valuesField.traverse((ArrayTraverser) (index, value) -> values[index] = decodeNumeric(value));
-
-        mixedBuilder.block(mappedAddress, values);
+        return values;
     }
 
     private static TensorAddress decodeAddress(Inspector addressField, TensorType type) {
@@ -140,6 +156,12 @@ public class JsonFormat {
         TensorAddress.Builder builder = new TensorAddress.Builder(type);
         addressField.traverse((ObjectTraverser) (dimension, label) -> builder.add(dimension, label.asString()));
         return builder.build();
+    }
+
+    private static TensorAddress asAddress(String label, TensorType type) {
+        if (type.dimensions().size() != 1)
+            throw new IllegalArgumentException("Expected a tensor with a single dimension but got " + type);
+        return new TensorAddress.Builder(type).add(type.dimensions().get(0).name(), label).build();
     }
 
     private static double decodeNumeric(Inspector numericField) {

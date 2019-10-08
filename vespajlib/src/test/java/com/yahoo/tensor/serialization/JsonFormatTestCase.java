@@ -32,6 +32,21 @@ public class JsonFormatTestCase {
     }
 
     @Test
+    public void testSingleSparseDimensionShortForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{})"));
+        builder.cell().label("x", "a").value(2.0);
+        builder.cell().label("x", "c").value(3.0);
+        Tensor expected = builder.build();
+
+        String json= "{\"cells\":{" +
+                     "\"a\":2.0," +
+                     "\"c\":3.0" +
+                     "}}";
+        Tensor decoded = JsonFormat.decode(expected.type(), json.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+    }
+
+    @Test
     public void testDenseTensor() {
         Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x[2],y[2])"));
         builder.cell().label("x", 0).label("y", 0).value(2.0);
@@ -80,6 +95,24 @@ public class JsonFormatTestCase {
                            "{\"address\":{\"x\":\"0\"},\"values\":[2.0,3.0,4.0]}," +
                            "{\"address\":{\"x\":\"1\"},\"values\":[5.0,6.0,7.0]}" +
                            "]}";
+        Tensor decoded = JsonFormat.decode(expected.type(), mixedJson.getBytes(StandardCharsets.UTF_8));
+        assertEquals(expected, decoded);
+    }
+
+    @Test
+    public void testMixedTensorInMixedFormWithSingleSparseDimensionShortForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+        String mixedJson = "{\"blocks\":{" +
+                           "\"0\":[2.0,3.0,4.0]," +
+                           "\"1\":[5.0,6.0,7.0]" +
+                           "}}";
         Tensor decoded = JsonFormat.decode(expected.type(), mixedJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
     }
