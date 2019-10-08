@@ -51,6 +51,11 @@ public class Properties {
         return getNonBlankProperty("certificateFile").map(Paths::get);
     }
 
+    /** Returns the actual private key as a string */
+    public static Optional<String> privateKey() {
+        return getNonBlankProperty("privateKey");
+    }
+
     /** Returns the path of the data plane certificate file, if this is set with the 'dataPlaneCertificateFile' property. */
     public static Optional<Path> dataPlaneCertificateFile() {
         return getNonBlankProperty("dataPlaneCertificateFile").map(Paths::get);
