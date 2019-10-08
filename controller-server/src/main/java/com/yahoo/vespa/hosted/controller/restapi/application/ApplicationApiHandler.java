@@ -375,11 +375,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse tenantCost(String tenantName, String dateString, HttpRequest request) {
         return controller.tenants().get(TenantName.from(tenantName))
-                .map(tenant -> tenantCost(tenant, tenantCostParseMonth(dateString), request))
+                .map(tenant -> tenantCost(tenant, tenantCostParseDate(dateString), request))
                 .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
 
-    private LocalDate tenantCostParseMonth(String dateString) {
+    private LocalDate tenantCostParseDate(String dateString) {
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         try {
