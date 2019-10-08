@@ -78,19 +78,17 @@ public class JsonFormat {
     private static void decodeCells(Inspector cells, Tensor.Builder builder) {
         if ( cells.type() != Type.ARRAY)
             throw new IllegalArgumentException("Excepted 'cells' to contain an array, not " + cells.type());
-        cells.traverse((ArrayTraverser) (__, cell) -> decodeCell(cell, builder.cell()));
+        cells.traverse((ArrayTraverser) (__, cell) -> decodeCell(cell, builder));
     }
 
-    private static void decodeCell(Inspector cell, Tensor.Builder.CellBuilder cellBuilder) {
-        Inspector address = cell.field("address");
-        if ( address.type() != Type.OBJECT)
-            throw new IllegalArgumentException("Excepted a cell to contain an object called 'address'");
-        address.traverse((ObjectTraverser) (dimension, label) -> cellBuilder.label(dimension, label.asString()));
+    private static void decodeCell(Inspector cell, Tensor.Builder builder) {
+        TensorAddress address = decodeAddress(cell.field("address"), builder.type());
 
         Inspector value = cell.field("value");
         if (value.type() != Type.LONG && value.type() != Type.DOUBLE)
             throw new IllegalArgumentException("Excepted a cell to contain a numeric value called 'value'");
-        cellBuilder.value(value.asDouble());
+
+        builder.cell(address, value.asDouble());
     }
 
     private static void decodeValues(Inspector values, Tensor.Builder builder) {
