@@ -9,7 +9,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
@@ -122,8 +121,7 @@ public class SessionPreparer {
                 preparation.writeTlsZK();
                 var globalServiceId = context.getApplicationPackage().getDeployment()
                                              .map(DeploymentSpec::fromXml)
-                                             .map(spec -> spec.requireInstance(context.getApplicationPackage().getApplicationId().instance()))
-                                             .flatMap(DeploymentInstanceSpec::globalServiceId);
+                                             .flatMap(DeploymentSpec::globalServiceId);
                 preparation.writeContainerEndpointsZK(globalServiceId);
                 preparation.distribute();
             }
