@@ -172,7 +172,7 @@ public class VersionStatus {
                 for (var node : nodes) {
                     // Only use current node version if config has converged
                     Version version = configConverged ? node.currentVersion() : controller.systemVersion();
-                    newNodeVersions.add(new NodeVersion(node.hostname(), version, node.wantedVersion(), now));
+                    newNodeVersions.add(new NodeVersion(node.hostname(), zone.getId(), version, node.wantedVersion(), now));
                 }
             }
         }

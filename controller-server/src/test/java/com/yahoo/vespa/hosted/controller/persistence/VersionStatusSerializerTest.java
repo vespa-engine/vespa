@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
@@ -45,7 +46,7 @@ public class VersionStatusSerializerTest {
                                            false, nodeVersions(Version.fromString("5.0"), Version.fromString("5.1"),
                                                                Instant.ofEpochMilli(456), "cfg1", "cfg2", "cfg3"), VespaVersion.Confidence.normal));
         VersionStatus status = new VersionStatus(vespaVersions);
-        VersionStatusSerializer serializer = new VersionStatusSerializer();
+        VersionStatusSerializer serializer = new VersionStatusSerializer(new NodeVersionSerializer());
         VersionStatus deserialized = serializer.fromSlime(serializer.toSlime(status));
 
         assertEquals(status.versions().size(), deserialized.versions().size());
@@ -67,7 +68,7 @@ public class VersionStatusSerializerTest {
     @Test
     public void testLegacySerialization() throws Exception {
         var data = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/version-status-legacy-format.json"));
-        var serializer = new VersionStatusSerializer();
+        var serializer = new VersionStatusSerializer(new NodeVersionSerializer());
         var deserializedStatus = serializer.fromSlime(SlimeUtils.jsonToSlime(data));
 
         var statistics = new DeploymentStatistics(
@@ -76,11 +77,16 @@ public class VersionStatusSerializerTest {
                 List.of(),
                 List.of()
         );
+        var nodeVersions = List.of(new NodeVersion(HostName.from("cfg1"), ZoneId.defaultId(), Version.fromString("7.0"),
+                                                   Version.fromString("7.1"), Instant.ofEpochMilli(1111)),
+                                   new NodeVersion(HostName.from("cfg2"), ZoneId.defaultId(), Version.fromString("7.0"),
+                                                   Version.fromString("7.1"), Instant.ofEpochMilli(2222)),
+                                   new NodeVersion(HostName.from("cfg3"), ZoneId.defaultId(), Version.fromString("7.0"),
+                                                   Version.fromString("7.1"), Instant.ofEpochMilli(3333)));
         var vespaVersion = new VespaVersion(statistics, "badc0ffee",
                                             Instant.ofEpochMilli(123), true,
                                             true, true,
-                                            nodeVersions(Version.emptyVersion, Version.emptyVersion,
-                                                         Instant.EPOCH, "cfg1", "cfg2", "cfg3"),
+                                            NodeVersions.EMPTY.with(nodeVersions),
                                             VespaVersion.Confidence.normal);
 
         VespaVersion deserialized = deserializedStatus.versions().get(0);
@@ -97,7 +103,7 @@ public class VersionStatusSerializerTest {
     private static NodeVersions nodeVersions(Version version, Version wantedVersion, Instant changedAt, String... hostnames) {
         var nodeVersions = new ArrayList<NodeVersion>();
         for (var hostname : hostnames) {
-            nodeVersions.add(new NodeVersion(HostName.from(hostname), version, wantedVersion, changedAt));
+            nodeVersions.add(new NodeVersion(HostName.from(hostname), ZoneId.from("prod", "us-north-1"), version, wantedVersion, changedAt));
         }
         return NodeVersions.EMPTY.with(nodeVersions);
     }
