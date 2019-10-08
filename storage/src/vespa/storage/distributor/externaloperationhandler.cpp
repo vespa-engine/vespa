@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "bucket_space_distribution_context.h"
 #include "externaloperationhandler.h"
 #include "distributor.h"
 #include <vespa/document/base/documentid.h>
@@ -12,7 +13,6 @@
 #include <vespa/storage/distributor/operations/external/statbucketlistoperation.h>
 #include <vespa/storage/distributor/operations/external/removelocationoperation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
-#include <vespa/document/util/stringutil.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
@@ -33,8 +33,11 @@ ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
                                                    DistributorComponentRegister& compReg)
     : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
       _operationGenerator(gen),
-      _rejectFeedBeforeTimeReached() // At epoch
-{ }
+      _rejectFeedBeforeTimeReached(), // At epoch
+      _non_main_thread_ops_mutex(),
+      _non_main_thread_ops_owner(owner, getClock())
+{
+}
 
 ExternalOperationHandler::~ExternalOperationHandler() = default;
 
@@ -78,22 +81,30 @@ void ExternalOperationHandler::bounce_with_result(api::StorageCommand& cmd, cons
     sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
-void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
+void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd,
+                                                              const lib::ClusterState& cluster_state)
+{
     // Distributor ownership is equal across bucket spaces, so always send back default space state.
     // This also helps client avoid getting confused by possibly observing different actual
     // (derived) state strings for global/non-global document types for the same state version.
     // Similarly, if we've yet to activate any version at all we send back BUSY instead
     // of a suspiciously empty WrongDistributionReply.
     // TOOD consider NOT_READY instead of BUSY once we're sure this won't cause any other issues.
-    const auto& cluster_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
     if (cluster_state.getVersion() != 0) {
         auto cluster_state_str = cluster_state.toString();
-        LOG(debug, "Got message with wrong distribution, sending back state '%s'", cluster_state_str.c_str());
+        LOG(debug, "Got %s with wrong distribution, sending back state '%s'",
+            cmd.toString().c_str(), cluster_state_str.c_str());
         bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::WRONG_DISTRIBUTION, cluster_state_str));
     } else { // Only valid for empty startup state
-        LOG(debug, "Got message with wrong distribution, but no cluster state activated yet. Sending back BUSY");
+        LOG(debug, "Got %s with wrong distribution, but no cluster state activated yet. Sending back BUSY",
+            cmd.toString().c_str());
         bounce_with_result(cmd, api::ReturnCode(api::ReturnCode::BUSY, "No cluster state activated yet"));
     }
+}
+
+void ExternalOperationHandler::bounce_with_wrong_distribution(api::StorageCommand& cmd) {
+    const auto& cluster_state = _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).getClusterState();
+    bounce_with_wrong_distribution(cmd, cluster_state);
 }
 
 void ExternalOperationHandler::bounce_with_busy_during_state_transition(
@@ -283,10 +294,23 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
 {
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
     auto& metrics = getMetrics().gets[cmd->getLoadType()];
-    bounce_or_invoke_read_only_op(*cmd, bucket, metrics, [&](auto& bucket_space_repo) {
-        _op = std::make_shared<GetOperation>(*this, bucket_space_repo.get(cmd->getBucket().getBucketSpace()),
-                                             cmd, metrics);
-    });
+    auto snapshot = getDistributor().read_snapshot_for_bucket(bucket);
+    if (!snapshot.is_routable()) {
+        const auto& ctx = snapshot.context();
+        if (ctx.has_pending_state_transition()) {
+            bounce_with_busy_during_state_transition(*cmd, *ctx.default_active_cluster_state(),
+                                                     *ctx.pending_cluster_state());
+        } else {
+            bounce_with_wrong_distribution(*cmd, *snapshot.context().default_active_cluster_state());
+            metrics.failures.wrongdistributor.inc(); // TODO thread safety for updates
+        }
+        return true;
+    }
+    // The snapshot is aware of whether stale reads are enabled, so we don't have to check that here.
+    const auto* space_repo = snapshot.bucket_space_repo();
+    assert(space_repo != nullptr);
+    _op = std::make_shared<GetOperation>(*this, space_repo->get(bucket.getBucketSpace()),
+                                         snapshot.steal_read_guard(), cmd, metrics);
     return true;
 }
 

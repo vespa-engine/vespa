@@ -31,6 +31,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
 
     // TODO These hardcoded headers should be provided by config instead
     private static final String HEADER_NAME_X_FORWARDED_FOR = "x-forwarded-for";
+    private static final String HEADER_NAME_X_FORWARDED_PORT = "X-Forwarded-Port";
     private static final String HEADER_NAME_Y_RA = "y-ra";
     private static final String HEADER_NAME_Y_RP = "y-rp";
     private static final String HEADER_NAME_YAHOOREMOTEIP = "yahooremoteip";
@@ -58,23 +59,24 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
                 accessLogEntry.setRawQuery(queryString);
             }
 
-            final String remoteAddress = getRemoteAddress(request);
-            final int remotePort = getRemotePort(request);
-            final String peerAddress = request.getRemoteAddr();
-            final int peerPort = request.getRemotePort();
-
             accessLogEntry.setUserAgent(request.getHeader("User-Agent"));
             accessLogEntry.setHttpMethod(request.getMethod());
             accessLogEntry.setHostString(request.getHeader("Host"));
             accessLogEntry.setReferer(request.getHeader("Referer"));
+
+            String peerAddress = request.getRemoteAddr();
             accessLogEntry.setIpV4Address(peerAddress);
-            accessLogEntry.setRemoteAddress(remoteAddress);
-            accessLogEntry.setRemotePort(remotePort);
+            accessLogEntry.setPeerAddress(peerAddress);
+            String remoteAddress = getRemoteAddress(request);
             if (!Objects.equal(remoteAddress, peerAddress)) {
-                accessLogEntry.setPeerAddress(peerAddress);
+                accessLogEntry.setRemoteAddress(remoteAddress);
             }
+
+            int peerPort = request.getRemotePort();
+            accessLogEntry.setPeerPort(peerPort);
+            int remotePort = getRemotePort(request);
             if (remotePort != peerPort) {
-                accessLogEntry.setPeerPort(peerPort);
+                accessLogEntry.setRemotePort(remotePort);
             }
             accessLogEntry.setHttpVersion(request.getProtocol());
             accessLogEntry.setScheme(request.getScheme());
@@ -118,15 +120,16 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     }
 
     private static String getRemoteAddress(final HttpServletRequest request) {
-        return Alternative.preferred(request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
-                .alternatively(() -> request.getHeader(HEADER_NAME_Y_RA))
-                .alternatively(() -> request.getHeader(HEADER_NAME_YAHOOREMOTEIP))
-                .alternatively(() -> request.getHeader(HEADER_NAME_CLIENT_IP))
+        return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RA)))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_YAHOOREMOTEIP)))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_CLIENT_IP)))
                 .orElseGet(request::getRemoteAddr);
     }
 
     private static int getRemotePort(final HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP))
+        return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_PORT))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP)))
                 .map(Integer::valueOf)
                 .orElseGet(request::getRemotePort);
     }

@@ -23,7 +23,7 @@ void verify_elements(SameElementSearch &se, uint32_t docid, const std::initializ
 }
 
 std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResult> &children, bool fake_attr = false) {
-    auto result = std::make_unique<SameElementBlueprint>(false);
+    auto result = std::make_unique<SameElementBlueprint>("foo", false);
     for (size_t i = 0; i < children.size(); ++i) {
         uint32_t field_id = i;
         vespalib::string field_name = vespalib::make_string("f%u", field_id);

@@ -1,15 +1,14 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identityprovider.client;
 
+import com.yahoo.security.SignatureUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
-import com.yahoo.security.SignatureAlgorithm;
 
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -37,7 +36,7 @@ public class IdentityDocumentSigner {
                                     IdentityType identityType,
                                     PrivateKey privateKey) {
         try {
-            Signature signer = createSigner();
+            Signature signer = SignatureUtils.createSigner(privateKey);
             signer.initSign(privateKey);
             writeToSigner(signer, providerUniqueId, providerService, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
             byte[] signature = signer.sign();
@@ -49,17 +48,13 @@ public class IdentityDocumentSigner {
 
     public boolean hasValidSignature(SignedIdentityDocument doc, PublicKey publicKey) {
         try {
-            Signature signer = createSigner();
+            Signature signer = SignatureUtils.createVerifier(publicKey);
             signer.initVerify(publicKey);
             writeToSigner(signer, doc.providerUniqueId(), doc.providerService(), doc.configServerHostname(), doc.instanceHostname(), doc.createdAt(), doc.ipAddresses(), doc.identityType());
             return signer.verify(Base64.getDecoder().decode(doc.signature()));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static Signature createSigner() throws NoSuchAlgorithmException {
-        return Signature.getInstance(SignatureAlgorithm.SHA512_WITH_RSA.getAlgorithmName());
     }
 
     private static void writeToSigner(Signature signer,

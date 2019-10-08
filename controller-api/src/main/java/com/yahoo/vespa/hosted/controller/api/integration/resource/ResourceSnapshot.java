@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
 import java.time.Instant;
@@ -17,14 +18,16 @@ public class ResourceSnapshot {
     private final ApplicationId applicationId;
     private final ResourceAllocation resourceAllocation;
     private final Instant timestamp;
+    private final ZoneId zoneId;
 
-    public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, Instant timestamp) {
+    public ResourceSnapshot(ApplicationId applicationId, double cpuCores, double memoryGb, double diskGb, Instant timestamp, ZoneId zoneId) {
         this.applicationId = applicationId;
         this.resourceAllocation = new ResourceAllocation(cpuCores, memoryGb, diskGb);
         this.timestamp = timestamp;
+        this.zoneId = zoneId;
     }
 
-    public static ResourceSnapshot from(List<Node> nodes, Instant timestamp) {
+    public static ResourceSnapshot from(List<Node> nodes, Instant timestamp, ZoneId zoneId) {
         Set<ApplicationId> applicationIds = nodes.stream()
                                                  .filter(node -> node.owner().isPresent())
                                                  .map(node -> node.owner().get())
@@ -37,7 +40,8 @@ public class ResourceSnapshot {
                 nodes.stream().mapToDouble(Node::vcpu).sum(),
                 nodes.stream().mapToDouble(Node::memoryGb).sum(),
                 nodes.stream().mapToDouble(Node::diskGb).sum(),
-                timestamp
+                timestamp,
+                zoneId
         );
     }
 
@@ -59,6 +63,10 @@ public class ResourceSnapshot {
 
     public Instant getTimestamp() {
         return timestamp;
+    }
+
+    public ZoneId getZoneId() {
+        return zoneId;
     }
 
 }

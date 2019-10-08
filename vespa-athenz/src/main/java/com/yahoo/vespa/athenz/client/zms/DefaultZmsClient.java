@@ -5,7 +5,6 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
@@ -45,7 +44,7 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     private DefaultZmsClient(URI zmsUrl, AthenzIdentity identity, Supplier<SSLContext> sslContextSupplier) {
-        super("vespa-zms-client", sslContextSupplier, ZmsClientException::new);
+        super("vespa-zms-client", sslContextSupplier, ZmsClientException::new, null);
         this.zmsUrl = addTrailingSlash(zmsUrl);
         this.identity = identity;
     }

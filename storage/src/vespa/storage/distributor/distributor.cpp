@@ -322,9 +322,7 @@ bool
 Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (msg->getType().isReply()) {
-        std::shared_ptr<api::StorageReply> reply =
-            std::dynamic_pointer_cast<api::StorageReply>(msg);
-
+        auto reply = std::dynamic_pointer_cast<api::StorageReply>(msg);
         if (handleReply(reply)) {
             return true;
         }
@@ -398,6 +396,10 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
         _externalOperationHandler.rejectFeedBeforeTimeReached(
                 _ownershipSafeTimeCalc->safeTimePoint(now));
     }
+}
+
+OperationRoutingSnapshot Distributor::read_snapshot_for_bucket(const document::Bucket& bucket) const {
+    return _bucketDBUpdater.read_snapshot_for_bucket(bucket);
 }
 
 void
@@ -834,6 +836,7 @@ Distributor::enableNextConfig()
     _bucketDBMetricUpdater.setMinimumReplicaCountingMode(getConfig().getMinimumReplicaCountingMode());
     _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());
     _pendingMessageTracker.setNodeBusyDuration(getConfig().getInhibitMergesOnBusyNodeDuration());
+    _bucketDBUpdater.set_stale_reads_enabled(getConfig().allowStaleReadsDuringClusterStateTransitions());
 }
 
 void

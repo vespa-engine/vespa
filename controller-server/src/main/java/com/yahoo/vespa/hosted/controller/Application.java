@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
@@ -51,7 +52,7 @@ public class Application {
     private final Optional<User> owner;
     private final OptionalInt majorVersion;
     private final ApplicationMetrics metrics;
-    private final Set<String> pemDeployKeys;
+    private final Set<PublicKey> deployKeys;
     private final Map<InstanceName, Instance> instances;
 
     /** Creates an empty application. */
@@ -64,7 +65,7 @@ public class Application {
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
-                       OptionalInt majorVersion, ApplicationMetrics metrics, Set<String> pemDeployKeys,
+                       OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys,
                        OptionalLong projectId, boolean internal, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
@@ -77,7 +78,7 @@ public class Application {
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
         this.majorVersion = Objects.requireNonNull(majorVersion, "majorVersion cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
-        this.pemDeployKeys = Objects.requireNonNull(pemDeployKeys, "pemDeployKeys cannot be null");
+        this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.internal = internal;
         this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
@@ -191,7 +192,7 @@ public class Application {
     }
 
     /** Returns the set of deploy keys for this application. */
-    public Set<String> pemDeployKeys() { return pemDeployKeys; }
+    public Set<PublicKey> deployKeys() { return deployKeys; }
 
     @Override
     public boolean equals(Object o) {

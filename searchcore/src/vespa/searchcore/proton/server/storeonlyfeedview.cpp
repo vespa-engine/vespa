@@ -786,7 +786,8 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
         forceCommit(serialNum, commitContext);
     }
     if (useDocumentStore(serialNum)) {
-        _summaryAdapter->compactLidSpace(op.getLidLimit());
+        _writeService.summary().execute(makeLambdaTask([this, &op]() { _summaryAdapter->compactLidSpace(op.getLidLimit()); }));
+        _writeService.summary().sync();
     }
 }
 

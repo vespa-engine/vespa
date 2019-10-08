@@ -136,6 +136,10 @@ public:
     }
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
+
+    const attribute::ISearchContext *get_attribute_search_context() const override {
+        return _search_context.get();
+    }
 };
 
 void

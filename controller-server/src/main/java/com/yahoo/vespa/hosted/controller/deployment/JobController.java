@@ -30,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.net.URI;
 import java.security.cert.X509Certificate;
@@ -351,12 +352,22 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment. */
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage) {
-        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            if ( ! application.get().internal())
-                controller.applications().store(registered(application));
-        });
         if ( ! type.environment().isManuallyDeployed())
             throw new IllegalArgumentException("Direct deployments are only allowed to manually deployed environments.");
+
+        if (   controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+            && controller.applications().getApplication(TenantAndApplicationId.from(id)).isEmpty())
+            controller.applications().createApplication(TenantAndApplicationId.from(id), Optional.empty());
+
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
+            if ( ! application.get().internal())
+                application = registered(application);
+
+            if ( ! application.get().instances().containsKey(id.instance()))
+                application = application.withNewInstance(id.instance());
+
+            controller.applications().store(application);
+        });
 
         last(id, type).filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
         locked(id, type, __ -> {

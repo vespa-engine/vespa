@@ -4,16 +4,27 @@
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/searchcommon/attribute/i_search_context.h>
+#include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/same_element_blueprint.h>
+#include <vespa/searchlib/queryeval/same_element_search.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.docsum_matcher");
 
 using search::FeatureSet;
-using search::StructFieldMapper;
 using search::MatchingElements;
-using search::fef::RankProgram;
+using search::StructFieldMapper;
 using search::fef::FeatureResolver;
+using search::fef::RankProgram;
+using search::queryeval::AndNotBlueprint;
+using search::queryeval::Blueprint;
+using search::queryeval::IntermediateBlueprint;
+using search::queryeval::SameElementBlueprint;
 using search::queryeval::SearchIterator;
+
+using AttrSearchCtx = search::attribute::ISearchContext;
 
 namespace proton::matching {
 
@@ -74,6 +85,54 @@ FeatureSet::UP get_feature_set(const MatchToolsFactory &mtf,
     return retval;
 }
 
+template<typename T>
+const T *as(const Blueprint &bp) { return dynamic_cast<const T *>(&bp); }
+
+void find_matching_elements(const std::vector<uint32_t> &docs, const SameElementBlueprint &same_element, MatchingElements &result) {
+    auto search = same_element.create_same_element_search(false);
+    search->initRange(docs.front(), docs.back()+1);
+    std::vector<uint32_t> matches;
+    for (uint32_t i = 0; i < docs.size(); ++i) {
+        search->find_matching_elements(docs[i], matches);
+        if (!matches.empty()) {
+            result.add_matching_elements(docs[i], same_element.struct_field_name(), matches);
+            matches.clear();
+        }
+    }
+}
+
+void find_matching_elements(const std::vector<uint32_t> &docs, const vespalib::string &struct_field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
+    int32_t weight = 0;
+    std::vector<uint32_t> matches;
+    for (uint32_t i = 0; i < docs.size(); ++i) {
+        for (int32_t id = attr_ctx.find(docs[i], 0, weight); id >= 0; id = attr_ctx.find(docs[i], id+1, weight)) {
+            matches.push_back(id);
+        }
+        if (!matches.empty()) {
+            result.add_matching_elements(docs[i], struct_field_name, matches);
+            matches.clear();
+        }
+    }
+}
+
+void find_matching_elements(const StructFieldMapper &mapper, const std::vector<uint32_t> &docs, const Blueprint &bp, MatchingElements &result) {
+    if (auto same_element = as<SameElementBlueprint>(bp)) {
+        if (mapper.is_struct_field(same_element->struct_field_name())) {
+            find_matching_elements(docs, *same_element, result);
+        }
+    } else if (const AttrSearchCtx *attr_ctx = bp.get_attribute_search_context()) {
+        if (mapper.is_struct_subfield(attr_ctx->attributeName())) {
+            find_matching_elements(docs, mapper.get_struct_field(attr_ctx->attributeName()), *attr_ctx, result);
+        }
+    } else if (auto and_not = as<AndNotBlueprint>(bp)) {
+        find_matching_elements(mapper, docs, and_not->getChild(0), result);
+    } else if (auto intermediate = as<IntermediateBlueprint>(bp)) {
+        for (size_t i = 0; i < intermediate->childCnt(); ++i) {
+            find_matching_elements(mapper, docs, intermediate->getChild(i), result);
+        }
+    }
+}
+
 }
 
 DocsumMatcher::DocsumMatcher()
@@ -127,11 +186,13 @@ DocsumMatcher::get_rank_features() const
 MatchingElements::UP
 DocsumMatcher::get_matching_elements(const StructFieldMapper &field_mapper) const
 {
-    if (!_mtf) {
-        return std::make_unique<MatchingElements>();
+    auto result = std::make_unique<MatchingElements>();
+    if (_mtf && !field_mapper.empty()) {
+        if (const Blueprint *root = _mtf->query().peekRoot()) {
+            find_matching_elements(field_mapper, _docs, *root, *result);
+        }
     }
-    (void) field_mapper;
-    return std::make_unique<MatchingElements>();
+    return result;
 }
 
 }

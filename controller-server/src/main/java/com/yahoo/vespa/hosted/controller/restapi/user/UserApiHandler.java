@@ -26,10 +26,9 @@ import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
-import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.yolean.Exceptions;
 
-import java.security.Principal;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -199,9 +198,9 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         if (role.definition().equals(RoleDefinition.developer))
             controller.tenants().lockIfPresent(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
-                String key = tenant.get().pemDeveloperKeys().inverse().get(new SimplePrincipal(user.value()));
+                PublicKey key = tenant.get().developerKeys().inverse().get(new SimplePrincipal(user.value()));
                 if (key != null)
-                    controller.tenants().store(tenant.withoutPemDeveloperKey(key));
+                    controller.tenants().store(tenant.withoutDeveloperKey(key));
             });
 
         users.removeUsers(role, List.of(user));

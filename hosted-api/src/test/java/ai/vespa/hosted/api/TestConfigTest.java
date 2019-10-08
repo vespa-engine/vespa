@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -32,6 +33,9 @@ public class TestConfigTest {
                             ZoneId.from("prod", "aws-us-east-1a"),
                             Map.of("default", URI.create("https://prod.endpoint:443/"))),
                      config.deployments());
+        assertEquals(Map.of(ZoneId.from("prod", "aws-us-east-1c"),
+                            List.of("documents")),
+                     config.contentClusters());
     }
 
     @Test

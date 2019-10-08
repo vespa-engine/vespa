@@ -82,9 +82,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag INCLUDE_SIS_IN_TRUSTSTORE = defineFeatureFlag(
             "include-sis-in-truststore", false,
-            "Whether to use the trust store backed by Athenz and Service Identity certificates.",
-            "Takes effect on next tick, but may get throttled due to orchestration.",
-            HOSTNAME);
+            "Whether to use the trust store backed by Athenz and (in public) Service Identity certificates in " +
+            "host-admin and/or Docker containers",
+            "Takes effect on restart of host-admin (for host-admin), and restart of Docker container.",
+            // For host-admin, HOSTNAME and NODE_TYPE is available
+            // For Docker containers, HOSTNAME and APPLICATION_ID is available
+            // WARNING: Having different sets of dimensions is DISCOURAGED in general, but needed for here since
+            // trust store for host-admin is determined before having access to application ID from node repo.
+            HOSTNAME, NODE_TYPE, APPLICATION_ID);
 
     public static final UnboundStringFlag TLS_INSECURE_MIXED_MODE = defineStringFlag(
             "tls-insecure-mixed-mode", "tls_client_mixed_server",
@@ -165,15 +170,16 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DYNAMIC_UPSTREAM_CONNECTION_CACHE = defineFeatureFlag(
-            "dynamic-upstream-connection-cache", false,
-            "Scale upstream connection cache with number of upstream servers",
-            "Takes effect on routing container redeployment");
-
     public static final UnboundBooleanFlag HEALTH_CHECK_ON_4081 = defineFeatureFlag(
             "health-check-on-4081", false,
             "Change nginx to send health check requests on port 4081 instead of 4080.",
             "Takes effect on routing container redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundIntFlag NGINX_UPSTREAM_KEEPALIVE_MULTIPLIER = defineIntFlag(
+            "nginx-upstream-keepalive-multiplier", 2,
+            "Multiplied with the number of servers to calculate the keepalive value for a upstream definition.",
+            "Takes effect within a minute",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

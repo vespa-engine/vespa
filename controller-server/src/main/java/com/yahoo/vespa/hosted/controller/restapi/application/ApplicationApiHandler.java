@@ -6,8 +6,8 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
@@ -16,19 +16,23 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.AlreadyExistsException;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
@@ -69,10 +73,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.ResourceResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -96,12 +96,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.DigestInputStream;
 import java.security.Principal;
+import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +111,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
@@ -132,6 +134,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
+    private final TestConfigSerializer testConfigSerializer;
 
     @Inject
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
@@ -140,6 +143,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         super(parentCtx);
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
+        this.testConfigSerializer = new TestConfigSerializer(controller.system());
     }
 
     @Override
@@ -196,6 +200,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/cost")) return tenantCost(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
@@ -240,14 +246,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return addDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), "default", request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), true, request);
@@ -352,6 +358,45 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
+    private HttpResponse tenantCost(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .map(tenant -> tenantCost(tenant, request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+    }
+
+    private HttpResponse tenantCost(Tenant tenant, HttpRequest request) {
+        var slime = new Slime();
+        var objectCursor = slime.setObject();
+        var monthsCursor = objectCursor.setArray("months");
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse tenantCost(String tenantName, String dateString, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .map(tenant -> tenantCost(tenant, tenantCostParseDate(dateString), request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+    }
+
+    private LocalDate tenantCostParseDate(String dateString) {
+        var monthPattern = Pattern.compile("^(?<year>[0-9]{4})-(?<month>[0-9]{2})$");
+        var matcher = monthPattern.matcher(dateString);
+
+        if (matcher.matches()) {
+            var year  = Integer.parseInt(matcher.group("year"));
+            var month = Integer.parseInt(matcher.group("month"));
+            return LocalDate.of(year, month, 1);
+        } else {
+            throw new IllegalArgumentException("Could not parse year-month '" + dateString + "'");
+        }
+    }
+
+    private HttpResponse tenantCost(Tenant tenant, LocalDate month, HttpRequest request) {
+        var slime = new Slime();
+        slime.setObject();
+        return new SlimeJsonResponse(slime);
+    }
+
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         Slime slime = new Slime();
@@ -377,9 +422,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Principal user = request.getJDiscRequest().getUserPrincipal();
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
-        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
-                controller.tenants().store(tenant.withPemDeveloperKey(pemDeveloperKey, user)));
-        return new MessageResponse("Set developer key " + pemDeveloperKey + " for " + user);
+        PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
+        Slime root = new Slime();
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
+            tenant = tenant.withDeveloperKey(developerKey, user);
+            toSlime(root.setObject().setArray("keys"), tenant.get().developerKeys());
+            controller.tenants().store(tenant);
+        });
+        return new SlimeJsonResponse(root);
     }
 
     private HttpResponse removeDeveloperKey(String tenantName, HttpRequest request) {
@@ -387,26 +437,51 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
-        Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).pemDeveloperKeys().get(pemDeveloperKey);
-        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant ->
-                controller.tenants().store(tenant.withoutPemDeveloperKey(pemDeveloperKey)));
-        return new MessageResponse("Removed developer key " + pemDeveloperKey + " for " + user);
+        PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
+        Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).developerKeys().get(developerKey);
+        Slime root = new Slime();
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
+            tenant = tenant.withoutDeveloperKey(developerKey);
+            toSlime(root.setObject().setArray("keys"), tenant.get().developerKeys());
+            controller.tenants().store(tenant);
+        });
+        return new SlimeJsonResponse(root);
+    }
+
+    private void toSlime(Cursor keysArray, Map<PublicKey, Principal> keys) {
+        keys.forEach((key, principal) -> {
+            Cursor keyObject = keysArray.addObject();
+            keyObject.setString("key", KeyUtils.toPem(key));
+            keyObject.setString("user", principal.getName());
+        });
     }
 
     private HttpResponse addDeployKey(String tenantName, String applicationName, HttpRequest request) {
         String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
+        PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
+        Slime root = new Slime();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
-            controller.applications().store(application.withPemDeployKey(pemDeployKey));
+            application = application.withDeployKey(deployKey);
+            application.get().deployKeys().stream()
+                       .map(KeyUtils::toPem)
+                       .forEach(root.setObject().setArray("keys")::addString);
+            controller.applications().store(application);
         });
-        return new MessageResponse("Added deploy key " + pemDeployKey);
+        return new SlimeJsonResponse(root);
     }
 
     private HttpResponse removeDeployKey(String tenantName, String applicationName, HttpRequest request) {
         String pemDeployKey = toSlime(request.getData()).get().field("key").asString();
+        PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
+        Slime root = new Slime();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(tenantName, applicationName), application -> {
-            controller.applications().store(application.withoutPemDeployKey(pemDeployKey));
+            application = application.withoutDeployKey(deployKey);
+            application.get().deployKeys().stream()
+                       .map(KeyUtils::toPem)
+                       .forEach(root.setObject().setArray("keys")::addString);
+            controller.applications().store(application);
         });
-        return new MessageResponse("Removed deploy key " + pemDeployKey);
+        return new SlimeJsonResponse(root);
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
@@ -424,7 +499,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             Inspector pemDeployKeyField = requestObject.field("pemDeployKey");
             if (pemDeployKeyField.valid()) {
                 String pemDeployKey = pemDeployKeyField.asString();
-                application = application.withPemDeployKey(pemDeployKey);
+                PublicKey deployKey = KeyUtils.fromPemEncodedPublicKey(pemDeployKey);
+                application = application.withDeployKey(deployKey);
                 messageBuilder.add("Added deploy key " + pemDeployKey);
             }
 
@@ -654,9 +730,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // TODO jonmv: Remove when clients are updated
-        application.pemDeployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", key));
+        application.deployKeys().stream().findFirst().ifPresent(key -> object.setString("pemDeployKey", KeyUtils.toPem(key)));
 
-        application.pemDeployKeys().forEach(object.setArray("pemDeployKeys")::addString);
+        application.deployKeys().stream().map(KeyUtils::toPem).forEach(object.setArray("pemDeployKeys")::addString);
 
         // Metrics
         Cursor metricsObject = object.setObject("metrics");
@@ -744,7 +820,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         deployment.activity().lastWritesPerSecond().ifPresent(value -> activity.setDouble("lastWritesPerSecond", value));
 
         // Cost
-        DeploymentCost appCost = deployment.calculateCost();
+        DeploymentCost appCost = new DeploymentCost(Map.of());
         Cursor costObject = response.setObject("cost");
         toSlime(appCost, costObject);
 
@@ -1017,25 +1093,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return tenant(controller.tenants().require(TenantName.from(tenantName)), request);
     }
 
-    private HttpResponse createApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+    private HttpResponse createApplication(String tenantName, String applicationName, HttpRequest request) {
         Inspector requestObject = toSlime(request.getData()).get();
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
-        try {
-            Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
-                    ? Optional.empty()
-                    : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
-            Application application = controller.applications().createApplication(id, credentials);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
+                                            ? Optional.empty()
+                                            : Optional.of(accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest()));
+        Application application = controller.applications().createApplication(id, credentials);
 
-            Slime slime = new Slime();
-            toSlime(id, slime.setObject(), request);
-            return new SlimeJsonResponse(slime);
-        }
-        catch (ZmsClientException e) { // TODO: Push conversion down
-            if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
-                throw new ForbiddenException("Not authorized to create application", e);
-            else
-                throw e;
-        }
+        Slime slime = new Slime();
+        toSlime(id, slime.setObject(), request);
+        return new SlimeJsonResponse(slime);
+    }
+
+    // TODO jonmv: Remove when clients are updated.
+    private HttpResponse createInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenantName, applicationName);
+        if (controller.applications().getApplication(applicationId).isEmpty())
+            createApplication(tenantName, applicationName, request);
+
+        controller.applications().createInstance(applicationId.instance(instanceName));
+
+        Slime slime = new Slime();
+        toSlime(applicationId.instance(instanceName), slime.setObject(), request);
+        return new SlimeJsonResponse(slime);
     }
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
@@ -1227,12 +1308,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                  deployOptions.field("ignoreValidationErrors").asBool(),
                                                                  deployOptions.field("deployCurrentVersion").asBool());
 
+        applicationPackage.ifPresent(aPackage -> controller.applications().verifyApplicationIdentityConfiguration(applicationId.tenant(),
+                                                                                                                  aPackage,
+                                                                                                                  Optional.of(requireUserPrincipal(request))));
+
         ActivateResult result = controller.applications().deploy(applicationId,
                                                                  zone,
                                                                  applicationPackage,
                                                                  applicationVersion,
-                                                                 deployOptionsJsonClass,
-                                                                 Optional.of(requireUserPrincipal(request)));
+                                                                 deployOptionsJsonClass);
 
         return new SlimeJsonResponse(toSlime(result));
     }
@@ -1255,22 +1339,23 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteApplication(String tenantName, String applicationName, HttpRequest request) {
-        TenantName tenant = TenantName.from(tenantName);
-        ApplicationName application = ApplicationName.from(applicationName);
-        Optional<Credentials> credentials = controller.tenants().require(tenant).type() == Tenant.Type.user
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                                             ? Optional.empty()
-                                            : Optional.of(accessControlRequests.credentials(tenant, toSlime(request.getData()).get(), request.getJDiscRequest()));
-        controller.applications().deleteApplication(tenant, application, credentials);
-        return new MessageResponse("Deleted application " + tenant + "." + application);
+                                            : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
+        controller.applications().deleteApplication(id, credentials);
+        return new MessageResponse("Deleted application " + id);
     }
 
     private HttpResponse deleteInstance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         Optional<Credentials> credentials = controller.tenants().require(id.tenant()).type() == Tenant.Type.user
                 ? Optional.empty()
                 : Optional.of(accessControlRequests.credentials(id.tenant(), toSlime(request.getData()).get(), request.getJDiscRequest()));
-        controller.applications().deleteInstance(id, credentials);
-        return new MessageResponse("Deleted instance " + id.toFullString());
+        controller.applications().deleteInstance(id.instance(instanceName));
+        if (controller.applications().requireApplication(id).instances().isEmpty())
+            controller.applications().deleteApplication(id, credentials);
+        return new MessageResponse("Deleted instance " + id.instance(instanceName).toFullString());
     }
 
     private HttpResponse deactivate(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
@@ -1300,11 +1385,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse testConfig(ApplicationId id, JobType type) {
-        var endpoints = controller.applications().clusterEndpoints(id, controller.jobController().testedZoneAndProductionZones(id, type));
-        return new SlimeJsonResponse(new TestConfigSerializer(controller.system()).configSlime(id,
-                                                                                               type,
-                                                                                               endpoints,
-                                                                                               Collections.emptyMap()));
+        Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id, type);
+        return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
+                                                                      type,
+                                                                      controller.applications().clusterEndpoints(id, zones),
+                                                                      controller.applications().contentClustersByZone(id, zones)));
     }
 
     private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {
@@ -1366,18 +1451,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case cloud: {
                 CloudTenant cloudTenant = (CloudTenant) tenant;
 
-                Cursor pemDeployKeysArray = object.setArray("pemDeployKeys");
-                for (Application application : applications)
-                    for (String key : application.pemDeployKeys()) {
-                        Cursor keyObject = pemDeployKeysArray.addObject();
-                        keyObject.setString("key", key);
-                        keyObject.setString("application", application.id().application().value());
-                    }
-
                 Cursor pemDeveloperKeysArray = object.setArray("pemDeveloperKeys");
-                cloudTenant.pemDeveloperKeys().forEach((key, user) -> {
+                cloudTenant.developerKeys().forEach((key, user) -> {
                     Cursor keyObject = pemDeveloperKeysArray.addObject();
-                    keyObject.setString("key", key);
+                    keyObject.setString("key", KeyUtils.toPem(key));
                     keyObject.setString("user", user.getName());
                 });
 
@@ -1468,6 +1545,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static String path(Object... elements) {
         return Joiner.on("/").join(elements);
+    }
+
+    private void toSlime(TenantAndApplicationId id, Cursor object, HttpRequest request) {
+        object.setString("tenant", id.tenant().value());
+        object.setString("application", id.application().value());
+        object.setString("url", withPath("/application/v4" +
+                                         "/tenant/" + id.tenant().value() +
+                                         "/application/" + id.application().value(),
+                                         request.getUri()).toString());
     }
 
     private void toSlime(ApplicationId id, Cursor object, HttpRequest request) {
@@ -1639,6 +1725,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
+        if (DeploymentSpec.empty.equals(applicationPackage.deploymentSpec()))
+            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));

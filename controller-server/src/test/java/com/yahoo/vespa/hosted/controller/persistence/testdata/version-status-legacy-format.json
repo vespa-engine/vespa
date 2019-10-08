@@ -1,0 +1,35 @@
+{
+  "versions": [
+    {
+      "releaseCommit": "badc0ffee",
+      "releasedAt": 123,
+      "isCurrentControllerVersion": true,
+      "isCurrentSystemVersion": true,
+      "isReleased": true,
+      "deploymentStatistics": {
+        "version": "7.0",
+        "failing": [],
+        "production": [],
+        "deploying": []
+      },
+      "confidence": "normal",
+      "nodeVersions": [
+        {
+          "hostname": "cfg1",
+          "wantedVersion": "7.1",
+          "changedAt": 1111
+        },
+        {
+          "hostname": "cfg2",
+          "wantedVersion": "7.1",
+          "changedAt": 2222
+        },
+        {
+          "hostname": "cfg3",
+          "wantedVersion": "7.1",
+          "changedAt": 3333
+        }
+      ]
+    }
+  ]
+}

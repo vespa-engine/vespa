@@ -1146,7 +1146,7 @@ TEST_F("require that compactLidSpace() propagates to document meta store and doc
     f.compactLidSpaceAndWait(2);
     // performIndexForceCommit in index thread, then completion callback
     // in master thread.
-    EXPECT_TRUE(assertThreadObserver(7, 5, 3, f.writeServiceObserver()));
+    EXPECT_TRUE(assertThreadObserver(7, 5, 4, f.writeServiceObserver()));
     EXPECT_EQUAL(2u, f.metaStoreObserver()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(2u, f.getDocumentStore()._compactLidSpaceLidLimit);
     EXPECT_EQUAL(1u, f.metaStoreObserver()._holdUnblockShrinkLidSpaceCnt);
@@ -1232,13 +1232,13 @@ TEST_F("require that commit is not called when inside a commit interval",
 TEST_F("require that commit is called when crossing a commit interval",
        SearchableFeedViewFixture(SHORT_DELAY))
 {
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 10);
+    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     EXPECT_EQUAL(1u, f.miw._commitCount);
     EXPECT_EQUAL(1u, f.maw._commitCount);
     EXPECT_EQUAL(2u, f._docIdLimit.get());
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 10);
+    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
     f.removeAndWait(dc);
     EXPECT_EQUAL(2u, f.miw._commitCount);
     EXPECT_EQUAL(2u, f.maw._commitCount);
@@ -1257,13 +1257,13 @@ TEST_F("require that commit is not implicitly called after handover to maintenan
        SearchableFeedViewFixture(SHORT_DELAY))
 {
     f._commitTimeTracker.setReplayDone();
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 10);
+    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 10);
+    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
     f.removeAndWait(dc);
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);

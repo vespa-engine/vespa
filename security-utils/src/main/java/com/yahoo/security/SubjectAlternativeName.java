@@ -3,10 +3,13 @@ package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -43,6 +46,10 @@ public class SubjectAlternativeName {
         return new GeneralName(type.tag, value);
     }
 
+    public SubjectAlternativeName decode() {
+        return new SubjectAlternativeName(new GeneralName(type.tag, value));
+    }
+
     static List<SubjectAlternativeName> fromGeneralNames(GeneralNames generalNames) {
         return Arrays.stream(generalNames.getNames()).map(SubjectAlternativeName::new).collect(toList());
     }
@@ -56,6 +63,14 @@ public class SubjectAlternativeName {
                 return DERIA5String.getInstance(name).getString();
             case GeneralName.directoryName:
                 return X500Name.getInstance(name).toString();
+            case GeneralName.iPAddress:
+                var octets = DEROctetString.getInstance(name.toASN1Primitive()).getOctets();
+                try {
+                    return InetAddress.getByAddress(octets).getHostAddress();
+                } catch (UnknownHostException e) {
+                    // Only thrown if IP address is of invalid length, which is an illegal argument
+                    throw new IllegalArgumentException(e);
+                }
             default:
                 return name.toString();
         }

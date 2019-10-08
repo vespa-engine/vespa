@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -111,13 +111,13 @@ public class OsUpgraderTest {
         assertWanted(version1, SystemApplication.tenantHost, zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId());
         statusUpdater.maintain();
         assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud).stream()
-                                                        .allMatch(node -> node.version().equals(version1)));
+                                                        .allMatch(node -> node.currentVersion().equals(version1)));
     }
 
-    private List<OsVersionStatus.Node> nodesOn(Version version) {
+    private List<NodeVersion> nodesOn(Version version) {
         return tester.controller().osVersionStatus().versions().entrySet().stream()
                      .filter(entry -> entry.getKey().version().equals(version))
-                     .flatMap(entry -> entry.getValue().stream())
+                     .flatMap(entry -> entry.getValue().asMap().values().stream())
                      .collect(Collectors.toList());
     }
 

@@ -11,8 +11,13 @@ namespace metrics {
 
 TextWriter::TextWriter(std::ostream& out, uint32_t period,
                        const std::string& regex, bool verbose)
-    : _period(period), _out(out), _regex(regex), _verbose(verbose)
-{ }
+    : _period(period), _out(out), _regex(), _verbose(verbose)
+{
+    try {
+        _regex = std::regex(regex);
+    } catch (std::regex_error &) {
+    }
+}
 
 TextWriter::~TextWriter() { }
 
@@ -50,7 +55,7 @@ TextWriter::writeCommon(const Metric& metric)
     }
     std::string mypath(path.str());
     path << metric.getMangledName();
-    if (_regex.match(path.str())) {
+    if (_regex && std::regex_search(path.str(), *_regex)) {
         if (metric.used() || _verbose) {
             _out << "\n" << mypath;
             return true;

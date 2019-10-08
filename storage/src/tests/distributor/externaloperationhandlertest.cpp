@@ -505,6 +505,7 @@ document::BucketId ExternalOperationHandlerTest::set_up_pending_cluster_state_tr
     std::string current = "version:123 distributor:2 storage:2";
     std::string pending = "version:321 distributor:3 storage:3";
     setupDistributor(1, 3, current);
+    getBucketDBUpdater().set_stale_reads_enabled(read_only_enabled);
     getConfig().setAllowStaleReadsDuringClusterStateTransitions(read_only_enabled);
 
     // Trigger pending cluster state

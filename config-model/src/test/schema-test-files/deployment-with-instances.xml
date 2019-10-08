@@ -1,0 +1,54 @@
+<!-- Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<deployment version='1.0' major-version='6' athenz-domain='vespa' athenz-service='service'>
+    <upgrade policy='canary'/>
+
+    <test/>
+    <staging/>
+
+    <block-change revision='true' version='false' days="mon,tue" hours="14,15"/>
+
+    <instance id="one,two">
+      <block-change days="mon,tue" hours="14,15" time-zone="CET"/>
+      <prod global-service-id='qrs' athenz-service='other-service'>
+          <region active='true'>us-west-1</region>
+          <delay hours='3'/>
+          <region active='true'>us-central-1</region>
+          <delay hours='3' minutes='7' seconds='13'/>
+          <region active='true'>us-east-3</region>
+          <parallel>
+              <region active='true'>us-north-1</region>
+              <region active='true'>us-south-1</region>
+          </parallel>
+          <parallel>
+              <region active='true'>us-north-2</region>
+              <region active='true'>us-south-2</region>
+          </parallel>
+      </prod>
+      <endpoints>
+          <endpoint id="foo" container-id="bar">
+              <region>us-east</region>
+          </endpoint>
+          <endpoint container-id="bar" />
+      </endpoints>
+    </instance>
+
+    <delay hours='2'/>
+
+    <parallel>
+        <instance id="three">
+            <test/>
+            <staging/>
+        </instance>
+        <instance id="four" athenz-service='four-service' athenz-domain='my-domain'>
+            <upgrade policy='conservative'/>
+            <block-change days="mon,tue,wed" hours="14,15"/>
+            <prod>
+                <region active='true'>us-central-1</region>
+            </prod>
+            <endpoints>
+                <endpoint container-id="barz" />
+            </endpoints>
+        </instance>
+    </parallel>
+
+</deployment>

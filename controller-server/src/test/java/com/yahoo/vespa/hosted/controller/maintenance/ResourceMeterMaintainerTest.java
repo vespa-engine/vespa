@@ -11,7 +11,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -27,20 +26,14 @@ public class ResourceMeterMaintainerTest {
 
     @Test
     public void testMaintainer() {
-        var awsZone = ZoneApiMock.newBuilder().withId("prod.aws-us-east-1").withCloud("aws").build();
-        tester.zoneRegistry().setZones(
-                ZoneApiMock.newBuilder().withId("prod.us-east-3").build(),
-                ZoneApiMock.newBuilder().withId("prod.us-west-1").build(),
-                ZoneApiMock.newBuilder().withId("prod.us-central-1").build(),
-                awsZone);
-        tester.configServer().nodeRepository().addFixedNodes(awsZone.getId());
+        setUpZones();
 
         ResourceMeterMaintainer resourceMeterMaintainer = new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), new JobControl(tester.curator()), metrics, snapshotConsumer);
         resourceMeterMaintainer.maintain();
         Collection<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
 
         // The mocked repository contains two applications, so we should also consume two ResourceSnapshots
-        assertEquals(2, consumedResources.size());
+        assertEquals(4, consumedResources.size());
         ResourceSnapshot app1 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant1", "app1", "default"))).findFirst().orElseThrow();
         ResourceSnapshot app2 = consumedResources.stream().filter(snapshot -> snapshot.getApplicationId().equals(ApplicationId.from("tenant2", "app2", "default"))).findFirst().orElseThrow();
 
@@ -53,7 +46,19 @@ public class ResourceMeterMaintainerTest {
         assertEquals(500, app2.getDiskGb(), DELTA);
 
         assertEquals(tester.clock().millis()/1000, metrics.getMetric("metering_last_reported"));
-        assertEquals(1112.0d, (Double) metrics.getMetric("metering_total_reported"), DELTA);
+        assertEquals(2224.0d, (Double) metrics.getMetric("metering_total_reported"), DELTA);
     }
 
+    private void setUpZones() {
+        ZoneApiMock nonAwsZone = ZoneApiMock.newBuilder().withId("test.region-1").build();
+        ZoneApiMock awsZone1 = ZoneApiMock.newBuilder().withId("prod.region-2").withCloud("aws").build();
+        ZoneApiMock awsZone2 = ZoneApiMock.newBuilder().withId("test.region-3").withCloud("aws").build();
+        tester.zoneRegistry().setZones(
+                nonAwsZone,
+                awsZone1,
+                awsZone2);
+        tester.configServer().nodeRepository().addFixedNodes(nonAwsZone.getId());
+        tester.configServer().nodeRepository().addFixedNodes(awsZone1.getId());
+        tester.configServer().nodeRepository().addFixedNodes(awsZone2.getId());
+    }
 }

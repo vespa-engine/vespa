@@ -6,6 +6,7 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <cassert>
 
@@ -121,8 +122,9 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 
 StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
                                                              const std::vector<vespalib::string> &valueFields,
-                                                             bool filter_elements)
-    : AttributeCombinerDFW(fieldName, filter_elements),
+                                                             bool filter_elements,
+                                                             std::shared_ptr<StructFieldMapper> struct_field_mapper)
+    : AttributeCombinerDFW(fieldName, filter_elements, std::move(struct_field_mapper)),
       _keyAttributeName(),
       _valueFields(valueFields),
       _valueAttributeNames()
@@ -132,6 +134,12 @@ StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::str
     vespalib::string prefix = fieldName + ".value.";
     for (const auto &field : _valueFields) {
         _valueAttributeNames.emplace_back(prefix + field);
+    }
+    if (filter_elements && _struct_field_mapper && !_struct_field_mapper->is_struct_field(fieldName)) {
+        _struct_field_mapper->add_mapping(fieldName, _keyAttributeName);
+        for (const auto &sub_field : _valueAttributeNames) {
+            _struct_field_mapper->add_mapping(fieldName, sub_field);
+        }
     }
 }
 

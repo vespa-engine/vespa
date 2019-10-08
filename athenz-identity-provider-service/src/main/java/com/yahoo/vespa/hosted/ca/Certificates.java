@@ -35,14 +35,17 @@ public class Certificates {
         var now = clock.instant();
         var notBefore = now.minus(Duration.ofHours(1));
         var notAfter = now.plus(CERTIFICATE_TTL);
-        return X509CertificateBuilder.fromCsr(csr,
+        var builder = X509CertificateBuilder.fromCsr(csr,
                                               x500principal,
                                               notBefore,
                                               notAfter,
                                               caPrivateKey,
                                               SHA256_WITH_ECDSA,
-                                              X509CertificateBuilder.generateRandomSerialNumber())
-                                     .build();
+                                              X509CertificateBuilder.generateRandomSerialNumber());
+        for (var san : csr.getSubjectAlternativeNames()) {
+            builder = builder.addSubjectAlternativeName(san.decode());
+        }
+        return builder.build();
     }
 
     /** Returns the DNS name field from Subject Alternative Names in given csr */

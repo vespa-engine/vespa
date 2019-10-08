@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <chrono>
+#include <mutex>
 
 namespace storage {
 
@@ -55,6 +56,8 @@ private:
     OperationSequencer _mutationSequencer;
     Operation::SP _op;
     TimePoint _rejectFeedBeforeTimeReached;
+    mutable std::mutex _non_main_thread_ops_mutex;
+    OperationOwner _non_main_thread_ops_owner;
 
     template <typename Func>
     void bounce_or_invoke_read_only_op(api::StorageCommand& cmd,
@@ -62,6 +65,8 @@ private:
                                        PersistenceOperationMetricSet& metrics,
                                        Func f);
 
+    void bounce_with_wrong_distribution(api::StorageCommand& cmd, const lib::ClusterState& cluster_state);
+    // Bounce with the current _default_ space cluster state.
     void bounce_with_wrong_distribution(api::StorageCommand& cmd);
     void bounce_with_busy_during_state_transition(api::StorageCommand& cmd,
                                                   const lib::ClusterState& current_state,

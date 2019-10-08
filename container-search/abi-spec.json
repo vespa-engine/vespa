@@ -5884,6 +5884,62 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.query.profile.SubstituteString$Component": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "protected abstract java.lang.String getValue(java.util.Map, com.yahoo.processing.request.Properties)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.query.profile.SubstituteString$PropertyComponent": {
+    "superClass": "com.yahoo.search.query.profile.SubstituteString$Component",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String getValue(java.util.Map, com.yahoo.processing.request.Properties)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.query.profile.SubstituteString$RelativePropertyComponent": {
+    "superClass": "com.yahoo.search.query.profile.SubstituteString$Component",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String getValue(java.util.Map, com.yahoo.processing.request.Properties)",
+      "public java.lang.String fieldName()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.query.profile.SubstituteString$StringComponent": {
+    "superClass": "com.yahoo.search.query.profile.SubstituteString$Component",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String getValue(java.util.Map, com.yahoo.processing.request.Properties)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.query.profile.SubstituteString": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -5892,7 +5948,11 @@
     ],
     "methods": [
       "public static com.yahoo.search.query.profile.SubstituteString create(java.lang.String)",
+      "public void <init>(java.util.List, java.lang.String)",
+      "public boolean hasRelative()",
       "public java.lang.String substitute(java.util.Map, com.yahoo.processing.request.Properties)",
+      "public java.util.List components()",
+      "public java.lang.String stringValue()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()"
@@ -6004,8 +6064,9 @@
     ],
     "methods": [
       "public void <init>()",
+      "public java.lang.Object valueFor(com.yahoo.search.query.profile.DimensionBinding)",
       "public void add(java.lang.Object, com.yahoo.search.query.profile.DimensionBinding)",
-      "public com.yahoo.search.query.profile.compiled.DimensionalValue build()"
+      "public com.yahoo.search.query.profile.compiled.DimensionalValue build(java.util.Map)"
     ],
     "fields": []
   },

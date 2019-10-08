@@ -978,44 +978,47 @@ public class QueryProfileVariantsTestCase {
 
     @Test
     public void testQueryProfileReferencesWithSubstitution() {
-        QueryProfile main=new QueryProfile("main");
+        QueryProfile main = new QueryProfile("main");
         main.setDimensions(new String[] {"x1"});
-        QueryProfile referencedMain=new QueryProfile("referencedMain");
+        QueryProfile referencedMain = new QueryProfile("referencedMain");
         referencedMain.set("r1","%{prefix}mainReferenced-r1", null); // In both
         referencedMain.set("r2","%{prefix}mainReferenced-r2", null); // Only in this
-        QueryProfile referencedVariant=new QueryProfile("referencedVariant");
+        QueryProfile referencedVariant = new QueryProfile("referencedVariant");
         referencedVariant.set("r1","%{prefix}variantReferenced-r1", null); // In both
         referencedVariant.set("r3","%{prefix}variantReferenced-r3", null); // Only in this
+        referencedVariant.set("inthis", "local value", null);
+        referencedVariant.set("r4","This has %{.inthis}", null); // Relative
 
-        main.set("a",referencedMain, null);
-        main.set("a",referencedVariant,new String[] {"x1"}, null);
-        main.set("prefix","mainPrefix:", null);
-        main.set("prefix","variantPrefix:",new String[] {"x1"}, null);
+        main.set("a", referencedMain, null);
+        main.set("a", referencedVariant,new String[] {"x1"}, null);
+        main.set("prefix", "mainPrefix:", null);
+        main.set("prefix", "variantPrefix:", new String[] {"x1"}, null);
 
-        Properties properties=new QueryProfileProperties(main.compile(null));
+        Properties properties = new QueryProfileProperties(main.compile(null));
 
         // No context
-        Map<String,Object> listed=properties.listProperties();
-        assertEquals(3,listed.size());
-        assertEquals("mainPrefix:mainReferenced-r1",listed.get("a.r1"));
-        assertEquals("mainPrefix:mainReferenced-r2",listed.get("a.r2"));
+        Map<String,Object> listed = properties.listProperties();
+        assertEquals(3, listed.size());
+        assertEquals("mainPrefix:mainReferenced-r1", listed.get("a.r1"));
+        assertEquals("mainPrefix:mainReferenced-r2", listed.get("a.r2"));
 
         // Context x=x1
-        listed=properties.listProperties(toMap(main,new String[] {"x1"}));
-        assertEquals(4,listed.size());
-        assertEquals("variantPrefix:variantReferenced-r1",listed.get("a.r1"));
-        assertEquals("variantPrefix:mainReferenced-r2",listed.get("a.r2"));
-        assertEquals("variantPrefix:variantReferenced-r3",listed.get("a.r3"));
+        listed = properties.listProperties(toMap(main, new String[] {"x1"}));
+        assertEquals(6, listed.size());
+        assertEquals("variantPrefix:variantReferenced-r1", listed.get("a.r1"));
+        assertEquals("variantPrefix:mainReferenced-r2", listed.get("a.r2"));
+        assertEquals("variantPrefix:variantReferenced-r3", listed.get("a.r3"));
+        assertEquals("This has local value", listed.get("a.r4"));
     }
 
     @Test
     public void testNewsCase1() {
-        QueryProfile shortcuts=new QueryProfile("shortcuts");
-        shortcuts.setDimensions(new String[] {"custid_1","custid_2","custid_3","custid_4","custid_5","custid_6"});
-        shortcuts.set("testout","outside", null);
-        shortcuts.set("test.out","dotoutside", null);
-        shortcuts.set("testin","inside",new String[] {"yahoo","ca","sc"}, null);
-        shortcuts.set("test.in","dotinside",new String[] {"yahoo","ca","sc"}, null);
+        QueryProfile shortcuts = new QueryProfile("shortcuts");
+        shortcuts.setDimensions(new String[] {"custid_1", "custid_2", "custid_3", "custid_4", "custid_5", "custid_6"});
+        shortcuts.set("testout", "outside", null);
+        shortcuts.set("test.out", "dotoutside", null);
+        shortcuts.set("testin", "inside", new String[] {"yahoo","ca","sc"}, null);
+        shortcuts.set("test.in", "dotinside", new String[] {"yahoo","ca","sc"}, null);
 
         QueryProfile profile=new QueryProfile("default");
         profile.setDimensions(new String[] {"custid_1","custid_2","custid_3","custid_4","custid_5","custid_6"});
@@ -1024,10 +1027,10 @@ public class QueryProfileVariantsTestCase {
         profile.freeze();
         Query query = new Query(HttpRequest.createTestRequest("?query=test&custid_1=yahoo&custid_2=ca&custid_3=sc", Method.GET), profile.compile(null));
 
-        assertEquals("outside",query.properties().get("testout"));
-        assertEquals("dotoutside",query.properties().get("test.out"));
-        assertEquals("inside",query.properties().get("testin"));
-        assertEquals("dotinside",query.properties().get("test.in"));
+        assertEquals("outside", query.properties().get("testout"));
+        assertEquals("dotoutside", query.properties().get("test.out"));
+        assertEquals("inside", query.properties().get("testin"));
+        assertEquals("dotinside", query.properties().get("test.in"));
     }
 
     @Test

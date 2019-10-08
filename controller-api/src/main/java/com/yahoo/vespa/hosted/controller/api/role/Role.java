@@ -62,6 +62,51 @@ public abstract class Role {
         return new ApplicationRole(RoleDefinition.headless, tenant, application);
     }
 
+    /** Returns a {@link RoleDefinition#reader} for the current system and given tenant. */
+    public static TenantRole reader(TenantName tenant) {
+        return new TenantRole(RoleDefinition.reader, tenant);
+    }
+
+    /** Returns a {@link RoleDefinition#developer} for the current system and given tenant. */
+    public static TenantRole developer(TenantName tenant) {
+        return new TenantRole(RoleDefinition.developer, tenant);
+    }
+
+    /** Returns a {@link RoleDefinition#administrator} for the current system and given tenant. */
+    public static TenantRole administrator(TenantName tenant) {
+        return new TenantRole(RoleDefinition.administrator, tenant);
+    }
+
+    /** Returns a {@link RoleDefinition#headless} for the current system, given tenant, and application */
+    public static ApplicationRole headless(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.headless, tenant, application);
+    }
+
+    /** Returns a {@link RoleDefinition#applicationAdmin} for the current system and given tenant and application. */
+    public static ApplicationRole applicationAdmin(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.applicationAdmin, tenant, application);
+    }
+
+    /** Returns a {@link RoleDefinition#applicationOperator} for the current system and given tenant and application. */
+    public static ApplicationRole applicationOperator(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.applicationOperator, tenant, application);
+    }
+
+    /** Returns a {@link RoleDefinition#applicationDeveloper} for the current system and given tenant and application. */
+    public static ApplicationRole applicationDeveloper(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.applicationDeveloper, tenant, application);
+    }
+
+    /** Returns a {@link RoleDefinition#applicationReader} for the current system and given tenant and application. */
+    public static ApplicationRole applicationReader(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.applicationReader, tenant, application);
+    }
+
+    /** Returns a {@link RoleDefinition#buildService} for the current system and given tenant and application. */
+    public static ApplicationRole buildService(TenantName tenant, ApplicationName application) {
+        return new ApplicationRole(RoleDefinition.buildService, tenant, application);
+    }
+
     /** Returns the role definition of this bound role. */
     public RoleDefinition definition() { return roleDefinition; }
 

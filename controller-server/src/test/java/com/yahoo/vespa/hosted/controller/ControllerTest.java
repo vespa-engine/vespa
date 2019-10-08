@@ -72,7 +72,6 @@ public class ControllerTest {
     @Test
     public void testDeployment() {
         // Setup system
-        ApplicationController applications = tester.controller().applications();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -508,7 +507,7 @@ public class ControllerTest {
             tester.deployAndNotify(tester.defaultInstance(app1.id()).id(), Optional.of(applicationPackage), true, systemTest);
             tester.applications().deactivate(app1.id().defaultInstance(), ZoneId.from(Environment.test, RegionName.from("us-east-1")));
             tester.applications().deactivate(app1.id().defaultInstance(), ZoneId.from(Environment.staging, RegionName.from("us-east-3")));
-            tester.applications().deleteApplication(app1.id().tenant(), app1.id().application(), tester.controllerTester().credentialsFor(app1.id()));
+            tester.applications().deleteApplication(app1.id(), tester.controllerTester().credentialsFor(app1.id()));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",
                            tester.applications().rotationRepository().availableRotations(lock)
@@ -753,7 +752,7 @@ public class ControllerTest {
             tester.deployCompletely(application, applicationPackage);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Endpoint 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+            assertEquals("Endpoint 'default' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
 
         var applicationPackage2 = new ApplicationPackageBuilder()
@@ -766,7 +765,7 @@ public class ControllerTest {
             tester.deployCompletely(application, applicationPackage2);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Endpoint 'foo' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+            assertEquals("Endpoint 'foo' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
     }
 

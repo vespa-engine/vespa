@@ -7,13 +7,37 @@ start = element deployment {
    attribute major-version { text }? &
    attribute athenz-domain { xsd:string }? &
    attribute athenz-service { xsd:string }? &
-   Upgrade? &
-   BlockChange* &
-   Notifications? &
-   Endpoints? &
-   Test? &
-   Staging? &
-   Prod*
+   Step
+}
+
+Step =
+    StepExceptInstance &
+    Instance*
+
+StepExceptInstance =
+    Delay* &
+    ParallelInstances* &
+    Upgrade? &
+    BlockChange* &
+    Notifications? &
+    Endpoints? &
+    Test? &
+    Staging? &
+    Prod*
+
+Instance = element instance {
+   attribute id { xsd:string } &
+   attribute athenz-domain { xsd:string }? &
+   attribute athenz-service { xsd:string }? &
+   StepExceptInstance
+}
+
+ParallelRegions = element parallel {
+    Region*
+}
+
+ParallelInstances = element parallel {
+    Instance*
 }
 
 Upgrade = element upgrade {
@@ -57,7 +81,7 @@ Prod = element prod {
    attribute tester-flavor { xsd:string }? &
    Region* &
    Delay* &
-   Parallel*
+   ParallelRegions*
 }
 
 Region = element region {
@@ -69,10 +93,6 @@ Delay = element delay {
    attribute hours { xsd:long }? &
    attribute minutes { xsd:long }? &
    attribute seconds { xsd:long }?
-}
-
-Parallel = element parallel {
-    Region*
 }
 
 EndpointRegion = element region {

@@ -1,14 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -21,11 +20,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
-import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
@@ -39,7 +36,7 @@ import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
-import java.security.Principal;
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,7 +51,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -91,7 +87,6 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
-    private static final String applicationCertificateField = "applicationCertificate";
 
     // Instance fields
     private static final String instanceNameField = "instanceName";
@@ -150,13 +145,6 @@ public class ApplicationSerializer {
     private static final String clusterInfoTypeField = "clusterType";
     private static final String clusterInfoHostnamesField = "hostnames";
 
-    // ClusterUtils fields
-    private static final String clusterUtilsField = "clusterUtils";
-    private static final String clusterUtilsCpuField = "cpu";
-    private static final String clusterUtilsMemField = "mem";
-    private static final String clusterUtilsDiskField = "disk";
-    private static final String clusterUtilsDiskBusyField = "diskbusy";
-
     // Deployment metrics fields
     private static final String deploymentMetricsField = "metrics";
     private static final String deploymentMetricsQPSField = "queriesPerSecond";
@@ -192,7 +180,7 @@ public class ApplicationSerializer {
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
-        deployKeysToSlime(application.pemDeployKeys().stream(), root.setArray(pemDeployKeysField));
+        deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -208,8 +196,8 @@ public class ApplicationSerializer {
         }
     }
 
-    private void deployKeysToSlime(Stream<String> pemDeployKeys, Cursor array) {
-        pemDeployKeys.forEach(array::addString);
+    private void deployKeysToSlime(Set<PublicKey> deployKeys, Cursor array) {
+        deployKeys.forEach(key -> array.addString(KeyUtils.toPem(key)));
     }
 
     private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
@@ -223,7 +211,6 @@ public class ApplicationSerializer {
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
         toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
         clusterInfoToSlime(deployment.clusterInfo(), object);
-        clusterUtilsToSlime(deployment.clusterUtils(), object);
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
@@ -263,20 +250,6 @@ public class ApplicationSerializer {
         for (String host : info.getHostnames()) {
             array.addString(host);
         }
-    }
-
-    private void clusterUtilsToSlime(Map<ClusterSpec.Id, ClusterUtilization> clusters, Cursor object) {
-        Cursor root = object.setObject(clusterUtilsField);
-        for (Map.Entry<ClusterSpec.Id, ClusterUtilization> entry : clusters.entrySet()) {
-            toSlime(entry.getValue(), root.setObject(entry.getKey().value()));
-        }
-    }
-
-    private void toSlime(ClusterUtilization utils, Cursor object) {
-        object.setDouble(clusterUtilsCpuField, utils.getCpu());
-        object.setDouble(clusterUtilsMemField, utils.getMemory());
-        object.setDouble(clusterUtilsDiskField, utils.getDisk());
-        object.setDouble(clusterUtilsDiskBusyField, utils.getDiskBusy());
     }
 
     private void zoneIdToSlime(ZoneId zone, Cursor object) {
@@ -384,14 +357,14 @@ public class ApplicationSerializer {
         OptionalInt majorVersion = Serializers.optionalInteger(root.field(majorVersionField));
         ApplicationMetrics metrics = new ApplicationMetrics(root.field(queryQualityField).asDouble(),
                                                             root.field(writeQualityField).asDouble());
-        Set<String> pemDeployKeys = pemDeployKeysFromSlime(root.field(pemDeployKeysField));
+        Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               pemDeployKeys, projectId, builtInternally, instances);
+                               deployKeys, projectId, builtInternally, instances);
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
@@ -411,9 +384,9 @@ public class ApplicationSerializer {
         return instances;
     }
 
-    private Set<String> pemDeployKeysFromSlime(Inspector array) {
-        Set<String> keys = new LinkedHashSet<>();
-        array.traverse((ArrayTraverser) (__, key) -> keys.add(key.asString()));
+    private Set<PublicKey> deployKeysFromSlime(Inspector array) {
+        Set<PublicKey> keys = new LinkedHashSet<>();
+        array.traverse((ArrayTraverser) (__, key) -> keys.add(KeyUtils.fromPemEncodedPublicKey(key.asString())));
         return keys;
     }
 
@@ -428,7 +401,6 @@ public class ApplicationSerializer {
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
-                              clusterUtilsMapFromSlime(deploymentObject.field(clusterUtilsField)),
                               clusterInfoMapFromSlime(deploymentObject.field(clusterInfoField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
@@ -482,21 +454,6 @@ public class ApplicationSerializer {
         Map<ClusterSpec.Id, ClusterInfo> map = new HashMap<>();
         object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterInfoFromSlime(value)));
         return map;
-    }
-
-    private Map<ClusterSpec.Id, ClusterUtilization> clusterUtilsMapFromSlime(Inspector object) {
-        Map<ClusterSpec.Id, ClusterUtilization> map = new HashMap<>();
-        object.traverse((String name, Inspector value) -> map.put(new ClusterSpec.Id(name), clusterUtililzationFromSlime(value)));
-        return map;
-    }
-
-    private ClusterUtilization clusterUtililzationFromSlime(Inspector object) {
-        double cpu = object.field(clusterUtilsCpuField).asDouble();
-        double mem = object.field(clusterUtilsMemField).asDouble();
-        double disk = object.field(clusterUtilsDiskField).asDouble();
-        double diskBusy = object.field(clusterUtilsDiskBusyField).asDouble();
-
-        return new ClusterUtilization(mem, cpu, disk, diskBusy);
     }
 
     private ClusterInfo clusterInfoFromSlime(Inspector inspector) {

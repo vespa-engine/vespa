@@ -2,6 +2,7 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.Properties;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +23,7 @@ public class SubstituteString {
 
     private final List<Component> components;
     private final String stringValue;
+    private final boolean hasRelative;
 
     /**
      * Returns a new SubstituteString if the given string contains substitutions, null otherwise.
@@ -35,33 +37,47 @@ public class SubstituteString {
             int end = value.indexOf("}", start + 2);
             if (end < 0)
                 throw new IllegalArgumentException("Unterminated value substitution '" + value.substring(start) + "'");
-            String propertyName = value.substring(start+2,end);
-            if (propertyName.indexOf("%{") >= 0)
+            String propertyName = value.substring(start + 2, end);
+            if (propertyName.contains("%{"))
                 throw new IllegalArgumentException("Unterminated value substitution '" + value.substring(start) + "'");
             components.add(new StringComponent(value.substring(lastEnd, start)));
-            components.add(new PropertyComponent(propertyName));
-            lastEnd = end+1;
+            if (propertyName.startsWith("."))
+                components.add(new RelativePropertyComponent(propertyName.substring(1)));
+            else
+                components.add(new PropertyComponent(propertyName));
+            lastEnd = end + 1;
             start = value.indexOf("%{", lastEnd);
         }
         components.add(new StringComponent(value.substring(lastEnd)));
         return new SubstituteString(components, value);
     }
 
-    private SubstituteString(List<Component> components, String stringValue) {
+    public SubstituteString(List<Component> components, String stringValue) {
         this.components = components;
         this.stringValue = stringValue;
+        this.hasRelative = components.stream().anyMatch(component -> component instanceof RelativePropertyComponent);
     }
 
+    /** Returns whether this has at least one relative component */
+    public boolean hasRelative() { return hasRelative; }
+
     /**
-     * Perform the substitution in this, by looking up in the given query profile,
+     * Perform the substitution in this, by looking up in the given properties,
      * and returns the resulting string
+     *
+     * @param context the content which is used to resolve profile variants when looking up substitution values
+     * @param substitution the properties in which values to be substituted are looked up
      */
     public String substitute(Map<String, String> context, Properties substitution) {
         StringBuilder b = new StringBuilder();
         for (Component component : components)
-            b.append(component.getValue(context,substitution));
+            b.append(component.getValue(context, substitution));
         return b.toString();
     }
+
+    public List<Component> components() { return components; }
+
+    public String stringValue() { return stringValue; }
 
     @Override
     public int hashCode() {
@@ -81,13 +97,13 @@ public class SubstituteString {
         return stringValue;
     }
 
-    private abstract static class Component {
+    public abstract static class Component {
 
         protected abstract String getValue(Map<String, String> context, Properties substitution);
 
     }
 
-    private final static class StringComponent extends Component {
+    public final static class StringComponent extends Component {
 
         private final String value;
 
@@ -107,7 +123,7 @@ public class SubstituteString {
 
     }
 
-    private final static class PropertyComponent extends Component {
+    public final static class PropertyComponent extends Component {
 
         private final String propertyName;
 
@@ -116,7 +132,7 @@ public class SubstituteString {
         }
 
         @Override
-        public String getValue(Map<String,String> context, Properties substitution) {
+        public String getValue(Map<String, String> context, Properties substitution) {
             Object value = substitution.get(propertyName, context, substitution);
             if (value == null) return "";
             return String.valueOf(value);
@@ -125,6 +141,32 @@ public class SubstituteString {
         @Override
         public String toString() {
             return "%{" + propertyName + "}";
+        }
+
+    }
+
+    /**
+     * A component where the value should be looked up in the profile containing the substitution field
+     * rather than globally
+     */
+    public final static class RelativePropertyComponent extends Component {
+
+        private final String fieldName;
+
+        public RelativePropertyComponent(String fieldName) {
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public String getValue(Map<String, String> context, Properties substitution) {
+            throw new IllegalStateException("Should be resolved during compilation");
+        }
+
+        public String fieldName() { return fieldName; }
+
+        @Override
+        public String toString() {
+            return "%{" + fieldName + "}";
         }
 
     }

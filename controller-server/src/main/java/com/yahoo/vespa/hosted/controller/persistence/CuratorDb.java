@@ -6,7 +6,6 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -82,14 +81,15 @@ public class CuratorDb {
     private static final Path applicationCertificateRoot = root.append("applicationCertificates");
 
     private final StringSetSerializer stringSetSerializer = new StringSetSerializer();
-    private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer();
+    private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
+    private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
     private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
     private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
-    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer);
+    private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
     private final RoutingPolicySerializer routingPolicySerializer = new RoutingPolicySerializer();
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
@@ -360,22 +360,11 @@ public class CuratorDb {
 
     private Stream<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
-                      .filter(id -> id.split(":").length == 2)
                       .map(TenantAndApplicationId::fromSerialized);
     }
 
-    public void deleteOldApplicationData() {
-        curator.getChildren(applicationRoot).stream()
-               .filter(id -> id.split(":").length == 3)
-               .forEach(id -> curator.delete(applicationRoot.append(id)));
-    }
-
-    // TODO jonmv: Refactor when instance split operation is done
-    public void storeWithoutInstance(Application application) {
-        if (application.instances().isEmpty())
-                curator.delete(applicationPath(application.id()));
-        else
-            writeApplication(application);
+    public void removeApplication(TenantAndApplicationId id) {
+        curator.delete(applicationPath(id));
     }
 
     // -------------- Job Runs ------------------------------------------------

@@ -84,6 +84,10 @@ LazyExpressions::check(const Properties &props, bool default_value)
     return lookupBool(props, NAME, default_value);
 }
 
+const vespalib::string UseFastForest::NAME("vespa.eval.use_fast_forest");
+const bool UseFastForest::DEFAULT_VALUE(false);
+bool UseFastForest::check(const Properties &props) { return lookupBool(props, NAME, DEFAULT_VALUE); }
+
 } // namespace eval
 
 namespace rank {

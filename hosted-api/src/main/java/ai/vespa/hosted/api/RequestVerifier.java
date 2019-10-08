@@ -5,6 +5,7 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureUtils;
 
 import java.net.URI;
+import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.time.Clock;
@@ -31,7 +32,12 @@ public class RequestVerifier {
 
     /** Creates a new request verifier from the given PEM encoded ECDSA public key, with the given clock. */
     public RequestVerifier(String pemPublicKey, Clock clock) {
-        this.verifier = SignatureUtils.createVerifier(KeyUtils.fromPemEncodedPublicKey(pemPublicKey), SHA256_WITH_ECDSA);
+        this(KeyUtils.fromPemEncodedPublicKey(pemPublicKey), clock);
+    }
+
+    /** Creates a new request verifier from the given PEM encoded ECDSA public key, with the given clock. */
+    public RequestVerifier(PublicKey publicKey, Clock clock) {
+        this.verifier = SignatureUtils.createVerifier(publicKey, SHA256_WITH_ECDSA);
         this.clock = clock;
     }
 

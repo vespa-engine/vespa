@@ -1,26 +1,26 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
+import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author bratseth
@@ -69,16 +69,15 @@ public class DeploymentApiTest extends ControllerContainerTest {
     private VersionStatus censorConfigServers(VersionStatus versionStatus, Controller controller) {
         List<VespaVersion> censored = new ArrayList<>();
         for (VespaVersion version : versionStatus.versions()) {
-            if (!version.systemApplicationHostnames().isEmpty()) {
+            if (version.nodeVersions().size() > 0) {
                 version = new VespaVersion(version.statistics(),
                                            version.releaseCommit(),
                                            version.committedAt(),
                                            version.isControllerVersion(),
                                            version.isSystemVersion(),
                                            version.isReleased(),
-                                           ImmutableSet.of("config1.test", "config2.test").stream()
-                                                       .map(HostName::from)
-                                                       .collect(Collectors.toSet()),
+                                           NodeVersions.EMPTY.with(List.of(new NodeVersion(HostName.from("config1.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Instant.EPOCH),
+                                                                           new NodeVersion(HostName.from("config2.test"), ZoneId.defaultId(), version.versionNumber(), version.versionNumber(), Instant.EPOCH))),
                                            VespaVersion.confidenceFrom(version.statistics(), controller)
                 );
             }

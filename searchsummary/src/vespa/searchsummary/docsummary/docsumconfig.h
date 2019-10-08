@@ -4,6 +4,7 @@
 
 #include <vespa/config-summarymap.h>
 
+namespace search { class StructFieldMapper; }
 namespace search::docsummary {
 
 class IDocsumEnvironment;
@@ -28,7 +29,7 @@ protected:
 
     virtual std::unique_ptr<IDocsumFieldWriter>
     createFieldWriter(const string & fieldName, const string & overrideName,
-                      const string & argument, bool & rc);
+                      const string & argument, bool & rc, std::shared_ptr<StructFieldMapper> struct_field_mapper);
 private:
     IDocsumEnvironment  * _env;
     DynamicDocsumWriter * _writer;
