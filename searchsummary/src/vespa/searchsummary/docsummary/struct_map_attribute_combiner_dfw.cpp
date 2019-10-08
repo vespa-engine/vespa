@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "struct_map_attribute_combiner_dfw.h"
-#include "docsum_field_writer_state.h"
 #include "attribute_field_writer.h"
+#include "docsum_field_writer_state.h"
+#include "struct_fields_resolver.h"
+#include "struct_map_attribute_combiner_dfw.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -121,25 +122,16 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 }
 
 StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::string &fieldName,
-                                                             const std::vector<vespalib::string> &valueFields,
+                                                             const StructFieldsResolver& fields_resolver,
                                                              bool filter_elements,
                                                              std::shared_ptr<StructFieldMapper> struct_field_mapper)
     : AttributeCombinerDFW(fieldName, filter_elements, std::move(struct_field_mapper)),
-      _keyAttributeName(),
-      _valueFields(valueFields),
-      _valueAttributeNames()
+      _keyAttributeName(fields_resolver.get_map_key_attribute()),
+      _valueFields(fields_resolver.get_map_value_fields()),
+      _valueAttributeNames(fields_resolver.get_map_value_attributes())
 {
-    _keyAttributeName = fieldName + ".key";
-    _valueAttributeNames.reserve(_valueFields.size());
-    vespalib::string prefix = fieldName + ".value.";
-    for (const auto &field : _valueFields) {
-        _valueAttributeNames.emplace_back(prefix + field);
-    }
     if (filter_elements && _struct_field_mapper && !_struct_field_mapper->is_struct_field(fieldName)) {
-        _struct_field_mapper->add_mapping(fieldName, _keyAttributeName);
-        for (const auto &sub_field : _valueAttributeNames) {
-            _struct_field_mapper->add_mapping(fieldName, sub_field);
-        }
+        fields_resolver.apply_to(*_struct_field_mapper);
     }
 }
 

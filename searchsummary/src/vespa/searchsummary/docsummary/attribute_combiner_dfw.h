@@ -33,7 +33,7 @@ public:
     ~AttributeCombinerDFW() override;
     bool IsGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    static std::unique_ptr<IDocsumFieldWriter> create(const vespalib::string &fieldName, IAttributeManager &attrMgr, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper);
+    static std::unique_ptr<IDocsumFieldWriter> create(const vespalib::string &fieldName, search::attribute::IAttributeContext &attrCtx, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper);
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };
 

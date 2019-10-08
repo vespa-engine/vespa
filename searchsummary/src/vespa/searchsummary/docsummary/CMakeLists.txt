@@ -22,6 +22,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     resultconfig.cpp
     resultpacker.cpp
     searchdatatype.cpp
+    struct_fields_resolver.cpp
     struct_map_attribute_combiner_dfw.cpp
     summaryfeaturesdfw.cpp
     summaryfieldconverter.cpp

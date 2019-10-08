@@ -3,7 +3,11 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/datatype/structdatatype.h>
 #include <vespa/document/document.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
+#include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
@@ -19,8 +23,15 @@
 #include <vespa/log/log.h>
 LOG_SETUP("matched_elements_filter_test");
 
+using search::AttributeFactory;
+using search::AttributeVector;
 using search::MatchingElements;
 using search::StructFieldMapper;
+using search::attribute::BasicType;
+using search::attribute::CollectionType;
+using search::attribute::Config;
+using search::attribute::IAttributeContext;
+using search::attribute::IAttributeVector;
 using vespalib::Slime;
 
 using namespace document;
@@ -36,12 +47,6 @@ struct SlimeValue {
         : slime()
     {
         size_t used = JsonFormat::decode(json_input, slime);
-        EXPECT_GT(used, 0);
-    }
-    SlimeValue(const Slime& slime_with_raw_field)
-        : slime()
-    {
-        size_t used = BinaryFormat::decode(slime_with_raw_field.get().asString(), slime);
         EXPECT_GT(used, 0);
     }
 };
@@ -93,8 +98,10 @@ public:
         auto* result_class = _config.AddResultClass("test", class_id);
         EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
         EXPECT_TRUE(result_class->AddConfigEntry("map", ResType::RES_JSONSTRING));
+        EXPECT_TRUE(result_class->AddConfigEntry("map2", ResType::RES_JSONSTRING));
         _config.CreateEnumMaps();
     }
+    ~DocsumStore() {}
     const ResultConfig& get_config() const { return _config; }
     const ResultClass* get_class() const { return _config.LookupResultClass(class_id); }
     search::docsummary::DocsumStoreValue getMappedDocsum() {
@@ -113,11 +120,39 @@ public:
             map_value.put(StringFieldValue("c"), *make_elem_value("c", 7));
             write_field_value(map_value);
         }
+        {
+            MapFieldValue map2_value(_map_type);
+            map2_value.put(StringFieldValue("dummy"), *make_elem_value("dummy", 2));
+            write_field_value(map2_value);
+        }
         const char* buf;
         uint32_t buf_len;
         assert(_packer.GetDocsumBlob(&buf, &buf_len));
         return DocsumStoreValue(buf, buf_len);
     }
+};
+
+class AttributeContext : public IAttributeContext {
+private:
+    AttributeVector::SP _map_value_name;
+    AttributeVector::SP _map2_key;
+    AttributeVector::SP _array_weight;
+public:
+    AttributeContext()
+        : _map_value_name(AttributeFactory::createAttribute("map.value.name", Config(BasicType::STRING, CollectionType::ARRAY))),
+          _map2_key(AttributeFactory::createAttribute("map2.key", Config(BasicType::STRING, CollectionType::ARRAY))),
+          _array_weight(AttributeFactory::createAttribute("array.weight", Config(BasicType::INT32, CollectionType::ARRAY)))
+    {}
+    ~AttributeContext() {}
+    const IAttributeVector* getAttribute(const string&) const override { abort(); }
+    const IAttributeVector* getAttributeStableEnum(const string&) const override { abort(); }
+    void getAttributeList(std::vector<const IAttributeVector*>& list) const override {
+        list.push_back(_map_value_name.get());
+        list.push_back(_map2_key.get());
+        list.push_back(_array_weight.get());
+    }
+    void releaseEnumGuards() override { abort(); }
+    void asyncForAttribute(const vespalib::string&, std::unique_ptr<search::attribute::IAttributeFunctor>) const override { abort(); }
 };
 
 class StateCallback : public GetDocsumsStateCallback {
@@ -144,34 +179,43 @@ public:
 
 class MatchedElementsFilterTest : public ::testing::Test {
 private:
-    DocsumStore _store;
+    DocsumStore _doc_store;
+    AttributeContext _attr_ctx;
+    std::shared_ptr<StructFieldMapper> _mapper;
 
-    SlimeValue run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
-        int input_field_enum = _store.get_config().GetFieldNameEnum().Lookup(input_field_name.c_str());
-        EXPECT_GE(input_field_enum, 0);
-        MatchedElementsFilterDFW filter(input_field_name, input_field_enum);
-
-        GeneralResult result(_store.get_class());
-        result.inplaceUnpack(_store.getMappedDocsum());
+    Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
+        auto writer = make_field_writer(input_field_name);
+        GeneralResult result(_doc_store.get_class());
+        result.inplaceUnpack(_doc_store.getMappedDocsum());
         StateCallback callback(input_field_name, matching_elements);
         GetDocsumsState state(callback);
         Slime slime;
         SlimeInserter inserter(slime);
 
-        filter.insertField(doc_id, &result, &state, ResType::RES_JSONSTRING, inserter);
-        return SlimeValue(slime);
+        writer->insertField(doc_id, &result, &state, ResType::RES_JSONSTRING, inserter);
+        return slime;
     }
 
 public:
     MatchedElementsFilterTest()
-        : _store()
+        : _doc_store(),
+          _attr_ctx(),
+          _mapper(std::make_shared<StructFieldMapper>())
     {
     }
-    void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
-        SlimeValue act = run_filter_field_writer(input_field_name, matching_elements);
-        SlimeValue exp(exp_slime_as_json);
-        EXPECT_EQ(exp.slime, act.slime);
+    ~MatchedElementsFilterTest() {}
+    std::unique_ptr<IDocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
+        int input_field_enum = _doc_store.get_config().GetFieldNameEnum().Lookup(input_field_name.c_str());
+        EXPECT_GE(input_field_enum, 0);
+        return MatchedElementsFilterDFW::create(input_field_name, input_field_enum,
+                                                _attr_ctx, _mapper);
     }
+    void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
+        Slime act = run_filter_field_writer(input_field_name, matching_elements);
+        SlimeValue exp(exp_slime_as_json);
+        EXPECT_EQ(exp.slime, act);
+    }
+    const StructFieldMapper& mapper() const { return *_mapper; }
 };
 
 TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
@@ -185,6 +229,14 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
                                         "{'name':'c','weight':7}]");
 }
 
+TEST_F(MatchedElementsFilterTest, struct_field_mapper_is_setup_for_array_field_value)
+{
+    auto writer = make_field_writer("array");
+    EXPECT_TRUE(mapper().is_struct_field("array"));
+    EXPECT_EQ("", mapper().get_struct_field("array.name"));
+    EXPECT_EQ("array", mapper().get_struct_field("array.weight"));
+}
+
 TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
 {
     expect_filtered("map", {}, "[]");
@@ -196,10 +248,28 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
 }
 
+TEST_F(MatchedElementsFilterTest, struct_field_mapper_is_setup_for_map_field_value)
+{
+    {
+        auto writer = make_field_writer("map");
+        EXPECT_TRUE(mapper().is_struct_field("map"));
+        EXPECT_EQ("", mapper().get_struct_field("map.key"));
+        EXPECT_EQ("map", mapper().get_struct_field("map.value.name"));
+        EXPECT_EQ("", mapper().get_struct_field("map.value.weight"));
+    }
+    {
+        auto writer = make_field_writer("map2");
+        EXPECT_TRUE(mapper().is_struct_field("map2"));
+        EXPECT_EQ("map2", mapper().get_struct_field("map2.key"));
+        EXPECT_EQ("", mapper().get_struct_field("map2.value.name"));
+        EXPECT_EQ("", mapper().get_struct_field("map2.value.weight"));
+    }
+}
+
 TEST_F(MatchedElementsFilterTest, field_writer_is_not_generated_as_it_depends_on_data_from_document_store)
 {
-    MatchedElementsFilterDFW filter("foo", 0);
-    EXPECT_FALSE(filter.IsGenerated());
+    auto writer = make_field_writer("array");
+    EXPECT_FALSE(writer->IsGenerated());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

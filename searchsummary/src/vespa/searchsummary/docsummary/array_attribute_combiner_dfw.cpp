@@ -1,8 +1,9 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "array_attribute_combiner_dfw.h"
-#include "docsum_field_writer_state.h"
 #include "attribute_field_writer.h"
+#include "docsum_field_writer_state.h"
+#include "struct_fields_resolver.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -100,22 +101,15 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
 }
 
 ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const vespalib::string &fieldName,
-                                                     const std::vector<vespalib::string> &fields,
+                                                     const StructFieldsResolver& fields_resolver,
                                                      bool filter_elements,
                                                      std::shared_ptr<StructFieldMapper> struct_field_mapper)
     : AttributeCombinerDFW(fieldName, filter_elements, std::move(struct_field_mapper)),
-      _fields(fields),
-      _attributeNames()
+      _fields(fields_resolver.get_array_fields()),
+      _attributeNames(fields_resolver.get_array_attributes())
 {
-    _attributeNames.reserve(_fields.size());
-    vespalib::string prefix = fieldName + ".";
-    for (const auto &field : _fields) {
-        _attributeNames.emplace_back(prefix + field);
-    }
     if (filter_elements && _struct_field_mapper && !_struct_field_mapper->is_struct_field(fieldName)) {
-        for (const auto &sub_field : _attributeNames) {
-            _struct_field_mapper->add_mapping(fieldName, sub_field);
-        }
+        fields_resolver.apply_to(*_struct_field_mapper);
     }
 }
 
