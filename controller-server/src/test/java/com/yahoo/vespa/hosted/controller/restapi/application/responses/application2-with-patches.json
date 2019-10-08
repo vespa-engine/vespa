@@ -64,5 +64,6 @@
     "queryServiceQuality": 0.0,
     "writeServiceQuality": 0.0
   },
-  "activity": {}
+  "activity": {},
+  "globalRotations": []
 }
