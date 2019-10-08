@@ -20,7 +20,7 @@ import java.util.Iterator;
 /**
  * Writes tensors on the JSON format used in Vespa tensor document fields:
  * A JSON map containing a 'cells' or 'values' array.
- * See a http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor
+ * See <a href="http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor">http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor</a>
  *
  * @author bratseth
  */
