@@ -39,7 +39,7 @@ public class DeploymentSpecValidator {
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
     private void validateSteps(DeploymentSpec deploymentSpec) {
         new DeploymentSteps(deploymentSpec, controller::system).jobs();
-        deploymentSpec.zones().stream()
+        deploymentSpec.instances().stream().flatMap(instance -> instance.zones().stream())
                       .filter(zone -> zone.environment() == Environment.prod)
                       .forEach(zone -> {
                           if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
@@ -51,16 +51,19 @@ public class DeploymentSpecValidator {
 
     /** Verify that no single endpoint contains regions in different clouds */
     private void validateEndpoints(DeploymentSpec deploymentSpec) {
-        for (var endpoint : deploymentSpec.endpoints()) {
-            var clouds = new HashSet<CloudName>();
-            for (var region : endpoint.regions()) {
-                for (ZoneApi zone : controller.zoneRegistry().zones().all().in(region).zones()) {
-                    clouds.add(zone.getCloudName());
+        for (var instance : deploymentSpec.instances()) {
+            for (var endpoint : instance.endpoints()) {
+                var clouds = new HashSet<CloudName>();
+                for (var region : endpoint.regions()) {
+                    for (ZoneApi zone : controller.zoneRegistry().zones().all().in(region).zones()) {
+                        clouds.add(zone.getCloudName());
+                    }
                 }
-            }
-            if (clouds.size() != 1) {
-                throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' cannot contain regions in different clouds: " +
-                                                   endpoint.regions().stream().sorted().collect(Collectors.toList()));
+                if (clouds.size() != 1) {
+                    throw new IllegalArgumentException("Endpoint '" + endpoint.endpointId() + "' in " + instance +
+                                                       " cannot contain regions in different clouds: " +
+                                                       endpoint.regions().stream().sorted().collect(Collectors.toList()));
+                }
             }
         }
     }

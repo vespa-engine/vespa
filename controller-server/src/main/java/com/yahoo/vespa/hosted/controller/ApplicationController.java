@@ -385,10 +385,9 @@ public class ApplicationController {
                 }
 
                 if (zone.environment().isProduction()) // Assign and register endpoints
-                    application = withRotation(application, instance);
+                    application = withRotation(applicationPackage.deploymentSpec(), application, instance);
 
-                endpoints = registerEndpointsInDns(application.get().deploymentSpec(), application.get().require(instanceId.instance()), zone);
-
+                endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Provisions a new certificate if missing
@@ -518,9 +517,9 @@ public class ApplicationController {
     }
 
     /** Makes sure the application has a global rotation, if eligible. */
-    private LockedApplication withRotation(LockedApplication application, InstanceName instanceName) {
+    private LockedApplication withRotation(DeploymentSpec deploymentSpec, LockedApplication application, InstanceName instanceName) {
         try (RotationLock rotationLock = rotationRepository.lock()) {
-            var rotations = rotationRepository.getOrAssignRotations(application.get().deploymentSpec(),
+            var rotations = rotationRepository.getOrAssignRotations(deploymentSpec,
                                                                     application.get().require(instanceName),
                                                                     rotationLock);
             application = application.with(instanceName, instance -> instance.with(rotations));
@@ -536,7 +535,7 @@ public class ApplicationController {
      */
     private Set<ContainerEndpoint> registerEndpointsInDns(DeploymentSpec deploymentSpec, Instance instance, ZoneId zone) {
         var containerEndpoints = new HashSet<ContainerEndpoint>();
-        var registerLegacyNames = deploymentSpec.globalServiceId().isPresent();
+        var registerLegacyNames = deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent();
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
             var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId())
@@ -628,8 +627,8 @@ public class ApplicationController {
     private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {
         DeploymentSpec deploymentSpec = application.get().deploymentSpec();
         List<Deployment> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
-                                                          .filter(deployment -> ! deploymentSpec.includes(deployment.zone().environment(),
-                                                                                                          Optional.of(deployment.zone().region())))
+                                                          .filter(deployment -> ! deploymentSpec.requireInstance(instance).includes(deployment.zone().environment(),
+                                                                                                                             Optional.of(deployment.zone().region())))
                                                           .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty()) return application;
@@ -653,7 +652,7 @@ public class ApplicationController {
     private Instance withoutUnreferencedDeploymentJobs(DeploymentSpec deploymentSpec, Instance instance) {
         for (JobType job : JobList.from(instance).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
-            if (deploymentSpec.includes(zone.environment(), Optional.of(zone.region())))
+            if (deploymentSpec.requireInstance(instance.name()).includes(zone.environment(), Optional.of(zone.region())))
                 continue;
             instance = instance.withoutDeploymentJob(job);
         }
@@ -911,9 +910,9 @@ public class ApplicationController {
      * 2. If the principal is given, verify that the principal is tenant admin or admin of the tenant domain
      * 3. If the principal is not given, verify that the Athenz domain of the tenant equals Athenz domain given in deployment.xml
      *
-     * @param tenantName Tenant where application should be deployed
-     * @param applicationPackage Application package
-     * @param deployer Principal initiating the deployment, possibly empty
+     * @param tenantName tenant where application should be deployed
+     * @param applicationPackage application package
+     * @param deployer principal initiating the deployment, possibly empty
      */
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
         verifyAllowedLaunchAthenzService(applicationPackage.deploymentSpec());
