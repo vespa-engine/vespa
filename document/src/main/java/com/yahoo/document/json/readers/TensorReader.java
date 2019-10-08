@@ -3,11 +3,7 @@ package com.yahoo.document.json.readers;
 
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.TokenBuffer;
-import com.yahoo.lang.MutableInteger;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Type;
 import com.yahoo.tensor.IndexedTensor;
-import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -60,30 +56,24 @@ public class TensorReader {
 
     private static void readTensorCell(TokenBuffer buffer, Tensor.Builder builder) {
         expectObjectStart(buffer.currentToken());
+
+        TensorAddress address = null;
+        Double value = null;
         int initNesting = buffer.nesting();
-        double cellValue = 0.0;
-        Tensor.Builder.CellBuilder cellBuilder = builder.cell();
         for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
             String currentName = buffer.currentName();
             if (TensorReader.TENSOR_ADDRESS.equals(currentName)) {
-                readTensorAddress(buffer, cellBuilder);
+                address = readAddress(buffer, builder.type());
             } else if (TensorReader.TENSOR_VALUE.equals(currentName)) {
-                cellValue = readDouble(buffer);
+                value = readDouble(buffer);
             }
         }
         expectObjectEnd(buffer.currentToken());
-        cellBuilder.value(cellValue);
-    }
-
-    private static void readTensorAddress(TokenBuffer buffer, MappedTensor.Builder.CellBuilder cellBuilder) {
-        expectObjectStart(buffer.currentToken());
-        int initNesting = buffer.nesting();
-        for (buffer.next(); buffer.nesting() >= initNesting; buffer.next()) {
-            String dimension = buffer.currentName();
-            String label = buffer.currentText();
-            cellBuilder.label(dimension, label);
-        }
-        expectObjectEnd(buffer.currentToken());
+        if (address == null)
+            throw new IllegalArgumentException("Expected an object in a tensor 'cells' array to contain an 'address' field");
+        if (value == null)
+            throw new IllegalArgumentException("Expected an object in a tensor 'cells' array to contain a 'value' field");
+        builder.cell(address, value);
     }
 
     private static void readTensorValues(TokenBuffer buffer, Tensor.Builder builder) {
