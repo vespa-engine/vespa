@@ -203,7 +203,7 @@ public class Application {
         Objects.requireNonNull(latestVersion, "latestVersion cannot be null");
         latestVersion.ifPresent(version -> {
             if (version.isUnknown())
-                throw new IllegalArgumentException("latstVersion cannot be unknown");
+                throw new IllegalArgumentException("latestVersion cannot be unknown");
         });
         return latestVersion;
     }

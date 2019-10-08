@@ -84,8 +84,9 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          phasedExecutor(phaser), stepRunner);
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
+        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
         try {
@@ -115,8 +116,9 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
+        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
 
         jobs.start(id, systemTest, versions);
@@ -188,7 +190,7 @@ public class JobRunnerTest {
 
         // Start a third run, then unregister and wait for data to be deleted.
         jobs.start(id, systemTest, versions);
-        jobs.unregister(id);
+        jobs.unregister(appId);
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).isPresent());
         assertTrue(jobs.runs(id, systemTest).isEmpty());
@@ -203,8 +205,9 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
+        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         RunId runId = new RunId(id, systemTest, 1);
         jobs.start(id, systemTest, versions);
@@ -239,8 +242,9 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), (id, step) -> Optional.of(running));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
+        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         for (int i = 0; i < jobs.historyLength(); i++) {
             jobs.start(id, systemTest, versions);
@@ -267,8 +271,9 @@ public class JobRunnerTest {
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
-        ApplicationId id = tester.createApplication("real", "tenant", 1, 1L).id().defaultInstance();
-        jobs.submit(id, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
+        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
         jobs.start(id, systemTest, versions);
         tester.clock().advance(JobRunner.jobTimeout.plus(Duration.ofSeconds(1)));

@@ -95,8 +95,8 @@ public class MetricsReporter extends Maintainer {
 
         for (Application application : applications)
             application.latestVersion()
-                    .flatMap(ApplicationVersion::buildTime)
-                    .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
+                       .flatMap(ApplicationVersion::buildTime)
+                       .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
                                                           metric.createContext(dimensions(application.id().defaultInstance()))));
     }

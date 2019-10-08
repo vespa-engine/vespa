@@ -120,7 +120,7 @@ public class InternalDeploymentTester {
      * Submits a new application, and returns the version of the new submission.
      */
     public ApplicationVersion newSubmission() {
-        return jobs.submit(instanceId, BuildJob.defaultSourceRevision, "a@b", 2,
+        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2,
                            tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage, new byte[0]);
     }
 

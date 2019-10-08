@@ -432,10 +432,10 @@ class JobControllerApiHandlerHelper {
      *
      * @return Response with the new application version
      */
-    static HttpResponse submitResponse(JobController jobController, String tenant, String application, String instance,
+    static HttpResponse submitResponse(JobController jobController, String tenant, String application,
                                        SourceRevision sourceRevision, String authorEmail, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
-        ApplicationVersion version = jobController.submit(ApplicationId.from(tenant, application, instance),
+        ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application),
                                                           sourceRevision,
                                                           authorEmail,
                                                           projectId,
@@ -460,8 +460,8 @@ class JobControllerApiHandlerHelper {
     }
 
     /** Unregisters the application from the internal deployment pipeline. */
-    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName, String instanceName) {
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
+    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName) {
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         jobs.unregister(id);
         Slime slime = new Slime();
         slime.setObject().setString("message", "Unregistered '" + id + "' from internal deployment pipeline.");
