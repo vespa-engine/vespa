@@ -103,8 +103,6 @@ public class ApplicationSerializerTest {
         JobStatus.JobRun componentJob = JobStatus.JobRun.triggering(Version.emptyVersion, applicationVersion1, empty(),
                                                                     empty(), "New commit", Instant.ofEpochMilli(400))
                                                         .completion(100, Instant.ofEpochMilli(500));
-        statusList.add(JobStatus.initial(JobType.component)
-                                .withCompletion(componentJob, empty()));
         statusList.add(JobStatus.initial(JobType.systemTest)
                                 .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, empty(), "Test", Instant.ofEpochMilli(7))
                                 .withCompletion(30, empty(), Instant.ofEpochMilli(8))
@@ -149,15 +147,14 @@ public class ApplicationSerializerTest {
                                                Set.of(publicKey, otherPublicKey),
                                                projectId,
                                                true,
-                                               empty(),
+                                               Optional.of(applicationVersion1),
                                                instances);
 
         Application serialized = APPLICATION_SERIALIZER.fromSlime(APPLICATION_SERIALIZER.toSlime(original));
 
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
-        assertEquals(applicationVersion1, serialized.latestVersion().get()); // TODO jonmv: remove once this is released
-        assertEquals(applicationVersion1, APPLICATION_SERIALIZER.fromSlime(APPLICATION_SERIALIZER.toSlime(serialized)).latestVersion().get());
+        assertEquals(original.latestVersion(), serialized.latestVersion());
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());

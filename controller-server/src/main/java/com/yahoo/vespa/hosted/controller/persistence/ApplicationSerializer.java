@@ -281,7 +281,8 @@ public class ApplicationSerializer {
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
         for (JobStatus jobStatus : jobStatuses)
-            toSlime(jobStatus, jobStatusArray.addObject());
+            if (jobStatus.type() != JobType.component)
+                toSlime(jobStatus, jobStatusArray.addObject());
     }
 
     private void toSlime(JobStatus jobStatus, Cursor object) {
@@ -362,7 +363,7 @@ public class ApplicationSerializer {
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
-        Optional<ApplicationVersion> latestVersion = latestVersionFromSlimeWithFallback(root.field(latestVersionField), instances);
+        Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
         boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
@@ -370,15 +371,11 @@ public class ApplicationSerializer {
                                deployKeys, projectId, builtInternally, latestVersion, instances);
     }
 
-    private Optional<ApplicationVersion> latestVersionFromSlimeWithFallback(Inspector latestVersionObject, List<Instance> instances) {
+    private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {
         if (latestVersionObject.valid())
             return Optional.of(applicationVersionFromSlime(latestVersionObject));
 
-        return instances.stream()
-                        .flatMap(instance -> instance.deploymentJobs().statusOf(JobType.component).stream())
-                        .flatMap(status -> status.lastSuccess().stream())
-                        .map(JobStatus.JobRun::application)
-                        .findFirst();
+        return Optional.empty();
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {
