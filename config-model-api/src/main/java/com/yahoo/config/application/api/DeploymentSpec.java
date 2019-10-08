@@ -47,11 +47,18 @@ public class DeploymentSpec {
                                                                   List.of());
 
     private final List<Step> steps;
+
+    // Attributes which can be set on the root tag and which must be available outside of any particular instance
     private final Optional<Integer> majorVersion;
+    private final Optional<AthenzDomain> athenzDomain;
+    private final Optional<AthenzService> athenzService;
+
     private final String xmlForm;
 
     public DeploymentSpec(List<Step> steps,
                           Optional<Integer> majorVersion,
+                          Optional<AthenzDomain> athenzDomain,
+                          Optional<AthenzService> athenzService,
                           String xmlForm) {
         if (singleInstance(steps)) { // TODO: Remove this clause after November 2019
             var singleInstance = (DeploymentInstanceSpec)steps.get(0);
@@ -61,6 +68,8 @@ public class DeploymentSpec {
             this.steps = List.copyOf(completeSteps(steps));
         }
         this.majorVersion = majorVersion;
+        this.athenzDomain = athenzDomain;
+        this.athenzService = athenzService;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
     }
@@ -81,6 +90,8 @@ public class DeploymentSpec {
                                                 notifications,
                                                 endpoints)),
              majorVersion,
+             athenzDomain,
+             athenzService,
              xmlForm);
     }
 
@@ -137,7 +148,7 @@ public class DeploymentSpec {
     }
 
     // TODO: Remove after October 2019
-    private DeploymentInstanceSpec defaultInstance() {
+    private DeploymentInstanceSpec singleInstance() {
         if (singleInstance(steps)) return (DeploymentInstanceSpec)steps.get(0);
         throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
                                            "as it has multiple instances: " +
@@ -145,56 +156,74 @@ public class DeploymentSpec {
     }
 
     // TODO: Remove after October 2019
-    public Optional<String> globalServiceId() { return defaultInstance().globalServiceId(); }
+    public Optional<String> globalServiceId() { return singleInstance().globalServiceId(); }
 
     // TODO: Remove after October 2019
-    public UpgradePolicy upgradePolicy() { return defaultInstance().upgradePolicy(); }
+    public UpgradePolicy upgradePolicy() { return singleInstance().upgradePolicy(); }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
     // TODO: Remove after November 2019
-    public boolean canUpgradeAt(Instant instant) { return defaultInstance().canUpgradeAt(instant); }
+    public boolean canUpgradeAt(Instant instant) { return singleInstance().canUpgradeAt(instant); }
 
     // TODO: Remove after November 2019
-    public boolean canChangeRevisionAt(Instant instant) { return defaultInstance().canChangeRevisionAt(instant); }
+    public boolean canChangeRevisionAt(Instant instant) { return singleInstance().canChangeRevisionAt(instant); }
 
     // TODO: Remove after November 2019
-    public List<ChangeBlocker> changeBlocker() { return defaultInstance().changeBlocker(); }
+    public List<ChangeBlocker> changeBlocker() { return singleInstance().changeBlocker(); }
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
-        if (singleInstance(steps)) return defaultInstance().steps(); // TODO: Remove line after November 2019
+        if (singleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019
         return steps;
     }
 
     // TODO: Remove after November 2019
     public List<DeclaredZone> zones() {
-        return defaultInstance().steps().stream()
-                                       .flatMap(step -> step.zones().stream())
-                                       .collect(Collectors.toList());
+        return singleInstance().steps().stream()
+                               .flatMap(step -> step.zones().stream())
+                               .collect(Collectors.toList());
     }
 
-    // TODO: Remove after November 2019
-    public Optional<AthenzDomain> athenzDomain() { return defaultInstance().athenzDomain(); }
+    /** Returns the Athenz domain set on the root tag, if any */
+    public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
+    /** Returns the Athenz service to use for the given environment and region, if any */
     // TODO: Remove after November 2019
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
-        return defaultInstance().athenzService(environment, region);
+        Optional<AthenzService> service = Optional.empty();
+        if (singleInstance(steps))
+            service = singleInstance().athenzService(environment, region);
+        if (service.isPresent())
+            return service;
+        return this.athenzService;
+    }
+
+    /**
+     * Returns the Athenz service to use for the given instance, environment and region, if any.
+     * This returns the default set on  the deploy tag (if any) if nothing is set for this particular
+     * combination of instance, environment and region, and also if that combination is not specified
+     * at all in services.
+     */
+    public Optional<AthenzService> athenzService(InstanceName instanceName, Environment environment, RegionName region) {
+        Optional<DeploymentInstanceSpec> instance = instance(instanceName);
+        if (instance.isEmpty()) return this.athenzService;
+        return instance.get().athenzService(environment, region).or(() -> this.athenzService);
     }
 
     // TODO: Remove after November 2019
-    public Notifications notifications() { return defaultInstance().notifications(); }
+    public Notifications notifications() { return singleInstance().notifications(); }
 
     // TODO: Remove after November 2019
-    public List<Endpoint> endpoints() { return defaultInstance().endpoints(); }
+    public List<Endpoint> endpoints() { return singleInstance().endpoints(); }
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
     // TODO: Remove after November 2019
     public boolean includes(Environment environment, Optional<RegionName> region) {
-        return defaultInstance().deploysTo(environment, region);
+        return singleInstance().deploysTo(environment, region);
     }
 
     // TODO: Remove after November 2019
@@ -202,31 +231,25 @@ public class DeploymentSpec {
         return steps.size() == 1 && steps.get(0) instanceof DeploymentInstanceSpec;
     }
 
-    /** Returns the instance step containing the given instance name, or null if not present */
-    public DeploymentInstanceSpec instance(String name) {
-        return instance(InstanceName.from(name));
-    }
-
-    /** Returns the instance step containing the given instance name, or null if not present */
-    public DeploymentInstanceSpec instance(InstanceName name) {
+    /** Returns the instance step containing the given instance name */
+    public Optional<DeploymentInstanceSpec> instance(InstanceName name) {
         for (DeploymentInstanceSpec instance : instances()) {
             if (instance.name().equals(name))
-                return instance;
+                return Optional.of(instance);
         }
-        return null;
+        return Optional.empty();
     }
 
-    /** Returns the instance step containing the given instance name, or throws an IllegalArgumentException if not present */
     public DeploymentInstanceSpec requireInstance(String name) {
         return requireInstance(InstanceName.from(name));
     }
 
     public DeploymentInstanceSpec requireInstance(InstanceName name) {
-        DeploymentInstanceSpec instance = instance(name);
-        if (instance == null)
+        Optional<DeploymentInstanceSpec> instance = instance(name);
+        if (instance.isEmpty())
             throw new IllegalArgumentException("No instance '" + name + "' in deployment.xml'. Instances: " +
                                                instances().stream().map(spec -> spec.name().toString()).collect(Collectors.joining(",")));
-        return instance;
+        return instance.get();
     }
 
     /** Returns the steps of this which are instances */

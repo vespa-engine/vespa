@@ -535,7 +535,7 @@ public class ApplicationController {
      */
     private Set<ContainerEndpoint> registerEndpointsInDns(DeploymentSpec deploymentSpec, Instance instance, ZoneId zone) {
         var containerEndpoints = new HashSet<ContainerEndpoint>();
-        var registerLegacyNames = deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent();
+        boolean registerLegacyNames = deploymentSpec.instance(instance.name()).flatMap(i -> i.globalServiceId()).isPresent();
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
             var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId())
@@ -628,7 +628,7 @@ public class ApplicationController {
         DeploymentSpec deploymentSpec = application.get().deploymentSpec();
         List<Deployment> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
                                                           .filter(deployment -> ! deploymentSpec.requireInstance(instance).includes(deployment.zone().environment(),
-                                                                                                                             Optional.of(deployment.zone().region())))
+                                                                                                                                    Optional.of(deployment.zone().region())))
                                                           .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty()) return application;

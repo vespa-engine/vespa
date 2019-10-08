@@ -329,7 +329,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.List, java.util.Optional, java.lang.String)",
+      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.lang.String)",
       "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public java.util.Optional globalServiceId()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
@@ -341,12 +341,12 @@
       "public java.util.List zones()",
       "public java.util.Optional athenzDomain()",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
+      "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
       "public java.lang.String xmlForm()",
       "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
-      "public com.yahoo.config.application.api.DeploymentInstanceSpec instance(java.lang.String)",
-      "public com.yahoo.config.application.api.DeploymentInstanceSpec instance(com.yahoo.config.provision.InstanceName)",
+      "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(com.yahoo.config.provision.InstanceName)",
       "public java.util.List instances()",

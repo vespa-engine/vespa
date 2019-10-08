@@ -108,6 +108,8 @@ public class DeploymentSpecXmlReader {
 
         return new DeploymentSpec(steps,
                                   optionalIntegerAttribute(majorVersionTag, root),
+                                  stringAttribute(athenzDomainAttribute, root).map(AthenzDomain::from),
+                                  stringAttribute(athenzServiceAttribute, root).map(AthenzService::from),
                                   xmlForm);
     }
 
