@@ -91,7 +91,7 @@ vespalib::string make_simple_stack_dump(const vespalib::string &field, const ves
 vespalib::string make_same_element_stack_dump(const vespalib::string &a1_term, const vespalib::string &f1_term)
 {
     QueryBuilder<ProtonNodeTypes> builder;
-    builder.addSameElement(2, "");
+    builder.addSameElement(2, "my");
     builder.addStringTerm(a1_term, "a1", 1, search::query::Weight(1));
     builder.addStringTerm(f1_term, "f1", 2, search::query::Weight(1));
     return StackDumpCreator::create(*builder.build());
@@ -129,10 +129,12 @@ struct MyWorld {
         schema.addIndexField(Schema::IndexField("f1", DataType::STRING));
         schema.addIndexField(Schema::IndexField("f2", DataType::STRING));
         schema.addIndexField(Schema::IndexField("tensor_field", DataType::TENSOR));
+        schema.addIndexField(Schema::IndexField("my.f1", DataType::STRING));
         schema.addAttributeField(Schema::AttributeField("a1", DataType::INT32));
         schema.addAttributeField(Schema::AttributeField("a2", DataType::INT32));
         schema.addAttributeField(Schema::AttributeField("a3", DataType::INT32));
         schema.addAttributeField(Schema::AttributeField("predicate_field", DataType::BOOLEANTREE));
+        schema.addAttributeField(Schema::AttributeField("my.a1", DataType::STRING));
 
         // config
         config.add(indexproperties::rank::FirstPhase::NAME, "attribute(a1)");
@@ -237,11 +239,11 @@ struct MyWorld {
         searchContext.attr().addResult("a1", term, result);
     }
 
-    void add_same_element_results(const vespalib::string &a1_term, const vespalib::string &f1_0_term) {
-        auto a1_result   = make_elem_result({{10, {1}}, {20, {2}}, {21, {2}}});
-        auto f1_0_result = make_elem_result({{10, {2}}, {20, {2}}, {21, {2}}});
-        searchContext.attr().addResult("a1", a1_term, a1_result);
-        searchContext.idx(0).getFake().addResult("f1", f1_0_term, f1_0_result);
+    void add_same_element_results(const vespalib::string &my_a1_term, const vespalib::string &my_f1_0_term) {
+        auto my_a1_result   = make_elem_result({{10, {1}}, {20, {2, 3}}, {21, {2}}});
+        auto my_f1_0_result = make_elem_result({{10, {2}}, {20, {1, 2}}, {21, {2}}});
+        searchContext.attr().addResult("my.a1", my_a1_term, my_a1_result);
+        searchContext.idx(0).getFake().addResult("my.f1", my_f1_0_term, my_f1_0_result);
     }
 
     void basicResults() {
@@ -323,20 +325,20 @@ struct MyWorld {
         return reply;
     }
 
-    DocsumRequest::SP createSimpleDocsumRequest(const vespalib::string & field, const vespalib::string & term)
-    {
-        DocsumRequest::SP request(new DocsumRequest);
-        setStackDump(*request, make_simple_stack_dump(field, term));
+    DocsumRequest::UP create_docsum_request(const vespalib::string &stack_dump, const std::initializer_list<uint32_t> docs) {
+        auto req = std::make_unique<DocsumRequest>();
+        setStackDump(*req, stack_dump);
+        for (uint32_t docid: docs) {
+            req->hits.push_back(DocsumRequest::Hit());
+            req->hits.back().docid = docid;
+        }
+        return req;
+    }
 
+    DocsumRequest::SP createSimpleDocsumRequest(const vespalib::string & field, const vespalib::string & term) {
         // match a subset of basic result + request for a non-hit (not
         // sorted on docid)
-        request->hits.push_back(DocsumRequest::Hit());
-        request->hits.back().docid = 30;
-        request->hits.push_back(DocsumRequest::Hit());
-        request->hits.back().docid = 10;
-        request->hits.push_back(DocsumRequest::Hit());
-        request->hits.back().docid = 15;
-        return request;
+        return create_docsum_request(make_simple_stack_dump(field, term), {30, 10, 15});
     }
 
     std::unique_ptr<FieldInfo> get_field_info(const vespalib::string &field_name) {
@@ -350,14 +352,21 @@ struct MyWorld {
 
     FeatureSet::SP getSummaryFeatures(DocsumRequest::SP req) {
         Matcher::SP matcher = createMatcher();
-        return matcher->getSummaryFeatures(*req, searchContext, attributeContext, *sessionManager);
+        auto docsum_matcher = matcher->create_docsum_matcher(*req, searchContext, attributeContext, *sessionManager);
+        return docsum_matcher->get_summary_features();
     }
 
     FeatureSet::SP getRankFeatures(DocsumRequest::SP req) {
         Matcher::SP matcher = createMatcher();
-        return matcher->getRankFeatures(*req, searchContext, attributeContext, *sessionManager);
+        auto docsum_matcher = matcher->create_docsum_matcher(*req, searchContext, attributeContext, *sessionManager);
+        return docsum_matcher->get_rank_features();
     }
 
+    MatchingElements::UP get_matching_elements(const DocsumRequest &req, const StructFieldMapper &mapper) {
+        Matcher::SP matcher = createMatcher();
+        auto docsum_matcher = matcher->create_docsum_matcher(req, searchContext, attributeContext, *sessionManager);
+        return docsum_matcher->get_matching_elements(mapper);
+    }
 };
 
 MyWorld::MyWorld()
@@ -898,7 +907,7 @@ TEST("require that fields are tagged with data type") {
     EXPECT_EQUAL(predicate_field->get_data_type(), FieldInfo::DataType::BOOLEANTREE);
 }
 
-TEST("require that same element search works (note that this does not test/use the attribute element iterator wrapper)") {
+TEST("require that same element search works") {
     MyWorld world;
     world.basicSetup();
     world.add_same_element_results("foo", "bar");
@@ -906,6 +915,35 @@ TEST("require that same element search works (note that this does not test/use t
     SearchReply::UP reply = world.performSearch(request, 1);
     ASSERT_EQUAL(1u, reply->hits.size());
     EXPECT_EQUAL(document::DocumentId("id:ns:searchdocument::20").getGlobalId(), reply->hits[0].gid);
+}
+
+TEST("require that docsum matcher can extract matching elements from same element blueprint") {
+    MyWorld world;
+    world.basicSetup();
+    world.add_same_element_results("foo", "bar");
+    auto request = world.create_docsum_request(make_same_element_stack_dump("foo", "bar"), {20});
+    StructFieldMapper mapper;
+    mapper.add_mapping("my", "my.a1");
+    mapper.add_mapping("my", "my.f1");
+    auto result = world.get_matching_elements(*request, mapper);
+    const auto &list = result->get_matching_elements(20, "my");
+    ASSERT_EQUAL(list.size(), 1u);
+    EXPECT_EQUAL(list[0], 2u);
+}
+
+TEST("require that docsum matcher can extract matching elements from single attribute term") {
+    MyWorld world;
+    world.basicSetup();
+    world.add_same_element_results("foo", "bar");
+    auto request = world.create_docsum_request(make_simple_stack_dump("my.a1", "foo"), {20});
+    StructFieldMapper mapper;
+    mapper.add_mapping("my", "my.a1");
+    mapper.add_mapping("my", "my.f1");
+    auto result = world.get_matching_elements(*request, mapper);
+    const auto &list = result->get_matching_elements(20, "my");
+    ASSERT_EQUAL(list.size(), 2u);
+    EXPECT_EQUAL(list[0], 2u);
+    EXPECT_EQUAL(list[1], 3u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

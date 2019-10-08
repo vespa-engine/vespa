@@ -21,7 +21,8 @@ namespace search::queryeval {
 
 FakeSearchable::FakeSearchable()
     : _tag("<undef>"),
-      _map()
+      _map(),
+      _is_attr(false)
 {
 }
 
@@ -44,10 +45,11 @@ class LookupVisitor : public CreateBlueprintVisitorHelper
 {
     const Map &_map;
     const vespalib::string _tag;
+    bool _is_attr;
 
 public:
     LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
-                  const Map &map, const vespalib::string &tag, const FieldSpec &field);
+                  const Map &map, const vespalib::string &tag, bool is_attr, const FieldSpec &field);
 
     ~LookupVisitor();
     template <class TermNode>
@@ -66,10 +68,11 @@ public:
 
 template <class Map>
 LookupVisitor<Map>::LookupVisitor(Searchable &searchable, const IRequestContext & requestContext,
-                                  const Map &map, const vespalib::string &tag, const FieldSpec &field)
+                                  const Map &map, const vespalib::string &tag, bool is_attr, const FieldSpec &field)
     : CreateBlueprintVisitorHelper(searchable, field, requestContext),
       _map(map),
-      _tag(tag)
+      _tag(tag),
+      _is_attr(is_attr)
 {}
 
 template <class Map>
@@ -86,8 +89,8 @@ LookupVisitor<Map>::visitTerm(TermNode &n) {
     if (pos != _map.end()) {
         result = pos->second;
     }
-   auto fake = std::make_unique<FakeBlueprint>(getField(), result);
-    fake->tag(_tag).term(term_string);
+    auto fake = std::make_unique<FakeBlueprint>(getField(), result);
+    fake->tag(_tag).is_attr(_is_attr).term(term_string);
     setResult(std::move(fake));
 }
 
@@ -98,7 +101,7 @@ FakeSearchable::createBlueprint(const IRequestContext & requestContext,
                                 const FieldSpec &field,
                                 const search::query::Node &term)
 {
-    LookupVisitor<Map> visitor(*this, requestContext, _map, _tag, field);
+    LookupVisitor<Map> visitor(*this, requestContext, _map, _tag, _is_attr, field);
     const_cast<Node &>(term).accept(visitor);
     return visitor.getResult();
 }
