@@ -100,6 +100,7 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -110,6 +111,7 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
@@ -198,6 +200,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/user")) return authenticatedUser(request);
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/cost")) return tenantCost(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
@@ -351,6 +355,45 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse tenant(Tenant tenant, HttpRequest request) {
         Slime slime = new Slime();
         toSlime(slime.setObject(), tenant, request);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse tenantCost(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .map(tenant -> tenantCost(tenant, request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+    }
+
+    private HttpResponse tenantCost(Tenant tenant, HttpRequest request) {
+        var slime = new Slime();
+        var objectCursor = slime.setObject();
+        var monthsCursor = objectCursor.setArray("months");
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse tenantCost(String tenantName, String dateString, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .map(tenant -> tenantCost(tenant, tenantCostParseDate(dateString), request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
+    }
+
+    private LocalDate tenantCostParseDate(String dateString) {
+        var monthPattern = Pattern.compile("^(?<year>[0-9]{4})-(?<month>[0-9]{2})$");
+        var matcher = monthPattern.matcher(dateString);
+
+        if (matcher.matches()) {
+            var year  = Integer.parseInt(matcher.group("year"));
+            var month = Integer.parseInt(matcher.group("month"));
+            return LocalDate.of(year, month, 1);
+        } else {
+            throw new IllegalArgumentException("Could not parse year-month '" + dateString + "'");
+        }
+    }
+
+    private HttpResponse tenantCost(Tenant tenant, LocalDate month, HttpRequest request) {
+        var slime = new Slime();
+        slime.setObject();
         return new SlimeJsonResponse(slime);
     }
 

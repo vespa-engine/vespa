@@ -44,7 +44,9 @@ enum PathGroup {
     /** Paths used by tenant administrators. */
     tenantInfo(Matcher.tenant,
                Optional.of("/api"),
-               "/application/v4/tenant/{tenant}/application/"),
+               "/application/v4/tenant/{tenant}/application/",
+               "/application/v4/tenant/{tenant}/cost",
+               "/application/v4/tenant/{tenant}/cost/{date}"),
 
     tenantKeys(Matcher.tenant,
                Optional.of("/api"),
