@@ -50,7 +50,11 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     private final URI ztsUrl;
 
     public DefaultZtsClient(URI ztsUrl, SSLContext sslContext) {
-        this(ztsUrl, () -> sslContext, null);
+        this(ztsUrl, sslContext, null);
+    }
+
+    public DefaultZtsClient(URI ztsUrl, SSLContext sslContext, HostnameVerifier hostnameVerifier) {
+        this(ztsUrl, () -> sslContext, hostnameVerifier);
     }
 
     public DefaultZtsClient(URI ztsUrl, ServiceIdentityProvider identityProvider) {
