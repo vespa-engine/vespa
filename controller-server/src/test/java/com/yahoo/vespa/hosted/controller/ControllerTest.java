@@ -72,7 +72,6 @@ public class ControllerTest {
     @Test
     public void testDeployment() {
         // Setup system
-        ApplicationController applications = tester.controller().applications();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -753,7 +752,7 @@ public class ControllerTest {
             tester.deployCompletely(application, applicationPackage);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Endpoint 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+            assertEquals("Endpoint 'default' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
 
         var applicationPackage2 = new ApplicationPackageBuilder()
@@ -766,7 +765,7 @@ public class ControllerTest {
             tester.deployCompletely(application, applicationPackage2);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Endpoint 'foo' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
+            assertEquals("Endpoint 'foo' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
     }
 
