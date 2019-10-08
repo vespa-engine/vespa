@@ -8,7 +8,9 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
+import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -70,16 +72,15 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         instance = firstNonBlank(instance, project.getProperties().getProperty("instance", "default"));
         id = ApplicationId.from(tenant, application, instance);
 
-        if (privateKey == null || privateKey.isEmpty()) {
-            if (privateKeyFile == null || privateKeyFile.isEmpty()) {
-                throw new IllegalArgumentException("Missing 'privateKey' or 'privateKeyFile' properties.");
-            }
-            privateKey = Paths.get(privateKeyFile);
+        if (privateKey != null) {
+            controller = ControllerHttpClient.withSignatureKey(URI.create(endpoint), privateKey, id);
+        } else if (privateKeyFile != null) {
+            controller = certificateFile == null
+                    ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(privateKeyFile), id)
+                    : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(privateKeyFile), Paths.get(certificateFile));
+        } else {
+            throw new IllegalArgumentException("One of the properties 'privateKey' or 'privateKeyFile' is required.");
         }
-
-        controller = certificateFile == null
-                ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), privateKey, id)
-                : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(privateKeyFile), Paths.get(certificateFile));
     }
 
     protected String projectPathOf(String first, String... rest) {
