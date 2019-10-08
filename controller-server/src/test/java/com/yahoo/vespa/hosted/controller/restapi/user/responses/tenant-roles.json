@@ -3,30 +3,45 @@
   "roleNames": [
     "tenantOwner",
     "tenantAdmin",
-    "tenantOperator"
+    "tenantOperator",
+    "administrator",
+    "developer",
+    "reader"
   ],
   "users": [
     {
-      "name": "owner@tenant",
-      "email":"owner@tenant",
+      "name": "operator@tenant",
+      "email": "operator@tenant",
       "roles": {
         "tenantOwner": {
-          "explicit": true,
+          "explicit": false,
           "implied": false
         },
         "tenantAdmin": {
           "explicit": false,
-          "implied": true
+          "implied": false
         },
         "tenantOperator": {
+          "explicit": true,
+          "implied": false
+        },
+        "administrator": {
           "explicit": false,
-          "implied": true
+          "implied": false
+        },
+        "developer": {
+          "explicit": false,
+          "implied": false
+        },
+        "reader": {
+          "explicit": false,
+          "implied": false
         }
       }
     },
     {
-      "name": "operator@tenant",
-      "email":"operator@tenant",
+      "name": "owner@tenant",
+      "email": "owner@tenant",
       "roles": {
         "tenantOwner": {
           "explicit": false,
@@ -37,6 +52,18 @@
           "implied": false
         },
         "tenantOperator": {
+          "explicit": false,
+          "implied": false
+        },
+        "administrator": {
+          "explicit": true,
+          "implied": false
+        },
+        "developer": {
+          "explicit": true,
+          "implied": false
+        },
+        "reader": {
           "explicit": true,
           "implied": false
         }

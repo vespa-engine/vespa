@@ -5,56 +5,65 @@
     "applicationAdmin",
     "applicationOperator",
     "applicationDeveloper",
-    "applicationReader"
+    "applicationReader",
+    "headless"
   ],
   "users": [
     {
-      "name": "owner@tenant",
-      "email":"owner@tenant",
-      "roles": {
-        "applicationAdmin": {
-          "explicit": false,
-          "implied": true
-        },
-        "applicationOperator": {
-          "explicit": false,
-          "implied": true
-        },
-        "applicationDeveloper": {
-          "explicit": false,
-          "implied": true
-        },
-        "applicationReader": {
-          "explicit": false,
-          "implied": true
-        }
-      }
-    },
-    {
       "name": "operator@tenant",
-      "email":"operator@tenant",
+      "email": "operator@tenant",
       "roles": {
         "applicationAdmin": {
-          "explicit": true,
+          "explicit": false,
           "implied": false
         },
         "applicationOperator": {
           "explicit": false,
-          "implied": true
+          "implied": false
         },
         "applicationDeveloper": {
           "explicit": false,
-          "implied": true
+          "implied": false
         },
         "applicationReader": {
           "explicit": false,
-          "implied": true
+          "implied": false
+        },
+        "headless": {
+          "explicit": false,
+          "implied": false
+        }
+      }
+    },
+    {
+      "name": "owner@tenant",
+      "email": "owner@tenant",
+      "roles": {
+        "applicationAdmin": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationOperator": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationDeveloper": {
+          "explicit": false,
+          "implied": false
+        },
+        "applicationReader": {
+          "explicit": false,
+          "implied": false
+        },
+        "headless": {
+          "explicit": false,
+          "implied": false
         }
       }
     },
     {
       "name": "reader@app",
-      "email":"reader@app",
+      "email": "reader@app",
       "roles": {
         "applicationAdmin": {
           "explicit": false,
@@ -70,6 +79,10 @@
         },
         "applicationReader": {
           "explicit": true,
+          "implied": false
+        },
+        "headless": {
+          "explicit": false,
           "implied": false
         }
       }
