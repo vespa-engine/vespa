@@ -95,13 +95,15 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         }
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
-            fieldWriter = AttributeCombinerDFW::create(fieldName, *getEnvironment()->getAttributeManager(), false, std::shared_ptr<StructFieldMapper>());
+            auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
+            fieldWriter = AttributeCombinerDFW::create(fieldName, *attr_ctx, false, std::shared_ptr<StructFieldMapper>());
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedattributeelementsfilter") {
         string source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
-            fieldWriter = AttributeCombinerDFW::create(source_field, *getEnvironment()->getAttributeManager(), true, struct_field_mapper);
+            auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
+            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, struct_field_mapper);
             rc = static_cast<bool>(fieldWriter);
         }
     } else {

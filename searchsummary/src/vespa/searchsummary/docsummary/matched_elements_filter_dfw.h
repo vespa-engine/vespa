@@ -4,6 +4,8 @@
 
 #include "docsumfieldwriter.h"
 
+namespace search::attribute { class IAttributeContext; }
+
 namespace search::docsummary {
 
 /**
@@ -17,7 +19,11 @@ private:
     std::shared_ptr<StructFieldMapper> _struct_field_mapper;
 
 public:
-    MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum);
+    MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
+                             std::shared_ptr<StructFieldMapper> struct_field_mapper);
+    static std::unique_ptr<IDocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
+                                                      search::attribute::IAttributeContext& attr_ctx,
+                                                      std::shared_ptr<StructFieldMapper> struct_field_mapper);
     ~MatchedElementsFilterDFW();
     bool IsGenerated() const override { return false; }
     void insertField(uint32_t docid, GeneralResult* result, GetDocsumsState *state,

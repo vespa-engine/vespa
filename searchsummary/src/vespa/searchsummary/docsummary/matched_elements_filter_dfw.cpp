@@ -2,6 +2,8 @@
 
 #include "docsumstate.h"
 #include "matched_elements_filter_dfw.h"
+#include "struct_fields_resolver.h"
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
@@ -19,12 +21,25 @@ using vespalib::slime::inject;
 
 namespace search::docsummary {
 
-MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum)
+MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
+                                                   std::shared_ptr<StructFieldMapper> struct_field_mapper)
     : _input_field_name(input_field_name),
       _input_field_enum(input_field_enum),
-      _struct_field_mapper(std::make_shared<StructFieldMapper>())
+      _struct_field_mapper(std::move(struct_field_mapper))
 {
-    // TODO: Take struct field mapper in constructor and populate based on available attribute vectors.
+}
+
+std::unique_ptr<IDocsumFieldWriter>
+MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
+                                 search::attribute::IAttributeContext& attr_ctx,
+                                 std::shared_ptr<StructFieldMapper> struct_field_mapper)
+{
+    StructFieldsResolver resolver(input_field_name, attr_ctx, false);
+    if (resolver.has_error()) {
+        return std::unique_ptr<IDocsumFieldWriter>();
+    }
+    resolver.apply_to(*struct_field_mapper);
+    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(struct_field_mapper));
 }
 
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;

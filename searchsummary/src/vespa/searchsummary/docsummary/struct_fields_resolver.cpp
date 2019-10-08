@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "struct_fields_resolver.h"
-#include <vespa/searchlib/attribute/iattributemanager.h>
+#include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/struct_field_mapper.h>
 #include <algorithm>
 
@@ -9,10 +9,12 @@
 LOG_SETUP(".searchsummary.docsummary.struct_fields_resolver");
 
 using search::attribute::CollectionType;
+using search::attribute::IAttributeContext;
 
 namespace search::docsummary {
 
-StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, const IAttributeManager& attr_mgr)
+StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, const IAttributeContext& attr_ctx,
+                                           bool require_all_struct_fields_as_attribute)
     : _field_name(field_name),
       _map_key_attribute(),
       _map_value_fields(),
@@ -23,8 +25,7 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
       _error(false)
 {
     std::vector<const search::attribute::IAttributeVector *> attrs;
-    auto attr_ctx = attr_mgr.createContext();
-    attr_ctx->getAttributeList(attrs);
+    attr_ctx.getAttributeList(attrs);
     vespalib::string prefix = field_name + ".";
     _map_key_attribute = prefix + "key";
     vespalib::string value_prefix = prefix + "value.";
@@ -58,7 +59,7 @@ StructFieldsResolver::StructFieldsResolver(const vespalib::string& field_name, c
             _array_attributes.emplace_back(prefix + field);
         }
 
-        if (!_map_value_fields.empty()) {
+        if (require_all_struct_fields_as_attribute && !_map_value_fields.empty()) {
             if (!_has_map_key) {
                 LOG(warning, "Missing key attribute '%s', have value attributes for map", _map_key_attribute.c_str());
                 _error = true;
@@ -76,7 +77,9 @@ void
 StructFieldsResolver::apply_to(StructFieldMapper& mapper) const
 {
     if (is_map_of_struct()) {
-        mapper.add_mapping(_field_name, _map_key_attribute);
+        if (_has_map_key) {
+            mapper.add_mapping(_field_name, _map_key_attribute);
+        }
         for (const auto& sub_field : _map_value_attributes) {
             mapper.add_mapping(_field_name, sub_field);
         }

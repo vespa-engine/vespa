@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace search {
-class IAttributeManager;
+namespace attribute { class IAttributeContext; }
 class StructFieldMapper;
 }
 
@@ -29,7 +29,8 @@ private:
     bool _error;
 
 public:
-    StructFieldsResolver(const vespalib::string& field_name, const IAttributeManager& attr_mgr);
+    StructFieldsResolver(const vespalib::string& field_name, const search::attribute::IAttributeContext& attr_ctx,
+                         bool require_all_struct_fields_as_attributes);
     ~StructFieldsResolver();
     bool is_map_of_struct() const { return !_map_value_fields.empty(); }
     const vespalib::string& get_map_key_attribute() const { return _map_key_attribute; }

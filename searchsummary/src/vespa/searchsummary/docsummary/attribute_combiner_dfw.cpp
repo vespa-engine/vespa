@@ -12,6 +12,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchsummary.docsummary.attribute_combiner_dfw");
 
+using search::attribute::IAttributeContext;
+
 namespace search::docsummary {
 
 AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper)
@@ -39,9 +41,9 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 std::unique_ptr<IDocsumFieldWriter>
-AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeManager &attrMgr, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper)
+AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContext &attrCtx, bool filter_elements, std::shared_ptr<StructFieldMapper> struct_field_mapper)
 {
-    StructFieldsResolver structFields(fieldName, attrMgr);
+    StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {
         return std::unique_ptr<IDocsumFieldWriter>();
     } else if (structFields.is_map_of_struct()) {

@@ -217,7 +217,7 @@ AttributeCombinerTest::set_field(const vespalib::string &field_name, bool filter
     if (filter_elements) {
         _struct_field_mapper = std::make_shared<search::StructFieldMapper>();
     }
-    writer = AttributeCombinerDFW::create(field_name, attrs.mgr, filter_elements, _struct_field_mapper);
+    writer = AttributeCombinerDFW::create(field_name, *state._attrCtx, filter_elements, _struct_field_mapper);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
 }
