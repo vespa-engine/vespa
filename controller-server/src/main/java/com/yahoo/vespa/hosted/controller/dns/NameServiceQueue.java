@@ -74,7 +74,6 @@ public class NameServiceQueue {
         var queue = new NameServiceQueue(requests);
         for (int i = 0; i < n && !queue.requests.isEmpty(); i++) {
             var request = queue.requests.peek();
-            log.log(LogLevel.INFO, "Dispatching name service request: " + request);
             try {
                 request.dispatchTo(nameService);
                 queue.requests.poll();
