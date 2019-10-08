@@ -1386,6 +1386,7 @@
       "public static varargs com.yahoo.tensor.TensorType$Value combinedValueType(com.yahoo.tensor.TensorType[])",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public com.yahoo.tensor.TensorType$Value valueType()",
+      "public com.yahoo.tensor.TensorType mappedSubtype()",
       "public int rank()",
       "public java.util.List dimensions()",
       "public java.util.Set dimensionNames()",

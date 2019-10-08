@@ -50,6 +50,7 @@ import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MappedTensor;
+import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
@@ -152,6 +153,8 @@ public class JsonReaderTestCase {
         }
         {
             DocumentType x = new DocumentType("testtensor");
+            x.addField(new Field("sparse_single_dimension_tensor",
+                                 new TensorDataType(new TensorType.Builder().mapped("x").build())));
             x.addField(new Field("sparse_tensor",
                                  new TensorDataType(new TensorType.Builder().mapped("x").mapped("y").build())));
             x.addField(new Field("dense_tensor",
@@ -1314,6 +1317,46 @@ public class JsonReaderTestCase {
     }
 
     @Test
+    public void testParsingOfMixedTensorOnMixedForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+
+        String mixedJson = "{\"blocks\":[" +
+                           "{\"address\":{\"x\":\"0\"},\"values\":[2.0,3.0,4.0]}," +
+                           "{\"address\":{\"x\":\"1\"},\"values\":[5.0,6.0,7.0]}" +
+                           "]}";
+        Tensor tensor = assertTensorField(expected,
+                                          createPutWithTensor(inputJson(mixedJson), "mixed_tensor"), "mixed_tensor");
+        assertTrue(tensor instanceof MixedTensor); // this matters for performance
+    }
+
+    @Test
+    public void testMixedTensorInMixedFormWithSingleSparseDimensionShortForm() {
+        Tensor.Builder builder = Tensor.Builder.of(TensorType.fromSpec("tensor(x{},y[3])"));
+        builder.cell().label("x", 0).label("y", 0).value(2.0);
+        builder.cell().label("x", 0).label("y", 1).value(3.0);
+        builder.cell().label("x", 0).label("y", 2).value(4.0);
+        builder.cell().label("x", 1).label("y", 0).value(5.0);
+        builder.cell().label("x", 1).label("y", 1).value(6.0);
+        builder.cell().label("x", 1).label("y", 2).value(7.0);
+        Tensor expected = builder.build();
+
+        String mixedJson = "{\"blocks\":{" +
+                           "\"0\":[2.0,3.0,4.0]," +
+                           "\"1\":[5.0,6.0,7.0]" +
+                           "}}";
+        Tensor tensor = assertTensorField(expected,
+                                          createPutWithTensor(inputJson(mixedJson), "mixed_tensor"), "mixed_tensor");
+        assertTrue(tensor instanceof MixedTensor); // this matters for performance
+    }
+
+    @Test
     public void testParsingOfTensorWithSingleCellInDifferentJsonOrder() {
         assertSparseTensorField("{{x:a,y:b}:2.0}",
                                 createPutWithSparseTensor(inputJson("{",
@@ -1515,6 +1558,15 @@ public class JsonReaderTestCase {
                         "  'cells': [",
                         "    { 'address': { 'x': 'a', 'y': 'b' }, 'value': 2.0 },",
                         "    { 'address': { 'x': 'c', 'y': 'd' }, 'value': 3.0 } ]}"));
+    }
+
+    @Test
+    public void tensor_add_update_on_sparse_tensor_with_single_dimension_short_form() {
+        assertTensorAddUpdate("{{x:a}:2.0, {x:c}: 3.0}", "sparse_single_dimension_tensor",
+                              inputJson("{",
+                                        "  'cells': {",
+                                        "    'a': 2.0,",
+                                        "    'c': 3.0 }}"));
     }
 
     @Test
