@@ -49,12 +49,6 @@ struct SlimeValue {
         size_t used = JsonFormat::decode(json_input, slime);
         EXPECT_GT(used, 0);
     }
-    SlimeValue(const Slime& slime_with_raw_field)
-        : slime()
-    {
-        size_t used = BinaryFormat::decode(slime_with_raw_field.get().asString(), slime);
-        EXPECT_GT(used, 0);
-    }
 };
 
 StructDataType::UP
@@ -189,7 +183,7 @@ private:
     AttributeContext _attr_ctx;
     std::shared_ptr<StructFieldMapper> _mapper;
 
-    SlimeValue run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
+    Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
         auto writer = make_field_writer(input_field_name);
         GeneralResult result(_doc_store.get_class());
         result.inplaceUnpack(_doc_store.getMappedDocsum());
@@ -199,7 +193,7 @@ private:
         SlimeInserter inserter(slime);
 
         writer->insertField(doc_id, &result, &state, ResType::RES_JSONSTRING, inserter);
-        return SlimeValue(slime);
+        return slime;
     }
 
 public:
@@ -217,9 +211,9 @@ public:
                                                 _attr_ctx, _mapper);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
-        SlimeValue act = run_filter_field_writer(input_field_name, matching_elements);
+        Slime act = run_filter_field_writer(input_field_name, matching_elements);
         SlimeValue exp(exp_slime_as_json);
-        EXPECT_EQ(exp.slime, act.slime);
+        EXPECT_EQ(exp.slime, act);
     }
     const StructFieldMapper& mapper() const { return *_mapper; }
 };

@@ -71,14 +71,6 @@ filter_matching_elements_in_input_field(const Slime& input_field, const std::vec
     }
 }
 
-void
-encode_output_field(const Slime& output_field, Inserter& target)
-{
-    vespalib::SmartBuffer buf(4096);
-    BinaryFormat::encode(output_field, buf);
-    target.insertString(buf.obtain());
-}
-
 }
 
 void
@@ -95,7 +87,7 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, GeneralResult* result, Get
         Slime output_field;
         filter_matching_elements_in_input_field(input_field, state->get_matching_elements(*_struct_field_mapper).get_matching_elements(docid, _input_field_name), output_field);
 
-        encode_output_field(output_field, target);
+        inject(output_field.get(), target);
     }
 }
 
