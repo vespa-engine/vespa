@@ -8,41 +8,20 @@
     "gitBranch": "master",
     "gitCommit": "commit1"
   },
-  "projectId": 1,
+  "projectId": 123,
+  "deploying": {
+    "revision": {
+      "buildNumber": "(ignore)",
+      "hash": "(ignore)",
+      "source": {
+        "gitRepository": "repository1",
+        "gitBranch": "master",
+        "gitCommit": "commit1"
+      }
+    }
+  },
   "deployedInternally": false,
   "deploymentJobs": [
-    {
-      "type": "component",
-      "success": true,
-      "lastCompleted": {
-        "id": 101,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Application commit",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 101,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Application commit",
-        "at": "(ignore)"
-      }
-    },
     {
       "type": "system-test",
       "success": true,
@@ -50,6 +29,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -57,13 +37,14 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing last changes outside prod",
         "at": "(ignore)"
       },
       "lastCompleted": {
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -71,13 +52,14 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing last changes outside prod",
         "at": "(ignore)"
       },
       "lastSuccess": {
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -85,7 +67,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing last changes outside prod",
         "at": "(ignore)"
       }
     },
@@ -96,6 +78,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -103,13 +86,14 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -117,13 +101,14 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -131,17 +116,18 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-central-1 (platform 6.1, application 1.0.42-commit1)",
         "at": "(ignore)"
       }
     },
     {
-      "type": "production-us-west-1",
-      "success": true,
+      "type": "production-us-central-1",
+      "success": false,
       "lastTriggered": {
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -156,6 +142,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -166,10 +153,11 @@
         "reason": "New change available",
         "at": "(ignore)"
       },
-      "lastSuccess": {
+      "firstFailing": {
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -178,63 +166,47 @@
           }
         },
         "reason": "New change available",
-        "at": "(ignore)"
-      }
-    },
-    {
-      "type": "production-us-east-3",
-      "success": true,
-      "lastTriggered": {
-        "id": -1,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Available change in production-us-west-1",
-        "at": "(ignore)"
-      },
-      "lastCompleted": {
-        "id": 42,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Available change in production-us-west-1",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 42,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Available change in production-us-west-1",
         "at": "(ignore)"
       }
     }
   ],
-  "changeBlockers": [],
-  "compileVersion": "(ignore)",
+  "changeBlockers": [
+    {
+      "versions": true,
+      "revisions": false,
+      "timeZone": "UTC",
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "hours": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    }
+  ],
+  "compileVersion": "6.0.0",
   "globalRotations": [
     "https://application1--tenant1.global.vespa.oath.cloud:4443/"
   ],
   "rotationId": "rotation-id-1",
   "instances": [
+    {
+      "environment": "dev",
+      "region": "us-west-1",
+      "instance": "instance1",
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/dev/region/us-west-1"
+    },
     {
       "bcpStatus": {
         "rotationStatus": "IN"
@@ -246,24 +218,9 @@
         }
       ],
       "environment": "prod",
-      "region": "us-west-1",
+      "region": "us-central-1",
       "instance": "instance1",
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1"
-    },
-    {
-      "bcpStatus": {
-        "rotationStatus": "UNKNOWN"
-      },
-      "endpointStatus": [
-        {
-          "endpointId": "default",
-          "status": "UNKNOWN"
-        }
-      ],
-      "environment": "prod",
-      "region": "us-east-3",
-      "instance": "instance1",
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-east-3"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1"
     }
   ],
   "pemDeployKeys": [],

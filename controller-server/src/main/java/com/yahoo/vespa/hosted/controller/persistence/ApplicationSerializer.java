@@ -75,6 +75,7 @@ public class ApplicationSerializer {
     private static final String instancesField = "instances";
     private static final String deployingField = "deployingField";
     private static final String projectIdField = "projectId";
+    private static final String latestVersionField = "latestVersion";
     private static final String builtInternallyField = "builtInternally";
     private static final String pinnedField = "pinned";
     private static final String outstandingChangeField = "outstandingChangeField";
@@ -181,6 +182,7 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
+        application.latestVersion().ifPresent(version -> toSlime(version, root.setObject(latestVersionField)));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
     }
@@ -360,11 +362,23 @@ public class ApplicationSerializer {
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
+        Optional<ApplicationVersion> latestVersion = latestVersionFromSlimeWithFallback(root.field(latestVersionField), instances);
         boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               deployKeys, projectId, builtInternally, instances);
+                               deployKeys, projectId, builtInternally, latestVersion, instances);
+    }
+
+    private Optional<ApplicationVersion> latestVersionFromSlimeWithFallback(Inspector latestVersionObject, List<Instance> instances) {
+        if (latestVersionObject.valid())
+            return Optional.of(applicationVersionFromSlime(latestVersionObject));
+
+        return instances.stream()
+                        .flatMap(instance -> instance.deploymentJobs().statusOf(JobType.component).stream())
+                        .flatMap(status -> status.lastSuccess().stream())
+                        .map(JobStatus.JobRun::application)
+                .findFirst();
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {

@@ -3,8 +3,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -70,10 +72,12 @@ public class MetricsReporter extends Maintainer {
     }
 
     private void reportDeploymentMetrics() {
-        List<Instance> instances = ApplicationList.from(controller().applications().asList())
-                                                  .withProductionDeployment().asList().stream()
-                                                  .flatMap(application -> application.instances().values().stream())
-                                                  .collect(Collectors.toUnmodifiableList());
+        List<Application> applications = ApplicationList.from(controller().applications().asList())
+                                                        .withProductionDeployment().asList().stream()
+                                                        .collect(Collectors.toUnmodifiableList());
+        List<Instance> instances = applications.stream()
+                                              .flatMap(application -> application.instances().values().stream())
+                                              .collect(Collectors.toUnmodifiableList());
 
         metric.set(DEPLOYMENT_FAIL_METRIC, deploymentFailRatio(instances) * 100, metric.createContext(Map.of()));
 
@@ -89,13 +93,12 @@ public class MetricsReporter extends Maintainer {
             metric.set(DEPLOYMENT_WARNINGS, warnings, metric.createContext(dimensions(application)));
         });
 
-        for (Instance instance : instances)
-            instance.deploymentJobs().statusOf(JobType.component)
-                    .flatMap(JobStatus::lastSuccess)
-                    .flatMap(run -> run.application().buildTime())
+        for (Application application : applications)
+            application.latestVersion()
+                    .flatMap(ApplicationVersion::buildTime)
                     .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
-                                                          metric.createContext(dimensions(instance.id()))));
+                                                          metric.createContext(dimensions(application.id().defaultInstance()))));
     }
 
     private void reportQueuedNameServiceRequests() {

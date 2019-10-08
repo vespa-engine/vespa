@@ -2,19 +2,18 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.EnvironmentId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 
 import java.net.URI;
-import java.util.List;
 
 /**
- * @author mortent
+ * @author jonmv
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class InstanceReference {
-
-    public List<DeploymentReference> deployments;
-    public InstanceId instance;
+public class DeploymentReference {
+    public EnvironmentId environment;
+    public RegionId region;
 
     public URI url;
 

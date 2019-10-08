@@ -102,7 +102,7 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
 
         Cursor lastVersionsObject = responseObject.setObject("lastVersions");
-        if (instance.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).isPresent()) {
+        if (application.latestVersion().isPresent()) {
             lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, instance, change, steps);
             lastApplicationToSlime(lastVersionsObject.setObject("application"), application, instance, change, steps, controller);
         }
@@ -192,9 +192,9 @@ class JobControllerApiHandlerHelper {
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Instance instance, Change change, DeploymentSteps steps, Controller controller) {
         long completed;
-        ApplicationVersion lastApplication = instance.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().application();
+        ApplicationVersion lastApplication = application.latestVersion().get();
         applicationVersionToSlime(lastApplicationObject.setObject("application"), lastApplication);
-        lastApplicationObject.setLong("at", instance.deploymentJobs().statusOf(component).flatMap(JobStatus::lastSuccess).get().at().toEpochMilli());
+        lastApplicationObject.setLong("at", lastApplication.buildTime().get().toEpochMilli());
         completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type)).count();
         if (Optional.of(lastApplication).equals(change.application()))
             lastApplicationObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");

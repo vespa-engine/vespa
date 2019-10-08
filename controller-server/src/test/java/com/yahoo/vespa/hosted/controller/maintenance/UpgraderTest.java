@@ -592,7 +592,7 @@ public class UpgraderTest {
         tester.jobCompletion(component).application(default2).nextBuildNumber().uploadArtifact(canaryPolicy).unsuccessful().submit();
         tester.jobCompletion(component).application(default3).nextBuildNumber(2).uploadArtifact(canaryPolicy).unsuccessful().submit();
         tester.upgradeSystem(version);
-        assertEquals(VespaVersion.Confidence.normal, tester.controller().versionStatus().systemVersion().get().confidence());
+        assertEquals(VespaVersion.Confidence.high, tester.controller().versionStatus().systemVersion().get().confidence());
     }
 
     @Test

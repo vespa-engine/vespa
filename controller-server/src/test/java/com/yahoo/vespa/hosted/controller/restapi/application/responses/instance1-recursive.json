@@ -11,6 +11,7 @@
   "projectId": 123,
   "deploying": {
     "revision": {
+      "buildNumber": "(ignore)",
       "hash": "(ignore)",
       "source": {
         "gitRepository": "repository1",
@@ -22,44 +23,13 @@
   "deployedInternally": false,
   "deploymentJobs": [
     {
-      "type": "component",
-      "success": true,
-      "lastCompleted": {
-        "id": 42,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Application commit",
-        "at": "(ignore)"
-      },
-      "lastSuccess": {
-        "id": 42,
-        "version": "(ignore)",
-        "revision": {
-          "hash": "(ignore)",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
-          }
-        },
-        "reason": "Application commit",
-        "at": "(ignore)"
-      }
-    },
-    {
       "type": "system-test",
       "success": true,
       "lastTriggered": {
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -74,6 +44,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -88,6 +59,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -106,6 +78,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -120,6 +93,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -134,6 +108,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -152,6 +127,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -166,6 +142,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
@@ -180,6 +157,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "(ignore)",
           "source": {
             "gitRepository": "repository1",
