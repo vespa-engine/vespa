@@ -31,6 +31,7 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
 
     // TODO These hardcoded headers should be provided by config instead
     private static final String HEADER_NAME_X_FORWARDED_FOR = "x-forwarded-for";
+    private static final String HEADER_NAME_X_FORWARDED_PORT = "X-Forwarded-Port";
     private static final String HEADER_NAME_Y_RA = "y-ra";
     private static final String HEADER_NAME_Y_RP = "y-rp";
     private static final String HEADER_NAME_YAHOOREMOTEIP = "yahooremoteip";
@@ -127,7 +128,8 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     }
 
     private static int getRemotePort(final HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP))
+        return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_PORT))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RP)))
                 .map(Integer::valueOf)
                 .orElseGet(request::getRemotePort);
     }
