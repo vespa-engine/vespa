@@ -192,7 +192,7 @@ public class AbiCheck extends AbstractMojo {
       } else {
         Map<String, JavaClassSignature> abiSpec = readSpec(specFile);
         if (!compareSignatures(abiSpec, signatures, getLog())) {
-          throw new MojoFailureException("ABI spec mismatch. To update run 'mvn package -Dabicheck.writeSpec'");
+          throw new MojoFailureException("ABI spec mismatch");
         }
       }
     } catch (IOException e) {

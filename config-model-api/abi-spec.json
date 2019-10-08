@@ -187,35 +187,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.application.api.DeploymentInstanceSpec": {
-    "superClass": "com.yahoo.config.application.api.DeploymentSpec$Step",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
-      "public com.yahoo.config.provision.InstanceName name()",
-      "public java.time.Duration delay()",
-      "public java.util.List steps()",
-      "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
-      "public java.util.List changeBlocker()",
-      "public java.util.Optional globalServiceId()",
-      "public boolean canUpgradeAt(java.time.Instant)",
-      "public boolean canChangeRevisionAt(java.time.Instant)",
-      "public java.util.List zones()",
-      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
-      "public java.util.Optional athenzDomain()",
-      "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
-      "public com.yahoo.config.application.api.Notifications notifications()",
-      "public java.util.List endpoints()",
-      "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
   "com.yahoo.config.application.api.DeploymentSpec$ChangeBlocker": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -226,8 +197,7 @@
       "public void <init>(boolean, boolean, com.yahoo.config.application.api.TimeWindow)",
       "public boolean blocksRevisions()",
       "public boolean blocksVersions()",
-      "public com.yahoo.config.application.api.TimeWindow window()",
-      "public java.lang.String toString()"
+      "public com.yahoo.config.application.api.TimeWindow window()"
     ],
     "fields": []
   },
@@ -264,9 +234,7 @@
     "methods": [
       "public void <init>(java.time.Duration)",
       "public java.time.Duration duration()",
-      "public java.time.Duration delay()",
-      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
-      "public java.lang.String toString()"
+      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)"
     ],
     "fields": []
   },
@@ -279,11 +247,9 @@
     "methods": [
       "public void <init>(java.util.List)",
       "public java.util.List zones()",
-      "public java.util.List steps()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
+      "public int hashCode()"
     ],
     "fields": []
   },
@@ -298,9 +264,7 @@
       "public void <init>()",
       "public final boolean deploysTo(com.yahoo.config.provision.Environment)",
       "public abstract boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
-      "public java.util.List zones()",
-      "public java.time.Duration delay()",
-      "public java.util.List steps()"
+      "public java.util.List zones()"
     ],
     "fields": []
   },
@@ -329,7 +293,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.lang.String)",
       "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public java.util.Optional globalServiceId()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
@@ -339,21 +302,16 @@
       "public java.util.List changeBlocker()",
       "public java.util.List steps()",
       "public java.util.List zones()",
-      "public java.util.Optional athenzDomain()",
-      "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
-      "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
       "public java.lang.String xmlForm()",
       "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
-      "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
-      "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
-      "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(com.yahoo.config.provision.InstanceName)",
-      "public java.util.List instances()",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.io.Reader)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String, boolean)",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
+      "public java.util.Optional athenzDomain()",
+      "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public static void main(java.lang.String[])"

@@ -5,6 +5,7 @@ package com.yahoo.config.provision;
  * Environments in hosted Vespa.
  *
  * @author bratseth
+ * @since 5.11
  */
 public enum Environment {
 
