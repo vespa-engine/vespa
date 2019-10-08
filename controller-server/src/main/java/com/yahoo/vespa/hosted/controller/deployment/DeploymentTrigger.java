@@ -98,6 +98,32 @@ public class DeploymentTrigger {
         return new DeploymentSteps(spec, controller::system);
     }
 
+    public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
+        if (applications().getApplication(id).isEmpty()) {
+            log.log(LogLevel.WARNING, "Ignoring submission from project '" + projectId +
+                                      "': Unknown application '" + id + "'");
+            return;
+        }
+
+        applications().lockApplicationOrThrow(id, application -> {
+            if (acceptNewApplicationVersion(application.get())) {
+                application = application.withChange(application.get().change().with(version))
+                                         .withOutstandingChange(Change.empty());
+                if (application.get().internal())
+                    for (Run run : jobs.active())
+                        if (   ! run.id().type().environment().isManuallyDeployed()
+                            && TenantAndApplicationId.from(run.id().application()).equals(id))
+                            jobs.abort(run.id());
+            }
+            else
+                application = application.withOutstandingChange(Change.of(version));
+
+            application = application.withProjectId(OptionalLong.of(projectId));
+            application = application.withNewSubmission(version);
+            applications().store(application.withChange(remainingChange(application.get())));
+        });
+    }
+
     /**
      * Records information when a job completes (successfully or not). This information is used when deciding what to
      * trigger next.
@@ -116,40 +142,22 @@ public class DeploymentTrigger {
         }
 
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(report.applicationId()), application -> {
-            JobRun triggering;
-            // TODO jonmv: Remove this, and replace with a simple application version counter.
             if (report.jobType() == component) {
-                ApplicationVersion applicationVersion = report.version().get();
-                triggering = JobRun.triggering(applications().oldestInstalledPlatform(TenantAndApplicationId.from(report.applicationId())),
-                                               applicationVersion,
-                                               Optional.empty(), Optional.empty(), "Application commit", clock.instant());
-                if (report.success()) {
-                    if (acceptNewApplicationVersion(application.get())) {
-                        application = application.withChange(application.get().change().with(applicationVersion))
-                                                 .withOutstandingChange(Change.empty());
-                        if (application.get().internal())
-                            for (Run run : jobs.active())
-                                if (run.id().application().equals(report.applicationId()))
-                                    jobs.abort(run.id());
-                    }
-                    else
-                        application = application.withOutstandingChange(Change.of(applicationVersion));
-                }
-                application = application.withProjectId(OptionalLong.of(report.projectId()));
+                notifyOfSubmission(application.get().id(), report.version().get(), report.projectId());
+                return;
             }
-            else {
-                Optional<JobStatus> status = application.get().require(report.applicationId().instance())
-                                                        .deploymentJobs().statusOf(report.jobType());
-                triggering = status.filter(job ->    job.lastTriggered().isPresent()
-                                                  && job.lastCompleted()
-                                                        .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
-                                                        .orElse(true))
-                                   .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
-                                                                                report.applicationId() + ", but that has not been triggered; last was " +
-                                                                                status.flatMap(job -> job.lastTriggered().map(run -> run.at().toString()))
-                                                                                      .orElse("never")))
-                                   .lastTriggered().get();
-            }
+            JobRun triggering;
+            Optional<JobStatus> status = application.get().require(report.applicationId().instance())
+                                                    .deploymentJobs().statusOf(report.jobType());
+            triggering = status.filter(job ->    job.lastTriggered().isPresent()
+                                              && job.lastCompleted()
+                                                    .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
+                                                    .orElse(true))
+                               .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
+                                                                            report.applicationId() + ", but that has not been triggered; last was " +
+                                                                            status.flatMap(job -> job.lastTriggered().map(run -> run.at().toString()))
+                                                                                  .orElse("never")))
+                               .lastTriggered().get();
 
             application = application.with(report.applicationId().instance(),
                                            instance -> instance.withJobCompletion(report.jobType(),

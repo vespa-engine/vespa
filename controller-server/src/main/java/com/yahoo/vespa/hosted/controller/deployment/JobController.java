@@ -289,7 +289,9 @@ public class JobController {
             if ( ! application.get().internal())
                 application = registered(application);
 
-            long run = nextBuild(id);
+            long run = 1 + application.get().latestVersion()
+                                      .map(latestVersion -> latestVersion.buildNumber().getAsLong())
+                                      .orElse(0L);
             if (applicationPackage.compileVersion().isPresent() && applicationPackage.buildTime().isPresent())
                 version.set(ApplicationVersion.from(revision, run, authorEmail,
                                                     applicationPackage.compileVersion().get(),
@@ -485,15 +487,6 @@ public class JobController {
         return Stream.concat(Stream.of(type.zone(controller.system())),
                              controller.applications().requireInstance(id).productionDeployments().keySet().stream())
                      .collect(Collectors.toSet());
-    }
-
-    // TODO jvenstad: Find a more appropriate way of doing this, at least when this is the only build service.
-    private long nextBuild(ApplicationId id) {
-        return 1 + controller.applications().requireInstance(id).deploymentJobs()
-                             .statusOf(JobType.component)
-                             .flatMap(JobStatus::lastCompleted)
-                             .map(JobStatus.JobRun::id)
-                             .orElse(0L);
     }
 
     private void prunePackages(ApplicationId id) {

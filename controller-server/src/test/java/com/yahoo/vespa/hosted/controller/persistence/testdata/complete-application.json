@@ -360,6 +360,14 @@
               "version": "6.174.156",
               "upgrade": false,
               "reason": "Application commit",
+              "revision": {
+                "applicationBuildNumber": 123,
+                "sourceRevision": {
+                  "repositoryField": "git@git.host:user/repo.git",
+                  "branchField": "origin/master",
+                  "commitField": "49cd7bbb1ed9f4b922083cb042590b0885ffe22b"
+                }
+              },
               "at": 1511217733555
             }
           },

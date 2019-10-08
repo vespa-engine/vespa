@@ -82,7 +82,7 @@ public class Application {
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.internal = internal;
-        this.latestVersion = Objects.requireNonNull(latestVersion, "latestVersion cannot be null");
+        this.latestVersion = requireNotUnknown(latestVersion);
         this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
     }
 
@@ -198,6 +198,15 @@ public class Application {
 
     /** Returns the set of deploy keys for this application. */
     public Set<PublicKey> deployKeys() { return deployKeys; }
+
+    private static Optional<ApplicationVersion> requireNotUnknown(Optional<ApplicationVersion> latestVersion) {
+        Objects.requireNonNull(latestVersion, "latestVersion cannot be null");
+        latestVersion.ifPresent(version -> {
+            if (version.isUnknown())
+                throw new IllegalArgumentException("latstVersion cannot be unknown");
+        });
+        return latestVersion;
+    }
 
     @Override
     public boolean equals(Object o) {
