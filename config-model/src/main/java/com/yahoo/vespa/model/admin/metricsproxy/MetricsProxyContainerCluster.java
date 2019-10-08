@@ -155,6 +155,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         super.getConfig(builder);
         // This takes effect via vespa-start-container-daemon:configure_gcopts
         builder.jvm.verbosegc(false);
+        builder.jvm.availableProcessors(2);
     }
 
     @Override
