@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attribute_combiner_dfw.h"
 #include "docsumconfig.h"
 #include "docsumwriter.h"
+#include "geoposdfw.h"
 #include "idocsumenvironment.h"
+#include "juniperdfw.h"
+#include "matched_elements_filter_dfw.h"
+#include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "textextractordfw.h"
-#include "geoposdfw.h"
-#include "positionsdfw.h"
-#include "juniperdfw.h"
-#include "attribute_combiner_dfw.h"
 #include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -104,6 +105,14 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
             fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, struct_field_mapper);
+            rc = static_cast<bool>(fieldWriter);
+        }
+    } else if (overrideName == "matchedelementsfilter") {
+        string source_field = argument.empty() ? fieldName : argument;
+        if (getEnvironment() && getEnvironment()->getAttributeManager()) {
+            auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
+            fieldWriter = MatchedElementsFilterDFW::create(source_field, resultConfig.GetFieldNameEnum().Lookup(source_field.c_str()),
+                                                           *attr_ctx, struct_field_mapper);
             rc = static_cast<bool>(fieldWriter);
         }
     } else {
