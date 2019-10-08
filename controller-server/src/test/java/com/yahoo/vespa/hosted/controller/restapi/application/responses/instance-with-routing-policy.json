@@ -18,6 +18,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -32,6 +33,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -46,6 +48,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -64,6 +67,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -78,6 +82,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -92,6 +97,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -110,6 +116,7 @@
         "id": -1,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -124,6 +131,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -138,6 +146,7 @@
         "id": 42,
         "version": "(ignore)",
         "revision": {
+          "buildNumber": "(ignore)",
           "hash": "1.0.42-commit1",
           "source": {
             "gitRepository": "repository1",
@@ -160,7 +169,7 @@
       "environment": "prod",
       "region": "us-west-1",
       "instance": "default",
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default"
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/environment/prod/region/us-west-1"
     }
   ],
   "pemDeployKeys": [],

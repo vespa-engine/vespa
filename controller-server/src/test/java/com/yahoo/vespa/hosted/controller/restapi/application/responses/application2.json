@@ -1,12 +1,15 @@
 {
   "tenant": "tenant2",
   "application": "application2",
-  "instance": "default",
-  "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/instance/default/job/",
-  "source": {
-    "gitRepository": "repository1",
-    "gitBranch": "master",
-    "gitCommit": "commit1"
+  "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/job/",
+  "latestVersion": {
+    "buildNumber": 42,
+    "hash": "1.0.42-commit1",
+    "source": {
+      "gitRepository": "repository1",
+      "gitBranch": "master",
+      "gitCommit": "commit1"
+    }
   },
   "projectId": 456,
   "deploying": {
@@ -14,6 +17,7 @@
   },
   "outstandingChange": {
     "revision": {
+      "buildNumber": 42,
       "hash": "(ignore)",
       "source": {
         "gitRepository": "repository1",
@@ -22,31 +26,36 @@
       }
     }
   },
-  "deployedInternally": false,
-  "deploymentJobs": [
+  "compileVersion": "6.1.0",
+  "instances": [
     {
-      "type": "system-test",
-      "success": false,
-      "lastTriggered": {
-        "id": -1,
-        "version": "7.0.0",
-        "revision": {
-          "hash": "1.0.42-commit1",
-          "source": {
-            "gitRepository": "repository1",
-            "gitBranch": "master",
-            "gitCommit": "commit1"
+      "instance": "default",
+      "deploymentJobs": [
+        {
+          "type": "system-test",
+          "success": false,
+          "lastTriggered": {
+            "id": -1,
+            "version": "7.0.0",
+            "revision": {
+              "buildNumber": 42,
+              "hash": "1.0.42-commit1",
+              "source": {
+                "gitRepository": "repository1",
+                "gitBranch": "master",
+                "gitCommit": "commit1"
+              }
+            },
+            "reason": "Testing last changes outside prod",
+            "at": "(ignore)"
           }
-        },
-        "reason": "Testing last changes outside prod",
-        "at": "(ignore)"
-      }
+        }
+      ],
+      "changeBlockers": [],
+      "globalRotations": [],
+      "deployments": []
     }
   ],
-  "changeBlockers": [],
-  "compileVersion": "6.1.0",
-  "globalRotations": [],
-  "instances": [],
   "pemDeployKeys": [],
   "metrics": {
     "queryServiceQuality": 0.0,

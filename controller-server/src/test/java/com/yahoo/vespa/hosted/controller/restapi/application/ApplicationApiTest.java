@@ -206,17 +206,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference.json"));
+                              new File("instance-reference.json"));
         // GET a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", GET).userIdentity(USER_ID),
                               new File("tenant-with-application.json"));
 
         // GET tenant applications
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/", GET).userIdentity(USER_ID),
-                              new File("application-list.json"));
+                              new File("instance-list.json"));
         // GET tenant applications (instances of "application1" only)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/", GET).userIdentity(USER_ID),
-                              new File("application-list.json"));
+                              new File("instance-list.json"));
 
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
@@ -312,7 +312,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference-2.json"));
+                              new File("instance-reference-2.json"));
 
         ApplicationId app2 = ApplicationId.from("tenant2", "application2", "default");
         long screwdriverProjectId2 = 456;
@@ -394,7 +394,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // GET tenant application deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
-                              new File("application.json"));
+                              new File("instance.json"));
         // GET an application deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
@@ -420,7 +420,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
                                       .userIdentity(USER_ID)
                                       .recursive("true"),
-                              new File("application1-recursive.json"));
+                              new File("instance1-recursive.json"));
 
         // GET nodes
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/nodes", GET)
@@ -845,7 +845,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference.json"));
+                              new File("instance-reference.json"));
 
         // Grant deploy access
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
@@ -936,7 +936,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         setDeploymentMaintainedInfo(controllerTester);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
                                       .userIdentity(USER_ID),
-                              new File("application-without-change-multiple-deployments.json"));
+                              new File("instance-without-change-multiple-deployments.json"));
     }
 
     @Test
@@ -958,7 +958,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/doesnotexist/application/doesnotexist/metering", GET)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application1-metering.json"));
+                              new File("instance1-metering.json"));
     }
 
     @Test
@@ -1043,7 +1043,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference.json"));
+                              new File("instance-reference.json"));
 
         // Create the same application again
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
@@ -1172,7 +1172,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference.json"),
+                              new File("instance-reference.json"),
                               200);
 
         // Deploy to an authorized zone by a user tenant is disallowed
@@ -1193,7 +1193,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", POST)
                                       .userIdentity(authorizedUser)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference-default.json"),
+                              new File("instance-reference-default.json"),
                               200);
 
         // Deleting the application when more than one instance is present is forbidden
@@ -1538,9 +1538,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.controller().curator().writeRoutingPolicies(app.id().defaultInstance(), Set.of(policy));
 
         // GET application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", GET)
                                       .userIdentity(USER_ID),
-                              new File("application-with-routing-policy.json"));
+                              new File("instance-with-routing-policy.json"));
 
         // GET deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/default", GET)
@@ -1670,7 +1670,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
-                              new File("application-reference.json"));
+                              new File("instance-reference.json"));
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN,
                                        new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
 

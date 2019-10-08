@@ -4,6 +4,6 @@
   "athensDomain": "domain1",
   "property": "property1",
   "applications": [
-    @include(application1-recursive.json)
+    @include(instance1-recursive.json)
   ]
 }
