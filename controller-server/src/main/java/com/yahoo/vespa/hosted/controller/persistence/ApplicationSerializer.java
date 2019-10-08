@@ -378,7 +378,7 @@ public class ApplicationSerializer {
                         .flatMap(instance -> instance.deploymentJobs().statusOf(JobType.component).stream())
                         .flatMap(status -> status.lastSuccess().stream())
                         .map(JobStatus.JobRun::application)
-                .findFirst();
+                        .findFirst();
     }
 
     private List<Instance> instancesFromSlime(TenantAndApplicationId id, DeploymentSpec deploymentSpec, Inspector field) {

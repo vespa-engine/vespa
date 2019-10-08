@@ -676,7 +676,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE submission to unsubscribe from continuous deployment.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"message\":\"Unregistered 'tenant1.application1.instance1' from internal deployment pipeline.\"}");
+                              "{\"message\":\"Unregistered 'tenant1.application1' from internal deployment pipeline.\"}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/jobreport", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)

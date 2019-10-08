@@ -50,6 +50,7 @@ import java.util.concurrent.Future;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.publicCdApplicationPackage;
@@ -104,7 +105,7 @@ public class InternalStepRunnerTest {
 
         tester.deployNewPlatform(new Version("7.2"));
 
-        tester.jobs().unregister(instanceId);
+        tester.jobs().unregister(appId);
         try {
             tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 1);
             throw new IllegalStateException("Component job should get even again with build numbers to produce a change.");

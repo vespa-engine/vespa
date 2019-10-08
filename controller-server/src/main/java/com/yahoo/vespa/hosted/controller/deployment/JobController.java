@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -282,10 +283,10 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(ApplicationId id, SourceRevision revision, String authorEmail, long projectId,
+    public ApplicationVersion submit(TenantAndApplicationId id, SourceRevision revision, String authorEmail, long projectId,
                                      ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
-        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> { // TODO jonmv: change callers
+        controller.applications().lockApplicationOrThrow(id, application -> { // TODO jonmv: change callers
             if ( ! application.get().internal())
                 application = registered(application);
 
@@ -299,17 +300,17 @@ public class JobController {
             else
                 version.set(ApplicationVersion.from(revision, run, authorEmail));
 
-            controller.applications().applicationStore().put(id,
+            controller.applications().applicationStore().put(id.defaultInstance(),
                                                              version.get(),
                                                              applicationPackage.zippedContent());
-            controller.applications().applicationStore().put(TesterId.of(id),
+            controller.applications().applicationStore().put(TesterId.of(id.defaultInstance()),
                                                              version.get(),
                                                              testPackageBytes);
 
             prunePackages(id);
             controller.applications().storeWithUpdatedConfig(application, applicationPackage);
 
-            controller.applications().deploymentTrigger().notifyOfCompletion(DeploymentJobs.JobReport.ofSubmission(id, projectId, version.get()));
+            controller.applications().deploymentTrigger().notifyOfSubmission(id, version.get(), projectId);
         });
         return version.get();
     }
@@ -400,10 +401,11 @@ public class JobController {
     }
 
     /** Unregisters the given application and makes all associated data eligible for garbage collection. */
-    public void unregister(ApplicationId id) {
-        controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> { // TODO jonmv: change callers.
+    public void unregister(TenantAndApplicationId id) {
+        controller.applications().lockApplicationIfPresent(id, application -> {
             controller.applications().store(application.withBuiltInternally(false));
-            jobs(id).forEach(type -> last(id, type).ifPresent(last -> abort(last.id())));
+            for (InstanceName instance : application.get().instances().keySet())
+                jobs(id.instance(instance)).forEach(type -> last(id.instance(instance), type).ifPresent(last -> abort(last.id())));
         });
     }
 
@@ -489,14 +491,15 @@ public class JobController {
                      .collect(Collectors.toSet());
     }
 
-    private void prunePackages(ApplicationId id) {
-        controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
-            application.get().require(id.instance()).productionDeployments().values().stream()
+    private void prunePackages(TenantAndApplicationId id) {
+        controller.applications().lockApplicationIfPresent(id, application -> {
+            application.get().productionDeployments().values().stream()
+                       .flatMap(List::stream)
                        .map(Deployment::applicationVersion)
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
-                           controller.applications().applicationStore().prune(id, oldestDeployed);
-                           controller.applications().applicationStore().prune(TesterId.of(id), oldestDeployed);
+                           controller.applications().applicationStore().prune(id.defaultInstance(), oldestDeployed);
+                           controller.applications().applicationStore().prune(TesterId.of(id.defaultInstance()), oldestDeployed);
                        });
         });
     }
