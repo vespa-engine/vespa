@@ -373,28 +373,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse tenantCost(String tenantName, String monthString, HttpRequest request) {
-        Optional<Tenant> tenant = controller.tenants().get(TenantName.from(tenantName));
-        Optional<LocalDate> month = tenantCostParseMonth(monthString);
-
-        if (tenant.isEmpty()){
-            return ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist");
-        }
-
-        if (month.isEmpty()) {
-            return ErrorResponse.badRequest("Could not parse month '" + monthString + "'");
-        }
-
-        return tenantCost(tenant.get(), month.get(), request);
+    private HttpResponse tenantCost(String tenantName, String dateString, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .map(tenant -> tenantCost(tenant, tenantCostParseMonth(dateString), request))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
 
-    private Optional<LocalDate> tenantCostParseMonth(String monthString) {
+    private LocalDate tenantCostParseMonth(String dateString) {
         var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         try {
-            return Optional.of(LocalDate.parse(monthString, formatter).withDayOfMonth(1));
-        } catch (DateTimeParseException ignored) {
-            return Optional.empty();
+            // Always set the date to the first of the month as we only care about
+            // year and month in this API.
+            return LocalDate.parse(dateString, formatter).withDayOfMonth(1);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Could not parse date parameter: " + Exceptions.toMessageString(e));
         }
     }
 
