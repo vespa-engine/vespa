@@ -76,7 +76,7 @@ public class JsonFormatTestCase {
         builder.cell().label("x", 1).label("y", 1).value(6.0);
         builder.cell().label("x", 1).label("y", 2).value(7.0);
         Tensor expected = builder.build();
-        String mixedJson = "{\"cells\":[" +
+        String mixedJson = "{\"blocks\":[" +
                            "{\"address\":{\"x\":\"0\"},\"values\":[2.0,3.0,4.0]}," +
                            "{\"address\":{\"x\":\"1\"},\"values\":[5.0,6.0,7.0]}" +
                            "]}";
