@@ -82,6 +82,19 @@ public class AccessLogRequestLogTest {
         assertThat(accessLogEntry.getRemoteAddress(), is("1.2.3.4"));
     }
 
+    @Test
+    public void verify_x_forwarded_port_precedence () {
+        AccessLogEntry accessLogEntry = new AccessLogEntry();
+        Request jettyRequest = createRequestMock(accessLogEntry);
+        when(jettyRequest.getRequestURI()).thenReturn("//search/");
+        when(jettyRequest.getQueryString()).thenReturn("q=%%2");
+        when(jettyRequest.getHeader("X-Forwarded-Port")).thenReturn("80");
+        when(jettyRequest.getHeader("y-rp")).thenReturn("8080");
+
+        new AccessLogRequestLog(mock(AccessLog.class)).log(jettyRequest, createResponseMock());
+        assertThat(accessLogEntry.getRemotePort(), is(80));
+    }
+
     private static Request createRequestMock(AccessLogEntry entry) {
         Request request = mock(Request.class);
         when(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY)).thenReturn(entry);
