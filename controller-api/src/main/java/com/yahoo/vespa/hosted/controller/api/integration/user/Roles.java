@@ -20,21 +20,14 @@ public class Roles {
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
     public static List<TenantRole> tenantRoles(TenantName tenant) {
-        return List.of(Role.tenantOwner(tenant),
-                       Role.tenantAdmin(tenant),
-                       Role.tenantOperator(tenant),
-                       Role.administrator(tenant),
+        return List.of(Role.administrator(tenant),
                        Role.developer(tenant),
                        Role.reader(tenant));
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
     public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(Role.applicationAdmin(tenant, application),
-                       Role.applicationOperator(tenant, application),
-                       Role.applicationDeveloper(tenant, application),
-                       Role.applicationReader(tenant, application),
-                       Role.headless(tenant, application));
+        return List.of(Role.headless(tenant, application));
     }
 
     /** Returns the {@link Role} the given value represents. */

@@ -194,7 +194,7 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         if (   role.definition() == RoleDefinition.administrator
             && Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet())))
-        throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
+        throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
 
         if (role.definition().equals(RoleDefinition.developer))
             controller.tenants().lockIfPresent(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
