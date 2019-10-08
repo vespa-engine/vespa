@@ -13,8 +13,8 @@ import com.yahoo.tensor.TensorType;
 import static com.yahoo.document.json.readers.JsonParserHelpers.*;
 
 /**
- * Reads the tensor format described at
- * http://docs.vespa.ai/documentation/reference/document-json-format.html#tensor
+ * Reads the tensor format defined at
+ * See <a href="http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor">http://docs.vespa.ai/documentation/reference/document-json-put-format.html#tensor</a>
  *
  * @author geirst
  * @author bratseth
