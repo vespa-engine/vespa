@@ -212,7 +212,6 @@ public class MixedTensor implements Tensor {
 
     }
 
-
     /**
      * Builder for mixed tensors with bound indexed dimensions.
      */

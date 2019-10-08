@@ -80,11 +80,20 @@ public class TensorType {
     /** Sorted list of the dimensions of this */
     private final ImmutableList<Dimension> dimensions;
 
+    private final TensorType mappedSubtype;
+
     private TensorType(Value valueType, Collection<Dimension> dimensions) {
         this.valueType = valueType;
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);
         this.dimensions = ImmutableList.copyOf(dimensionList);
+
+        if (dimensionList.stream().allMatch(d -> d.isIndexed()))
+            mappedSubtype = empty;
+        else if (dimensionList.stream().noneMatch(d -> d.isIndexed()))
+            mappedSubtype = this;
+        else
+            mappedSubtype = new TensorType(valueType, dimensions.stream().filter(d -> ! d.isIndexed()).collect(Collectors.toList()));
     }
 
     static public Value combinedValueType(TensorType ... types) {
@@ -115,6 +124,9 @@ public class TensorType {
 
     /** Returns the numeric type of the cell values of this */
     public Value valueType() { return valueType; }
+
+    /** The type representing the mapped subset of dimensions of this. */
+    public TensorType mappedSubtype() { return mappedSubtype; }
 
     /** Returns the number of dimensions of this: dimensions().size() */
     public int rank() { return dimensions.size(); }

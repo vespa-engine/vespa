@@ -10,6 +10,7 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.Type;
 import com.yahoo.tensor.IndexedTensor;
+import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -75,19 +76,46 @@ public class JsonFormat {
     private static void decodeCells(Inspector cells, Tensor.Builder builder) {
         if ( cells.type() != Type.ARRAY)
             throw new IllegalArgumentException("Excepted 'cells' to contain an array, not " + cells.type());
-        cells.traverse((ArrayTraverser) (__, cell) -> decodeCell(cell, builder.cell()));
+        cells.traverse((ArrayTraverser) (__, cell) -> decodeCellOrCells(cell, builder));
     }
 
-    private static void decodeCell(Inspector cell, Tensor.Builder.CellBuilder cellBuilder) {
-        Inspector address = cell.field("address");
+    private static void decodeCellOrCells(Inspector cell, Tensor.Builder builder) {
+        Inspector value = cell.field("value");
+        if (value.type() == Type.LONG || value.type() == Type.DOUBLE) {
+            decodeCell(cell.field("address"), value, builder.cell());
+        }
+        else {
+            Inspector values = cell.field("values");
+            if (values.type() == Type.ARRAY)
+                decodeValueBlock(cell.field("address"), values, builder);
+            else
+                throw new IllegalArgumentException("Expected a cell to contain a numeric 'value' or an array 'values'");
+        }
+    }
+
+    private static void decodeCell(Inspector address, Inspector value, Tensor.Builder.CellBuilder cellBuilder) {
         if ( address.type() != Type.OBJECT)
             throw new IllegalArgumentException("Excepted a cell to contain an object called 'address'");
         address.traverse((ObjectTraverser) (dimension, label) -> cellBuilder.label(dimension, label.asString()));
-
-        Inspector value = cell.field("value");
-        if (value.type() != Type.LONG && value.type() != Type.DOUBLE)
-            throw new IllegalArgumentException("Excepted a cell to contain a numeric value called 'value'");
         cellBuilder.value(value.asDouble());
+    }
+
+    private static void decodeValueBlock(Inspector address, Inspector valuesBlock, Tensor.Builder builder) {
+        if ( ! (builder instanceof MixedTensor.BoundBuilder))
+            throw new IllegalArgumentException("Sending 'values' in 'cells' is only permissible with a mixed tensor " +
+                                               "type with bound indexed dimensions, but the type is " +
+                                               builder.type());
+        MixedTensor.BoundBuilder mixedBuilder = (MixedTensor.BoundBuilder)builder;
+
+        if (address.type() != Type.OBJECT)
+            throw new IllegalArgumentException("Expected a cell to contain an object called 'address'");
+        TensorAddress.Builder sparseAddress = new TensorAddress.Builder(mixedBuilder.type().mappedSubtype());
+        address.traverse((ObjectTraverser) (dimension, label) -> sparseAddress.add(dimension, label.asString()));
+
+        double[] values = new double[(int)mixedBuilder.denseSubspaceSize()];
+        valuesBlock.traverse((ArrayTraverser) (index, value) -> values[index] = value.asDouble());
+
+        mixedBuilder.block(sparseAddress.build(), values);
     }
 
     private static void decodeValues(Inspector values, Tensor.Builder builder) {
