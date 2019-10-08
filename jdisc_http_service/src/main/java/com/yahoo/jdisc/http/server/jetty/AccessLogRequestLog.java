@@ -120,10 +120,10 @@ public class AccessLogRequestLog extends AbstractLifeCycle implements RequestLog
     }
 
     private static String getRemoteAddress(final HttpServletRequest request) {
-        return Alternative.preferred(request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
-                .alternatively(() -> request.getHeader(HEADER_NAME_Y_RA))
-                .alternatively(() -> request.getHeader(HEADER_NAME_YAHOOREMOTEIP))
-                .alternatively(() -> request.getHeader(HEADER_NAME_CLIENT_IP))
+        return Optional.ofNullable(request.getHeader(HEADER_NAME_X_FORWARDED_FOR))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_Y_RA)))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_YAHOOREMOTEIP)))
+                .or(() -> Optional.ofNullable(request.getHeader(HEADER_NAME_CLIENT_IP)))
                 .orElseGet(request::getRemoteAddr);
     }
 
