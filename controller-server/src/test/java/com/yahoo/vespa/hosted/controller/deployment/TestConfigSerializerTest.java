@@ -27,6 +27,7 @@ public class TestConfigSerializerTest {
         ZoneId zone = JobType.systemTest.zone(SystemName.PublicCd);
         byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(instanceId,
                                                                                JobType.systemTest,
+                                                                               true,
                                                                                Map.of(zone, Map.of(ClusterSpec.Id.from("ai"),
                                                                                                    URI.create("https://server/"))),
                                                                                Map.of(zone, List.of("facts")));

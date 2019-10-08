@@ -30,6 +30,7 @@ public class TestConfigSerializer {
 
     public Slime configSlime(ApplicationId id,
                              JobType type,
+                             boolean isCI,
                              Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments,
                              Map<ZoneId, List<String>> clusters) {
         Slime slime = new Slime();
@@ -38,6 +39,7 @@ public class TestConfigSerializer {
         root.setString("application", id.serializedForm());
         root.setString("zone", type.zone(system).value());
         root.setString("system", system.value());
+        root.setBool("isCI", isCI);
 
         Cursor endpointsObject = root.setObject("endpoints"); // TODO jvenstad: remove.
         deployments.forEach((zone, endpoints) -> {
@@ -69,10 +71,11 @@ public class TestConfigSerializer {
     /** Returns the config for the tests to run for the given job. */
     public byte[] configJson(ApplicationId id,
                              JobType type,
+                             boolean isCI,
                              Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments,
                              Map<ZoneId, List<String>> clusters) {
         try {
-            return SlimeUtils.toJsonBytes(configSlime(id, type, deployments, clusters));
+            return SlimeUtils.toJsonBytes(configSlime(id, type, isCI, deployments, clusters));
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);

@@ -2,6 +2,7 @@
   "application": "t:a:i",
   "zone": "dev.aws-us-east-1c",
   "system": "publiccd",
+  "isCI": true,
   "zoneEndpoints": {
     "dev.aws-us-east-1c": {
       "default": "https://dev.endpoint:443/"

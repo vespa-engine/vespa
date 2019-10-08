@@ -2,6 +2,7 @@
   "application": "tenant1:application1:instance1",
   "zone": "prod.us-central-1",
   "system": "main",
+  "isCI": false,
   "endpoints": {
     "prod.us-central-1": [
       "http://old-endpoint.vespa.yahooapis.com:4080"

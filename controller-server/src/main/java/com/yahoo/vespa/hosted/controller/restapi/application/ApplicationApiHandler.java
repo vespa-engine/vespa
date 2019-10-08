@@ -1523,6 +1523,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id, type);
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
+                                                                      false,
                                                                       controller.applications().clusterEndpoints(id, zones),
                                                                       controller.applications().contentClustersByZone(id, zones)));
     }
