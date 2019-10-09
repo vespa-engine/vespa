@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.os.OsVersion;
@@ -14,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -45,11 +47,14 @@ public class OsUpgradeActivatorTest {
         var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host);
         tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version0);
 
+        var allNodes = new ArrayList<>(configHostNodes);
+        allNodes.addAll(tenantHostNodes);
+
         // All nodes are on initial version
-        assertEquals(version0, minWantedVersion(NodeType.confighost, NodeType.host));
+        assertEquals(version0, minWantedVersion(allNodes));
         completeUpgradeOf(configHostNodes);
         completeUpgradeOf(tenantHostNodes);
-        assertEquals("All nodes are on initial version", version0, minCurrentVersion(NodeType.confighost, NodeType.host));
+        assertEquals("All nodes are on initial version", version0, minCurrentVersion(allNodes));
 
         // New OS target version is set
         var osVersion0 = Version.fromString("8.0");
@@ -64,16 +69,20 @@ public class OsUpgradeActivatorTest {
         var version1 = Version.fromString("7.1");
         tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version1);
         assertEquals("Wanted version of " + NodeType.host + " is raised", version1,
-                     minWantedVersion(NodeType.host));
+                     minWantedVersion(tenantHostNodes));
 
         // Activator pauses upgrade for tenant hosts only
         osUpgradeActivator.maintain();
         assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost));
         assertFalse("OS version " + osVersion0 + " is inactive", isOsVersionActive(NodeType.host));
 
-        // Tenant hosts complete their Vespa upgrade
-        completeUpgradeOf(tenantHostNodes);
-        assertEquals("Tenant hosts upgraded", version1, minCurrentVersion(NodeType.host));
+        // One tenant host fails and is no longer considered
+        tester.nodeRepository().fail(tenantHostNodes.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
+
+        // Remaining hosts complete their Vespa upgrade
+        var healthyTenantHostNodes = tenantHostNodes.subList(1, tenantHostNodes.size());
+        completeUpgradeOf(healthyTenantHostNodes);
+        assertEquals("Tenant hosts upgraded", version1, minCurrentVersion(healthyTenantHostNodes));
 
         // Activator resumes OS upgrade of tenant hosts
         osUpgradeActivator.run();
@@ -98,30 +107,30 @@ public class OsUpgradeActivatorTest {
         }
     }
 
-    private Stream<Node> streamNodes(NodeType... types) {
+    private Stream<Node> streamUpdatedNodes(List<Node> nodes) {
         Stream<Node> stream = Stream.empty();
-        for (var type : types) {
-            stream = Stream.concat(stream, tester.nodeRepository().getNodes(type).stream());
+        for (var node : nodes) {
+            stream = Stream.concat(stream, tester.nodeRepository().getNode(node.hostname()).stream());
         }
         return stream;
     }
 
-    private Version minCurrentVersion(NodeType... types) {
-        return streamNodes(types).map(Node::status)
-                                 .map(Status::vespaVersion)
-                                 .flatMap(Optional::stream)
-                                 .min(Comparator.naturalOrder())
-                                 .orElse(Version.emptyVersion);
+    private Version minCurrentVersion(List<Node> nodes) {
+        return streamUpdatedNodes(nodes).map(Node::status)
+                                        .map(Status::vespaVersion)
+                                        .flatMap(Optional::stream)
+                                        .min(Comparator.naturalOrder())
+                                        .orElse(Version.emptyVersion);
     }
 
-    private Version minWantedVersion(NodeType... types) {
-        return streamNodes(types).map(Node::allocation)
-                                 .flatMap(Optional::stream)
-                                 .map(Allocation::membership)
-                                 .map(ClusterMembership::cluster)
-                                 .map(ClusterSpec::vespaVersion)
-                                 .min(Comparator.naturalOrder())
-                                 .orElse(Version.emptyVersion);
+    private Version minWantedVersion(List<Node> nodes) {
+        return streamUpdatedNodes(nodes).map(Node::allocation)
+                                        .flatMap(Optional::stream)
+                                        .map(Allocation::membership)
+                                        .map(ClusterMembership::cluster)
+                                        .map(ClusterSpec::vespaVersion)
+                                        .min(Comparator.naturalOrder())
+                                        .orElse(Version.emptyVersion);
     }
 
 }

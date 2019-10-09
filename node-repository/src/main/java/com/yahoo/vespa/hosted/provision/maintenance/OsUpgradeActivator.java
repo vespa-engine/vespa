@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
@@ -31,7 +32,12 @@ public class OsUpgradeActivator extends Maintainer {
 
     /** Returns whether to allow OS upgrade of nodes of given type */
     private boolean canUpgradeOsOf(NodeType type) {
-        return nodeRepository().list().nodeType(type).changingVersion().asList().isEmpty();
+        return nodeRepository().list()
+                               .nodeType(type)
+                               .state(Node.State.ready, Node.State.active) // Only consider nodes in long-term states
+                               .changingVersion()
+                               .asList()
+                               .isEmpty();
     }
 
 }

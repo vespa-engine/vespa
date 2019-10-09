@@ -104,7 +104,7 @@ public class NodeList implements Iterable<Node> {
         return childrenOf(parent.hostname());
     }
 
-    /** Returns the subset of nodes that are in a given state(s) */
+    /** Returns the subset of nodes that are in any of the given state(s) */
     public NodeList state(Node.State first, Node.State... rest) {
         EnumSet<Node.State> nodeStates = EnumSet.of(first, rest);
         return filter(node -> nodeStates.contains(node.state()));
