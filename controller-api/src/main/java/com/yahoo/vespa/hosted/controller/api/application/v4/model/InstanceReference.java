@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author mortent
@@ -15,7 +16,8 @@ public class InstanceReference {
 
     public List<DeploymentReference> deployments;
     public InstanceId instance;
-
+    public Set<URI> globalRotations;
+    public String rotationId;
     public URI url;
 
 }
