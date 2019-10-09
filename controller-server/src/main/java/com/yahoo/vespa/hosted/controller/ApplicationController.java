@@ -434,7 +434,7 @@ public class ApplicationController {
     public ApplicationPackage getApplicationPackage(ApplicationId id, boolean internal, ApplicationVersion version) {
         try {
             return internal
-                    ? new ApplicationPackage(applicationStore.get(id, version))
+                    ? new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version))
                     : new ApplicationPackage(artifactRepository.getApplicationPackage(id, version.id()));
         }
         catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
@@ -443,7 +443,7 @@ public class ApplicationController {
                          + (internal ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
                 return internal
                         ? new ApplicationPackage(artifactRepository.getApplicationPackage(id, version.id()))
-                        : new ApplicationPackage(applicationStore.get(id, version));
+                        : new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version));
             }
             catch (RuntimeException s) { // If this fails, too, the first failure is most likely the relevant one.
                 e.addSuppressed(s);
@@ -759,8 +759,8 @@ public class ApplicationController {
                                                    application.get().require(instanceId.instance()).deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
 
-            applicationStore.removeAll(instanceId);
-            applicationStore.removeAll(TesterId.of(instanceId));
+            applicationStore.removeAll(instanceId.tenant(), instanceId.application());
+            applicationStore.removeAllTesters(instanceId.tenant(), instanceId.application());
 
             Instance instance = application.get().require(instanceId.instance());
             instance.rotations().forEach(assignedRotation -> {
