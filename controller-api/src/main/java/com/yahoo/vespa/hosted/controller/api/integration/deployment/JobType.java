@@ -20,7 +20,7 @@ import static com.yahoo.config.provision.SystemName.main;
 /** Job types that exist in the build system */
 public enum JobType {
 //     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
-    component              ("component",
+    component              ("component", // TODO jonmv: remove when no longer present in serialized data
                             Map.of()),
 
     systemTest             ("system-test",

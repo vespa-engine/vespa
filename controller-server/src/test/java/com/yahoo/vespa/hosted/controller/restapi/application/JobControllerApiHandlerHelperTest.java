@@ -54,7 +54,8 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().setInstant(Instant.EPOCH);
 
         // Revision 1 gets deployed everywhere.
-        ApplicationVersion revision1 = tester.deployNewSubmission();
+        ApplicationVersion revision1 = tester.newSubmission();
+        tester.deployNewSubmission(revision1);
         assertEquals(2, tester.application().projectId().getAsLong());
 
         tester.clock().advance(Duration.ofMillis(1000));

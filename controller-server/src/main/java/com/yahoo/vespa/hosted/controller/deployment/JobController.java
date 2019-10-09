@@ -197,6 +197,14 @@ public class JobController {
         locked(id, run -> run.with(testerCertificate));
     }
 
+    /** Returns a list of all applications which have registered. */
+    public List<TenantAndApplicationId> applications() {
+        return copyOf(controller.applications().asList().stream()
+                                .filter(Application::internal)
+                                .map(Application::id)
+                                .iterator());
+    }
+
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
         return copyOf(controller.applications().asList().stream()
@@ -241,12 +249,19 @@ public class JobController {
 
     /** Returns a list of all active runs. */
     public List<Run> active() {
-        return copyOf(instances().stream()
-                                 .flatMap(id -> Stream.of(JobType.values())
-                                                         .map(type -> last(id, type))
-                                                         .flatMap(Optional::stream)
-                                                         .filter(run -> ! run.hasEnded()))
-                                 .iterator());
+        return copyOf(applications().stream()
+                                    .flatMap(id -> active(id).stream())
+                                    .iterator());
+    }
+
+    /** Returns a list of all active runs for the given instance. */
+    public List<Run> active(TenantAndApplicationId id) {
+        return copyOf(controller.applications().requireApplication(id).instances().keySet().stream()
+                                .flatMap(name -> Stream.of(JobType.values())
+                                                       .map(type -> last(id.instance(name), type))
+                                                       .flatMap(Optional::stream)
+                                                       .filter(run -> ! run.hasEnded()))
+                                .iterator());
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
