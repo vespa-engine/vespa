@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
-import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
