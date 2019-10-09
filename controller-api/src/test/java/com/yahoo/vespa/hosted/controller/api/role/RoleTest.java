@@ -102,4 +102,19 @@ public class RoleTest {
         assertTrue(applicationDeveloper11.implies(applicationReader11));
     }
 
+    @Test
+    public void new_implications() {
+        TenantName tenant1 = TenantName.from("t1");
+        ApplicationName application1 = ApplicationName.from("a1");
+        ApplicationName application2 = ApplicationName.from("a2");
+
+        Role tenantAdmin1 = Role.administrator(tenant1);
+        Role tenantDeveloper1 = Role.developer(tenant1);
+        Role applicationHeadless11 = Role.headless(tenant1, application1);
+        Role applicationHeadless12 = Role.headless(tenant1, application2);
+
+        assertFalse(tenantAdmin1.implies(tenantDeveloper1));
+        assertFalse(tenantAdmin1.implies(applicationHeadless11));
+        assertFalse(applicationHeadless11.implies(applicationHeadless12));
+    }
 }

@@ -30,6 +30,11 @@ public class RolesTest {
                      Roles.toRole("my-tenant.tenantOperator"));
         assertEquals(Role.applicationReader(tenant, application),
                      Roles.toRole("my-tenant.my-application.applicationReader"));
+
+        assertEquals(Role.administrator(tenant), Roles.toRole("my-tenant.administrator"));
+        assertEquals(Role.developer(tenant), Roles.toRole("my-tenant.developer"));
+        assertEquals(Role.reader(tenant), Roles.toRole("my-tenant.reader"));
+        assertEquals(Role.headless(tenant, application), Roles.toRole("my-tenant.my-application.headless"));
     }
 
     @Test(expected = IllegalArgumentException.class)

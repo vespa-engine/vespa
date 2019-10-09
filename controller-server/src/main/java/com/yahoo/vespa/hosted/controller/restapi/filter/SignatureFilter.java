@@ -20,13 +20,10 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.yolean.Exceptions;
 
-import java.security.Principal;
 import java.security.PublicKey;
 import java.util.Base64;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.logging.Logger;
 
 import static java.nio.charset.StandardCharsets.UTF_8;

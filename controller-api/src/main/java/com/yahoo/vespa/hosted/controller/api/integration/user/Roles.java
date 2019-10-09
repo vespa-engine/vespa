@@ -20,17 +20,14 @@ public class Roles {
 
     /** Returns the list of {@link TenantRole}s a {@link UserId} may be a member of. */
     public static List<TenantRole> tenantRoles(TenantName tenant) {
-        return List.of(Role.tenantOwner(tenant),
-                       Role.tenantAdmin(tenant),
-                       Role.tenantOperator(tenant));
+        return List.of(Role.administrator(tenant),
+                       Role.developer(tenant),
+                       Role.reader(tenant));
     }
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
     public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(Role.applicationAdmin(tenant, application),
-                       Role.applicationOperator(tenant, application),
-                       Role.applicationDeveloper(tenant, application),
-                       Role.applicationReader(tenant, application));
+        return List.of(Role.headless(tenant, application));
     }
 
     /** Returns the {@link Role} the given value represents. */
@@ -48,6 +45,9 @@ public class Roles {
             case "tenantOwner": return Role.tenantOwner(tenant);
             case "tenantAdmin": return Role.tenantAdmin(tenant);
             case "tenantOperator": return Role.tenantOperator(tenant);
+            case "administrator": return Role.administrator(tenant);
+            case "developer": return Role.developer(tenant);
+            case "reader": return Role.reader(tenant);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -59,6 +59,7 @@ public class Roles {
             case "applicationOperator": return Role.applicationOperator(tenant, application);
             case "applicationDeveloper": return Role.applicationDeveloper(tenant, application);
             case "applicationReader": return Role.applicationReader(tenant, application);
+            case "headless": return Role.headless(tenant, application);
             default: throw new IllegalArgumentException("Malformed or illegal role name '" + roleName + "'.");
         }
     }
@@ -101,6 +102,10 @@ public class Roles {
             case applicationOperator:  return "applicationOperator";
             case applicationDeveloper: return "applicationDeveloper";
             case applicationReader:    return "applicationReader";
+            case administrator:        return "administrator";
+            case developer:            return "developer";
+            case reader:               return "reader";
+            case headless:             return "headless";
             default: throw new IllegalArgumentException("No value defined for role '" + role + "'.");
         }
     }

@@ -192,12 +192,11 @@ public class UserApiHandler extends LoggingRequestHandler {
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
 
-        if (   role.definition() == RoleDefinition.tenantOwner
+        if (   role.definition() == RoleDefinition.administrator
             && Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet())))
-        throw new IllegalArgumentException("Can't remove the last owner of a tenant.");
+        throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
 
-        // TODO jonmv: Change to developer role, when this exists.
-        if (role.definition().equals(RoleDefinition.tenantOperator))
+        if (role.definition().equals(RoleDefinition.developer))
             controller.tenants().lockIfPresent(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
                 PublicKey key = tenant.get().developerKeys().inverse().get(new SimplePrincipal(user.value()));
                 if (key != null)
@@ -235,6 +234,10 @@ public class UserApiHandler extends LoggingRequestHandler {
             case applicationOperator:   return "applicationOperator";
             case applicationDeveloper:  return "applicationDeveloper";
             case applicationReader:     return "applicationReader";
+            case administrator:         return "administrator";
+            case developer:             return "developer";
+            case reader:                return "reader";
+            case headless:              return "headless";
             default: throw new IllegalArgumentException("Unexpected role type '" + role.definition() + "'.");
         }
     }

@@ -36,9 +36,14 @@ public class CloudAccessControl implements AccessControl {
         CloudTenantSpec spec = (CloudTenantSpec) tenantSpec;
         CloudTenant tenant = CloudTenant.create(spec.tenant(), defaultBillingInfo);
 
-        for (Role role : Roles.tenantRoles(spec.tenant()))
+        for (Role role : Roles.tenantRoles(spec.tenant())) {
             userManagement.createRole(role);
-        userManagement.addUsers(Role.tenantOwner(spec.tenant()), List.of(new UserId(credentials.user().getName())));
+        }
+
+        var userId = List.of(new UserId(credentials.user().getName()));
+        userManagement.addUsers(Role.administrator(spec.tenant()), userId);
+        userManagement.addUsers(Role.developer(spec.tenant()), userId);
+        userManagement.addUsers(Role.reader(spec.tenant()), userId);
 
         return tenant;
     }
@@ -60,7 +65,6 @@ public class CloudAccessControl implements AccessControl {
     public void createApplication(TenantAndApplicationId id, Credentials credentials) {
         for (Role role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.createRole(role);
-        userManagement.addUsers(Role.applicationAdmin(id.tenant(), id.application()), List.of(new UserId(credentials.user().getName())));
     }
 
     @Override

@@ -2,74 +2,25 @@
   "tenant": "my-tenant",
   "application": "my-app",
   "roleNames": [
-    "applicationAdmin",
-    "applicationOperator",
-    "applicationDeveloper",
-    "applicationReader"
+    "headless"
   ],
   "users": [
     {
-      "name": "owner@tenant",
-      "email":"owner@tenant",
+      "name": "administrator@tenant",
+      "email": "administrator@tenant",
       "roles": {
-        "applicationAdmin": {
+        "headless": {
           "explicit": false,
-          "implied": true
-        },
-        "applicationOperator": {
-          "explicit": false,
-          "implied": true
-        },
-        "applicationDeveloper": {
-          "explicit": false,
-          "implied": true
-        },
-        "applicationReader": {
-          "explicit": false,
-          "implied": true
+          "implied": false
         }
       }
     },
     {
-      "name": "operator@tenant",
-      "email":"operator@tenant",
+      "name": "developer@tenant",
+      "email": "developer@tenant",
       "roles": {
-        "applicationAdmin": {
-          "explicit": true,
-          "implied": false
-        },
-        "applicationOperator": {
+        "headless": {
           "explicit": false,
-          "implied": true
-        },
-        "applicationDeveloper": {
-          "explicit": false,
-          "implied": true
-        },
-        "applicationReader": {
-          "explicit": false,
-          "implied": true
-        }
-      }
-    },
-    {
-      "name": "reader@app",
-      "email":"reader@app",
-      "roles": {
-        "applicationAdmin": {
-          "explicit": false,
-          "implied": false
-        },
-        "applicationOperator": {
-          "explicit": false,
-          "implied": false
-        },
-        "applicationDeveloper": {
-          "explicit": false,
-          "implied": false
-        },
-        "applicationReader": {
-          "explicit": true,
           "implied": false
         }
       }
