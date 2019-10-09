@@ -351,11 +351,18 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
 }
 
 bool ExternalOperationHandler::try_handle_message_outside_main_thread(const std::shared_ptr<api::StorageMessage>& msg) {
-    if (!concurrent_gets_enabled()) {
-        return false;
-    }
     const auto type_id = msg->getType().getId();
     if (type_id == api::MessageType::GET_ID) {
+        // Only do this check for Get _requests_ to avoid the following case:
+        //  1) Stale reads are initially enabled and a Get request is received
+        //  2) A Get is sent to the content node(s)
+        //  3) Stale reads are disabled via config
+        //  4) Get-reply from content node is disregarded since concurrent reads are no longer allowed
+        //  5) We've effectively leaked a Get operation, and the client will time out
+        // TODO consider having stale reads _not_ be a live config instead!
+        if (!concurrent_gets_enabled()) {
+            return false;
+        }
         auto op = try_generate_get_operation(std::dynamic_pointer_cast<api::GetCommand>(msg));
         if (op) {
             std::lock_guard g(_non_main_thread_ops_mutex);
