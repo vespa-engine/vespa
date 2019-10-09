@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
-import com.yahoo.vespa.athenz.identity.SiaIdentityProvider;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
@@ -55,7 +55,9 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private final CloseableHttpClient client;
 
-    public static ConfigServerApiImpl create(ConfigServerInfo info, SiaIdentityProvider provider, HostnameVerifier hostnameVerifier) {
+    public static ConfigServerApiImpl create(ConfigServerInfo info,
+                                             ServiceIdentityProvider provider,
+                                             HostnameVerifier hostnameVerifier) {
         return new ConfigServerApiImpl(
                 info.getConfigServerUris(),
                 hostnameVerifier,
@@ -63,7 +65,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     public static ConfigServerApiImpl createFor(ConfigServerInfo info,
-                                                SiaIdentityProvider provider,
+                                                ServiceIdentityProvider provider,
                                                 HostnameVerifier hostnameVerifier,
                                                 HostName configServerHostname) {
         return new ConfigServerApiImpl(
@@ -74,7 +76,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     private ConfigServerApiImpl(Collection<URI> configServers,
                                 HostnameVerifier verifier,
-                                SiaIdentityProvider identityProvider) {
+                                ServiceIdentityProvider identityProvider) {
         this(configServers, createClient(new SSLConnectionSocketFactory(new ServiceIdentitySslSocketFactory(identityProvider), verifier)));
     }
 

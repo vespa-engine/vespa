@@ -26,9 +26,6 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private final AutoReloadingX509KeyManager keyManager;
     private final SSLContext sslContext;
     private final AthenzIdentity service;
-    private final File privateKeyFile;
-    private final File certificateFile;
-    private final File trustStoreFile;
 
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
@@ -52,9 +49,6 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
                                File certificateFile,
                                File trustStoreFile) {
         this.service = service;
-        this.privateKeyFile = privateKeyFile;
-        this.certificateFile = certificateFile;
-        this.trustStoreFile = trustStoreFile;
         this.keyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyFile.toPath(), certificateFile.toPath());
         this.sslContext = createIdentitySslContext(keyManager, trustStoreFile.toPath());
     }
