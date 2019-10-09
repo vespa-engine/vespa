@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/testapp.h>
+
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
@@ -8,76 +9,58 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/fef/matchdata.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("fake_searchable_test");
-
 using namespace search::queryeval;
 using namespace search::query;
 using namespace search::fef;
 
-class Test : public vespalib::TestApp {
-public:
-    ~Test();
-    int Main() override;
-    void testTestFakeResult();
-    void testTerm();
-    void testPhrase();
-    void testWeightedSet();
-    void testMultiField();
-    void testPhraseWithEmptyChild();
-private:
-    FakeRequestContext _requestContext;
+struct FakeSearchableTest : ::testing::Test {
+    Weight w;
+    FakeRequestContext req_ctx;
+    FakeSearchable source;
+    FakeSearchableTest() : w(100), req_ctx(), source() {}
 };
 
-Test::~Test() {}
-void
-Test::testTestFakeResult()
-{
-    EXPECT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).pos(6).elem(6).doc(6),
-               FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).pos(6).elem(6).doc(6));
+TEST(FakeResultTest, require_that_fake_result_works) {
+    EXPECT_EQ(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).pos(6).elem(6).doc(6),
+              FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).pos(6).elem(6).doc(6));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(1).elem(5).len(15).weight(5).pos(5));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(1).elem(5).len(15).weight(5).pos(5));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(1).len(15).weight(5).pos(5));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(1).len(15).weight(5).pos(5));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(5).len(19).weight(5).pos(5));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(5).len(19).weight(5).pos(5));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(5).len(15).weight(1).pos(5));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(5).len(15).weight(1).pos(5));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(5).len(15).weight(5).pos(1));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(5).len(15).weight(5).pos(1));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).doc(6));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).doc(6));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).elem(6));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).elem(6));
 
-    EXPECT_NOT_EQUAL(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5),
-                   FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).pos(6));
+    EXPECT_FALSE(FakeResult().doc(5).elem(5).len(15).weight(5).pos(5) ==
+                 FakeResult().doc(5).elem(5).len(15).weight(5).pos(5).pos(6));
 }
 
-void
-Test::testTerm()
-{
-    Weight w(100);
-
-    FakeSearchable source;
+TEST_F(FakeSearchableTest, require_that_term_search_works) {
     source.addResult("fieldfoo", "word1",
-                     FakeResult().doc(5).pos(3));
+                     FakeResult().doc(5).elem(2).pos(3).elem(4).pos(5));
 
     SimpleStringTerm termNode("word1", "viewfoo", 1, w);
 
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", 1, 1));
-    Blueprint::UP bp = source.createBlueprint(_requestContext, fields, termNode);
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, termNode);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
-        TEST_STATE(strict ? "strict" : "non-strict");
+        SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
         bp->fetchPostings(strict);
         SearchIterator::UP search = bp->createSearch(*md, strict);
@@ -85,21 +68,26 @@ Test::testTerm()
 
         EXPECT_TRUE(!search->seek(3));
         if (strict) {
-            EXPECT_EQUAL(5u, search->getDocId());
+            EXPECT_EQ(5u, search->getDocId());
         } else {
             EXPECT_TRUE(search->seek(5u));
         }
-        EXPECT_EQUAL(5u, search->getDocId());
+        EXPECT_EQ(5u, search->getDocId());
         { // test doc 5 results
             search->unpack(5u);
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
-                EXPECT_EQUAL(1u, data.getFieldId());
-                EXPECT_EQUAL(5u, data.getDocId());
+                EXPECT_EQ(1u, data.getFieldId());
+                EXPECT_EQ(5u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(1u, itr.size());
+                EXPECT_EQ(2u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(3u, itr.getPosition());
+                EXPECT_EQ(2u, itr.getElementId());
+                EXPECT_EQ(3u, itr.getPosition());
+                itr.next();
+                ASSERT_TRUE(itr.valid());
+                EXPECT_EQ(4u, itr.getElementId());
+                EXPECT_EQ(5u, itr.getPosition());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
@@ -111,12 +99,7 @@ Test::testTerm()
     }
 }
 
-void
-Test::testPhrase()
-{
-    Weight w(100);
-
-    FakeSearchable source;
+TEST_F(FakeSearchableTest, require_that_phrase_search_works) {
     source.addResult("fieldfoo", "word1",
                      FakeResult().doc(3).pos(7).doc(5).pos(3));
     source.addResult("fieldfoo", "word2",
@@ -128,10 +111,10 @@ Test::testPhrase()
 
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", 1, 1));
-    Blueprint::UP bp = source.createBlueprint(_requestContext, fields, phraseNode);
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, phraseNode);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
-        TEST_STATE(strict ? "strict" : "non-strict");
+        SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
         bp->fetchPostings(strict);
         SearchIterator::UP search = bp->createSearch(*md, strict);
@@ -139,21 +122,21 @@ Test::testPhrase()
 
         EXPECT_TRUE(!search->seek(3));
         if (strict) {
-            EXPECT_EQUAL(5u, search->getDocId());
+            EXPECT_EQ(5u, search->getDocId());
         } else {
             EXPECT_TRUE(search->seek(5u));
         }
-        EXPECT_EQUAL(5u, search->getDocId());
+        EXPECT_EQ(5u, search->getDocId());
         { // test doc 5 results
             search->unpack(5u);
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
-                EXPECT_EQUAL(1u, data.getFieldId());
-                EXPECT_EQUAL(5u, data.getDocId());
+                EXPECT_EQ(1u, data.getFieldId());
+                EXPECT_EQ(5u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(1u, itr.size());
+                EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(3u, itr.getPosition());
+                EXPECT_EQ(3u, itr.getPosition());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
@@ -165,12 +148,7 @@ Test::testPhrase()
     }
 }
 
-void
-Test::testWeightedSet()
-{
-    Weight w(100);
-
-    FakeSearchable source;
+TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
     source.addResult("fieldfoo", "friend1",
                      FakeResult().doc(3).doc(5).doc(7).doc(9));
     source.addResult("fieldfoo", "friend2",
@@ -184,10 +162,10 @@ Test::testWeightedSet()
 
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", 1, 1));
-    Blueprint::UP bp = source.createBlueprint(_requestContext, fields, weightedSet);
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, weightedSet);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
-        TEST_STATE(strict ? "strict" : "non-strict");
+        SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
         bp->fetchPostings(strict);
         SearchIterator::UP search = bp->createSearch(*md, strict);
@@ -195,24 +173,24 @@ Test::testWeightedSet()
 
         EXPECT_TRUE(!search->seek(2));
         if (strict) {
-            EXPECT_EQUAL(3u, search->getDocId());
+            EXPECT_EQ(3u, search->getDocId());
         } else {
             EXPECT_TRUE(search->seek(3u));
         }
-        EXPECT_EQUAL(3u, search->getDocId());
+        EXPECT_EQ(3u, search->getDocId());
         { // test doc 3 results
             search->unpack(3u);
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
-                EXPECT_EQUAL(1u, data.getFieldId());
-                EXPECT_EQUAL(3u, data.getDocId());
+                EXPECT_EQ(1u, data.getFieldId());
+                EXPECT_EQ(3u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(2u, itr.size());
+                EXPECT_EQ(2u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(2, itr.getElementWeight());
+                EXPECT_EQ(2, itr.getElementWeight());
                 itr.next();
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(1, itr.getElementWeight());
+                EXPECT_EQ(1, itr.getElementWeight());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
@@ -227,12 +205,12 @@ Test::testWeightedSet()
             search->unpack(9u);
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
-                EXPECT_EQUAL(1u, data.getFieldId());
-                EXPECT_EQUAL(9u, data.getDocId());
+                EXPECT_EQ(1u, data.getFieldId());
+                EXPECT_EQ(9u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(1u, itr.size());
+                EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(1, itr.getElementWeight());
+                EXPECT_EQ(1, itr.getElementWeight());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
@@ -244,12 +222,7 @@ Test::testWeightedSet()
     }
 }
 
-void
-Test::testMultiField()
-{
-    Weight w(100);
-
-    FakeSearchable source;
+TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
     source.addResult("fieldfoo", "word1",
                      FakeResult().doc(5).pos(3));
     source.addResult("fieldbar", "word1",
@@ -260,10 +233,10 @@ Test::testMultiField()
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", 1, 1));
     fields.add(FieldSpec("fieldbar", 2, 2));
-    Blueprint::UP bp = source.createBlueprint(_requestContext, fields, termNode);
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, termNode);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
-        TEST_STATE(strict ? "strict" : "non-strict");
+        SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
         bp->fetchPostings(strict);
         SearchIterator::UP search = bp->createSearch(*md, strict);
@@ -271,58 +244,58 @@ Test::testMultiField()
 
         EXPECT_TRUE(!search->seek(3));
         if (strict) {
-            EXPECT_EQUAL(5u, search->getDocId());
+            EXPECT_EQ(5u, search->getDocId());
         } else {
             EXPECT_TRUE(search->seek(5u));
         }
-        EXPECT_EQUAL(5u, search->getDocId());
+        EXPECT_EQ(5u, search->getDocId());
         { // test doc 5 results
             search->unpack(5u);
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
-                EXPECT_EQUAL(1u, data.getFieldId());
-                EXPECT_EQUAL(5u, data.getDocId());
+                EXPECT_EQ(1u, data.getFieldId());
+                EXPECT_EQ(5u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(1u, itr.size());
+                EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(3u, itr.getPosition());
+                EXPECT_EQ(3u, itr.getPosition());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
             {
                 TermFieldMatchData &data = *md->resolveTermField(2);
-                EXPECT_EQUAL(2u, data.getFieldId());
-                EXPECT_EQUAL(5u, data.getDocId());
+                EXPECT_EQ(2u, data.getFieldId());
+                EXPECT_EQ(5u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(1u, itr.size());
+                EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(7u, itr.getPosition());
+                EXPECT_EQ(7u, itr.getPosition());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
         }
         EXPECT_TRUE(!search->seek(7));
         if (strict) {
-            EXPECT_EQUAL(10u, search->getDocId());
+            EXPECT_EQ(10u, search->getDocId());
         } else {
             EXPECT_TRUE(search->seek(10u));
         }
-        EXPECT_EQUAL(10u, search->getDocId());
+        EXPECT_EQ(10u, search->getDocId());
         { // test doc 10 results
             search->unpack(10u);
             {
                 TermFieldMatchData &data = *md->resolveTermField(1);
-                EXPECT_EQUAL(1u, data.getFieldId());
-                EXPECT_NOT_EQUAL(10u, data.getDocId());
+                EXPECT_EQ(1u, data.getFieldId());
+                EXPECT_NE(10u, data.getDocId());
             }
             {
                 TermFieldMatchData &data = *md->resolveTermField(2);
-                EXPECT_EQUAL(2u, data.getFieldId());
-                EXPECT_EQUAL(10u, data.getDocId());
+                EXPECT_EQ(2u, data.getFieldId());
+                EXPECT_EQ(10u, data.getDocId());
                 FieldPositionsIterator itr = data.getIterator();
-                EXPECT_EQUAL(1u, itr.size());
+                EXPECT_EQ(1u, itr.size());
                 ASSERT_TRUE(itr.valid());
-                EXPECT_EQUAL(2u, itr.getPosition());
+                EXPECT_EQ(2u, itr.getPosition());
                 itr.next();
                 EXPECT_TRUE(!itr.valid());
             }
@@ -334,12 +307,7 @@ Test::testMultiField()
     }
 }
 
-void
-Test::testPhraseWithEmptyChild()
-{
-    Weight w(100);
-
-    FakeSearchable source;
+TEST_F(FakeSearchableTest, require_that_phrase_with_empty_child_works) {
     source.addResult("fieldfoo", "word1",
                      FakeResult().doc(3).pos(7).doc(5).pos(3));
 
@@ -349,10 +317,10 @@ Test::testPhraseWithEmptyChild()
 
     FieldSpecList fields;
     fields.add(FieldSpec("fieldfoo", 1, 1));
-    Blueprint::UP bp = source.createBlueprint(_requestContext, fields, phraseNode);
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, phraseNode);
     for (int i = 0; i <= 1; ++i) {
         bool strict = (i == 0);
-        TEST_STATE(strict ? "strict" : "non-strict");
+        SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
         bp->fetchPostings(strict);
         SearchIterator::UP search = bp->createSearch(*md, strict);
@@ -365,17 +333,58 @@ Test::testPhraseWithEmptyChild()
     }
 }
 
-int
-Test::Main()
-{
-    TEST_INIT("fake_searchable_test");
-    testTestFakeResult();
-    testTerm();
-    testPhrase();
-    testWeightedSet();
-    testMultiField();
-    testPhraseWithEmptyChild();
-    TEST_DONE();
+TEST_F(FakeSearchableTest, require_that_match_data_is_compressed_for_attributes) {
+    source.is_attr(true);
+    source.addResult("attrfoo", "word1",
+                     FakeResult().doc(5).elem(2).weight(6).pos(3).elem(4).weight(8).pos(5));
+    SimpleStringTerm termNode("word1", "viewfoo", 1, w);
+    FieldSpecList fields;
+    fields.add(FieldSpec("attrfoo", 1, 1));
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, termNode);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
+    bp->fetchPostings(false);
+    SearchIterator::UP search = bp->createSearch(*md, false);
+    search->initFullRange();
+    EXPECT_TRUE(search->seek(5));
+    search->unpack(5u);
+    {
+        TermFieldMatchData &data = *md->resolveTermField(1);
+        EXPECT_EQ(1u, data.getFieldId());
+        EXPECT_EQ(5u, data.getDocId());
+        FieldPositionsIterator itr = data.getIterator();
+        EXPECT_EQ(1u, itr.size());
+        ASSERT_TRUE(itr.valid());
+        EXPECT_EQ(14u, itr.getElementWeight()); // 6 + 8
+        itr.next();
+        EXPECT_TRUE(!itr.valid());
+    }
 }
 
-TEST_APPHOOK(Test);
+TEST_F(FakeSearchableTest, require_that_relevant_data_can_be_obtained_from_fake_attribute_search_context) {
+    source.is_attr(true);
+    source.addResult("attrfoo", "word1",
+                     FakeResult().doc(5).elem(2).weight(6).pos(3).elem(4).weight(8).pos(5));
+    SimpleStringTerm termNode("word1", "viewfoo", 1, w);
+    FieldSpecList fields;
+    fields.add(FieldSpec("attrfoo", 1, 1));
+    Blueprint::UP bp = source.createBlueprint(req_ctx, fields, termNode);
+    MatchData::UP md = MatchData::makeTestInstance(100, 10);
+    bp->fetchPostings(false);
+    SearchIterator::UP search = bp->createSearch(*md, false);
+    EXPECT_EQ(bp->get_attribute_search_context(), search->getAttributeSearchContext());
+    const auto *attr_ctx = bp->get_attribute_search_context();
+    ASSERT_TRUE(attr_ctx);
+    EXPECT_EQ(attr_ctx->attributeName(), "attrfoo");
+    int32_t elem_weight = 0;
+    EXPECT_EQ(attr_ctx->find(4, 0, elem_weight), -1);
+    int32_t elem_id = attr_ctx->find(5, 0, elem_weight);
+    EXPECT_EQ(elem_id, 2);
+    EXPECT_EQ(elem_weight, 6);
+    elem_id = attr_ctx->find(5, 3, elem_weight);
+    EXPECT_EQ(elem_id, 4);
+    EXPECT_EQ(elem_weight, 8);
+    EXPECT_EQ(attr_ctx->find(5, 5, elem_weight), -1);
+    EXPECT_EQ(attr_ctx->find(6, 0, elem_weight), -1);
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

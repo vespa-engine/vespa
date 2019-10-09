@@ -61,11 +61,46 @@ SimpleBlueprint::tag(const vespalib::string &t)
 
 //-----------------------------------------------------------------------------
 
+namespace {
+
+struct FakeContext : attribute::ISearchContext {
+    const vespalib::string &name;
+    const FakeResult &result;
+    FakeContext(const vespalib::string &name_in, const FakeResult &result_in)
+        : name(name_in), result(result_in) {}
+    int32_t onFind(DocId docid, int32_t elemid, int32_t &weight) const override {
+        for (const auto &doc: result.inspect()) {
+            if (doc.docId == docid) {
+                for (const auto &elem: doc.elements) {
+                    if (elem.id >= uint32_t(elemid)) {
+                        weight = elem.weight;
+                        return elem.id;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+    int32_t onFind(DocId docid, int32_t elem) const override {
+        int32_t ignore_weight;
+        return onFind(docid, elem, ignore_weight);
+    }
+    unsigned int approximateHits() const override { return 0; }
+    std::unique_ptr<SearchIterator> createIterator(fef::TermFieldMatchData *, bool) override { abort(); }
+    void fetchPostings(bool) override { }
+    bool valid() const override { return true; }
+    search::Int64Range getAsIntegerTerm() const override { abort(); }
+    const search::QueryTermBase * queryTerm() const override { abort(); }
+    const vespalib::string &attributeName() const override { return name; }
+};
+
+}
+
 SearchIterator::UP
 FakeBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool) const
 {
     auto result = std::make_unique<FakeSearch>(_tag, _field.getName(), _term, _result, tfmda);
-    result->is_attr(_is_attr);
+    result->attr_ctx(_ctx.get());
     return result;
 }
 
@@ -75,11 +110,21 @@ FakeBlueprint::FakeBlueprint(const FieldSpec &field, const FakeResult &result)
       _term("<term>"),
       _field(field),
       _result(result),
-      _is_attr(false)
+      _ctx()
 {
     setEstimate(HitEstimate(result.inspect().size(), result.inspect().empty()));
 }
 
 FakeBlueprint::~FakeBlueprint() = default;
+
+FakeBlueprint &
+FakeBlueprint::is_attr(bool value) {
+    if (value) {
+        _ctx = std::make_unique<FakeContext>(_field.getName(), _result);
+    } else {
+        _ctx.reset();
+    }
+    return *this;
+}
 
 }

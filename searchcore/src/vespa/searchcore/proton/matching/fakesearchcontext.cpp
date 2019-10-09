@@ -12,7 +12,9 @@ FakeSearchContext::FakeSearchContext(size_t initialNumDocs)
       _indexes(new IndexCollection(_selector)),
       _attrSearchable(),
       _docIdLimit(initialNumDocs)
-{}
+{
+    _attrSearchable.is_attr(true);
+}
 
 FakeSearchContext::~FakeSearchContext() {}
 

@@ -17,11 +17,11 @@ class FakeSearchable : public Searchable
 {
 private:
     typedef std::pair<vespalib::string, vespalib::string> Key;
-    typedef FakeResult                          Value;
-    typedef std::map<Key, Value>                Map;
+    typedef std::map<Key, FakeResult> Map;
 
     vespalib::string _tag;
-    Map         _map;
+    Map              _map;
+    bool             _is_attr;
 
 public:
     /**
@@ -38,6 +38,16 @@ public:
      **/
     FakeSearchable &tag(const vespalib::string &t) {
         _tag = t;
+        return *this;
+    }
+
+    /**
+     * Is this searchable searching attributes? Setting this to true
+     * will result in blueprints and search iterators exposing a
+     * mocked attribute search context interface.
+     **/
+    FakeSearchable &is_attr(bool value) {
+        _is_attr = value;
         return *this;
     }
 

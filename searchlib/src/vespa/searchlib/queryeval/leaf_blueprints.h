@@ -51,7 +51,7 @@ private:
     vespalib::string _term;
     FieldSpec   _field;
     FakeResult  _result;
-    bool _is_attr;
+    std::unique_ptr<attribute::ISearchContext> _ctx;
 
 protected:
     SearchIterator::UP
@@ -67,15 +67,16 @@ public:
     }
     const vespalib::string &tag() const { return _tag; }
 
-    FakeBlueprint &is_attr(bool value) {
-        _is_attr = value;
-        return *this;
-    }
-    bool is_attr() const { return _is_attr; }
+    FakeBlueprint &is_attr(bool value);
+    bool is_attr() const { return bool(_ctx); }
 
     FakeBlueprint &term(const vespalib::string &t) {
         _term = t;
         return *this;
+    }
+
+    const attribute::ISearchContext *get_attribute_search_context() const override {
+        return _ctx.get();
     }
 };
 

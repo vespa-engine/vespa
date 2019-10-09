@@ -9,32 +9,6 @@
 namespace search {
 namespace queryeval {
 
-namespace {
-
-struct FakeContext : search::attribute::ISearchContext {
-    int32_t onFind(DocId, int32_t, int32_t &) const override { return -1; }
-    int32_t onFind(DocId, int32_t) const override { return -1; }
-    unsigned int approximateHits() const override { return 0; }
-    std::unique_ptr<SearchIterator> createIterator(fef::TermFieldMatchData *, bool) override { abort(); }
-    void fetchPostings(bool) override { }
-    bool valid() const override { return true; }
-    search::Int64Range getAsIntegerTerm() const override { abort(); }
-    const search::QueryTermBase * queryTerm() const override { abort(); }
-    const vespalib::string &attributeName() const override { abort(); }
-};
-
-} // namespace search::queryeval::<unnamed>
-
-void
-FakeSearch::is_attr(bool value)
-{
-    if (value) {
-        _ctx = std::make_unique<FakeContext>();
-    } else {
-        _ctx.reset();
-    }
-}
-
 void
 FakeSearch::doSeek(uint32_t docid)
 {
@@ -59,12 +33,19 @@ FakeSearch::doUnpack(uint32_t docid)
     const Doc &doc = _result.inspect()[_offset];
     assert(doc.docId == docid);
     _tfmda[0]->reset(docid);
+    int32_t sum_weight = 0;
     for (uint32_t i = 0; i < doc.elements.size(); ++i) {
-        const Elem &elem =doc.elements[i];
-        for (uint32_t j = 0; j < elem.positions.size(); ++j) {
-            _tfmda[0]->appendPosition(PosCtx(elem.id, elem.positions[j],
-                                             elem.weight, elem.length));
+        const Elem &elem = doc.elements[i];
+        sum_weight += elem.weight;
+        if (!is_attr()) {
+            for (uint32_t j = 0; j < elem.positions.size(); ++j) {
+                _tfmda[0]->appendPosition(PosCtx(elem.id, elem.positions[j],
+                                elem.weight, elem.length));
+            }
         }
+    }
+    if (is_attr()) {
+        _tfmda[0]->appendPosition(PosCtx(0, 0, sum_weight, 1));
     }
 }
 

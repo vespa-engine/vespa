@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_fake_searchable_test_app TEST
     fake_searchable_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_fake_searchable_test_app COMMAND searchlib_fake_searchable_test_app)

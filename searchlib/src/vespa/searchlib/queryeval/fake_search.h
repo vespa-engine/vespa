@@ -19,7 +19,7 @@ private:
     FakeResult                   _result;
     uint32_t                     _offset;
     fef::TermFieldMatchDataArray _tfmda;
-    std::unique_ptr<attribute::ISearchContext> _ctx;
+    const attribute::ISearchContext *_ctx;
 
     bool valid() const { return _offset < _result.inspect().size(); }
     uint32_t currId() const { return _result.inspect()[_offset].docId; }
@@ -32,16 +32,18 @@ public:
                const FakeResult &res,
                const fef::TermFieldMatchDataArray &tfmda)
         : _tag(tag), _field(field), _term(term),
-          _result(res), _offset(0), _tfmda(tfmda)
+          _result(res), _offset(0), _tfmda(tfmda),
+          _ctx(nullptr)
     {
         assert(_tfmda.size() == 1);
     }
-    void is_attr(bool value);
+    void attr_ctx(const attribute::ISearchContext *ctx) { _ctx = ctx; }
+    bool is_attr() const { return (_ctx != nullptr); }
     void doSeek(uint32_t docid) override;
     void doUnpack(uint32_t docid) override;
     const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const attribute::ISearchContext *getAttributeSearchContext() const override { return _ctx.get(); }
+    const attribute::ISearchContext *getAttributeSearchContext() const override { return _ctx; }
 };
 
 } // namespace queryeval
