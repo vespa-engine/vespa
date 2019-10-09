@@ -46,6 +46,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
@@ -236,29 +237,31 @@ public class ControllerTest {
                 new RoutingEndpoint("http://old-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream2"),
                 new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
                 new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3"),
+                new RoutingEndpoint("http://global-endpoint-2.vespa.yahooapis.com:4080", "host2", true, "upstream4"),
                 new RoutingEndpoint("http://global-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1"),
                 new RoutingEndpoint("http://alias-endpoint.vespa.yahooapis.com:4080", "host1", true, "upstream1")
         ));
 
-        Supplier<Map<RoutingEndpoint, EndpointStatus>> rotationStatus = () -> tester.controller().applications().globalRotationStatus(deployment);
-        Function<String, Optional<EndpointStatus>> findStatusByUpstream = (upstreamName) -> {
-            return rotationStatus.get()
-                                 .entrySet().stream()
-                                 .filter(kv -> kv.getKey().upstreamName().equals(upstreamName))
-                                 .findFirst()
-                                 .map(Map.Entry::getValue);
+        Supplier<Map<RoutingEndpoint, EndpointStatus>> globalRotationStatus = () -> tester.controller().applications().globalRotationStatus(deployment);
+        Supplier<List<EndpointStatus>> upstreamOneEndpoints = () -> {
+            return globalRotationStatus.get()
+                                       .entrySet().stream()
+                                       .filter(kv -> kv.getKey().upstreamName().equals("upstream1"))
+                                       .map(Map.Entry::getValue)
+                                       .collect(Collectors.toList());
         };
 
         // Check initial rotation status
-        assertEquals(1, rotationStatus.get().size());
-        assertEquals(findStatusByUpstream.apply("upstream1").get().getStatus(), EndpointStatus.Status.in);
+        assertEquals(3, globalRotationStatus.get().size());
+        assertEquals(2, upstreamOneEndpoints.get().size());
+        assertTrue("All upstreams are in", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.in));
 
         // Set the global rotations out of service
         EndpointStatus status = new EndpointStatus(EndpointStatus.Status.out, "unit-test", "Test", tester.clock().instant().getEpochSecond());
         tester.controller().applications().setGlobalRotationStatus(deployment, status);
-        assertEquals(1, rotationStatus.get().size());
-        assertEquals(findStatusByUpstream.apply("upstream1").get().getStatus(), EndpointStatus.Status.out);
-        assertEquals("unit-test", findStatusByUpstream.apply("upstream1").get().getReason());
+        assertEquals(2, upstreamOneEndpoints.get().size());
+        assertTrue("All upstreams are out", upstreamOneEndpoints.get().stream().allMatch(es -> es.getStatus() == EndpointStatus.Status.out));
+        assertTrue("Reason is set", upstreamOneEndpoints.get().stream().allMatch(es -> es.getReason().equals("unit-test")));
 
         // Deployment without a global endpoint
         tester.serviceRegistry().routingGeneratorMock().putEndpoints(deployment, List.of(
@@ -266,7 +269,6 @@ public class ControllerTest {
                 new RoutingEndpoint("http://qrs-endpoint.vespa.yahooapis.com:4080", "host1", false, "upstream1"),
                 new RoutingEndpoint("http://feeding-endpoint.vespa.yahooapis.com:4080", "host2", false, "upstream3")
         ));
-        assertFalse("No global endpoint exists", findStatusByUpstream.apply("upstream1").isPresent());
         try {
             tester.controller().applications().setGlobalRotationStatus(deployment, status);
             fail("Expected exception");
