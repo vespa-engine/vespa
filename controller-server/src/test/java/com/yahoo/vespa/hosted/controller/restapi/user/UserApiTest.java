@@ -154,7 +154,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Key "+  quotedPemPublicKey + " is already owned by joe@dev\"}",
                               400);
 
-        // PATCH in a different pem developer key
+        // POST in a different pem developer key
         tester.assertResponse(request("/application/v4/tenant/my-tenant/key", POST)
                                       .user("developer@tenant")
                                       .roles(Set.of(Role.developer(id.tenant())))
