@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -81,13 +80,14 @@ public class RotationStatusUpdater extends Maintainer {
     }
 
     private RotationStatus getStatus(Instance instance) {
-        var statusMap = new LinkedHashMap<RotationId, Map<ZoneId, RotationState>>();
+        var statusMap = new LinkedHashMap<RotationId, RotationStatus.Targets>();
         for (var assignedRotation : instance.rotations()) {
             var rotation = applications.rotationRepository().getRotation(assignedRotation.rotationId());
             if (rotation.isEmpty()) continue;
-            var rotationStatus = service.getHealthStatus(rotation.get().name()).entrySet().stream()
-                                        .collect(Collectors.toMap(Map.Entry::getKey, (kv) -> from(kv.getValue())));
-            statusMap.put(assignedRotation.rotationId(), rotationStatus);
+            var targets = service.getHealthStatus(rotation.get().name()).entrySet().stream()
+                                 .collect(Collectors.toMap(Map.Entry::getKey, (kv) -> from(kv.getValue())));
+            var lastUpdated = controller().clock().instant();
+            statusMap.put(assignedRotation.rotationId(), new RotationStatus.Targets(targets, lastUpdated));
         }
         return RotationStatus.from(statusMap);
     }
