@@ -3,12 +3,10 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
-import com.yahoo.component.Version;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
@@ -30,11 +28,6 @@ public class OsVersionStatusSerializer {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     private static final String versionsField = "versions";
-    private static final String versionField = "version";
-    private static final String nodesField = "nodes";
-    private static final String hostnameField = "hostname";
-    private static final String regionField = "region";
-    private static final String environmentField = "environment";
     private static final String nodeVersionsField = "nodeVersions";
 
     private final OsVersionSerializer osVersionSerializer;
@@ -53,8 +46,6 @@ public class OsVersionStatusSerializer {
             Cursor object = versions.addObject();
             osVersionSerializer.toSlime(version, object);
             nodeVersionSerializer.nodeVersionsToSlime(nodes, object.setArray(nodeVersionsField));
-            // TODO(mpolden): Stop writing this after September 2019
-            nodesToSlime(nodes, object.setArray(nodesField));
         });
         return slime;
     }
@@ -63,33 +54,13 @@ public class OsVersionStatusSerializer {
         return new OsVersionStatus(osVersionsFromSlime(slime.get().field(versionsField)));
     }
 
-    private void nodesToSlime(NodeVersions nodeVersions, Cursor array) {
-        nodeVersions.asMap().values().forEach(node -> nodeToSlime(node, array.addObject()));
-    }
-
-    private void nodeToSlime(NodeVersion node, Cursor object) {
-        object.setString(hostnameField, node.hostname().value());
-        object.setString(versionField, node.currentVersion().toFullString());
-        object.setString(regionField, node.zone().region().value());
-        object.setString(environmentField, node.zone().environment().value());
-    }
-
     private ImmutableMap<OsVersion, NodeVersions> osVersionsFromSlime(Inspector array) {
         var versions = ImmutableSortedMap.<OsVersion, NodeVersions>naturalOrder();
         array.traverse((ArrayTraverser) (i, object) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(object);
-            versions.put(osVersion, nodesFromSlime(object, osVersion.version()));
+            versions.put(osVersion, nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodeVersionsField), osVersion.version()));
         });
         return versions.build();
-    }
-
-    // TODO(mpolden): Simplify and in-line after September 2019
-    private NodeVersions nodesFromSlime(Inspector object, Version version) {
-        var newField = object.field(nodeVersionsField);
-        if (newField.valid()) {
-            return nodeVersionSerializer.nodeVersionsFromSlime(newField, version);
-        }
-        return nodeVersionSerializer.nodeVersionsFromSlime(object.field(nodesField), version);
     }
 
 }

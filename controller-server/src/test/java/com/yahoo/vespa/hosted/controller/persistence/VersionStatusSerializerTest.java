@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
@@ -13,8 +12,6 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,41 +60,6 @@ public class VersionStatusSerializerTest {
             assertEquals(a.confidence(), b.confidence());
         }
 
-    }
-
-    @Test
-    public void testLegacySerialization() throws Exception {
-        var data = Files.readAllBytes(Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/version-status-legacy-format.json"));
-        var serializer = new VersionStatusSerializer(new NodeVersionSerializer());
-        var deserializedStatus = serializer.fromSlime(SlimeUtils.jsonToSlime(data));
-
-        var statistics = new DeploymentStatistics(
-                Version.fromString("7.0"),
-                List.of(),
-                List.of(),
-                List.of()
-        );
-        var nodeVersions = List.of(new NodeVersion(HostName.from("cfg1"), ZoneId.defaultId(), Version.fromString("7.0"),
-                                                   Version.fromString("7.1"), Instant.ofEpochMilli(1111)),
-                                   new NodeVersion(HostName.from("cfg2"), ZoneId.defaultId(), Version.fromString("7.0"),
-                                                   Version.fromString("7.1"), Instant.ofEpochMilli(2222)),
-                                   new NodeVersion(HostName.from("cfg3"), ZoneId.defaultId(), Version.fromString("7.0"),
-                                                   Version.fromString("7.1"), Instant.ofEpochMilli(3333)));
-        var vespaVersion = new VespaVersion(statistics, "badc0ffee",
-                                            Instant.ofEpochMilli(123), true,
-                                            true, true,
-                                            NodeVersions.EMPTY.with(nodeVersions),
-                                            VespaVersion.Confidence.normal);
-
-        VespaVersion deserialized = deserializedStatus.versions().get(0);
-        assertEquals(vespaVersion.releaseCommit(), deserialized.releaseCommit());
-        assertEquals(vespaVersion.committedAt().truncatedTo(MILLIS), deserialized.committedAt());
-        assertEquals(vespaVersion.isControllerVersion(), deserialized.isControllerVersion());
-        assertEquals(vespaVersion.isSystemVersion(), deserialized.isSystemVersion());
-        assertEquals(vespaVersion.isReleased(), deserialized.isReleased());
-        assertEquals(vespaVersion.statistics(), deserialized.statistics());
-        assertEquals(vespaVersion.nodeVersions(), deserialized.nodeVersions());
-        assertEquals(vespaVersion.confidence(), deserialized.confidence());
     }
 
     private static NodeVersions nodeVersions(Version version, Version wantedVersion, Instant changedAt, String... hostnames) {

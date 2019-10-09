@@ -32,10 +32,6 @@ public class NodeVersionSerializer {
     private static final String wantedVersionField = "wantedVersion";
     private static final String changedAtField = "changedAt";
 
-    // Legacy fields
-    private static final String environmentField = "environment";
-    private static final String regionField = "region";
-
     public void nodeVersionsToSlime(NodeVersions nodeVersions, Cursor array) {
         for (var nodeVersion : nodeVersions.asMap().values()) {
             var nodeVersionObject = array.addObject();
@@ -50,29 +46,12 @@ public class NodeVersionSerializer {
         var nodeVersions = ImmutableMap.<HostName, NodeVersion>builder();
         array.traverse((ArrayTraverser) (i, entry) -> {
             var hostname = HostName.from(entry.field(hostnameField).asString());
-            var zone = zoneFromSlime(entry);
-            // TODO(mpolden): Make the following fields non-optional after September 2019
-            var wantedVersion = Serializers.optionalString(entry.field(wantedVersionField))
-                                           .map(Version::fromString)
-                                           .orElse(Version.emptyVersion);
-            var changedAt = Serializers.optionalInstant(entry.field(changedAtField)).orElse(Instant.EPOCH);
+            var zone = ZoneId.from(entry.field(zoneField).asString());
+            var wantedVersion = Version.fromString(entry.field(wantedVersionField).asString());
+            var changedAt = Instant.ofEpochMilli(entry.field(changedAtField).asLong());
             nodeVersions.put(hostname, new NodeVersion(hostname, zone, version, wantedVersion, changedAt));
         });
         return new NodeVersions(nodeVersions.build());
-    }
-
-    // TODO(mpolden): Simplify and in-line after September 2019
-    private ZoneId zoneFromSlime(Inspector object) {
-        var zoneInspector = object.field(zoneField);
-        if (zoneInspector.valid()) {
-            return ZoneId.from(zoneInspector.asString());
-        }
-        var regionInspector = object.field(regionField);
-        var environmentInspector = object.field(environmentField);
-        if (regionInspector.valid() && environmentInspector.valid()) {
-            return ZoneId.from(environmentInspector.asString(), regionInspector.asString());
-        }
-        return ZoneId.defaultId();
     }
 
 }
