@@ -129,17 +129,20 @@ public class RotationRepository {
         }
 
         Map<EndpointId, AssignedRotation> existingAssignments = existingEndpointAssignments(deploymentSpec, instance);
-        Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(deploymentSpec, existingAssignments, lock);
+        Map<EndpointId, AssignedRotation> updatedAssignments = assignRotationsToEndpoints(deploymentSpec, existingAssignments, instance.name(), lock);
 
         existingAssignments.putAll(updatedAssignments);
 
         return List.copyOf(existingAssignments.values());
     }
 
-    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(DeploymentSpec deploymentSpec, Map<EndpointId, AssignedRotation> existingAssignments, RotationLock lock) {
+    private Map<EndpointId, AssignedRotation> assignRotationsToEndpoints(DeploymentSpec deploymentSpec,
+                                                                         Map<EndpointId, AssignedRotation> existingAssignments,
+                                                                         InstanceName instance,
+                                                                         RotationLock lock) {
         var availableRotations = new ArrayList<>(availableRotations(lock).values());
 
-        var neededRotations = deploymentSpec.endpoints().stream()
+        var neededRotations = deploymentSpec.requireInstance(instance).endpoints().stream()
                                             .filter(Predicate.not(endpoint -> existingAssignments.containsKey(EndpointId.of(endpoint.endpointId()))))
                                             .collect(Collectors.toSet());
 
