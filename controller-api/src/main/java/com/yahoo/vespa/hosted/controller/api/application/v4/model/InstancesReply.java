@@ -12,8 +12,6 @@ import java.util.Set;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstancesReply {
-    public Set<URI> globalRotations;
     public List<InstanceReference> instances;
     public String compileVersion;
-    public String rotationId;
 }
