@@ -172,7 +172,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
                               new File("second-developer-key.json"));
 
-        // DELETE an application is available to application admins.
+        // DELETE an application is available to developers.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", DELETE)
                              .roles(Set.of(Role.developer(id.tenant()))),
                               "{\"message\":\"Deleted application my-tenant.my-app\"}");
