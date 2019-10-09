@@ -258,6 +258,11 @@ public class DeploymentSpec {
         return instance.get();
     }
 
+    /** Returns the instance names declared in this */
+    public List<InstanceName> instanceNames() {
+        return instances().stream().map(DeploymentInstanceSpec::name).collect(Collectors.toUnmodifiableList());
+    }
+
     /** Returns the step descendants of this which are instances */
     public List<DeploymentInstanceSpec> instances() {
         return instances(steps);

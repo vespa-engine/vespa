@@ -6,8 +6,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -20,18 +18,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -1233,6 +1229,21 @@ public class DeploymentTriggerTest {
         iTester.tester().controller().applications().createInstance(appId.instance("user"));
         iTester.deployNewSubmission(iTester.newSubmission());
         iTester.newSubmission();
+    }
+
+    public void testMultipleInstances() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1,instance2")
+                .environment(Environment.prod)
+                .region("us-east-3")
+                .build();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
+        ApplicationVersion version = tester.newSubmission(appId, applicationPackage);
+        tester.deployNewSubmission(appId, version);
+        assertEquals(2, tester.tester().application(appId).instances().size());
+        assertEquals(2, tester.tester().application(appId).productionDeployments().values().stream()
+                              .mapToInt(Collection::size)
+                              .sum());
     }
 
     /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */
