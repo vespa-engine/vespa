@@ -122,12 +122,22 @@ public class InternalDeploymentTester {
         domain.services.put(ATHENZ_SERVICE, new AthenzDbMock.Service(true));
     }
 
+    /** Submits a new application, and returns the version of the new submission. */
+    public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage,
+                                            SourceRevision revision, String authorEmail, long projectId) {
+        return jobs.submit(id, revision, authorEmail, projectId, applicationPackage, new byte[0]);
+    }
+
+    /** Submits a new application, and returns the version of the new submission. */
+    public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage) {
+        return newSubmission(id, applicationPackage, BuildJob.defaultSourceRevision, "a@b", 2);
+    }
+
     /**
      * Submits a new application, and returns the version of the new submission.
      */
     public ApplicationVersion newSubmission() {
-        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2,
-                           tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage, new byte[0]);
+        return newSubmission(appId, tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage);
     }
 
     /**
@@ -151,11 +161,11 @@ public class InternalDeploymentTester {
     }
 
     /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
-    public List<JobType> completeRollout() {
+    public List<JobType> completeRollout(TenantAndApplicationId id) {
         tester.readyJobTrigger().run();
         Set<JobType> jobs = new HashSet<>();
         List<Run> activeRuns;
-        while ( ! (activeRuns = jobs().active(appId)).isEmpty())
+        while ( ! (activeRuns = jobs().active(id)).isEmpty())
             for (Run run : activeRuns)
                 if (jobs.add(run.id().type())) {
                     runJob(run.id().type());
@@ -170,34 +180,45 @@ public class InternalDeploymentTester {
 
     /** Completely deploys the given application version, assuming it is the last to be submitted. */
     public void deployNewSubmission(ApplicationVersion version) {
-        assertFalse(instance().deployments().values().stream()
-                              .anyMatch(deployment -> deployment.applicationVersion().equals(version)));
-        assertEquals(version, application().change().application().get());
-        assertFalse(application().change().platform().isPresent());
-        completeRollout();
+        deployNewSubmission(appId, version);
     }
 
-    /**
-     * Completely deploys the given, new platform.
-     */
+    /** Completely deploys the given application version, assuming it is the last to be submitted. */
+    public void deployNewSubmission(TenantAndApplicationId id, ApplicationVersion version) {
+        assertFalse(tester.application(id).instances().values().stream()
+                          .anyMatch(instance -> instance.deployments().values().stream()
+                                                        .anyMatch(deployment -> deployment.applicationVersion().equals(version))));
+        assertEquals(version, tester.application(id).change().application().get());
+        assertFalse(tester.application(id).change().platform().isPresent());
+        completeRollout(id);
+    }
+
+    /** Completely deploys the given, new platform. */
     public void deployNewPlatform(Version version) {
-        tester.upgradeSystem(version);
-        assertFalse(instance().deployments().values().stream()
-                              .anyMatch(deployment -> deployment.version().equals(version)));
-        assertEquals(version, application().change().platform().get());
-        assertFalse(application().change().application().isPresent());
+        deployNewPlatform(appId, version);
+    }
 
-        completeRollout();
+    /** Completely deploys the given, new platform. */
+    public void deployNewPlatform(TenantAndApplicationId id, Version version) {
+        assertEquals(tester.controller().systemVersion(), version);
+        assertFalse(tester.application(id).instances().values().stream()
+                          .anyMatch(instance -> instance.deployments().values().stream()
+                                                        .anyMatch(deployment -> deployment.version().equals(version))));
+        assertEquals(version, tester.application(id).change().platform().get());
+        assertFalse(tester.application(id).change().application().isPresent());
 
-        assertTrue(instance().productionDeployments().values().stream()
-                             .allMatch(deployment -> deployment.version().equals(version)));
+        completeRollout(id);
+
+        assertTrue(tester.application(id).productionDeployments().values().stream()
+                         .allMatch(deployments -> deployments.stream()
+                                                             .allMatch(deployment -> deployment.version().equals(version))));
 
         for (JobType type : new DeploymentSteps(application().deploymentSpec(), tester.controller()::system).productionJobs())
             assertTrue(tester.configServer().nodeRepository()
-                             .list(type.zone(tester.controller().system()), instanceId).stream()
+                             .list(type.zone(tester.controller().system()), id.defaultInstance()).stream() // TODO jonmv: support more
                              .allMatch(node -> node.currentVersion().equals(version)));
 
-        assertFalse(application().change().hasTargets());
+        assertFalse(tester.application(id).change().hasTargets());
     }
 
     /**
