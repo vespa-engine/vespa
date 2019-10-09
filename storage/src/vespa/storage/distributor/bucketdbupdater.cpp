@@ -183,6 +183,11 @@ public:
             // If we encounter a bucket that already exists, replace value wholesale.
             // Don't try to cleverly merge replicas, as the values we currently hold
             // in the read-only DB may be stale.
+            // Note that this case shouldn't really happen, since we only add previously
+            // owned buckets to the read-only DB, and subsequent adds to a non-empty DB
+            // can only happen for state preemptions. Since ownership is not regained
+            // before a state is stable, a bucket is only added once. But we handle it
+            // anyway in case this changes at some point in the future.
             m.current_entry() = *_current;
             return Result::Update;
         }

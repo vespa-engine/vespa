@@ -29,6 +29,7 @@ namespace storage::distributor {
 
 struct DistributorTest : Test, DistributorTestUtil {
     DistributorTest();
+    ~DistributorTest() override;
 
     // TODO handle edge case for window between getnodestate reply already
     // sent and new request not yet received
@@ -167,6 +168,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         return _distributor->handleMessage(msg);
     }
 
+    void configure_stale_reads_enabled(bool enabled) {
+        ConfigBuilder builder;
+        builder.allowStaleReadsDuringClusterStateTransitions = enabled;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -184,6 +191,8 @@ DistributorTest::DistributorTest()
       _bucketSpaces()
 {
 }
+
+DistributorTest::~DistributorTest() = default;
 
 TEST_F(DistributorTest, operation_generation) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
@@ -661,6 +670,13 @@ auto makeDummyRemoveCommand() {
             api::Timestamp(0));
 }
 
+auto make_dummy_get_command_for_bucket_1() {
+    return std::make_shared<api::GetCommand>(
+            makeDocumentBucket(document::BucketId(0)),
+            document::DocumentId("id:foo:testdoctype1:n=1:foo"),
+            "[all]");
+}
+
 }
 
 void DistributorTest::sendDownClusterStateCommand() {
@@ -978,24 +994,49 @@ TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_h
     createLinks(true);
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
 
-    ConfigBuilder builder;
-    builder.allowStaleReadsDuringClusterStateTransitions = true;
-    configureDistributor(builder);
+    configure_stale_reads_enabled(true);
     EXPECT_TRUE(getExternalOperationHandler().concurrent_gets_enabled());
 
-    builder.allowStaleReadsDuringClusterStateTransitions = false;
-    configureDistributor(builder);
+    configure_stale_reads_enabled(false);
     EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
 }
 
 TEST_F(DistributorTest, concurrent_reads_not_enabled_if_btree_db_is_not_enabled) {
     createLinks(false);
     setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
-
-    ConfigBuilder builder;
-    builder.allowStaleReadsDuringClusterStateTransitions = true;
-    configureDistributor(builder);
+    configure_stale_reads_enabled(true);
     EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
+}
+
+TEST_F(DistributorTest, gets_are_started_outside_main_distributor_logic_if_btree_db_and_stale_reads_enabled) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+    configure_stale_reads_enabled(true);
+
+    document::BucketId bucket(16, 1);
+    addNodesToBucketDB(bucket, "0=1/1/1/t");
+    _distributor->onDown(make_dummy_get_command_for_bucket_1());
+    ASSERT_THAT(_sender.commands(), SizeIs(1));
+    EXPECT_THAT(_sender.replies(), SizeIs(0));
+
+    // Reply is routed to the correct owner
+    auto reply = std::shared_ptr<api::StorageReply>(_sender.command(0)->makeReply());
+    _distributor->onDown(reply);
+    ASSERT_THAT(_sender.commands(), SizeIs(1));
+    EXPECT_THAT(_sender.replies(), SizeIs(1));
+}
+
+TEST_F(DistributorTest, gets_are_not_started_outside_main_distributor_logic_if_stale_reads_disabled) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+    configure_stale_reads_enabled(false);
+
+    document::BucketId bucket(16, 1);
+    addNodesToBucketDB(bucket, "0=1/1/1/t");
+    _distributor->onDown(make_dummy_get_command_for_bucket_1());
+    // Get has been placed into distributor queue, so no external messages are produced.
+    EXPECT_THAT(_sender.commands(), SizeIs(0));
+    EXPECT_THAT(_sender.replies(), SizeIs(0));
 }
 
 }
