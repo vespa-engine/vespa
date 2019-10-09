@@ -615,9 +615,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("deployments", withPath("/application/v4" +
-                                                         "/tenant/" + application.id().tenant().value() +
-                                                         "/application/" + application.id().application().value() +
-                                                         "/job/",
+                                                 "/tenant/" + application.id().tenant().value() +
+                                                 "/application/" + application.id().application().value() +
+                                                 "/job/",
                                                  request.getUri()).toString());
 
         application.latestVersion().ifPresent(version -> toSlime(version, object.setObject("latestVersion")));
@@ -625,11 +625,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
         // Currently deploying change
-        if (!application.change().isEmpty())
+        if ( ! application.change().isEmpty())
             toSlime(object.setObject("deploying"), application.change());
 
         // Outstanding change
-        if (!application.outstandingChange().isEmpty())
+        if ( ! application.outstandingChange().isEmpty())
             toSlime(object.setObject("outstandingChange"), application.outstandingChange());
 
         // Compile version. The version that should be used when building an application
@@ -658,24 +658,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.ownershipIssueId().ifPresent(issueId -> object.setString("ownershipIssueId", issueId.value()));
         application.owner().ifPresent(owner -> object.setString("owner", owner.username()));
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
-
-
-        // TODO jonmv: Remove when clients of the InstancesReply are updated
-        Cursor globalRotationsArray = object.setArray("globalRotations");
-        application.instances().values().stream().findFirst().ifPresent(instance -> {
-            instance.endpointsIn(controller.system())
-                    .scope(Endpoint.Scope.global)
-                    .legacy(false) // Hide legacy names
-                    .asList().stream()
-                    .map(Endpoint::url)
-                    .map(URI::toString)
-                    .forEach(globalRotationsArray::addString);
-
-            instance.rotations().stream()
-                    .map(AssignedRotation::rotationId)
-                    .findFirst()
-                    .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
-        });
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentSpec deploymentSpec, HttpRequest request) {
