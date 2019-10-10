@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
@@ -11,13 +13,17 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -27,6 +33,7 @@ import java.util.stream.Stream;
  * @author freva
  */
 public class FileFinder {
+    private static final Logger logger = Logger.getLogger(FileFinder.class.getName());
 
     private final Path basePath;
     private Predicate<FileAttributes> matcher;
@@ -79,10 +86,29 @@ public class FileFinder {
      *
      * @return true iff anything was matched and deleted
      */
-    public boolean deleteRecursively() {
-        boolean[] deletedAnything = { false }; // :(
-        forEach(attributes -> deletedAnything[0] |= attributes.unixPath().deleteRecursively());
-        return deletedAnything[0];
+    public boolean deleteRecursively(TaskContext context) {
+        List<UnixPath> pathsToDelete = new ArrayList<>();
+        forEach(attributes -> {
+            if (Files.exists(attributes.path())) {
+                pathsToDelete.add(attributes.unixPath());
+            }
+        });
+
+        if (pathsToDelete.isEmpty()) return false;
+
+        if (pathsToDelete.size() < 20) {
+            List<Path> paths = pathsToDelete.stream()
+                    .map(x -> basePath.relativize(x.toPath()))
+                    .sorted()
+                    .collect(Collectors.toList());
+            context.log(logger, "Deleting these files in " + basePath + ": " + paths);
+        } else {
+            context.log(logger, "Deleting " + pathsToDelete.size() + " paths under " + basePath);
+        }
+
+        pathsToDelete.sort(Comparator.comparing(UnixPath::toPath));
+        pathsToDelete.forEach(UnixPath::deleteRecursively);
+        return true;
     }
 
     public List<FileAttributes> list() {

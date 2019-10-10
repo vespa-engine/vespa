@@ -141,7 +141,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
 
     public void clearCredentials(NodeAgentContext context) {
         FileFinder.files(context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY))
-                .deleteRecursively();
+                .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
     }
 

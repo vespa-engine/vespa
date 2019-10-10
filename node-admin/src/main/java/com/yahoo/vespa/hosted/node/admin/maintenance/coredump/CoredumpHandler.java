@@ -80,7 +80,7 @@ public class CoredumpHandler {
         FileFinder.files(containerCrashPathOnHost)
                 .match(nameMatches(JAVA_CORE_PATTERN))
                 .maxDepth(1)
-                .deleteRecursively();
+                .deleteRecursively(context);
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
