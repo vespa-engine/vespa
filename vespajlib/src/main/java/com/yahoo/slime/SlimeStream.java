@@ -4,6 +4,11 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+/**
+ * Simple utility to bridge Slime and Streams.
+ *
+ * @author ogronnesby
+ */
 public final class SlimeStream {
     private SlimeStream() {}
 
