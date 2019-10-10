@@ -222,6 +222,8 @@
       "endpointStatus": [
         {
           "endpointId": "default",
+          "rotationId": "rotation-id-1",
+          "clusterId": "foo",
           "status": "IN",
           "lastUpdated": "(ignore)"
         }
@@ -238,6 +240,8 @@
       "endpointStatus": [
         {
           "endpointId": "default",
+          "rotationId": "rotation-id-1",
+          "clusterId": "foo",
           "status": "UNKNOWN",
           "lastUpdated": "(ignore)"
         }
