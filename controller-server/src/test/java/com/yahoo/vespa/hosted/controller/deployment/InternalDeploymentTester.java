@@ -191,6 +191,7 @@ public class InternalDeploymentTester {
         assertEquals(version, tester.application(id).change().application().get());
         assertFalse(tester.application(id).change().platform().isPresent());
         completeRollout(id);
+        assertFalse(tester.application(id).change().hasTargets());
     }
 
     /** Completely deploys the given, new platform. */

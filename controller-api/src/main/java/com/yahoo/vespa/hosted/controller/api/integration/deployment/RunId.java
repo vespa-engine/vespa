@@ -12,47 +12,40 @@ import java.util.Objects;
  */
 public class RunId {
 
-    private final ApplicationId application;
+    private final JobId jobId;
     private final TesterId tester;
-    private final JobType type;
     private final long number;
 
     public RunId(ApplicationId application, JobType type, long number) {
-        this.application = Objects.requireNonNull(application, "ApplicationId cannot be null!");
+        this.jobId = new JobId(application, type);
         this.tester = TesterId.of(application);
-        this.type = Objects.requireNonNull(type, "JobType cannot be null!");
         if (number <= 0) throw new IllegalArgumentException("Build number must be a positive integer!");
         this.number = number;
     }
 
-    public ApplicationId application() { return application; }
+    public JobId job() { return jobId; }
+    public ApplicationId application() { return jobId.application(); }
     public TesterId tester() { return tester; }
-    public JobType type() { return type; }
+    public JobType type() { return jobId.type(); }
     public long number() { return number; }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if ( ! (o instanceof RunId)) return false;
-
-        RunId id = (RunId) o;
-
-        if (number != id.number) return false;
-        if ( ! application.equals(id.application)) return false;
-        return type == id.type;
+        if (o == null || getClass() != o.getClass()) return false;
+        RunId runId = (RunId) o;
+        return number == runId.number &&
+               jobId.equals(runId.jobId);
     }
 
     @Override
     public int hashCode() {
-        int result = application.hashCode();
-        result = 31 * result + type.hashCode();
-        result = 31 * result + (int) (number ^ (number >>> 32));
-        return result;
+        return Objects.hash(jobId, number);
     }
 
     @Override
     public String toString() {
-        return "run " + number + " of " + type.jobName() + " for " + application;
+        return "run " + number + " of " + type().jobName() + " for " + application();
     }
 
 }
