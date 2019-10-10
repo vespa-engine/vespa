@@ -36,7 +36,6 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     @Override
     public void failed(ErrorMessage error) {
         respondedAt = now();
-        atStartUp = false;
 
         if (error.getCode() == Error.BACKEND_COMMUNICATION_ERROR.code) {
             setWorking(false, "Connection failure: " + error.toString());
@@ -55,10 +54,8 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     public void responded() {
         respondedAt=now();
         succeededAt=respondedAt;
-        atStartUp = false;
 
-        if (!isWorking)
-            setWorking(true,"Responds correctly");
+        setWorking(true,"Responds correctly");
     }
 
     /**
@@ -67,7 +64,9 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
     public Boolean isKnownWorking() { return atStartUp ? null : isWorking; }
 
     /** Thread-safely changes the state of this node if required */
+    @Override
     protected synchronized void setWorking(boolean working, String explanation) {
+        atStartUp = false;
         if (this.isWorking == working) return; // Old news
 
         if (explanation==null) {
@@ -78,10 +77,8 @@ public class TrafficNodeMonitor<T> extends BaseNodeMonitor<T> {
 
         if (working) {
             log.info("Putting " + node + " in service" + explanation);
-        }
-        else {
-            if (!atStartUp || !isInternal())
-                log.warning("Taking " + node + " out of service" + explanation);
+        } else {
+            log.warning("Taking " + node + " out of service" + explanation);
             failedAt=now();
         }
 
