@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.Path;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -170,11 +171,30 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
+        if (requestObject.field("roles").valid()) {
+            return addMultipleTenantRoleMembers(tenantName, requestObject);
+        }
+        return addTenantRoleMember(tenantName, requestObject);
+    }
+
+    private HttpResponse addTenantRoleMember(String tenantName, Inspector requestObject) {
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
         users.addUsers(role, List.of(user));
         return new MessageResponse(user + " is now a member of " + role);
+    }
+
+    private HttpResponse addMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
+        var user = new UserId(require("user", Inspector::asString, requestObject));
+        var roles = new ArrayList<Role>();
+        requestObject.field("roles").traverse((ArrayTraverser) (idx, inspector) -> {
+            var roleName = inspector.asString();
+            var role = Roles.toRole(TenantName.from(tenantName), roleName);
+            users.addUsers(role, List.of(user));
+            roles.add(role);
+        });
+        return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
     private HttpResponse addApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
