@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
@@ -106,7 +105,6 @@ public class FileFinder {
             context.log(logger, "Deleting " + pathsToDelete.size() + " paths under " + basePath);
         }
 
-        pathsToDelete.sort(Comparator.comparing(UnixPath::toPath));
         pathsToDelete.forEach(UnixPath::deleteRecursively);
         return true;
     }
