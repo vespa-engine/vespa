@@ -7,6 +7,7 @@ import org.osgi.framework.ServiceRegistration;
 import org.osgi.framework.Version;
 import org.osgi.framework.hooks.bundle.CollisionHook;
 import org.osgi.framework.hooks.bundle.EventHook;
+import org.osgi.framework.hooks.bundle.FindHook;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -24,7 +25,7 @@ import java.util.Set;
  *
  * @author gjoranv
  */
-public class BundleCollisionHook implements CollisionHook, EventHook {
+public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
 
     private ServiceRegistration<?> registration;
     private Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
@@ -33,8 +34,8 @@ public class BundleCollisionHook implements CollisionHook, EventHook {
         if (registration != null) {
             throw new IllegalStateException();
         }
-        registration = context.registerService(new String[]{CollisionHook.class.getName(), EventHook.class.getName()},
-                                               this, null);
+        String[] serviceClasses = {CollisionHook.class.getName(), EventHook.class.getName(), FindHook.class.getName()};
+        registration = context.registerService(serviceClasses, this, null);
     }
 
     public void stop() {
@@ -47,7 +48,7 @@ public class BundleCollisionHook implements CollisionHook, EventHook {
      */
     synchronized void allowDuplicateBundles(Collection<Bundle> bundles) {
         for (var bundle : bundles) {
-            allowedDuplicates.put(bundle, new BsnVersion(bundle.getSymbolicName(), bundle.getVersion()));
+            allowedDuplicates.put(bundle, new BsnVersion(bundle));
         }
     }
 
@@ -63,18 +64,52 @@ public class BundleCollisionHook implements CollisionHook, EventHook {
         }
     }
 
+    /**
+     * Removes duplicates of the allowed duplicate bundles from the given collision candidates.
+     */
     @Override
     public synchronized void filterCollisions(int operationType, Bundle target, Collection<Bundle> collisionCandidates) {
         Set<Bundle> whitelistedCandidates = new HashSet<>();
         for (var bundle : collisionCandidates) {
-            var bsnVersion = new BsnVersion(bundle.getSymbolicName(), bundle.getVersion());
-
             // This is O(n), but n should be small here, plus this is only called when bundles collide.
-            if (allowedDuplicates.containsValue(bsnVersion)) {
+            if (allowedDuplicates.containsValue(new BsnVersion(bundle))) {
                 whitelistedCandidates.add(bundle);
             }
         }
         collisionCandidates.removeAll(whitelistedCandidates);
+    }
+
+    /**
+     * Filters out the set of bundles that should not be visible to the bundle associated with the given context.
+     * If the given context represents one of the allowed duplicates, this method filters out all bundles
+     * that are duplicates of the allowed duplicates. Otherwise this method filters out the allowed duplicates,
+     * so they are not visible to other bundles.
+     *
+     * NOTE:  This hook method is added for a consistent view of the installed bundles, but is not actively
+     *        used by jdisc. The OSGi framework does not use FindHooks when calculating bundle wiring.
+     */
+    @Override
+    public synchronized void find(BundleContext context, Collection<Bundle> bundles) {
+        Set<Bundle> bundlesToHide = new HashSet<>();
+        if (allowedDuplicates.containsKey(context.getBundle())) {
+            for (var bundle : bundles) {
+                // isDuplicate... is O(n), but n should be small here, plus this is only run for duplicate bundles.
+                if (isDuplicateOfAllowedDuplicates(bundle)) {
+                    bundlesToHide.add(bundle);
+                }
+            }
+        } else {
+            for (var bundle : bundles) {
+                if (allowedDuplicates.containsKey(bundle)) {
+                    bundlesToHide.add(bundle);
+                }
+            }
+        }
+        bundles.removeAll(bundlesToHide);
+    }
+
+    private boolean isDuplicateOfAllowedDuplicates(Bundle bundle) {
+        return ! allowedDuplicates.containsKey(bundle) && allowedDuplicates.containsValue(new BsnVersion(bundle));
     }
 
 
@@ -83,9 +118,9 @@ public class BundleCollisionHook implements CollisionHook, EventHook {
         private final String symbolicName;
         private final Version version;
 
-        BsnVersion(String symbolicName, Version version) {
-            this.symbolicName = symbolicName;
-            this.version = version;
+        BsnVersion(Bundle bundle) {
+            this.symbolicName = bundle.getSymbolicName();
+            this.version = bundle.getVersion();
         }
 
         @Override
