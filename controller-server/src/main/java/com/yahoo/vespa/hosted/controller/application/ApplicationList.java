@@ -79,6 +79,14 @@ public class ApplicationList {
         return notUpgradingTo(Collections.singletonList(version));
     }
 
+    public ApplicationList notFailingUpgrade() {
+        return filteredOn(application -> application.instances().values().stream()
+                                                    .allMatch(instance -> JobList.from(instance)
+                                                                                 .failing()
+                                                                                 .not().failingApplicationChange()
+                                                                                 .isEmpty()));
+    }
+
     /** Returns the subset of applications which are currently not upgrading to any of the given versions */
     public ApplicationList notUpgradingTo(Collection<Version> versions) {
         return filteredOn(application -> versions.stream().noneMatch(version -> isUpgradingTo(version, application)));

@@ -47,7 +47,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
         // 'production on this': All deployment jobs upgrading to this version have completed without failure
         ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications())
                                                           .notUpgradingTo(statistics.version())
-                                                          .notFailing();
+                                                          .notFailingUpgrade();
         ApplicationList failingOnThis = ApplicationList.from(statistics.failing(), controller.applications());
         ApplicationList all = ApplicationList.from(controller.applications().asList())
                                              .withProductionDeployment();
