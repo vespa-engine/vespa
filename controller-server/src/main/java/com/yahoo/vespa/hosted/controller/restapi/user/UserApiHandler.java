@@ -13,6 +13,7 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeStream;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
@@ -186,14 +187,12 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse addMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
+        var tenant = TenantName.from(tenantName);
         var user = new UserId(require("user", Inspector::asString, requestObject));
-        var roles = new ArrayList<Role>();
-        requestObject.field("roles").traverse((ArrayTraverser) (idx, inspector) -> {
-            var roleName = inspector.asString();
-            var role = Roles.toRole(TenantName.from(tenantName), roleName);
-            users.addUsers(role, List.of(user));
-            roles.add(role);
-        });
+        var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
+                .map(roleName -> Roles.toRole(tenant, roleName))
+                .peek(role -> users.addUsers(role, List.of(user)))
+                .collect(Collectors.toUnmodifiableList());
         return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
