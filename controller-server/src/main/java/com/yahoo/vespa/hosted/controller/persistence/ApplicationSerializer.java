@@ -159,6 +159,7 @@ public class ApplicationSerializer {
     // RotationStatus fields
     private static final String rotationStatusField = "rotationStatus2";
     private static final String rotationIdField = "rotationId";
+    private static final String lastUpdatedField = "lastUpdated";
     private static final String rotationStateField = "state";
     private static final String statusField = "status";
 
@@ -321,11 +322,12 @@ public class ApplicationSerializer {
     }
 
     private void toSlime(RotationStatus status, Cursor array) {
-        status.asMap().forEach((rotationId, zoneStatus) -> {
+        status.asMap().forEach((rotationId, targets) -> {
             Cursor rotationObject = array.addObject();
             rotationObject.setString(rotationIdField, rotationId.asString());
+            rotationObject.setLong(lastUpdatedField, targets.lastUpdated().toEpochMilli());
             Cursor statusArray = rotationObject.setArray(statusField);
-            zoneStatus.forEach((zone, state) -> {
+            targets.asMap().forEach((zone, state) -> {
                 Cursor statusObject = statusArray.addObject();
                 zoneIdToSlime(zone, statusObject);
                 statusObject.setString(rotationStateField, state.name());
@@ -442,9 +444,11 @@ public class ApplicationSerializer {
 
     private RotationStatus rotationStatusFromSlime(Inspector parentObject) {
         var object = parentObject.field(rotationStatusField);
-        var statusMap = new LinkedHashMap<RotationId, Map<ZoneId, RotationState>>();
+        var statusMap = new LinkedHashMap<RotationId, RotationStatus.Targets>();
         object.traverse((ArrayTraverser) (idx, statusObject) -> statusMap.put(new RotationId(statusObject.field(rotationIdField).asString()),
-                                                                              singleRotationStatusFromSlime(statusObject.field(statusField))));
+                                                                              new RotationStatus.Targets(
+                                                                                      singleRotationStatusFromSlime(statusObject.field(statusField)),
+                                                                                      Instant.ofEpochMilli(statusObject.field(lastUpdatedField).asLong()))));
         return RotationStatus.from(statusMap);
     }
 

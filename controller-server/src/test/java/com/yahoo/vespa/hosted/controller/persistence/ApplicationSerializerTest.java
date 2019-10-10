@@ -117,8 +117,10 @@ public class ApplicationSerializerTest {
         DeploymentJobs deploymentJobs = new DeploymentJobs(statusList);
 
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
-                                                        Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
-                                                               ZoneId.from("prod", "us-east-3"), RotationState.out)));
+                                                        new RotationStatus.Targets(
+                                                                Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
+                                                                       ZoneId.from("prod", "us-east-3"), RotationState.out),
+                                                                Instant.ofEpochMilli(42))));
 
         ApplicationId id1 = ApplicationId.from("t1", "a1", "i1");
         ApplicationId id3 = ApplicationId.from("t1", "a1", "i3");

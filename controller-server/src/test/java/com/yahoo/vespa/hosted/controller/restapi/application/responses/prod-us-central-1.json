@@ -5,7 +5,10 @@
   "endpointStatus": [
     {
       "endpointId": "default",
-      "status": "IN"
+      "rotationId": "rotation-id-1",
+      "clusterId": "foo",
+      "status": "IN",
+      "lastUpdated": "(ignore)"
     }
   ],
   "tenant": "tenant1",

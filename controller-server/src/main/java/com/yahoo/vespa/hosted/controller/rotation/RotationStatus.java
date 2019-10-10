@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.rotation;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 
@@ -16,24 +17,24 @@ public class RotationStatus {
 
     public static final RotationStatus EMPTY = new RotationStatus(Map.of());
 
-    private final Map<RotationId, Map<ZoneId, RotationState>> status;
+    private final Map<RotationId, Targets> status;
 
-    private RotationStatus(Map<RotationId, Map<ZoneId, RotationState>> status) {
+    private RotationStatus(Map<RotationId, Targets> status) {
         this.status = Map.copyOf(Objects.requireNonNull(status));
     }
 
-    public Map<RotationId, Map<ZoneId, RotationState>> asMap() {
+    public Map<RotationId, Targets> asMap() {
         return status;
     }
 
-    /** Get status of given rotation, if any */
-    public Map<ZoneId, RotationState> of(RotationId rotation) {
-        return status.getOrDefault(rotation, Map.of());
+    /** Get targets of given rotation, if any */
+    public Targets of(RotationId rotation) {
+        return status.getOrDefault(rotation, Targets.NONE);
     }
 
     /** Get status of deployment in given rotation, if any */
     public RotationState of(RotationId rotation, Deployment deployment) {
-        return of(rotation).entrySet().stream()
+        return of(rotation).asMap().entrySet().stream()
                            .filter(kv -> kv.getKey().equals(deployment.zone()))
                            .map(Map.Entry::getValue)
                            .findFirst()
@@ -58,8 +59,45 @@ public class RotationStatus {
         return Objects.hash(status);
     }
 
-    public static RotationStatus from(Map<RotationId, Map<ZoneId, RotationState>> status) {
-        return status.isEmpty() ? EMPTY : new RotationStatus(status);
+    public static RotationStatus from(Map<RotationId, Targets> targets) {
+        return targets.isEmpty() ? EMPTY : new RotationStatus(targets);
+    }
+
+    /** Targets of a rotation */
+    public static class Targets {
+
+        public static final Targets NONE = new Targets(Map.of(), Instant.EPOCH);
+
+        private final Map<ZoneId, RotationState> targets;
+        private final Instant lastUpdated;
+
+        public Targets(Map<ZoneId, RotationState> targets, Instant lastUpdated) {
+            this.targets = Map.copyOf(Objects.requireNonNull(targets, "states must be non-null"));
+            this.lastUpdated = Objects.requireNonNull(lastUpdated, "lastUpdated must be non-null");
+        }
+
+        public Map<ZoneId, RotationState> asMap() {
+            return targets;
+        }
+
+        public Instant lastUpdated() {
+            return lastUpdated;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Targets targets1 = (Targets) o;
+            return targets.equals(targets1.targets) &&
+                   lastUpdated.equals(targets1.lastUpdated);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(targets, lastUpdated);
+        }
+
     }
 
 }

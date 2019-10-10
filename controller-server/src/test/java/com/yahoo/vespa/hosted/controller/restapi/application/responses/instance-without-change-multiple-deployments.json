@@ -222,7 +222,10 @@
       "endpointStatus": [
         {
           "endpointId": "default",
-          "status": "IN"
+          "rotationId": "rotation-id-1",
+          "clusterId": "foo",
+          "status": "IN",
+          "lastUpdated": "(ignore)"
         }
       ],
       "environment": "prod",
@@ -237,7 +240,10 @@
       "endpointStatus": [
         {
           "endpointId": "default",
-          "status": "UNKNOWN"
+          "rotationId": "rotation-id-1",
+          "clusterId": "foo",
+          "status": "UNKNOWN",
+          "lastUpdated": "(ignore)"
         }
       ],
       "environment": "prod",
