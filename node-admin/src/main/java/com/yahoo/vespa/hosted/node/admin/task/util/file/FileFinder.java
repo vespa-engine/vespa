@@ -86,27 +86,27 @@ public class FileFinder {
      * @return true iff anything was matched and deleted
      */
     public boolean deleteRecursively(TaskContext context) {
-        List<UnixPath> pathsToDelete = new ArrayList<>();
-        forEach(attributes -> {
-            if (Files.exists(attributes.path())) {
-                pathsToDelete.add(attributes.unixPath());
+        List<Path> deletedPaths = new ArrayList<>();
+
+        try {
+            forEach(attributes -> {
+                if (attributes.unixPath().deleteRecursively()) {
+                    deletedPaths.add(attributes.path());
+                }
+            });
+        } finally {
+            if (deletedPaths.size() > 20) {
+                context.log(logger, "Deleted " + deletedPaths.size() + " paths under " + basePath);
+            } else if (deletedPaths.size() > 0) {
+                List<Path> paths = deletedPaths.stream()
+                        .map(basePath::relativize)
+                        .sorted()
+                        .collect(Collectors.toList());
+                context.log(logger, "Deleted these paths in " + basePath + ": " + paths);
             }
-        });
-
-        if (pathsToDelete.isEmpty()) return false;
-
-        if (pathsToDelete.size() < 20) {
-            List<Path> paths = pathsToDelete.stream()
-                    .map(x -> basePath.relativize(x.toPath()))
-                    .sorted()
-                    .collect(Collectors.toList());
-            context.log(logger, "Deleting these files in " + basePath + ": " + paths);
-        } else {
-            context.log(logger, "Deleting " + pathsToDelete.size() + " paths under " + basePath);
         }
 
-        pathsToDelete.forEach(UnixPath::deleteRecursively);
-        return true;
+        return deletedPaths.size() > 0;
     }
 
     public List<FileAttributes> list() {
