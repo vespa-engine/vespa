@@ -75,8 +75,7 @@ public class InfraDeployerImpl implements InfraDeployer {
             try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
                 NodeType nodeType = application.getCapacity().type();
 
-                candidateNodes = nodeRepository
-                        .getNodes(nodeType, Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive);
+                candidateNodes = getCandidateNodes(nodeType);
                 if (candidateNodes.isEmpty()) {
                     logger.log(LogLevel.DEBUG, "No nodes to provision for " + nodeType + ", removing application");
                     removeApplication(application.getApplicationId());
@@ -121,6 +120,14 @@ public class InfraDeployerImpl implements InfraDeployer {
         public void restart(HostFilter filter) {
             provisioner.restart(application.getApplicationId(), filter);
         }
+    }
+
+    private List<Node> getCandidateNodes(NodeType nodeType) {
+        return nodeRepository.getNodes(nodeType, Node.State.ready, Node.State.reserved,
+                                       Node.State.active, Node.State.inactive)
+                .stream()
+                .filter(node -> node.allocation().isEmpty() || ! node.allocation().get().isRemovable())
+                .collect(Collectors.toList());
     }
 
     private void removeApplication(ApplicationId applicationId) {

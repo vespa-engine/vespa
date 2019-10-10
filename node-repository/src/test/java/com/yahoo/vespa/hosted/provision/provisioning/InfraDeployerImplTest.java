@@ -216,20 +216,42 @@ public class InfraDeployerImplTest {
         verifyRemoved(2);
     }
 
+    @Test
+    public void provision_when_removable_nodes() {
+        infrastructureVersions.setTargetVersion(nodeType, target, false);
+
+        addNode(1, Node.State.failed, Optional.of(oldVersion));
+        addNode(2, Node.State.active, Optional.of(oldVersion));
+        addNode(3, Node.State.active, Optional.of(oldVersion), true); // removable, should not be part of app after deploy
+
+        when(provisioner.prepare(any(), any(), any(), anyInt(), any()))
+                .thenReturn(List.of(new HostSpec(node2.value(), List.of())));
+
+        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
+
+        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
+        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), List.of(node2));
+    }
+
     private void verifyRemoved(int removedCount) {
         verify(provisioner, times(removedCount)).remove(any(), any());
         verify(duperModelInfraApi, times(removedCount)).infraApplicationRemoved(any());
     }
 
-    private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
+    private void addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
+        addNode(id, state, wantedVespaVersion, false);
+    }
+
+    private void addNode(int id, Node.State state, Optional<Version> wantedVespaVersion, boolean removable) {
         Node node = tester.addNode("id-" + id, "node-" + id, "default", nodeType);
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
             ClusterSpec clusterSpec = ClusterSpec.from(ClusterSpec.Type.admin, new ClusterSpec.Id("clusterid"), ClusterSpec.Group.from(0), version, false);
             ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
-            Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), false);
+            Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), removable);
             return node.with(allocation);
         });
-        return nodeRepository.database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());
+        nodeRepository.database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());
     }
 
 }
