@@ -174,12 +174,17 @@ public:
     {}
 
     Result merge(BucketDatabase::Merger& m) override {
-        const auto key = m.bucket_key();
-        while (_current != _last && (_current->getBucketId().toKey() < key)) {
+        const uint64_t key_to_insert = m.bucket_key();
+        uint64_t key_at_cursor = 0;
+        while (_current != _last) {
+            key_at_cursor = _current->getBucketId().toKey();
+            if (key_at_cursor >= key_to_insert) {
+                break;
+            }
             m.insert_before_current(*_current);
             ++_current;
         }
-        if (_current != _last && _current->getBucketId().toKey() == key) {
+        if ((_current != _last) && (key_at_cursor == key_to_insert)) {
             // If we encounter a bucket that already exists, replace value wholesale.
             // Don't try to cleverly merge replicas, as the values we currently hold
             // in the read-only DB may be stale.
