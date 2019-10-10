@@ -178,10 +178,9 @@ public abstract class ControllerHttpClient {
     }
 
     private URI deploymentPath(ApplicationId id, ZoneId zone) {
-        return concatenated(applicationPath(id.tenant(), id.application()),
+        return concatenated(instancePath(id),
                             "environment", zone.environment().value(),
-                            "region", zone.region().value(),
-                            "instance", id.instance().value());
+                            "region", zone.region().value());
     }
 
     private URI deploymentJobPath(ApplicationId id, ZoneId zone) {
