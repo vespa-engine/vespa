@@ -7,9 +7,6 @@ namespace=cloud.config
 # Active rotation given as flag 'active' for a prod region in deployment.xml
 # Default true for now (since code in config-model to set it is not ready yet), should have no default value
 tenants{}.applications{}.activeRotation                         bool default=true
-# Send health check requests on port 4081 instead of 4080
-tenants{}.applications{}.healthCheckOn4081                      bool default=false
-tenants{}.applications{}.nginxUpstreamKeepaliveMultiplier       int default=2
 
 tenants{}.applications{}.hosts{}.hostname                       string default="(unknownhostname)"
 tenants{}.applications{}.hosts{}.services{}.type                string default="(noservicetype)"
