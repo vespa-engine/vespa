@@ -451,8 +451,7 @@ public class ApplicationSerializer {
         object.traverse((ArrayTraverser) (idx, statusObject) -> statusMap.put(new RotationId(statusObject.field(rotationIdField).asString()),
                                                                               new RotationStatus.Targets(
                                                                                       singleRotationStatusFromSlime(statusObject.field(statusField)),
-                                                                                      // TODO(mpolden): Make non-optional after October 2019
-                                                                                      Serializers.optionalInstant(statusObject.field(lastUpdatedField)).orElse(Instant.EPOCH))));
+                                                                                      Instant.ofEpochMilli(statusObject.field(lastUpdatedField).asLong()))));
         return RotationStatus.from(statusMap);
     }
 
