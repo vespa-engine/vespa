@@ -4,12 +4,14 @@ package com.yahoo.vespa.hosted.ca;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Objects;
+import java.util.Optional;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
@@ -22,6 +24,7 @@ import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
 public class Certificates {
 
     private static final Duration CERTIFICATE_TTL = Duration.ofDays(30);
+    private static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
     private final Clock clock;
 
@@ -48,13 +51,27 @@ public class Certificates {
         return builder.build();
     }
 
-    /** Returns the DNS name field from Subject Alternative Names in given csr */
-    public static String extractDnsName(Pkcs10Csr csr) {
+    /** Returns instance ID parsed from the Subject Alternative Names in given csr */
+    public static String instanceIdFrom(Pkcs10Csr csr) {
         return csr.getSubjectAlternativeNames().stream()
                   .filter(san -> san.getType() == DNS_NAME)
                   .map(SubjectAlternativeName::getValue)
+                  .map(Certificates::parseInstanceId)
+                  .flatMap(Optional::stream)
+                  .map(VespaUniqueInstanceId::asDottedString)
                   .findFirst()
-                  .orElseThrow(() -> new IllegalArgumentException("DNS name not found in CSR"));
+                  .orElseThrow(() -> new IllegalArgumentException("No instance ID found in CSR"));
+    }
+
+    private static Optional<VespaUniqueInstanceId> parseInstanceId(String dnsName) {
+        var delimiterStart = dnsName.indexOf(INSTANCE_ID_DELIMITER);
+        if (delimiterStart == -1) return Optional.empty();
+        dnsName = dnsName.substring(0, delimiterStart);
+        try {
+            return Optional.of(VespaUniqueInstanceId.fromDottedString(dnsName));
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
 }

@@ -41,7 +41,7 @@ public class CertificatesTest {
         var certificates = new Certificates(new ManualClock());
         var dnsName = "host.example.com";
         var ip = "192.0.2.42";
-        var csr = CertificateTester.createCsr(dnsName, ip);
+        var csr = CertificateTester.createCsr(List.of(dnsName), List.of(ip));
         var certificate = certificates.create(csr, caCertificate, keyPair.getPrivate());
 
         assertNotNull(certificate.getSubjectAlternativeNames());
@@ -52,6 +52,14 @@ public class CertificatesTest {
                      subjectAlternativeNames.get(0));
         assertEquals(List.of(SubjectAlternativeName.Type.IP_ADDRESS.getTag(), ip),
                      subjectAlternativeNames.get(1));
+    }
+
+    @Test
+    public void parse_instance_id() {
+        var instanceId = "1.cluster1.default.app1.tenant1.us-north-1.prod.node";
+        var instanceIdWithSuffix = instanceId + ".instanceid.athenz.dev-us-north-1.vespa.aws.oath.cloud";
+        var csr = CertificateTester.createCsr(List.of("foo", "bar", instanceIdWithSuffix));
+        assertEquals(instanceId, Certificates.instanceIdFrom(csr));
     }
 
 }

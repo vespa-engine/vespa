@@ -82,7 +82,7 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
     private HttpResponse registerInstance(HttpRequest request) {
         var instanceRegistration = deserializeRequest(request, InstanceSerializer::registrationFromSlime);
         var certificate = certificates.create(instanceRegistration.csr(), caCertificate(), caPrivateKey());
-        var instanceId = Certificates.extractDnsName(instanceRegistration.csr());
+        var instanceId = Certificates.instanceIdFrom(instanceRegistration.csr());
         var identity = new InstanceIdentity(instanceRegistration.provider(), instanceRegistration.service(), instanceId,
                                             Optional.of(certificate));
         return new SlimeJsonResponse(InstanceSerializer.identityToSlime(identity));
@@ -90,10 +90,10 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
 
     private HttpResponse refreshInstance(HttpRequest request, String provider, String service, String instanceId) {
         var instanceRefresh = deserializeRequest(request, InstanceSerializer::refreshFromSlime);
-        var instanceIdFromCsr = Certificates.extractDnsName(instanceRefresh.csr());
+        var instanceIdFromCsr = Certificates.instanceIdFrom(instanceRefresh.csr());
         if (!instanceIdFromCsr.equals(instanceId)) {
             throw new IllegalArgumentException("Mismatched instance ID and SAN DNS name [instanceId=" + instanceId +
-                                               ",dnsName=" + instanceIdFromCsr + "]");
+                                               ",instanceIdFromCsr=" + instanceIdFromCsr + "]");
         }
         var certificate = certificates.create(instanceRefresh.csr(), caCertificate(), caPrivateKey());
         var identity = new InstanceIdentity(provider, service, instanceIdFromCsr, Optional.of(certificate));
