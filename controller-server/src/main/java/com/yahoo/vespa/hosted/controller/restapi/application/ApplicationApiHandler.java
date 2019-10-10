@@ -993,8 +993,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var array = object.setArray("endpointStatus");
         for (var rotation : rotations) {
             var statusObject = array.addObject();
+            var targets = status.of(rotation.rotationId());
             statusObject.setString("endpointId", rotation.endpointId().id());
             statusObject.setString("status", rotationStateString(status.of(rotation.rotationId(), deployment)));
+            statusObject.setLong("lastUpdated", targets.lastUpdated().toEpochMilli());
         }
     }
 

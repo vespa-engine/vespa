@@ -214,7 +214,8 @@
       "endpointStatus": [
         {
           "endpointId": "default",
-          "status": "IN"
+          "status": "IN",
+          "lastUpdated":"(ignore)"
         }
       ],
       "environment": "prod",

@@ -5,7 +5,8 @@
   "endpointStatus": [
     {
       "endpointId": "default",
-      "status": "IN"
+      "status": "IN",
+      "lastUpdated": "(ignore)"
     }
   ],
   "tenant": "tenant1",

@@ -222,7 +222,8 @@
       "endpointStatus": [
         {
           "endpointId": "default",
-          "status": "IN"
+          "status": "IN",
+          "lastUpdated": "(ignore)"
         }
       ],
       "environment": "prod",
@@ -237,7 +238,8 @@
       "endpointStatus": [
         {
           "endpointId": "default",
-          "status": "UNKNOWN"
+          "status": "UNKNOWN",
+          "lastUpdated": "(ignore)"
         }
       ],
       "environment": "prod",
