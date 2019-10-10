@@ -1,29 +1,17 @@
 {
   "tenant": "my-tenant",
   "application": "my-app",
-  "roleNames": [
-    "headless"
-  ],
+  "roleNames": [],
   "users": [
     {
       "name": "administrator@tenant",
       "email": "administrator@tenant",
-      "roles": {
-        "headless": {
-          "explicit": false,
-          "implied": false
-        }
-      }
+      "roles": {}
     },
     {
       "name": "developer@tenant",
       "email": "developer@tenant",
-      "roles": {
-        "headless": {
-          "explicit": false,
-          "implied": false
-        }
-      }
+      "roles": {}
     }
   ]
 }

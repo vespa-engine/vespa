@@ -27,7 +27,7 @@ public class Roles {
 
     /** Returns the list of {@link ApplicationRole}s a {@link UserId} may be a member of. */
     public static List<ApplicationRole> applicationRoles(TenantName tenant, ApplicationName application) {
-        return List.of(Role.headless(tenant, application));
+        return List.of();
     }
 
     /** Returns the {@link Role} the given value represents. */
