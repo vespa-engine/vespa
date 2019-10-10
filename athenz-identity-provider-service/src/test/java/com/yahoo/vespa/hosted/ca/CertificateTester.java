@@ -15,6 +15,7 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 
@@ -44,14 +45,22 @@ public class CertificateTester {
     }
 
     public static Pkcs10Csr createCsr() {
-        return createCsr(null);
+        return createCsr(List.of(), List.of());
     }
 
-    public static Pkcs10Csr createCsr(String dnsName, String... ipAddresses) {
+    public static Pkcs10Csr createCsr(String dnsName) {
+        return createCsr(List.of(dnsName), List.of());
+    }
+
+    public static Pkcs10Csr createCsr(List<String> dnsNames) {
+        return createCsr(dnsNames, List.of());
+    }
+
+    public static Pkcs10Csr createCsr(List<String> dnsNames, List<String> ipAddresses) {
         X500Principal subject = new X500Principal("CN=subject");
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         var builder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA512_WITH_ECDSA);
-        if (dnsName != null) {
+        for (var dnsName : dnsNames) {
             builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.DNS_NAME, dnsName);
         }
         for (var ipAddress : ipAddresses) {
