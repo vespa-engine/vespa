@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -37,11 +38,14 @@ public class AthenzRoleFilterTest {
     private static final TenantName TENANT = TenantName.from("mytenant");
     private static final TenantName TENANT2 = TenantName.from("othertenant");
     private static final ApplicationName APPLICATION = ApplicationName.from("myapp");
+    private static final InstanceName INSTANCE = InstanceName.from("john");
     private static final URI NO_CONTEXT_PATH = URI.create("/application/v4/");
     private static final URI TENANT_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/");
     private static final URI APPLICATION_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/");
     private static final URI TENANT2_CONTEXT_PATH = URI.create("/application/v4/tenant/othertenant/");
     private static final URI APPLICATION2_CONTEXT_PATH = URI.create("/application/v4/tenant/othertenant/application/myapp/");
+    private static final URI INSTANCE_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/instance/john");
+    private static final URI INSTANCE2_CONTEXT_PATH = URI.create("/application/v4/tenant/mytenant/application/myapp/instance/jane");
 
     private ControllerTester tester;
     private AthenzRoleFilter filter;
@@ -113,6 +117,10 @@ public class AthenzRoleFilterTest {
         assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.tenantPipeline(TENANT, APPLICATION)),
                      filter.roles(TENANT_ADMIN_AND_PIPELINE, APPLICATION_CONTEXT_PATH));
 
+        // Users have the athenzUser under their instance
+        assertEquals(Set.of(Role.athenzUser(TENANT, APPLICATION, INSTANCE)),
+                     filter.roles(USER, INSTANCE_CONTEXT_PATH));
+
         // Unprivileged users are just members of the everyone role.
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(USER, NO_CONTEXT_PATH));
@@ -122,6 +130,9 @@ public class AthenzRoleFilterTest {
 
         assertEquals(Set.of(Role.everyone()),
                      filter.roles(USER, APPLICATION_CONTEXT_PATH));
+
+        assertEquals(Set.of(Role.everyone()),
+                     filter.roles(USER, INSTANCE2_CONTEXT_PATH));
     }
 
 }

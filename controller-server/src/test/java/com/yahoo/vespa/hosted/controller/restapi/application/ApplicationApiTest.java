@@ -137,6 +137,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final AthenzDomain ATHENZ_TENANT_DOMAIN_2 = new AthenzDomain("domain2");
     private static final ScrewdriverId SCREWDRIVER_ID = new ScrewdriverId("12345");
     private static final UserId USER_ID = new UserId("myuser");
+    private static final UserId OTHER_USER_ID = new UserId("otheruser");
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
     private static final OktaAccessToken OKTA_AT = new OktaAccessToken("dummy");
     private static final ZoneId TEST_ZONE = ZoneId.from(Environment.test, RegionName.from("us-east-1"));
@@ -587,9 +588,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST an application package to start a deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1", POST)
-                             .userIdentity(USER_ID)
-                             .data(createApplicationDeployData(applicationPackage, false)),
+                                      .userIdentity(USER_ID)
+                                      .data(createApplicationDeployData(applicationPackage, false)),
                               new File("deployment-job-accepted.json"));
+
+        // POST an application package is allowed under user instance
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser/deploy/dev-us-east-1", POST)
+                             .userIdentity(OTHER_USER_ID)
+                             .data(createApplicationDeployData(applicationPackage, false)),
+                              new File("deployment-job-accepted-2.json"));
+
+        // DELETE a dev deployment is allowed under user instance
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser/environment/dev/region/us-east-1", DELETE)
+                                      .userIdentity(OTHER_USER_ID),
+                              "{\"message\":\"Deactivated tenant1.application1.otheruser in dev.us-east-1\"}");
 
         // POST an application package and a test jar, submitting a new application for internal pipeline deployment.
         // First attempt does not have an Athenz service definition in deployment spec, and is accepted.
@@ -704,10 +716,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "");
 
-        // DELETE an application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE).userIdentity(USER_ID)
+        // DELETE all instances under an application to delete the application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
+                                      .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
                               "{\"message\":\"Deleted instance tenant1.application1.instance1\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"message\":\"Deleted instance tenant1.application1.otheruser\"}");
+
         // DELETE a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),

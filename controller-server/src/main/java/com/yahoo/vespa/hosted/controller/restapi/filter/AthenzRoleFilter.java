@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
@@ -75,6 +76,9 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         path.matches("/application/v4/tenant/{tenant}/application/{application}/{*}");
         Optional<ApplicationName> application = Optional.ofNullable(path.get("application")).map(ApplicationName::from);
 
+        path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/{*}");
+        Optional<InstanceName> instance = Optional.ofNullable(path.get("instance")).map(InstanceName::from);
+
         AthenzIdentity identity = principal.getIdentity();
 
         if (athenz.hasHostedOperatorAccess(identity))
@@ -90,6 +94,10 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             if (   tenant.get().type() != Tenant.Type.athenz
                 || hasDeployerAccess(identity, ((AthenzTenant) tenant.get()).domain(), application.get()))
                     roleMemberships.add(Role.tenantPipeline(tenant.get().name(), application.get()));
+
+        if (   tenant.isPresent() && application.isPresent() && instance.isPresent()
+            && instance.get().value().equals(principal.getIdentity().getName()))
+            roleMemberships.add(Role.athenzUser(tenant.get().name(), application.get(), instance.get()));
 
         return roleMemberships.isEmpty()
                 ? Set.of(Role.everyone())
