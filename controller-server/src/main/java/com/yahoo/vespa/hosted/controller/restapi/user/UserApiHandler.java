@@ -9,9 +9,11 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.Path;
+import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeStream;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
@@ -170,11 +172,28 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
+        if (requestObject.field("roles").valid()) {
+            return addMultipleTenantRoleMembers(tenantName, requestObject);
+        }
+        return addTenantRoleMember(tenantName, requestObject);
+    }
+
+    private HttpResponse addTenantRoleMember(String tenantName, Inspector requestObject) {
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
         Role role = Roles.toRole(TenantName.from(tenantName), roleName);
         users.addUsers(role, List.of(user));
         return new MessageResponse(user + " is now a member of " + role);
+    }
+
+    private HttpResponse addMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
+        var tenant = TenantName.from(tenantName);
+        var user = new UserId(require("user", Inspector::asString, requestObject));
+        var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
+                .map(roleName -> Roles.toRole(tenant, roleName))
+                .peek(role -> users.addUsers(role, List.of(user)))
+                .collect(Collectors.toUnmodifiableList());
+        return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
     private HttpResponse addApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
@@ -188,23 +207,48 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private HttpResponse removeTenantRoleMember(String tenantName, HttpRequest request) {
         Inspector requestObject = bodyInspector(request);
+        if (requestObject.field("roles").valid()) {
+            return removeMultipleTenantRoleMembers(tenantName, requestObject);
+        }
+        return removeTenantRoleMember(tenantName, requestObject);
+    }
+
+    private HttpResponse removeTenantRoleMember(String tenantName, Inspector requestObject) {
+        TenantName tenant = TenantName.from(tenantName);
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = Roles.toRole(TenantName.from(tenantName), roleName);
+        Role role = Roles.toRole(tenant, roleName);
 
+        removeTenantRoleMember(tenant, user, role);
+
+        return new MessageResponse(user+" is no longer a member of "+role);
+    }
+
+    private HttpResponse removeMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
+        var tenant = TenantName.from(tenantName);
+        var user = new UserId(require("user", Inspector::asString, requestObject));
+        var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
+                .map(roleName -> Roles.toRole(tenant, roleName))
+                .collect(Collectors.toUnmodifiableList());
+
+        roles.forEach(role -> removeTenantRoleMember(tenant, user, role));
+
+        return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
+    }
+
+    private void removeTenantRoleMember(TenantName tenantName, UserId user, Role role) {
         if (   role.definition() == RoleDefinition.administrator
-            && Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet())))
-        throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
+                && Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet())))
+            throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
 
         if (role.definition().equals(RoleDefinition.developer))
-            controller.tenants().lockIfPresent(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
+            controller.tenants().lockIfPresent(tenantName, LockedTenant.Cloud.class, tenant -> {
                 PublicKey key = tenant.get().developerKeys().inverse().get(new SimplePrincipal(user.value()));
                 if (key != null)
                     controller.tenants().store(tenant.withoutDeveloperKey(key));
             });
 
         users.removeUsers(role, List.of(user));
-        return new MessageResponse(user+" is no longer a member of "+role);
     }
 
     private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {
