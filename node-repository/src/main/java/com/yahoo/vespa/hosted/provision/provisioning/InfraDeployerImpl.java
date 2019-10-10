@@ -14,7 +14,6 @@ import com.yahoo.config.provision.Provisioner;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
@@ -61,7 +60,6 @@ public class InfraDeployerImpl implements InfraDeployer {
         private final InfraApplicationApi application;
 
         private boolean prepared = false;
-        private List<Node> candidateNodes;
         private List<HostSpec> hostSpecs;
 
         private InfraDeployment(InfraApplicationApi application) {
@@ -74,24 +72,13 @@ public class InfraDeployerImpl implements InfraDeployer {
 
             try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
                 NodeType nodeType = application.getCapacity().type();
-
-                candidateNodes = nodeRepository
-                        .getNodes(nodeType, Node.State.ready, Node.State.reserved, Node.State.active, Node.State.inactive);
-                if (candidateNodes.isEmpty()) {
-                    logger.log(LogLevel.DEBUG, "No nodes to provision for " + nodeType + ", removing application");
-                    removeApplication(application.getApplicationId());
-                    return;
-                }
-
                 Version targetVersion = infrastructureVersions.getTargetVersionFor(nodeType);
-                if (!allActiveNodesOn(targetVersion, candidateNodes)) {
-                    hostSpecs = provisioner.prepare(
-                            application.getApplicationId(),
-                            application.getClusterSpecWithVersion(targetVersion),
-                            application.getCapacity(),
-                            1, // groups
-                            logger::log);
-                }
+                hostSpecs = provisioner.prepare(
+                        application.getApplicationId(),
+                        application.getClusterSpecWithVersion(targetVersion),
+                        application.getCapacity(),
+                        1, // groups
+                        logger::log);
 
                 prepared = true;
             }
@@ -101,19 +88,21 @@ public class InfraDeployerImpl implements InfraDeployer {
         public void activate() {
             try (Mutex lock = nodeRepository.lock(application.getApplicationId())) {
                 prepare();
-                if (candidateNodes == null) return;
 
-                if (hostSpecs != null) {
+                if (hostSpecs.isEmpty()) {
+                    logger.log(LogLevel.DEBUG, "No nodes to provision for " + application.getCapacity().type() + ", removing application");
+                    removeApplication(application.getApplicationId());
+                } else {
                     NestedTransaction nestedTransaction = new NestedTransaction();
                     provisioner.activate(nestedTransaction, application.getApplicationId(), hostSpecs);
                     nestedTransaction.commit();
+
+                    duperModel.infraApplicationActivated(
+                            application.getApplicationId(),
+                            hostSpecs.stream().map(HostSpec::hostname).map(HostName::from).collect(Collectors.toList()));
+
+                    logger.log(LogLevel.DEBUG, () -> generateActivationLogMessage(hostSpecs, application.getApplicationId()));
                 }
-
-                duperModel.infraApplicationActivated(
-                        application.getApplicationId(),
-                        candidateNodes.stream().map(Node::hostname).map(HostName::from).collect(Collectors.toList()));
-
-                logger.log(LogLevel.DEBUG, () -> generateActivationLogMessage(candidateNodes, application.getApplicationId()));
             }
         }
 
@@ -133,21 +122,12 @@ public class InfraDeployerImpl implements InfraDeployer {
         }
     }
 
-    private static boolean allActiveNodesOn(Version version, List<Node> nodes) {
-        return nodes.stream()
-                .allMatch(node ->
-                        node.state() == Node.State.active &&
-                        node.allocation()
-                                .map(allocation -> allocation.membership().cluster().vespaVersion().equals(version))
-                                .orElse(false));
-    }
-
-    private static String generateActivationLogMessage(List<Node> nodes, ApplicationId applicationId) {
+    private static String generateActivationLogMessage(List<HostSpec> hostSpecs, ApplicationId applicationId) {
         String detail;
-        if (nodes.size() < 10) {
-            detail = ": " + nodes.stream().map(Node::hostname).collect(Collectors.joining(","));
+        if (hostSpecs.size() < 10) {
+            detail = ": " + hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.joining(","));
         } else {
-            detail = " with " + nodes.size() + " hosts";
+            detail = " with " + hostSpecs.size() + " hosts";
         }
         return "Infrastructure application " + applicationId + " activated" + detail;
     }
