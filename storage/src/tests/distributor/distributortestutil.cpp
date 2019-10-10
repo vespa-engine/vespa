@@ -20,7 +20,7 @@ DistributorTestUtil::DistributorTestUtil()
 DistributorTestUtil::~DistributorTestUtil() { }
 
 void
-DistributorTestUtil::createLinks()
+DistributorTestUtil::createLinks(bool use_btree_db)
 {
     _node.reset(new TestDistributorApp(_config.getConfigId()));
     _threadPool = framework::TickingThreadPool::createDefault("distributor");
@@ -29,7 +29,7 @@ DistributorTestUtil::createLinks()
             *_threadPool,
             *this,
             true,
-            false, // TODO swap default
+            use_btree_db,
             _hostInfo,
             &_messageSender));
     _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));

@@ -99,6 +99,8 @@ private:
      * could be found (i.e. all targets have already been sent to).
      */
     int findBestUnsentTarget(const GroupVector& candidates) const;
+
+    void update_internal_metrics();
 };
 
 }

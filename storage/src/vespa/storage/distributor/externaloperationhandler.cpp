@@ -35,7 +35,8 @@ ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch
       _non_main_thread_ops_mutex(),
-      _non_main_thread_ops_owner(owner, getClock())
+      _non_main_thread_ops_owner(owner, getClock()),
+      _concurrent_gets_enabled(false)
 {
 }
 
@@ -290,8 +291,7 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, RemoveLocation)
     return true;
 }
 
-IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
-{
+std::shared_ptr<Operation> ExternalOperationHandler::try_generate_get_operation(const std::shared_ptr<api::GetCommand>& cmd) {
     document::Bucket bucket(cmd->getBucket().getBucketSpace(), getBucketId(cmd->getDocumentId()));
     auto& metrics = getMetrics().gets[cmd->getLoadType()];
     auto snapshot = getDistributor().read_snapshot_for_bucket(bucket);
@@ -302,15 +302,20 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
                                                      *ctx.pending_cluster_state());
         } else {
             bounce_with_wrong_distribution(*cmd, *snapshot.context().default_active_cluster_state());
-            metrics.failures.wrongdistributor.inc(); // TODO thread safety for updates
+            metrics.locked()->failures.wrongdistributor.inc();
         }
-        return true;
+        return std::shared_ptr<Operation>();
     }
     // The snapshot is aware of whether stale reads are enabled, so we don't have to check that here.
     const auto* space_repo = snapshot.bucket_space_repo();
     assert(space_repo != nullptr);
-    _op = std::make_shared<GetOperation>(*this, space_repo->get(bucket.getBucketSpace()),
-                                         snapshot.steal_read_guard(), cmd, metrics);
+    return std::make_shared<GetOperation>(*this, space_repo->get(bucket.getBucketSpace()),
+                                          snapshot.steal_read_guard(), cmd, metrics);
+}
+
+IMPL_MSG_COMMAND_H(ExternalOperationHandler, Get)
+{
+    _op = try_generate_get_operation(cmd);
     return true;
 }
 
@@ -343,6 +348,36 @@ IMPL_MSG_COMMAND_H(ExternalOperationHandler, CreateVisitor)
     auto &distributorBucketSpace(_bucketSpaceRepo.get(cmd->getBucket().getBucketSpace()));
     _op = Operation::SP(new VisitorOperation(*this, distributorBucketSpace, cmd, visitorConfig, getMetrics().visits[cmd->getLoadType()]));
     return true;
+}
+
+bool ExternalOperationHandler::try_handle_message_outside_main_thread(const std::shared_ptr<api::StorageMessage>& msg) {
+    const auto type_id = msg->getType().getId();
+    if (type_id == api::MessageType::GET_ID) {
+        // Only do this check for Get _requests_ to avoid the following case:
+        //  1) Stale reads are initially enabled and a Get request is received
+        //  2) A Get is sent to the content node(s)
+        //  3) Stale reads are disabled via config
+        //  4) Get-reply from content node is disregarded since concurrent reads are no longer allowed
+        //  5) We've effectively leaked a Get operation, and the client will time out
+        // TODO consider having stale reads _not_ be a live config instead!
+        if (!concurrent_gets_enabled()) {
+            return false;
+        }
+        auto op = try_generate_get_operation(std::dynamic_pointer_cast<api::GetCommand>(msg));
+        if (op) {
+            std::lock_guard g(_non_main_thread_ops_mutex);
+            _non_main_thread_ops_owner.start(std::move(op), msg->getPriority());
+        }
+        return true;
+    } else if (type_id == api::MessageType::GET_REPLY_ID) {
+        std::lock_guard g(_non_main_thread_ops_mutex);
+        // The Get for which this reply was created may have been sent by someone outside
+        // the ExternalOperationHandler, such as TwoPhaseUpdateOperation. Pass it on if so.
+        // It is undefined which thread actually invokes this, so mutex protection of reply
+        // handling is crucial!
+        return _non_main_thread_ops_owner.handleReply(std::dynamic_pointer_cast<api::StorageReply>(msg));
+    }
+    return false;
 }
 
 }

@@ -11,7 +11,7 @@ class OperationStarter
 {
 public:
     using Priority = uint8_t;
-    virtual ~OperationStarter() {}
+    virtual ~OperationStarter() = default;
     virtual bool start(const std::shared_ptr<Operation>& operation, Priority priority) = 0;
 };
 

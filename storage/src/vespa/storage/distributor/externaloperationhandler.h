@@ -7,6 +7,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
+#include <atomic>
 #include <chrono>
 #include <mutex>
 
@@ -51,6 +52,17 @@ public:
         _rejectFeedBeforeTimeReached = timePoint;
     }
 
+    // Returns true iff message was handled and should not be processed further by the caller.
+    bool try_handle_message_outside_main_thread(const std::shared_ptr<api::StorageMessage>& msg);
+
+    void set_concurrent_gets_enabled(bool enabled) noexcept {
+        _concurrent_gets_enabled.store(enabled, std::memory_order_relaxed);
+    }
+
+    bool concurrent_gets_enabled() const noexcept {
+        return _concurrent_gets_enabled.load(std::memory_order_relaxed);
+    }
+
 private:
     const MaintenanceOperationGenerator& _operationGenerator;
     OperationSequencer _mutationSequencer;
@@ -58,6 +70,7 @@ private:
     TimePoint _rejectFeedBeforeTimeReached;
     mutable std::mutex _non_main_thread_ops_mutex;
     OperationOwner _non_main_thread_ops_owner;
+    std::atomic<bool> _concurrent_gets_enabled;
 
     template <typename Func>
     void bounce_or_invoke_read_only_op(api::StorageCommand& cmd,
@@ -72,6 +85,7 @@ private:
                                                   const lib::ClusterState& current_state,
                                                   const lib::ClusterState& pending_state);
     void bounce_with_result(api::StorageCommand& cmd, const api::ReturnCode& result);
+    std::shared_ptr<Operation> try_generate_get_operation(const std::shared_ptr<api::GetCommand>&);
 
     bool checkSafeTimeReached(api::StorageCommand& cmd);
     api::ReturnCode makeSafeTimeRejectionResult(TimePoint unsafeTime);
