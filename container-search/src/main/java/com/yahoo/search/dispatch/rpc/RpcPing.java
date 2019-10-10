@@ -39,7 +39,7 @@ public class RpcPing implements Callable<Pong> {
 
             var responseOrError = queue.poll(clusterMonitor.getConfiguration().getRequestTimeout(), TimeUnit.MILLISECONDS);
             if (responseOrError == null) {
-                return new Pong(ErrorMessage.createTimeout("Timed out waiting for pong from " + node));
+                return new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Timed out waiting for pong from " + node));
             } else if (responseOrError.error().isPresent()) {
                 return new Pong(ErrorMessage.createBackendCommunicationError(responseOrError.error().get()));
             }
