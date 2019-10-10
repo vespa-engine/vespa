@@ -116,6 +116,8 @@ public class NodePrioritizer {
      *                    already have nodes allocated to this tenant
      */
     void addNewDockerNodes(boolean exclusively) {
+        if ( ! isDocker) return;
+
         LockedNodeList candidates = allNodes
                 .filter(node -> node.type() != NodeType.host || ALLOCATABLE_HOST_STATES.contains(node.state()));
 
@@ -135,7 +137,6 @@ public class NodePrioritizer {
     }
 
     private void addNewDockerNodesOn(LockedNodeList candidates) {
-        if ( ! isDocker) return;
         NodeResources wantedResources = resources(requestedNodes);
 
         for (Node host : candidates) {
