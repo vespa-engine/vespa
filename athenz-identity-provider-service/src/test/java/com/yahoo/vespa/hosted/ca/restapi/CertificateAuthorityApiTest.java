@@ -92,7 +92,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
 
         // POST instance refresh where instanceId does not match CSR dnsName
         csr = CertificateTester.createCsr(List.of("node1.example.com", INSTANCE_ID_WITH_SUFFIX));
-        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/foobar failed: Mismatched instance ID and SAN DNS name [instanceId=foobar,instanceIdFromCsr=1.cluster1.default.app1.tenant1.us-north-1.prod.node]\"}",
+        assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/foobar failed: Mismatch between instance ID in URL path and instance ID in CSR [instanceId=foobar,instanceIdFromCsr=1.cluster1.default.app1.tenant1.us-north-1.prod.node]\"}",
                        new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/foobar",
                                    instanceRefreshJson(csr),
                                    Request.Method.POST));

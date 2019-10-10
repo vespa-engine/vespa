@@ -92,8 +92,9 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         var instanceRefresh = deserializeRequest(request, InstanceSerializer::refreshFromSlime);
         var instanceIdFromCsr = Certificates.instanceIdFrom(instanceRefresh.csr());
         if (!instanceIdFromCsr.equals(instanceId)) {
-            throw new IllegalArgumentException("Mismatched instance ID and SAN DNS name [instanceId=" + instanceId +
-                                               ",instanceIdFromCsr=" + instanceIdFromCsr + "]");
+            throw new IllegalArgumentException("Mismatch between instance ID in URL path and instance ID in CSR " +
+                                               "[instanceId=" + instanceId + ",instanceIdFromCsr=" + instanceIdFromCsr +
+                                               "]");
         }
         var certificate = certificates.create(instanceRefresh.csr(), caCertificate(), caPrivateKey());
         var identity = new InstanceIdentity(provider, service, instanceIdFromCsr, Optional.of(certificate));
