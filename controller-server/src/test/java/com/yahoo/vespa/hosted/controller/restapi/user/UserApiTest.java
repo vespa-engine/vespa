@@ -181,8 +181,8 @@ public class UserApiTest extends ControllerContainerCloudTest {
         // DELETE the developer role clears any developer key.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
                                       .roles(Set.of(Role.administrator(id.tenant())))
-                                      .data("{\"user\":\"developer@tenant\",\"roleName\":\"developer\"}"),
-                              "{\"message\":\"user 'developer@tenant' is no longer a member of role 'developer' of 'my-tenant'\"}");
+                                      .data("{\"user\":\"developer@tenant\",\"roles\":[\"developer\",\"reader\"]}"),
+                              "{\"message\":\"user 'developer@tenant' is no longer a member of role 'developer' of 'my-tenant', role 'reader' of 'my-tenant'\"}");
 
         // DELETE the last tenant owner is not allowed.
         tester.assertResponse(request("/user/v1/tenant/my-tenant", DELETE)
