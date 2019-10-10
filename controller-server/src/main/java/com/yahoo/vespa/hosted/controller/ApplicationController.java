@@ -87,6 +87,7 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -235,35 +236,34 @@ public class ApplicationController {
                                      .orElse(controller.systemVersion());
     }
 
-    /** Change the global endpoint status for given deployment */
+    /** Change status of all global endpoints for given deployment */
     public void setGlobalRotationStatus(DeploymentId deployment, EndpointStatus status) {
-        findGlobalEndpoint(deployment).map(endpoint -> {
+        var globalEndpoints = findGlobalEndpoints(deployment);
+        if (globalEndpoints.isEmpty()) throw new IllegalArgumentException(deployment + " has no global endpoints");
+        globalEndpoints.forEach(endpoint -> {
             try {
                 configServer.setGlobalRotationStatus(deployment, endpoint.upstreamName(), status);
-                return endpoint;
             } catch (Exception e) {
-                throw new RuntimeException("Failed to set rotation status of " + deployment, e);
+                throw new RuntimeException("Failed to set rotation status of " + endpoint + " in " + deployment, e);
             }
-        }).orElseThrow(() -> new IllegalArgumentException("No global endpoint exists for " + deployment));
+        });
     }
 
     /** Get global endpoint status for given deployment */
     public Map<RoutingEndpoint, EndpointStatus> globalRotationStatus(DeploymentId deployment) {
-        return findGlobalEndpoint(deployment).map(endpoint -> {
-            try {
-                EndpointStatus status = configServer.getGlobalRotationStatus(deployment, endpoint.upstreamName());
-                return Map.of(endpoint, status);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to get rotation status of " + deployment, e);
-            }
-        }).orElseGet(Collections::emptyMap);
+        var routingEndpoints = new LinkedHashMap<RoutingEndpoint, EndpointStatus>();
+        findGlobalEndpoints(deployment).forEach(endpoint -> {
+            var status = configServer.getGlobalRotationStatus(deployment, endpoint.upstreamName());
+            routingEndpoints.put(endpoint, status);
+        });
+        return Collections.unmodifiableMap(routingEndpoints);
     }
 
-    /** Find the global endpoint of given deployment, if any */
-    private Optional<RoutingEndpoint> findGlobalEndpoint(DeploymentId deployment) {
+    /** Find the global endpoints of given deployment */
+    private List<RoutingEndpoint> findGlobalEndpoints(DeploymentId deployment) {
         return routingGenerator.endpoints(deployment).stream()
                                .filter(RoutingEndpoint::isGlobal)
-                               .findFirst();
+                               .collect(Collectors.toUnmodifiableList());
     }
 
     /**

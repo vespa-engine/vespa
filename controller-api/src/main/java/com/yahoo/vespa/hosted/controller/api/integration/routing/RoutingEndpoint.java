@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.routing;
 
+import java.util.Objects;
+
 /**
  * @author smorgrav
  */
@@ -36,6 +38,22 @@ public class RoutingEndpoint {
     /** The upstream name of this endpoint */
     public String upstreamName() {
         return upstreamName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RoutingEndpoint that = (RoutingEndpoint) o;
+        return isGlobal == that.isGlobal &&
+               endpoint.equals(that.endpoint) &&
+               hostname.equals(that.hostname) &&
+               upstreamName.equals(that.upstreamName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isGlobal, endpoint, hostname, upstreamName);
     }
 
 }
