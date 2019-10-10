@@ -8,6 +8,8 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Provisioner;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
@@ -22,16 +24,21 @@ import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.mockito.ArgumentMatcher;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,15 +58,13 @@ public class InfraDeployerImplTest {
     }
 
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
-    private final Provisioner provisioner = mock(Provisioner.class);
     private final NodeRepository nodeRepository = tester.nodeRepository();
+    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(
+            nodeRepository, Zone.defaultZone(), new EmptyProvisionServiceProvider(), new InMemoryFlagSource()));
     private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfraDeployerImpl infraDeployer;
 
-    private final HostName node1 = HostName.from("node-1");
-    private final HostName node2 = HostName.from("node-2");
-    private final HostName node3 = HostName.from("node-3");
     private final Version target = Version.fromString("6.123.456");
     private final Version oldVersion = Version.fromString("6.122.333");
 
@@ -88,17 +93,22 @@ public class InfraDeployerImplTest {
         addNode(1, Node.State.failed, Optional.of(target));
         addNode(2, Node.State.parked, Optional.empty());
         when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(applicationIsActive);
+
         infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
+
+        verify(duperModelInfraApi, never()).infraApplicationActivated(any(), any());
         if (applicationIsActive) {
             verify(duperModelInfraApi).infraApplicationRemoved(application.getApplicationId());
-            verifyRemoved(1);
+            verify(provisioner).remove(any(), eq(application.getApplicationId()));
+            verify(duperModelInfraApi).infraApplicationRemoved(eq(application.getApplicationId()));
         } else {
-            verifyRemoved(0);
+            verify(provisioner, never()).remove(any(), any());
+            verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
         }
     }
 
     @Test
-    public void activate_when_no_op() {
+    public void activate() {
         infrastructureVersions.setTargetVersion(nodeType, target, false);
 
         addNode(1, Node.State.failed, Optional.of(oldVersion));
@@ -106,127 +116,35 @@ public class InfraDeployerImplTest {
         addNode(3, Node.State.active, Optional.of(target));
         addNode(4, Node.State.inactive, Optional.of(target));
         addNode(5, Node.State.dirty, Optional.empty());
-
-        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
+        addNode(6, Node.State.ready, Optional.empty());
+        Node node7 = addNode(7, Node.State.active, Optional.of(target));
+        nodeRepository.setRemovable(application.getApplicationId(), List.of(node7));
 
         infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
+
         verify(duperModelInfraApi, never()).infraApplicationRemoved(any());
-        verify(duperModelInfraApi).infraApplicationActivated(any(), any());
-        verify(provisioner).activate(any(), any(), any());
+        verifyActivated("node-3", "node-6");
     }
 
-    @Test
-    public void activates_after_target_has_been_set_the_first_time() {
-        infrastructureVersions.setTargetVersion(nodeType, target, false);
-
-        addNode(1, Node.State.inactive, Optional.empty());
-        addNode(2, Node.State.parked, Optional.empty());
-        addNode(3, Node.State.active, Optional.empty());
-        addNode(4, Node.State.failed, Optional.empty());
-        addNode(5, Node.State.dirty, Optional.empty());
-
-        when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(List.of(
-                new HostSpec(node1.value(), List.of()),
-                new HostSpec(node3.value(), List.of())));
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-
-        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
-        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), List.of(node3, node1));
-    }
-
-
-    @Test
-    public void always_activates_for_dupermodel() {
-        infrastructureVersions.setTargetVersion(nodeType, target, false);
-
-        addNode(1, Node.State.active, Optional.of(target));
-
-        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(false);
-        when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(List.of(
-                new HostSpec(node1.value(), List.of())));
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-
-        verify(provisioner, never()).prepare(any(), any(), any(), anyInt(), any());
-        verify(provisioner, never()).activate(any(), any(), any());
-        verify(duperModelInfraApi, times(1)).infraApplicationActivated(application.getApplicationId(), List.of(node1));
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-
-        verify(provisioner, never()).prepare(any(), any(), any(), anyInt(), any());
-        verify(provisioner, never()).activate(any(), any(), any());
-        verify(duperModelInfraApi, times(2)).infraApplicationActivated(application.getApplicationId(), List.of(node1));
-    }
-
-    @Test
-    public void provision_usable_nodes_on_old_version() {
-        infrastructureVersions.setTargetVersion(nodeType, target, false);
-
-        addNode(1, Node.State.failed, Optional.of(oldVersion));
-        addNode(2, Node.State.inactive, Optional.of(target));
-        addNode(3, Node.State.active, Optional.of(oldVersion));
-
-        when(duperModelInfraApi.getSupportedInfraApplications()).thenReturn(List.of(application));
-        when(provisioner.prepare(any(), any(), any(), anyInt(), any())).thenReturn(List.of(
-                new HostSpec(node2.value(), List.of()),
-                new HostSpec(node3.value(), List.of())));
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-
-        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
-        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), List.of(node3, node2));
-    }
-
-    @Test
-    public void provision_with_usable_node_without_version() {
-        infrastructureVersions.setTargetVersion(nodeType, target, false);
-
-        addNode(1, Node.State.failed, Optional.of(oldVersion));
-        addNode(2, Node.State.ready, Optional.empty());
-        addNode(3, Node.State.active, Optional.of(target));
-
-        when(provisioner.prepare(any(), any(), any(), anyInt(), any()))
-                .thenReturn(List.of(
-                        new HostSpec(node2.value(), List.of()),
-                        new HostSpec(node3.value(), List.of())));
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-
-        verify(provisioner).prepare(eq(application.getApplicationId()), any(), any(), anyInt(), any());
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), any());
-        verify(duperModelInfraApi).infraApplicationActivated(application.getApplicationId(), List.of(node2, node3));
-    }
-
-    @Test
-    public void avoid_provisioning_if_no_usable_nodes() {
-        when(duperModelInfraApi.infraApplicationIsActive(eq(application.getApplicationId()))).thenReturn(true);
-        infrastructureVersions.setTargetVersion(nodeType, target, false);
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-        verifyRemoved(1);
-
-        // Add nodes in non-provisionable states
-        addNode(1, Node.State.dirty, Optional.empty());
-        addNode(2, Node.State.failed, Optional.empty());
-
-        infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
-        verifyRemoved(2);
-    }
-
-    private void verifyRemoved(int removedCount) {
-        verify(provisioner, times(removedCount)).remove(any(), any());
-        verify(duperModelInfraApi, times(removedCount)).infraApplicationRemoved(any());
+    @SuppressWarnings("unchecked")
+    private void verifyActivated(String... hostnames) {
+        verify(duperModelInfraApi).infraApplicationActivated(
+                eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::from).collect(Collectors.toList())));
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), argThat(new ArgumentMatcher<>() {
+            @Override
+            public boolean matches(Object o) {
+                assertEquals(Set.of(hostnames), ((List<HostSpec>) o).stream().map(HostSpec::hostname).collect(Collectors.toSet()));
+                return true;
+            }
+        }));
     }
 
     private Node addNode(int id, Node.State state, Optional<Version> wantedVespaVersion) {
         Node node = tester.addNode("id-" + id, "node-" + id, "default", nodeType);
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
-            ClusterSpec clusterSpec = ClusterSpec.from(ClusterSpec.Type.admin, new ClusterSpec.Id("clusterid"), ClusterSpec.Group.from(0), version, false);
+            ClusterSpec clusterSpec = application.getClusterSpecWithVersion(version).with(Optional.of(ClusterSpec.Group.from(0)));
             ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
-            Allocation allocation = new Allocation(application.getApplicationId(), membership, new Generation(0, 0), false);
+            Allocation allocation = new Allocation(application.getApplicationId(), membership, Generation.initial(), false);
             return node.with(allocation);
         });
         return nodeRepository.database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());
