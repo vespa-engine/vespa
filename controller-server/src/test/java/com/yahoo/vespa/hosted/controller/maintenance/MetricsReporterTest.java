@@ -186,7 +186,8 @@ public class MetricsReporterTest {
     @Test
     public void test_build_time_reporting() {
         InternalDeploymentTester tester = new InternalDeploymentTester();
-        ApplicationVersion version = tester.deployNewSubmission();
+        ApplicationVersion version = tester.newSubmission();
+        tester.deployNewSubmission(version);
         assertEquals(1000, version.buildTime().get().toEpochMilli());
 
         MetricsReporter reporter = createReporter(tester.tester().controller());

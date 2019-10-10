@@ -9,16 +9,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
-
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Information about which deployment jobs an application should run and their current status.

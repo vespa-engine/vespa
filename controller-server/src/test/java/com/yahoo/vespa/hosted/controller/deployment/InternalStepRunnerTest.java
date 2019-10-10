@@ -83,9 +83,11 @@ public class InternalStepRunnerTest {
 
     @Test
     public void canRegisterAndRunDirectly() {
-        tester.deployNewSubmission();
+        tester.deployNewSubmission(tester.newSubmission());
 
-        tester.deployNewPlatform(new Version("7.1"));
+        Version version = new Version("7.1");
+        tester.tester().upgradeSystem(version);
+        tester.deployNewPlatform(version);
     }
 
     @Test
@@ -100,10 +102,12 @@ public class InternalStepRunnerTest {
         tester.tester().upgradeSystem(new Version("7.1"));
         tester.tester().buildService().clear();
 
-        tester.deployNewSubmission();
-        tester.deployNewSubmission();
+        tester.deployNewSubmission(tester.newSubmission());
+        tester.deployNewSubmission(tester.newSubmission());
 
-        tester.deployNewPlatform(new Version("7.2"));
+        Version version = new Version("7.2");
+        tester.tester().upgradeSystem(version);
+        tester.deployNewPlatform(version);
 
         tester.jobs().unregister(appId);
         try {

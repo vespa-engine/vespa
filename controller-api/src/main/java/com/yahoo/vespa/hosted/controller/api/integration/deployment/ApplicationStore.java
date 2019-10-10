@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 /**
@@ -15,28 +17,28 @@ import com.yahoo.config.provision.zone.ZoneId;
 public interface ApplicationStore {
 
     /** Returns the tenant application package of the given version. */
-    byte[] get(ApplicationId application, ApplicationVersion applicationVersion);
+    byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion);
 
     /** Stores the given tenant application package of the given version. */
-    void put(ApplicationId application, ApplicationVersion applicationVersion, byte[] applicationPackage);
+    void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage);
 
     /** Removes applications older than the given version, for the given application, and returns whether something was removed. */
-    boolean prune(ApplicationId application, ApplicationVersion olderThanVersion);
+    boolean prune(TenantName tenant, ApplicationName application, ApplicationVersion olderThanVersion);
 
     /** Removes all application packages for the given application, including any development package. */
-    void removeAll(ApplicationId application);
+    void removeAll(TenantName tenant, ApplicationName application);
 
     /** Returns the tester application package of the given version. Does NOT contain the services.xml. */
-    byte[] get(TesterId tester, ApplicationVersion applicationVersion);
+    byte[] getTester(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion);
 
     /** Stores the given tester application package of the given version. Does NOT contain the services.xml. */
-    void put(TesterId tester, ApplicationVersion applicationVersion, byte[] testerPackage);
+    void putTester(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] testerPackage);
 
     /** Removes tester packages older than the given version, for the given tester, and returns whether something was removed. */
-    boolean prune(TesterId tester, ApplicationVersion olderThanVersion);
+    boolean pruneTesters(TenantName tenant, ApplicationName application, ApplicationVersion olderThanVersion);
 
     /** Removes all tester packages for the given tester. */
-    void removeAll(TesterId tester);
+    void removeAllTesters(TenantName tenant, ApplicationName application);
 
     /** Stores the given application package as the development package for the given application and zone. */
     void putDev(ApplicationId application, ZoneId zone, byte[] applicationPackage);

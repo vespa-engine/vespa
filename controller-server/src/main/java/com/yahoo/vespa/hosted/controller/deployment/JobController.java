@@ -26,8 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -197,6 +195,14 @@ public class JobController {
         locked(id, run -> run.with(testerCertificate));
     }
 
+    /** Returns a list of all applications which have registered. */
+    public List<TenantAndApplicationId> applications() {
+        return copyOf(controller.applications().asList().stream()
+                                .filter(Application::internal)
+                                .map(Application::id)
+                                .iterator());
+    }
+
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
         return copyOf(controller.applications().asList().stream()
@@ -241,12 +247,19 @@ public class JobController {
 
     /** Returns a list of all active runs. */
     public List<Run> active() {
-        return copyOf(instances().stream()
-                                 .flatMap(id -> Stream.of(JobType.values())
-                                                         .map(type -> last(id, type))
-                                                         .flatMap(Optional::stream)
-                                                         .filter(run -> ! run.hasEnded()))
-                                 .iterator());
+        return copyOf(applications().stream()
+                                    .flatMap(id -> active(id).stream())
+                                    .iterator());
+    }
+
+    /** Returns a list of all active runs for the given instance. */
+    public List<Run> active(TenantAndApplicationId id) {
+        return copyOf(controller.applications().requireApplication(id).instances().keySet().stream()
+                                .flatMap(name -> Stream.of(JobType.values())
+                                                       .map(type -> last(id.instance(name), type))
+                                                       .flatMap(Optional::stream)
+                                                       .filter(run -> ! run.hasEnded()))
+                                .iterator());
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
@@ -300,12 +313,14 @@ public class JobController {
             else
                 version.set(ApplicationVersion.from(revision, run, authorEmail));
 
-            controller.applications().applicationStore().put(id.defaultInstance(),
+            controller.applications().applicationStore().put(id.tenant(),
+                                                             id.application(),
                                                              version.get(),
                                                              applicationPackage.zippedContent());
-            controller.applications().applicationStore().put(TesterId.of(id.defaultInstance()),
-                                                             version.get(),
-                                                             testPackageBytes);
+            controller.applications().applicationStore().putTester(id.tenant(),
+                                                                   id.application(),
+                                                                   version.get(),
+                                                                   testPackageBytes);
 
             prunePackages(id);
             controller.applications().storeWithUpdatedConfig(application, applicationPackage);
@@ -325,7 +340,7 @@ public class JobController {
                     .distinct()
                     .forEach(appVersion -> {
                         byte[] content = controller.applications().artifacts().getApplicationPackage(instance.id(), appVersion.id());
-                        controller.applications().applicationStore().put(instance.id(), appVersion, content);
+                        controller.applications().applicationStore().put(instance.id().tenant(), instance.id().application(), appVersion, content);
                     });
         }
         // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
@@ -498,8 +513,8 @@ public class JobController {
                        .map(Deployment::applicationVersion)
                        .min(Comparator.comparingLong(applicationVersion -> applicationVersion.buildNumber().getAsLong()))
                        .ifPresent(oldestDeployed -> {
-                           controller.applications().applicationStore().prune(id.defaultInstance(), oldestDeployed);
-                           controller.applications().applicationStore().prune(TesterId.of(id.defaultInstance()), oldestDeployed);
+                           controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
+                           controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);
                        });
         });
     }

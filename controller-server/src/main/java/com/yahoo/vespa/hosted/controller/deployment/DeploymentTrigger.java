@@ -322,13 +322,6 @@ public class DeploymentTrigger {
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
-        ApplicationList applications = ApplicationList.from(applications().asList());
-        applications = applications.withProjectId();
-        applications = applications.withChanges();
-        var jobs = applications.idList().stream()
-                .map(this::computeReadyJobs)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
         return ApplicationList.from(applications().asList())
                            .withProjectId()
                            .withChanges()

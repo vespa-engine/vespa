@@ -143,12 +143,7 @@ public class Versions {
 
     private static ApplicationVersion defaultApplicationVersion(Application application) {
         return application.oldestDeployedApplication()
-                          .or(() -> application.instances().values().stream()
-                                               .flatMap(instance -> instance.deploymentJobs().statusOf(JobType.component)
-                                                                            .flatMap(JobStatus::lastSuccess)
-                                                                            .map(JobStatus.JobRun::application)
-                                                                            .stream())
-                                               .findAny())
+                          .or(application::latestVersion)
                           .orElse(ApplicationVersion.unknown);
     }
 

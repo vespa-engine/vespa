@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -13,22 +13,24 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
@@ -40,14 +42,18 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class InternalDeploymentTester {
@@ -116,12 +122,22 @@ public class InternalDeploymentTester {
         domain.services.put(ATHENZ_SERVICE, new AthenzDbMock.Service(true));
     }
 
+    /** Submits a new application, and returns the version of the new submission. */
+    public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage,
+                                            SourceRevision revision, String authorEmail, long projectId) {
+        return jobs.submit(id, revision, authorEmail, projectId, applicationPackage, new byte[0]);
+    }
+
+    /** Submits a new application, and returns the version of the new submission. */
+    public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage) {
+        return newSubmission(id, applicationPackage, BuildJob.defaultSourceRevision, "a@b", 2);
+    }
+
     /**
      * Submits a new application, and returns the version of the new submission.
      */
     public ApplicationVersion newSubmission() {
-        return jobs.submit(appId, BuildJob.defaultSourceRevision, "a@b", 2,
-                           tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage, new byte[0]);
+        return newSubmission(appId, tester.controller().system().isPublic() ? publicCdApplicationPackage : applicationPackage);
     }
 
     /**
@@ -144,53 +160,65 @@ public class InternalDeploymentTester {
                                                                                          zone.environment().value()))));
     }
 
-    /**
-     * Completely deploys a new submission and returns the new version.
-     */
-    public ApplicationVersion deployNewSubmission() {
-        ApplicationVersion applicationVersion = newSubmission();
+    /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
+    public List<JobType> completeRollout(TenantAndApplicationId id) {
+        tester.readyJobTrigger().run();
+        Set<JobType> jobs = new HashSet<>();
+        List<Run> activeRuns;
+        while ( ! (activeRuns = jobs().active(id)).isEmpty())
+            for (Run run : activeRuns)
+                if (jobs.add(run.id().type())) {
+                    runJob(run.id().type());
+                    tester.readyJobTrigger().run();
+                }
+                else
+                    throw new AssertionError("Job '" + run.id().type() + "' was run twice for '" + instanceId + "'");
 
-        assertFalse(instance().deployments().values().stream()
-                              .anyMatch(deployment -> deployment.applicationVersion().equals(applicationVersion)));
-        assertEquals(applicationVersion, application().change().application().get());
-        assertFalse(application().change().platform().isPresent());
-
-        runJob(JobType.systemTest);
-        runJob(JobType.stagingTest);
-        runJob(JobType.productionUsCentral1);
-        runJob(JobType.productionUsWest1);
-        runJob(JobType.productionUsEast3);
-
-        return applicationVersion;
+        assertFalse("Change should have no targets, but was " + application().change(), application().change().hasTargets());
+        return List.copyOf(jobs);
     }
 
-    /**
-     * Completely deploys the given, new platform.
-     */
-    public void deployNewPlatform(Version version) {
-        tester.upgradeSystem(version);
-        assertFalse(instance().deployments().values().stream()
-                              .anyMatch(deployment -> deployment.version().equals(version)));
-        assertEquals(version, application().change().platform().get());
-        assertFalse(application().change().application().isPresent());
+    /** Completely deploys the given application version, assuming it is the last to be submitted. */
+    public void deployNewSubmission(ApplicationVersion version) {
+        deployNewSubmission(appId, version);
+    }
 
-        runJob(JobType.systemTest);
-        runJob(JobType.stagingTest);
-        runJob(JobType.productionUsCentral1);
-        runJob(JobType.productionUsWest1);
-        runJob(JobType.productionUsEast3);
-        assertTrue(instance().productionDeployments().values().stream()
-                             .allMatch(deployment -> deployment.version().equals(version)));
-        assertTrue(tester.configServer().nodeRepository()
-                         .list(JobType.productionAwsUsEast1a.zone(tester.controller().system()), instanceId).stream()
-                         .allMatch(node -> node.currentVersion().equals(version)));
-        assertTrue(tester.configServer().nodeRepository()
-                         .list(JobType.productionUsEast3.zone(tester.controller().system()), instanceId).stream()
-                         .allMatch(node -> node.currentVersion().equals(version)));
-        assertTrue(tester.configServer().nodeRepository()
-                         .list(JobType.productionUsEast3.zone(tester.controller().system()), instanceId).stream()
-                         .allMatch(node -> node.currentVersion().equals(version)));
-        assertFalse(application().change().hasTargets());
+    /** Completely deploys the given application version, assuming it is the last to be submitted. */
+    public void deployNewSubmission(TenantAndApplicationId id, ApplicationVersion version) {
+        assertFalse(tester.application(id).instances().values().stream()
+                          .anyMatch(instance -> instance.deployments().values().stream()
+                                                        .anyMatch(deployment -> deployment.applicationVersion().equals(version))));
+        assertEquals(version, tester.application(id).change().application().get());
+        assertFalse(tester.application(id).change().platform().isPresent());
+        completeRollout(id);
+    }
+
+    /** Completely deploys the given, new platform. */
+    public void deployNewPlatform(Version version) {
+        deployNewPlatform(appId, version);
+    }
+
+    /** Completely deploys the given, new platform. */
+    public void deployNewPlatform(TenantAndApplicationId id, Version version) {
+        assertEquals(tester.controller().systemVersion(), version);
+        assertFalse(tester.application(id).instances().values().stream()
+                          .anyMatch(instance -> instance.deployments().values().stream()
+                                                        .anyMatch(deployment -> deployment.version().equals(version))));
+        assertEquals(version, tester.application(id).change().platform().get());
+        assertFalse(tester.application(id).change().application().isPresent());
+
+        completeRollout(id);
+
+        assertTrue(tester.application(id).productionDeployments().values().stream()
+                         .allMatch(deployments -> deployments.stream()
+                                                             .allMatch(deployment -> deployment.version().equals(version))));
+
+        for (JobType type : new DeploymentSteps(application().deploymentSpec(), tester.controller()::system).productionJobs())
+            assertTrue(tester.configServer().nodeRepository()
+                             .list(type.zone(tester.controller().system()), id.defaultInstance()).stream() // TODO jonmv: support more
+                             .allMatch(node -> node.currentVersion().equals(version)));
+
+        assertFalse(tester.application(id).change().hasTargets());
     }
 
     /**
@@ -203,7 +231,7 @@ public class InternalDeploymentTester {
                       .findAny()
                       .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         assertFalse(run.hasFailed());
-        assertNotSame(aborted, run.status());
+        assertNotEquals(aborted, run.status());
 
         ZoneId zone = type.zone(tester.controller().system());
         DeploymentId deployment = new DeploymentId(instanceId, zone);
