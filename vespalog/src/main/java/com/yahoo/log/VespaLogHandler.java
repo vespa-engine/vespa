@@ -7,7 +7,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
 /**
- * @author  Bjorn Borud
+ * @author Bjorn Borud
  * @author arnej27959
  */
 class VespaLogHandler extends StreamHandler {
@@ -32,8 +32,7 @@ class VespaLogHandler extends StreamHandler {
      * </DL>
      */
     VespaLogHandler(LogTarget logTarget,
-                           LevelControllerRepo levelControllerRepo, String serviceName,
-                           String applicationPrefix) {
+                    LevelControllerRepo levelControllerRepo, String serviceName, String applicationPrefix) {
         this.logTarget = logTarget;
         this.serviceName = serviceName;
         this.appPrefix = applicationPrefix;

@@ -117,18 +117,15 @@ public class Instance {
     }
 
     public Instance withoutDeploymentJob(JobType jobType) {
-        return new Instance(id, deployments.values(), deploymentJobs.without(jobType),
-                            rotations, rotationStatus);
+        return new Instance(id, deployments.values(), deploymentJobs.without(jobType), rotations, rotationStatus);
     }
 
     public Instance with(List<AssignedRotation> assignedRotations) {
-        return new Instance(id, deployments.values(), deploymentJobs,
-                            assignedRotations, rotationStatus);
+        return new Instance(id, deployments.values(), deploymentJobs, assignedRotations, rotationStatus);
     }
 
     public Instance with(RotationStatus rotationStatus) {
-        return new Instance(id, deployments.values(), deploymentJobs,
-                            rotations, rotationStatus);
+        return new Instance(id, deployments.values(), deploymentJobs, rotations, rotationStatus);
     }
 
     private Instance with(Deployment deployment) {
@@ -138,8 +135,7 @@ public class Instance {
     }
 
     private Instance with(Map<ZoneId, Deployment> deployments) {
-        return new Instance(id, deployments.values(), deploymentJobs,
-                            rotations, rotationStatus);
+        return new Instance(id, deployments.values(), deploymentJobs, rotations, rotationStatus);
     }
 
     public ApplicationId id() { return id; }

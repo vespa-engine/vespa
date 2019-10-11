@@ -11,8 +11,8 @@ public class StringBucket extends BucketValue {
     /**
      * Get the next distinct value.
      *
-     * @param value The base value.
-     * @return the next value.
+     * @param value the base value
+     * @return the next value
      */
     public static StringValue nextValue(StringValue value) {
         return new StringValue(value.getValue() + " ");
@@ -21,8 +21,8 @@ public class StringBucket extends BucketValue {
     /**
      * Constructs a new instance of this class.
      *
-     * @param from          The from-value to assign to this.
-     * @param to            The to-value to assign to this.
+     * @param from the from-value to assign to this
+     * @param to the to-value to assign to this
      */
     public StringBucket(String from, String to) {
         super(null, null, new StringValue(from), new StringValue(to));
@@ -31,8 +31,8 @@ public class StringBucket extends BucketValue {
     /**
      * Constructs a new instance of this class.
      *
-     * @param from          The from-value to assign to this.
-     * @param to            The to-value to assign to this.
+     * @param from the from-value to assign to this
+     * @param to the to-value to assign to this
      */
     public StringBucket(ConstantValue<?> from, ConstantValue<?> to) {
         super(null, null, from, to);

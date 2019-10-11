@@ -72,7 +72,6 @@ public class SessionPreparer {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Curator curator;
     private final Zone zone;
-    private final FlagSource flagSource;
     private final SecretStore secretStore;
 
     @Inject
@@ -84,7 +83,6 @@ public class SessionPreparer {
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,
                            Zone zone,
-                           FlagSource flagSource,
                            SecretStore secretStore) {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.fileDistributionFactory = fileDistributionFactory;
@@ -94,7 +92,6 @@ public class SessionPreparer {
         this.configDefinitionRepo = configDefinitionRepo;
         this.curator = curator;
         this.zone = zone;
-        this.flagSource = flagSource;
         this.secretStore = secretStore;
     }
 

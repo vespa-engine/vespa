@@ -48,8 +48,7 @@ public class VespaFormat {
      * value was "(empty)".
      *
      * @param s String that might need escaping
-     * @return Returns escaped string
-     *
+     * @return returns the escaped string
      */
     public static String escape (String s) {
         if (s == null) {
