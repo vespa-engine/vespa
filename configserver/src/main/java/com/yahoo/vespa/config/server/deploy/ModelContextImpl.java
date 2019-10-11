@@ -14,7 +14,6 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -127,7 +126,6 @@ public class ModelContextImpl implements ModelContext {
         private final String athenzDnsSuffix;
         private final boolean hostedVespa;
         private final Zone zone;
-        private final Set<Rotation> rotations;
         private final Set<ContainerEndpoint> endpoints;
         private final boolean isBootstrap;
         private final boolean isFirstTimeDeployment;
@@ -143,7 +141,6 @@ public class ModelContextImpl implements ModelContext {
                           String athenzDnsSuffix,
                           boolean hostedVespa,
                           Zone zone,
-                          Set<Rotation> rotations,
                           Set<ContainerEndpoint> endpoints,
                           boolean isBootstrap,
                           boolean isFirstTimeDeployment,
@@ -157,7 +154,6 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDnsSuffix = athenzDnsSuffix;
             this.hostedVespa = hostedVespa;
             this.zone = zone;
-            this.rotations = rotations;
             this.endpoints = endpoints;
             this.isBootstrap = isBootstrap;
             this.isFirstTimeDeployment = isFirstTimeDeployment;
@@ -195,9 +191,6 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public Zone zone() { return zone; }
-
-        @Override
-        public Set<Rotation> rotations() { return rotations; }
 
         @Override
         public Set<ContainerEndpoint> endpoints() { return endpoints; }

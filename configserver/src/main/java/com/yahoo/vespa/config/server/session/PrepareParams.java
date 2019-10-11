@@ -4,7 +4,6 @@ package com.yahoo.vespa.config.server.session;
 import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.Slime;
@@ -17,7 +16,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * Parameters for prepare. Immutable.
@@ -42,14 +40,12 @@ public final class PrepareParams {
     private final boolean verbose;
     private final boolean isBootstrap;
     private final Optional<Version> vespaVersion;
-    private final Set<Rotation> rotations;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<String> tlsSecretsKeyName;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
-                          Set<Rotation> rotations, List<ContainerEndpoint> containerEndpoints,
-                          Optional<String> tlsSecretsKeyName) {
+                          List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -57,11 +53,7 @@ public final class PrepareParams {
         this.verbose = verbose;
         this.isBootstrap = isBootstrap;
         this.vespaVersion = vespaVersion;
-        this.rotations = rotations;
         this.containerEndpoints = containerEndpoints;
-        if ((rotations != null && !rotations.isEmpty()) && !containerEndpoints.isEmpty()) {
-            throw new IllegalArgumentException("Cannot set both rotations and containerEndpoints");
-        }
         this.tlsSecretsKeyName = tlsSecretsKeyName;
     }
 
@@ -137,8 +129,8 @@ public final class PrepareParams {
         }
 
         public PrepareParams build() {
-            return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     verbose, isBootstrap, vespaVersion, Set.of(), containerEndpoints, tlsSecretsKeyName);
+            return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
+                                     verbose, isBootstrap, vespaVersion, containerEndpoints, tlsSecretsKeyName);
         }
 
     }
@@ -181,10 +173,6 @@ public final class PrepareParams {
 
     /** Returns the Vespa version the nodes running the prepared system should have, or empty to use the system version */
     public Optional<Version> vespaVersion() { return vespaVersion; }
-
-    /** Returns the global rotations that should be made available for this deployment */
-    // TODO: Remove this once all applications have to switched to containerEndpoints
-    public Set<Rotation> rotations() { return rotations; }
 
     /** Returns the container endpoints that should be made available for this deployment. One per cluster */
     public List<ContainerEndpoint> containerEndpoints() {

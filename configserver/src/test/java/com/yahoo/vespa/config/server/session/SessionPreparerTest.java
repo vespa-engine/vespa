@@ -3,7 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
@@ -17,7 +17,6 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.io.IOUtils;
@@ -37,9 +36,7 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
-import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.mock.MockCurator;
@@ -60,7 +57,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -185,38 +181,10 @@ public class SessionPreparerTest {
         assertThat(zkc.readApplicationId(), is(origId));
     }
 
-    private List<ContainerEndpoint> readContainerEndpoints(ApplicationId application) {
-        return new ContainerEndpointsCache(tenantPath, curator).read(application);
-    }
-
-    private Set<Rotation> readRotationsFromZK(ApplicationId applicationId) {
-        return new Rotations(curator, tenantPath).readRotationsFromZooKeeper(applicationId);
-    }
-
     @Test
-    public void require_that_rotations_are_read_from_zookeeper_and_used() throws IOException {
-        final TestModelFactory modelFactory = new TestModelFactory(version123);
-        preparer = createPreparer(new ModelFactoryRegistry(Collections.singletonList(modelFactory)),
-                HostProvisionerProvider.empty());
-
-        final String rotations = "foo.msbe.global.vespa.yahooapis.com";
-        final ApplicationId applicationId = applicationId("test");
-        new Rotations(curator, tenantPath).writeRotationsToZooKeeper(applicationId, Collections.singleton(new Rotation(rotations)));
-        final PrepareParams params = new PrepareParams.Builder().applicationId(applicationId).build();
-        final File app = new File("src/test/resources/deploy/app");
-        prepare(app, params);
-
-        // check that the rotation from zookeeper were used
-        final ModelContext modelContext = modelFactory.getModelContext();
-        final Set<Rotation> rotationSet = modelContext.properties().rotations();
-        assertThat(rotationSet, contains(new Rotation(rotations)));
-
-        // Check that the persisted value is still the same
-        assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
-    }
-
-    @Test
-    public void require_that_container_endpoints_are_written() throws Exception {
+    public void require_that_container_endpoints_are_written_and_used() throws Exception {
+        var modelFactory = new TestModelFactory(version123);
+        preparer = createPreparer(new ModelFactoryRegistry(List.of(modelFactory)), HostProvisionerProvider.empty());
         var endpoints = "[\n" +
                         "  {\n" +
                         "    \"clusterId\": \"foo\",\n" +
@@ -245,6 +213,16 @@ public class SessionPreparerTest {
                                new ContainerEndpoint("bar",
                                                      List.of("bar.app1.tenant1.global.vespa.example.com",
                                                              "rotation-043.vespa.global.routing")));
+        assertEquals(expected, readContainerEndpoints(applicationId));
+
+
+        var modelContext = modelFactory.getModelContext();
+        var containerEndpointsFromModel = modelContext.properties().endpoints();
+        assertEquals(Set.copyOf(expected), containerEndpointsFromModel);
+
+        // Writing empty container endpoints keeps old value
+        params = new PrepareParams.Builder().applicationId(applicationId).build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
         assertEquals(expected, readContainerEndpoints(applicationId));
     }
 
@@ -286,6 +264,10 @@ public class SessionPreparerTest {
         preparer = createPreparer(HostProvisionerProvider.withProvisioner(new FailWithTransientExceptionProvisioner()));
         var params = new PrepareParams.Builder().applicationId(applicationId("test")).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
+    }
+
+    private List<ContainerEndpoint> readContainerEndpoints(ApplicationId application) {
+        return new ContainerEndpointsCache(tenantPath, curator).read(application);
     }
 
     private void prepare(File app) throws IOException {

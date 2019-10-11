@@ -49,7 +49,7 @@ public interface ModelContext {
         String athenzDnsSuffix();
         boolean hostedVespa();
         Zone zone();
-        Set<Rotation> rotations();
+        default Set<Rotation> rotations() { return Set.of(); }
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();

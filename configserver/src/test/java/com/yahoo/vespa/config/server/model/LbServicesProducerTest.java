@@ -13,7 +13,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -42,17 +41,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
-import static org.junit.Assume.assumeTrue;
 
 /**
  * @author Ulf Lilleengen
  */
 @RunWith(Parameterized.class)
 public class LbServicesProducerTest {
+
     private static final String rotation1 = "rotation-1";
     private static final String rotation2 = "rotation-2";
-    private static final String rotationString = rotation1 + "," + rotation2;
-    private static final Set<Rotation> rotations = Collections.singleton(new Rotation(rotationString));
     private static final Set<ContainerEndpoint> endpoints = Set.of(
             new ContainerEndpoint("mydisc", List.of("rotation-1", "rotation-2"))
     );
@@ -70,7 +67,7 @@ public class LbServicesProducerTest {
 
     @Test
     public void testDeterministicGetConfig() throws IOException, SAXException {
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().rotations(rotations));
+        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().endpoints(endpoints));
         LbServicesConfig last = null;
         for (int i = 0; i < 100; i++) {
             testModel = randomizeApplications(testModel, i);
@@ -123,25 +120,6 @@ public class LbServicesProducerTest {
         LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
         producer.getConfig(builder);
         return new LbServicesConfig(builder);
-    }
-
-    @Test
-    public void testConfigAliasesWithRotations() throws IOException, SAXException {
-        assumeTrue(useGlobalServiceId);
-
-        Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder()
-                                                                                  .rotations(rotations)
-                                                                                  .properties(new TestProperties().setHostedVespa(true)));
-        RegionName regionName = RegionName.from("us-east-1");
-
-        var services = getLbServicesConfig(new Zone(Environment.prod, regionName), testModel)
-                .tenants("foo")
-                .applications("foo:prod:" + regionName.value() + ":default")
-                .hosts("foo.foo.yahoo.com")
-                .services(QRSERVER.serviceName);
-
-        assertThat(services.servicealiases(), contains("service1"));
-        assertThat("Missing rotations in list: " + services.endpointaliases(), services.endpointaliases(), containsInAnyOrder("foo1.bar1.com", "foo2.bar2.com", rotation1, rotation2));
     }
 
     @Test
@@ -259,4 +237,5 @@ public class LbServicesProducerTest {
         assertThat(expected.toString(), is(actual.toString()));
         assertThat(ConfigPayload.fromInstance(expected).toString(true), is(ConfigPayload.fromInstance(actual).toString(true)));
     }
+
 }
