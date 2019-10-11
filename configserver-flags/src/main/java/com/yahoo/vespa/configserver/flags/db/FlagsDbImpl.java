@@ -48,7 +48,7 @@ public class FlagsDbImpl implements FlagsDb {
     }
 
     @Override
-    public Map<FlagId, FlagData> getAllFlags() {
+    public Map<FlagId, FlagData> getAllFlagData() {
         List<ChildData> dataList = cache.getCurrentData();
         return dataList.stream()
                 .map(ChildData::getData)

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -82,5 +83,8 @@ public interface ConfigServer {
 
     /** Get all load balancers for application in given zone */
     List<LoadBalancer> getLoadBalancers(ApplicationId application, ZoneId zone);
+
+    /** List all flag data for the given zone */
+    List<FlagData> listFlagData(ZoneId zone);
 
 }

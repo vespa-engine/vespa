@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -260,6 +261,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return getLoadBalancers(zone).stream()
                                      .filter(lb -> lb.application().equals(application))
                                      .collect(Collectors.toUnmodifiableList());
+    }
+
+    @Override
+    public List<FlagData> listFlagData(ZoneId zone) {
+        return List.of();
     }
 
     public void addLoadBalancers(ZoneId zone, List<LoadBalancer> loadBalancers) {

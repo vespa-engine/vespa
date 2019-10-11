@@ -45,7 +45,7 @@ public class FlagsDbImplTest {
         FlagId flagId2 = new FlagId("id2");
         FlagData data2 = new FlagData(flagId2, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
         db.setValue(flagId2, data2);
-        Map<FlagId, FlagData> flags = db.getAllFlags();
+        Map<FlagId, FlagData> flags = db.getAllFlagData();
         assertThat(flags.size(), equalTo(2));
         assertThat(flags.get(flagId), notNullValue());
         assertThat(flags.get(flagId2), notNullValue());
