@@ -79,7 +79,7 @@ public class SessionPreparer {
     public SessionPreparer(ModelFactoryRegistry modelFactoryRegistry,
                            FileDistributionFactory fileDistributionFactory,
                            HostProvisionerProvider hostProvisionerProvider,
-                           PermanentApplicationPackage permanentApplicationPackage,
+                           PermanentApplicationPackage permanentApplicationPackage,x
                            ConfigserverConfig configserverConfig,
                            ConfigDefinitionRepo configDefinitionRepo,
                            Curator curator,

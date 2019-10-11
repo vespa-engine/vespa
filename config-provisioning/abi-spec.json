@@ -735,7 +735,8 @@
       "public void <init>(java.lang.String)",
       "public java.lang.String getId()",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
+      "public int hashCode()",
+      "public java.lang.String toString()"
     ],
     "fields": []
   },
