@@ -3,7 +3,6 @@ package com.yahoo.vespa.clustercontroller.utils.test;
 
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperation;
 import com.yahoo.vespa.clustercontroller.utils.communication.async.AsyncOperationImpl;
-import com.yahoo.vespa.clustercontroller.utils.communication.http.AsyncHttpClient;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
