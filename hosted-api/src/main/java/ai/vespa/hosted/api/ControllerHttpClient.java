@@ -29,6 +29,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -75,13 +77,17 @@ public abstract class ControllerHttpClient {
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
-    public static ControllerHttpClient withKeyAndCertificate(URI endpoint, String privateKey, String certificate) {
-        return new MutualTlsControllerHttpClient(endpoint, privateKey, certificate);
-    }
-
-    /** Creates an HTTP client against the given endpoint, which uses the given private key and certificate identity. */
     public static ControllerHttpClient withKeyAndCertificate(URI endpoint, Path privateKeyFile, Path certificateFile) {
-        return new MutualTlsControllerHttpClient(endpoint, privateKeyFile, certificateFile);
+        var privateKey = unchecked(() -> KeyUtils.fromPemEncodedPrivateKey(Files.readString(privateKeyFile, UTF_8)));
+        var certificates = unchecked(() -> X509CertificateUtils.certificateListFromPem(Files.readString(certificateFile, UTF_8)));
+
+        for (var certificate : certificates)
+        if (   Instant.now().isBefore(certificate.getNotBefore().toInstant())
+            || Instant.now().isAfter(certificate.getNotAfter().toInstant()))
+            throw new IllegalStateException("Certificate at '" + certificateFile + "' is valid between " +
+                                            certificate.getNotBefore() + " and " + certificate.getNotAfter() + " — not now.");
+
+        return new MutualTlsControllerHttpClient(endpoint, privateKey, certificates);
     }
 
     /** Sends the given submission to the remote controller and returns the version of the accepted package, or throws if this fails. */
@@ -230,8 +236,8 @@ public abstract class ControllerHttpClient {
 
                 Inspector rootObject = toSlime(response.body()).get();
                 String message = response.request() + " returned code " + response.statusCode() +
-                                 " (" + rootObject.field("error-code").asString() + "): " +
-                                 rootObject.field("message").asString();
+                                 (rootObject.field("error-code").valid() ? " (" + rootObject.field("error-code").asString() + ")" : "") +
+                                 ": " + rootObject.field("message").asString();
 
                 if (response.statusCode() / 100 == 4)
                     throw new IllegalArgumentException(message);
@@ -377,20 +383,10 @@ public abstract class ControllerHttpClient {
     /** Client that uses a given key / certificate identity to authenticate to the remote controller. */
     private static class MutualTlsControllerHttpClient extends ControllerHttpClient {
 
-        private MutualTlsControllerHttpClient(URI endpoint, Path privateKeyFile, Path certificateFile) {
+        private MutualTlsControllerHttpClient(URI endpoint, PrivateKey privateKey, List<X509Certificate> certs) {
             super(endpoint,
                   HttpClient.newBuilder()
-                            .sslContext(new SslContextBuilder().withKeyStore(privateKeyFile,
-                                                                             certificateFile)
-                                                               .build()));
-        }
-
-        private MutualTlsControllerHttpClient(URI endpoint, String privateKey, String certificate) {
-            super(endpoint,
-                  HttpClient.newBuilder()
-                            .sslContext(new SslContextBuilder().withKeyStore(KeyUtils.fromPemEncodedPrivateKey(privateKey),
-                                                                             X509CertificateUtils.certificateListFromPem(certificate))
-                                                               .build()));
+                            .sslContext(new SslContextBuilder().withKeyStore(privateKey, certs).build()));
         }
 
     }
