@@ -60,8 +60,8 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
                           String xmlForm) {
-        if (singleInstance(steps)) { // TODO: Remove this clause after November 2019
-            var singleInstance = (DeploymentInstanceSpec)steps.get(0);
+        if (hasSingleInstance(steps)) { // TODO: Remove this clause after November 2019
+            var singleInstance = singleInstance(steps);
             this.steps = List.of(singleInstance.withSteps(completeSteps(singleInstance.steps())));
         }
         else {
@@ -149,10 +149,16 @@ public class DeploymentSpec {
 
     // TODO: Remove after October 2019
     private DeploymentInstanceSpec singleInstance() {
-        if (singleInstance(steps)) return (DeploymentInstanceSpec)steps.get(0);
+        return singleInstance(steps);
+    }
+
+    // TODO: Remove after October 2019
+    private static DeploymentInstanceSpec singleInstance(List<DeploymentSpec.Step> steps) {
+        List<DeploymentInstanceSpec> instances = instances(steps);
+        if (instances.size() == 1) return instances.get(0);
         throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
                                            "as it has multiple instances: " +
-                                           instances().stream().map(Step::toString).collect(Collectors.joining(",")));
+                                           instances.stream().map(Step::toString).collect(Collectors.joining(",")));
     }
 
     // TODO: Remove after October 2019
@@ -175,7 +181,7 @@ public class DeploymentSpec {
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
-        if (singleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019
+        if (hasSingleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019
         return steps;
     }
 
@@ -193,7 +199,7 @@ public class DeploymentSpec {
     // TODO: Remove after November 2019
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         Optional<AthenzService> service = Optional.empty();
-        if (singleInstance(steps))
+        if (hasSingleInstance(steps))
             service = singleInstance().athenzService(environment, region);
         if (service.isPresent())
             return service;
@@ -227,8 +233,8 @@ public class DeploymentSpec {
     }
 
     // TODO: Remove after November 2019
-    private static boolean singleInstance(List<DeploymentSpec.Step> steps) {
-        return steps.size() == 1 && steps.get(0) instanceof DeploymentInstanceSpec;
+    private static boolean hasSingleInstance(List<DeploymentSpec.Step> steps) {
+        return instances(steps).size() == 1;
     }
 
     /** Returns the instance step containing the given instance name */
@@ -254,6 +260,10 @@ public class DeploymentSpec {
 
     /** Returns the step descendants of this which are instances */
     public List<DeploymentInstanceSpec> instances() {
+        return instances(steps);
+    }
+
+    private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
                     .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones)step).steps.stream() : List.of(step).stream())
                     .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
