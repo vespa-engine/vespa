@@ -349,7 +349,8 @@
                 <version>${xml-apis.version}</version>
             </dependency>
 
-            <!--  NOTE: The dependencies below are not provided from the jdisc container runtime, but had to be moved
+            <!--  NOTE: The dependencies below are either not provided from the jdisc container runtime, or should
+                        not be leaked as maven dependency via the 'container' artifact. Still, they had to be moved
                         here from 'parent' because factorylib reads the text in parent/pom.xml and this pom file to
                         build a pom model used to bootstrap the maven cache on factory. Hence all deps using properties
                         declared in this pom also have to reside in this pom.
@@ -375,31 +376,31 @@
                 <version>${guava.version}</version>
             </dependency>
             <dependency>
-                <!-- NOT provided from jdisc runtime -->
+                <!-- Installed in jdisc runtime, but should only be used internally and not leaked as maven dep to users -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-continuation</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <!-- NOT provided from jdisc runtime -->
+                <!-- Installed in jdisc runtime, but should only be used internally and not leaked as maven dep to users -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <!-- NOT provided from jdisc runtime -->
+                <!-- Installed in jdisc runtime, but should only be used internally and not leaked as maven dep to users -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <!-- NOT provided from jdisc runtime -->
+                <!-- Installed in jdisc runtime, but should only be used internally and not leaked as maven dep to users -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlets</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <!-- NOT provided from jdisc runtime -->
+                <!-- Installed in jdisc runtime, but should only be used internally and not leaked as maven dep to users -->
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-jmx</artifactId>
                 <version>${jetty.version}</version>
