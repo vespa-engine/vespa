@@ -3613,6 +3613,8 @@
     ],
     "methods": [
       "public static com.yahoo.search.grouping.request.StringValue nextValue(com.yahoo.search.grouping.request.StringValue)",
+      "public void <init>(java.lang.String)",
+      "public void <init>(com.yahoo.search.grouping.request.StringValue)",
       "public void <init>(java.lang.String, java.lang.String)",
       "public void <init>(com.yahoo.search.grouping.request.ConstantValue, com.yahoo.search.grouping.request.ConstantValue)",
       "public com.yahoo.search.grouping.request.StringBucket copy()",
