@@ -90,7 +90,7 @@ public class FlagsHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse getFlagDataList(HttpRequest request) {
-        return new FlagDataListResponse(flagsV1Uri(request), flagsDb.getAllFlags(),
+        return new FlagDataListResponse(flagsV1Uri(request), flagsDb.getAllFlagData(),
                                         Objects.equals(request.getProperty("recursive"), "true"));
     }
 

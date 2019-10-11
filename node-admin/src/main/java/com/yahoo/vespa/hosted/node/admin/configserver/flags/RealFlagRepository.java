@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.configserver.flags;
 
 import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.FlagRepository;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
