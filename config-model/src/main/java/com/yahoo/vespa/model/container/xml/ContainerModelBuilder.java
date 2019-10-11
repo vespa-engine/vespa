@@ -24,7 +24,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.search.rendering.RendererRegistry;
@@ -79,7 +78,6 @@ import org.w3c.dom.Node;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -223,14 +221,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                         context.getDeployState().getProperties().athenzDnsSuffix(),
                                         context.getDeployState().zone(),
                                         deploymentSpec);
-                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getRotations(), context.getDeployState().getEndpoints(), deploymentSpec);
+                    addRotationProperties(cluster, context.getDeployState().zone(), context.getDeployState().getEndpoints(), deploymentSpec);
                 });
     }
 
-    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<Rotation> rotations, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
-        Optional<String> globalServiceId = spec.instance(app.getApplicationId().instance()).flatMap(instance -> instance.globalServiceId());
+    private void addRotationProperties(ApplicationContainerCluster cluster, Zone zone, Set<ContainerEndpoint> endpoints, DeploymentSpec spec) {
         cluster.getContainers().forEach(container -> {
-            setRotations(container, rotations, endpoints, globalServiceId, cluster.getName());
+            setRotations(container, endpoints, cluster.getName());
             container.setProp("activeRotation", Boolean.toString(zoneHasActiveRotation(zone, spec)));
         });
     }
@@ -243,26 +240,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                              declaredZone.active());
     }
 
-    private void setRotations(Container container,
-                              Set<Rotation> rotations,
-                              Set<ContainerEndpoint> endpoints,
-                              Optional<String> globalServiceId,
-                              String containerClusterName) {
-        final Set<String> rotationsProperty = new HashSet<>();
-
-        // Add the legacy rotations to the list of available rotations.  Using the same test
-        // as was used before to mirror the old business logic for global-service-id.
-        if ( ! rotations.isEmpty() && globalServiceId.isPresent()) {
-            if (containerClusterName.equals(globalServiceId.get())) {
-                rotations.stream().map(Rotation::getId).forEach(rotationsProperty::add);
-            }
-        }
-
-        // For ContainerEndpoints this is more straight-forward, just add all that are present
-        endpoints.stream()
-                .filter(endpoint -> endpoint.clusterId().equals(containerClusterName))
-                .flatMap(endpoint -> endpoint.names().stream())
-                .forEach(rotationsProperty::add);
+    private void setRotations(Container container, Set<ContainerEndpoint> endpoints, String containerClusterName) {
+        var rotationsProperty = endpoints.stream()
+                                         .filter(endpoint -> endpoint.clusterId().equals(containerClusterName))
+                                         .flatMap(endpoint -> endpoint.names().stream())
+                                         .collect(Collectors.toUnmodifiableSet());
 
         // Build the comma delimited list of endpoints this container should be known as.
         // Confusingly called 'rotations' for legacy reasons.

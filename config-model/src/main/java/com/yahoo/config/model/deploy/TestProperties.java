@@ -8,7 +8,6 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
 import java.net.URI;
@@ -25,6 +24,7 @@ import java.util.Set;
  * @author hakonhall
  */
 public class TestProperties implements ModelContext.Properties {
+
     private boolean multitenant = false;
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = Collections.emptyList();
@@ -33,7 +33,6 @@ public class TestProperties implements ModelContext.Properties {
     private String athenzDnsSuffix = null;
     private boolean hostedVespa = false;
     private Zone zone;
-    private Set<Rotation> rotations;
     private Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean isBootstrap = false;
     private boolean isFirstTimeDeployment = false;
@@ -51,7 +50,6 @@ public class TestProperties implements ModelContext.Properties {
     @Override public String athenzDnsSuffix() { return athenzDnsSuffix; }
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Zone zone() { return zone; }
-    @Override public Set<Rotation> rotations() { return rotations; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
 
     @Override public boolean isBootstrap() { return isBootstrap; }

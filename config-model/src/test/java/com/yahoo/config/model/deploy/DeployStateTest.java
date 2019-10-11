@@ -3,13 +3,13 @@ package com.yahoo.config.model.deploy;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.model.VespaModel;
@@ -18,16 +18,17 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Ulf Lilleengen
@@ -108,13 +109,10 @@ public class DeployStateTest {
     }
 
     @Test
-    public void testRotations() {
-        Set<Rotation> rotations = new HashSet<>();
-        assertThat(new DeployState.Builder().rotations(rotations).build().getRotations().size(), is(0));
-        for (String name : new String[]{"rotation-001.vespa.a02.yahoodns.net", "rotation-002.vespa.a02.yahoodns.net"}) {
-            rotations.add(new Rotation(name));
-        }
-        assertThat(new DeployState.Builder().rotations(rotations).build().getRotations(), equalTo(rotations));
+    public void testContainerEndpoints() {
+        assertTrue(new DeployState.Builder().endpoints(Set.of()).build().getEndpoints().isEmpty());
+        var endpoints = Set.of(new ContainerEndpoint("c1", List.of("c1.example.com", "c1-alias.example.com")));
+        assertEquals(endpoints, new DeployState.Builder().endpoints(endpoints).build().getEndpoints());
     }
 
     private DeployState createDeployState(ApplicationPackage app, Map<ConfigDefinitionKey, com.yahoo.vespa.config.buildergen.ConfigDefinition> defs) {

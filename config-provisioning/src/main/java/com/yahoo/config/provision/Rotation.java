@@ -6,6 +6,7 @@ import java.util.Objects;
 /**
  * A rotation (virtual endpoint).
  */
+// TODO(mpolden): Remove once 7.122 is the oldest config model
 public class Rotation {
 
     private final String id;
