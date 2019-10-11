@@ -1,0 +1,21 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Config containing only structs in various forms
+namespace=foo
+
+simple.name string default="_default_"
+simple.gender enum { MALE, FEMALE } default=MALE
+simple.emails[] string
+
+nested.inner.name string default="_default_"
+nested.inner.gender enum { MALE, FEMALE } default=MALE
+nested.inner.emails[] string
+
+simplearr[].name string
+simplearr[].gender enum { MALE, FEMALE }
+
+nestedarr[].inner.name string
+nestedarr[].inner.gender enum { MALE, FEMALE }
+nestedarr[].inner.emails[] string
+
+complexarr[].innerarr[].name string
+complexarr[].innerarr[].gender enum { MALE, FEMALE }

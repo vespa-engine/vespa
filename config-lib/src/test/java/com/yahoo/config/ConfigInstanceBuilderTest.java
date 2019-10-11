@@ -2,6 +2,7 @@
 package com.yahoo.config;
 
 import com.yahoo.foo.MaptypesConfig;
+import com.yahoo.foo.StructtypesConfig;
 import com.yahoo.test.FunctionTestConfig;
 import com.yahoo.test.IntConfig;
 import com.yahoo.test.RestartConfig;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.yahoo.foo.StructtypesConfig.Simple.Gender.Enum.FEMALE;
 import static com.yahoo.test.FunctionTestConfig.BasicStruct;
 import static com.yahoo.test.FunctionTestConfig.Enum_val;
 import static com.yahoo.test.FunctionTestConfig.Enumarr;
@@ -40,6 +42,18 @@ import static org.junit.Assert.assertTrue;
  */
 public class ConfigInstanceBuilderTest
 {
+
+    @Test
+    public void struct_values_can_be_set_without_declaring_a_new_struct_builder() {
+        var builder = new StructtypesConfig.Builder();
+        builder.simple
+                .name("myname")
+                .gender(FEMALE);
+
+        StructtypesConfig config = builder.build();
+        assertThat(config.simple().name(), is("myname"));
+        assertThat(config.simple().gender(), is(FEMALE));
+    }
 
     @Test
     public void leaf_map_setter_merges_maps() {
