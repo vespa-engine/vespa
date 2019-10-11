@@ -30,8 +30,8 @@ void
 SummaryAdapter::put(SerialNum serialNum, const DocumentIdT lid, const Document &doc)
 {
     if ( ! ignore(serialNum) ) {
-        LOG(spam, "SummaryAdapter::put(docId = '%s', lid = %u, document = '%s')",
-            doc.getId().toString().c_str(), lid, doc.toString(true).c_str());
+        LOG(spam, "SummaryAdapter::put(serialnum = '%" PRIu64 "', lid = %u, docId = '%s', document = '%s')",
+            serialNum, lid, doc.getId().toString().c_str(), doc.toString(true).c_str());
         _mgr->putDocument(serialNum, lid, doc);
         _lastSerial = serialNum;
     }
@@ -52,6 +52,7 @@ void
 SummaryAdapter::remove(SerialNum serialNum, const DocumentIdT lid)
 {
     if ( ! ignore(serialNum + 1) ) {
+        LOG(spam, "SummaryAdapter::remove(serialnum = '%" PRIu64 "', lid = %u)", serialNum, lid);
         _mgr->removeDocument(serialNum, lid);
         _lastSerial = serialNum;
     }
@@ -71,8 +72,12 @@ SummaryAdapter::getDocumentStore() const {
 }
 
 std::unique_ptr<Document>
-SummaryAdapter::get(const DocumentIdT lid, const DocumentTypeRepo &repo) {
-    return imgr().getBackingStore().read(lid, repo);
+SummaryAdapter::get(const DocumentIdT lid, const DocumentTypeRepo &repo)
+{
+    auto result = imgr().getBackingStore().read(lid, repo);
+    LOG(spam, "SummaryAdapter::get(lid = %u, docId = '%s', document = '%s')",
+        lid, (result ? result->getId().toString().c_str() : "null"), (result ? result->toString(true).c_str() : "null"));
+    return result;
 }
 
 void
