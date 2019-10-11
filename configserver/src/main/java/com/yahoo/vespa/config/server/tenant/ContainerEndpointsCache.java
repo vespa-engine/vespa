@@ -6,6 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.curator.transaction.CuratorOperations;
+import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -13,14 +15,11 @@ import java.util.List;
 
 
 /**
- * Persists assignment of rotations to an application to ZooKeeper.
+ * Persists assignment of rotations to an application in ZooKeeper.
+ *
  * The entries are {@link ContainerEndpoint} instances, which keep track of the container
  * cluster that is the target, the endpoint name, and the rotation used to
  * give availability to that cluster.
- *
- * This is v2 of that storage in a new directory.  Previously we only stored
- * the name of the rotation, since all the other information could be
- * calculated runtime.
  *
  * @author ogronnesby
  */
@@ -35,27 +34,32 @@ public class ContainerEndpointsCache {
     }
 
     public List<ContainerEndpoint> read(ApplicationId applicationId) {
-        final var optionalData = curator.getData(applicationPath(applicationId));
-        return optionalData
-                .map(SlimeUtils::jsonToSlime)
-                .map(ContainerEndpointSerializer::endpointListFromSlime)
-                .orElseGet(List::of);
+        var optionalData = curator.getData(containerEndpointsPath(applicationId));
+        return optionalData.map(SlimeUtils::jsonToSlime)
+                           .map(ContainerEndpointSerializer::endpointListFromSlime)
+                           .orElseGet(List::of);
     }
 
     public void write(ApplicationId applicationId, List<ContainerEndpoint> endpoints) {
         if (endpoints.isEmpty()) return;
 
-        final var slime = ContainerEndpointSerializer.endpointListToSlime(endpoints);
+        var slime = ContainerEndpointSerializer.endpointListToSlime(endpoints);
 
         try {
-            final var bytes = SlimeUtils.toJsonBytes(slime);
-            curator.set(applicationPath(applicationId), bytes);
+            var bytes = SlimeUtils.toJsonBytes(slime);
+            curator.set(containerEndpointsPath(applicationId), bytes);
         } catch (IOException e) {
             throw new UncheckedIOException("Error writing endpoints of: " + applicationId, e);
         }
     }
 
-    private Path applicationPath(ApplicationId applicationId) {
+    /** Returns a transaction which deletes these rotations if they exist */
+    public CuratorTransaction delete(ApplicationId application) {
+        if ( ! curator.exists(containerEndpointsPath(application))) return CuratorTransaction.empty(curator);
+        return CuratorTransaction.from(CuratorOperations.delete(containerEndpointsPath(application).getAbsolute()), curator);
+    }
+
+    private Path containerEndpointsPath(ApplicationId applicationId) {
         return cachePath.append(applicationId.serializedForm());
     }
 
