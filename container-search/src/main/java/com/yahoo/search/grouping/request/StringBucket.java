@@ -18,6 +18,16 @@ public class StringBucket extends BucketValue {
         return new StringValue(value.getValue() + " ");
     }
 
+    /** Constructs a new bucket for a single unique string */
+    public StringBucket(String value) {
+        this(new StringValue(value));
+    }
+
+    /** Constructs a new bucket for a single unique string */
+    public StringBucket(StringValue value) {
+        this(value, nextValue(value));
+    }
+
     /**
      * Constructs a new instance of this class.
      *
