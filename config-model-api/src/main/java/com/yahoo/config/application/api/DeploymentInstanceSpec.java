@@ -129,7 +129,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
         // If athenz domain is not set, athenz service cannot be set on any level
         if (athenzDomain.isEmpty()) {
             for (DeploymentSpec.DeclaredZone zone : zones()) {
-                if(zone.athenzService().isPresent()) {
+                if (zone.athenzService().isPresent()) {
                     throw new IllegalArgumentException("Athenz service configured for zone: " + zone + ", but Athenz domain is not configured");
                 }
             }

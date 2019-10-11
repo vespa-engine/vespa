@@ -102,7 +102,7 @@ public class DeploymentSpecXmlReader {
                 if (topLevelTag.getTagName().equals(instanceTag))
                     steps.addAll(readInstanceContent(topLevelTag.getAttribute(idAttribute), topLevelTag, new MutableOptional<>(), root));
                 else
-                    steps.addAll(readNonInstanceSteps(topLevelTag, new MutableOptional<>(), topLevelTag)); // (No global service id here)
+                    steps.addAll(readNonInstanceSteps(topLevelTag, new MutableOptional<>(), root)); // (No global service id here)
             }
         }
 
@@ -194,7 +194,7 @@ public class DeploymentSpecXmlReader {
                                                             longAttribute("seconds", stepTag))));
             case parallelTag: // regions and instances may be nested within
                 return List.of(new ParallelZones(XML.getChildren(stepTag).stream()
-                                                    .flatMap(child -> readSteps(child, globalServiceId, stepTag).stream())
+                                                    .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
                                                     .collect(Collectors.toList())));
             case regionTag:
                 return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));

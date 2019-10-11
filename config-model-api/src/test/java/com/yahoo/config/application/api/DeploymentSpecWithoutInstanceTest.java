@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -370,6 +371,33 @@ public class DeploymentSpecWithoutInstanceTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(spec.requireInstance("default").athenzDomain().get().value(), "domain");
         assertEquals(spec.requireInstance("default").athenzService(Environment.prod, RegionName.from("us-west-1")).get().value(), "service");
+    }
+
+    @Test
+    public void athenz_config_is_propagated_through_parallel_zones() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "   <prod athenz-service='prod-service'>" +
+                "      <region active='true'>us-central-1</region>" +
+                "      <parallel>" +
+                "         <region active='true'>us-west-1</region>" +
+                "         <region active='true'>us-east-3</region>" +
+                "      </parallel>" +
+                "   </prod>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals("prod-service", spec.athenzService(InstanceName.from("default"),
+                                                                 Environment.prod,
+                                                                 RegionName.from("us-central-1")).get().value());
+        assertEquals("prod-service", spec.athenzService(InstanceName.from("default"),
+                                                                 Environment.prod,
+                                                                 RegionName.from("us-west-1")).get().value());
+        assertEquals("prod-service", spec.athenzService(InstanceName.from("default"),
+                                                                 Environment.prod,
+                                                                 RegionName.from("us-east-3")).get().value());
+        assertEquals("domain", spec.athenzDomain().get().value());
     }
 
     @Test
