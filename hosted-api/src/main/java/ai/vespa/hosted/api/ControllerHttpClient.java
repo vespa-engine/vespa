@@ -230,8 +230,8 @@ public abstract class ControllerHttpClient {
 
                 Inspector rootObject = toSlime(response.body()).get();
                 String message = response.request() + " returned code " + response.statusCode() +
-                                 " (" + rootObject.field("error-code").asString() + "): " +
-                                 rootObject.field("message").asString();
+                                 (rootObject.field("error-code").valid() ? " (" + rootObject.field("error-code").asString() + ")" : "") +
+                                 ": " + rootObject.field("message").asString();
 
                 if (response.statusCode() / 100 == 4)
                     throw new IllegalArgumentException(message);
