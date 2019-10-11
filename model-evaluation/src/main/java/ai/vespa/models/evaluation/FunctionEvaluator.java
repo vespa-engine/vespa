@@ -65,8 +65,8 @@ public class FunctionEvaluator {
 
     public Tensor evaluate() {
         for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
-            if (argument.getValue().rank() == 0) continue; // Scalar argumentds can be skipped (defaults to 0)
-            if (context.get(argument.getKey()) == LazyArrayContext.defaultContextValue)
+            if (argument.getValue().rank() == 0) continue; // Scalar arguments can be skipped (defaults to 0)
+            if (context.isMissing(argument.getKey()))
                 throw new IllegalStateException("Missing argument '" + argument.getKey() +
                                                 "': Must be bound to a value of type " + argument.getValue());
         }
