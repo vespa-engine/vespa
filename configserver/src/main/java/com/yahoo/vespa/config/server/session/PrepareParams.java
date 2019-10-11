@@ -49,8 +49,9 @@ public final class PrepareParams {
     private final Optional<String> tlsSecretsKeyName;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
-                          boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion, Set<Rotation> rotations,
-			  List<ContainerEndpoint> containerEndpoints, Optional<String> tlsSecretsKeyName) {
+                          boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
+                          Set<Rotation> rotations, List<ContainerEndpoint> containerEndpoints,
+                          Optional<String> tlsSecretsKeyName) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = applicationId;
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -140,8 +141,8 @@ public final class PrepareParams {
             if (serialized == null) return this;
             Slime slime = SlimeUtils.jsonToSlime(serialized);
             containerEndpoints = ContainerEndpointSerializer.endpointListFromSlime(slime);
-	    return this;
-	}
+            return this;
+        }
 
         public Builder tlsSecretsKeyName(String tlsSecretsKeyName) {
             this.tlsSecretsKeyName = Optional.ofNullable(tlsSecretsKeyName)

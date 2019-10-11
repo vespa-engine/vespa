@@ -92,9 +92,7 @@ public class VespaFormatter extends SimpleFormatter {
     public String format(LogRecord r) {
         StringBuilder sbuf = new StringBuilder(300); // initial guess
 
-        String levelName = LogLevel.getVespaLogLevel(r.getLevel())
-            .toString()
-            .toLowerCase();
+        String levelName = LogLevel.getVespaLogLevel(r.getLevel()).toString().toLowerCase();
 
         String component = r.getLoggerName();
 
@@ -129,7 +127,6 @@ public class VespaFormatter extends SimpleFormatter {
             sbuf.append(VespaFormat.escape(formatMessage(r)));
         }
         appendException(r.getThrown(), sbuf);
-
 
         sbuf.append("\n");
         return sbuf.toString();

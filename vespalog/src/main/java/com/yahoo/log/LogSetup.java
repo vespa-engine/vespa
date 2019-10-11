@@ -82,7 +82,7 @@ public class LogSetup {
         String logControlDir  = System.getProperty("vespa.log.control.dir");
         String logControlFile = System.getProperty("vespa.log.control.file");
         if (programName == null || programName.equals("")) {
-            throw new RuntimeException("invalid programName: "+programName);
+            throw new RuntimeException("invalid programName: " + programName);
         }
 
         // then try environment values
@@ -165,6 +165,7 @@ public class LogSetup {
      * For other log records, isLoggable returns true
      */
     static class ZooKeeperFilter implements Filter {
+
         private FileHandler fileHandler;
 
         ZooKeeperFilter(String logFile) {
@@ -180,6 +181,7 @@ public class LogSetup {
         /**
          * Return true if loggable (ordinary log record), returns false if this filter
          * logs it itself
+         *
          * @param record a #{@link LogRecord}
          * @return true if loggable, false otherwise
          */
