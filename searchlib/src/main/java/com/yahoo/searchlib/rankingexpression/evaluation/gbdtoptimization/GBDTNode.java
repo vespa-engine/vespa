@@ -26,15 +26,16 @@ public final class GBDTNode extends ExpressionNode {
     // n=[0,MAX_LEAF_VALUE>                                             : n is data (tree leaf constant value)
     // n=[MAX_LEAF_VALUE+MAX_VARIABLES*0,MAX_LEAF_VALUE+MAX_VARIABLES*1>: < than var at index n
     // n=[MAX_LEAF_VALUE+MAX_VARIABLES*1,MAX_LEAF_VALUE+MAX_VARIABLES*2>: = to var at index n-MAX_VARIABLES
-    // n=[MAX_LEAF_VALUE+MAX_VARIABLES*2,MAX_LEAF_VALUE+MAX_VARIABLES*3]: n-MAX_VARIABLES*2 is IN the following set
+    // n=[MAX_LEAF_VALUE+MAX_VARIABLES*2,MAX_LEAF_VALUE+MAX_VARIABLES*3>: n-MAX_VARIABLES*2 is IN the following set
+    // n=[MAX_LEAF_VALUE+MAX_VARIABLES*3,MAX_LEAF_VALUE+MAX_VARIABLES*4]: !( >= ) than var at index n-MAX_VARIABLES*3 (if-inversion)
 
     // The full layout of an IF instruction is
     // COMPARISON,TRUE_BRANCH_LENGTH,TRUE_BRANCH,FALSE_BRANCH
-    // where COMPARISON is VARIABLE_AND_OPCODE,COMPARE_CONSTANT if the opcode is < or =,
+    // where COMPARISON is VARIABLE_AND_OPCODE,COMPARE_CONSTANT if the opcode is < or = or !( >= ),
     // and                 VARIABLE_AND_OPCODE,COMPARE_CONSTANTS_LENGTH,COMPARE_CONSTANTS if the opcode is IN
 
 
-    // If any change is made to this encoding, this change must also be reflected in GBDTNodeOptimizer
+    // If any change is made to this encoding, this change must also be reflected in GBDTOptimizer
 
     /** The max (absolute) supported value an optimized leaf may have */
     public final static int MAX_LEAF_VALUE=2*1000*1000*1000;
@@ -72,7 +73,7 @@ public final class GBDTNode extends ExpressionNode {
                 else if (offset < MAX_VARIABLES*2) {
                     comparisonIsTrue = context.getDouble(offset-MAX_VARIABLES)==values[pc++];
                 }
-                else { // offset<MAX_VARIABLES*3
+                else if (offset<MAX_VARIABLES*3) {
                     double testValue = context.getDouble(offset-MAX_VARIABLES*2);
                     int setValuesLeft = (int)values[pc++];
                     while (setValuesLeft > 0) { // test each value in the set
@@ -83,6 +84,9 @@ public final class GBDTNode extends ExpressionNode {
                         }
                     }
                     pc += setValuesLeft; // jump to after the set
+                }
+                else { // offset<MAX_VARIABLES*4
+                    comparisonIsTrue = ! (context.getDouble(offset-MAX_VARIABLES*3)>=values[pc++]);
                 }
 
                 if (comparisonIsTrue)
