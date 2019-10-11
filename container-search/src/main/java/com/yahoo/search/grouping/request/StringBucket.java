@@ -8,12 +8,7 @@ package com.yahoo.search.grouping.request;
  */
 public class StringBucket extends BucketValue {
 
-    /**
-     * Get the next distinct value.
-     *
-     * @param value the base value
-     * @return the next value
-     */
+    /** Returns the next distinct value after the given value */
     public static StringValue nextValue(StringValue value) {
         return new StringValue(value.getValue() + " ");
     }
@@ -29,20 +24,20 @@ public class StringBucket extends BucketValue {
     }
 
     /**
-     * Constructs a new instance of this class.
+     * Constructs a new bucket for a range of strings.
      *
-     * @param from the from-value to assign to this
-     * @param to the to-value to assign to this
+     * @param from the start of the bucket, inclusive
+     * @param to the end of the bucket, exclusive
      */
     public StringBucket(String from, String to) {
         super(null, null, new StringValue(from), new StringValue(to));
     }
 
     /**
-     * Constructs a new instance of this class.
+     * Constructs a new bucket for a range of strings.
      *
-     * @param from the from-value to assign to this
-     * @param to the to-value to assign to this
+     * @param from the start of the bucket, inclusive
+     * @param to the end of the bucket, exclusive
      */
     public StringBucket(ConstantValue<?> from, ConstantValue<?> to) {
         super(null, null, from, to);
