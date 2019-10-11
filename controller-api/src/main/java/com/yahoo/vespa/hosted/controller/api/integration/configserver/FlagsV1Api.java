@@ -35,5 +35,5 @@ public interface FlagsV1Api {
 
     @GET
     @Path("/data")
-    WireFlagDataList listFlagData(@QueryParam("recursive") String recursive);
+    WireFlagDataList listFlagData(@QueryParam("recursive") Boolean recursive);
 }
