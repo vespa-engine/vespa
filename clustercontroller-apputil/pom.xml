@@ -18,10 +18,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>annotations</artifactId>
             <version>${project.version}</version>
