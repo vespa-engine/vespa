@@ -16,7 +16,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,9 +41,9 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                      Map<FunctionReference, ExpressionFunction> referencedFunctions,
                      List<Constant> constants,
                      Model model,
-                     Value missingValue) {
+                     Value defaultFeatureValue) {
         this.function = function;
-        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model, missingValue);
+        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model, defaultFeatureValue);
     }
 
     /**
@@ -121,8 +120,12 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     }
 
     boolean isMissing(String name) {
-        Integer index = indexedBindings.indexOf(name);
-        return index == null || indexedBindings.isMissing(index);
+        return indexedBindings.indexOf(name) == null;
+    }
+
+    /** Returns the value which should be used when no value is set */
+    public Value defaultValue() {
+        return indexedBindings.defaultValue;
     }
 
     /**
@@ -138,28 +141,23 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The mapping from variable name to index */
         private final ImmutableMap<String, Integer> nameToIndex;
 
-        /** The names which needs to be bound externally when envoking this (i.e not constant or invocation */
+        /** The names which needs to be bound externally when invoking this (i.e not constant or invocation */
         private final ImmutableSet<String> arguments;
 
         /** The current values set, pre-converted to doubles */
         private final Value[] values;
 
-        /** The values that actually have been set */
-        private final BitSet setValues;
-
         /** The value to return if not set */
-        private final Value missingValue;
+        private final Value defaultValue;
 
         private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
                                 Value[] values,
                                 ImmutableSet<String> arguments,
-                                BitSet setValues,
-                                Value missingValue) {
+                                Value defaultValue) {
             this.nameToIndex = nameToIndex;
             this.values = values;
             this.arguments = arguments;
-            this.setValues = setValues;
-            this.missingValue = missingValue.freeze();
+            this.defaultValue = defaultValue.freeze();
         }
 
         /**
@@ -171,17 +169,16 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                         List<Constant> constants,
                         LazyArrayContext owner,
                         Model model,
-                        Value missingValue) {
+                        Value defaultFeatureValue) {
             // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
             Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
             extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments);
 
             this.arguments = ImmutableSet.copyOf(arguments);
-            this.missingValue = missingValue.freeze();
+            this.defaultValue = defaultFeatureValue.freeze();
             values = new Value[bindTargets.size()];
-            Arrays.fill(values, this.missingValue);
-            setValues = new BitSet(bindTargets.size());
+            Arrays.fill(values, this.defaultValue);
 
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
@@ -195,7 +192,6 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 Integer index = nameToIndex.get(constantReference);
                 if (index != null) {
                     values[index] = new TensorValue(constant.value());
-                    setValues.set(index);
                 }
             }
 
@@ -203,7 +199,6 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 Integer index = nameToIndex.get(referencedFunction.getKey().serialForm());
                 if (index != null) { // Referenced in this, so bind it
                     values[index] = new LazyValue(referencedFunction.getKey(), owner, model);
-                    setValues.set(index);
                 }
             }
         }
@@ -249,24 +244,17 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         Value get(int index) { return values[index]; }
         void set(int index, Value value) {
             values[index] = value;
-            setValues.set(index);
         }
 
         Set<String> names() { return nameToIndex.keySet(); }
         Set<String> arguments() { return arguments; }
         Integer indexOf(String name) { return nameToIndex.get(name); }
-        boolean isMissing(int index) { return ! setValues.get(index); }
 
         IndexedBindings copy(Context context) {
             Value[] valueCopy = new Value[values.length];
-            BitSet setValuesCopy = new BitSet(values.length);
-            for (int i = 0; i < values.length; i++) {
+            for (int i = 0; i < values.length; i++)
                 valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue) values[i]).copyFor(context) : values[i];
-                if (setValues.get(i)) {
-                    setValuesCopy.set(i);
-                }
-            }
-            return new IndexedBindings(nameToIndex, valueCopy, arguments, setValuesCopy, missingValue);
+            return new IndexedBindings(nameToIndex, valueCopy, arguments, defaultValue);
         }
 
     }

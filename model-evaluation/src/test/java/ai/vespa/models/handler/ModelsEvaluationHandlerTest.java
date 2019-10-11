@@ -97,14 +97,14 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testMnistSoftmaxEvaluateDefaultFunctionWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/eval";
-        String expected = "{\"error\":\"Missing argument 'Placeholder': Must be bound to a value of type tensor(d0[],d1[784])\"}";
+        String expected = "{\"error\":\"Argument 'Placeholder' must be bound to a value of type tensor(d0[],d1[784])\"}";
         assertResponse(url, 400, expected);
     }
 
     @Test
     public void testMnistSoftmaxEvaluateSpecificFunctionWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
-        String expected = "{\"error\":\"Missing argument 'Placeholder': Must be bound to a value of type tensor(d0[],d1[784])\"}";
+        String expected = "{\"error\":\"Argument 'Placeholder' must be bound to a value of type tensor(d0[],d1[784])\"}";
         assertResponse(url, 400, expected);
     }
 

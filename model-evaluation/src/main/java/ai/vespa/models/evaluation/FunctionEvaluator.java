@@ -1,9 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -16,7 +14,6 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-@Beta
 // This wraps all access to the context and the ranking expression to avoid incorrect usage
 public class FunctionEvaluator {
 
@@ -65,10 +62,15 @@ public class FunctionEvaluator {
 
     public Tensor evaluate() {
         for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
-            if (argument.getValue().rank() == 0) continue; // Scalar arguments can be skipped (defaults to 0)
+            System.out.println("Checking " + argument.getKey() + " default " + context.defaultValue() + " is assignable to " + argument.getValue() +
+                               "? " + context.defaultValue().type().isAssignableTo(argument.getValue()));
             if (context.isMissing(argument.getKey()))
                 throw new IllegalStateException("Missing argument '" + argument.getKey() +
                                                 "': Must be bound to a value of type " + argument.getValue());
+            if (! context.get(argument.getKey()).type().isAssignableTo(argument.getValue()))
+                throw new IllegalStateException("Argument '" + argument.getKey() +
+                                                "' must be bound to a value of type " + argument.getValue());
+
         }
         evaluated = true;
         return function.getBody().evaluate(context).asTensor();
