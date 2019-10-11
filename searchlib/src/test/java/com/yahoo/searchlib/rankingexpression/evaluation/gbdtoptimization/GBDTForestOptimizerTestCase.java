@@ -24,7 +24,7 @@ public class GBDTForestOptimizerTestCase {
         RankingExpression gbdt = new RankingExpression(gbdtString);
 
         // Regular evaluation
-        MapContext arguments = new MapContext();
+        MapContext arguments = new MapContext(DoubleValue.NaN);
         arguments.put("LW_NEWS_SEARCHES_RATIO", 1d);
         arguments.put("SUGG_OVERLAP", 17d);
         double result1 = gbdt.evaluate(arguments).asDouble();
@@ -36,7 +36,7 @@ public class GBDTForestOptimizerTestCase {
         double result3 = gbdt.evaluate(arguments).asDouble();
 
         // Optimized evaluation
-        ArrayContext fArguments = new ArrayContext(gbdt);
+        ArrayContext fArguments = new ArrayContext(gbdt, DoubleValue.NaN);
         ExpressionOptimizer optimizer = new ExpressionOptimizer();
         OptimizationReport report = optimizer.optimize(gbdt, fArguments);
         assertEquals(4, report.getMetric("Optimized GDBT trees"));
@@ -70,7 +70,7 @@ public class GBDTForestOptimizerTestCase {
         RankingExpression gbdt = new RankingExpression(gbdtString);
 
         // Regular evaluation
-        MapContext arguments = new MapContext();
+        MapContext arguments = new MapContext(DoubleValue.NaN);
         arguments.put("MYSTRING", new StringValue("string 1"));
         arguments.put("LW_NEWS_SEARCHES_RATIO", 1d);
         arguments.put("SUGG_OVERLAP", 17d);
@@ -83,7 +83,7 @@ public class GBDTForestOptimizerTestCase {
         double result3 = gbdt.evaluate(arguments).asDouble();
 
         // Optimized evaluation
-        ArrayContext fArguments = new ArrayContext(gbdt);
+        ArrayContext fArguments = new ArrayContext(gbdt, DoubleValue.NaN);
         ExpressionOptimizer optimizer = new ExpressionOptimizer();
         OptimizationReport report = optimizer.optimize(gbdt, fArguments);
         assertEquals(4, report.getMetric("Optimized GDBT trees"));

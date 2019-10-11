@@ -21,13 +21,23 @@ public class MapContext extends Context {
     private boolean frozen = false;
 
     public MapContext() {
+        this(defaultMissingValue);
+    }
+
+    public MapContext(Value missingValue) {
+        this.missingValue = missingValue.freeze();
+    }
+
+    public MapContext(Map<String,Value> bindings) {
+        this(bindings, defaultMissingValue);
     }
 
     /**
      * Creates a map context from a map.
      * All the Values of the map will be frozen.
      */
-    public MapContext(Map<String,Value> bindings) {
+    public MapContext(Map<String,Value> bindings, Value missingValue) {
+        this.missingValue = missingValue.freeze();
         bindings.forEach((k, v) -> this.bindings.put(k, v.freeze()));
     }
 
@@ -52,7 +62,7 @@ public class MapContext extends Context {
     /** Returns the value of a key. 0 is returned if the given key is not bound in this. */
     @Override
     public Value get(String key) {
-        return bindings.getOrDefault(key, DoubleValue.zero);
+        return bindings.getOrDefault(key, missingValue);
     }
 
     /**

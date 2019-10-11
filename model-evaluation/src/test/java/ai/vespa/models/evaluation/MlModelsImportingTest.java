@@ -43,7 +43,7 @@ public class MlModelsImportingTest {
             // Evaluator
             FunctionEvaluator evaluator = xgboost.evaluatorOf();
             assertEquals("f109, f29, f56, f60", evaluator.context().names().stream().sorted().collect(Collectors.joining(", ")));
-            assertEquals(-8.17695, evaluator.evaluate().sum().asDouble(), delta);
+            assertEquals(-4.37659, evaluator.evaluate().sum().asDouble(), delta);
         }
 
         {

@@ -68,7 +68,7 @@ public abstract class Value {
     public abstract Value compare(TruthOperator operator, Value value);
 
     /** Perform the given binary function on this value and the given value */
-    public abstract Value function(Function function,Value value);
+    public abstract Value function(Function function, Value value);
 
     /**
      * Irreversibly makes this immutable. Overriders must always call super.freeze() and return this

@@ -49,8 +49,9 @@ public class BooleanValue extends DoubleCompatibleValue {
     @Override
     public boolean equals(Object other) {
         if (this==other) return true;
-        if ( ! (other instanceof BooleanValue)) return false;
-        return ((BooleanValue)other).value==this.value;
+        if ( ! (other instanceof Value)) return false;
+        if ( ! ((Value) other).hasDouble()) return false;
+        return this.value == ((Value) other).asBoolean();
     }
 
     @Override

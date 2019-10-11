@@ -41,7 +41,9 @@ public class TensorValue extends Value {
 
     @Override
     public boolean asBoolean() {
-        throw new UnsupportedOperationException("A tensor does not have a boolean value");
+        if (hasDouble())
+            return asDouble() != 0.0;
+        throw new UnsupportedOperationException("Tensor does not have a value that can be converted to a boolean");
     }
 
     @Override
@@ -118,18 +120,11 @@ public class TensorValue extends Value {
             return new TensorValue(value.map((value) -> Math.pow(value, argument.asDouble())));
     }
 
-    private Tensor asTensor(Value value, String operationName) {
-        if ( ! (value instanceof TensorValue))
-            throw new UnsupportedOperationException("Could not perform " + operationName +
-                                                    ": The second argument must be a tensor but was " + value);
-        return ((TensorValue)value).value;
-    }
-
     public Tensor asTensor() { return value; }
 
     @Override
     public Value compare(TruthOperator operator, Value argument) {
-        return new TensorValue(compareTensor(operator, asTensor(argument, operator.toString())));
+        return new TensorValue(compareTensor(operator, argument.asTensor()));
     }
 
     private Tensor compareTensor(TruthOperator operator, Tensor argument) {
@@ -148,7 +143,7 @@ public class TensorValue extends Value {
     @Override
     public Value function(Function function, Value arg) {
         if (arg instanceof TensorValue)
-            return new TensorValue(functionOnTensor(function, asTensor(arg, function.toString())));
+            return new TensorValue(functionOnTensor(function, arg.asTensor()));
         else
             return new TensorValue(value.map((value) -> function.evaluate(value, arg.asDouble())));
     }

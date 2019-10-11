@@ -19,7 +19,11 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
      * This will fail if unknown values are attempted added.
      */
     public DoubleOnlyArrayContext(RankingExpression expression) {
-        this(expression, false);
+        this(expression, false, defaultMissingValue);
+    }
+
+    public DoubleOnlyArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
+        this(expression, ignoreUnknownValues, defaultMissingValue);
     }
 
     /**
@@ -29,9 +33,10 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
      * @param expression the expression to create a context for
      * @param ignoreUnknownValues whether attempts to put values not present in this expression
      *                            should fail (false - the default), or be ignored (true)
+     * @param missingValue the value to return if not set.
      */
-    public DoubleOnlyArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
-        super(expression, ignoreUnknownValues);
+    public DoubleOnlyArrayContext(RankingExpression expression, boolean ignoreUnknownValues, Value missingValue) {
+        super(expression, ignoreUnknownValues, missingValue);
     }
 
     /**
@@ -56,6 +61,7 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
     /** Same as put(index,DoubleValue.frozen(value)) */
     public final void put(int index, double value) {
         doubleValues()[index] = value;
+        clearMissing(index);
     }
 
     /** Puts a value by index. */
@@ -77,7 +83,7 @@ public class DoubleOnlyArrayContext extends AbstractArrayContext {
     @Override
     public Value get(String name) {
         Integer index = nameToIndex().get(name);
-        if (index==null) return DoubleValue.zero;
+        if (index==null) return missingValue;
         return new DoubleValue(getDouble(index));
     }
 

@@ -18,6 +18,12 @@ import java.util.stream.Collectors;
  */
 public abstract class Context implements EvaluationContext<Reference> {
 
+    /** The default value to return if the value has not been set  */
+    static Value defaultMissingValue = DoubleValue.zero;
+
+    /** The value to return if the value has not been set  */
+    Value missingValue;
+
     /**
      * Returns the value of a simple variable name.
      *

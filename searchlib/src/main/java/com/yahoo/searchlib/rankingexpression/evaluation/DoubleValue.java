@@ -20,6 +20,9 @@ public final class DoubleValue extends DoubleCompatibleValue {
     /** The double value instance for 0 */
     public final static DoubleValue zero = DoubleValue.frozen(0);
 
+    /** The double value instance for NaN */
+    public final static DoubleValue NaN = DoubleValue.frozen(Double.NaN);
+
     public DoubleValue(double value) {
         this.value = value;
     }
@@ -146,8 +149,9 @@ public final class DoubleValue extends DoubleCompatibleValue {
     @Override
     public boolean equals(Object other) {
         if (this==other) return true;
-        if ( ! (other instanceof DoubleValue)) return false;
-        return ((DoubleValue)other).value==this.value;
+        if ( ! (other instanceof Value)) return false;
+        if ( ! ((Value) other).hasDouble()) return false;
+        return this.asDouble() == ((Value) other).asDouble();
     }
 
     @Override

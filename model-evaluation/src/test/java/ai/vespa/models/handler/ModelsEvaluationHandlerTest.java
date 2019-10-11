@@ -63,7 +63,7 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testXgBoostEvaluationWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";  // only has a single function
-        String expected = "{\"cells\":[{\"address\":{},\"value\":-8.17695}]}";
+        String expected = "{\"cells\":[{\"address\":{},\"value\":-4.376589999999999}]}";
         assertResponse(url, 200, expected);
     }
 

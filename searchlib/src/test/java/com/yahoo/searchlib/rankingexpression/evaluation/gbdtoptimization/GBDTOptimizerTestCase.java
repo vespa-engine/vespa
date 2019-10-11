@@ -3,6 +3,7 @@ package com.yahoo.searchlib.rankingexpression.evaluation.gbdtoptimization;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport;
@@ -43,7 +44,7 @@ public class GBDTOptimizerTestCase {
         RankingExpression gbdt = new RankingExpression(gbdtString);
 
         // Regular evaluation
-        MapContext arguments = new MapContext();
+        MapContext arguments = new MapContext(DoubleValue.NaN);
         arguments.put("LW_NEWS_SEARCHES_RATIO", 1d);
         arguments.put("SUGG_OVERLAP", 17d);
         double result1 = gbdt.evaluate(arguments).asDouble();
@@ -55,7 +56,7 @@ public class GBDTOptimizerTestCase {
         double result3 = gbdt.evaluate(arguments).asDouble();
 
         // Optimized evaluation
-        ArrayContext fArguments = new ArrayContext(gbdt);
+        ArrayContext fArguments = new ArrayContext(gbdt, DoubleValue.NaN);
         ExpressionOptimizer optimizer = new ExpressionOptimizer();
         optimizer.getOptimizer(GBDTForestOptimizer.class).setEnabled(false);
         OptimizationReport report = optimizer.optimize(gbdt,fArguments);

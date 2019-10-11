@@ -53,7 +53,7 @@ public class GBDTOptimizer extends Optimizer {
      * anything else.</p>
      *
      * <p>Each condition node is converted to the double sequence [(OperatorIsEquals ? GBDTNode.MAX_VARIABLES : 0) +
-     * IndexOfLeftComparisonFeature+GBDTNode.MAX_LEAFT_VALUE, ValueOfRightComparisonValue,#OfValuesInTrueBranch,true
+     * IndexOfLeftComparisonFeature+GBDTNode.MAX_LEAF_VALUE, ValueOfRightComparisonValue,#OfValuesInTrueBranch,true
      * branch values,false branch values]</p>
      *
      * <p>Each value node is converted to the double value of the value node itself.</p>
@@ -130,6 +130,20 @@ public class GBDTOptimizer extends Optimizer {
             values.add((double)setMembership.getSetValues().size());
             for (ExpressionNode setElementNode : setMembership.getSetValues())
                 values.add(toValue(setElementNode));
+        }
+        else if (condition instanceof NotNode) {  // handle if inversion: !(a >= b)
+            NotNode notNode = (NotNode)condition;
+            if (notNode.children().size() == 1 && notNode.children().get(0) instanceof EmbracedNode) {
+                EmbracedNode embracedNode = (EmbracedNode)notNode.children().get(0);
+                if (embracedNode.children().size() == 1 && embracedNode.children().get(0) instanceof ComparisonNode) {
+                    ComparisonNode comparison = (ComparisonNode)embracedNode.children().get(0);
+                    if (comparison.getOperator() == TruthOperator.LARGEREQUAL)
+                        values.add(GBDTNode.MAX_LEAF_VALUE + GBDTNode.MAX_VARIABLES*3 + getVariableIndex(comparison.getLeftCondition(), context));
+                    else
+                        throw new IllegalArgumentException("Cannot optimize other conditions than >=, encountered: " + comparison.getOperator());
+                    values.add(toValue(comparison.getRightCondition()));
+                }
+            }
         }
         else {
             throw new IllegalArgumentException("Node condition could not be optimized: " + condition);

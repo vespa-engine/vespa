@@ -37,9 +37,7 @@
       "public java.util.Set arguments()",
       "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
     ],
-    "fields": [
-      "public static final com.yahoo.searchlib.rankingexpression.evaluation.Value defaultContextValue"
-    ]
+    "fields": []
   },
   "ai.vespa.models.evaluation.Model": {
     "superClass": "java.lang.Object",
