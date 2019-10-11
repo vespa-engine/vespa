@@ -51,6 +51,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -1229,6 +1230,14 @@ public class DeploymentTriggerTest {
         jobs.add(buildJob(instance3.id(), stagingTest));
         jobs.add(buildJob(instance2.id(), systemTest));
         assertJobsInOrder(jobs, tester.buildService().jobs());
+    }
+
+    @Test
+    public void testUserInstancesNotInDeploymentSpec() {
+        InternalDeploymentTester iTester = new InternalDeploymentTester();
+        iTester.tester().controller().applications().createInstance(appId.instance("user"));
+        iTester.deployNewSubmission(iTester.newSubmission());
+        iTester.newSubmission();
     }
 
     /** Verifies that the given job lists have the same jobs, ignoring order of jobs that may have been triggered concurrently. */

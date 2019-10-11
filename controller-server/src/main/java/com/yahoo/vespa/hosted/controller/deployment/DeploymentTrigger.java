@@ -337,7 +337,12 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(TenantAndApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().getApplication(id).ifPresent(application -> {
-            for (Instance instance : application.instances().values()) {
+            Collection<Instance> instances = application.deploymentSpec().equals(DeploymentSpec.empty)
+                                             ? application.instances().values()
+                                             : application.deploymentSpec().instances().stream()
+                                                          .flatMap(instance -> application.get(instance.name()).stream())
+                                                          .collect(Collectors.toUnmodifiableList());
+            for (Instance instance : instances) {
                 Change change = application.change();
                 Optional<Instant> completedAt = max(instance.deploymentJobs().statusOf(systemTest)
                                                             .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)),
