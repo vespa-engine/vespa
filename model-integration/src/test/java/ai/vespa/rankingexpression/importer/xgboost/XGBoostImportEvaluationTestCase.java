@@ -43,10 +43,10 @@ public class XGBoostImportEvaluationTestCase {
         optimizer.optimize(expression, (ContextIndex)context);
         assertTrue(expression.getRoot() instanceof GBDTForestNode);
 
-//        assertXGBoostEvaluation(1.0, expression, features(context, "f1", 0.0, "f2", 0.0));
-//        assertXGBoostEvaluation(2.0, expression, features(context, "f1", 0.0, "f2", 1.0));
-//        assertXGBoostEvaluation(3.0, expression, features(context, "f1", 1.0, "f2", 0.0));
-//        assertXGBoostEvaluation(4.0, expression, features(context, "f1", 1.0, "f2", 1.0));
+        assertXGBoostEvaluation(1.0, expression, features(context, "f1", 0.0, "f2", 0.0));
+        assertXGBoostEvaluation(2.0, expression, features(context, "f1", 0.0, "f2", 1.0));
+        assertXGBoostEvaluation(3.0, expression, features(context, "f1", 1.0, "f2", 0.0));
+        assertXGBoostEvaluation(4.0, expression, features(context, "f1", 1.0, "f2", 1.0));
         assertXGBoostEvaluation(5.0, expression, features(context, "f1", 0.0));
         assertXGBoostEvaluation(6.0, expression, features(context, "f1", 1.0));
         assertXGBoostEvaluation(7.0, expression, features(context, "f2", 0.0));
