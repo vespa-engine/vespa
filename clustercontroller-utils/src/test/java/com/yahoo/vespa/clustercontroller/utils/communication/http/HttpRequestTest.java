@@ -107,16 +107,19 @@ public class HttpRequestTest {
     public void testToString() {
         assertEquals("GET? http://localhost:8080/",
                      new HttpRequest()
+                             .setScheme("http")
                              .setHost("localhost")
                              .setPort(8080)
                              .toString(true));
         assertEquals("POST http://localhost/",
                 new HttpRequest()
+                        .setScheme("http")
                         .setHttpOperation(HttpRequest.HttpOp.POST)
                         .setHost("localhost")
                         .toString(true));
         assertEquals("GET http://localhost/?foo=bar",
                 new HttpRequest()
+                        .setScheme("http")
                         .setHttpOperation(HttpRequest.HttpOp.GET)
                         .addUrlOption("foo", "bar")
                         .setHost("localhost")

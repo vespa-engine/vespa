@@ -160,7 +160,7 @@ public class RestApiHandler implements HttpRequestHandler {
 
     private String getMasterLocationUrl(HttpRequest request, String host, int port) {
         StringBuilder sb = new StringBuilder();
-        sb.append("http://").append(host).append(':').append(port)
+        sb.append(request.getScheme()).append("://").append(host).append(':').append(port)
           .append(request.getPath());
         if (!request.getUrlOptions().isEmpty()) {
             boolean first = true;

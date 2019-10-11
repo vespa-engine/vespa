@@ -25,6 +25,7 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
 
     public enum HttpOp { GET, POST, PUT, DELETE }
 
+    private String scheme;
     private String host;
     private int port;
     private String path;
@@ -36,6 +37,7 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
 
     public HttpRequest() {}
 
+    public String getScheme() { return scheme; }
     public String getHost() { return host; }
     public int getPort() { return port; }
     public String getPath() { return path; }
@@ -58,6 +60,7 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
     public Object getPostContent() { return postContent; }
     public HttpOp getHttpOperation() { return httpOperation; }
 
+    public HttpRequest setScheme(String scheme) { this.scheme = scheme; return this; }
     public HttpRequest setHost(String hostname) { this.host = hostname; return this; }
     public HttpRequest setPort(int port) { this.port = port; return this; }
     public HttpRequest setPath(String path) {
@@ -73,6 +76,7 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
     /** Create a copy of this request, and override what is specified in the input in the new request. */
     public HttpRequest merge(HttpRequest r) {
         HttpRequest copy = clone();
+        if (r.scheme != null) copy.scheme = r.scheme;
         if (r.host != null) copy.host = r.host;
         if (r.port != 0) copy.port = r.port;
         if (r.path != null) copy.path = r.path;
@@ -105,7 +109,7 @@ public class HttpRequest extends CertainlyCloneable<HttpRequest> {
     public String toString(boolean verbose) {
         String httpOp = (httpOperation != null ? httpOperation.toString()
                                                : (postContent == null ? "GET?" : "POST?"));
-        StringBuilder sb = new StringBuilder().append(httpOp).append(" http:");
+        StringBuilder sb = new StringBuilder().append(httpOp).append(" ").append(scheme).append(':');
         if (host != null) {
             sb.append("//").append(host);
             if (port != 0) sb.append(':').append(port);

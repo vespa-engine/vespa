@@ -338,17 +338,17 @@ public class StateRestAPITest {
         setupDummyStateApi();
         {
             stateApi.induceException(new OtherMasterException("example.com", 80));
-            HttpResult result = execute(new HttpRequest().setPath("/cluster/v2").addUrlOption(" %=?&", "&?%=").addUrlOption("foo", "bar"));
+            HttpResult result = execute(new HttpRequest().setScheme("https").setPath("/cluster/v2").addUrlOption(" %=?&", "&?%=").addUrlOption("foo", "bar"));
             assertEquals(result.toString(true), 307, result.getHttpReturnCode());
             assertEquals(result.toString(true), "Temporary Redirect", result.getHttpReturnCodeDescription());
-            assertEquals(result.toString(true), "http://example.com:80/cluster/v2?%20%25%3D%3F%26=%26%3F%25%3D&foo=bar", result.getHeader("Location"));
+            assertEquals(result.toString(true), "https://example.com:80/cluster/v2?%20%25%3D%3F%26=%26%3F%25%3D&foo=bar", result.getHeader("Location"));
             assertEquals(result.toString(true), "application/json", result.getHeader("Content-Type"));
             String expected = "{\"message\":\"Cluster controller not master. Use master at example.com:80.\"}";
             assertEquals(expected, result.getContent().toString());
         }
         {
             stateApi.induceException(new OtherMasterException("example.com", 80));
-            HttpResult result = execute(new HttpRequest().setPath("/cluster/v2/foo"));
+            HttpResult result = execute(new HttpRequest().setScheme("http").setPath("/cluster/v2/foo"));
             assertEquals(result.toString(true), 307, result.getHttpReturnCode());
             assertEquals(result.toString(true), "Temporary Redirect", result.getHttpReturnCodeDescription());
             assertEquals(result.toString(true), "http://example.com:80/cluster/v2/foo", result.getHeader("Location"));
