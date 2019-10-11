@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -506,7 +507,7 @@ public class ApplicationController {
         DeploymentId deploymentId = new DeploymentId(application, zone);
         try {
             ConfigServer.PreparedApplication preparedApplication =
-                    configServer.deploy(deploymentId, deployOptions, Set.of(), endpoints, applicationCertificate, applicationPackage.zippedContent());
+                    configServer.deploy(deploymentId, deployOptions, endpoints, applicationCertificate, applicationPackage.zippedContent());
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
@@ -535,7 +536,9 @@ public class ApplicationController {
      */
     private Set<ContainerEndpoint> registerEndpointsInDns(DeploymentSpec deploymentSpec, Instance instance, ZoneId zone) {
         var containerEndpoints = new HashSet<ContainerEndpoint>();
-        boolean registerLegacyNames = deploymentSpec.instance(instance.name()).flatMap(i -> i.globalServiceId()).isPresent();
+        boolean registerLegacyNames = deploymentSpec.instance(instance.name())
+                                                    .flatMap(DeploymentInstanceSpec::globalServiceId)
+                                                    .isPresent();
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
             var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId())

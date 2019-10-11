@@ -8,10 +8,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Identifier;
@@ -35,6 +35,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.InputStream;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,7 +47,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * @author mortent
@@ -272,8 +272,9 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
-                                      Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content) {
+    public PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
+                                      Set<ContainerEndpoint> containerEndpoints,
+                                      ApplicationCertificate applicationCertificate, byte[] content) {
         lastPrepareVersion = deployOptions.vespaVersion.map(Version::fromString).orElse(null);
         if (prepareException != null) {
             RuntimeException prepareException = this.prepareException;
@@ -285,16 +286,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(deployment.zoneId(), deployment.applicationId()).isEmpty())
             provision(deployment.zoneId(), deployment.applicationId());
 
-        if (!rotationNames.isEmpty() && !containerEndpoints.isEmpty()) {
-            throw new IllegalArgumentException("Cannot set both rotations and containerEndpoints"); // Same constraint as a real config server
-        }
-
         this.rotationNames.put(
                 deployment,
-                Stream.concat(
-                        containerEndpoints.stream().flatMap(e -> e.names().stream()),
-                        rotationNames.stream()
-                ).collect(Collectors.toSet())
+                containerEndpoints.stream()
+                                  .map(ContainerEndpoint::names)
+                                  .flatMap(Collection::stream)
+                                  .collect(Collectors.toSet())
         );
 
         return () -> {

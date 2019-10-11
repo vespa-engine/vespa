@@ -29,8 +29,9 @@ public interface ConfigServer {
         PrepareResponse prepareResponse();
     }
 
-    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions, Set<String> rotationNames,
-                               Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate, byte[] content);
+    PreparedApplication deploy(DeploymentId deployment, DeployOptions deployOptions,
+                               Set<ContainerEndpoint> containerEndpoints, ApplicationCertificate applicationCertificate,
+                               byte[] content);
 
     void restart(DeploymentId deployment, Optional<Hostname> hostname);
 
