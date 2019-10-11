@@ -103,24 +103,24 @@ public class StorageMaintainer {
             FileFinder.files(path)
                     .match(olderThan(Duration.ofDays(3)).and(nameMatches(Pattern.compile(".*\\.log.+"))))
                     .maxDepth(1)
-                    .deleteRecursively();
+                    .deleteRecursively(context);
         }
 
         FileFinder.files(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("logs/vespa/qrs")))
                 .match(olderThan(Duration.ofDays(3)))
-                .deleteRecursively();
+                .deleteRecursively(context);
 
         FileFinder.files(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("logs/vespa/logarchive")))
                 .match(olderThan(Duration.ofDays(31)))
-                .deleteRecursively();
+                .deleteRecursively(context);
 
         FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/filedistribution")))
                 .match(olderThan(Duration.ofDays(31)))
-                .deleteRecursively();
+                .deleteRecursively(context);
 
         FileFinder.directories(context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome("var/db/vespa/download")))
                 .match(olderThan(Duration.ofDays(31)))
-                .deleteRecursively();
+                .deleteRecursively(context);
     }
 
     /** Checks if container has any new coredumps, reports and archives them if so */

@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
+import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitResult;
@@ -11,13 +13,16 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -27,6 +32,7 @@ import java.util.stream.Stream;
  * @author freva
  */
 public class FileFinder {
+    private static final Logger logger = Logger.getLogger(FileFinder.class.getName());
 
     private final Path basePath;
     private Predicate<FileAttributes> matcher;
@@ -79,10 +85,28 @@ public class FileFinder {
      *
      * @return true iff anything was matched and deleted
      */
-    public boolean deleteRecursively() {
-        boolean[] deletedAnything = { false }; // :(
-        forEach(attributes -> deletedAnything[0] |= attributes.unixPath().deleteRecursively());
-        return deletedAnything[0];
+    public boolean deleteRecursively(TaskContext context) {
+        List<Path> deletedPaths = new ArrayList<>();
+
+        try {
+            forEach(attributes -> {
+                if (attributes.unixPath().deleteRecursively()) {
+                    deletedPaths.add(attributes.path());
+                }
+            });
+        } finally {
+            if (deletedPaths.size() > 20) {
+                context.log(logger, "Deleted " + deletedPaths.size() + " paths under " + basePath);
+            } else if (deletedPaths.size() > 0) {
+                List<Path> paths = deletedPaths.stream()
+                        .map(basePath::relativize)
+                        .sorted()
+                        .collect(Collectors.toList());
+                context.log(logger, "Deleted these paths in " + basePath + ": " + paths);
+            }
+        }
+
+        return deletedPaths.size() > 0;
     }
 
     public List<FileAttributes> list() {
