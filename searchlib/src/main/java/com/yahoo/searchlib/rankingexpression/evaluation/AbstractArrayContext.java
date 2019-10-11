@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 
+import java.util.BitSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -33,7 +34,11 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
      * This will fail if unknown values are attempted added.
      */
     protected AbstractArrayContext(RankingExpression expression) {
-        this(expression, false);
+        this(expression, false, defaultMissingValue);
+    }
+
+    protected AbstractArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
+        this(expression, ignoreUnknownValues, defaultMissingValue);
     }
 
     /**
@@ -44,10 +49,11 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
      * @param ignoreUnknownValues whether attempts to put values not present in this expression
      *                            should fail (false - the default), or be ignored (true)
      */
-    protected AbstractArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
+    protected AbstractArrayContext(RankingExpression expression, boolean ignoreUnknownValues, Value missingValue) {
+        this.missingValue = missingValue.freeze();
         this.ignoreUnknownValues = ignoreUnknownValues;
         this.rankingExpressionName = expression.getName();
-        this.indexedBindings = new IndexedBindings(expression);
+        this.indexedBindings = new IndexedBindings(expression, this.missingValue);
     }
 
     protected final Map<String, Integer> nameToIndex() { return indexedBindings.nameToIndex(); }
@@ -75,6 +81,14 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
     @Override
     public double getDouble(int index) {
         return indexedBindings.getDouble(index);
+    }
+
+    final boolean isMissing(int index) {
+        return indexedBindings.isMissing(index);
+    }
+
+    final void clearMissing(int index) {
+        indexedBindings.clearMissing(index);
     }
 
     @Override
@@ -107,11 +121,22 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
         /** The current values set, pre-converted to doubles */
         private double[] doubleValues;
 
-        public IndexedBindings(RankingExpression expression) {
+        /** Which values actually are set */
+        private BitSet setValues;
+
+        /** Value to return if value is missing. */
+        private double missingValue;
+
+        public IndexedBindings(RankingExpression expression, Value missingValue) {
             Set<String> bindTargets = new LinkedHashSet<>();
             extractBindTargets(expression.getRoot(), bindTargets);
 
+            this.missingValue = missingValue.asDouble();
+            setValues = new BitSet(bindTargets.size());
             doubleValues = new double[bindTargets.size()];
+            for (int i = 0; i < bindTargets.size(); ++i) {
+                doubleValues[i] = this.missingValue;
+            }
 
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
@@ -136,10 +161,13 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
 
         public Map<String, Integer> nameToIndex() { return nameToIndex; }
         public double[] doubleValues() { return doubleValues; }
+
         public Set<String> names() { return nameToIndex.keySet(); }
         public int getIndex(String name) { return nameToIndex.get(name); }
         public int size() { return doubleValues.length; }
         public double getDouble(int index) { return doubleValues[index]; }
+        public boolean isMissing(int index) { return ! setValues.get(index); }
+        public void clearMissing(int index) { setValues.set(index); }
 
         /**
          * Creates a clone of this context suitable for evaluating against the same ranking expression
@@ -149,7 +177,11 @@ public abstract class AbstractArrayContext extends Context implements Cloneable,
         public IndexedBindings clone() {
             try {
                 IndexedBindings clone = (IndexedBindings)super.clone();
+                clone.setValues = new BitSet(nameToIndex.size());
                 clone.doubleValues = new double[nameToIndex.size()];
+                for (int i = 0; i < nameToIndex.size(); ++i) {
+                    clone.doubleValues[i] = missingValue;
+                }
                 return clone;
             }
             catch (CloneNotSupportedException e) {

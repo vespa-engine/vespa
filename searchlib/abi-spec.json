@@ -378,6 +378,7 @@
     "methods": [
       "protected void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression)",
       "protected void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean)",
+      "protected void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "protected final java.util.Map nameToIndex()",
       "protected final double[] doubleValues()",
       "protected final boolean ignoreUnknownValues()",
@@ -402,6 +403,8 @@
     "methods": [
       "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression)",
       "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public final void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public final void put(int, double)",
       "public final void put(int, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
@@ -509,6 +512,7 @@
     "methods": [
       "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression)",
       "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean)",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.RankingExpression, boolean, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public final void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public final void put(int, double)",
       "public final void put(int, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
@@ -550,7 +554,8 @@
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.Value asMutable()"
     ],
     "fields": [
-      "public static final com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue zero"
+      "public static final com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue zero",
+      "public static final com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue NaN"
     ]
   },
   "com.yahoo.searchlib.rankingexpression.evaluation.ExpressionOptimizer": {
@@ -575,7 +580,9 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public void <init>(java.util.Map)",
+      "public void <init>(java.util.Map, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.MapContext freeze()",
       "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value get(java.lang.String)",

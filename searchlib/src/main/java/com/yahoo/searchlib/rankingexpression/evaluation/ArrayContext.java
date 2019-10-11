@@ -19,8 +19,6 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     /** The current values set */
     private Value[] values;
 
-    private static DoubleValue constantZero = DoubleValue.frozen(0);
-
     /**
      * Create a fast lookup context for an expression.
      * This instance should be reused indefinitely by a single thread.
@@ -30,6 +28,14 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
         this(expression, false);
     }
 
+    public ArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
+        this(expression, ignoreUnknownValues, defaultMissingValue);
+    }
+
+    public ArrayContext(RankingExpression expression, Value defaultValue) {
+        this(expression, false, defaultValue);
+    }
+
     /**
      * Create a fast lookup context for an expression.
      * This instance should be reused indefinitely by a single thread.
@@ -37,11 +43,12 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
      * @param expression the expression to create a context for
      * @param ignoreUnknownValues whether attempts to put values not present in this expression
      *                            should fail (false - the default), or be ignored (true)
+     * @param missingValue the value to return if not set.
      */
-    public ArrayContext(RankingExpression expression, boolean ignoreUnknownValues) {
-        super(expression, ignoreUnknownValues);
+    public ArrayContext(RankingExpression expression, boolean ignoreUnknownValues, Value missingValue) {
+        super(expression, ignoreUnknownValues, missingValue);
         values = new Value[doubleValues().length];
-        Arrays.fill(values, DoubleValue.zero);
+        Arrays.fill(values, this.missingValue);
     }
 
     /**
@@ -74,6 +81,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
      */
     public final void put(int index, Value value) {
         values[index] = value.freeze();
+        clearMissing(index);
         try {
             doubleValues()[index] = value.asDouble();
         }
@@ -93,7 +101,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     @Override
     public Value get(String name) {
         Integer index = nameToIndex().get(name);
-        if (index == null) return DoubleValue.zero;
+        if (index == null) return missingValue;
         return values[index];
     }
 
@@ -107,7 +115,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     @Override
     public final double getDouble(int index) {
         double value = doubleValues()[index];
-        if (Double.isNaN(value))
+        if (Double.isNaN(value) && ! isMissing(index))  // NaN is valid as a missing value
             throw new UnsupportedOperationException("Value at " + index + " has no double representation");
         return value;
     }
@@ -119,7 +127,7 @@ public class ArrayContext extends AbstractArrayContext implements Cloneable {
     public ArrayContext clone() {
         ArrayContext clone = (ArrayContext)super.clone();
         clone.values = new Value[nameToIndex().size()];
-        Arrays.fill(clone.values, constantZero);
+        Arrays.fill(clone.values, missingValue);
         return clone;
     }
 

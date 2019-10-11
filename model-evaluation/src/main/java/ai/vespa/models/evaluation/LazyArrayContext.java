@@ -16,6 +16,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +29,7 @@ import java.util.Set;
  */
 public final class LazyArrayContext extends Context implements ContextIndex {
 
-    public final static Value defaultContextValue = DoubleValue.zero;
-
     private final ExpressionFunction function;
-
     private final IndexedBindings indexedBindings;
 
     private LazyArrayContext(ExpressionFunction function, IndexedBindings indexedBindings) {
@@ -43,9 +41,10 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     LazyArrayContext(ExpressionFunction function,
                      Map<FunctionReference, ExpressionFunction> referencedFunctions,
                      List<Constant> constants,
-                     Model model) {
+                     Model model,
+                     Value missingValue) {
         this.function = function;
-        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model);
+        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model, missingValue);
     }
 
     /**
@@ -121,6 +120,11 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         return index;
     }
 
+    boolean isMissing(String name) {
+        Integer index = indexedBindings.indexOf(name);
+        return index == null || indexedBindings.isMissing(index);
+    }
+
     /**
      * Creates a copy of this context suitable for evaluating against the same ranking expression
      * in a different thread or for re-binding free variables.
@@ -134,18 +138,28 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The mapping from variable name to index */
         private final ImmutableMap<String, Integer> nameToIndex;
 
-        /** The names which neeeds to be bound externally when envoking this (i.e not constant or invocation */
+        /** The names which needs to be bound externally when envoking this (i.e not constant or invocation */
         private final ImmutableSet<String> arguments;
 
         /** The current values set, pre-converted to doubles */
         private final Value[] values;
 
+        /** The values that actually have been set */
+        private final BitSet setValues;
+
+        /** The value to return if not set */
+        private final Value missingValue;
+
         private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
                                 Value[] values,
-                                ImmutableSet<String> arguments) {
+                                ImmutableSet<String> arguments,
+                                BitSet setValues,
+                                Value missingValue) {
             this.nameToIndex = nameToIndex;
             this.values = values;
             this.arguments = arguments;
+            this.setValues = setValues;
+            this.missingValue = missingValue.freeze();
         }
 
         /**
@@ -156,15 +170,18 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                         Map<FunctionReference, ExpressionFunction> referencedFunctions,
                         List<Constant> constants,
                         LazyArrayContext owner,
-                        Model model) {
+                        Model model,
+                        Value missingValue) {
             // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
             Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
             extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments);
 
             this.arguments = ImmutableSet.copyOf(arguments);
+            this.missingValue = missingValue.freeze();
             values = new Value[bindTargets.size()];
-            Arrays.fill(values, defaultContextValue);
+            Arrays.fill(values, this.missingValue);
+            setValues = new BitSet(bindTargets.size());
 
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
@@ -172,19 +189,22 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 nameToIndexBuilder.put(variable, i++);
             nameToIndex = nameToIndexBuilder.build();
 
-
             // 2. Bind the bind targets
             for (Constant constant : constants) {
                 String constantReference = "constant(" + constant.name() + ")";
                 Integer index = nameToIndex.get(constantReference);
-                if (index != null)
+                if (index != null) {
                     values[index] = new TensorValue(constant.value());
+                    setValues.set(index);
+                }
             }
 
             for (Map.Entry<FunctionReference, ExpressionFunction> referencedFunction : referencedFunctions.entrySet()) {
                 Integer index = nameToIndex.get(referencedFunction.getKey().serialForm());
-                if (index != null) // Referenced in this, so bind it
+                if (index != null) { // Referenced in this, so bind it
                     values[index] = new LazyValue(referencedFunction.getKey(), owner, model);
+                    setValues.set(index);
+                }
             }
         }
 
@@ -227,16 +247,26 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         }
 
         Value get(int index) { return values[index]; }
-        void set(int index, Value value) { values[index] = value; }
+        void set(int index, Value value) {
+            values[index] = value;
+            setValues.set(index);
+        }
+
         Set<String> names() { return nameToIndex.keySet(); }
         Set<String> arguments() { return arguments; }
         Integer indexOf(String name) { return nameToIndex.get(name); }
+        boolean isMissing(int index) { return ! setValues.get(index); }
 
         IndexedBindings copy(Context context) {
             Value[] valueCopy = new Value[values.length];
-            for (int i = 0; i < values.length; i++)
-                valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue)values[i]).copyFor(context) : values[i];
-            return new IndexedBindings(nameToIndex, valueCopy, arguments);
+            BitSet setValuesCopy = new BitSet(values.length);
+            for (int i = 0; i < values.length; i++) {
+                valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue) values[i]).copyFor(context) : values[i];
+                if (setValues.get(i)) {
+                    setValuesCopy.set(i);
+                }
+            }
+            return new IndexedBindings(nameToIndex, valueCopy, arguments, setValuesCopy, missingValue);
         }
 
     }
