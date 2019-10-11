@@ -44,6 +44,7 @@ public class JDiscHttpRequestHandler extends LoggingRequestHandler {
         final HttpRequest legacyRequest = new HttpRequest();
         final com.yahoo.jdisc.http.HttpRequest jDiscRequest = request.getJDiscRequest();
 
+        legacyRequest.setScheme(request.getUri().getScheme());
         legacyRequest.setHost(request.getUri().getHost());
         setOperation(legacyRequest, request.getMethod());
         legacyRequest.setPort(request.getUri().getPort());
