@@ -464,7 +464,7 @@ public class ApplicationController {
         // We do this at deployment time for externally built applications, and at submission time
         // for internally built ones, to be able to return a validation failure message when necessary
         for (InstanceName instanceName : application.get().instances().keySet()) {
-                application = withoutDeletedDeployments(application, instanceName);
+            application = withoutDeletedDeployments(application, instanceName);
 
                 // Clean up deployment jobs that are no longer referenced by deployment spec
             DeploymentSpec deploymentSpec = application.get().deploymentSpec();
@@ -630,8 +630,9 @@ public class ApplicationController {
     private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {
         DeploymentSpec deploymentSpec = application.get().deploymentSpec();
         List<Deployment> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
-                                                          .filter(deployment -> ! deploymentSpec.requireInstance(instance).includes(deployment.zone().environment(),
-                                                                                                                                    Optional.of(deployment.zone().region())))
+                                                          .filter(deployment ->      deploymentSpec.instance(instance).isEmpty()
+                                                                                || ! deploymentSpec.requireInstance(instance).includes(deployment.zone().environment(),
+                                                                                                                                     Optional.of(deployment.zone().region())))
                                                           .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty()) return application;
@@ -655,7 +656,9 @@ public class ApplicationController {
     private Instance withoutUnreferencedDeploymentJobs(DeploymentSpec deploymentSpec, Instance instance) {
         for (JobType job : JobList.from(instance).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
-            if (deploymentSpec.requireInstance(instance.name()).includes(zone.environment(), Optional.of(zone.region())))
+            if (deploymentSpec.instance(instance.name())
+                              .map(spec -> spec.includes(zone.environment(), Optional.of(zone.region())))
+                              .orElse(false))
                 continue;
             instance = instance.withoutDeploymentJob(job);
         }
