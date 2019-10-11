@@ -275,13 +275,14 @@ public class MetricsReporterTest {
                                         new JobControl(tester.controllerTester().curator()), CloudName.defaultName());;
         var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
                                                        new JobControl(tester.controller().curator()));
-        tester.configServer().bootstrap(List.of(zone.getId()), SystemApplication.tenantHost);
+        tester.configServer().bootstrap(List.of(zone.getId()), SystemApplication.configServerHost, SystemApplication.tenantHost);
 
         // All nodes upgrade to initial OS version
         var version0 = Version.fromString("8.0");
         tester.controller().upgradeOsIn(cloud, version0, false);
         osUpgrader.maintain();
         tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version0);
+        tester.configServer().setOsVersion(SystemApplication.configServerHost.id(), zone.getId(), version0);
         statusUpdater.maintain();
         reporter.maintain();
         assertEquals(0, getNodesFailingOsUpgrade());
@@ -300,15 +301,22 @@ public class MetricsReporterTest {
             reporter.maintain();
             assertEquals(0, getNodesFailingOsUpgrade());
 
-            // 1/3 nodes upgrade within timeout
-            tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version, 1);
-            tester.clock().advance(Duration.ofMinutes(30).plus(Duration.ofSeconds(1)));
+            // 2/6 nodes upgrade within timeout
+            tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version, 2);
+            tester.clock().advance(Duration.ofMinutes(30 * 3 /* time allowance * node count */).plus(Duration.ofSeconds(1)));
             statusUpdater.maintain();
             reporter.maintain();
-            assertEquals(2, getNodesFailingOsUpgrade());
+            assertEquals(4, getNodesFailingOsUpgrade());
 
-            // 3/3 nodes upgrade
+            // 5/6 nodes upgrade
             tester.configServer().setOsVersion(SystemApplication.tenantHost.id(), zone.getId(), version);
+            tester.configServer().setOsVersion(SystemApplication.configServerHost.id(), zone.getId(), version, 2);
+            statusUpdater.maintain();
+            reporter.maintain();
+            assertEquals(1, getNodesFailingOsUpgrade());
+
+            // Final node upgrades
+            tester.configServer().setOsVersion(SystemApplication.configServerHost.id(), zone.getId(), version);
             statusUpdater.maintain();
             reporter.maintain();
             assertEquals(0, getNodesFailingOsUpgrade());
