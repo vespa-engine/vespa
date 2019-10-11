@@ -252,9 +252,10 @@ public class DeploymentSpec {
         return instance.get();
     }
 
-    /** Returns the steps of this which are instances */
+    /** Returns the step descendants of this which are instances */
     public List<DeploymentInstanceSpec> instances() {
         return steps.stream()
+                    .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones)step).steps.stream() : List.of(step).stream())
                     .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
                     .collect(Collectors.toList());
     }

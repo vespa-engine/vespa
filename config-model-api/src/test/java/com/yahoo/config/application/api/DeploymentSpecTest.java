@@ -617,6 +617,79 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void athenz_config_is_propagated_through_parallel_zones() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "   <instance id='instance1'>" +
+                "      <prod athenz-service='prod-service'>" +
+                "         <region active='true'>us-central-1</region>" +
+                "         <parallel>" +
+                "            <region active='true'>us-west-1</region>" +
+                "            <region active='true'>us-east-3</region>" +
+                "         </parallel>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals("prod-service", spec.athenzService(InstanceName.from("instance1"),
+                                                                 Environment.prod,
+                                                                 RegionName.from("us-west-1")).get().value());
+        assertEquals("service", spec.athenzService(InstanceName.from("non-existent"),
+                                                            Environment.prod,
+                                                            RegionName.from("us-west-1")).get().value());
+        assertEquals("domain", spec.requireInstance("instance1").athenzDomain().get().value());
+        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
+                                                                                                     RegionName.from("us-central-1")).get().value());
+        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
+                                                                                                     RegionName.from("us-west-1")).get().value());
+        assertEquals("prod-service", spec.requireInstance("instance1").athenzService(Environment.prod,
+                                                                                                     RegionName.from("us-east-3")).get().value());
+    }
+
+    @Test
+    public void athenz_config_is_propagated_through_parallel_zones_and_instances() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "   <parallel>" +
+                "      <instance id='instance1'>" +
+                "         <prod>" +
+                "            <parallel>" +
+                "               <region active='true'>us-west-1</region>" +
+                "               <region active='true'>us-east-3</region>" +
+                "            </parallel>" +
+                "         </prod>" +
+                "      </instance>" +
+                "      <instance id='instance2'>" +
+                "         <prod>" +
+                "            <parallel>" +
+                "               <region active='true'>us-west-1</region>" +
+                "               <region active='true'>us-east-3</region>" +
+                "            </parallel>" +
+                "         </prod>" +
+                "      </instance>" +
+                "   </parallel>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("domain", spec.athenzDomain().get().value());
+        assertEquals("service", spec.athenzService(InstanceName.from("instance1"),
+                                                   Environment.prod,
+                                                   RegionName.from("us-west-1")).get().value());
+        assertEquals("service", spec.athenzService(InstanceName.from("non-existent"),
+                                                   Environment.prod,
+                                                   RegionName.from("us-west-1")).get().value());
+        assertEquals("domain", spec.requireInstance("instance1").athenzDomain().get().value());
+        assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
+                                                                                RegionName.from("us-west-1")).get().value());
+        assertEquals("service", spec.requireInstance("instance1").athenzService(Environment.prod,
+                                                                                RegionName.from("us-east-3")).get().value());
+        assertEquals("service", spec.requireInstance("instance2").athenzService(Environment.prod,
+                                                                                RegionName.from("us-east-3")).get().value());
+    }
+
+    @Test
     public void athenz_config_is_read_from_instance() {
         StringReader r = new StringReader(
                 "<deployment>" +
