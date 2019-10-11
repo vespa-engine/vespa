@@ -194,15 +194,6 @@ public class SessionPreparerTest {
     }
 
     @Test
-    public void require_that_rotations_are_written_in_prepare() throws IOException {
-        final String rotations = "mediasearch.msbe.global.vespa.yahooapis.com";
-        final ApplicationId applicationId = applicationId("test");
-        PrepareParams params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
-        prepare(new File("src/test/resources/deploy/app"), params);
-        assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
-    }
-
-    @Test
     public void require_that_rotations_are_read_from_zookeeper_and_used() throws IOException {
         final TestModelFactory modelFactory = new TestModelFactory(version123);
         preparer = createPreparer(new ModelFactoryRegistry(Collections.singletonList(modelFactory)),
@@ -222,19 +213,6 @@ public class SessionPreparerTest {
 
         // Check that the persisted value is still the same
         assertThat(readRotationsFromZK(applicationId), contains(new Rotation(rotations)));
-    }
-
-    @Test
-    public void require_that_rotations_are_written_as_container_endpoints() throws Exception {
-        var rotations = "app1.tenant1.global.vespa.example.com,rotation-042.vespa.global.routing";
-        var applicationId = applicationId("test");
-        var params = new PrepareParams.Builder().applicationId(applicationId).rotations(rotations).build();
-        prepare(new File("src/test/resources/deploy/hosted-app"), params);
-
-        var expected = List.of(new ContainerEndpoint("qrs",
-                                                     List.of("app1.tenant1.global.vespa.example.com",
-                                                             "rotation-042.vespa.global.routing")));
-        assertEquals(expected, readContainerEndpoints(applicationId));
     }
 
     @Test

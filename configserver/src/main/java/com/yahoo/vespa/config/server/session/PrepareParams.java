@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.TenantName;
@@ -10,12 +11,10 @@ import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,7 +32,6 @@ public final class PrepareParams {
     static final String DRY_RUN_PARAM_NAME = "dryRun";
     static final String VERBOSE_PARAM_NAME = "verbose";
     static final String VESPA_VERSION_PARAM_NAME = "vespaVersion";
-    static final String ROTATIONS_PARAM_NAME = "rotations";
     static final String CONTAINER_ENDPOINTS_PARAM_NAME = "containerEndpoints";
     static final String TLS_SECRETS_KEY_NAME_PARAM_NAME = "tlsSecretsKeyName";
 
@@ -76,7 +74,6 @@ public final class PrepareParams {
         private ApplicationId applicationId = ApplicationId.defaultId();
         private TimeoutBudget timeoutBudget = new TimeoutBudget(Clock.systemUTC(), Duration.ofSeconds(30));
         private Optional<Version> vespaVersion = Optional.empty();
-        private Set<Rotation> rotations;
         private List<ContainerEndpoint> containerEndpoints = List.of();
         private Optional<String> tlsSecretsKeyName = Optional.empty();
 
@@ -126,17 +123,6 @@ public final class PrepareParams {
             return this;
         }
 
-        public Builder rotations(String rotationsString) {
-            this.rotations = new LinkedHashSet<>();
-            if (rotationsString != null && !rotationsString.isEmpty()) {
-                String[] rotations = rotationsString.split(",");
-                for (String s : rotations) {
-                    this.rotations.add(new Rotation(s));
-                }
-            }
-            return this;
-        }
-
         public Builder containerEndpoints(String serialized) {
             if (serialized == null) return this;
             Slime slime = SlimeUtils.jsonToSlime(serialized);
@@ -152,7 +138,7 @@ public final class PrepareParams {
 
         public PrepareParams build() {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun, 
-                                     verbose, isBootstrap, vespaVersion, rotations, containerEndpoints, tlsSecretsKeyName);
+                                     verbose, isBootstrap, vespaVersion, Set.of(), containerEndpoints, tlsSecretsKeyName);
         }
 
     }
@@ -164,7 +150,6 @@ public final class PrepareParams {
                             .timeoutBudget(SessionHandler.getTimeoutBudget(request, barrierTimeout))
                             .applicationId(createApplicationId(request, tenant))
                             .vespaVersion(request.getProperty(VESPA_VERSION_PARAM_NAME))
-                            .rotations(request.getProperty(ROTATIONS_PARAM_NAME))
                             .containerEndpoints(request.getProperty(CONTAINER_ENDPOINTS_PARAM_NAME))
                             .tlsSecretsKeyName(request.getProperty(TLS_SECRETS_KEY_NAME_PARAM_NAME))
                             .build();
