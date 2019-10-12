@@ -3,7 +3,6 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -115,6 +114,61 @@ public class DeploymentSpecDeprecatedAPITest {
         assertFalse(spec.globalServiceId().isPresent());
         
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.upgradePolicy());
+    }
+
+    @Test
+    public void deploymentSpecWithTest() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <test/>" +
+                "   <staging/>" +
+                "   <prod>" +
+                "      <region active='false'>us-east1</region>" +
+                "      <region active='true'>us-west1</region>" +
+                "   </prod>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("[test, staging, prod.us-east1, prod.us-west1]", spec.steps().toString());
+    }
+
+    @Test
+    public void deploymentSpecWithTestInsideInstance() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='instance1'>" +
+                "      <test/>" +
+                "      <staging/>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("[test, staging, prod.us-east1, prod.us-west1]", spec.steps().toString());
+    }
+
+    @Test
+    public void deploymentSpecWithTestOutsideInstance() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <test/>" +
+                "   <staging/>" +
+                "   <instance id='instance1'>" +
+                "      <prod>" +
+                "         <region active='false'>us-east1</region>" +
+                "         <region active='true'>us-west1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("[test, staging, prod.us-east1, prod.us-west1]", spec.steps().toString());
     }
 
     @Test
