@@ -8,6 +8,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.model.application.provider.SimpleApplicationValidator;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
@@ -26,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -351,6 +353,18 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
         FleetcontrollerConfig cfg = new FleetcontrollerConfig(builder);
         assertThat(cfg.index(), is(0));
+
+        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
+        assertEquals(512, qrStartConfig.jvm().heapsize());
+        assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals(0, qrStartConfig.jvm().availableProcessors());
+        assertEquals(true, qrStartConfig.jvm().verbosegc());
+        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1", qrStartConfig.jvm().gcopts());
+        assertEquals(512, qrStartConfig.jvm().stacksize());
+        assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
+        assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
     }
 
     @Test
