@@ -67,15 +67,11 @@ configure_memory() {
 
     # Update jvm_heapsize only if percentage is explicitly set (default is 0).
     if ((jvm_heapSizeAsPercentageOfPhysicalMemory > 0)); then
-        if ((VESPA_TOTAL_MEMORY_MB > 0)); then
-            available="$VESPA_TOTAL_MEMORY_MB"
-        else
-            available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
-            if hash cgget 2>/dev/null; then
-                available_cgroup_bytes=$(cgget -nv -r memory.limit_in_bytes /)
-                available_cgroup=$((available_cgroup_bytes >> 20))
-                available=$((available > available_cgroup ? available_cgroup : available))
-            fi
+        available=`free -m | grep Mem | tr -s ' ' | cut -f2 -d' '`
+        if hash cgget 2>/dev/null; then
+            available_cgroup_bytes=$(cgget -nv -r memory.limit_in_bytes /)
+            available_cgroup=$((available_cgroup_bytes >> 20))
+            available=$((available > available_cgroup ? available_cgroup : available))
         fi
 
         jvm_heapsize=$((available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100))
