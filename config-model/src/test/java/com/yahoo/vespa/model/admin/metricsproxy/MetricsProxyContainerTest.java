@@ -54,7 +54,6 @@ public class MetricsProxyContainerTest {
         VespaModel model = getModel(servicesWithContent(), self_hosted);
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
         assertThat(container.getStartupCommand(), containsString("-Xms32m"));
-        assertThat(container.getStartupCommand(), containsString("-Xmx512m"));
     }
 
     @Test
