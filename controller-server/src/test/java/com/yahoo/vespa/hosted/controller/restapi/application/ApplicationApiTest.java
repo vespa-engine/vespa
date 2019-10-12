@@ -651,6 +651,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(streamer),
                               "{\"message\":\"Application package version: 1.0.45-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
+        // Sixth attempt has a multi-instance deployment spec, and fails.
+        ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
+                .instances("instance1,instance2")
+                .environment(Environment.prod)
+                .region("us-west-1")
+                .build();
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(createApplicationSubmissionData(multiInstanceSpec)),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Only single-instance deployment specs are currently supported\"}", 400);
+
         ApplicationId app1 = ApplicationId.from("tenant1", "application1", "instance1");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/jobreport", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
