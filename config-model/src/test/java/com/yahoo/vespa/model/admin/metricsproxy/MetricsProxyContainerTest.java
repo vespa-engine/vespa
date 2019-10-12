@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -54,6 +55,22 @@ public class MetricsProxyContainerTest {
         MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
         assertThat(container.getStartupCommand(), containsString("-Xms32m"));
         assertThat(container.getStartupCommand(), containsString("-Xmx512m"));
+    }
+
+    @Test
+    public void metrics_proxy_has_expected_qr_start_options() {
+        VespaModel model = getModel(servicesWithContent(), self_hosted);
+        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrBuilder, CONTAINER_CONFIG_ID);
+        QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
+        assertEquals(1536, qrStartConfig.jvm().heapsize());
+        assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals(0, qrStartConfig.jvm().availableProcessors());
+        assertEquals(false, qrStartConfig.jvm().verbosegc());
+        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
+        assertEquals(512, qrStartConfig.jvm().stacksize());
+        assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
+        assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
     }
 
     @Test
