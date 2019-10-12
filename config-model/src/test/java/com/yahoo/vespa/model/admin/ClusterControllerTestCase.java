@@ -359,9 +359,9 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
-        assertEquals(0, qrStartConfig.jvm().availableProcessors());
-        assertEquals(true, qrStartConfig.jvm().verbosegc());
-        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1", qrStartConfig.jvm().gcopts());
+        assertEquals(2, qrStartConfig.jvm().availableProcessors());
+        assertEquals(false, qrStartConfig.jvm().verbosegc());
+        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
         assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());

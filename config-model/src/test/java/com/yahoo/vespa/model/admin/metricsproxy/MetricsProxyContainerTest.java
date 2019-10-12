@@ -63,9 +63,9 @@ public class MetricsProxyContainerTest {
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         model.getConfig(qrBuilder, CONTAINER_CONFIG_ID);
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
-        assertEquals(1536, qrStartConfig.jvm().heapsize());
+        assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
-        assertEquals(0, qrStartConfig.jvm().availableProcessors());
+        assertEquals(2, qrStartConfig.jvm().availableProcessors());
         assertEquals(false, qrStartConfig.jvm().verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
