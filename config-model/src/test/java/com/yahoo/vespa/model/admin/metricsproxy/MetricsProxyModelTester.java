@@ -47,6 +47,12 @@ class MetricsProxyModelTester {
         return tester.createModel(servicesXml, true);
     }
 
+    static String configId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
+        return (mode == hosted)
+                ? CLUSTER_CONFIG_ID + "/" + model.getHosts().iterator().next().getHostname()
+                : CONTAINER_CONFIG_ID;
+    }
+
     static boolean checkMetric(ConsumersConfig.Consumer consumer, Metric metric) {
         for (ConsumersConfig.Consumer.Metric m : consumer.metric()) {
             if (metric.name.equals(m.name()) && metric.outputName.equals(m.outputname()))

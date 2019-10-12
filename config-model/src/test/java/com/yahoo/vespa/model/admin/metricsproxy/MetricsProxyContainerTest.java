@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainer.NodeDimensionNames;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -15,6 +14,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.C
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.configId;
+
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
@@ -49,27 +50,15 @@ public class MetricsProxyContainerTest {
         }
     }
 
-    @Test
-    public void metrics_proxy_requires_less_memory_than_other_containers() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
-        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
+    private void metrics_proxy_requires_less_memory_than_other_containers(MetricsProxyModelTester.TestMode mode) {
+        VespaModel model = getModel(servicesWithContent(), mode);
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(configId(model, mode));
         assertThat(container.getStartupCommand(), containsString("-Xms32m"));
     }
-
     @Test
-    public void metrics_proxy_has_expected_qr_start_options() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
-        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
-        model.getConfig(qrBuilder, CONTAINER_CONFIG_ID);
-        QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
-        assertEquals(512, qrStartConfig.jvm().heapsize());
-        assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
-        assertEquals(2, qrStartConfig.jvm().availableProcessors());
-        assertEquals(false, qrStartConfig.jvm().verbosegc());
-        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
-        assertEquals(512, qrStartConfig.jvm().stacksize());
-        assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
-        assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
+    public void metrics_proxy_requires_less_memory_than_other_containers() {
+        metrics_proxy_requires_less_memory_than_other_containers(self_hosted);
+        metrics_proxy_requires_less_memory_than_other_containers(hosted);
     }
 
     @Test
