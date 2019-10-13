@@ -5,9 +5,18 @@ import com.google.common.collect.Collections2;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.SimpleApplicationValidator;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -17,6 +26,7 @@ import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Before;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -318,6 +328,10 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
     @Test
     public void testUnconfiguredNoTuning() throws Exception {
+        verifyUnconfiguredNoTuning(false);
+        verifyUnconfiguredNoTuning(true);
+    }
+    private void verifyUnconfiguredNoTuning(boolean isHosted) throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -341,7 +355,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                 "\n" +
                 "</services>";
 
-        VespaModel model = createVespaModel(xml);
+        VespaModel model = createVespaModel(xml, isHosted);
         assertTrue(model.getService("admin/cluster-controllers/0").isPresent());
 
         assertTrue(existsHostsWithClusterControllerConfigId(model));
@@ -360,7 +374,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
-        assertEquals(false, qrStartConfig.jvm().verbosegc());
+        assertFalse(qrStartConfig.jvm().verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
@@ -441,10 +455,21 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     private VespaModel createVespaModel(String servicesXml) throws IOException, SAXException {
-        VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
-                                                  .withServices(servicesXml)
-                                                  .withSearchDefinitions(sds)
-                                                  .build());
+        return createVespaModel(servicesXml, false);
+    }
+    private VespaModel createVespaModel(String servicesXml, boolean isHosted) throws IOException, SAXException {
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(servicesXml)
+                .withSearchDefinitions(sds)
+                .build();
+        // Need to create VespaModel to make deploy properties have effect
+        DeployLogger logger = new DeployLoggerStub();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .deployLogger(logger)
+                .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
+                .properties(new TestProperties().setHostedVespa(isHosted))
+                .build());
         SimpleApplicationValidator.checkServices(new StringReader(servicesXml), new Version(7));
         return model;
     }
