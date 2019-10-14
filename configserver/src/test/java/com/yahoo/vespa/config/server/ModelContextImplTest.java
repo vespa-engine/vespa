@@ -8,7 +8,6 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -30,16 +29,13 @@ import static org.junit.Assert.assertTrue;
  * @author Ulf Lilleengen
  */
 public class ModelContextImplTest {
+
     @Test
     public void testModelContextTest() {
 
-        final Rotation rotation = new Rotation("this.is.a.mock.rotation");
-        final Set<Rotation> rotations = Collections.singleton(rotation);
-
-        final ContainerEndpoint endpoint = new ContainerEndpoint("foo", List.of("a", "b"));
-        final Set<ContainerEndpoint> endpoints = Collections.singleton(endpoint);
-
-        final InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        ContainerEndpoint endpoint = new ContainerEndpoint("foo", List.of("a", "b"));
+        Set<ContainerEndpoint> endpoints = Collections.singleton(endpoint);
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
         ModelContext context = new ModelContextImpl(
                 MockApplicationPackage.createEmpty(),
@@ -58,7 +54,6 @@ public class ModelContextImplTest {
                         null,
                         false,
                         Zone.defaultZone(),
-                        rotations,
                         endpoints,
                         false,
                         false,
@@ -78,8 +73,8 @@ public class ModelContextImplTest {
         assertTrue(context.properties().multitenant());
         assertNotNull(context.properties().zone());
         assertFalse(context.properties().hostedVespa());
-        assertThat(context.properties().rotations(), equalTo(rotations));
         assertThat(context.properties().endpoints(), equalTo(endpoints));
         assertThat(context.properties().isFirstTimeDeployment(), equalTo(false));
     }
+
 }

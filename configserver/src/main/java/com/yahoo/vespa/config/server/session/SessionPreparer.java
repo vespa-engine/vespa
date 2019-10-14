@@ -9,16 +9,14 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TlsSecrets;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
@@ -34,9 +32,7 @@ import com.yahoo.vespa.config.server.http.InvalidApplicationException;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
-import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
-import com.yahoo.vespa.config.server.tenant.Rotations;
 import com.yahoo.vespa.config.server.tenant.TlsSecretsKeys;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -47,7 +43,6 @@ import javax.xml.transform.TransformerException;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -118,13 +113,8 @@ public class SessionPreparer {
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
                 preparation.writeStateZK();
-                preparation.writeRotZK();
                 preparation.writeTlsZK();
-                var globalServiceId = context.getApplicationPackage().getDeployment()
-                                             .map(DeploymentSpec::fromXml)
-                                             .flatMap(spec -> spec.instance(context.getApplicationPackage().getApplicationId().instance()))
-                                             .flatMap(DeploymentInstanceSpec::globalServiceId);
-                preparation.writeContainerEndpointsZK(globalServiceId);
+                preparation.writeContainerEndpointsZK();
                 preparation.distribute();
             }
             log.log(LogLevel.DEBUG, () -> "time used " + params.getTimeoutBudget().timesUsed() +
@@ -149,9 +139,7 @@ public class SessionPreparer {
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final com.yahoo.component.Version vespaVersion;
 
-        final Rotations rotations; // TODO: Remove this once we have migrated fully to container endpoints
         final ContainerEndpointsCache containerEndpoints;
-        final Set<Rotation> rotationsSet;
         final Set<ContainerEndpoint> endpointsSet;
         final ModelContext.Properties properties;
         private final TlsSecretsKeys tlsSecretsKeys;
@@ -173,9 +161,7 @@ public class SessionPreparer {
 
             this.applicationId = params.getApplicationId();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
-            this.rotations = new Rotations(curator, tenantPath);
             this.containerEndpoints = new ContainerEndpointsCache(tenantPath, curator);
-            this.rotationsSet = getRotations(params.rotations());
             this.tlsSecretsKeys = new TlsSecretsKeys(curator, tenantPath, secretStore);
             this.tlsSecrets = tlsSecretsKeys.getTlsSecrets(params.tlsSecretsKeyName(), applicationId);
             this.endpointsSet = getEndpoints(params.containerEndpoints());
@@ -188,7 +174,6 @@ public class SessionPreparer {
                                                               configserverConfig.athenzDnsSuffix(),
                                                               configserverConfig.hostedVespa(),
                                                               zone,
-                                                              rotationsSet,
                                                               endpointsSet,
                                                               params.isBootstrap(),
                                                               ! currentActiveApplicationSet.isPresent(),
@@ -248,27 +233,14 @@ public class SessionPreparer {
             checkTimeout("write state to zookeeper");
         }
 
-        void writeRotZK() {
-            rotations.writeRotationsToZooKeeper(applicationId, rotationsSet);
-            checkTimeout("write rotations to zookeeper");
-        }
-
         void writeTlsZK() {
             tlsSecretsKeys.writeTlsSecretsKeyToZooKeeper(applicationId, params.tlsSecretsKeyName().orElse(null));
             checkTimeout("write tlsSecretsKey to zookeeper");
         }
 
-        void writeContainerEndpointsZK(Optional<String> globalServiceId) {
+        void writeContainerEndpointsZK() {
             if (!params.containerEndpoints().isEmpty()) { // Use endpoints from parameter when explicitly given
                 containerEndpoints.write(applicationId, params.containerEndpoints());
-            } else { // Fall back to writing rotations as container endpoints
-                if (!rotationsSet.isEmpty()) {
-                    if (globalServiceId.isEmpty()) {
-                        log.log(LogLevel.WARNING, "Want to write rotations " + rotationsSet + " as container endpoints, but " + applicationId + " has no global-service-id. This should not happen");
-                        return;
-                    }
-                    containerEndpoints.write(applicationId, toContainerEndpoints(globalServiceId.get(), rotationsSet));
-                }
             }
             checkTimeout("write container endpoints to zookeeper");
         }
@@ -283,13 +255,6 @@ public class SessionPreparer {
             return prepareResult.getConfigChangeActions();
         }
 
-        private Set<Rotation> getRotations(Set<Rotation> rotations) {
-            if (rotations == null || rotations.isEmpty()) {
-                rotations = this.rotations.readRotationsFromZooKeeper(applicationId);
-            }
-            return rotations;
-        }
-
         private Set<ContainerEndpoint> getEndpoints(List<ContainerEndpoint> endpoints) {
             if (endpoints == null || endpoints.isEmpty()) {
                 endpoints = this.containerEndpoints.read(applicationId);
@@ -297,13 +262,6 @@ public class SessionPreparer {
             return ImmutableSet.copyOf(endpoints);
         }
 
-    }
-
-    private static List<ContainerEndpoint> toContainerEndpoints(String globalServceId, Set<Rotation> rotations) {
-        return List.of(new ContainerEndpoint(globalServceId,
-                                             rotations.stream()
-                                                      .map(Rotation::getId)
-                                                      .collect(Collectors.toUnmodifiableList())));
     }
 
     private void writeStateToZooKeeper(SessionZooKeeperClient zooKeeperClient,

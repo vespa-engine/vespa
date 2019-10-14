@@ -53,7 +53,7 @@ import com.yahoo.vespa.config.server.session.RemoteSessionRepo;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionFactory;
 import com.yahoo.vespa.config.server.session.SilentDeployLogger;
-import com.yahoo.vespa.config.server.tenant.Rotations;
+import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Lock;
@@ -70,10 +70,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -370,7 +368,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             }).orElse(true);
 
             NestedTransaction transaction = new NestedTransaction();
-            transaction.add(new Rotations(tenant.getCurator(), tenant.getPath()).delete(applicationId)); // TODO: Not unit tested
+            transaction.add(new ContainerEndpointsCache(tenant.getPath(), tenant.getCurator()).delete(applicationId)); // TODO: Not unit tested
             // (When rotations are updated in zk, we need to redeploy the zone app, on the right config server
             // this is done asynchronously in application maintenance by the node repository)
             transaction.add(tenantApplications.createDeleteTransaction(applicationId));

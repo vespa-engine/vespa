@@ -71,7 +71,6 @@ public class DeployState implements ConfigDefinitionStore {
     private final Optional<Model> previousModel;
     private final ModelContext.Properties properties;
     private final Version vespaVersion;
-    private final Set<Rotation> rotations;
     private final Set<ContainerEndpoint> endpoints;
     private final Zone zone;
     private final QueryProfiles queryProfiles;
@@ -105,7 +104,6 @@ public class DeployState implements ConfigDefinitionStore {
                         Optional<ApplicationPackage> permanentApplicationPackage,
                         Optional<ConfigDefinitionRepo> configDefinitionRepo,
                         java.util.Optional<Model> previousModel,
-                        Set<Rotation> rotations,
                         Set<ContainerEndpoint> endpoints,
                         Collection<MlModelImporter> modelImporters,
                         Zone zone,
@@ -125,7 +123,6 @@ public class DeployState implements ConfigDefinitionStore {
         this.documentModel = searchDocumentModel.getDocumentModel();
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.rotations = rotations;
         this.endpoints = Set.copyOf(endpoints);
         this.zone = zone;
         this.queryProfiles = queryProfiles; // TODO: Remove this by seeing how pagetemplates are propagated
@@ -242,10 +239,6 @@ public class DeployState implements ConfigDefinitionStore {
         return properties.hostedVespa();
     }
 
-    public Set<Rotation> getRotations() {
-        return this.rotations; // todo: consider returning a copy or immutable view
-    }
-
     public Set<ContainerEndpoint> getEndpoints() {
         return endpoints;
     }
@@ -293,7 +286,6 @@ public class DeployState implements ConfigDefinitionStore {
         private Version version = new Version(1, 0, 0);
         private Optional<ConfigDefinitionRepo> configDefinitionRepo = Optional.empty();
         private Optional<Model> previousModel = Optional.empty();
-        private Set<Rotation> rotations = new HashSet<>();
         private Set<ContainerEndpoint> endpoints = Set.of();
         private Collection<MlModelImporter> modelImporters = Collections.emptyList();
         private Zone zone = Zone.defaultZone();
@@ -346,11 +338,6 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder rotations(Set<Rotation> rotations) {
-            this.rotations = rotations;
-            return this;
-        }
-
         public Builder endpoints(Set<ContainerEndpoint> endpoints) {
             this.endpoints = endpoints;
             return this;
@@ -396,7 +383,6 @@ public class DeployState implements ConfigDefinitionStore {
                                    permanentApplicationPackage,
                                    configDefinitionRepo,
                                    previousModel,
-                                   rotations,
                                    endpoints,
                                    modelImporters,
                                    zone,
