@@ -154,10 +154,11 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
         // This takes effect via vespa-start-container-daemon:configure_gcopts
-        builder.jvm.verbosegc(false);
-        builder.jvm.availableProcessors(2);
-        builder.jvm.heapSizeAsPercentageOfPhysicalMemory(0);
-        builder.jvm.heapsize(512);
+        builder.jvm
+                .verbosegc(false)
+                .availableProcessors(2)
+                .heapSizeAsPercentageOfPhysicalMemory(0)
+                .heapsize(512);
     }
 
     @Override
