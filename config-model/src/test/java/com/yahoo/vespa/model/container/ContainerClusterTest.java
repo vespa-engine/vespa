@@ -151,11 +151,11 @@ public class ContainerClusterTest {
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
         addClusterController(root.deployLogger(), cluster, "host-c1");
         assertEquals(1, cluster.getContainers().size());
-        ClusterControllerContainer container = (ClusterControllerContainer) cluster.getContainers().get(0);
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
-        container.getConfig(qrBuilder);
+        cluster.getConfig(qrBuilder);
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(512, qrStartConfig.jvm().heapsize());
+        assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
 
         ThreadpoolConfig.Builder tpBuilder = new ThreadpoolConfig.Builder();
         cluster.getConfig(tpBuilder);

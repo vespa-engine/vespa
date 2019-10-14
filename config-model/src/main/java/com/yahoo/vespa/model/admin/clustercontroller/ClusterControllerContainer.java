@@ -9,7 +9,6 @@ import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.Container;
@@ -28,8 +27,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 @RestartConfigs({FleetcontrollerConfig.class, ZookeeperServerConfig.class})
 public class ClusterControllerContainer extends Container implements
         BundlesConfig.Producer,
-        ZookeeperServerConfig.Producer,
-        QrStartConfig.Producer
+        ZookeeperServerConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZKFACADE_BUNDLE = new ComponentSpecification("zkfacade");
@@ -106,15 +104,6 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.myid(index());
-    }
-
-    @Override
-    public void getConfig(QrStartConfig.Builder builder) {
-        builder.jvm
-                .verbosegc(false)
-                .availableProcessors(2)
-                .heapsize(512)
-                .heapSizeAsPercentageOfPhysicalMemory(0);
     }
 
 }
