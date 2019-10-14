@@ -49,7 +49,7 @@ public class MetricsProxyContainer extends Container implements
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
 
-        appendJvmOptions("-Xms32m -Xmx512m");
+        appendJvmOptions("-Xms32m");
     }
 
     private void addNodeSpecificComponents() {

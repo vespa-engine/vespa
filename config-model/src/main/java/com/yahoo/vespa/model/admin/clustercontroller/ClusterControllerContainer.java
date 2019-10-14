@@ -110,7 +110,11 @@ public class ClusterControllerContainer extends Container implements
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        builder.jvm(new QrStartConfig.Jvm.Builder().heapsize(512));
+        builder.jvm
+                .verbosegc(false)
+                .availableProcessors(2)
+                .heapsize(512)
+                .heapSizeAsPercentageOfPhysicalMemory(0);
     }
 
 }

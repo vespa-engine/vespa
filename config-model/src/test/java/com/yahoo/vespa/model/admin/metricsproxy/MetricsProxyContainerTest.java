@@ -14,6 +14,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.C
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.configId;
+
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
@@ -48,12 +50,15 @@ public class MetricsProxyContainerTest {
         }
     }
 
+    private void metrics_proxy_requires_less_memory_than_other_containers(MetricsProxyModelTester.TestMode mode) {
+        VespaModel model = getModel(servicesWithContent(), mode);
+        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(configId(model, mode));
+        assertThat(container.getStartupCommand(), containsString("-Xms32m"));
+    }
     @Test
     public void metrics_proxy_requires_less_memory_than_other_containers() {
-        VespaModel model = getModel(servicesWithContent(), self_hosted);
-        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(CONTAINER_CONFIG_ID);
-        assertThat(container.getStartupCommand(), containsString("-Xms32m"));
-        assertThat(container.getStartupCommand(), containsString("-Xmx512m"));
+        metrics_proxy_requires_less_memory_than_other_containers(self_hosted);
+        metrics_proxy_requires_less_memory_than_other_containers(hosted);
     }
 
     @Test

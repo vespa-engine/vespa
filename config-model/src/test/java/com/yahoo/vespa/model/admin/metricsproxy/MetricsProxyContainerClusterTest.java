@@ -41,6 +41,7 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.c
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.configId;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getQrStartConfig;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicMetrics.defaultPublicMetricSet;
@@ -93,11 +94,23 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(MockApplicationPackage.DEPLOYED_BY_USER, config.user());
     }
 
+    private void metrics_proxy_has_expected_qr_start_options(MetricsProxyModelTester.TestMode mode) {
+        VespaModel model = getModel(servicesWithAdminOnly(), mode);
+        QrStartConfig qrStartConfig = getQrStartConfig(model);
+        assertEquals(512, qrStartConfig.jvm().heapsize());
+        assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
+        assertEquals(2, qrStartConfig.jvm().availableProcessors());
+        assertEquals(false, qrStartConfig.jvm().verbosegc());
+        assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
+        assertEquals(512, qrStartConfig.jvm().stacksize());
+        assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
+        assertEquals(75, qrStartConfig.jvm().baseMaxDirectMemorySize());
+    }
+
     @Test
-    public void verbose_gc_logging_is_disabled() {
-        VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
-        QrStartConfig config = getQrStartConfig(model);
-        assertFalse(config.jvm().verbosegc());
+    public void metrics_proxy_has_expected_qr_start_options() {
+        metrics_proxy_has_expected_qr_start_options(self_hosted);
+        metrics_proxy_has_expected_qr_start_options(hosted);
     }
 
     @Test
