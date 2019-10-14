@@ -35,6 +35,7 @@
       "public int size()",
       "public java.util.Set names()",
       "public java.util.Set arguments()",
+      "public com.yahoo.searchlib.rankingexpression.evaluation.Value defaultValue()",
       "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
     ],
     "fields": []

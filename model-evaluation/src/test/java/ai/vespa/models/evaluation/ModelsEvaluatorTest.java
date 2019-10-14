@@ -50,7 +50,7 @@ public class ModelsEvaluatorTest {
             evaluator.evaluate();
         }
         catch (IllegalStateException e) {
-            assertEquals("Missing argument 'arg2': Must be bound to a value of type tensor(d1{})",
+            assertEquals("Argument 'arg2' must be bound to a value of type tensor(d1{})",
                          Exceptions.toMessageString(e));
         }
 
@@ -60,7 +60,7 @@ public class ModelsEvaluatorTest {
             evaluator.evaluate();
         }
         catch (IllegalStateException e) {
-            assertEquals("Missing argument 'arg1': Must be bound to a value of type tensor(d0[1])",
+            assertEquals("Argument 'arg1' must be bound to a value of type tensor(d0[1])",
                          Exceptions.toMessageString(e));
         }
 
