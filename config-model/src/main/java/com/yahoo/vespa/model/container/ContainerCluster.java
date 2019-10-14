@@ -484,13 +484,12 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        QrStartConfig.Jvm.Builder jvmBuilder = builder.jvm;
-        if (getMemoryPercentage().isPresent()) {
-            jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
-        } else if (isHostedVespa()) {
-            jvmBuilder.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
-        }
-        jvmBuilder.gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));
+        builder.jvm
+                .verbosegc(false)
+                .availableProcessors(2)
+                .heapsize(512)
+                .heapSizeAsPercentageOfPhysicalMemory(0)
+                .gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));
         if (environmentVars != null) {
             builder.qrs.env(environmentVars);
         }

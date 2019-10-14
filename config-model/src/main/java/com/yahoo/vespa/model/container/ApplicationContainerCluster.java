@@ -14,6 +14,7 @@ import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.defaults.Defaults;
@@ -41,6 +42,7 @@ import java.util.stream.Stream;
  */
 public final class ApplicationContainerCluster extends ContainerCluster<ApplicationContainer> implements
         BundlesConfig.Producer,
+        QrStartConfig.Producer,
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         ServletPathsConfig.Producer,
@@ -176,6 +178,19 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         }
         if (getDocproc() != null)
             getDocproc().getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(QrStartConfig.Builder builder) {
+        super.getConfig(builder);
+        builder.jvm.verbosegc(true)
+                .availableProcessors(0)
+                .heapsize(1536);
+        if (getMemoryPercentage().isPresent()) {
+            builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());
+        } else if (isHostedVespa()) {
+            builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getHostClusterId().isPresent() ? 17 : 60);
+        }
     }
 
     public Optional<TlsSecrets> getTlsSecrets() {

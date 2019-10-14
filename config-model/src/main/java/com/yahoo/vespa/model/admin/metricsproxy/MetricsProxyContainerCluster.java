@@ -26,7 +26,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.handler.ThreadpoolConfig;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
@@ -68,7 +67,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ApplicationDimensionsConfig.Producer,
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
-        QrStartConfig.Producer,
         ThreadpoolConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
@@ -147,18 +145,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         if (isHostedVespa()) {
             builder.dimensions(applicationDimensions());
         }
-    }
-
-    // Switch off verbose:gc, because it's very noisy when Xms < Xmx
-    @Override
-    public void getConfig(QrStartConfig.Builder builder) {
-        super.getConfig(builder);
-        // This takes effect via vespa-start-container-daemon:configure_gcopts
-        builder.jvm
-                .verbosegc(false)
-                .availableProcessors(2)
-                .heapSizeAsPercentageOfPhysicalMemory(0)
-                .heapsize(512);
     }
 
     @Override
