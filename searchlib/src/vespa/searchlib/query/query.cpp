@@ -177,7 +177,7 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
         while ((nextIndex < nextIndexMax) && (nextHL[nextIndex].elemId() < currElemId)) {
             nextIndex++;
         }
-        if (nextHL[nextIndex].elemId() == currElemId) {
+        if ((nextIndex < nextIndexMax) && (nextHL[nextIndex].elemId() == currElemId)) {
             currMatchCount++;
             if ((currMatchCount+1) == numFields) {
                 Hit h = nextHL[indexVector[currMatchCount]];
