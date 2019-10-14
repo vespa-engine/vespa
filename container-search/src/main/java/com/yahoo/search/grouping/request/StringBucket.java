@@ -30,7 +30,21 @@ public class StringBucket extends BucketValue {
      * @param to the end of the bucket, exclusive
      */
     public StringBucket(String from, String to) {
-        super(null, null, new StringValue(from), new StringValue(to));
+        this(from, to, false);
+    }
+
+    /**
+     * Constructs a new bucket for a range of strings.
+     *
+     * @param from the start of the bucket, inclusive
+     * @param to the end of the bucket
+     * @param toInclusive whether <code>to</code> value should be included in the bucket
+     */
+    public StringBucket(String from, String to, boolean toInclusive) {
+        super(null,
+              null,
+              new StringValue(from),
+              toInclusive ? nextValue(new StringValue(to)) : new StringValue(to));
     }
 
     /**
