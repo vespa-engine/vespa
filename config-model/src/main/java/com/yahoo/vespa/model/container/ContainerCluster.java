@@ -37,7 +37,6 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
-import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.Component;
@@ -79,7 +78,6 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
  * @author Einar M R Rosenvinge
  * @author Tony Vaagenes
  */
-@RestartConfigs({QrStartConfig.class})
 public abstract class ContainerCluster<CONTAINER extends Container>
         extends AbstractConfigProducer<AbstractConfigProducer<?>>
         implements

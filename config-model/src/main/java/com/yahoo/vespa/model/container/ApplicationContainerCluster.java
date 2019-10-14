@@ -18,7 +18,6 @@ import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.model.application.validation.RestartConfigs;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConfigProducerGroup;
 import com.yahoo.vespa.model.container.component.Servlet;
@@ -41,7 +40,6 @@ import java.util.stream.Stream;
  *
  * @author gjoranv
  */
-@RestartConfigs({QrStartConfig.class})
 public final class ApplicationContainerCluster extends ContainerCluster<ApplicationContainer> implements
         BundlesConfig.Producer,
         QrStartConfig.Producer,
