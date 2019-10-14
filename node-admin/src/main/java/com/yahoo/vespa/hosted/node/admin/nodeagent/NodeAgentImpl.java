@@ -210,7 +210,7 @@ public class NodeAgentImpl implements NodeAgent {
                 return Optional.empty();
             }
 
-            shouldRestartServices(context.node()).ifPresent(restartReason -> {
+            shouldRestartServices(context, existingContainer.get()).ifPresent(restartReason -> {
                 context.log(logger, "Will restart services: " + restartReason);
                 restartServices(context, existingContainer.get());
                 currentRestartGeneration = context.node().wantedRestartGeneration();
@@ -220,14 +220,23 @@ public class NodeAgentImpl implements NodeAgent {
         return existingContainer;
     }
 
-    private Optional<String> shouldRestartServices(NodeSpec node) {
-        if (!node.wantedRestartGeneration().isPresent()) return Optional.empty();
+    private Optional<String> shouldRestartServices( NodeAgentContext context, Container existingContainer) {
+        NodeSpec node = context.node();
+        if (node.wantedRestartGeneration().isEmpty()) return Optional.empty();
 
         // Restart generation is only optional because it does not exist for unallocated nodes
         if (currentRestartGeneration.get() < node.wantedRestartGeneration().get()) {
             return Optional.of("Restart requested - wanted restart generation has been bumped: "
                     + currentRestartGeneration.get() + " -> " + node.wantedRestartGeneration().get());
         }
+
+        // Restart services if wanted memory changes (searchnode and container needs to be restarted to pick up changes)
+        ContainerResources wantedContainerResources = getContainerResources(context);
+        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
+            return Optional.of("Container should be running with different memory allocation, wanted: " +
+                                       wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
+        }
+
         return Optional.empty();
     }
 
@@ -288,16 +297,6 @@ public class NodeAgentImpl implements NodeAgent {
         if (currentRebootGeneration < context.node().wantedRebootGeneration()) {
             return Optional.of(String.format("Container reboot wanted. Current: %d, Wanted: %d",
                     currentRebootGeneration, context.node().wantedRebootGeneration()));
-        }
-
-        // Even though memory can be easily changed with docker update, we need to restart the container
-        // for proton to pick up the change. If/when proton could detect available memory correctly (rather than reading
-        // VESPA_TOTAL_MEMORY_MB env. variable set in DockerOperation), it would be enough with a services restart
-        // TODO: Change to Vespa restart once all tenant applications are > 7.111
-        ContainerResources wantedContainerResources = getContainerResources(context);
-        if (!wantedContainerResources.equalsMemory(existingContainer.resources)) {
-            return Optional.of("Container should be running with different memory allocation, wanted: " +
-                    wantedContainerResources.toStringMemory() + ", actual: " + existingContainer.resources.toStringMemory());
         }
 
         if (containerState == STARTING) return Optional.of("Container failed to start");
