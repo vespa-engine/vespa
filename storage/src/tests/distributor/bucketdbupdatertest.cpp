@@ -61,6 +61,7 @@ class BucketDBUpdaterTest : public Test,
 {
 public:
     BucketDBUpdaterTest();
+    ~BucketDBUpdaterTest() override;
 
     auto &defaultDistributorBucketSpace() { return getBucketSpaceRepo().get(makeBucketSpace()); }
 
@@ -554,6 +555,8 @@ BucketDBUpdaterTest::BucketDBUpdaterTest()
       _bucketSpaces()
 {
 }
+
+BucketDBUpdaterTest::~BucketDBUpdaterTest() = default;
 
 TEST_F(BucketDBUpdaterTest, normal_usage) {
     setSystemState(lib::ClusterState("distributor:2 .0.s:i .1.s:i storage:3"));

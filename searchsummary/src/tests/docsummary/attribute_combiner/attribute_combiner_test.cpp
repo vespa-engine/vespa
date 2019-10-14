@@ -54,18 +54,23 @@ struct FieldBlock {
     search::RawBuf binary;
     vespalib::string json;
 
-    explicit FieldBlock(const vespalib::string &jsonInput)
-        : input(jsonInput), slime(), binary(1024), json()
-    {
-        size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
-        EXPECT_TRUE(used > 0);
-        json = toCompactJsonString(slime);
-        search::SlimeOutputRawBufAdapter adapter(binary);
-        vespalib::slime::BinaryFormat::encode(slime, adapter);
-    }
+    explicit FieldBlock(const vespalib::string &jsonInput);
+    ~FieldBlock();
     const char *data() const { return binary.GetDrainPos(); }
     size_t dataLen() const { return binary.GetUsedLen(); }
 };
+
+FieldBlock::FieldBlock(const vespalib::string &jsonInput)
+    : input(jsonInput), slime(), binary(1024), json()
+{
+    size_t used = vespalib::slime::JsonFormat::decode(jsonInput, slime);
+    EXPECT_TRUE(used > 0);
+    json = toCompactJsonString(slime);
+    search::SlimeOutputRawBufAdapter adapter(binary);
+    vespalib::slime::BinaryFormat::encode(slime, adapter);
+}
+
+FieldBlock::~FieldBlock() = default;
 
 struct AttributeManagerFixture
 {
