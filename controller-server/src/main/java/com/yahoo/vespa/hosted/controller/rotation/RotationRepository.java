@@ -6,11 +6,9 @@ import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -58,15 +56,7 @@ public class RotationRepository {
         return new RotationLock(curator.lockRotations());
     }
 
-    /** Get rotation for given application */
-    public Optional<Rotation> getRotation(Instance instance) {
-        return instance.rotations().stream()
-                       .map(AssignedRotation::rotationId)
-                       .map(allRotations::get)
-                       .findFirst();
-    }
-
-    /** Get rotation for the given rotationId */
+    /** Get rotation by given rotationId */
     public Optional<Rotation> getRotation(RotationId rotationId) {
         return Optional.of(allRotations.get(rotationId));
     }
