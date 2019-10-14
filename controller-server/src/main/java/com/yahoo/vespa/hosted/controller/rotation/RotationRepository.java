@@ -62,7 +62,8 @@ public class RotationRepository {
     }
 
     /**
-     * Returns a rotation for the given application
+     * Returns a single rotation for the given application. This is only used when a rotation is assigned through the
+     * use of a global service ID.
      *
      * If a rotation is already assigned to the application, that rotation will be returned.
      * If no rotation is assigned, return an available rotation. The caller is responsible for assigning the rotation.
@@ -71,7 +72,7 @@ public class RotationRepository {
      * @param instance the instance requesting a rotation
      * @param lock lock which must be acquired by the caller
      */
-    public Rotation getOrAssignRotation(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
+    private Rotation getOrAssignRotation(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
         if ( ! instance.rotations().isEmpty()) {
             return allRotations.get(instance.rotations().get(0).rotationId());
         }
