@@ -26,6 +26,8 @@ vespa_add_library(vespalib
     INSTALL lib64
     DEPENDS
     ${VESPA_GCC_LIB}
+    ssl
+    crypto
 )
 
 vespa_add_target_package_dependency(vespalib OpenSSL)
