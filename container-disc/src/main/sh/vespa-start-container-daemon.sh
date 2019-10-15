@@ -85,6 +85,7 @@ configure_memory() {
     # Safety measure against bad of min vs max heapsize.
    if ((jvm_minHeapsize > jvm_heapsize)); then
         jvm_minHeapsize=${jvm_heapsize}
+        echo "Misconfigured heap size, jvm_minHeapsize(${jvm_minHeapsize} is larger than jvm_heapsize(${jvm_heapsize}). It has been capped."
    fi
 
     maxDirectMemorySize=$(( jvm_baseMaxDirectMemorySize + jvm_heapsize / 8 + jvm_directMemorySizeCache ))
