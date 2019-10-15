@@ -70,15 +70,15 @@ Options related to operation visibility:
                             the cluster before returning.
 
 Node selection options. By default, nodes running locally will be selected:
- -c --cluster             : Cluster name of cluster to query. If unspecified,
+ -c --cluster             : Cluster name. If unspecified,
                             and vespa is installed on current node, information
                             will be attempted auto-extracted
- -f --force               : Force the execution of a dangerous command.
- -t --type                : Node type to query. This can either be 'storage' or
+ -f --force               : Force execution
+ -t --type                : Node type - can either be 'storage' or
                             'distributor'. If not specified, the operation will
-                            show state for all types.
- -i --index               : The node index to show state for. If not specified,
-                            all nodes found running on this host will be shown.
+                            use state for both types.
+ -i --index               : Node index. If not specified,
+                            all nodes found running on this host will be used.
 
 Config retrieval options:
  --config-server          : Host name of config server to query
