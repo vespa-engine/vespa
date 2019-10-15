@@ -49,7 +49,10 @@ public class NodeRebooter extends Maintainer {
     }
     
     private boolean shouldReboot(Node node) {
-        if (node.history().hasEventAfter(History.Event.Type.rebooted, clock.instant().minus(rebootInterval)))
+        var rebootEvents = EnumSet.of(History.Event.Type.rebooted, History.Event.Type.osUpgraded);
+        var acceptableRebootInstant = clock.instant().minus(rebootInterval);
+
+        if (rebootEvents.stream().anyMatch(event -> node.history().hasEventAfter(event, acceptableRebootInstant)))
             return false;
         else // schedule with a probability such that reboots of nodes are spread roughly over the reboot interval
             return random.nextDouble() < (double) interval().getSeconds() / (double)rebootInterval.getSeconds();
