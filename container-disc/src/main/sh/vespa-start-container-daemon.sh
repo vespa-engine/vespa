@@ -82,6 +82,11 @@ configure_memory() {
         jvm_minHeapsize=${jvm_heapsize}
     fi
 
+    # Safety measure against bad of min vs max heapsize.
+   if ((jvm_minHeapsize > jvm_heapsize)); then
+        jvm_minHeapsize=${jvm_heapsize}
+   fi
+
     maxDirectMemorySize=$(( jvm_baseMaxDirectMemorySize + jvm_heapsize / 8 + jvm_directMemorySizeCache ))
 
     memory_options="-Xms${jvm_minHeapsize}m -Xmx${jvm_heapsize}m"
