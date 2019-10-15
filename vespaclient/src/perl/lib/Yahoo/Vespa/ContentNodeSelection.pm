@@ -51,25 +51,25 @@ sub registerCommandLineArguments { # (Flags)
     setStringOption(
             ['c', 'cluster'],
             \$CLUSTER,
-            'Cluster name of cluster to query. '
+            'Cluster name. '
           . 'If unspecified, and vespa is installed on current node, '
           . 'information will be attempted auto-extracted');
     setFlagOption(
         ['f', 'force'],
         \$FORCE,
-        'Force the execution of a dangerous command.');
+        'Force execution');
     if (($flags & CLUSTER_ONLY_LIMITATION) == 0) {
         setStringOption(
                 ['t', 'type'],
                 \$NODE_TYPE,
-                'Node type to query. This can either be \'storage\' or '
-              . '\'distributor\'. If not specified, the operation will show '
-              . 'state for all types.');
+                'Node type - can either be \'storage\' or '
+              . '\'distributor\'. If not specified, the operation will use '
+              . 'state for both types.');
         setIntegerOption(
                 ['i', 'index'],
                 \$INDEX,
-                'The node index to show state for. If not specified, all nodes '
-              . 'found running on this host will be shown.');
+                'Node index. If not specified, all nodes '
+              . 'found running on this host will be used.');
     }
 }
 sub visit { # (Callback)
