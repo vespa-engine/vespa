@@ -11,10 +11,14 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
+import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
@@ -712,6 +716,37 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         root.getConfig(qrStartBuilder, "container/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals("KMP_SETTING=1 KMP_AFFINITY=granularity=fine,verbose,compact,1,0 ", qrStartConfig.qrs().env());
+    }
+
+    private void verifyAvailableprocessors(boolean isHosted, Flavor flavor, int expectProcessors) throws IOException, SAXException {
+        DeployState deployState = new DeployState.Builder()
+                .modelHostProvisioner(flavor != null ? new SingleNodeProvisioner(flavor) : new SingleNodeProvisioner())
+                .properties(new TestProperties()
+                        .setMultitenant(isHosted)
+                        .setHostedVespa(isHosted))
+                .build();
+        MockRoot myRoot = new MockRoot("root", deployState);
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <nodes>",
+                "    <node hostalias='localhost'/>",
+                "  </nodes>",
+                "</container>"
+        );
+
+        createModel(myRoot, clusterElem);
+        QrStartConfig.Builder qsB = new QrStartConfig.Builder();
+        myRoot.getConfig(qsB, "container/container.0");
+        QrStartConfig qsC= new QrStartConfig(qsB);
+        assertEquals(expectProcessors, qsC.jvm().availableProcessors());
+    }
+
+    @Test
+    public void requireThatAvailableProcessorsFollowFlavor() throws IOException, SAXException {
+        verifyAvailableprocessors(false, null,0);
+        verifyAvailableprocessors(true, null,0);
+        verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()), 9);
+        verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(1).build()), 2);
     }
 
     @Test

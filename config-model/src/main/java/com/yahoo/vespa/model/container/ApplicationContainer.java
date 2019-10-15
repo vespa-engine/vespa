@@ -3,9 +3,11 @@ package com.yahoo.vespa.model.container;
 
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.Flavor;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.fastsearch.FS4ResourcePool;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.component.Component;
 
 /**
@@ -13,7 +15,7 @@ import com.yahoo.vespa.model.container.component.Component;
  *
  * @author gjoranv
  */
-public final class ApplicationContainer extends Container {
+public final class ApplicationContainer extends Container implements QrStartConfig.Producer {
 
     private static final String defaultHostedJVMArgs = "-XX:+UseOSErrorReporting -XX:+SuppressFatalErrorMessage";
 
@@ -36,6 +38,15 @@ public final class ApplicationContainer extends Container {
         return new Component<>(new ComponentModel(spec));
     }
 
+    @Override
+    public void getConfig(QrStartConfig.Builder builder) {
+        if (getHostResource() != null) {
+            if (getHostResource().getFlavor().isPresent()) {
+                NodeFlavorTuning flavorTuning = new NodeFlavorTuning(getHostResource().getFlavor().get());
+                flavorTuning.getConfig(builder);
+            }
+        }
+    }
 
     @Override
     protected ContainerServiceType myServiceType() {
