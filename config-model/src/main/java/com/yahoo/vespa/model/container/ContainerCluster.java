@@ -154,7 +154,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private String hostClusterId = null;
     private String jvmGCOptions = null;
     private String environmentVars = null;
-    private Integer memoryPercentage = null;
 
 
     public ContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
@@ -605,16 +604,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      */
     public Optional<String> getHostClusterId() { return Optional.ofNullable(hostClusterId); }
 
-    public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage; }
     public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
-    public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
-    public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
-    /**
-     * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
-     * or empty if this is not specified by the application.
-     */
-    public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
+    public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
+
+    public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
     public final void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }
 
