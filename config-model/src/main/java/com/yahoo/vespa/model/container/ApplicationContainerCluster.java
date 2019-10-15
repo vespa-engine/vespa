@@ -62,6 +62,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
 
+    private Integer memoryPercentage = null;
+
     public ApplicationContainerCluster(AbstractConfigProducer<?> parent, String subId, String name, DeployState deployState) {
         super(parent, subId, name, deployState);
 
@@ -140,6 +142,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private Stream<Jersey2Servlet> allJersey2Servlets() {
         return restApiGroup.getComponents().stream().map(RestApi::getJersey2Servlet);
     }
+
+    public void setMemoryPercentage(Integer memoryPercentage) { this.memoryPercentage = memoryPercentage;
+    }
+
+    /**
+     * Returns the percentage of host physical memory this application has specified for nodes in this cluster,
+     * or empty if this is not specified by the application.
+     */
+    public Optional<Integer> getMemoryPercentage() { return Optional.ofNullable(memoryPercentage); }
 
     @Override
     public void getConfig(BundlesConfig.Builder builder) {
