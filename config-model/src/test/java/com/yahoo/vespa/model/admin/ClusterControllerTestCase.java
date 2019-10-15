@@ -328,10 +328,6 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
     @Test
     public void testUnconfiguredNoTuning() throws Exception {
-        verifyUnconfiguredNoTuning(false);
-        verifyUnconfiguredNoTuning(true);
-    }
-    private void verifyUnconfiguredNoTuning(boolean isHosted) throws Exception {
         String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
                 "<services>\n" +
                 "\n" +
@@ -355,18 +351,18 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                 "\n" +
                 "</services>";
 
-        VespaModel model = createVespaModel(xml, isHosted);
+        VespaModel model = createVespaModel(xml, false);
         assertTrue(model.getService("admin/cluster-controllers/0").isPresent());
 
         assertTrue(existsHostsWithClusterControllerConfigId(model));
         assertGroupSize(model, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer", 1);
-        assertThat(model.getAdmin().getClusterControllers().getContainers().size(), is(1));
+        assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());
 
         FleetcontrollerConfig.Builder builder = new FleetcontrollerConfig.Builder();
         model.getConfig(builder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
 
         FleetcontrollerConfig cfg = new FleetcontrollerConfig(builder);
-        assertThat(cfg.index(), is(0));
+        assertEquals(0, cfg.index());
 
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");

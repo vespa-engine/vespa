@@ -401,9 +401,11 @@ public class StorageGroup {
             Optional<NodesSpecification> nodeRequirement;
             if (nodesElement.isPresent() && nodesElement.get().stringAttribute("count") != null ) // request these nodes
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
+            else if (nodesElement.isPresent() && context.getDeployState().isHosted() && context.getDeployState().zone().environment().isManuallyDeployed() ) // default to 1 node
+                nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (! nodesElement.isPresent() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
-            else // Nodes or groups explicitly listed, and/opr not hosted - resolve in GroupBuilder
+            else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 
             return new GroupBuilder(group, subGroups, explicitNodes, nodeRequirement, context.getDeployLogger());
