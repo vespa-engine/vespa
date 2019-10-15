@@ -31,6 +31,13 @@ MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_fiel
 
 std::unique_ptr<IDocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
+                                 std::shared_ptr<StructFieldMapper> struct_field_mapper)
+{
+    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(struct_field_mapper));
+}
+
+std::unique_ptr<IDocsumFieldWriter>
+MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
                                  search::attribute::IAttributeContext& attr_ctx,
                                  std::shared_ptr<StructFieldMapper> struct_field_mapper)
 {

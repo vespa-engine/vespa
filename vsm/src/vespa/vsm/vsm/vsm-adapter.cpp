@@ -2,6 +2,7 @@
 
 #include "vsm-adapter.h"
 #include "docsumconfig.h"
+#include "i_matching_elements_filler.h"
 #include <vespa/searchlib/common/matching_elements.h>
 
 #include <vespa/log/log.h>
@@ -16,7 +17,8 @@ namespace vsm {
 
 GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _summaryFeatures(),
-    _rankFeatures()
+    _rankFeatures(),
+    _matching_elements_filler()
 { }
 
 void GetDocsumsStateCallback::FillSummaryFeatures(GetDocsumsState * state, IDocsumEnvironment * env)
@@ -48,9 +50,18 @@ void GetDocsumsStateCallback::FillDocumentLocations(GetDocsumsState *state, IDoc
 }
 
 std::unique_ptr<MatchingElements>
-GetDocsumsStateCallback::fill_matching_elements(const search::StructFieldMapper &)
+GetDocsumsStateCallback::fill_matching_elements(const search::StructFieldMapper& struct_field_mapper)
 {
+    if (_matching_elements_filler) {
+        return _matching_elements_filler->fill_matching_elements(struct_field_mapper);
+    }
     return std::make_unique<MatchingElements>();
+}
+
+void
+GetDocsumsStateCallback::set_matching_elements_filler(std::unique_ptr<IMatchingElementsFiller> matching_elements_filler)
+{
+    _matching_elements_filler = std::move(matching_elements_filler);
 }
 
 GetDocsumsStateCallback::~GetDocsumsStateCallback() = default;
@@ -156,7 +167,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsumTools->setJuniper(std::move(juniper));
 
     // configure dynamic docsum writer
-    DynamicDocsumConfig dynDocsumConfig(docsumTools.get(), docsumTools->getDocsumWriter());
+    DynamicDocsumConfig dynDocsumConfig(docsumTools.get(), docsumTools->getDocsumWriter(), _fieldsCfg.get());
     dynDocsumConfig.configure(*summaryMap.get());
 
     // configure new docsum tools

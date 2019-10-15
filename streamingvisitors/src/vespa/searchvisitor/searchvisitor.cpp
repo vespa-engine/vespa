@@ -15,6 +15,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/databuffer.h>
+#include "matching_elements_filler.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
@@ -1114,8 +1115,10 @@ SearchVisitor::generateDocumentSummaries()
     if ( ! _rankController.valid()) {
         return;
     }
-    _summaryGenerator.setDocsumCache(_rankController.getRankProcessor()->getHitCollector());
+    auto& hit_collector = _rankController.getRankProcessor()->getHitCollector();
+    _summaryGenerator.setDocsumCache(hit_collector);
     vdslib::SearchResult & searchResult(_queryResult->getSearchResult());
+    _summaryGenerator.getDocsumCallback().set_matching_elements_filler(std::make_unique<MatchingElementsFiller>(_fieldSearcherMap, _query, hit_collector, searchResult));
     vdslib::DocumentSummary & documentSummary(_queryResult->getDocumentSummary());
     for (size_t i(0), m(searchResult.getHitCount()); (i < m) && (i < searchResult.getWantedHitCount()); i++ ) {
         const char * docId(nullptr);
