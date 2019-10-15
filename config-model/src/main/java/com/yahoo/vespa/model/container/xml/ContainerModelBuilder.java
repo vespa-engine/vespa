@@ -499,8 +499,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     void extractJvmFromLegacyNodesTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                                      Element nodesElement, ConfigModelContext context)
-    {
+                                      Element nodesElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, getJvmOptions(cluster, nodesElement, context.getDeployLogger()));
 
         if (!cluster.getJvmGCOptions().isPresent()) {
@@ -512,9 +511,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         applyMemoryPercentage(cluster, nodesElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
     }
+
     void extractJvmTag(List<ApplicationContainer> nodes, ApplicationContainerCluster cluster,
-                       Element jvmElement, ConfigModelContext context)
-    {
+                       Element jvmElement, ConfigModelContext context) {
         applyNodesTagJvmArgs(nodes, jvmElement.getAttribute(VespaDomBuilder.OPTIONS));
         applyMemoryPercentage(cluster, jvmElement.getAttribute(VespaDomBuilder.Allocated_MEMORY_ATTRIB_NAME));
         String jvmGCOptions = jvmElement.hasAttribute(VespaDomBuilder.GC_OPTIONS)
@@ -522,9 +521,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 : null;
         cluster.setJvmGCOptions(buildJvmGCOptions(context.getDeployState().zone(), jvmGCOptions, context.getDeployState().isHosted()));
     }
+
     private void addNodesFromXml(ApplicationContainerCluster cluster, Element containerElement, ConfigModelContext context) {
         Element nodesElement = XML.getChild(containerElement, "nodes");
-        Element rotationsElement = XML.getChild(containerElement, "rotations");
         if (nodesElement == null) { // default single node on localhost
             ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
             HostResource host = allocateSingleNodeHost(cluster, log, containerElement, context);
@@ -564,12 +563,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private List<ApplicationContainer> createNodes(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
-        if (nodesElement.hasAttribute("count")) // regular, hosted node spec
-            return createNodesFromNodeCount(cluster, nodesElement, context);
-        else if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
+        if (nodesElement.hasAttribute("type")) // internal use for hosted system infrastructure nodes
             return createNodesFromNodeType(cluster, nodesElement, context);
         else if (nodesElement.hasAttribute("of")) // hosted node spec referencing a content cluster
             return createNodesFromContentServiceReference(cluster, nodesElement, context);
+        else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
+            return createNodesFromNodeCount(cluster, nodesElement, context);
+        else if (cluster.isHostedVespa() && cluster.getZone().environment().isManuallyDeployed()) // default to 1 in manual zones
+            return createNodesFromNodeCount(cluster, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
     }

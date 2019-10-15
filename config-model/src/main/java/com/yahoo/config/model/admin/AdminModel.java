@@ -77,6 +77,10 @@ public class AdminModel extends ConfigModel {
 
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
+            if (modelContext.getDeployState().isHosted()) { // admin v2 is used on hosted: Build a default V4 instead
+                new BuilderV4().doBuild(model, adminElement, modelContext);
+                return;
+            }
             AbstractConfigProducer parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();
             DomAdminV2Builder domBuilder = new DomAdminV2Builder(modelContext.getApplicationType(),

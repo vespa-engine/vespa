@@ -63,13 +63,13 @@ public class NodesSpecification {
 
     private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
         this(dedicated,
-             nodesElement.requiredIntegerAttribute("count"),
+             nodesElement.integerAttribute("count", 1),
              nodesElement.integerAttribute("groups", 1),
              version,
              nodesElement.booleanAttribute("required", false),
              canFail,
              nodesElement.booleanAttribute("exclusive", false),
-             getFlavor(nodesElement),
+             getResources(nodesElement),
              Optional.ofNullable(nodesElement.stringAttribute("docker-image")));
     }
 
@@ -162,7 +162,7 @@ public class NodesSpecification {
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
 
-    private static Optional<NodeResources> getFlavor(ModelElement nodesElement) {
+    private static Optional<NodeResources> getResources(ModelElement nodesElement) {
         ModelElement resources = nodesElement.child("resources");
         if (resources != null) {
             return Optional.of(new NodeResources(resources.requiredDoubleAttribute("vcpu"),
