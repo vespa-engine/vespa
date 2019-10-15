@@ -97,6 +97,7 @@ public class MetricsProxyContainerClusterTest {
     private void metrics_proxy_has_expected_qr_start_options(MetricsProxyModelTester.TestMode mode) {
         VespaModel model = getModel(servicesWithAdminOnly(), mode);
         QrStartConfig qrStartConfig = getQrStartConfig(model);
+        assertEquals(32, qrStartConfig.jvm().minHeapsize());
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());

@@ -486,6 +486,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         builder.jvm
                 .verbosegc(false)
                 .availableProcessors(2)
+                .minHeapsize(32)
                 .heapsize(512)
                 .heapSizeAsPercentageOfPhysicalMemory(0)
                 .gcopts(Objects.requireNonNullElse(jvmGCOptions, G1GC));

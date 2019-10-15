@@ -48,8 +48,6 @@ public class MetricsProxyContainer extends Container implements
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
-
-        appendJvmOptions("-Xms32m");
     }
 
     private void addNodeSpecificComponents() {

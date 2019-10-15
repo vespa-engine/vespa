@@ -60,6 +60,7 @@ getconfig() {
 }
 
 configure_memory() {
+    consider_fallback jvm_minHeapsize 1536
     consider_fallback jvm_heapsize 1536
     consider_fallback jvm_stacksize 512
     consider_fallback jvm_baseMaxDirectMemorySize 75
@@ -78,11 +79,12 @@ configure_memory() {
         if (( jvm_heapsize < 1024 )); then
             jvm_heapsize=1024
         fi
+        jvm_minHeapsize=${jvm_heapsize}
     fi
 
     maxDirectMemorySize=$(( jvm_baseMaxDirectMemorySize + jvm_heapsize / 8 + jvm_directMemorySizeCache ))
 
-    memory_options="-Xms${jvm_heapsize}m -Xmx${jvm_heapsize}m"
+    memory_options="-Xms${jvm_minHeapsize}m -Xmx${jvm_heapsize}m"
     memory_options="${memory_options} -XX:ThreadStackSize=${jvm_stacksize}"
     memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"    
 

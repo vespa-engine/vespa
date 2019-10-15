@@ -371,6 +371,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
+        assertEquals(32, qrStartConfig.jvm().minHeapsize());
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());

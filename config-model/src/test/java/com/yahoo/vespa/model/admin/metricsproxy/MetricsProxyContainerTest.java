@@ -50,17 +50,6 @@ public class MetricsProxyContainerTest {
         }
     }
 
-    private void metrics_proxy_requires_less_memory_than_other_containers(MetricsProxyModelTester.TestMode mode) {
-        VespaModel model = getModel(servicesWithContent(), mode);
-        MetricsProxyContainer container = (MetricsProxyContainer)model.id2producer().get(configId(model, mode));
-        assertThat(container.getStartupCommand(), containsString("-Xms32m"));
-    }
-    @Test
-    public void metrics_proxy_requires_less_memory_than_other_containers() {
-        metrics_proxy_requires_less_memory_than_other_containers(self_hosted);
-        metrics_proxy_requires_less_memory_than_other_containers(hosted);
-    }
-
     @Test
     public void http_server_is_running_on_expected_port() {
         VespaModel model = getModel(servicesWithContent(), self_hosted);
