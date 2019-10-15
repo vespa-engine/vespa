@@ -185,7 +185,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         super.getConfig(builder);
         builder.jvm.verbosegc(true)
                 .availableProcessors(0)
-                .minheapsize(1536)
+                .minHeapsize(1536)
                 .heapsize(1536);
         if (getMemoryPercentage().isPresent()) {
             builder.jvm.heapSizeAsPercentageOfPhysicalMemory(getMemoryPercentage().get());

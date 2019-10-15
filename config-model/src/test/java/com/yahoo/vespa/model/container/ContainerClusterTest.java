@@ -154,7 +154,7 @@ public class ContainerClusterTest {
         QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
         cluster.getConfig(qrBuilder);
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
-        assertEquals(32, qrStartConfig.jvm().minheapsize());
+        assertEquals(32, qrStartConfig.jvm().minHeapsize());
         assertEquals(512, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
 

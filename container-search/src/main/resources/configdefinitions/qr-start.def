@@ -14,8 +14,8 @@ jvm.gcopts string default="-XX:+UseG1GC -XX:MaxTenuringThreshold=15 -XX:NewRatio
 ## Heap size (in megabytes) for the Java VM
 jvm.heapsize int default=1536 restart
 
-## Min heapsize for the Java VM
-jvm.minheapsize int default=1536 restart
+## Min heapsize (in megabytes) for the Java VM
+jvm.minHeapsize int default=1536 restart
 
 ## Stack size (in kilobytes)
 jvm.stacksize int default=512 restart
