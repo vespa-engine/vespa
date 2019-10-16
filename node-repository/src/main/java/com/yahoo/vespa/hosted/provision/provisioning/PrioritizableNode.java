@@ -189,8 +189,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     /** The mean and mean deviation (squared difference) of a bunch of numbers */
     private static class Mean {
 
-        private double mean;
-        private double deviation;
+        private final double mean;
+        private final double deviation;
 
         private Mean(double ... numbers) {
             mean = Arrays.stream(numbers).sum() / numbers.length;
