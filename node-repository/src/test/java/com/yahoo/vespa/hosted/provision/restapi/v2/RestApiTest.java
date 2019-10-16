@@ -165,23 +165,23 @@ public class RestApiTest {
                        "{\"message\":\"Removed host8.yahoo.com\"}");
 
         // or, PUT a node in failed ...
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-101-2",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-102-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-node-pool-101-2 to failed\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2"),
+                       "{\"message\":\"Moved test-node-pool-102-2 to failed\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2"),
                                            "\"state\":\"failed\"");
         // ... and deallocate it such that it moves to dirty and is recycled
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-node-pool-101-2",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/test-node-pool-102-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-node-pool-101-2 to dirty\"}");
+                       "{\"message\":\"Moved test-node-pool-102-2 to dirty\"}");
 
         // ... and set it back to ready as if this was from the node-admin with the temporary state rest api
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-node-pool-101-2",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/test-node-pool-102-2",
                         new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved test-node-pool-101-2 to ready\"}");
+                "{\"message\":\"Moved test-node-pool-102-2 to ready\"}");
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",  new byte[0], Request.Method.GET),
-                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-node-pool-101-2'\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",  new byte[0], Request.Method.GET),
+                404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-node-pool-102-2'\"}");
 
         // Put a host in failed and make sure it's children are also failed
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),
@@ -286,10 +286,10 @@ public class RestApiTest {
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot assign [127.0.1.1] to tenant-node-foo.yahoo.com: [127.0.1.1] already assigned to host1.yahoo.com\"}");
 
         // Attempt to PATCH existing tenant node with already assigned IP
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",
                                    "{\"ipAddresses\": [\"127.0.2.1\"]}",
                                    Request.Method.PATCH), 400,
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [127.0.2.1] to test-node-pool-101-2: [127.0.2.1] already assigned to host2.yahoo.com\"}");
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'ipAddresses': Cannot assign [127.0.2.1] to test-node-pool-102-2: [127.0.2.1] already assigned to host2.yahoo.com\"}");
 
         // Attempt to POST host node with already assigned IP
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -480,7 +480,7 @@ public class RestApiTest {
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot add host8.yahoo.com: A node with this name already exists\"}");
 
         // Attempt to PATCH field not relevant for child node
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-101-2",
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",
                                    Utf8.toBytes("{\"modelName\": \"foo\"}"), Request.Method.PATCH),
                        400,
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'modelName': A child node cannot have model name set\"}");

@@ -109,44 +109,79 @@ public class DynamicDockerAllocationTest {
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         deployZoneApp(tester);
         List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, Node.State.active);
-        NodeResources flavor = new NodeResources(1, 4, 10, 0.3);
+        NodeResources resources = new NodeResources(1, 4, 10, 0.3);
 
         // Application 1
         ApplicationId application1 = makeApplicationId("t1", "a1");
         ClusterSpec clusterSpec1 = clusterSpec("myContent.t1.a1");
-        deployApp(application1, clusterSpec1, flavor, tester, 3);
+        deployApp(application1, clusterSpec1, resources, tester, 3);
 
         // Application 2
         ApplicationId application2 = makeApplicationId("t2", "a2");
         ClusterSpec clusterSpec2 = clusterSpec("myContent.t2.a2");
-        deployApp(application2, clusterSpec2, flavor, tester, 2);
+        deployApp(application2, clusterSpec2, resources, tester, 2);
 
         // Application 3
         ApplicationId application3 = makeApplicationId("t3", "a3");
         ClusterSpec clusterSpec3 = clusterSpec("myContent.t3.a3");
-        deployApp(application3, clusterSpec3, flavor, tester, 2);
+        deployApp(application3, clusterSpec3, resources, tester, 2);
 
         // App 2 and 3 should have been allocated to the same nodes - fail one of the parent hosts from there
-        String parent = tester.nodeRepository().getNodes(application2).stream().findAny().get().parentHostname().get();
+        String parent = "host-1.yahoo.com";
         tester.nodeRepository().failRecursively(parent, Agent.system, "Testing");
 
         // Redeploy all applications
-        deployApp(application1, clusterSpec1, flavor, tester, 3);
-        deployApp(application2, clusterSpec2, flavor, tester, 2);
-        deployApp(application3, clusterSpec3, flavor, tester, 2);
+        deployApp(application1, clusterSpec1, resources, tester, 3);
+        deployApp(application2, clusterSpec2, resources, tester, 2);
+        deployApp(application3, clusterSpec3, resources, tester, 2);
 
         Map<Integer, Integer> numberOfChildrenStat = new HashMap<>();
-        for (Node node : dockerHosts) {
-            int nofChildren = tester.nodeRepository().list().childrenOf(node).size();
+        for (Node host : dockerHosts) {
+            int nofChildren = tester.nodeRepository().list().childrenOf(host).size();
             if (!numberOfChildrenStat.containsKey(nofChildren)) {
                 numberOfChildrenStat.put(nofChildren, 0);
             }
             numberOfChildrenStat.put(nofChildren, numberOfChildrenStat.get(nofChildren) + 1);
         }
 
-        assertEquals(3, numberOfChildrenStat.get(3).intValue());
-        assertEquals(1, numberOfChildrenStat.get(0).intValue());
+        assertEquals(4, numberOfChildrenStat.get(2).intValue());
         assertEquals(1, numberOfChildrenStat.get(1).intValue());
+    }
+
+    @Test
+    public void test_allocation_balancing() {
+        // Here we test balancing between cpu and memory and ignore disk
+
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        tester.makeReadyNodes(3, "flt", NodeType.host, 8); // cpu: 30, mem: 30
+        tester.makeReadyNodes(3, "cpu", NodeType.host, 8); // cpu: 40, mem: 20
+        tester.makeReadyNodes(3, "mem", NodeType.host, 8); // cpu: 20, mem: 40
+        deployZoneApp(tester);
+        NodeResources fltResources = new NodeResources(6, 6, 1, 0.1);
+        NodeResources cpuResources = new NodeResources(8, 4, 1, 0.1);
+        NodeResources memResources = new NodeResources(4, 8, 1, 0.1);
+
+        // Cpu heavy application
+        ApplicationId application1 = makeApplicationId("t1", "a1");
+        deployApp(application1, clusterSpec("c"), cpuResources, tester, 2);
+        tester.assertAllocatedOn("Cpu nodes cause least skew increase", "cpu", application1);
+
+        // Mem heavy application
+        ApplicationId application2 = makeApplicationId("t2", "a2");
+        deployApp(application2, clusterSpec("c"), memResources, tester, 2);
+        tester.assertAllocatedOn("Mem nodes cause least skew increase", "mem", application2);
+
+        // Flat application
+        ApplicationId application3 = makeApplicationId("t3", "a3");
+        deployApp(application3, clusterSpec("c"), fltResources, tester, 2);
+        tester.assertAllocatedOn("Flat nodes cause least skew increase", "flt", application3);
+
+        // Mem heavy application which can't all be allocated on mem nodes
+        ApplicationId application4 = makeApplicationId("t4", "a4");
+        deployApp(application4, clusterSpec("c"), memResources, tester, 3);
+        assertEquals(2, tester.hostFlavorCount("mem", application4));
+        assertEquals(1, tester.hostFlavorCount("flt", application4));
+
     }
 
     /**
@@ -410,8 +445,11 @@ public class DynamicDockerAllocationTest {
 
     private FlavorsConfig flavorsConfig() {
         FlavorConfigBuilder b = new FlavorConfigBuilder();
-        b.addFlavor("host-large", 6., 24., 80, 6, Flavor.Type.BARE_METAL);
-        b.addFlavor("host-small", 3., 12., 40, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-large", 6, 24, 80, 6, Flavor.Type.BARE_METAL);
+        b.addFlavor("host-small", 3, 12, 40, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("flt", 30, 30, 40, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("cpu", 40, 20, 40, 3, Flavor.Type.BARE_METAL);
+        b.addFlavor("mem", 20, 40, 40, 3, Flavor.Type.BARE_METAL);
         return b.build();
     }
 

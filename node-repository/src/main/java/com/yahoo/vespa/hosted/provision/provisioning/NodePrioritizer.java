@@ -89,9 +89,7 @@ public class NodePrioritizer {
                     .collect(Collectors.toSet());
     }
 
-    /**
-     * @return The list of nodes sorted by PrioritizableNode::compare
-     */
+    /** Returns the list of nodes sorted by PrioritizableNode::compare */
     List<PrioritizableNode> prioritize() {
         return nodes.values().stream().sorted().collect(Collectors.toList());
     }
@@ -102,7 +100,7 @@ public class NodePrioritizer {
      */
     void addSurplusNodes(List<Node> surplusNodes) {
         for (Node node : surplusNodes) {
-            PrioritizableNode nodePri = toNodePriority(node, true, false);
+            PrioritizableNode nodePri = toPrioritizable(node, true, false);
             if (!nodePri.violatesSpares || isAllocatingForReplacement) {
                 nodes.put(node, nodePri);
             }
@@ -112,7 +110,7 @@ public class NodePrioritizer {
     /**
      * Add a node on each docker host with enough capacity for the requested flavor
      *
-     * @param exclusively Whether the ready docker nodes should only be added on hosts that
+     * @param exclusively whether the ready docker nodes should only be added on hosts that
      *                    already have nodes allocated to this tenant
      */
     void addNewDockerNodes(boolean exclusively) {
@@ -164,7 +162,7 @@ public class NodePrioritizer {
                                                  host.hostname(),
                                                  resources(requestedNodes).withDiskSpeed(host.flavor().resources().diskSpeed()),
                                                  NodeType.tenant);
-            PrioritizableNode nodePri = toNodePriority(newNode, false, true);
+            PrioritizableNode nodePri = toPrioritizable(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {
                 log.log(LogLevel.DEBUG, "Adding new Docker node " + newNode);
                 nodes.put(newNode, nodePri);
@@ -172,9 +170,7 @@ public class NodePrioritizer {
         }
     }
 
-    /**
-     * Add existing nodes allocated to the application
-     */
+    /** Add existing nodes allocated to the application */
     void addApplicationNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.asList().stream()
@@ -182,18 +178,16 @@ public class NodePrioritizer {
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
-                .map(node -> toNodePriority(node, false, false))
+                .map(node -> toPrioritizable(node, false, false))
                 .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
     }
 
-    /**
-     * Add nodes already provisioned, but not allocated to any application
-     */
+    /** Add nodes already provisioned, but not allocated to any application */
     void addReadyNodes() {
         allNodes.asList().stream()
                 .filter(node -> node.type().equals(requestedNodes.type()))
                 .filter(node -> node.state().equals(Node.State.ready))
-                .map(node -> toNodePriority(node, false, false))
+                .map(node -> toPrioritizable(node, false, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
                 .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
     }
@@ -202,14 +196,13 @@ public class NodePrioritizer {
      * Convert a list of nodes to a list of node priorities. This includes finding, calculating
      * parameters to the priority sorting procedure.
      */
-    private PrioritizableNode toNodePriority(Node node, boolean isSurplusNode, boolean isNewNode) {
+    private PrioritizableNode toPrioritizable(Node node, boolean isSurplusNode, boolean isNewNode) {
         PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
                 .withSurplusNode(isSurplusNode)
                 .withNewNode(isNewNode);
 
         allNodes.parentOf(node).ifPresent(parent -> {
             builder.withParent(parent).withFreeParentCapacity(capacity.freeCapacityOf(parent, false));
-
             if (spareHosts.contains(parent)) {
                 builder.withViolatesSpares(true);
             }

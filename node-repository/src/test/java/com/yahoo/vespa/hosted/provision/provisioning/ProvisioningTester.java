@@ -412,6 +412,31 @@ public class ProvisioningTester {
         assertEquals(expectedCount, actualNodesWithFlavor);
     }
 
+    public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
+        for (Node node : nodeRepository.getNodes(app)) {
+            Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
+            assertEquals(node + ": " + explanation, hostFlavor, parent.flavor().name());
+        }
+    }
+
+    public void printFreeResources() {
+        for (Node host : nodeRepository().getNodes(NodeType.host)) {
+            NodeResources free = host.flavor().resources();
+            for (Node child : nodeRepository().getNodes(NodeType.tenant)) {
+                if (child.parentHostname().get().equals(host.hostname()))
+                    free = free.subtract(child.flavor().resources());
+            }
+            System.out.println(host.flavor().name() + " node. Free resources: " + free);
+        }
+    }
+
+    public int hostFlavorCount(String hostFlavor, ApplicationId app) {
+        return (int)nodeRepository().getNodes(app).stream()
+                                                  .map(n -> nodeRepository().getNode(n.parentHostname().get()).get())
+                                                  .filter(p -> p.flavor().name().equals(hostFlavor))
+                                                  .count();
+    }
+
     private Flavor getNodeFlavor(String hostname) {
         return nodeRepository.getNode(hostname).map(Node::flavor).orElseThrow(() -> new RuntimeException("No flavor for host " + hostname));
     }

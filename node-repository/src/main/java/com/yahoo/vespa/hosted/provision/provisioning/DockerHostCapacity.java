@@ -56,8 +56,8 @@ public class DockerHostCapacity {
     /**
      * Calculate the remaining capacity for the dockerHost.
      *
-     * @param dockerHost The host to find free capacity of.
-     * @return A default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
+     * @param dockerHost the host to find free capacity of.
+     * @return a default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
     NodeResources freeCapacityOf(Node dockerHost, boolean excludeInactive) {
         // Only hosts have free capacity
