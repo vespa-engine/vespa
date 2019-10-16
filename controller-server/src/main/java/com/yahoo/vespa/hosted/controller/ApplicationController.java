@@ -49,9 +49,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.DeploymentSpecValidator;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -130,7 +130,7 @@ public class ApplicationController {
     private final Clock clock;
     private final DeploymentTrigger deploymentTrigger;
     private final BooleanFlag provisionApplicationCertificate;
-    private final DeploymentSpecValidator deploymentSpecValidator;
+    private final ApplicationPackageValidator applicationPackageValidator;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
@@ -148,7 +148,7 @@ public class ApplicationController {
         rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         deploymentTrigger = new DeploymentTrigger(controller, controller.serviceRegistry().buildService(), clock);
         provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
-        deploymentSpecValidator = new DeploymentSpecValidator(controller);
+        applicationPackageValidator = new ApplicationPackageValidator(controller);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -455,7 +455,7 @@ public class ApplicationController {
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
     public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        deploymentSpecValidator.validate(applicationPackage.deploymentSpec());
+        applicationPackageValidator.validate(applicationPackage);
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());

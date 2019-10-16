@@ -14,26 +14,26 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * This contains validators for a {@link DeploymentSpec} that depend on a {@link Controller} to perform validation.
+ * This contains validators for a {@link ApplicationPackage} that depend on a {@link Controller} to perform validation.
  *
  * @author mpolden
  */
-public class DeploymentSpecValidator {
+public class ApplicationPackageValidator {
 
     private final Controller controller;
 
-    public DeploymentSpecValidator(Controller controller) {
+    public ApplicationPackageValidator(Controller controller) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
     }
 
     /**
-     * Validate the given deploymentSpec
+     * Validate the given application package
      *
      * @throws IllegalArgumentException if any validations fail
      */
-    public void validate(DeploymentSpec deploymentSpec) {
-        validateSteps(deploymentSpec);
-        validateEndpoints(deploymentSpec);
+    public void validate(ApplicationPackage applicationPackage) {
+        validateSteps(applicationPackage.deploymentSpec());
+        validateEndpoints(applicationPackage.deploymentSpec());
     }
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
