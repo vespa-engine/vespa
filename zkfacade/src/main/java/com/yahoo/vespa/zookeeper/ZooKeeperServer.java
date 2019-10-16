@@ -125,8 +125,6 @@ public class ZooKeeperServer extends AbstractComponent implements Runnable {
         super.deconstruct();
     }
 
-    public ZookeeperServerConfig getZookeeperServerConfig() { return zookeeperServerConfig; }
-
     private static Set<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
         return zookeeperServerConfig.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toSet());
     }
