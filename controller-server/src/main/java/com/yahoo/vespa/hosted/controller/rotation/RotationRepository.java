@@ -6,11 +6,9 @@ import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -58,21 +56,14 @@ public class RotationRepository {
         return new RotationLock(curator.lockRotations());
     }
 
-    /** Get rotation for given application */
-    public Optional<Rotation> getRotation(Instance instance) {
-        return instance.rotations().stream()
-                       .map(AssignedRotation::rotationId)
-                       .map(allRotations::get)
-                       .findFirst();
-    }
-
-    /** Get rotation for the given rotationId */
+    /** Get rotation by given rotationId */
     public Optional<Rotation> getRotation(RotationId rotationId) {
         return Optional.of(allRotations.get(rotationId));
     }
 
     /**
-     * Returns a rotation for the given application
+     * Returns a single rotation for the given application. This is only used when a rotation is assigned through the
+     * use of a global service ID.
      *
      * If a rotation is already assigned to the application, that rotation will be returned.
      * If no rotation is assigned, return an available rotation. The caller is responsible for assigning the rotation.
@@ -81,7 +72,7 @@ public class RotationRepository {
      * @param instance the instance requesting a rotation
      * @param lock lock which must be acquired by the caller
      */
-    public Rotation getOrAssignRotation(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
+    private Rotation getOrAssignRotation(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
         if ( ! instance.rotations().isEmpty()) {
             return allRotations.get(instance.rotations().get(0).rotationId());
         }

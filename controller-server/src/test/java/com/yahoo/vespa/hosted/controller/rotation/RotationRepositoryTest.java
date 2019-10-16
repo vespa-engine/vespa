@@ -73,8 +73,10 @@ public class RotationRepositoryTest {
         assertEquals(URI.create("https://app1--tenant1.global.vespa.oath.cloud:4443/"),
                      instance.endpointsIn(SystemName.main).main().get().url());
         try (RotationLock lock = repository.lock()) {
-            Rotation rotation = repository.getOrAssignRotation(application.deploymentSpec(), tester.applications().requireInstance(instance.id()), lock);
-            assertEquals(expected, rotation);
+            List<AssignedRotation> rotations = repository.getOrAssignRotations(application.deploymentSpec(),
+                                                                              tester.applications().requireInstance(instance.id()),
+                                                                              lock);
+            assertSingleRotation(expected, rotations, repository);
         }
 
         // Deploying once more assigns same rotation
@@ -98,9 +100,9 @@ public class RotationRepositoryTest {
         Instance instance2 = tester.defaultInstance(application2.id());
 
         try (RotationLock lock = repository.lock()) {
-            Rotation rotation = repository.getOrAssignRotation(application2.deploymentSpec(), instance2, lock);
+            List<AssignedRotation> rotations = repository.getOrAssignRotations(application2.deploymentSpec(), instance2, lock);
             Rotation assignedRotation = new Rotation(new RotationId("foo-1"), "foo-1.com");
-            assertEquals(assignedRotation, rotation);
+            assertSingleRotation(assignedRotation, rotations, repository);
         }
     }
 
@@ -154,6 +156,14 @@ public class RotationRepositoryTest {
         assertEquals(List.of(new RotationId("foo-1")), rotationIds(tester.defaultInstance(application2.id()).rotations()));
         assertEquals("https://cd--app2--tenant2.global.vespa.oath.cloud:4443/", tester.defaultInstance(application2.id())
                 .endpointsIn(SystemName.cd).main().get().url().toString());
+    }
+
+    private void assertSingleRotation(Rotation expected, List<AssignedRotation> assignedRotations, RotationRepository repository) {
+        assertEquals(1, assignedRotations.size());
+        var rotationId = assignedRotations.get(0).rotationId();
+        var rotation = repository.getRotation(rotationId);
+        assertTrue(rotationId + " exists", rotation.isPresent());
+        assertEquals(expected, rotation.get());
     }
 
     private static List<RotationId> rotationIds(List<AssignedRotation> assignedRotations) {
