@@ -64,6 +64,11 @@ public class Curator implements AutoCloseable {
         return new Curator(connectionSpec, connectionSpec);
     }
 
+    // For testing
+    public Curator(ConfigserverConfig configserverConfig) {
+        this(configserverConfig, createConnectionSpec(configserverConfig));
+    }
+
     // Depend on ZooKeeperServer to make sure it is started first
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
