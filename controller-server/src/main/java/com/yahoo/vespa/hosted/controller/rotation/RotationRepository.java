@@ -121,7 +121,7 @@ public class RotationRepository {
             return List.of(
                     new AssignedRotation(
                             new ClusterSpec.Id(deploymentSpec.requireInstance(instance.name()).globalServiceId().get()),
-                            EndpointId.default_(),
+                            EndpointId.defaultId(),
                             rotation.id(),
                             regions
                     )

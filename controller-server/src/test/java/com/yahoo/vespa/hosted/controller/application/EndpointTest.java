@@ -22,7 +22,7 @@ public class EndpointTest {
 
     @Test
     public void test_global_endpoints() {
-        EndpointId endpointId = EndpointId.default_();
+        EndpointId endpointId = EndpointId.defaultId();
 
         Map<String, Endpoint> tests = Map.of(
                 // Legacy endpoint
@@ -66,7 +66,7 @@ public class EndpointTest {
 
     @Test
     public void test_global_endpoints_with_endpoint_id() {
-        var endpointId = EndpointId.default_();
+        var endpointId = EndpointId.defaultId();
 
         Map<String, Endpoint> tests = Map.of(
                 // Legacy endpoint
@@ -164,7 +164,7 @@ public class EndpointTest {
                 // Default rotation
                 "https://a1.t1.global.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .named(EndpointId.default_())
+                        .named(EndpointId.defaultId())
                         .directRouting()
                         .on(Port.tls())
                         .in(SystemName.Public),

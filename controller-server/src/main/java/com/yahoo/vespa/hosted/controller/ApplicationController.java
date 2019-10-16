@@ -598,7 +598,7 @@ public class ApplicationController {
         // as the certificate provider requires the first CN to be < 64 characters long.
         endpointDnsNames.add(Endpoint.createHashedCn(applicationId, controller.system()));
 
-        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.default_());
+        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.defaultId());
         var rotationEndpoints = Endpoint.of(applicationId).wildcard();
 
         var zoneLocalEndpoints = controller.zoneRegistry().zones().directlyRouted().zones().stream().flatMap(zone -> Stream.of(
