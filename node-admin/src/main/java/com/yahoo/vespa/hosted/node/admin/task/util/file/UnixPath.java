@@ -72,6 +72,17 @@ public class UnixPath {
         return uncheck(() -> Files.readAllBytes(path));
     }
 
+    /** Reads and returns all bytes contained in this path, if any such path exists. */
+    public Optional<byte[]> readBytesIfExists() {
+        try {
+            return Optional.of(Files.readAllBytes(path));
+        } catch (NoSuchFileException ignored) {
+            return Optional.empty();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public UnixPath writeUtf8File(String content, OpenOption... options) {
         return writeBytes(content.getBytes(StandardCharsets.UTF_8), options);
     }
