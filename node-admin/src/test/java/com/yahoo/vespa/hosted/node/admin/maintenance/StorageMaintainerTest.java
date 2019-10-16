@@ -110,7 +110,7 @@ public class StorageMaintainerTest {
 
         private NodeAgentContext createNodeAgentContextAndContainerStorage(FileSystem fileSystem, String containerName) throws IOException {
             NodeAgentContext context = new NodeAgentContextImpl.Builder(containerName + ".domain.tld")
-                    .fileSystem(fileSystem).build();
+                    .pathToContainerStorageFromFileSystem(fileSystem).build();
 
             Path containerVespaHomeOnHost = context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(""));
             Files.createDirectories(context.pathOnHostFromPathInNode("/etc/something"));
