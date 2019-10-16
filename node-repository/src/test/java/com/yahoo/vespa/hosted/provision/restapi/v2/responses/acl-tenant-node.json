@@ -163,9 +163,9 @@
       "trustedBy": "foo.yahoo.com"
     },
     {
-      "hostname": "test-node-pool-101-2",
+      "hostname": "test-node-pool-102-2",
       "type": "tenant",
-      "ipAddress": "::101:2",
+      "ipAddress": "::102:2",
       "trustedBy": "foo.yahoo.com"
     }
   ],

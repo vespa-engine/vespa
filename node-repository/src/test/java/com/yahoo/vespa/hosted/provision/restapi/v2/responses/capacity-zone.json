@@ -25,16 +25,16 @@
   },
   "details": {
     "hostsToRemove": [
-      "dockerhost2.yahoo.com",
+      "dockerhost3.yahoo.com",
       "dockerhost1.yahoo.com",
       "dockerhost4.yahoo.com",
-      "dockerhost3.yahoo.com"
+      "dockerhost5.yahoo.com"
     ],
     "removalPossible": false,
     "history": [
       {
-        "tenant": "test-node-pool-101-2",
-        "newParent": "dockerhost5.yahoo.com",
+        "tenant": "test-node-pool-102-2",
+        "newParent": "dockerhost2.yahoo.com",
         "eligibleParents": 1
       },
       {

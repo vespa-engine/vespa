@@ -587,7 +587,8 @@
     ],
     "methods": [
       "public static com.yahoo.config.provision.NodeResources$DiskSpeed[] values()",
-      "public static com.yahoo.config.provision.NodeResources$DiskSpeed valueOf(java.lang.String)"
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed valueOf(java.lang.String)",
+      "public static int compare(com.yahoo.config.provision.NodeResources$DiskSpeed, com.yahoo.config.provision.NodeResources$DiskSpeed)"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed fast",

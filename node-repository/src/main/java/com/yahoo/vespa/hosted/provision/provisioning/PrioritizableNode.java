@@ -4,7 +4,12 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLOCATABLE_HOST_STATES;
 
@@ -15,11 +20,14 @@ import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLO
  */
 class PrioritizableNode implements Comparable<PrioritizableNode> {
 
+    private static final NodeResources zeroResources =
+            new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any);
+
     // TODO: Make immutable
     Node node;
 
-    /** The free capacity, including retired allocations */
-    final NodeResources freeParentCapacity;
+    /** The free capacity on the parent of this node, before adding this node to it */
+    private final NodeResources freeParentCapacity;
 
     /** The parent host (docker or hypervisor) */
     final Optional<Node> parent;
@@ -66,8 +74,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (other.node.state() == Node.State.inactive && this.node.state() != Node.State.inactive) return 1;
 
         // Choose reserved nodes from a previous allocation attempt (the exist in node repo)
-        if (isInNodeRepoAndReserved(this) && !isInNodeRepoAndReserved(other)) return -1;
-        if (isInNodeRepoAndReserved(other) && !isInNodeRepoAndReserved(this)) return 1;
+        if (this.isInNodeRepoAndReserved() && ! other.isInNodeRepoAndReserved()) return -1;
+        if (other.isInNodeRepoAndReserved() && ! this.isInNodeRepoAndReserved()) return 1;
 
         // Choose ready nodes
         if (this.node.state() == Node.State.ready && other.node.state() != Node.State.ready) return -1;
@@ -81,9 +89,16 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
         if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
-        // Choose the node with parent node with the least capacity (TODO parameterize this as this is pretty much the core of the algorithm)
-        int freeCapacity = NodeResourceComparator.defaultOrder().compare(this.freeParentCapacity, other.freeParentCapacity);
-        if (freeCapacity != 0) return freeCapacity;
+        if (this.parent.isPresent() && other.parent.isPresent()) {
+            int diskCostDifference = NodeResources.DiskSpeed.compare(this.parent.get().flavor().resources().diskSpeed(),
+                                                                     other.parent.get().flavor().resources().diskSpeed());
+            if (diskCostDifference != 0)
+                return diskCostDifference;
+        }
+
+        int hostPriority = Double.compare(this.skewWithThis() - this.skewWithoutThis(),
+                                          other.skewWithThis() - other.skewWithoutThis());
+        if (hostPriority != 0) return hostPriority;
 
         // Choose cheapest node
         if (this.node.flavor().cost() < other.node.flavor().cost()) return -1;
@@ -93,14 +108,43 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         return this.node.hostname().compareTo(other.node.hostname());
     }
 
-    private static boolean isInNodeRepoAndReserved(PrioritizableNode nodePri) {
-        if (nodePri.isNewNode) return false;
-        return nodePri.node.state().equals(Node.State.reserved);
+    /** Returns the allocation skew of the parent of this before adding this node to it */
+    double skewWithoutThis() { return skewWith(zeroResources); }
+
+    /** Returns the allocation skew of the parent of this after adding this node to it */
+    double skewWithThis() { return skewWith(node.flavor().resources()); }
+
+    private double skewWith(NodeResources resources) {
+        if (parent.isEmpty()) return 0;
+
+        NodeResources all = anySpeed(parent.get().flavor().resources());
+        NodeResources allocated = all.subtract(anySpeed(freeParentCapacity)).add(anySpeed(resources));
+
+        return new Mean(allocated.vcpu() / all.vcpu(),
+                        allocated.memoryGb() / all.memoryGb(),
+                        allocated.diskGb() / all.diskGb())
+                       .deviation();
+    }
+
+    /** We don't care about disk speed in calculations here */
+    private NodeResources anySpeed(NodeResources resources) {
+        return resources.withDiskSpeed(NodeResources.DiskSpeed.any);
+    }
+
+    private boolean isInNodeRepoAndReserved() {
+        if (isNewNode) return false;
+        return node.state().equals(Node.State.reserved);
+    }
+
+    @Override
+    public String toString() {
+        return node.id();
     }
 
     static class Builder {
+
         public final Node node;
-        private NodeResources freeParentCapacity = new NodeResources(0, 0, 0, 0);
+        private NodeResources freeParentCapacity;
         private Optional<Node> parent = Optional.empty();
         private boolean violatesSpares;
         private boolean isSurplusNode;
@@ -108,8 +152,10 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
 
         Builder(Node node) {
             this.node = node;
+            this.freeParentCapacity = node.flavor().resources();
         }
 
+        /** The free capacity of the parent, before adding this node to it */
         Builder withFreeParentCapacity(NodeResources freeParentCapacity) {
             this.freeParentCapacity = freeParentCapacity;
             return this;
@@ -138,6 +184,21 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         PrioritizableNode build() {
             return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode);
         }
+    }
+
+    /** The mean and mean deviation (squared difference) of a bunch of numbers */
+    private static class Mean {
+
+        private double mean;
+        private double deviation;
+
+        private Mean(double ... numbers) {
+            mean = Arrays.stream(numbers).sum() / numbers.length;
+            deviation = Arrays.stream(numbers).map(n -> Math.pow(mean - n, 2)).sum() / numbers.length;
+        }
+
+        public double deviation() {  return deviation; }
+
     }
 
 }

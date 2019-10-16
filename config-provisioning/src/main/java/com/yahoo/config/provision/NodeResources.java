@@ -11,9 +11,24 @@ import java.util.Objects;
 public class NodeResources {
 
     public enum DiskSpeed {
+
         fast, // SSD disk or similar speed is needed
         slow, // This is tuned to work with the speed of spinning disks
-        any // The performance of the cluster using this does not depend on disk speed
+        any; // The performance of the cluster using this does not depend on disk speed
+
+        /**
+         * Compares disk speeds by cost: Slower is cheaper, and therefore before.
+         * Any can be slow and therefore costs the same as slow.
+         */
+        public static int compare(DiskSpeed a, DiskSpeed b) {
+            if (a == any) a = slow;
+            if (b == any) b = slow;
+
+            if (a == slow && b == fast) return -1;
+            if (a == fast && b == slow) return 1;
+            return 0;
+        }
+
     }
 
     private final double vcpu;
