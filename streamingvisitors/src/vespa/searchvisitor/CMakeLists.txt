@@ -3,6 +3,7 @@ vespa_add_library(streamingvisitors_searchvisitor
     SOURCES
     hitcollector.cpp
     indexenvironment.cpp
+    matching_elements_filler.cpp
     queryenvironment.cpp
     querytermdata.cpp
     querywrapper.cpp

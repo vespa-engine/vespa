@@ -4,13 +4,21 @@
 
 #include <vespa/searchsummary/docsummary/docsumconfig.h>
 
+namespace vespa::config::search::vsm {
+namespace internal { class InternalVsmfieldsType; }
+typedef const internal::InternalVsmfieldsType VsmfieldsConfig;
+}
 namespace vsm {
 
 class DynamicDocsumConfig : public search::docsummary::DynamicDocsumConfig
 {
 public:
     using Parent = search::docsummary::DynamicDocsumConfig;
-    using Parent::Parent;
+    using VsmfieldsConfig = vespa::config::search::vsm::VsmfieldsConfig;
+private:
+    std::shared_ptr<VsmfieldsConfig> _vsm_fields_config;
+public:
+    DynamicDocsumConfig(search::docsummary::IDocsumEnvironment* env, search::docsummary::DynamicDocsumWriter* writer, std::shared_ptr<VsmfieldsConfig> vsm_fields_config);
 private:
     std::unique_ptr<search::docsummary::IDocsumFieldWriter>
         createFieldWriter(const string & fieldName, const string & overrideName,
