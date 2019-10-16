@@ -107,6 +107,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public Path pathOnHostFromPathInNode(String pathInNode) {
+        // Ensure the path is on the proper FileSystem
+        return pathOnHostFromPathInNode(ROOT.getFileSystem().getPath(pathInNode));
+    }
+
+    @Override
     public Path pathInNodeFromPathOnHost(Path pathOnHost) {
         if (! pathOnHost.isAbsolute())
             throw new IllegalArgumentException("Expected an absolute path on the host, got: " + pathOnHost);
@@ -118,11 +124,23 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public Path pathInNodeFromPathOnHost(String pathOnHost) {
+        // Ensure the path is on the proper FileSystem
+        return pathInNodeFromPathOnHost(pathToNodeRootOnHost.getFileSystem().getPath(pathOnHost));
+    }
+
+    @Override
     public Path pathInNodeUnderVespaHome(Path relativePath) {
         if (relativePath.isAbsolute())
             throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
 
         return pathToVespaHome.resolve(relativePath);
+    }
+
+    @Override
+    public Path pathInNodeUnderVespaHome(String relativePath) {
+        // Ensure the path is on the proper FileSystem
+        return pathInNodeUnderVespaHome(pathToVespaHome.getFileSystem().getPath(relativePath));
     }
 
     @Override
