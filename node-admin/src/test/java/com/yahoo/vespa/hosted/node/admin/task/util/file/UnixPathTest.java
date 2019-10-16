@@ -9,6 +9,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -17,6 +18,7 @@ import static org.junit.Assert.assertTrue;
  * @author hakonhall
  */
 public class UnixPathTest {
+
     private final FileSystem fs = TestFileSystem.create();
 
     @Test
@@ -87,4 +89,13 @@ public class UnixPathTest {
         UnixPath link = path.createSymbolicLink(fs.getPath("link-to-example.txt"));
         assertEquals(original, link.readUtf8File());
     }
+
+    @Test
+    public void readBytesIfExists() {
+        UnixPath path = new UnixPath(fs.getPath("example.txt"));
+        assertFalse(path.readBytesIfExists().isPresent());
+        path.writeBytes(new byte[]{42});
+        assertArrayEquals(new byte[]{42}, path.readBytesIfExists().get());
+    }
+
 }
