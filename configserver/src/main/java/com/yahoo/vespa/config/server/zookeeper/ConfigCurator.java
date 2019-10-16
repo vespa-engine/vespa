@@ -2,11 +2,11 @@
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -63,8 +63,8 @@ public class ConfigCurator {
     }
 
     @Inject
-    public ConfigCurator(Curator curator, ZooKeeperServer server) {
-        this(curator, server.getZookeeperServerConfig().juteMaxBuffer());
+    public ConfigCurator(Curator curator, ZookeeperServerConfig config) {
+        this(curator, config.juteMaxBuffer());
     }
 
     private ConfigCurator(Curator curator, int maxNodeSize) {
