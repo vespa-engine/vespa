@@ -11,6 +11,21 @@ import static org.junit.Assert.assertTrue;
 public class BufferTest {
 
     @org.junit.Test
+    public void testEmptyBufferAutoCompact() {
+        Buffer buf = new Buffer(1024);
+        ByteBuffer b = buf.getWritable(10);
+        for (int x = 0; x < 10; x++) {
+            b.put((byte)x);
+        }
+        b = buf.getReadable();
+        while (b.remaining() > 0) {
+            b.get();
+        }
+        b = buf.getWritable(10);
+        assertEquals(1024, b.remaining());
+    }
+
+    @org.junit.Test
     public void testBuffer() {
 
         int        size = Buffer.MAX_IO + (Buffer.MAX_IO / 10);
