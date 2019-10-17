@@ -341,8 +341,8 @@ public final class Node {
         NodeResources allocated = all.subtract(freeHostCapacity.anySpeed());
 
         return new Mean(allocated.vcpu() / all.vcpu(),
-                                          allocated.memoryGb() / all.memoryGb(),
-                                          allocated.diskGb() / all.diskGb())
+                        allocated.memoryGb() / all.memoryGb(),
+                        allocated.diskGb() / all.diskGb())
                        .deviation();
     }
 
