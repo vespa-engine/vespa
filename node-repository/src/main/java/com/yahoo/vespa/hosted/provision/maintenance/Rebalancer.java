@@ -10,11 +10,13 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
+import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public class Rebalancer extends Maintainer {
 
@@ -40,7 +42,7 @@ public class Rebalancer extends Maintainer {
     }
 
     private boolean zoneIsStable(NodeList allNodes) {
-        List<Node> active = allNodes.state(Node.State.active).asList();
+        NodeList active = allNodes.state(Node.State.active);
         if (active.stream().anyMatch(node -> node.allocation().get().membership().retired())) return false;
         if (active.stream().anyMatch(node -> node.status().wantToRetire())) return false;
         return true;
@@ -53,8 +55,8 @@ public class Rebalancer extends Maintainer {
     private Move findBestMove(NodeList allNodes) {
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         Move bestMove = Move.none;
-        for (Node node : allNodes.state(Node.State.active).asList()) {
-            for (Node toHost : allNodes.nodeType(NodeType.host).asList()) {
+        for (Node node : allNodes.state(Node.State.active)) {
+            for (Node toHost : allNodes.state(NodePrioritizer.ALLOCATABLE_HOST_STATES).nodeType(NodeType.host)) {
                 if (node.parentHostname().isEmpty()) continue;
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;

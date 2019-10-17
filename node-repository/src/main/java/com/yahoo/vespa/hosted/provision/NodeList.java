@@ -13,6 +13,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -107,7 +108,11 @@ public class NodeList implements Iterable<Node> {
 
     /** Returns the subset of nodes that are in any of the given state(s) */
     public NodeList state(Node.State first, Node.State... rest) {
-        EnumSet<Node.State> nodeStates = EnumSet.of(first, rest);
+        return state(EnumSet.of(first, rest));
+    }
+
+    /** Returns the subset of nodes that are in any of the given state(s) */
+    public NodeList state(Collection<Node.State> nodeStates) {
         return filter(node -> nodeStates.contains(node.state()));
     }
 
