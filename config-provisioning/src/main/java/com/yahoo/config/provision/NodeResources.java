@@ -88,6 +88,11 @@ public class NodeResources {
         return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed);
     }
 
+    /** A shorthand for withDiskSpeed(NodeResources.DiskSpeed.any) */
+    public NodeResources anySpeed() {
+        return withDiskSpeed(NodeResources.DiskSpeed.any);
+    }
+
     public NodeResources subtract(NodeResources other) {
         if ( ! this.isInterchangeableWith(other))
             throw new IllegalArgumentException(this + " and " + other + " are not interchangeable");

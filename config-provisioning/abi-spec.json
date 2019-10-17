@@ -617,6 +617,7 @@
       "public com.yahoo.config.provision.NodeResources withDiskGb(double)",
       "public com.yahoo.config.provision.NodeResources withBandwidthGbps(double)",
       "public com.yahoo.config.provision.NodeResources withDiskSpeed(com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public com.yahoo.config.provision.NodeResources anySpeed()",
       "public com.yahoo.config.provision.NodeResources subtract(com.yahoo.config.provision.NodeResources)",
       "public com.yahoo.config.provision.NodeResources add(com.yahoo.config.provision.NodeResources)",
       "public boolean equals(java.lang.Object)",
