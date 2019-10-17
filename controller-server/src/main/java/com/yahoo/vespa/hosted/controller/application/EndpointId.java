@@ -50,7 +50,7 @@ public class EndpointId implements Comparable<EndpointId> {
         return input;
     }
 
-    public static EndpointId default_() { return DEFAULT; }
+    public static EndpointId defaultId() { return DEFAULT; }
 
     public static EndpointId of(String id) { return new EndpointId(id); }
 

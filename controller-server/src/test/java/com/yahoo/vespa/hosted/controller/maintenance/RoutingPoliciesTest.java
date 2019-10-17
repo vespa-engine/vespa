@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
@@ -127,6 +128,7 @@ public class RoutingPoliciesTest {
                 .region(zone1.region())
                 .region(zone2.region())
                 .region(zone3.region())
+                .allow(ValidationId.globalEndpointChange)
                 .build();
         tester.deployCompletely(app1, applicationPackage4, ++buildNumber);
         assertEquals("DNS records are removed", List.of(), aliasDataOf(endpoint1));

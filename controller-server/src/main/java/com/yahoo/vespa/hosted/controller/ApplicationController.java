@@ -49,9 +49,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.DeploymentSpecValidator;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobList;
@@ -130,7 +130,7 @@ public class ApplicationController {
     private final Clock clock;
     private final DeploymentTrigger deploymentTrigger;
     private final BooleanFlag provisionApplicationCertificate;
-    private final DeploymentSpecValidator deploymentSpecValidator;
+    private final ApplicationPackageValidator applicationPackageValidator;
 
     ApplicationController(Controller controller, CuratorDb curator,
                           AccessControl accessControl, RotationsConfig rotationsConfig,
@@ -148,7 +148,7 @@ public class ApplicationController {
         rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         deploymentTrigger = new DeploymentTrigger(controller, controller.serviceRegistry().buildService(), clock);
         provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
-        deploymentSpecValidator = new DeploymentSpecValidator(controller);
+        applicationPackageValidator = new ApplicationPackageValidator(controller);
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -385,11 +385,6 @@ public class ApplicationController {
                     validateRun(application.get(), instance, zone, platformVersion, applicationVersion);
                 }
 
-                if (zone.environment().isProduction()) // Assign and register endpoints
-                    application = withRotation(applicationPackage.deploymentSpec(), application, instance);
-
-                endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
-
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Provisions a new certificate if missing
                     applicationCertificate = getApplicationCertificate(application.get().require(instance));
@@ -401,8 +396,13 @@ public class ApplicationController {
                 if (   ! preferOldestVersion
                     && ! application.get().internal()
                     && ! zone.environment().isManuallyDeployed()) {
-                    storeWithUpdatedConfig(application, applicationPackage);
+                    application = storeWithUpdatedConfig(application, applicationPackage);
                 }
+
+                if (zone.environment().isProduction()) // Assign and register endpoints
+                    application = withRotation(applicationPackage.deploymentSpec(), application, instance);
+
+                endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -454,8 +454,8 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        deploymentSpecValidator.validate(applicationPackage.deploymentSpec());
+    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+        applicationPackageValidator.validate(application.get(), applicationPackage, clock.instant());
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
@@ -471,6 +471,7 @@ public class ApplicationController {
             application = application.with(instanceName, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
         }
         store(application);
+        return application;
     }
 
     /** Deploy a system application to given zone */
@@ -598,7 +599,7 @@ public class ApplicationController {
         // as the certificate provider requires the first CN to be < 64 characters long.
         endpointDnsNames.add(Endpoint.createHashedCn(applicationId, controller.system()));
 
-        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.default_());
+        var globalDefaultEndpoint = Endpoint.of(applicationId).named(EndpointId.defaultId());
         var rotationEndpoints = Endpoint.of(applicationId).wildcard();
 
         var zoneLocalEndpoints = controller.zoneRegistry().zones().directlyRouted().zones().stream().flatMap(zone -> Stream.of(

@@ -373,9 +373,10 @@
       "public java.lang.String endpointId()",
       "public java.lang.String containerId()",
       "public java.util.Set regions()",
+      "public com.yahoo.config.application.api.Endpoint withRegions(java.util.Set)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public com.yahoo.config.application.api.Endpoint withRegions(java.util.Set)"
+      "public java.lang.String toString()"
     ],
     "fields": []
   },
@@ -518,7 +519,8 @@
       "public static final enum com.yahoo.config.application.api.ValidationId configModelVersionMismatch",
       "public static final enum com.yahoo.config.application.api.ValidationId skipOldConfigModels",
       "public static final enum com.yahoo.config.application.api.ValidationId forceAutomaticTenantUpgradeTests",
-      "public static final enum com.yahoo.config.application.api.ValidationId accessControl"
+      "public static final enum com.yahoo.config.application.api.ValidationId accessControl",
+      "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange"
     ]
   },
   "com.yahoo.config.application.api.ValidationOverrides$Allow": {

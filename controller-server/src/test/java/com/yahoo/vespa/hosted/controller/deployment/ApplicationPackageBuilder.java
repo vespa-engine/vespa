@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -20,9 +19,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.OptionalInt;
 import java.util.StringJoiner;
 import java.util.zip.ZipEntry;
@@ -80,14 +77,14 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder endpoint(String endpointId, String containerId, String... regions) {
-        endpointsBody.append("  <endpoint");
+        endpointsBody.append("      <endpoint");
         endpointsBody.append(" id='").append(endpointId).append("'");
         endpointsBody.append(" container-id='").append(containerId).append("'");
         endpointsBody.append(">\n");
         for (var region : regions) {
-            endpointsBody.append("    <region>").append(region).append("</region>\n");
+            endpointsBody.append("        <region>").append(region).append("</region>\n");
         }
-        endpointsBody.append("  </endpoint>\n");
+        endpointsBody.append("      </endpoint>\n");
         return this;
     }
 
