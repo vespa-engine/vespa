@@ -69,54 +69,52 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private final InternalDeploymentTester iTester = new InternalDeploymentTester();
+    private final DeploymentTester tester = iTester.tester();
 
     @Test
     public void testTriggerFailing() {
-        Application app = tester.createApplication("app1", "tenant1", 1, 1L);
-        Instance instance = tester.defaultInstance(app.id());
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
-        Version version = Version.fromString("6.2");
-        tester.upgradeSystem(version);
-
         // Deploy completely once
-        tester.jobCompletion(component).application(app).uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(instance.id(), applicationPackage, true, JobType.systemTest);
-        tester.deployAndNotify(instance.id(), applicationPackage, true, JobType.stagingTest);
-        tester.deployAndNotify(instance.id(), applicationPackage, true, JobType.productionUsWest1);
+        iTester.newSubmission(applicationPackage);
+        iTester.runJob(systemTest);
+        iTester.runJob(stagingTest);
+        iTester.runJob(productionUsWest1);
 
         // New version is released
-        version = Version.fromString("6.3");
+        Version version = Version.fromString("6.3");
         tester.upgradeSystem(version);
 
-        // staging-test times out and is retried
-        tester.buildService().remove(buildJob(app.id().defaultInstance(), stagingTest));
-        tester.readyJobTrigger().maintain();
-        assertEquals("Retried dead job", 2, tester.buildService().jobs().size());
-        tester.assertRunning(stagingTest, app.id().defaultInstance());
-        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, stagingTest);
+        // staging-test fails deployment and is retried
+        iTester.failDeployment(stagingTest);
+        iTester.triggerJobs();
+        assertEquals("Retried dead job", 2, iTester.jobs().active().size());
+        iTester.assertRunning(stagingTest);
+        iTester.runJob(stagingTest);
 
         // system-test is now the only running job -- production jobs haven't started yet, since it is unfinished.
-        tester.assertRunning(systemTest, app.id().defaultInstance());
-        assertEquals(1, tester.buildService().jobs().size());
+        iTester.assertRunning(systemTest);
+        assertEquals(1, iTester.jobs().active().size());
 
         // system-test fails and is retried
-        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, JobType.systemTest);
-        assertEquals("Job is retried on failure", 1, tester.buildService().jobs().size());
-        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), true, JobType.systemTest);
+        iTester.timeOutUpgrade(systemTest);
+        iTester.triggerJobs();
+        assertEquals("Job is retried on failure", 1, iTester.jobs().active().size());
+        iTester.runJob(systemTest);
 
-        tester.assertRunning(productionUsWest1, app.id().defaultInstance());
+        iTester.triggerJobs();
+        iTester.assertRunning(productionUsWest1);
 
-        // system-test fails again, but the app loses its projectId, and the job isn't retried.
-        tester.applications().lockApplicationOrThrow(app.id(), locked ->
+        // production-us-west-1 fails, but the app loses its projectId, and the job isn't retried.
+        tester.applications().lockApplicationOrThrow(appId, locked ->
                 tester.applications().store(locked.withProjectId(OptionalLong.empty())));
-        tester.deployAndNotify(instance.id(), Optional.of(applicationPackage), false, productionUsWest1);
-        assertEquals("Job is not triggered when no projectId is present", 0, tester.buildService().jobs().size());
+        iTester.timeOutConvergence(productionUsWest1);
+        assertEquals("Job is not triggered when no projectId is present", 0, iTester.jobs().active().size());
     }
 
     @Test
@@ -165,11 +163,8 @@ public class DeploymentTriggerTest {
 
     @Test
     public void abortsInternalJobsOnNewApplicationChange() {
-        InternalDeploymentTester iTester = new InternalDeploymentTester();
-        DeploymentTester tester = iTester.tester();
-
         Instance instance = iTester.instance();
-        Application application = tester.application(TenantAndApplicationId.from(instance.id()));
+        Application application = iTester.application();
         ApplicationPackage applicationPackage = InternalDeploymentTester.applicationPackage;
 
         tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
