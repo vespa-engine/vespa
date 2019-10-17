@@ -1,0 +1,20 @@
+{
+    "month": "2019-09",
+    "items": [
+    {
+        "applicationId":"tenant1:application1:instance1",
+        "zoneId":"prod.us-south-1",
+        "cpu": {"usage":7.0,"charge":35},
+        "memory": {"usage":600.0,"charge":23},
+        "disk": {"usage":1000.0,"charge":10}
+    },
+    {
+        "applicationId":"tenant1:application1:instance1",
+        "zoneId":"prod.us-north-1",
+        "cpu": {"usage":2.0,"charge":10},
+        "memory": {"usage":3.0,"charge":20},
+        "disk": {"usage":4.0,"charge":30}
+    }
+    ]
+
+}
