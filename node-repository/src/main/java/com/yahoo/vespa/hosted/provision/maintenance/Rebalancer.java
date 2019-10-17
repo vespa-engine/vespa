@@ -55,9 +55,9 @@ public class Rebalancer extends Maintainer {
     private Move findBestMove(NodeList allNodes) {
         DockerHostCapacity capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
         Move bestMove = Move.none;
-        for (Node node : allNodes.state(Node.State.active)) {
+        for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
-            for (Node toHost : allNodes.state(NodePrioritizer.ALLOCATABLE_HOST_STATES).nodeType(NodeType.host)) {
+            for (Node toHost : allNodes.nodeType(NodeType.host).state(NodePrioritizer.ALLOCATABLE_HOST_STATES)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
 
