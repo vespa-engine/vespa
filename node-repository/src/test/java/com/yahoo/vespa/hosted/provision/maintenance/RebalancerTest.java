@@ -44,7 +44,7 @@ public class RebalancerTest {
         NodeResources memResources = new NodeResources(4, 9, 1, 0.1);
 
         tester.makeReadyNodes(3, "flt", NodeType.host, 8);
-        tester.deployZoneApp(tester);
+        tester.deployZoneApp();
 
         // Cpu heavy application - causing 1 of these nodes to be skewed
         ApplicationId cpuApp = makeApplicationId("t1", "a1");
