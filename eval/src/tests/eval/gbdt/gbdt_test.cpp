@@ -17,6 +17,14 @@ using namespace vespalib::eval::gbdt;
 
 //-----------------------------------------------------------------------------
 
+bool is_little_endian() {
+    uint32_t value = 0;
+    uint8_t bytes[4] = {0, 1, 2, 3};
+    static_assert(sizeof(bytes) == sizeof(value));
+    memcpy(&value, bytes, sizeof(bytes));
+    return (value == 0x03020100);
+}
+
 double eval_double(const Function &function, const std::vector<double> &params) {
     InterpretedFunction ifun(SimpleTensorEngine::ref(), function, NodeTypes());
     InterpretedFunction::Context ctx(ifun);
@@ -25,6 +33,22 @@ double eval_double(const Function &function, const std::vector<double> &params) 
 }
 
 double my_resolve(void *ctx, size_t idx) { return ((double*)ctx)[idx]; }
+
+double eval_compiled(const CompiledFunction &cfun, std::vector<double> &params) {
+    ASSERT_EQUAL(params.size(), cfun.num_params());
+    if (cfun.pass_params() == PassParams::ARRAY) {
+        return cfun.get_function()(&params[0]);
+    }
+    if (cfun.pass_params() == PassParams::LAZY) {
+        return cfun.get_lazy_function()(my_resolve, &params[0]);
+    }
+    return 31212.0;
+}
+
+double eval_ff(const FastForest &ff, FastForest::Context &ctx, const std::vector<double> &params) {
+    std::vector<float> my_params(params.begin(), params.end());
+    return ff.eval(ctx, &my_params[0]);
+}
 
 //-----------------------------------------------------------------------------
 
@@ -304,28 +328,17 @@ TEST("require that FastForest model evaluation works") {
     EXPECT_TRUE(compiled.get_forests().empty());
     auto forest = FastForest::try_convert(function);
     ASSERT_TRUE(forest);
-    FastForest::Context ctx(*forest);
+    auto ctx = forest->create_context();
     std::vector<double> p1({0.5, 0.5, 0.5}); // all true: 1.0 + 10.0
     std::vector<double> p2({2.5, 2.5, 2.5}); // all false: 4.0 + 40.0
     std::vector<double> pn(3, std::numeric_limits<double>::quiet_NaN()); // default: 4.0 + 10.0
-    EXPECT_EQUAL(forest->eval(ctx, [&p1](size_t i){return p1[i];}), f(&p1[0]));
-    EXPECT_EQUAL(forest->eval(ctx, [&p2](size_t i){return p2[i];}), f(&p2[0]));
-    EXPECT_EQUAL(forest->eval(ctx, [&pn](size_t i){return pn[i];}), f(&pn[0]));
-    EXPECT_EQUAL(forest->eval(ctx, [&p1](size_t i){return p1[i];}), f(&p1[0]));
+    EXPECT_EQUAL(eval_ff(*forest, *ctx, p1), f(&p1[0]));
+    EXPECT_EQUAL(eval_ff(*forest, *ctx, p2), f(&p2[0]));
+    EXPECT_EQUAL(eval_ff(*forest, *ctx, pn), f(&pn[0]));
+    EXPECT_EQUAL(eval_ff(*forest, *ctx, p1), f(&p1[0]));
 }
 
 //-----------------------------------------------------------------------------
-
-double eval_compiled(const CompiledFunction &cfun, std::vector<double> &params) {
-    ASSERT_EQUAL(params.size(), cfun.num_params());
-    if (cfun.pass_params() == PassParams::ARRAY) {
-        return cfun.get_function()(&params[0]);
-    }
-    if (cfun.pass_params() == PassParams::LAZY) {
-        return cfun.get_lazy_function()(my_resolve, &params[0]);
-    }
-    return 31212.0;
-}
 
 TEST("require that forests evaluate to approximately the same for all evaluation options") {
     for (PassParams pass_params: {PassParams::ARRAY, PassParams::LAZY}) {
@@ -356,9 +369,36 @@ TEST("require that forests evaluate to approximately the same for all evaluation
                         EXPECT_EQUAL(expected_nan, eval_compiled(deinline, inputs_nan));
                         EXPECT_EQUAL(expected_nan, eval_compiled(vm_forest, inputs_nan));
                         if (forest) {
-                            FastForest::Context ctx(*forest);
-                            EXPECT_EQUAL(expected, forest->eval(ctx, [&inputs](size_t i){return inputs[i];}));
-                            EXPECT_EQUAL(expected_nan, forest->eval(ctx, [&inputs_nan](size_t i){return inputs_nan[i];}));
+                            auto ctx = forest->create_context();
+                            EXPECT_EQUAL(expected, eval_ff(*forest, *ctx, inputs));
+                            EXPECT_EQUAL(expected_nan, eval_ff(*forest, *ctx, inputs_nan));
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+TEST("require that fast forest evaluation is correct for all tree size categories") {
+    for (size_t tree_size: std::vector<size_t>({7,15,30,61,127})) {
+        for (size_t num_trees: std::vector<size_t>({127})) {
+            for (size_t num_features: std::vector<size_t>({35})) {
+                for (size_t less_percent: std::vector<size_t>({100})) {
+                    for (size_t invert_percent: std::vector<size_t>({50})) {
+                        vespalib::string expression = Model().max_features(num_features).less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
+                        Function function = Function::parse(expression);
+                        auto forest = FastForest::try_convert(function);
+                        if ((tree_size <= 64) || is_little_endian()) {
+                            ASSERT_TRUE(forest);
+                            TEST_STATE(forest->impl_name().c_str());
+                            std::vector<double> inputs(function.num_params(), 0.5);
+                            std::vector<double> inputs_nan(function.num_params(), std::numeric_limits<double>::quiet_NaN());
+                            double expected = eval_double(function, inputs);
+                            double expected_nan = eval_double(function, inputs_nan);
+                            auto ctx = forest->create_context();
+                            EXPECT_EQUAL(expected, eval_ff(*forest, *ctx, inputs));
+                            EXPECT_EQUAL(expected_nan, eval_ff(*forest, *ctx, inputs_nan));
                         }
                     }
                 }

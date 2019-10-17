@@ -13,3 +13,9 @@ vespa_add_executable(eval_gbdt_benchmark_app
     vespaeval
 )
 vespa_add_test(NAME eval_gbdt_benchmark_app COMMAND eval_gbdt_benchmark_app BENCHMARK)
+vespa_add_executable(eval_fast_forest_bench_app
+    SOURCES
+    fast_forest_bench.cpp
+    DEPENDS
+    vespaeval
+)

@@ -13,6 +13,7 @@ class Model
 {
 private:
     std::mt19937 _gen;
+    size_t _max_features;
     size_t _less_percent;
     size_t _invert_percent;
 
@@ -32,9 +33,9 @@ private:
     }
 
     std::string make_feature_name() {
-        size_t max_feature = 2;
-        while ((max_feature < 1024) && (get_int(0, 99) < 55)) {
-            max_feature *= 2;
+        size_t max_feature = 7;
+        while ((max_feature < _max_features) && (get_int(0, 99) < 55)) {
+            max_feature = std::min(max_feature * 2, _max_features);
         }
         return make_string("feature_%zu", get_int(1, max_feature));
     }
@@ -60,7 +61,12 @@ private:
     }
 
 public:
-    explicit Model(size_t seed = 5489u) : _gen(seed), _less_percent(80), _invert_percent(0) {}
+    explicit Model(size_t seed = 5489u) : _gen(seed), _max_features(1024), _less_percent(80), _invert_percent(0) {}
+
+    Model &max_features(size_t value) {
+        _max_features = value;
+        return *this;
+    }
 
     Model &less_percent(size_t value) {
         _less_percent = value;

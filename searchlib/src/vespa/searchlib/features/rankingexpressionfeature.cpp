@@ -50,10 +50,11 @@ class FastForestExecutor : public fef::FeatureExecutor
 {
 private:
     const FastForest &_forest;
-    FastForest::Context _ctx;
+    FastForest::Context::UP _ctx;
+    ArrayRef<float> _params;
 
 public:
-    FastForestExecutor(const FastForest &forest);
+    FastForestExecutor(ArrayRef<float> param_space, const FastForest &forest);
     bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
@@ -128,18 +129,27 @@ public:
 
 //-----------------------------------------------------------------------------
 
-FastForestExecutor::FastForestExecutor(const FastForest &forest)
+FastForestExecutor::FastForestExecutor(ArrayRef<float> param_space, const FastForest &forest)
     : _forest(forest),
-      _ctx(_forest)
+      _ctx(_forest.create_context()),
+      _params(param_space)
 {
 }
 
 void
 FastForestExecutor::execute(uint32_t)
 {
-    const auto &params = inputs();
-    double result = _forest.eval(_ctx, [&params](size_t p){ return params.get_number(p); });
-    outputs().set_number(0, result);
+    size_t i = 0;
+    for (; (i + 3) < _params.size(); i += 4) {
+        _params[i+0] = inputs().get_number(i+0);
+        _params[i+1] = inputs().get_number(i+1);
+        _params[i+2] = inputs().get_number(i+2);
+        _params[i+3] = inputs().get_number(i+3);
+    }
+    for (; i < _params.size(); ++i) {
+        _params[i] = inputs().get_number(i);
+    }
+    outputs().set_number(0, _forest.eval(*_ctx, &_params[0]));
 }
 
 //-----------------------------------------------------------------------------
@@ -342,7 +352,8 @@ RankingExpressionBlueprint::createExecutor(const fef::IQueryEnvironment &env, ve
         return stash.create<InterpretedRankingExpressionExecutor>(*_interpreted_function, input_is_object);
     }
     if (_fast_forest) {
-        return stash.create<FastForestExecutor>(*_fast_forest);
+        ArrayRef<float> param_space = stash.create_array<float>(_input_is_object.size(), 0.0);
+        return stash.create<FastForestExecutor>(param_space, *_fast_forest);
     }
     assert(_compile_token.get() != nullptr); // will be nullptr for VERIFY_SETUP feature motivation
     if (_compile_token->get().pass_params() == PassParams::ARRAY) {
