@@ -5,6 +5,7 @@ import ai.vespa.hosted.api.MultiPartStreamer;
 import ai.vespa.hosted.api.Signatures;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
@@ -325,8 +326,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST (create) another application
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
+                .globalServiceId("foo")
                 .environment(Environment.prod)
                 .region("us-west-1")
+                .allow(ValidationId.globalEndpointChange)
                 .build();
 
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", POST)
@@ -626,6 +629,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Third attempt finally has a service under the domain of the tenant, and succeeds.
         ApplicationPackage packageWithService = new ApplicationPackageBuilder()
                 .instances("instance1")
+                .globalServiceId("foo")
                 .environment(Environment.prod)
                 .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from(ATHENZ_TENANT_DOMAIN.getName()), AthenzService.from("service"))
                 .region("us-west-1")

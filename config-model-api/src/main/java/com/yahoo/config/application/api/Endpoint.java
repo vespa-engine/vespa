@@ -60,6 +60,10 @@ public class Endpoint {
         return regions;
     }
 
+    public Endpoint withRegions(Set<String> regions) {
+        return new Endpoint(endpointId, containerId, regions);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -75,7 +79,10 @@ public class Endpoint {
         return Objects.hash(endpointId, containerId, regions);
     }
 
-    public Endpoint withRegions(Set<String> regions) {
-        return new Endpoint(endpointId, containerId, regions);
+    @Override
+    public String toString() {
+        return "endpoint '" + endpointId() + "' (cluster " + containerId + ") -> " +
+               regions.stream().map(RegionName::value).sorted().collect(Collectors.joining(", "));
     }
+
 }

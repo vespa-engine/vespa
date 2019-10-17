@@ -402,49 +402,130 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsAliasRegistrationWithChangingZones() {
+    public void testDnsAliasRegistrationWithChangingEndpoints() {
         Application application = tester.createApplication("app1", "tenant1", 1, 1L);
+        var west = ZoneId.from("prod", "us-west-1");
+        var central = ZoneId.from("prod", "us-central-1");
+        var east = ZoneId.from("prod", "us-east-3");
+        var buildNumber = BuildJob.defaultBuildNumber;
 
+        // Application is deployed with endpoint pointing to 2/3 zones
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .endpoint("default", "qrs", "us-west-1", "us-central-1")
-                .region("us-west-1")
-                .region("us-central-1")
+                .endpoint("default", "qrs", west.region().value(), central.region().value())
+                .region(west.region().value())
+                .region(central.region().value())
+                .region(east.region().value())
                 .build();
+        tester.deployCompletely(application, applicationPackage, ++buildNumber);
 
-        tester.deployCompletely(application, applicationPackage);
+        for (var zone : List.of(west, central)) {
+            assertEquals(
+                    "Zone " + zone + " is a member of global endpoint",
+                    Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
+                    tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), zone))
+            );
+        }
 
-        assertEquals(
-                Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-west-1")))
-        );
-
-        assertEquals(
-                Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-central-1")))
-        );
-
-
+        // Application is deployed with an additional endpoint
         ApplicationPackage applicationPackage2 = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
-                .endpoint("default", "qrs", "us-west-1")
-                .region("us-west-1")
-                .region("us-central-1")
+                .endpoint("default", "qrs", west.region().value(), central.region().value())
+                .endpoint("east", "qrs", east.region().value())
+                .region(west.region().value())
+                .region(central.region().value())
+                .region(east.region().value())
                 .build();
+        tester.deployCompletely(application, applicationPackage2, ++buildNumber);
 
-        tester.deployCompletely(application, applicationPackage2, BuildJob.defaultBuildNumber + 1);
-
+        for (var zone : List.of(west, central)) {
+            assertEquals(
+                    "Zone " + zone + " is a member of global endpoint",
+                    Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
+                    tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), zone))
+            );
+        }
         assertEquals(
-                Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-west-1")))
+                "Zone " + east + " is a member of global endpoint",
+                Set.of("rotation-id-02", "east--app1--tenant1.global.vespa.oath.cloud"),
+                tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), east))
         );
 
-        assertEquals(
-                Set.of(),
-                tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-central-1")))
-        );
+        // Application is deployed with default endpoint pointing to 3/3 zones
+        ApplicationPackage applicationPackage3 = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("default", "qrs", west.region().value(), central.region().value(), east.region().value())
+                .endpoint("east", "qrs", east.region().value())
+                .region(west.region().value())
+                .region(central.region().value())
+                .region(east.region().value())
+                .build();
+        tester.deployCompletely(application, applicationPackage3, ++buildNumber);
+        for (var zone : List.of(west, central, east)) {
+            assertEquals(
+                    "Zone " + zone + " is a member of global endpoint",
+                    zone.equals(east)
+                            ? Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud",
+                                     "rotation-id-02", "east--app1--tenant1.global.vespa.oath.cloud")
+                            : Set.of("rotation-id-01", "app1--tenant1.global.vespa.oath.cloud"),
+                    tester.configServer().rotationNames().get(new DeploymentId(application.id().defaultInstance(), zone))
+            );
+        }
 
-        assertEquals(Set.of(RegionName.from("us-west-1")), tester.defaultInstance(application.id()).rotations().get(0).regions());
+        // Region is removed from an endpoint without override
+        ApplicationPackage applicationPackage4 = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("default", "qrs", west.region().value(), central.region().value())
+                .endpoint("east", "qrs", east.region().value())
+                .region(west.region().value())
+                .region(central.region().value())
+                .region(east.region().value())
+                .build();
+        try {
+            tester.deployCompletely(application, applicationPackage4, ++buildNumber);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("global-endpoint-change: application 'tenant1.app1' has endpoints " +
+                         "[endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1, endpoint 'east' (cluster qrs) -> us-east-3], " +
+                         "but does not include all of these in deployment.xml. Deploying given deployment.xml " +
+                         "will remove [endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1] " +
+                         "and add [endpoint 'default' (cluster qrs) -> us-central-1, us-west-1]. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.globalEndpointChange), e.getMessage());
+        } finally {
+            tester.buildService().clear();
+        }
+
+        // Entire endpoint is removed without override
+        ApplicationPackage applicationPackage5 = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("east", "qrs", east.region().value())
+                .region(west.region().value())
+                .region(central.region().value())
+                .region(east.region().value())
+                .build();
+        try {
+            tester.deployCompletely(application, applicationPackage5, ++buildNumber);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("global-endpoint-change: application 'tenant1.app1' has endpoints " +
+                         "[endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1, endpoint 'east' (cluster qrs) -> us-east-3], " +
+                         "but does not include all of these in deployment.xml. Deploying given deployment.xml " +
+                         "will remove [endpoint 'default' (cluster qrs) -> us-central-1, us-east-3, us-west-1]. " +
+                         ValidationOverrides.toAllowMessage(ValidationId.globalEndpointChange), e.getMessage());
+        } finally {
+            tester.buildService().clear();
+        }
+
+        // ... override is added
+        ApplicationPackage applicationPackage6 = new ApplicationPackageBuilder()
+                .environment(Environment.prod)
+                .endpoint("east", "qrs", east.region().value())
+                .region(west.region().value())
+                .region(central.region().value())
+                .region(east.region().value())
+                .allow(ValidationId.globalEndpointChange)
+                .build();
+        tester.deployCompletely(application, applicationPackage6, ++buildNumber);
     }
 
     @Test
@@ -464,6 +545,7 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-central-1") // Two deployments should result in each DNS alias being registered once
+                .allow(ValidationId.globalEndpointChange)
                 .build();
 
         tester.deployCompletely(application, applicationPackage2, BuildJob.defaultBuildNumber + 1);
@@ -504,6 +586,7 @@ public class ControllerTest {
             applicationPackage = new ApplicationPackageBuilder()
                     .environment(Environment.prod)
                     .allow(ValidationId.deploymentRemoval)
+                    .allow(ValidationId.globalEndpointChange)
                     .build();
             tester.jobCompletion(component).application(app1).nextBuildNumber().uploadArtifact(applicationPackage).submit();
             tester.deployAndNotify(tester.defaultInstance(app1.id()).id(), Optional.of(applicationPackage), true, systemTest);

@@ -385,11 +385,6 @@ public class ApplicationController {
                     validateRun(application.get(), instance, zone, platformVersion, applicationVersion);
                 }
 
-                if (zone.environment().isProduction()) // Assign and register endpoints
-                    application = withRotation(applicationPackage.deploymentSpec(), application, instance);
-
-                endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
-
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
                     // Provisions a new certificate if missing
                     applicationCertificate = getApplicationCertificate(application.get().require(instance));
@@ -401,8 +396,13 @@ public class ApplicationController {
                 if (   ! preferOldestVersion
                     && ! application.get().internal()
                     && ! zone.environment().isManuallyDeployed()) {
-                    storeWithUpdatedConfig(application, applicationPackage);
+                    application = storeWithUpdatedConfig(application, applicationPackage);
                 }
+
+                if (zone.environment().isProduction()) // Assign and register endpoints
+                    application = withRotation(applicationPackage.deploymentSpec(), application, instance);
+
+                endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
@@ -454,8 +454,8 @@ public class ApplicationController {
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */
-    public void storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
-        applicationPackageValidator.validate(applicationPackage);
+    public LockedApplication storeWithUpdatedConfig(LockedApplication application, ApplicationPackage applicationPackage) {
+        applicationPackageValidator.validate(application.get(), applicationPackage, clock.instant());
 
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
@@ -471,6 +471,7 @@ public class ApplicationController {
             application = application.with(instanceName, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
         }
         store(application);
+        return application;
     }
 
     /** Deploy a system application to given zone */
