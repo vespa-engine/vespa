@@ -34,10 +34,9 @@ class Buffer {
         buf.limit(buf.capacity());
         if (readPos == writePos) {
             readPos = 0;
-            buf.position(0);
-        } else {
-            buf.position(writePos);
+            writePos = 0;
         }
+        buf.position(writePos);
         readMode = false;
     }
 
