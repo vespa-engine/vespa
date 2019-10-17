@@ -5,6 +5,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 
 import java.util.Objects;
 
@@ -18,10 +19,10 @@ import java.util.Objects;
  */
 public class DockerHostCapacity {
 
-    private final LockedNodeList allNodes;
+    private final NodeList allNodes;
     private final HostResourcesCalculator hostResourcesCalculator;
 
-    DockerHostCapacity(LockedNodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
+    public DockerHostCapacity(NodeList allNodes, HostResourcesCalculator hostResourcesCalculator) {
         this.allNodes = Objects.requireNonNull(allNodes, "allNodes must be non-null");
         this.hostResourcesCalculator = Objects.requireNonNull(hostResourcesCalculator, "hostResourcesCalculator must be non-null");
     }
@@ -60,24 +61,28 @@ public class DockerHostCapacity {
     }
 
     /**
-     * Calculate the remaining capacity for the dockerHost.
+     * Calculate the remaining capacity of a host.
      *
-     * @param dockerHost the host to find free capacity of.
+     * @param host the host to find free capacity of.
      * @return a default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
      */
-    NodeResources freeCapacityOf(Node dockerHost, boolean excludeInactive) {
+    public NodeResources freeCapacityOf(Node host) {
+        return freeCapacityOf(host, false);
+    }
+
+    NodeResources freeCapacityOf(Node host, boolean excludeInactive) {
         // Only hosts have free capacity
-        if (dockerHost.type() != NodeType.host) return new NodeResources(0, 0, 0, 0);
-        NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(dockerHost.flavor().resources());
+        if (host.type() != NodeType.host) return new NodeResources(0, 0, 0, 0);
+        NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(host.flavor().resources());
 
         // Subtract used resources without taking disk speed into account since existing allocations grandfathered in
         // may not use reflect the actual disk speed (as of May 2019). This (the 3 diskSpeed assignments below)
         // can be removed when all node allocations accurately reflect the true host disk speed
-        return allNodes.childrenOf(dockerHost).asList().stream()
+        return allNodes.childrenOf(host).asList().stream()
                 .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
-                .map(node -> node.flavor().resources().withDiskSpeed(NodeResources.DiskSpeed.any))
-                .reduce(hostResources.withDiskSpeed(NodeResources.DiskSpeed.any), NodeResources::subtract)
-                .withDiskSpeed(dockerHost.flavor().resources().diskSpeed());
+                .map(node -> node.flavor().resources().anySpeed())
+                .reduce(hostResources.anySpeed(), NodeResources::subtract)
+                .withDiskSpeed(host.flavor().resources().diskSpeed());
     }
 
     private static boolean isInactiveOrRetired(Node node) {

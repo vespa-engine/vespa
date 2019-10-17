@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.collectingAndThen;
 
@@ -131,6 +132,9 @@ public class NodeList implements Iterable<Node> {
 
     /** Returns the immutable list of nodes in this */
     public List<Node> asList() { return nodes; }
+
+    /** Returns the nodes of this as a stream */
+    public Stream<Node> stream() { return asList().stream(); }
 
     public NodeList filter(Predicate<Node> predicate) {
         return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::wrap));

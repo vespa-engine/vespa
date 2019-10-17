@@ -61,6 +61,7 @@ import static org.mockito.Mockito.when;
  * @author freva
  */
 public class DynamicProvisioningMaintainerTest {
+
     private final HostProvisionerTester tester = new HostProvisionerTester();
     private final HostProvisioner hostProvisioner = mock(HostProvisioner.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource()

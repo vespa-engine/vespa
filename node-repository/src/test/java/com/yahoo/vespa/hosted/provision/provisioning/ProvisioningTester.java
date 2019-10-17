@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -395,6 +396,18 @@ public class ProvisioningTester {
         nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;
+    }
+
+    public void deployZoneApp(ProvisioningTester tester) {
+        ApplicationId applicationId = tester.makeApplicationId();
+        List<HostSpec> list = tester.prepare(applicationId,
+                                             ClusterSpec.request(ClusterSpec.Type.container,
+                                                                 ClusterSpec.Id.from("node-admin"),
+                                                                 Version.fromString("6.42"),
+                                                                 false),
+                                             Capacity.fromRequiredNodeType(NodeType.host),
+                                             1);
+        tester.activate(applicationId, ImmutableSet.copyOf(list));
     }
 
     /** Returns the hosts from the input list which are not retired */

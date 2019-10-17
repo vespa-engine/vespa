@@ -167,8 +167,10 @@ public final class Node {
      */
     public Node withWantToRetire(boolean wantToRetire, Agent agent, Instant at) {
         if (wantToRetire == status.wantToRetire()) return this;
-        return with(status.withWantToRetire(wantToRetire))
-                .with(history.with(new History.Event(History.Event.Type.wantToRetire, Agent.operator, at)));
+        Node node = this.with(status.withWantToRetire(wantToRetire));
+        if (wantToRetire)
+            node = node.with(history.with(new History.Event(History.Event.Type.wantToRetire, agent, at)));
+        return node;
     }
 
     /**

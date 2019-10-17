@@ -138,7 +138,7 @@ public class InactiveAndFailedExpirerTest {
         // Flag one node for retirement and redeploy
         {
             Node toRetire = tester.getNodes(applicationId, Node.State.active).asList().get(0);
-            tester.patchNode(toRetire.with(toRetire.status().withWantToRetire(true)));
+            tester.patchNode(toRetire.withWantToRetire(true, Agent.operator, tester.clock().instant()));
             List<HostSpec> hostSpecs = tester.prepare(applicationId, cluster, Capacity.fromCount(2, nodeResources), 1);
             tester.activate(applicationId, new HashSet<>(hostSpecs));
         }
@@ -160,7 +160,7 @@ public class InactiveAndFailedExpirerTest {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, tester.clock(), Duration.ofDays(30),
-                Duration.ofMinutes(10)).run();
+                           Duration.ofMinutes(10)).run();
         assertEquals(1, tester.nodeRepository().getNodes(Node.State.inactive).size());
 
         // Inactive times out and one node is moved to parked
