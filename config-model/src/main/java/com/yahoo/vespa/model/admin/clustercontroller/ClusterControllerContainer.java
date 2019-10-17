@@ -7,7 +7,6 @@ import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.BundlesConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
@@ -30,43 +29,36 @@ public class ClusterControllerContainer extends Container implements
         ZookeeperServerConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
-    private static final ComponentSpecification ZKFACADE_BUNDLE = new ComponentSpecification("zkfacade");
+    private static final ComponentSpecification ZOOKEEPER_SERVER_BUNDLE = new ComponentSpecification("zkfacade");
 
     private final Set<String> bundles = new TreeSet<>();
 
     public ClusterControllerContainer(AbstractConfigProducer parent, int index, boolean runStandaloneZooKeeper, boolean isHosted) {
         super(parent, "" + index, index);
-        addHandler(
-                new Handler(new ComponentModel(new BundleInstantiationSpecification(
-                    new ComponentSpecification("clustercontroller-status"),
-                    new ComponentSpecification("com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler"),
-                    CLUSTERCONTROLLER_BUNDLE))), "clustercontroller-status/*"
-        );
-        addHandler(
-                new Handler(new ComponentModel(new BundleInstantiationSpecification(
-                        new ComponentSpecification("clustercontroller-state-restapi-v2"),
-                        new ComponentSpecification("com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler"),
-                        CLUSTERCONTROLLER_BUNDLE))), "cluster/v2/*"
-        );
+        addHandler("clustercontroller-status",
+                   "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
+                   "clustercontroller-status/*");
+        addHandler("clustercontroller-state-restapi-v2",
+                   "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StateRestApiV2Handler",
+                   "cluster/v2/*");
         if (runStandaloneZooKeeper) {
-            addComponent(new Component<>(new ComponentModel(new BundleInstantiationSpecification(
-                    new ComponentSpecification("clustercontroller-zkrunner"),
-                    new ComponentSpecification("com.yahoo.vespa.zookeeper.ZooKeeperServer"), ZKFACADE_BUNDLE))));
-            addComponent(new Component<>(new ComponentModel(new BundleInstantiationSpecification(
-                    new ComponentSpecification("clustercontroller-zkprovider"),
-                    new ComponentSpecification("com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider"), CLUSTERCONTROLLER_BUNDLE))));
+            addComponent("clustercontroller-zkrunner",
+                         "com.yahoo.vespa.zookeeper.ZooKeeperServer",
+                         ZOOKEEPER_SERVER_BUNDLE);
+            addComponent("clustercontroller-zkprovider",
+                         "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider",
+                         CLUSTERCONTROLLER_BUNDLE);
         } else {
-            addComponent(new Component<>(new ComponentModel(new BundleInstantiationSpecification(
-                    new ComponentSpecification("clustercontroller-zkprovider"),
-                    new ComponentSpecification("com.yahoo.vespa.clustercontroller.apps.clustercontroller.DummyZooKeeperProvider"), CLUSTERCONTROLLER_BUNDLE))));
+            addComponent("clustercontroller-zkprovider",
+                         "com.yahoo.vespa.clustercontroller.apps.clustercontroller.DummyZooKeeperProvider",
+                         CLUSTERCONTROLLER_BUNDLE);
         }
-        addBundle("file:" + getDefaults().underVespaHome("lib/jars/clustercontroller-apps-jar-with-dependencies.jar"));
-        addBundle("file:" + getDefaults().underVespaHome("lib/jars/clustercontroller-apputil-jar-with-dependencies.jar"));
-        addBundle("file:" + getDefaults().underVespaHome("lib/jars/clustercontroller-core-jar-with-dependencies.jar"));
-        addBundle("file:" + getDefaults().underVespaHome("lib/jars/clustercontroller-utils-jar-with-dependencies.jar"));
-
-        log.log(LogLevel.DEBUG, "Adding access log for cluster controller ...");
         addComponent(new AccessLogComponent(AccessLogComponent.AccessLogType.jsonAccessLog, "controller", isHosted));
+
+        addFileBundle("lib/jars/clustercontroller-apps-jar-with-dependencies.jar");
+        addFileBundle("lib/jars/clustercontroller-apputil-jar-with-dependencies.jar");
+        addFileBundle("lib/jars/clustercontroller-core-jar-with-dependencies.jar");
+        addFileBundle("lib/jars/clustercontroller-utils-jar-with-dependencies.jar");
     }
 
     @Override
@@ -89,8 +81,23 @@ public class ClusterControllerContainer extends Container implements
         super.addHandler(h);
     }
 
-    public void addBundle(String bundlePath) {
-        bundles.add(bundlePath);
+    private void addFileBundle(String bundlePath) {
+        bundles.add("file:" + getDefaults().underVespaHome(bundlePath));
+    }
+
+    private ComponentModel createComponentModel(String id, String className, ComponentSpecification bundle) {
+        return new ComponentModel(new BundleInstantiationSpecification(new ComponentSpecification(id),
+                                                                       new ComponentSpecification(className),
+                                                                       bundle));
+    }
+
+    private void addComponent(String id, String className, ComponentSpecification bundle) {
+        addComponent(new Component<>(createComponentModel(id, className, bundle)));
+    }
+
+    private void addHandler(String id, String className, String binding) {
+        addHandler(new Handler(createComponentModel(id, className, CLUSTERCONTROLLER_BUNDLE)),
+                   binding);
     }
 
     @Override
