@@ -293,7 +293,7 @@ public class JobController {
     public ApplicationVersion submit(TenantAndApplicationId id, SourceRevision revision, String authorEmail, long projectId,
                                      ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
-        controller.applications().lockApplicationOrThrow(id, application -> { // TODO jonmv: change callers
+        controller.applications().lockApplicationOrThrow(id, application -> {
             if ( ! application.get().internal())
                 application = registered(application);
 
