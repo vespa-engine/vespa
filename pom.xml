@@ -141,6 +141,7 @@
         <module>yolean</module>
         <module>zkfacade</module>
         <module>zookeeper-command-line-client</module>
+        <module>zookeeper-server</module>
         <module>hosted-api</module>
     </modules>
 </project>
