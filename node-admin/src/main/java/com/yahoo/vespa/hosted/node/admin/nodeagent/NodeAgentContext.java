@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public interface NodeAgentContext extends TaskContext {
 
@@ -52,10 +51,7 @@ public interface NodeAgentContext extends TaskContext {
     Path pathOnHostFromPathInNode(Path pathInNode);
 
     /** @see #pathOnHostFromPathInNode(Path) */
-    default Path pathOnHostFromPathInNode(String pathInNode) {
-        return pathOnHostFromPathInNode(Paths.get(pathInNode));
-    }
-
+    Path pathOnHostFromPathInNode(String pathInNode);
 
     /**
      * This method is the inverse of {@link #pathOnHostFromPathInNode(Path)}
@@ -66,9 +62,7 @@ public interface NodeAgentContext extends TaskContext {
     Path pathInNodeFromPathOnHost(Path pathOnHost);
 
     /** @see #pathOnHostFromPathInNode(Path) */
-    default Path pathInNodeFromPathOnHost(String pathOnHost) {
-        return pathInNodeFromPathOnHost(Paths.get(pathOnHost));
-    }
+    Path pathInNodeFromPathOnHost(String pathOnHost);
 
 
     /**
@@ -78,7 +72,5 @@ public interface NodeAgentContext extends TaskContext {
     Path pathInNodeUnderVespaHome(Path relativePath);
 
     /** @see #pathInNodeUnderVespaHome(Path) */
-    default Path pathInNodeUnderVespaHome(String relativePath) {
-        return pathInNodeUnderVespaHome(Paths.get(relativePath));
-    }
+    Path pathInNodeUnderVespaHome(String relativePath);
 }

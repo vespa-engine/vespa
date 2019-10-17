@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
 import com.yahoo.vespa.hosted.node.admin.docker.DockerNetworking;
 
 import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -106,6 +107,12 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public Path pathOnHostFromPathInNode(String pathInNode) {
+        // Ensure the path is on the proper FileSystem
+        return pathOnHostFromPathInNode(ROOT.getFileSystem().getPath(pathInNode));
+    }
+
+    @Override
     public Path pathInNodeFromPathOnHost(Path pathOnHost) {
         if (! pathOnHost.isAbsolute())
             throw new IllegalArgumentException("Expected an absolute path on the host, got: " + pathOnHost);
@@ -117,11 +124,23 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public Path pathInNodeFromPathOnHost(String pathOnHost) {
+        // Ensure the path is on the proper FileSystem
+        return pathInNodeFromPathOnHost(pathToNodeRootOnHost.getFileSystem().getPath(pathOnHost));
+    }
+
+    @Override
     public Path pathInNodeUnderVespaHome(Path relativePath) {
         if (relativePath.isAbsolute())
             throw new IllegalArgumentException("Expected a relative path to the Vespa home, got: " + relativePath);
 
         return pathToVespaHome.resolve(relativePath);
+    }
+
+    @Override
+    public Path pathInNodeUnderVespaHome(String relativePath) {
+        // Ensure the path is on the proper FileSystem
+        return pathInNodeUnderVespaHome(pathToVespaHome.getFileSystem().getPath(relativePath));
     }
 
     @Override
@@ -166,6 +185,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private Path pathToVespaHome;
         private String vespaUser;
         private String vespaUserOnHost;
+        private FileSystem fileSystem = FileSystems.getDefault();
 
         public Builder(NodeSpec node) {
             this.nodeSpecBuilder = new NodeSpec.Builder(node);
@@ -209,8 +229,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
-        public Builder pathToContainerStorage(Path pathToContainerStorage) {
-            this.pathToContainerStorage = pathToContainerStorage;
+        public Builder pathToContainerStorageFromFileSystem(FileSystem fileSystem) {
+            this.pathToContainerStorage = fileSystem.getPath("/home/docker");
             return this;
         }
 
@@ -229,8 +249,13 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        /**
+         * Sets the default file system to use for paths. May be overridden for each path,
+         * e.g. {@link #pathToVespaHome(Path)}  pathToVespaHome()}.
+         */
         public Builder fileSystem(FileSystem fileSystem) {
-            return pathToContainerStorage(fileSystem.getPath("/home/docker"));
+            this.fileSystem = fileSystem;
+            return this;
         }
 
         public NodeAgentContextImpl build() {
@@ -260,8 +285,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                             return getId().region().value();
                         }
                     }),
-                    Optional.ofNullable(pathToContainerStorage).orElseGet(() -> Paths.get("/home/docker")),
-                    Optional.ofNullable(pathToVespaHome).orElseGet(() -> Paths.get("/opt/vespa")),
+                    Optional.ofNullable(pathToContainerStorage).orElseGet(() -> fileSystem.getPath("/home/docker")),
+                    Optional.ofNullable(pathToVespaHome).orElseGet(() -> fileSystem.getPath("/opt/vespa")),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
                     Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"));
         }

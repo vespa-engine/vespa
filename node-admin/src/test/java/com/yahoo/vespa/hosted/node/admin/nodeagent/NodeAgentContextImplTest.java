@@ -13,7 +13,7 @@ import static org.junit.Assert.assertEquals;
 public class NodeAgentContextImplTest {
     private final FileSystem fileSystem = TestFileSystem.create();
     private final NodeAgentContext context = new NodeAgentContextImpl.Builder("container-1.domain.tld")
-            .fileSystem(fileSystem).build();
+            .pathToContainerStorageFromFileSystem(fileSystem).build();
 
     @Test
     public void path_on_host_from_path_in_node_test() {
