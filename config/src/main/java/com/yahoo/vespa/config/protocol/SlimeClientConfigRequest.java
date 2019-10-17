@@ -80,7 +80,8 @@ public abstract class SlimeClientConfigRequest implements JRTClientConfigRequest
                 .append(",").append(getRequestConfigMd5())
                 .append(",").append(getRequestGeneration())
                 .append(",").append(getTimeout())
-                .append(",").append(getVespaVersion()).append("'\n");
+                .append(",").append(getVespaVersion().isPresent() ? getVespaVersion().get() : "")
+                .append("'\n");
         sb.append("response='").append(getNewConfigMd5())
                 .append(",").append(getNewGeneration())
                 .append(",").append(responseIsInternalRedeploy())
