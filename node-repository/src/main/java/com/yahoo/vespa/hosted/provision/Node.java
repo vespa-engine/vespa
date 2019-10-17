@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -166,8 +167,10 @@ public final class Node {
      */
     public Node withWantToRetire(boolean wantToRetire, Agent agent, Instant at) {
         if (wantToRetire == status.wantToRetire()) return this;
-        return with(status.withWantToRetire(wantToRetire))
-                .with(history.with(new History.Event(History.Event.Type.wantToRetire, Agent.operator, at)));
+        Node node = this.with(status.withWantToRetire(wantToRetire));
+        if (wantToRetire)
+            node = node.with(history.with(new History.Event(History.Event.Type.wantToRetire, agent, at)));
+        return node;
     }
 
     /**
@@ -332,6 +335,19 @@ public final class Node {
         }
     }
 
+    /** Computes the allocation skew of a host node */
+    public static double skew(NodeResources totalHostCapacity, NodeResources freeHostCapacity) {
+        NodeResources all = totalHostCapacity.anySpeed();
+        NodeResources allocated = all.subtract(freeHostCapacity.anySpeed());
+
+        return new Mean(allocated.vcpu() / all.vcpu(),
+                        allocated.memoryGb() / all.memoryGb(),
+                        allocated.diskGb() / all.diskGb())
+                       .deviation();
+    }
+
+
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -387,6 +403,21 @@ public final class Node {
         public boolean isAllocated() {
             return this == reserved || this == active || this == inactive || this == failed || this == parked;
         }
+    }
+
+    /** The mean and mean deviation (squared difference) of a bunch of numbers */
+    private static class Mean {
+
+        private final double mean;
+        private final double deviation;
+
+        private Mean(double ... numbers) {
+            mean = Arrays.stream(numbers).sum() / numbers.length;
+            deviation = Arrays.stream(numbers).map(n -> Math.pow(mean - n, 2)).sum() / numbers.length;
+        }
+
+        public double deviation() {  return deviation; }
+
     }
 
 }

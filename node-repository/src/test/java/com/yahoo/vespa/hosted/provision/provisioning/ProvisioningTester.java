@@ -397,6 +397,18 @@ public class ProvisioningTester {
         return nodes;
     }
 
+    public void deployZoneApp() {
+        ApplicationId applicationId = makeApplicationId();
+        List<HostSpec> list = prepare(applicationId,
+                                             ClusterSpec.request(ClusterSpec.Type.container,
+                                                                 ClusterSpec.Id.from("node-admin"),
+                                                                 Version.fromString("6.42"),
+                                                                 false),
+                                             Capacity.fromRequiredNodeType(NodeType.host),
+                                             1);
+        activate(applicationId, Set.copyOf(list));
+    }
+
     /** Returns the hosts from the input list which are not retired */
     public List<HostSpec> nonRetired(Collection<HostSpec> hosts) {
         return hosts.stream().filter(host -> ! host.membership().get().retired()).collect(Collectors.toList());

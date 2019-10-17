@@ -47,7 +47,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
     private final Optional<DynamicProvisioningMaintainer> dynamicProvisioningMaintainer;
     private final CapacityReportMaintainer capacityReportMaintainer;
     private final OsUpgradeActivator osUpgradeActivator;
+    private final Rebalancer rebalancer;
 
+    @SuppressWarnings("unused")
     @Inject
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
@@ -55,7 +57,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      ProvisionServiceProvider provisionServiceProvider,
                                      FlagSource flagSource) {
         this(nodeRepository, deployer, infraDeployer, hostLivenessTracker, serviceMonitor, zone, Clock.systemUTC(),
-                orchestrator, metric, provisionServiceProvider, flagSource);
+             orchestrator, metric, provisionServiceProvider, flagSource);
     }
 
     public NodeRepositoryMaintenance(NodeRepository nodeRepository, Deployer deployer, InfraDeployer infraDeployer,
@@ -82,6 +84,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 new DynamicProvisioningMaintainer(nodeRepository, durationFromEnv("host_provisioner_interval").orElse(defaults.dynamicProvisionerInterval), hostProvisioner, flagSource));
         capacityReportMaintainer = new CapacityReportMaintainer(nodeRepository, metric, durationFromEnv("capacity_report_interval").orElse(defaults.capacityReportInterval));
         osUpgradeActivator = new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval);
+        rebalancer = new Rebalancer(nodeRepository, provisionServiceProvider.getHostResourcesCalculator(), clock, defaults.rebalancerInterval);
 
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintain();
@@ -105,6 +108,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         loadBalancerExpirer.ifPresent(Maintainer::deconstruct);
         dynamicProvisioningMaintainer.ifPresent(Maintainer::deconstruct);
         osUpgradeActivator.deconstruct();
+        rebalancer.deconstruct();
     }
 
     private static Optional<Duration> durationFromEnv(String envVariable) {
@@ -149,6 +153,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration loadBalancerExpirerInterval;
         private final Duration dynamicProvisionerInterval;
         private final Duration osUpgradeActivatorInterval;
+        private final Duration rebalancerInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -169,6 +174,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             reservationExpiry = Duration.ofMinutes(20); // Need to be long enough for deployment to be finished for all config model versions
             dynamicProvisionerInterval = Duration.ofMinutes(5);
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
+            rebalancerInterval = Duration.ofMinutes(40);
 
             if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy

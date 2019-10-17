@@ -40,6 +40,9 @@
       "name": "ProvisionedExpirer"
     },
     {
+      "name": "Rebalancer"
+    },
+    {
       "name": "ReservationExpirer"
     },
     {

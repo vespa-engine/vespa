@@ -6,6 +6,7 @@ import com.google.common.net.InetAddresses;
 import com.google.common.primitives.UnsignedBytes;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.net.Inet4Address;
@@ -201,7 +202,7 @@ public class IP {
          *
          * @param nodes Locked list of all nodes in the repository
          */
-        public Set<String> findUnused(LockedNodeList nodes) {
+        public Set<String> findUnused(NodeList nodes) {
             var unusedAddresses = new LinkedHashSet<>(addresses);
             nodes.filter(node -> node.ipConfig().primary().stream().anyMatch(addresses::contains))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));

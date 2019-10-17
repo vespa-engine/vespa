@@ -4,12 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLOCATABLE_HOST_STATES;
 
@@ -117,18 +112,8 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     private double skewWith(NodeResources resources) {
         if (parent.isEmpty()) return 0;
 
-        NodeResources all = anySpeed(parent.get().flavor().resources());
-        NodeResources allocated = all.subtract(anySpeed(freeParentCapacity)).add(anySpeed(resources));
-
-        return new Mean(allocated.vcpu() / all.vcpu(),
-                        allocated.memoryGb() / all.memoryGb(),
-                        allocated.diskGb() / all.diskGb())
-                       .deviation();
-    }
-
-    /** We don't care about disk speed in calculations here */
-    private NodeResources anySpeed(NodeResources resources) {
-        return resources.withDiskSpeed(NodeResources.DiskSpeed.any);
+        NodeResources free = freeParentCapacity.anySpeed().subtract(resources.anySpeed());
+        return Node.skew(parent.get().flavor().resources(), free);
     }
 
     private boolean isInNodeRepoAndReserved() {
@@ -184,21 +169,6 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         PrioritizableNode build() {
             return new PrioritizableNode(node, freeParentCapacity, parent, violatesSpares, isSurplusNode, isNewNode);
         }
-    }
-
-    /** The mean and mean deviation (squared difference) of a bunch of numbers */
-    private static class Mean {
-
-        private final double mean;
-        private final double deviation;
-
-        private Mean(double ... numbers) {
-            mean = Arrays.stream(numbers).sum() / numbers.length;
-            deviation = Arrays.stream(numbers).map(n -> Math.pow(mean - n, 2)).sum() / numbers.length;
-        }
-
-        public double deviation() {  return deviation; }
-
     }
 
 }
