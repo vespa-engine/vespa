@@ -239,6 +239,8 @@ public class TlsCryptoSocket implements CryptoSocket {
             case OK:
                 return true;
             case BUFFER_OVERFLOW:
+                // This is to ensure we have large enough buffer during handshake phase too.
+                sessionPacketBufferSize = sslEngine.getSession().getPacketBufferSize();
                 return false;
             default:
                 throw unexpectedStatusException(result.getStatus());
