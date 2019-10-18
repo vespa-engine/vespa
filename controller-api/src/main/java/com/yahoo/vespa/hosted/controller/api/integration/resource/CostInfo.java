@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.resource;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.math.BigDecimal;
+
 /**
  * @author olaa
  */
@@ -11,16 +13,16 @@ public class CostInfo {
 
     private final ApplicationId applicationId;
     private final ZoneId zoneId;
-    private final double cpuHours;
-    private final double memoryHours;
-    private final double diskHours;
+    private final BigDecimal cpuHours;
+    private final BigDecimal memoryHours;
+    private final BigDecimal diskHours;
     private final int cpuCost;
     private final int memoryCost;
     private final int diskCost;
 
 
     public CostInfo(ApplicationId applicationId, ZoneId zoneId,
-                        double cpuHours, double memoryHours, double diskHours,
+                    BigDecimal cpuHours, BigDecimal memoryHours, BigDecimal diskHours,
                         int cpuCost, int memoryCost, int diskCost) {
         this.applicationId = applicationId;
         this.zoneId = zoneId;
@@ -40,15 +42,15 @@ public class CostInfo {
         return zoneId;
     }
 
-    public double getCpuHours() {
+    public BigDecimal getCpuHours() {
         return cpuHours;
     }
 
-    public double getMemoryHours() {
+    public BigDecimal getMemoryHours() {
         return memoryHours;
     }
 
-    public double getDiskHours() {
+    public BigDecimal getDiskHours() {
         return diskHours;
     }
 

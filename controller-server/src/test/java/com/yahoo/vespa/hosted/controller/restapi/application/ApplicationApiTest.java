@@ -75,6 +75,7 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -1037,8 +1038,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .oktaAccessToken(OKTA_AT),
                 "{\"months\":[\"2019-09\",\"2019-10\"]}");
 
-        CostInfo costInfo1 = new CostInfo(applicationId, ZoneId.from("prod", "us-south-1"), 7.0, 600.0, 1000.0, 35, 23, 10);
-        CostInfo costInfo2 = new CostInfo(applicationId, ZoneId.from("prod", "us-north-1"), 2.0, 3.0, 4.0, 10, 20, 30);
+        CostInfo costInfo1 = new CostInfo(applicationId, ZoneId.from("prod", "us-south-1"),
+                new BigDecimal("7.0"),
+                new BigDecimal("600.0"),
+                new BigDecimal("1000.0"),
+                35, 23, 10);
+        CostInfo costInfo2 = new CostInfo(applicationId, ZoneId.from("prod", "us-north-1"),
+                new BigDecimal("2.0"),
+                new BigDecimal("3.0"),
+                new BigDecimal("4.0"),
+                10, 20, 30);
 
         mockTenantCost.setCostInfoList(
                 List.of(costInfo1, costInfo2)

@@ -94,6 +94,7 @@ import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.DigestInputStream;
@@ -404,13 +405,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             costObject.setString("applicationId", costInfo.getApplicationId().serializedForm());
             costObject.setString("zoneId", costInfo.getZoneId().value());
             Cursor cpu = costObject.setObject("cpu");
-            cpu.setDouble("usage", costInfo.getCpuHours());
+            cpu.setDouble("usage", costInfo.getCpuHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
             cpu.setLong("charge", costInfo.getCpuCost());
             Cursor memory = costObject.setObject("memory");
-            memory.setDouble("usage", costInfo.getMemoryHours());
+            memory.setDouble("usage", costInfo.getMemoryHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
             memory.setLong("charge", costInfo.getMemoryCost());
             Cursor disk = costObject.setObject("disk");
-            disk.setDouble("usage", costInfo.getDiskHours());
+            disk.setDouble("usage", costInfo.getDiskHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
             disk.setLong("charge", costInfo.getDiskCost());
         });
 
