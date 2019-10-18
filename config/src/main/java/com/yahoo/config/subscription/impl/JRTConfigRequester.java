@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 /**
  * This class fetches config payload using JRT, and acts as the callback target.
  * It uses the {@link JRTConfigSubscription} and {@link JRTClientConfigRequest}
- * as context, and puts the requests objects on a queue on the subscription,
+ * as context, and puts the request objects on a queue on the subscription,
  * for handling by the user thread.
  *
  * @author Vegard Havdal
@@ -80,19 +80,17 @@ public class JRTConfigRequester implements RequestWaiter {
         doRequest(sub, req, timingValues.getSubscribeTimeout());
     }
 
-    private <T extends ConfigInstance> void doRequest(JRTConfigSubscription<T> sub,
-                                                      JRTClientConfigRequest req, long timeout) {
+    private <T extends ConfigInstance> void doRequest(JRTConfigSubscription<T> sub, JRTClientConfigRequest req, long timeout) {
         com.yahoo.vespa.config.Connection connection = connectionPool.getCurrent();
         req.getRequest().setContext(new RequestContext(sub, req, connection));
         boolean reqOK = req.validateParameters();
         if (!reqOK) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
         // Add some time to the timeout, we never want it to time out in JRT during normal operation
         double jrtClientTimeout = getClientTimeout(timeout);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Requesting config for " + sub + " on connection " + connection
-                    + " with RPC timeout " + jrtClientTimeout +
-                    (log.isLoggable(LogLevel.SPAM) ? (",defcontent=" + req.getDefContent().asString()) : ""));
-        }
+        log.log(LogLevel.DEBUG, () -> "Requesting config for " + sub + " on connection " + connection
+                + " with RPC timeout " + jrtClientTimeout +
+                (log.isLoggable(LogLevel.SPAM) ? (",defcontent=" + req.getDefContent().asString()) : ""));
+
         connection.invokeAsync(req.getRequest(), jrtClientTimeout, this);
     }
 
@@ -118,15 +116,11 @@ public class JRTConfigRequester implements RequestWaiter {
 
     private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
         boolean validResponse = jrtReq.validateResponse();
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "Request callback " +(validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
-        }
+        log.log(LogLevel.DEBUG, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
         if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
-        if (log.isLoggable(LogLevel.SPAM)) {
-            log.log(LogLevel.SPAM, trace.toString());
-        }
+        log.log(LogLevel.SPAM, trace::toString);
         if (validResponse) {
             handleOKRequest(jrtReq, sub, connection);
         } else {
@@ -138,7 +132,7 @@ public class JRTConfigRequester implements RequestWaiter {
     private void logWhenErrorResponse(JRTClientConfigRequest jrtReq, Connection connection) {
         switch (jrtReq.errorCode()) {
             case com.yahoo.jrt.ErrorCode.CONNECTION:
-                log.log(LogLevel.DEBUG, "Request callback failed: " + jrtReq.errorMessage() +
+                log.log(LogLevel.DEBUG, () -> "Request callback failed: " + jrtReq.errorMessage() +
                         "\nConnection spec: " + connection);
                 break;
             case ErrorCode.APPLICATION_NOT_LOADED:
@@ -260,13 +254,11 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void scheduleNextRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<?> sub, long delay, long timeout) {
-        if (delay < 0) delay = 0;
+        long delayBeforeSendingRequest = (delay < 0) ? 0 : delay;
         JRTClientConfigRequest jrtReqNew = jrtReq.nextRequest(timeout);
-        if (log.isLoggable(LogLevel.DEBUG)) {
-            log.log(LogLevel.DEBUG, "My timing values: " + timingValues);
-            log.log(LogLevel.DEBUG, "Scheduling new request " + delay + " millis from now for " + jrtReqNew.getConfigKey());
-        }
-        scheduler.schedule(new GetConfigTask(jrtReqNew, sub), delay, TimeUnit.MILLISECONDS);
+        log.log(LogLevel.DEBUG, timingValues::toString);
+        log.log(LogLevel.DEBUG, () -> "Scheduling new request " + delayBeforeSendingRequest + " millis from now for " + jrtReqNew.getConfigKey());
+        scheduler.schedule(new GetConfigTask(jrtReqNew, sub), delayBeforeSendingRequest, TimeUnit.MILLISECONDS);
     }
 
     /**
