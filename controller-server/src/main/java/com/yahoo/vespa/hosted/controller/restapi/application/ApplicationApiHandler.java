@@ -1524,12 +1524,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse testConfig(ApplicationId id, JobType type) {
-        Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id, type);
+        // TODO jonmv: Support non-default instances as well; requires API change in clients.
+        ApplicationId defaultInstanceId = TenantAndApplicationId.from(id).defaultInstance();
+        var deployments = controller.applications()
+                                    .getInstance(defaultInstanceId).stream()
+                                    .flatMap(instance -> instance.productionDeployments().keySet().stream())
+                                    .map(zone -> new DeploymentId(defaultInstanceId, zone))
+                                    .collect(Collectors.toSet());
+        var testedZone = type.zone(controller.system());
+
+        // This should not happen, unless one asks for test-config for a production job, which one shouldn't have use for.
+        if (deployments.stream().anyMatch(deploymentId ->      deploymentId.zoneId().equals(testedZone)
+                                                          && ! deploymentId.applicationId().equals(id)))
+            throw new IllegalStateException("Conflict: " + testedZone + " contains both default and " + id.instance().value() + " instances");
+
+        deployments.add(new DeploymentId(id, testedZone));
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
-                                                                      controller.applications().clusterEndpoints(id, zones),
-                                                                      controller.applications().contentClustersByZone(id, zones)));
+                                                                      controller.applications().clusterEndpoints(deployments),
+                                                                      controller.applications().contentClustersByZone(deployments)));
     }
 
     private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {

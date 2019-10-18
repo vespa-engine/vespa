@@ -499,13 +499,6 @@ public class JobController {
         return URI.create("http://" + url.getHost() + ":443/");
     }
 
-    /** Returns a set containing the zone of the deployment tested in the given run, and all production zones for the application. */
-    public Set<ZoneId> testedZoneAndProductionZones(ApplicationId id, JobType type) {
-        return Stream.concat(Stream.of(type.zone(controller.system())),
-                             controller.applications().requireInstance(id).productionDeployments().keySet().stream())
-                     .collect(Collectors.toSet());
-    }
-
     private void prunePackages(TenantAndApplicationId id) {
         controller.applications().lockApplicationIfPresent(id, application -> {
             application.get().productionDeployments().values().stream()

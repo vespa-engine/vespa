@@ -216,10 +216,10 @@ public class ApplicationController {
     public ApplicationStore applicationStore() {  return applicationStore; }
 
     /** Returns all content clusters in all current deployments of the given application. */
-    public Map<ZoneId, List<String>> contentClustersByZone(ApplicationId id, Iterable<ZoneId> zones) {
+    public Map<ZoneId, List<String>> contentClustersByZone(Collection<DeploymentId> ids) {
         ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
-        for (ZoneId zone : zones)
-            clusters.put(zone, ImmutableList.copyOf(configServer.getContentClusters(new DeploymentId(id, zone))));
+        for (DeploymentId id : ids)
+            clusters.put(id.zoneId(), ImmutableList.copyOf(configServer.getContentClusters(id)));
         return clusters.build();
     }
 
@@ -715,12 +715,13 @@ public class ApplicationController {
     }
 
     /** Returns all zone-specific cluster endpoints for the given application, in the given zones. */
-    public Map<ZoneId, Map<ClusterSpec.Id, URI>> clusterEndpoints(ApplicationId id, Collection<ZoneId> zones) {
+    public Map<ZoneId, Map<ClusterSpec.Id, URI>> clusterEndpoints(Collection<DeploymentId> ids) {
         Map<ZoneId, Map<ClusterSpec.Id, URI>> deployments = new TreeMap<>(Comparator.comparing(ZoneId::value));
-        for (ZoneId zone : zones) {
-            var endpoints = clusterEndpoints(new DeploymentId(id, zone));
-            if ( ! endpoints.isEmpty())
-                deployments.put(zone, endpoints);
+        for (DeploymentId id : ids) {
+            var endpoints = clusterEndpoints(id);
+            if ( ! endpoints.isEmpty()) {
+                deployments.put(id.zoneId(), endpoints);
+            }
         }
         return Collections.unmodifiableMap(deployments);
     }
