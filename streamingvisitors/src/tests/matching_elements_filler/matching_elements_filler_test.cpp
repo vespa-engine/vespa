@@ -212,6 +212,7 @@ MyDocType::make_test_doc() const
 {
     auto doc = std::make_unique<document::Document>(_document_type, DocumentId("id::test::1"));
     doc->setValue("elem_array", *make_elem_array({{"foo", 10},{"bar", 20},{"baz", 30},{"foo", 40}, {"zap", 20}, {"zap", 20}}));
+    // the elements in maps are ordered on the key
     doc->setValue("elem_map", *make_elem_map({{"@foo", {"foo", 10}}, {"@bar", {"bar", 20}},{"@baz", {"baz", 30}},{"@foo@", {"foo", 40}},{"@zap", {"zap", 20}}, {"@zap@", {"zap", 20}}}));
     doc->setValue("str_int_map", *make_str_int_map({{"@foo", 10}, {"@bar", 20}, {"@baz", 30}, {"@foo@", 40}, {"@zap", 20}, {"@zap@", 20}}));
     return doc;
@@ -347,7 +348,7 @@ MatchingElementsFillerTest::assert_same_element_single(const vespalib::string& f
     assert_elements(1, field, exp_elements);
 }
 
-TEST_F(MatchingElementsFillerTest, same_element_operator)
+TEST_F(MatchingElementsFillerTest, matching_elements_calculated_for_same_element_operator)
 {
     assert_same_element("elem_array", "name:bar", "weight:20", { 1 });
     assert_same_element("elem_array", "name:zap", "weight:20", { 4, 5 });
@@ -357,7 +358,7 @@ TEST_F(MatchingElementsFillerTest, same_element_operator)
     assert_same_element("str_int_map", "key:zap", "value:20", { 4, 5 });
 }
 
-TEST_F(MatchingElementsFillerTest, nested_field)
+TEST_F(MatchingElementsFillerTest, matching_elements_calculated_when_searching_on_nested_field)
 {
     assert_same_element_single("elem_array", "name:bar", { 1 });
     assert_same_element_single("elem_array", "name:foo", { 0, 3 });
@@ -376,7 +377,7 @@ TEST_F(MatchingElementsFillerTest, nested_field)
     assert_same_element_single("str_int_map", "value:10", { 2 });
 }
 
-TEST_F(MatchingElementsFillerTest, traverse_query_tree)
+TEST_F(MatchingElementsFillerTest, all_children_of_intermediate_query_nodes_are_traversed)
 {
     MyQueryBuilder builder;
     builder.addAnd(2);
@@ -396,17 +397,6 @@ TEST_F(MatchingElementsFillerTest, ignore_same_element_operator)
     fill_matching_elements(make_query(builder.build()));
     assert_elements(1, "elem_array", { 1 });
     assert_elements(1, "elem_map", { });
-}
-
-TEST_F(MatchingElementsFillerTest, ignore_nested_field)
-{
-    MyQueryBuilder builder;
-    builder.addAndNot(2);
-    builder.make_same_element("elem_map", "value.name:zap", 1, "value.weight:20", 2);
-    builder.add_term("elem_array.name:bar", 0);
-    fill_matching_elements(make_query(builder.build()));
-    assert_elements(1, "elem_array", { });
-    assert_elements(1, "elem_map", { 4, 5 });
 }
 
 TEST_F(MatchingElementsFillerTest, union_of_matching_elements)
