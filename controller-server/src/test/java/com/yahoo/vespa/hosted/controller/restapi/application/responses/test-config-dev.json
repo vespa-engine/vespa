@@ -1,0 +1,30 @@
+{
+  "application": "tenant1:application1:my-user",
+  "zone": "dev.us-east-1",
+  "system": "main",
+  "isCI": false,
+  "endpoints": {
+    "dev.us-east-1": [
+      "http://old-endpoint.vespa.yahooapis.com:4080"
+    ],
+    "prod.us-central-1": [
+      "http://old-endpoint.vespa.yahooapis.com:4080"
+    ]
+  },
+  "zoneEndpoints": {
+    "dev.us-east-1": {
+      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+    },
+    "prod.us-central-1": {
+      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+    }
+  },
+  "clusters": {
+    "dev.us-east-1": [
+      "music"
+    ],
+    "prod.us-central-1": [
+      "music"
+    ]
+  }
+}
