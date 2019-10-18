@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
@@ -589,6 +590,23 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Deactivated tenant1.application1.instance1 in prod.us-central-1\"}");
 
+        // GET test-config for local tests against a dev deployment
+        tester.controller().applications().deploy(ApplicationId.from("tenant1", "application1", "default"),
+                                                  ZoneId.from("prod", "us-central-1"),
+                                                  Optional.of(applicationPackageDefault),
+                                                  new DeployOptions(true, Optional.empty(), false, false));
+        tester.controller().applications().deploy(ApplicationId.from("tenant1", "application1", "my-user"),
+                                                  ZoneId.from("dev", "us-east-1"),
+                                                  Optional.of(applicationPackageDefault),
+                                                  new DeployOptions(false, Optional.empty(), false, false));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user/job/dev-us-east-1/test-config", GET)
+                                      .userIdentity(USER_ID),
+                              new File("test-config-dev.json"));
+        tester.controller().applications().deactivate(ApplicationId.from("tenant1", "application1", "default"),
+                                                      ZoneId.from("prod", "us-central-1"));
+        tester.controller().applications().deactivate(ApplicationId.from("tenant1", "application1", "my-user"),
+                                                      ZoneId.from("dev", "us-east-1"));
+
         // POST an application package to start a deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1", POST)
                                       .userIdentity(USER_ID)
@@ -732,6 +750,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "");
 
         // DELETE all instances under an application to delete the application
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"message\":\"Deleted instance tenant1.application1.default\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT),
+                              "{\"message\":\"Deleted instance tenant1.application1.my-user\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),

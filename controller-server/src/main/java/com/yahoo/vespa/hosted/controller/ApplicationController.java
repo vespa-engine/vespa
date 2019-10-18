@@ -217,10 +217,10 @@ public class ApplicationController {
 
     /** Returns all content clusters in all current deployments of the given application. */
     public Map<ZoneId, List<String>> contentClustersByZone(Collection<DeploymentId> ids) {
-        ImmutableMap.Builder<ZoneId, List<String>> clusters = ImmutableMap.builder();
+        Map<ZoneId, List<String>> clusters = new TreeMap<>(Comparator.comparing(ZoneId::value));
         for (DeploymentId id : ids)
             clusters.put(id.zoneId(), ImmutableList.copyOf(configServer.getContentClusters(id)));
-        return clusters.build();
+        return Collections.unmodifiableMap(clusters);
     }
 
     /** Returns the oldest Vespa version installed on any active or reserved production node for the given application. */
