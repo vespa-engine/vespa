@@ -52,6 +52,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -343,7 +344,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns true iff all containers in the deployment give 100 consecutive 200 OK responses on /status.html. */
     private boolean containersAreUp(ApplicationId id, ZoneId zoneId, DualLogger logger) {
-        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zoneId));
+        var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zoneId)));
         if ( ! endpoints.containsKey(zoneId))
             return false;
 
@@ -363,7 +364,7 @@ public class InternalStepRunner implements StepRunner {
 
     private boolean endpointsAvailable(ApplicationId id, ZoneId zone, DualLogger logger) {
         logger.log("Attempting to find deployment endpoints ...");
-        var endpoints = controller.applications().clusterEndpoints(id, Set.of(zone));
+        var endpoints = controller.applications().clusterEndpoints(Set.of(new DeploymentId(id, zone)));
         if ( ! endpoints.containsKey(zone)) {
             logger.log("Endpoints not yet ready.");
             return false;
@@ -437,10 +438,14 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(aborted);
         }
 
-        Set<ZoneId> zones = controller.jobController().testedZoneAndProductionZones(id.application(), id.type());
+        var deployments = controller.applications().requireInstance(id.application())
+                                    .productionDeployments().keySet().stream()
+                                    .map(zone -> new DeploymentId(id.application(), zone))
+                                    .collect(Collectors.toSet());
+        deployments.add(new DeploymentId(id.application(), id.type().zone(controller.system())));
 
         logger.log("Attempting to find endpoints ...");
-        var endpoints = controller.applications().clusterEndpoints(id.application(), zones);
+        var endpoints = controller.applications().clusterEndpoints(deployments);
         if ( ! endpoints.containsKey(id.type().zone(controller.system())) && timedOut(id, deployment.get(), endpointTimeout)) {
             logger.log(WARNING, "Endpoints for the deployment to test vanished again, while it was still active!");
             return Optional.of(error);
@@ -465,7 +470,7 @@ public class InternalStepRunner implements StepRunner {
                                                                                       id.type(),
                                                                                       true,
                                                                                       endpoints,
-                                                                                      controller.applications().contentClustersByZone(id.application(), zones)));
+                                                                                      controller.applications().contentClustersByZone(deployments)));
         return Optional.of(running);
     }
 
