@@ -545,9 +545,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Requested restart of tenant1.application1.instance1 in dev.us-central-1\"}");
 
         // POST a 'restart application' command with a host filter (other filters not supported yet)
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=host1", POST)
+        tester.serviceRegistry().configServerMock().nodeRepository().addFixedNodes(ZoneId.from("prod", "us-central-1"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/restart?hostname=hostA", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID),
-                              "{\"error-code\":\"INTERNAL_SERVER_ERROR\",\"message\":\"No node with the hostname host1 is known.\"}", 500);
+                              "{\"message\":\"Requested restart of tenant1.application1.instance1 in prod.us-central-1\"}", 200);
 
         // GET suspended
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/suspended", GET)
