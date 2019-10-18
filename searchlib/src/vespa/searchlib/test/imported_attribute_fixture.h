@@ -3,6 +3,7 @@
 #pragma once
 
 #include "mock_gid_to_lid_mapping.h"
+#include "weighted_type_test_utils.h"
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
@@ -296,7 +297,7 @@ ImportedAttributeFixture::ImportedAttributeFixture(bool use_search_cache_)
     reference_attr->setGidToLidMapperFactory(mapper_factory);
 }
 
-ImportedAttributeFixture::~ImportedAttributeFixture() {}
+ImportedAttributeFixture::~ImportedAttributeFixture() = default;
 
 template<typename AttrValueType, typename PredicateType>
 void assert_multi_value_matches(const ImportedAttributeFixture &f,
@@ -305,9 +306,14 @@ void assert_multi_value_matches(const ImportedAttributeFixture &f,
                                 PredicateType predicate) {
     AttributeContent<AttrValueType> content;
     content.fill(*f.get_imported_attr(), lid);
-    EXPECT_EQUAL(expected.size(), content.size());
+    ASSERT_EQUAL(expected.size(), content.size());
     std::vector<AttrValueType> actual(content.begin(), content.end());
-    EXPECT_TRUE(std::equal(expected.begin(), expected.end(),
+    std::vector<AttrValueType> wanted(expected.begin(), expected.end());
+    if constexpr (IsWeightedType<AttrValueType>::value) {
+        std::sort(actual.begin(), actual.end(), value_then_weight_order());
+        std::sort(wanted.begin(), wanted.end(), value_then_weight_order());
+    }
+    EXPECT_TRUE(std::equal(wanted.begin(), wanted.end(),
                            actual.begin(), actual.end(), predicate));
 }
 
