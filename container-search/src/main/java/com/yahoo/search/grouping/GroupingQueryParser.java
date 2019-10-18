@@ -9,6 +9,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.request.GroupingOperation;
+import com.yahoo.search.query.Select;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
@@ -28,7 +29,7 @@ public class GroupingQueryParser extends Searcher {
 
     public static final String SELECT_PARAMETER_PARSING = "SelectParameterParsing";
     public static final CompoundName PARAM_CONTINUE = new CompoundName("continue");
-    public static final CompoundName PARAM_REQUEST = new CompoundName("select");
+    public static final CompoundName PARAM_REQUEST = new CompoundName(Select.SELECT);
     public static final CompoundName PARAM_TIMEZONE = new CompoundName("timezone");
     private static final ThreadLocal<ZoneCache> zoneCache = new ThreadLocal<>();
 

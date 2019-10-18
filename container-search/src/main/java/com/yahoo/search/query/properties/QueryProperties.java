@@ -101,17 +101,22 @@ public class QueryProperties extends Properties {
                 if (key.last().equals(Matching.MINHITSPERTHREAD)) return matching.getMinHitsPerThread();
 
             }
-            else if (key.size()>2) {
+            else if (key.size() > 2) {
                 // pass the portion after "ranking.features/properties" down
                 if (key.get(1).equals(Ranking.FEATURES)) return ranking.getFeatures().getObject(key.rest().rest().toString());
                 if (key.get(1).equals(Ranking.PROPERTIES)) return ranking.getProperties().get(key.rest().rest().toString());
             }
         }
-        else if (key.size()==2 && key.first().equals(Select.SELECT)) {
-            if (key.last().equals(Select.WHERE)) return query.getSelect().getWhereString();
-            if (key.last().equals(Select.GROUPING)) return query.getSelect().getGroupingString();
+        else if (key.first().equals(Select.SELECT)) {
+            if (key.size() == 1) {
+                return query.getSelect().getGroupingExpressionString();
+            }
+            else if (key.size() == 2) {
+                if (key.last().equals(Select.WHERE)) return query.getSelect().getWhereString();
+                if (key.last().equals(Select.GROUPING)) return query.getSelect().getGroupingString();
+            }
         }
-        else if (key.size()==2 && key.first().equals(Presentation.PRESENTATION)) {
+        else if (key.size() == 2 && key.first().equals(Presentation.PRESENTATION)) {
             if (key.last().equals(Presentation.BOLDING)) return query.getPresentation().getBolding();
             if (key.last().equals(Presentation.SUMMARY)) return query.getPresentation().getSummary();
             if (key.last().equals(Presentation.FORMAT)) return query.getPresentation().getFormat();
@@ -144,7 +149,7 @@ public class QueryProperties extends Properties {
     public void set(CompoundName key, Object value, Map<String,String> context) {
         // Note: The defaults here are never used
         try {
-            if (key.size()==2 && key.first().equals(Model.MODEL)) {
+            if (key.size() == 2 && key.first().equals(Model.MODEL)) {
                 Model model = query.getModel();
                 if (key.last().equals(Model.QUERY_STRING))
                     model.setQueryString(asString(value, ""));
@@ -171,7 +176,7 @@ public class QueryProperties extends Properties {
             }
             else if (key.first().equals(Ranking.RANKING)) {
                 Ranking ranking = query.getRanking();
-                if (key.size()==2) {
+                if (key.size() == 2) {
                     if (key.last().equals(Ranking.LOCATION))
                         ranking.setLocation(asString(value,""));
                     else if (key.last().equals(Ranking.PROFILE))
@@ -225,7 +230,7 @@ public class QueryProperties extends Properties {
                     if (key.last().equals(Matching.NUMSEARCHPARTITIIONS)) matching.setNumSearchPartitions(asInteger(value, 1));
                     if (key.last().equals(Matching.MINHITSPERTHREAD)) matching.setMinHitsPerThread(asInteger(value, 0));
                 }
-                else if (key.size()>2) {
+                else if (key.size() > 2) {
                     String restKey = key.rest().rest().toString();
                     if (key.get(1).equals(Ranking.FEATURES))
                         setRankingFeature(query, restKey, toSpecifiedType(restKey, value, profileRegistry.getTypeRegistry().getComponent("features")));
@@ -235,7 +240,7 @@ public class QueryProperties extends Properties {
                         throwIllegalParameter(key.rest().toString(),Ranking.RANKING);
                 }
             }
-            else if (key.size()==2 && key.first().equals(Presentation.PRESENTATION)) {
+            else if (key.size() == 2 && key.first().equals(Presentation.PRESENTATION)) {
                 if (key.last().equals(Presentation.BOLDING))
                     query.getPresentation().setBolding(asBoolean(value, true));
                 else if (key.last().equals(Presentation.SUMMARY))
@@ -249,11 +254,19 @@ public class QueryProperties extends Properties {
                 else
                     throwIllegalParameter(key.last(), Presentation.PRESENTATION);
             }
-            else if (key.size()==2 && key.first().equals(Select.SELECT)) {
-                if (key.last().equals(Select.WHERE)){
-                    query.getSelect().setWhereString(asString(value, ""));
-                } else if (key.last().equals(Select.GROUPING)) {
-                    query.getSelect().setGroupingString(asString(value, ""));
+            else if (key.first().equals(Select.SELECT)) {
+                if (key.size() == 1) {
+                    query.getSelect().setGroupingExpressionString(asString(value, ""));
+                }
+                else if (key.size() == 2) {
+                    if (key.last().equals(Select.WHERE)) {
+                        query.getSelect().setWhereString(asString(value, ""));
+                    } else if (key.last().equals(Select.GROUPING)) {
+                        query.getSelect().setGroupingString(asString(value, ""));
+                    }
+                }
+                else {
+                    throwIllegalParameter(key.last(), Select.SELECT);
                 }
             }
             else if (key.first().equals("rankfeature") || key.first().equals("featureoverride") ) { // featureoverride is deprecated

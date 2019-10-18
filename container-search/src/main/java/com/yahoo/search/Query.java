@@ -346,7 +346,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             Properties queryProfileProperties = new QueryProfileProperties(queryProfile);
             properties().chain(queryProfileProperties);
             // TODO: Just checking legality rather than actually setting would be faster
-            setPropertiesFromRequestMap(requestMap, properties()); // Adds errors to the query for illegal set attempts
+            setPropertiesFromRequestMap(requestMap, properties(), true); // Adds errors to the query for illegal set attempts
 
             // Create the full chain
             properties().chain(new QueryProperties(this, queryProfile.getRegistry())).
@@ -358,13 +358,20 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             // Pass the values from the query profile which maps through a field in the Query object model
             // through the property chain to cause those values to be set in the Query object model
             setFieldsFrom(queryProfileProperties, requestMap);
+
+            // We need special handling for "select" because it can be both the prefix of the nested JSON select
+            // parameters, and a plain select expression. The latter will be disallowed by query profile types
+            // since they contain the former.
+            String select = requestMap.get(Select.SELECT);
+            if (select != null)
+                properties().set(Select.SELECT, select);
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
                     chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
-            setPropertiesFromRequestMap(requestMap, properties());
+            setPropertiesFromRequestMap(requestMap, properties(), false);
         }
 
         properties().setParentQuery(this);
@@ -434,9 +441,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     /** Calls properties.set on all entries in requestMap */
-    private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties) {
+    private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
         for (var entry : requestMap.entrySet()) {
             try {
+                if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
                 properties.set(entry.getKey(), entry.getValue(), requestMap);
             }
             catch (IllegalArgumentException e) {

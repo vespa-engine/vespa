@@ -84,6 +84,7 @@ public class SortingDegraderTestCase {
         Query query = new Query("?ranking.sorting=%2ba1%20-a2&select=all(group(a1)%20each(output(a1)))");
         execute(query);
         assertNull(query.getRanking().getMatchPhase().getAttribute());
+
     }
 
     @Test

@@ -212,8 +212,8 @@ public class Properties implements Cloneable {
      * @throws RuntimeException if no instance in the chain accepted this name-value pair
      */
     public void set(CompoundName name, Object value, Map<String, String> context) {
-        if (chained == null) throw new RuntimeException("Property '" + name + "->" + value +
-                "' was not accepted in this property chain");
+        if (chained == null) throw new RuntimeException("Property '" + name + "->" +
+                                                        value + "' was not accepted in this property chain");
         chained.set(name, value, context);
     }
 
