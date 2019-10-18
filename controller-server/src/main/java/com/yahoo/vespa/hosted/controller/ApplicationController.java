@@ -745,6 +745,9 @@ public class ApplicationController {
         for (ApplicationId instance : instances)
             deleteInstance(instance);
 
+        applicationStore.removeAll(id.tenant(), id.application());
+        applicationStore.removeAllTesters(id.tenant(), id.application());
+
         if (tenant.type() != Tenant.Type.user)
             accessControl.deleteApplication(id, credentials.get());
         curator.removeApplication(id);
@@ -765,9 +768,6 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments in: " +
                                                    application.get().require(instanceId.instance()).deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
-
-            applicationStore.removeAll(instanceId.tenant(), instanceId.application());
-            applicationStore.removeAllTesters(instanceId.tenant(), instanceId.application());
 
             Instance instance = application.get().require(instanceId.instance());
             instance.rotations().forEach(assignedRotation -> {
