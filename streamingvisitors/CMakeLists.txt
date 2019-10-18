@@ -17,6 +17,7 @@ vespa_define_module(
 
     TESTS
     src/tests/hitcollector
+    src/tests/matching_elements_filler
     src/tests/querywrapper
     src/tests/searchvisitor
 )

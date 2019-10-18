@@ -80,12 +80,15 @@ class ObjectContainer
 {
  public:
   ObjectContainer() : _p(NULL) { }
+  ObjectContainer(std::unique_ptr<T> &&org) : _p(org.release()) { }
   ObjectContainer(const T & org) : _p(static_cast<T*>(org.duplicate())) { }
   ObjectContainer(const T * org) : _p(org ? static_cast<T*>(org->duplicate()) : NULL) { }
   ObjectContainer(const ObjectContainer & org) : _p(NULL) { *this = org; }
+  ObjectContainer(ObjectContainer && org) : _p(org._p) { org._p = nullptr; }
   ObjectContainer & operator = (const T * org) { cleanUp(); if (org) { _p = static_cast<T*>(org->duplicate()); } return *this; }
   ObjectContainer & operator = (const T & org) { cleanUp(); _p = static_cast<T*>(org.duplicate()); return *this; }
   ObjectContainer & operator = (const ObjectContainer & org) { if (this != & org) { cleanUp(); if (org._p) { _p = static_cast<T*>(org._p->duplicate());} } return *this; }
+  ObjectContainer & operator = (ObjectContainer && org) { if (this != & org) { cleanUp(); _p = org._p; org._p = nullptr; } return *this; }
   virtual ~ObjectContainer() { cleanUp(); }
   bool valid()           const { return (_p != NULL); }
   T *operator->()              { return _p; }
@@ -97,34 +100,6 @@ class ObjectContainer
 
  private:
   void cleanUp()             { delete _p; _p = NULL; }
-  T * _p;
-};
-
-/**
-  This is a template similar to ObjectContainer that frees you from the trouble
-  of having to write you own copy/assignment operators when you use pointers as
-  pure references. Adds one level of indirection, but that normally optimized
-  away by the compiler. Can be used as an ordinary pointer since -> and * is
-  overloaded.
-*/
-template <typename T>
-class PointerContainer
-{
- public:
-  PointerContainer() : _p(NULL) { }
-  PointerContainer(T & org) : _p(org) { }
-  PointerContainer(T * org) : _p(org) { }
-  PointerContainer(const PointerContainer & org) : _p(org._p) { }
-  PointerContainer & operator = (T * org) { _p = org; return *this; }
-  PointerContainer & operator = (T & org) { _p = &org; return *this; }
-  PointerContainer & operator = (const PointerContainer & org) { if (this != & org) { _p = org._p;} return *this; }
-  virtual ~PointerContainer() { _p = 0; }
-  bool valid()         const { return (_p != NULL); }
-  T *operator->()      const { return _p; }
-  T &operator*()       const { return *_p; }
-  operator T & ()      const { return *_p; }
-  operator T * ()      const { return _p; }
- private:
   T * _p;
 };
 
