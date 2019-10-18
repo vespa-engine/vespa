@@ -19,7 +19,7 @@ import static com.yahoo.vespa.service.duper.DuperModelManager.configServerApplic
 import static com.yahoo.vespa.service.duper.DuperModelManager.controllerApplication;
 import static com.yahoo.vespa.service.duper.DuperModelManager.proxyHostApplication;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;

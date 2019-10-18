@@ -60,7 +60,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.mockito.internal.matchers.Contains;
+import org.mockito.ArgumentMatchers;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -75,10 +75,19 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
-import static com.yahoo.document.json.readers.SingleValueReader.*;
+import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_DECREMENT;
+import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_DIVIDE;
+import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_INCREMENT;
+import static com.yahoo.document.json.readers.SingleValueReader.UPDATE_MULTIPLY;
 import static com.yahoo.test.json.JsonTestHelper.inputJson;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Basic test of JSON streams to Vespa document instances.
@@ -1724,7 +1733,7 @@ public class JsonReaderTestCase {
     @Test
     public void requireThatUnknownDocTypeThrowsIllegalArgumentException() {
         exception.expect(IllegalArgumentException.class);
-        exception.expectMessage(new Contains("Document type walrus does not exist"));
+        exception.expectMessage(ArgumentMatchers.contains("Document type walrus does not exist"));
 
         final String jsonData = inputJson(
                 "[",
@@ -1894,7 +1903,7 @@ public class JsonReaderTestCase {
     // NOTE: Do not call this method multiple times from a test method as it's using the ExpectedException rule
     private void assertParserErrorMatches(String expectedError, String... json) {
         exception.expect(JsonReaderException.class);
-        exception.expectMessage(new Contains(expectedError));
+        exception.expectMessage(ArgumentMatchers.contains(expectedError));
         String jsonData = inputJson(json);
         new JsonReader(types, jsonToInputStream(jsonData), parserFactory).next();
     }

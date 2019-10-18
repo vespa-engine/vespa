@@ -1,15 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
-import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
@@ -20,7 +17,6 @@ import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,8 +35,8 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -156,15 +152,10 @@ public class DocumentRetrieverTest {
                 params);
         documentRetriever.retrieveDocuments();
 
-        verify(mockedSession, times(1)).syncSend(argThat(new ArgumentMatcher<GetDocumentMessage>() {
-            @Override
-            public boolean matches(Object o) {
-                GetDocumentMessage msg = (GetDocumentMessage) o;
-                return msg.getPriority().equals(DocumentProtocol.Priority.HIGH_1) &&
-                        !msg.getRetryEnabled() &&
-                        msg.getLoadType().equals(new LoadType(1, "loadtype", DocumentProtocol.Priority.HIGH_1));
-            }
-        }));
+        verify(mockedSession, times(1)).syncSend(argThat((ArgumentMatcher<GetDocumentMessage>) o ->
+                o.getPriority().equals(DocumentProtocol.Priority.HIGH_1) &&
+                !o.getRetryEnabled() &&
+                o.getLoadType().equals(new LoadType(1, "loadtype", DocumentProtocol.Priority.HIGH_1))));
         assertContainsDocument(DOC_ID_1);
     }
 
@@ -255,12 +246,7 @@ public class DocumentRetrieverTest {
         DocumentRetriever documentRetriever = createDocumentRetriever(params, clusterList);
         documentRetriever.retrieveDocuments();
 
-        verify(mockedFactory).createDocumentAccess(argThat(new ArgumentMatcher<MessageBusParams>() {
-            @Override
-            public boolean matches(Object o) {
-                return ((MessageBusParams) o).getRoute().equals(expectedRoute);
-            }
-        }));
+        verify(mockedFactory).createDocumentAccess(argThat(o -> o.getRoute().equals(expectedRoute)));
     }
 
     @Test

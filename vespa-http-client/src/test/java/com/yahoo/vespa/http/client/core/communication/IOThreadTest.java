@@ -9,7 +9,6 @@ import com.yahoo.vespa.http.client.V3HttpAPITest;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.core.Document;
 import com.yahoo.vespa.http.client.core.EndpointResult;
-
 import com.yahoo.vespa.http.client.core.ServerResponseException;
 import org.junit.Test;
 
@@ -28,9 +27,13 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class IOThreadTest {
 
@@ -71,7 +74,7 @@ public class IOThreadTest {
 
             latch.countDown();
             return null;
-        }).when(endpointResultQueue).failOperation(anyObject(), eq(0));
+        }).when(endpointResultQueue).failOperation(any(), eq(0));
 
         doAnswer(invocation -> {
             EndpointResult endpointResult = (EndpointResult) invocation.getArguments()[0];
@@ -79,7 +82,7 @@ public class IOThreadTest {
             assertThat(endpointResult.getDetail().getResultType(), is(Result.ResultType.OPERATION_EXECUTED));
             latch.countDown();
             return null;
-        }).when(endpointResultQueue).resultReceived(anyObject(), eq(0));
+        }).when(endpointResultQueue).resultReceived(any(), eq(0));
     }
 
     @Test
@@ -87,7 +90,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         InputStream serverResponse = new ByteArrayInputStream(
                 (docId1 + " OK Doc{20}fed").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.writeOperations(anyObject())).thenReturn(serverResponse);
+        when(apacheGatewayConnection.writeOperations(any())).thenReturn(serverResponse);
         setupEndpointResultQueueMock( "nope", docId1, true, exceptionMessage);
         try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10000, 10000L, documentQueue, 0)) {
             ioThread.post(doc1);
@@ -98,7 +101,7 @@ public class IOThreadTest {
     @Test
     public void requireThatSingleDocumentWriteErrorIsHandledProperly() throws Exception {
         when(apacheGatewayConnection.connect()).thenReturn(true);
-        when(apacheGatewayConnection.writeOperations(anyObject())).thenThrow(new IOException(exceptionMessage));
+        when(apacheGatewayConnection.writeOperations(any())).thenThrow(new IOException(exceptionMessage));
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true, exceptionMessage);
         try (IOThread ioThread = new IOThread(null, endpointResultQueue, apacheGatewayConnection, 0, 0, 10000, 10000L, documentQueue, 0)) {
             ioThread.post(doc1);
@@ -111,7 +114,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(true);
         InputStream serverResponse = new ByteArrayInputStream(
                 (docId2 + " OK Doc{20}fed").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.writeOperations(anyObject()))
+        when(apacheGatewayConnection.writeOperations(any()))
                 .thenThrow(new IOException(exceptionMessage))
                 .thenReturn(serverResponse);
         latch = new CountDownLatch(2);
@@ -129,7 +132,7 @@ public class IOThreadTest {
         when(apacheGatewayConnection.connect()).thenReturn(false);
         InputStream serverResponse = new ByteArrayInputStream(
                 ("").getBytes(StandardCharsets.UTF_8));
-        when(apacheGatewayConnection.writeOperations(anyObject()))
+        when(apacheGatewayConnection.writeOperations(any()))
                 .thenReturn(serverResponse);
         setupEndpointResultQueueMock(doc1.getOperationId(), "nope", true,
                 "java.lang.Exception: Not sending document operation, timed out in queue after");

@@ -2,11 +2,11 @@
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
+import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
-import org.mockito.ArgumentMatcher;
 
-public class NodeEventWithDescription extends ArgumentMatcher<NodeEvent> {
+public class NodeEventWithDescription extends BaseMatcher<NodeEvent> {
     private final String expected;
 
     private NodeEventWithDescription(String expected) {

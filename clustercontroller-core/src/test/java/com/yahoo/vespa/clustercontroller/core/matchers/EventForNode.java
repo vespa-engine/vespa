@@ -3,11 +3,11 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
+import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
-import org.mockito.ArgumentMatcher;
 
-public class EventForNode extends ArgumentMatcher<NodeEvent> {
+public class EventForNode extends BaseMatcher<NodeEvent> {
     private final Node expected;
 
     private EventForNode(Node expected) {

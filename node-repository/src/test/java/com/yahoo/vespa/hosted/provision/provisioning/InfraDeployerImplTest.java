@@ -24,7 +24,6 @@ import com.yahoo.vespa.service.monitor.InfraApplicationApi;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.mockito.ArgumentMatcher;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,9 +32,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -130,12 +129,9 @@ public class InfraDeployerImplTest {
     private void verifyActivated(String... hostnames) {
         verify(duperModelInfraApi).infraApplicationActivated(
                 eq(application.getApplicationId()), eq(Stream.of(hostnames).map(HostName::from).collect(Collectors.toList())));
-        verify(provisioner).activate(any(), eq(application.getApplicationId()), argThat(new ArgumentMatcher<>() {
-            @Override
-            public boolean matches(Object o) {
-                assertEquals(Set.of(hostnames), ((List<HostSpec>) o).stream().map(HostSpec::hostname).collect(Collectors.toSet()));
-                return true;
-            }
+        verify(provisioner).activate(any(), eq(application.getApplicationId()), argThat(hostSpecs -> {
+            assertEquals(Set.of(hostnames), hostSpecs.stream().map(HostSpec::hostname).collect(Collectors.toSet()));
+            return true;
         }));
     }
 

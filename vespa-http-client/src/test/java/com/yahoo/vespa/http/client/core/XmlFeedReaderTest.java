@@ -3,7 +3,6 @@ package com.yahoo.vespa.http.client.core;
 
 import com.yahoo.vespa.http.client.FeedClient;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -11,11 +10,8 @@ import org.xml.sax.SAXParseException;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,8 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
@@ -138,7 +134,7 @@ public class XmlFeedReaderTest {
                 assertThat(docId, is("id:&"));
                 return null;
             }
-        }).when(feedClient).stream(anyString(), anyObject());
+        }).when(feedClient).stream(anyString(), any());
         XmlFeedReader.read(stream, feedClient, numSent);
         assertThat(numSent.get(), is(1));
     }
@@ -180,7 +176,7 @@ public class XmlFeedReaderTest {
                 success.set(true);
                 return null;
             }
-        }).when(feedClient).stream(anyString(), anyObject());
+        }).when(feedClient).stream(anyString(), any());
         XmlFeedReader.read(stream, feedClient, numSent);
         assertThat(numSent.get(), is(1));
         assert(success.get());

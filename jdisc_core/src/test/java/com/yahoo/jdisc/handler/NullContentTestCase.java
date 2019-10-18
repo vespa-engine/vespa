@@ -22,7 +22,7 @@ public class NullContentTestCase {
         } catch (UnsupportedOperationException e) {
 
         }
-        Mockito.verifyZeroInteractions(completion);
+        Mockito.verifyNoInteractions(completion);
     }
 
     @Test

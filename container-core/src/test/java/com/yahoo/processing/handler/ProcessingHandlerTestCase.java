@@ -9,9 +9,8 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.AccessLogInterface;
-import com.yahoo.jdisc.Request;
+import com.yahoo.container.protect.Error;
 import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.execution.Execution;
@@ -21,34 +20,33 @@ import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.processing.request.ErrorMessage;
 import com.yahoo.processing.response.Data;
 import com.yahoo.processing.test.ProcessorLibrary;
-import com.yahoo.container.protect.Error;
 import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
-
-import static com.yahoo.processing.test.ProcessorLibrary.MapData;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static com.yahoo.processing.test.ProcessorLibrary.MapData;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.notNull;
 import static org.mockito.Mockito.times;
 
 /**
@@ -97,16 +95,6 @@ public class ProcessingHandlerTestCase {
         AccessLogEntry entry = accessLogEntryCaptor.getValue();
         assertNotNull(entry);
         assertThat(entry.getKeyValues().get(LOG_KEY), is(Collections.singletonList(LOG_VALUE)));
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T notNull() {
-        return (T)Matchers.notNull();
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> T any() {
-        return (T)Matchers.any();
     }
 
     @Test
