@@ -388,7 +388,7 @@ TEST_F(MatchingElementsFillerTest, all_children_of_intermediate_query_nodes_are_
     assert_elements(1, "elem_map", { 4, 5 });
 }
 
-TEST_F(MatchingElementsFillerTest, ignore_same_element_operator)
+TEST_F(MatchingElementsFillerTest, and_not_query_node_ignores_all_but_first_child)
 {
     MyQueryBuilder builder;
     builder.addAndNot(2);
