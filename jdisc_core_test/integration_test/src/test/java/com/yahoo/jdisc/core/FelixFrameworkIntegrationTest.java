@@ -111,8 +111,11 @@ public class FelixFrameworkIntegrationTest {
         Bundle bundleL = startBundle(felix, "cert-l1.jar");
         Bundle bundleM = startBundle(felix, "cert-ml.jar");
         assertEquals(1, callClass(bundleM, "com.yahoo.jdisc.bundle.m.CertificateM"));
+
+        // Switch from l1 to l2 (identical bundles, except for bsn)
         bundleL.uninstall();
         startBundle(felix, "cert-l2.jar");
+
         felix.refreshPackages();
         assertEquals(2, callClass(bundleM, "com.yahoo.jdisc.bundle.m.CertificateM"));
         felix.stop();
@@ -185,7 +188,7 @@ public class FelixFrameworkIntegrationTest {
                      "com.yahoo.vespa.jdisc_core.cert-q-frag");
     }
 
-    private static Bundle startBundle(FelixFramework felix, String bundleLocation) throws BundleException {
+    static Bundle startBundle(FelixFramework felix, String bundleLocation) throws BundleException {
         List<Bundle> lst = felix.installBundle(bundleLocation);
         assertEquals(1, lst.size());
         felix.startBundles(lst, false);

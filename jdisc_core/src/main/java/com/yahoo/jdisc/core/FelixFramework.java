@@ -15,6 +15,7 @@ import org.osgi.framework.wiring.FrameworkWiring;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen Hult
+ * @author gjoranv
  */
 public class FelixFramework implements OsgiFramework {
 
@@ -35,11 +37,14 @@ public class FelixFramework implements OsgiFramework {
     private final ConsoleLogManager logListener;
     private final Felix felix;
 
+    private final BundleCollisionHook collisionHook;
+
     @Inject
     public FelixFramework(FelixParams params) {
         deleteDirContents(new File(params.getCachePath()));
         felix = new Felix(params.toConfig());
         logListener = params.isLoggerEnabled() ? new ConsoleLogManager() : null;
+        collisionHook = new BundleCollisionHook();
     }
 
     @Override
@@ -48,6 +53,7 @@ public class FelixFramework implements OsgiFramework {
         felix.start();
 
         BundleContext ctx = felix.getBundleContext();
+        collisionHook.start(ctx);
         logService.start(ctx);
         logHandler.install(ctx);
         if (logListener != null) {
@@ -65,6 +71,7 @@ public class FelixFramework implements OsgiFramework {
             }
             logHandler.uninstall();
             logService.stop();
+            collisionHook.stop();
         }
         felix.stop();
         try {
@@ -90,8 +97,8 @@ public class FelixFramework implements OsgiFramework {
         for (Bundle bundle : bundles) {
             if (!privileged && OsgiHeader.isSet(bundle, OsgiHeader.PRIVILEGED_ACTIVATOR)) {
                 log.log(Level.INFO, "OSGi bundle '" + bundle.getSymbolicName() + "' " +
-                                    "states that it requires privileged " +
-                                    "initialization, but privileges are not available. YMMV.");
+                        "states that it requires privileged " +
+                        "initialization, but privileges are not available. YMMV.");
             }
             if (bundle.getHeaders().get(Constants.FRAGMENT_HOST) != null) {
                 continue; // fragments can not be started
@@ -102,7 +109,7 @@ public class FelixFramework implements OsgiFramework {
     }
 
     private String startedBundlesMessage(List<Bundle> bundles) {
-        StringBuilder sb = new StringBuilder("Started bundles: {" );
+        StringBuilder sb = new StringBuilder("Started bundles: {");
         for (Bundle b : bundles)
             sb.append("[" + b.getBundleId() + "]" + b.getSymbolicName() + ":" + b.getVersion() + ", ");
         sb.setLength(sb.length() - 2);
@@ -127,9 +134,9 @@ public class FelixFramework implements OsgiFramework {
                               });
         try {
             long TIMEOUT_SECONDS = 60L;
-            if ( ! latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            if (!latch.await(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 log.warning("No PACKAGES_REFRESHED FrameworkEvent received within " + TIMEOUT_SECONDS +
-                            " seconds of calling FrameworkWiring.refreshBundles()");
+                                    " seconds of calling FrameworkWiring.refreshBundles()");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -144,6 +151,14 @@ public class FelixFramework implements OsgiFramework {
     @Override
     public List<Bundle> bundles() {
         return Arrays.asList(felix.getBundleContext().getBundles());
+    }
+
+    public List<Bundle> getBundles(Bundle requestingBundle) {
+        return Arrays.asList(requestingBundle.getBundleContext().getBundles());
+    }
+
+    public void allowDuplicateBundles(Collection<Bundle> bundles) {
+        collisionHook.allowDuplicateBundles(bundles);
     }
 
     private void installBundle(String bundleLocation, Set<String> mask, List<Bundle> out) throws BundleException {

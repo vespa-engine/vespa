@@ -153,6 +153,12 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa.jdisc_core</groupId>
+            <artifactId>cert-l1-dup</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa.jdisc_core</groupId>
             <artifactId>cert-l2</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -160,6 +166,12 @@
         <dependency>
             <groupId>com.yahoo.vespa.jdisc_core</groupId>
             <artifactId>cert-ml</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa.jdisc_core</groupId>
+            <artifactId>cert-ml-dup</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
