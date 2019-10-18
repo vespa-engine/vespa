@@ -10,6 +10,7 @@
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/util/bufferwriter.h>
+#include <vespa/vespalib/util/regexp.h>
 #include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
