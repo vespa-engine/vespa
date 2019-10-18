@@ -119,7 +119,7 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
                 // Failure to communicate with a config server is not abnormal during upgrades
                 if (ConnectionException.isKnownConnectionException(e)) {
-                    logger.info("Failed to connect to " + configServer + " (upgrading?), will try next: " + e.getMessage());
+                    logger.info("Failed to connect to " + configServer + ", will try next: " + e.getMessage());
                 } else {
                     logger.warning("Failed to communicate with " + configServer + ", will try next: " + e.getMessage());
                 }

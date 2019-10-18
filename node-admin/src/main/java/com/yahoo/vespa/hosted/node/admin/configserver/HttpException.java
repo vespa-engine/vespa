@@ -58,8 +58,9 @@ public class HttpException extends ConvergenceException {
                 throw new HttpException(status, message, false);
         }
 
-        // Other errors like server-side errors are assumed to be retryable.
-        throw new HttpException(status, message, true);
+        // Other errors like server-side errors are assumed to be NOT retryable,
+        // in case retries would put additional load on a bogged down server.
+        throw new HttpException(status, message, false);
     }
 
     public static class NotFoundException extends HttpException {
