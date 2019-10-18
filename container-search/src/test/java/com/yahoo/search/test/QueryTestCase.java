@@ -34,6 +34,9 @@ import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.yolean.Exceptions;
@@ -929,6 +932,19 @@ public class QueryTestCase {
         query.getModel().setExecution(new Execution(Execution.Context.createContextStub(new IndexFacts(indexModel))));
 
         assertEquals("myfield:\"it s fine\"", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    public void testGroupingAndQueryProfileType() {
+        QueryProfileType type = new QueryProfileType("mytype");
+        QueryProfile profile = new QueryProfile("default");
+        profile.setType(type);
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        registry.register(profile);
+        registry.getTypeRegistry().register(type);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query query = new Query(httpEncode("?query=sddocname:sentence&select=all(group(context_id) max(10) each(each(output(summary()))))"),
+                                cRegistry.findQueryProfile("default"));
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
