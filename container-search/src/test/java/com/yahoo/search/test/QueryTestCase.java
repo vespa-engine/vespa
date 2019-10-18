@@ -30,6 +30,8 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.grouping.GroupingQueryParser;
+import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.query.profile.QueryProfile;
@@ -935,16 +937,39 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testGroupingAndQueryProfileType() {
+    public void testOldStyleSelect() {
+        // The same as testOldStyleSelectAndNativeQueryProfileType but not inheriting native
+        QueryProfileRegistry registry = new QueryProfileRegistry();
         QueryProfileType type = new QueryProfileType("mytype");
         QueryProfile profile = new QueryProfile("default");
         profile.setType(type);
-        QueryProfileRegistry registry = new QueryProfileRegistry();
         registry.register(profile);
         registry.getTypeRegistry().register(type);
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         Query query = new Query(httpEncode("?query=sddocname:sentence&select=all(group(context_id) max(10) each(each(output(summary()))))"),
                                 cRegistry.findQueryProfile("default"));
+        GroupingQueryParser parser = new GroupingQueryParser();
+        parser.search(query, new Execution(parser, Execution.Context.createContextStub()));
+        assertEquals("[all(group(context_id) max(10) each(each(output(summary())))), all(group(context_id) max(10) each(each(output(summary()))))]",
+                     query.getSelect().getGrouping().toString());
+    }
+
+    @Test
+    public void testOldStyleSelectAndNativeQueryProfileType() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileType type = new QueryProfileType("mytype");
+        type.inherited().add(registry.getType("native"));
+        QueryProfile profile = new QueryProfile("default");
+        profile.setType(type);
+        registry.register(profile);
+        registry.getTypeRegistry().register(type);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query query = new Query(httpEncode("?query=sddocname:sentence&select=all(group(context_id) max(10) each(each(output(summary()))))"),
+                                cRegistry.findQueryProfile("default"));
+        GroupingQueryParser parser = new GroupingQueryParser();
+        parser.search(query, new Execution(parser, Execution.Context.createContextStub()));
+        assertEquals("[all(group(context_id) max(10) each(each(output(summary())))), all(group(context_id) max(10) each(each(output(summary()))))]",
+                     query.getSelect().getGrouping().toString());
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {

@@ -45,7 +45,7 @@ public class QueryProfileProperties extends Properties {
 
     /** Gets a value from the query profile, or from the nested profile if the value is null */
     @Override
-    public Object get(CompoundName name, Map<String,String> context,
+    public Object get(CompoundName name, Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
         name = unalias(name, context);
         Object value = null;

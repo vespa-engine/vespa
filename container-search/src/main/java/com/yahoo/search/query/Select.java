@@ -37,6 +37,7 @@ public class Select implements Cloneable {
 
     private String where;
     private String grouping;
+    private String groupingExpressionString;
 
     static {
         argumentType = new QueryProfileType(SELECT);
@@ -107,6 +108,15 @@ public class Select implements Cloneable {
         }
     }
 
+    /**
+     * Sets the grouping expression string directly.
+     * This will not be parsed by this but will be accessed later by GroupingQueryParser.
+     */
+    public void setGroupingExpressionString(String groupingExpressionString) {
+        this.groupingExpressionString = groupingExpressionString;
+    }
+
+    public String getGroupingExpressionString() { return groupingExpressionString; }
 
     /** Returns the grouping in the query */
     public String getGroupingString(){
