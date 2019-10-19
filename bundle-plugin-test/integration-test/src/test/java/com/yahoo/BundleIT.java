@@ -4,14 +4,15 @@ package com.yahoo;
 import com.yahoo.osgi.maven.ProjectBundleClassPaths;
 import com.yahoo.vespa.config.VespaVersion;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -19,6 +20,7 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 
 import static com.yahoo.osgi.maven.ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -31,16 +33,19 @@ import static org.junit.Assert.assertThat;
 
 /**
  * Verifies the bundle jar file built and its manifest.
+ *
  * @author Tony Vaagenes
  */
 public class BundleIT {
+    static final String TEST_BUNDLE_PATH = System.getProperty("test.bundle.path", ".") + "/";
+
     private JarFile jarFile;
     private Attributes mainAttributes;
 
     @Before
     public void setup() {
         try {
-            File componentJar = findBundleJar();
+            File componentJar = findBundleJar("main");
             jarFile = new JarFile(componentJar);
             Manifest manifest = jarFile.getManifest();
             mainAttributes = manifest.getMainAttributes();
@@ -49,11 +54,11 @@ public class BundleIT {
         }
     }
 
-    private File findBundleJar() {
-        File[] componentFile = new File("target").listFiles(new FilenameFilter() {
+    private File findBundleJar(String bundleName) {
+        File[] componentFile = new File(TEST_BUNDLE_PATH).listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String fileName) {
-                return fileName.endsWith("-deploy.jar") || fileName.endsWith("-jar-with-dependencies.jar");
+                return fileName.endsWith("-bundle.jar");
             }
         });
 
@@ -75,7 +80,7 @@ public class BundleIT {
 
     @Test
     public void require_that_bundle_symbolic_name_matches_pom_artifactId() {
-        assertThat(mainAttributes.getValue("Bundle-SymbolicName"), is("bundle-plugin-test"));
+        assertThat(mainAttributes.getValue("Bundle-SymbolicName"), is("main"));
     }
 
     @Test
@@ -141,17 +146,25 @@ public class BundleIT {
         assertThat(webInfUrl, containsString("/WEB-INF/web.xml"));
     }
 
+    // TODO Vespa 8: Remove, the classpath mappings file is only needed for jersey resources to work in the application test framework.
+    //               When this test is removed, also remove the maven-resources-plugin from the 'main' test bundle's pom.
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
     @SuppressWarnings("unchecked")
     @Test
-    public void bundle_class_path_mappings_are_generated() throws URISyntaxException, IOException {
-        URL mappingsUrl = getClass().getResource("/" + CLASSPATH_MAPPINGS_FILENAME);
+    public void bundle_class_path_mappings_are_generated() throws Exception {
+        ZipEntry classpathMappingsEntry = jarFile.getEntry(CLASSPATH_MAPPINGS_FILENAME);
+
         assertNotNull(
-                "Could not find " + CLASSPATH_MAPPINGS_FILENAME + " in the test output directory",
-                mappingsUrl);
+                "Could not find " + CLASSPATH_MAPPINGS_FILENAME + " in the test bundle",
+                classpathMappingsEntry);
 
-        ProjectBundleClassPaths bundleClassPaths = ProjectBundleClassPaths.load(Paths.get(mappingsUrl.toURI()));
+        Path mappingsFile = tempFolder.newFile(CLASSPATH_MAPPINGS_FILENAME).toPath();
+        Files.copy(jarFile.getInputStream(classpathMappingsEntry), mappingsFile, REPLACE_EXISTING);
 
-        assertThat(bundleClassPaths.mainBundle.bundleSymbolicName, is("bundle-plugin-test"));
+        ProjectBundleClassPaths bundleClassPaths = ProjectBundleClassPaths.load(mappingsFile);
+
+        assertThat(bundleClassPaths.mainBundle.bundleSymbolicName, is("main"));
 
         Collection<String> mainBundleClassPaths = bundleClassPaths.mainBundle.classPathElements;
 
