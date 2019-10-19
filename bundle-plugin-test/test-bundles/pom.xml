@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+        <artifactId>bundle-plugin-test</artifactId>
+        <version>7-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>test-bundles</artifactId>
+    <version>7-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <!-- Trick to package bundles before test phase to allow running 'mvn test' -->
+                <groupId>com.yahoo.vespa</groupId>
+                <artifactId>bundle-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>package-test-bundles</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>generate-osgi-manifest</goal>
+                            <goal>assemble-container-plugin</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <!-- The integration-test module should use the bundle jars instead of the ordinary artifacts. -->
+                    <AttachBundle>true</AttachBundle>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <modules>
+        <module>main</module>
+    </modules>
+</project>
