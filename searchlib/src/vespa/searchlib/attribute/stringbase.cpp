@@ -18,7 +18,6 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
 
 using attribute::LoadedEnumAttribute;
 using attribute::LoadedEnumAttributeVector;
-using vespalib::Regexp;
 
 AttributeVector::SearchContext::UP
 StringAttribute::getSearch(QueryTermSimple::UP term, const attribute::SearchContextParams & params) const
@@ -228,10 +227,14 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     _queryTerm(std::move(qTerm)),
     _termUCS4(queryTerm()->getUCS4Term()),
     _bufferLen(toBeSearched.getMaxValueCount()),
-    _buffer()
+    _buffer(nullptr),
+    _regex()
 {
     if (isRegex()) {
-        _regex = std::make_unique<Regexp>(_queryTerm->getTerm(), Regexp::Flags().enableICASE());
+        try {
+            _regex = std::regex(_queryTerm->getTerm(), std::regex::icase);
+        } catch (std::regex_error &) {
+        }
     }
 }
 

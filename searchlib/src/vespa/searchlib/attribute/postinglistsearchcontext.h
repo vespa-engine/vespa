@@ -9,6 +9,7 @@
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <regex>
 #include "posting_list_merger.h"
 
 namespace search::attribute {
@@ -186,9 +187,10 @@ private:
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
     using Parent::_toBeSearched;
     using Parent::_enumStore;
+    using Parent::isRegex;
     using Parent::getRegex;
     bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override {
-        return getRegex() ? getRegex()->match(_enumStore.get_value(it.getKey())) : true;
+        return isRegex() ? (getRegex() ? std::regex_search(_enumStore.get_value(it.getKey()), *getRegex()) : false ) : true;
     }
 public:
     StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);

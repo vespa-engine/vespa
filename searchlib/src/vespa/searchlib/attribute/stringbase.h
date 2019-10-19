@@ -11,7 +11,8 @@
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>
-#include <vespa/vespalib/util/regexp.h>
+#include <optional>
+#include <regex>
 
 namespace search {
 
@@ -102,7 +103,7 @@ protected:
         const QueryTermBase * queryTerm() const override;
         bool isMatch(const char *src) const {
             if (__builtin_expect(isRegex(), false)) {
-                return getRegex()->match(src);
+                return _regex ? std::regex_search(src, *_regex) : false;
             }
             vespalib::Utf8ReaderForZTS u8reader(src);
             uint32_t j = 0;
@@ -161,7 +162,7 @@ protected:
         bool  isRegex() const { return _isRegex; }
         QueryTermSimpleUP         _queryTerm;
         std::vector<ucs4_t>       _termUCS4;
-        const vespalib::Regexp * getRegex() const { return _regex.get(); }
+        const std::optional<std::regex>& getRegex() const { return _regex; }
     private:
         WeightedConstChar * getBuffer() const {
             if (_buffer == nullptr) {
@@ -171,7 +172,7 @@ protected:
         }
         unsigned                    _bufferLen;
         mutable WeightedConstChar * _buffer;
-        std::unique_ptr<vespalib::Regexp>   _regex;
+        std::optional<std::regex>   _regex;
     };
 private:
     SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
