@@ -3,48 +3,9 @@
 
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/exception.h>
+#include <regex>
 
 using namespace vespalib;
-
-TEST("require that empty expression works as expected") {
-    Regexp empty("");
-    EXPECT_TRUE(empty.valid());
-    EXPECT_TRUE(empty.match(""));
-    EXPECT_TRUE(empty.match("foo"));
-    EXPECT_TRUE(empty.match("bar"));
-}
-
-TEST("require that substring expression works as expected") {
-    Regexp re("foo");
-    EXPECT_TRUE(re.match("foo"));
-    EXPECT_TRUE(re.match("afoob"));
-    EXPECT_TRUE(re.match("foo foo"));
-    EXPECT_FALSE(re.match("bar"));
-    EXPECT_FALSE(re.match("fobaroo"));
-}
-
-TEST("require that it is default case sentive") {
-    Regexp re("foo");
-    EXPECT_TRUE(re.match("foo"));
-    EXPECT_FALSE(re.match("fOo"));
-}
-
-TEST("require that it is case insentive") {
-    Regexp re("foo", Regexp::Flags().enableICASE());
-    EXPECT_TRUE(re.match("foo"));
-    EXPECT_TRUE(re.match("fOo"));
-}
-
-TEST("require that invalid expression fails compilation") {
-    Regexp bad("[unbalanced");
-    EXPECT_FALSE(bad.valid());
-    EXPECT_FALSE(bad.match("nothing"));
-}
-
-TEST("require that * is not valid") {
-    Regexp bad("*");
-    EXPECT_FALSE(bad.valid());
-}
 
 TEST("require that prefix detection works") {
     EXPECT_EQUAL("", Regexp::get_prefix(""));
@@ -86,33 +47,23 @@ struct ExprFixture {
     }
 };
 
-TEST_F("require that regexp can be made from prefix string", ExprFixture()) {
-    for (vespalib::string str: f1.expressions) {
-        Regexp re(Regexp::make_from_prefix(str));
-        EXPECT_TRUE(re.match(str));
-        EXPECT_TRUE(re.match(str + "foo"));
-        EXPECT_FALSE(re.match("foo" + str));
-        EXPECT_FALSE(re.match("foo" + str + "bar"));
-    }
-}
-
 TEST_F("require that regexp can be made from suffix string", ExprFixture()) {
     for (vespalib::string str: f1.expressions) {
-        Regexp re(Regexp::make_from_suffix(str));
-        EXPECT_TRUE(re.match(str));
-        EXPECT_FALSE(re.match(str + "foo"));
-        EXPECT_TRUE(re.match("foo" + str));
-        EXPECT_FALSE(re.match("foo" + str + "bar"));
+        std::regex re(std::string(Regexp::make_from_suffix(str)));
+        EXPECT_TRUE(std::regex_search(std::string(str), re));
+        EXPECT_FALSE(std::regex_search(std::string(str + "foo"), re));
+        EXPECT_TRUE(std::regex_search(std::string("foo" + str), re));
+        EXPECT_FALSE(std::regex_search(std::string("foo" + str + "bar"), re));
     }
 }
 
 TEST_F("require that regexp can be made from substring string", ExprFixture()) {
     for (vespalib::string str: f1.expressions) {
-        Regexp re(Regexp::make_from_substring(str));
-        EXPECT_TRUE(re.match(str));
-        EXPECT_TRUE(re.match(str + "foo"));
-        EXPECT_TRUE(re.match("foo" + str));
-        EXPECT_TRUE(re.match("foo" + str + "bar"));
+        std::regex re(std::string(Regexp::make_from_substring(str)));
+        EXPECT_TRUE(std::regex_search(std::string(str), re));
+        EXPECT_TRUE(std::regex_search(std::string(str + "foo"), re));
+        EXPECT_TRUE(std::regex_search(std::string("foo" + str), re));
+        EXPECT_TRUE(std::regex_search(std::string("foo" + str + "bar"), re));
     }
 }
 
