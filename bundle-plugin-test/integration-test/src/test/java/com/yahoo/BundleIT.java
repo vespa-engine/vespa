@@ -9,10 +9,10 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -54,19 +54,13 @@ public class BundleIT {
         }
     }
 
-    private File findBundleJar(String bundleName) {
-        File[] componentFile = new File(TEST_BUNDLE_PATH).listFiles(new FilenameFilter() {
-            @Override
-            public boolean accept(File file, String fileName) {
-                return fileName.endsWith("-bundle.jar");
-            }
-        });
-
-        if (componentFile.length != 1) {
-            throw new RuntimeException("Failed finding component jar file");
+    static File findBundleJar(String bundleName) {
+        Path bundlePath = Paths.get(TEST_BUNDLE_PATH, bundleName + "-bundle.jar");
+        if (! Files.exists(bundlePath)) {
+            throw new RuntimeException("Failed finding component jar file: " + bundlePath);
         }
 
-        return componentFile[0];
+        return bundlePath.toFile();
     }
 
     @Test
