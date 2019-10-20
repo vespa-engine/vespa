@@ -191,6 +191,12 @@
       <scope>compile</scope> <!-- TODO Should ideally be provided, but this bundle is not installed as part of configserver. Orchestrator bundle also includes jaxrs_client_utils in compile scope -->
     </dependency>
     <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>zookeeper-server</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <scope>provided</scope>
