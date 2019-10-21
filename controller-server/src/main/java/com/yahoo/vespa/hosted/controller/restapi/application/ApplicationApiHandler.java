@@ -19,9 +19,9 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
-import com.yahoo.security.KeyUtils;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -107,6 +107,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -204,6 +205,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/metering")) return metering(path.get("tenant"), path.get("application"), request);
@@ -407,6 +409,38 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     toSlime(application.id().instance(instance), array.addObject(), request);
         }
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
+        var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
+        var applicationId = ApplicationId.from(tenantName, applicationName, InstanceName.defaultName().value());
+
+        long buildNumber;
+        var requestedBuild = Optional.ofNullable(request.getProperty("build")).map(build -> {
+            try {
+                return Long.parseLong(build);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Invalid build number", e);
+            }
+        });
+        if (requestedBuild.isEmpty()) { // Fall back to latest build
+            var application = controller.applications().requireApplication(tenantAndApplication);
+            var latestBuild = application.latestVersion().map(ApplicationVersion::buildNumber).orElse(OptionalLong.empty());
+            if (latestBuild.isEmpty()) {
+                throw new NotExistsException("No application package has been submitted for '" + tenantAndApplication + "'");
+            }
+            buildNumber = latestBuild.getAsLong();
+        } else {
+            buildNumber = requestedBuild.get();
+        }
+        var applicationPackage = controller.applications().applicationStore().find(tenantAndApplication.tenant(), tenantAndApplication.application(), buildNumber);
+        var filename = tenantAndApplication + "-build" + buildNumber + ".zip";
+        if (applicationPackage.isEmpty()) {
+            throw new NotExistsException("No application package found for '" +
+                                         tenantAndApplication +
+                                         "' with build number " + buildNumber);
+        }
+        return new ZipResponse(filename, applicationPackage.get());
     }
 
     private HttpResponse application(String tenantName, String applicationName, HttpRequest request) {

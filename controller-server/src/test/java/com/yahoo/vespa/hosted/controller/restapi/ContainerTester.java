@@ -22,10 +22,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -119,27 +121,26 @@ public class ContainerTester {
     }
 
     public void assertResponse(Supplier<Request> request, String expectedResponse) {
-        assertResponse(request.get(), expectedResponse, 200);
-    }
-
-    public void assertResponse(Request request, String expectedResponse) {
         assertResponse(request, expectedResponse, 200);
     }
 
-    public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
-        assertResponse(request.get(), expectedResponse, expectedStatusCode);
+    public void assertResponse(Request request, String expectedResponse) {
+        assertResponse(() -> request, expectedResponse, 200);
     }
 
-    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) {
+    public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
+        assertResponse(request,
+                       (response) -> assertEquals(expectedResponse, new String(response.getBody(), StandardCharsets.UTF_8)),
+                       expectedStatusCode);
+    }
+
+    public void assertResponse(Supplier<Request> requestSupplier, Consumer<Response> responseAssertion, int expectedStatusCode) {
+        var request = requestSupplier.get();
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        try {
-            assertEquals(expectedResponse, response.getBodyAsString());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
         assertEquals("Status code", expectedStatusCode, response.getStatus());
+        responseAssertion.accept(response);
     }
 
     // Hack to run request filters as part of the request processing chain.
