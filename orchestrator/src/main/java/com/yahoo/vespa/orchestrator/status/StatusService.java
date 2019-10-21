@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
@@ -45,7 +46,7 @@ public interface StatusService {
      */
     MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             OrchestratorContext context,
-            ApplicationInstanceReference applicationInstanceReference);
+            ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException;
 
     /**
      * Returns all application instances that are allowed to be down. The intention is to use this

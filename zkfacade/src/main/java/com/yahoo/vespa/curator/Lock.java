@@ -24,7 +24,7 @@ public class Lock implements Mutex {
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
-    public void acquire(Duration timeout) {
+    public void acquire(Duration timeout) throws UncheckedTimeoutException {
         boolean acquired;
         try {
             acquired = mutex.acquire(timeout.toMillis(), TimeUnit.MILLISECONDS);

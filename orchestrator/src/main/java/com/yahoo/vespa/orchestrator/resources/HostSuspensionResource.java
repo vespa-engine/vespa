@@ -18,6 +18,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -42,9 +43,12 @@ public class HostSuspensionResource implements HostSuspensionApi {
         List<HostName> hostnames = hostnamesAsStrings.stream().map(HostName::new).collect(Collectors.toList());
         try {
             orchestrator.suspendAll(parentHostname, hostnames);
-        } catch (BatchHostStateChangeDeniedException | UncheckedTimeoutException e) {
+        } catch (BatchHostStateChangeDeniedException e) {
             log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             throw createWebApplicationException(e.getMessage(), Response.Status.CONFLICT);
+        } catch (UncheckedTimeoutException e) {
+            log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
+            throw createWebApplicationException(e.getMessage(), Response.Status.GATEWAY_TIMEOUT);
         } catch (BatchHostNameNotFoundException e) {
             log.log(LogLevel.DEBUG, "Failed to suspend nodes " + hostnames + " with parent host " + parentHostname, e);
             // Note that we're returning BAD_REQUEST instead of NOT_FOUND because the resource identified
