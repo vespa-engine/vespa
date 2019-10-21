@@ -56,23 +56,13 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.9</version>
-        <executions>
-          <execution>
-            <id>integration-test</id>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
+        <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
-          <trimStackTrace>false</trimStackTrace>
+          <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
           <systemPropertyVariables>
             <test.bundle.path>${project.build.directory}/dependency</test.bundle.path>
-            <redirectTestOutputToFile>${test.hide}</redirectTestOutputToFile>
           </systemPropertyVariables>
+          <trimStackTrace>false</trimStackTrace>
         </configuration>
       </plugin>
       <plugin>
