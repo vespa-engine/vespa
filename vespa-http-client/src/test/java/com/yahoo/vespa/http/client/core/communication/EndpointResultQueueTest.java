@@ -14,8 +14,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 
@@ -35,7 +35,7 @@ public class EndpointResultQueueTest {
         doAnswer(invocationOnMock -> {
             resultCount.getAndIncrement();
             return null;
-        }).when(mockAggregator).resultReceived(anyObject(), eq(0));
+        }).when(mockAggregator).resultReceived(any(), eq(0));
 
         EndpointResultQueue q = new EndpointResultQueue(
                 mockAggregator, endpoint, 0, new ScheduledThreadPoolExecutor(1), 100L * 1000L);
@@ -79,7 +79,7 @@ public class EndpointResultQueueTest {
         doAnswer(invocationOnMock -> {
             latch.countDown();
             return null;
-        }).when(mockAggregator).resultReceived(anyObject(), eq(0));
+        }).when(mockAggregator).resultReceived(any(), eq(0));
         EndpointResultQueue q = new EndpointResultQueue(
                 mockAggregator, endpoint, 0, new ScheduledThreadPoolExecutor(1), 100L);
         q.operationSent("1234");

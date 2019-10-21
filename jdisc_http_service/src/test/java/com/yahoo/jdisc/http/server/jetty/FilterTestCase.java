@@ -39,7 +39,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -284,8 +285,8 @@ public class FilterTestCase {
         final HttpRequest request = null;
         final ResponseHandler responseHandler = null;
         requestFilterChain.filter(request, responseHandler);
-        verify(requestFilter1).filter(any(HttpRequest.class), any(ResponseHandler.class));
-        verify(requestFilter2).filter(any(HttpRequest.class), any(ResponseHandler.class));
+        verify(requestFilter1).filter(isNull(), any(ResponseHandler.class));
+        verify(requestFilter2).filter(isNull(), any(ResponseHandler.class));
     }
 
     @Test
@@ -299,7 +300,7 @@ public class FilterTestCase {
         // Check that the filter is called with the same request argument as the chain was,
         // in a manner that allows the request object to be wrapped.
         final ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(requestFilter).filter(requestCaptor.capture(), any(ResponseHandler.class));
+        verify(requestFilter).filter(requestCaptor.capture(), isNull());
         verify(request, never()).getUri();
         requestCaptor.getValue().getUri();
         verify(request, times(1)).getUri();
@@ -316,7 +317,7 @@ public class FilterTestCase {
         // Check that the filter is called with the same response handler argument as the chain was,
         // in a manner that allows the handler object to be wrapped.
         final ArgumentCaptor<ResponseHandler> responseHandlerCaptor = ArgumentCaptor.forClass(ResponseHandler.class);
-        verify(requestFilter).filter(any(HttpRequest.class), responseHandlerCaptor.capture());
+        verify(requestFilter).filter(isNull(), responseHandlerCaptor.capture());
         verify(responseHandler, never()).handleResponse(any(Response.class));
         responseHandlerCaptor.getValue().handleResponse(mock(Response.class));
         verify(responseHandler, times(1)).handleResponse(any(Response.class));
@@ -373,7 +374,7 @@ public class FilterTestCase {
         ResponseFilterChain.newInstance(responseFilter1, responseFilter2).filter(response, request);
 
         final ArgumentCaptor<Response> responseCaptor = ArgumentCaptor.forClass(Response.class);
-        verify(responseFilter2).filter(responseCaptor.capture(), any(Request.class));
+        verify(responseFilter2).filter(responseCaptor.capture(), isNull());
         assertThat(responseCaptor.getValue().getStatus(), is(statusCode));
         assertThat(responseCaptor.getValue().headers().getFirst("foo"), is("bar"));
 

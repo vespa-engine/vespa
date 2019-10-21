@@ -5,7 +5,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.logging.Level;
 

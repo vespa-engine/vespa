@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -56,9 +56,9 @@ public class TargetCachingSlobrokHostFetcherTest {
         Fixture() {
             when(mockMirror.updates()).thenReturn(1);
             when(routingContext.getMirror()).thenReturn(mockMirror);
-            when(mockSlobrokPolicy.lookup(anyObject(), eq(idOfIndex(1)))).thenReturn(dummyEntries(1));
-            when(mockSlobrokPolicy.lookup(anyObject(), eq(idOfIndex(2)))).thenReturn(dummyEntries(2));
-            when(mockSlobrokPolicy.lookup(anyObject(), eq(idOfWildcardLookup()))).thenReturn(dummyEntries(1, 2, 3, 4));
+            when(mockSlobrokPolicy.lookup(any(), eq(idOfIndex(1)))).thenReturn(dummyEntries(1));
+            when(mockSlobrokPolicy.lookup(any(), eq(idOfIndex(2)))).thenReturn(dummyEntries(2));
+            when(mockSlobrokPolicy.lookup(any(), eq(idOfWildcardLookup()))).thenReturn(dummyEntries(1, 2, 3, 4));
         }
     }
 
@@ -68,7 +68,7 @@ public class TargetCachingSlobrokHostFetcherTest {
 
         String spec = fixture.hostFetcher.getTargetSpec(1, fixture.routingContext);
         assertEquals(resolvedSpecOfIndex(1), spec);
-        verify(fixture.mockSlobrokPolicy, times(1)).lookup(anyObject(), eq(idOfIndex(1)));
+        verify(fixture.mockSlobrokPolicy, times(1)).lookup(any(), eq(idOfIndex(1)));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class TargetCachingSlobrokHostFetcherTest {
         String spec2 = fixture.hostFetcher.getTargetSpec(1, fixture.routingContext);
         assertEquals(spec1, spec2);
         // Only invoked once
-        verify(fixture.mockSlobrokPolicy, times(1)).lookup(anyObject(), anyString());
+        verify(fixture.mockSlobrokPolicy, times(1)).lookup(any(), anyString());
     }
 
     @Test
@@ -97,8 +97,8 @@ public class TargetCachingSlobrokHostFetcherTest {
         assertEquals(spec1_1, spec1_2);
         assertEquals(spec2_1, spec2_2);
 
-        verify(fixture.mockSlobrokPolicy, times(1)).lookup(anyObject(), eq(idOfIndex(1)));
-        verify(fixture.mockSlobrokPolicy, times(1)).lookup(anyObject(), eq(idOfIndex(2)));
+        verify(fixture.mockSlobrokPolicy, times(1)).lookup(any(), eq(idOfIndex(1)));
+        verify(fixture.mockSlobrokPolicy, times(1)).lookup(any(), eq(idOfIndex(2)));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class TargetCachingSlobrokHostFetcherTest {
         Fixture fixture = new Fixture();
 
         when(fixture.mockMirror.updates()).thenReturn(1).thenReturn(2);
-        when(fixture.mockSlobrokPolicy.lookup(anyObject(), eq(idOfIndex(1))))
+        when(fixture.mockSlobrokPolicy.lookup(any(), eq(idOfIndex(1))))
                 .thenReturn(dummyEntries(1)).thenReturn(dummyEntries(2));
 
         String spec1 = fixture.hostFetcher.getTargetSpec(1, fixture.routingContext);
@@ -125,7 +125,7 @@ public class TargetCachingSlobrokHostFetcherTest {
         spec = fixture.hostFetcher.getTargetSpec(null, fixture.routingContext);
         assertNotNull(spec);
 
-        verify(fixture.mockSlobrokPolicy, times(2)).lookup(anyObject(), eq(idOfWildcardLookup()));
+        verify(fixture.mockSlobrokPolicy, times(2)).lookup(any(), eq(idOfWildcardLookup()));
     }
 
 }

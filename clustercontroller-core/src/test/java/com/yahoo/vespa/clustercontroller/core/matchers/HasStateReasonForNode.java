@@ -3,13 +3,13 @@ package com.yahoo.vespa.clustercontroller.core.matchers;
 
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.NodeStateReason;
+import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
-import org.mockito.ArgumentMatcher;
 
 import java.util.Map;
 
-public class HasStateReasonForNode extends ArgumentMatcher<Map<Node, NodeStateReason>> {
+public class HasStateReasonForNode extends BaseMatcher<Map<Node, NodeStateReason>> {
     private final Node node;
     private final NodeStateReason expected;
 

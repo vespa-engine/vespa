@@ -2,13 +2,13 @@
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
 import com.yahoo.vespa.clustercontroller.core.NodeEvent;
+import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
-import org.mockito.ArgumentMatcher;
 
 import java.util.Optional;
 
-public class NodeEventForBucketSpace extends ArgumentMatcher<NodeEvent> {
+public class NodeEventForBucketSpace extends BaseMatcher<NodeEvent> {
     private final Optional<String> bucketSpace;
 
     private NodeEventForBucketSpace(Optional<String> bucketSpace) {

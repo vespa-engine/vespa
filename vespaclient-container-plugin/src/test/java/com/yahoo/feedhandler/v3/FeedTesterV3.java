@@ -26,7 +26,6 @@ import com.yahoo.vespa.http.server.FeedHandlerV3;
 import com.yahoo.vespa.http.server.MetricNames;
 import com.yahoo.vespa.http.server.ReplyContext;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 
 import java.io.ByteArrayInputStream;
@@ -38,7 +37,7 @@ import java.util.concurrent.Executors;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -131,7 +130,7 @@ public class FeedTesterV3 {
                 SharedSourceSession sharedSourceSession = mock(SharedSourceSession.class);
 
                 try {
-                    Mockito.stub(sharedSourceSession.sendMessageBlocking(anyObject())).toAnswer((Answer<?>) invocation -> {
+                    when(sharedSourceSession.sendMessageBlocking(any())).thenAnswer((Answer<?>) invocation -> {
                         Object[] args = invocation.getArguments();
                         PutDocumentMessage putDocumentMessage = (PutDocumentMessage) args[0];
                         ReplyContext replyContext = (ReplyContext)putDocumentMessage.getContext();

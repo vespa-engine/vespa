@@ -2,16 +2,16 @@
 package com.yahoo.vespa.clustercontroller.core.matchers;
 
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
+import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
-import org.mockito.ArgumentMatcher;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HasMetricContext extends ArgumentMatcher<MetricReporter.Context> {
+public class HasMetricContext extends BaseMatcher<MetricReporter.Context> {
 
     private final Map<String, ?> dimensions;
 

@@ -38,7 +38,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.stub;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -306,7 +305,7 @@ public class ApacheGatewayConnectionTest {
                 mock(ApacheGatewayConnection.HttpClientFactory.class);
         HttpClient httpClientMock = mock(HttpClient.class);
         when(mockFactory.createClient()).thenReturn(httpClientMock);
-        stub(httpClientMock.execute(any())).toAnswer((Answer) invocation -> {
+        when(httpClientMock.execute(any())).thenAnswer((Answer) invocation -> {
             Object[] args = invocation.getArguments();
             HttpPost post = (HttpPost) args[0];
             return httpExecuteMock.execute(post);

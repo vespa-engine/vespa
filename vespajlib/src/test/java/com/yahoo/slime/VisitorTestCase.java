@@ -4,8 +4,8 @@ package com.yahoo.slime;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.mockito.Matchers.argThat;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.mockito.hamcrest.MockitoHamcrest.argThat;
 
 public class VisitorTestCase {
 

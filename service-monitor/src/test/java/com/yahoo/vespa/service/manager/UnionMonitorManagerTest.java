@@ -13,7 +13,7 @@ import static com.yahoo.vespa.applicationmodel.ServiceStatus.DOWN;
 import static com.yahoo.vespa.applicationmodel.ServiceStatus.NOT_CHECKED;
 import static com.yahoo.vespa.applicationmodel.ServiceStatus.UP;
 import static org.junit.Assert.assertSame;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
