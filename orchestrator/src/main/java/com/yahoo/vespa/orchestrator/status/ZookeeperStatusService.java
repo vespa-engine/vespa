@@ -137,14 +137,14 @@ public class ZookeeperStatusService implements StatusService {
             lockAcquired = true;
         } finally {
             acquireEndTime = timer.currentTime();
-            double seconds = Duration.between(startTime, acquireEndTime).toMillis() / 1000.0;
+            double seconds = durationInSeconds(startTime, acquireEndTime);
             metric.set("orchestrator.lock.acquire-latency", seconds, metricContext);
             metric.set("orchestrator.lock.acquired", lockAcquired ? 1 : 0, metricContext);
         }
 
         Runnable updateLockHoldMetric = () -> {
             Instant lockReleasedTime = timer.currentTime();
-            double seconds = Duration.between(acquireEndTime, lockReleasedTime).toMillis() / 1000.0;
+            double seconds = durationInSeconds(acquireEndTime, lockReleasedTime);
             metric.set("orchestrator.lock.hold-latency", seconds, metricContext);
         };
 
@@ -156,6 +156,10 @@ public class ZookeeperStatusService implements StatusService {
             lock.close();
             throw t;
         }
+    }
+
+    private double durationInSeconds(Instant startInstant, Instant endInstant) {
+        return Duration.between(startInstant, endInstant).toMillis() / 1000.0;
     }
 
     private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
