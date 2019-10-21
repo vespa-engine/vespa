@@ -36,7 +36,7 @@ import static org.junit.Assert.assertThat;
  *
  * @author Tony Vaagenes
  */
-public class BundleIT {
+public class BundleTest {
     static final String TEST_BUNDLE_PATH = System.getProperty("test.bundle.path", ".") + "/";
 
     private JarFile jarFile;
