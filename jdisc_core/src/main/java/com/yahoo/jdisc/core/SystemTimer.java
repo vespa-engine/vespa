@@ -3,6 +3,8 @@ package com.yahoo.jdisc.core;
 
 import com.yahoo.jdisc.Timer;
 
+import java.time.Instant;
+
 /**
  * A timer which returns the System time
  *
@@ -13,5 +15,10 @@ public class SystemTimer implements Timer {
     @Override
     public long currentTimeMillis() {
         return System.currentTimeMillis();
+    }
+
+    @Override
+    public Instant currentTime() {
+        return Instant.now();
     }
 }
