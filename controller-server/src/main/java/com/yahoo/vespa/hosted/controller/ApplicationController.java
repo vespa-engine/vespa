@@ -485,12 +485,6 @@ public class ApplicationController {
         return application;
     }
 
-    private boolean specIncludes(DeploymentSpec deploymentSpec, InstanceName name, ZoneId zone) {
-        return deploymentSpec.instance(name)
-                             .map(spec -> spec.includes(zone.environment(), Optional.of(zone.region())))
-                             .orElse(false);
-    }
-
     /** Deploy a system application to given zone */
     public void deploy(SystemApplication application, ZoneId zone, Version version) {
         if (application.hasApplicationPackage()) {
@@ -667,8 +661,9 @@ public class ApplicationController {
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
                                                " in deployment.xml. " +
                                                ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
-        // Remove the instance as well, if it contains only production deployments that are removed now.
-        boolean removeInstance = application.get().require(instance).deployments().size() == deploymentsToRemove.size();
+        // Remove the instance as well, if it is no longer referenced, and contains only production deployments that are removed now.
+        boolean removeInstance =    ! deploymentSpec.instanceNames().contains(instance)
+                                 &&   application.get().require(instance).deployments().size() == deploymentsToRemove.size();
         for (ZoneId zone : deploymentsToRemove)
             application = deactivate(application, instance, zone);
         if (removeInstance)
