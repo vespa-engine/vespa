@@ -5,3 +5,4 @@ athenzDomain string
 athenzService string
 keyPathPrefix string
 trustStorePath string
+trustStoreType enum {pem, jks} default=jks

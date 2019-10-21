@@ -10,6 +10,7 @@ import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -53,7 +54,32 @@ public class SiaIdentityProviderTest {
                         new AthenzService("domain", "service-name"),
                         keyFile,
                         certificateFile,
-                        trustStoreFile);
+                        trustStoreFile,
+                        SiaProviderConfig.TrustStoreType.Enum.jks);
+
+        assertNotNull(provider.getIdentitySslContext());
+    }
+
+    @Test
+    public void constructs_ssl_context_with_pem_trust_store() throws IOException {
+        File keyFile = tempDirectory.newFile();
+        KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
+        createPrivateKeyFile(keyFile, keypair);
+
+        X509Certificate certificate = createCertificate(keypair);
+        File certificateFile = tempDirectory.newFile();
+        createCertificateFile(certificate, certificateFile);
+
+        File trustStoreFile = tempDirectory.newFile();
+        createPemTrustStoreFile(certificate, trustStoreFile);
+
+        SiaIdentityProvider provider =
+                new SiaIdentityProvider(
+                        new AthenzService("domain", "service-name"),
+                        keyFile,
+                        certificateFile,
+                        trustStoreFile,
+                        SiaProviderConfig.TrustStoreType.Enum.pem);
 
         assertNotNull(provider.getIdentitySslContext());
     }
@@ -79,6 +105,11 @@ public class SiaIdentityProviderTest {
                         SignatureAlgorithm.SHA256_WITH_RSA,
                         BigInteger.ONE)
                 .build();
+    }
+
+    private void createPemTrustStoreFile(X509Certificate certificate, File trustStoreFile) {
+        var pemEncoded = X509CertificateUtils.toPem(certificate);
+        Exceptions.uncheck(() -> Files.writeString(trustStoreFile.toPath(), pemEncoded));
     }
 
     private void createTrustStoreFile(X509Certificate certificate, File trustStoreFile) {
