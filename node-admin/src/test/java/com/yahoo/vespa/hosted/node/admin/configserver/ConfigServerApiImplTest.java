@@ -119,7 +119,7 @@ public class ConfigServerApiImplTest {
     }
 
     @Test
-    public void testRetriesOnBadHttpResponseCode() {
+    public void testNoRetriesOnBadHttpResponseCode() {
         // Client is throwing exception, should be retries.
         mockReturnCode = 503;
         try {
@@ -129,9 +129,7 @@ public class ConfigServerApiImplTest {
             // ignore
         }
 
-        String[] log = mockLog.toString().split("  ");
-        assertThat(log, arrayContainingInAnyOrder(
-                "GET http://host1:666/path", "GET http://host2:666/path"));
+        assertLogStringContainsGETForAHost();
     }
 
     @Test
