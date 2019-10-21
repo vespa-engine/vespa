@@ -24,16 +24,6 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /**
-         * WARNING: DO NOT USE
-         *
-         * <p>ALL flags can be set differently in different zones: This dimension is ONLY useful for the controller
-         * that needs to handle multiple zones.
-         *
-         * <p>Value from ZoneId::value is of the form environment.region.
-         */
-        ZONE_ID,
-
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
 
@@ -44,7 +34,27 @@ public class FetchVector {
         NODE_TYPE,
 
         /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
-        CLUSTER_TYPE
+        CLUSTER_TYPE,
+
+        /**
+         * WARNING: DO SET THIS DIMENSION FOR A FLAG
+         *
+         * <p>ALL flags can be set differently in different zones: This dimension is ONLY useful for the controller
+         * that needs to handle multiple zones.
+         *
+         * <p>Value from ZoneId::value is of the form environment.region.
+         */
+        ZONE_ID,
+
+        /**
+         * WARNING: DO SET THIS DIMENSION FOR A FLAG
+         *
+         * <p>The Vespa version is always fetched implicitly from {@link com.yahoo.component.Vtag#currentVersion}.
+         *
+         * <p>Value from Version::toFullString is of the form Major.Minor.Micro[.qualifier]. When ordering
+         * versions, note that 7.3 == 7.3.0.
+         */
+        VESPA_VERSION
     }
 
     private final Map<Dimension, String> map;
