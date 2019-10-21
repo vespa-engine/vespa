@@ -52,8 +52,9 @@
         <artifactId>maven-resources-plugin</artifactId>
         <executions>
           <execution>
-            <id>copy-resources</id>
-            <phase>prepare-package</phase>
+            <id>copy-bundle-classpath-mappings-from-test-to-main</id>
+            <!-- NOTE: Must be done after generating classpath-mappings and before assembling the bundle (see the test-bundles pom) -->
+            <phase>process-test-sources</phase>
             <goals>
               <goal>copy-resources</goal>
             </goals>

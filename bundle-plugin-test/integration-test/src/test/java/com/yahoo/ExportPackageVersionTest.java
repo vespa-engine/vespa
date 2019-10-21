@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
-import static com.yahoo.BundleIT.findBundleJar;
+import static com.yahoo.BundleTest.findBundleJar;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertThat;
  *
  * @author gjoranv
  */
-public class ExportPackageVersionIT {
+public class ExportPackageVersionTest {
 
     private static Attributes mainAttributes;
 
