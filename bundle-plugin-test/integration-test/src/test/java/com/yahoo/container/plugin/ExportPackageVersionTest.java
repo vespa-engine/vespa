@@ -1,5 +1,5 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo;
+package com.yahoo.container.plugin;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 
-import static com.yahoo.BundleTest.findBundleJar;
+import static com.yahoo.container.plugin.BundleTest.findBundleJar;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertThat;
