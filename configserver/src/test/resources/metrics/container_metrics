@@ -21,8 +21,8 @@
              "values": {
                   "query_latency.count": 43.0,
                   "query_latency.sum": 3000,
-                  "feed_latency.count": 43.0,
-                  "feed_latency.sum": 3000
+                  "feed.latency.count": 43.0,
+                  "feed.latency.sum": 3000
 
               },
               "dimensions": {
