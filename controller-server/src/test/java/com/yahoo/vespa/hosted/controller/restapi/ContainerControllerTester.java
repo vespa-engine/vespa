@@ -125,7 +125,7 @@ public class ContainerControllerTester {
     }
 
     public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) {
-        containerTester.assertResponse(request, expectedResponse, expectedStatusCode);
+        containerTester.assertResponse(() -> request, expectedResponse, expectedStatusCode);
     }
 
     /*

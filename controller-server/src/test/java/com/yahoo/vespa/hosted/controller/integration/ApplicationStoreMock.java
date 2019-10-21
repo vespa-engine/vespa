@@ -11,10 +11,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Objects.requireNonNull;
-import static org.junit.Assert.assertFalse;
 
 /**
  * Threadsafe.
@@ -37,6 +37,14 @@ public class ApplicationStoreMock implements ApplicationStore {
     @Override
     public byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion) {
         return requireNonNull(store.get(appId(tenant, application)).get(applicationVersion));
+    }
+
+    @Override
+    public Optional<byte[]> find(TenantName tenant, ApplicationName application, long buildNumber) {
+        return store.getOrDefault(appId(tenant, application), Map.of()).entrySet().stream()
+                    .filter(kv -> kv.getKey().buildNumber().orElse(Long.MIN_VALUE) == buildNumber)
+                    .map(Map.Entry::getValue)
+                    .findFirst();
     }
 
     @Override

@@ -75,6 +75,7 @@ enum PathGroup {
     applicationInfo(Matcher.tenant,
                     Matcher.application,
                     Optional.of("/api"),
+                    "/application/v4/tenant/{tenant}/application/{application}/package",
                     "/application/v4/tenant/{tenant}/application/{application}/deploying/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/deploying/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/job/{*}",

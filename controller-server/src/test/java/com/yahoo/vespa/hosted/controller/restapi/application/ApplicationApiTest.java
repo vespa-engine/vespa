@@ -94,6 +94,7 @@ import static com.yahoo.application.container.handler.Request.Method.GET;
 import static com.yahoo.application.container.handler.Request.Method.PATCH;
 import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -632,6 +633,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(applicationPackage)),
                               "{\"message\":\"Application package version: 1.0.43-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
+        // GET application package
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1-build43.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(applicationPackage.zippedContent(), response.getBody());
+                              },
+                              200);
+
         // Second attempt has a service under a different domain than the tenant of the application, and fails.
         ApplicationPackage packageWithServiceForWrongDomain = new ApplicationPackageBuilder()
                 .instances("instance1")
@@ -658,6 +667,22 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService)),
                               "{\"message\":\"Application package version: 1.0.44-d00d, source revision of repository 'repo', branch 'master' with commit 'd00d', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+
+        // GET last submitted application package
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1-build44.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(packageWithService.zippedContent(), response.getBody());
+                              },
+                              200);
+
+        // GET application package for previous build
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=43", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1-build43.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(applicationPackage.zippedContent(), response.getBody());
+                              },
+                              200);
 
         // Fourth attempt has a wrong content hash in a header, and fails.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
@@ -1139,6 +1164,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         ConfigServerMock configServer = serviceRegistry().configServerMock();
         configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE, null));
+
+        // GET non-existent application package
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package has been submitted for 'tenant1.application1'\"}",
+                              404);
+
+        // GET non-existent application package of specific build
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=42", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package found for 'tenant1.application1' with build number 42\"}",
+                              404);
+
+        // GET non-existent application package of invalid build
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package?build=foobar", GET).userIdentity(HOSTED_VESPA_OPERATOR),
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid build number: For input string: \\\"foobar\\\"\"}",
+                              400);
         
         // POST (deploy) an application with an invalid application package
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
@@ -1556,10 +1596,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         job.type(JobType.systemTest).submit();
 
         // Notifying about job started not by the controller fails
-        Request request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
+        var request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                 .data(asJson(job.type(JobType.systemTest).report()))
-                .userIdentity(HOSTED_VESPA_OPERATOR)
-                .get();
+                .userIdentity(HOSTED_VESPA_OPERATOR);
         tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Notified of completion " +
                                        "of system-test for tenant1.application1, but that has not been triggered; last was " +
                                        controllerTester.controller().applications().requireInstance(app.id().defaultInstance()).deploymentJobs().jobStatus().get(JobType.systemTest).lastTriggered().get().at() + "\"}", 400);
@@ -1567,8 +1606,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Notifying about unknown job fails
         request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
                 .data(asJson(job.type(JobType.productionUsEast3).report()))
-                .userIdentity(HOSTED_VESPA_OPERATOR)
-                .get();
+                .userIdentity(HOSTED_VESPA_OPERATOR);
         tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Notified of completion " +
                                        "of production-us-east-3 for tenant1.application1, but that has not been triggered; last was never\"}",
                               400);
