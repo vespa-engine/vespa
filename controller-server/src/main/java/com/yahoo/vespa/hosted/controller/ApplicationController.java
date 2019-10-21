@@ -303,19 +303,23 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the instance already exists, or has an invalid instance name.
      */
     public void createInstance(ApplicationId id) {
+        lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
+            store(withNewInstance(application, id));
+        });
+    }
+
+    private LockedApplication withNewInstance(LockedApplication application, ApplicationId id) {
         if (id.instance().isTester())
             throw new IllegalArgumentException("'" + id + "' is a tester application!");
-        lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            InstanceId.validate(id.instance().value());
+        InstanceId.validate(id.instance().value());
 
-            if (getInstance(id).isPresent())
-                throw new IllegalArgumentException("Could not create '" + id + "': Instance already exists");
-            if (getInstance(dashToUnderscore(id)).isPresent()) // VESPA-1945
-                throw new IllegalArgumentException("Could not create '" + id + "': Instance " + dashToUnderscore(id) + " already exists");
+        if (getInstance(id).isPresent())
+            throw new IllegalArgumentException("Could not create '" + id + "': Instance already exists");
+        if (getInstance(dashToUnderscore(id)).isPresent()) // VESPA-1945
+            throw new IllegalArgumentException("Could not create '" + id + "': Instance " + dashToUnderscore(id) + " already exists");
 
-            store(application.withNewInstance(id.instance()));
-            log.info("Created " + id);
-        });
+        log.info("Created " + id);
+        return application.withNewInstance(id.instance());
     }
 
     public ActivateResult deploy(ApplicationId applicationId, ZoneId zone,
@@ -460,15 +464,22 @@ public class ApplicationController {
         application = application.with(applicationPackage.deploymentSpec());
         application = application.with(applicationPackage.validationOverrides());
 
+        var existingInstances = application.get().instances().keySet();
+        var declaredInstances = applicationPackage.deploymentSpec().instanceNames();
+        for (var name : declaredInstances)
+            if ( ! existingInstances.contains(name))
+                application = withNewInstance(application, application.get().id().instance(name));
+
         // Delete zones not listed in DeploymentSpec, if allowed
         // We do this at deployment time for externally built applications, and at submission time
         // for internally built ones, to be able to return a validation failure message when necessary
-        for (InstanceName instanceName : application.get().instances().keySet()) {
-            application = withoutDeletedDeployments(application, instanceName);
-
-                // Clean up deployment jobs that are no longer referenced by deployment spec
-            DeploymentSpec deploymentSpec = application.get().deploymentSpec();
-            application = application.with(instanceName, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
+        for (InstanceName name : existingInstances) {
+            application = withoutDeletedDeployments(application, name);
+            // Clean up deployment jobs that are no longer referenced by deployment spec
+            if (application.get().instances().containsKey(name)) {
+                DeploymentSpec deploymentSpec = application.get().deploymentSpec();
+                application = application.with(name, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
+            }
         }
         store(application);
         return application;
@@ -630,27 +641,33 @@ public class ApplicationController {
 
     private LockedApplication withoutDeletedDeployments(LockedApplication application, InstanceName instance) {
         DeploymentSpec deploymentSpec = application.get().deploymentSpec();
-        List<Deployment> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
-                                                          .filter(deployment ->      deploymentSpec.instance(instance).isEmpty()
-                                                                                || ! deploymentSpec.requireInstance(instance).includes(deployment.zone().environment(),
-                                                                                                                                     Optional.of(deployment.zone().region())))
-                                                          .collect(Collectors.toList());
+        List<ZoneId> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
+                                                      .map(Deployment::zone)
+                                                      .filter(zone ->      deploymentSpec.instance(instance).isEmpty()
+                                                                      || ! deploymentSpec.requireInstance(instance).includes(zone.environment(),
+                                                                                                                             Optional.of(zone.region())))
+                                                      .collect(Collectors.toList());
 
-        if (deploymentsToRemove.isEmpty()) return application;
+        if (deploymentsToRemove.isEmpty())
+            return application;
 
         if ( ! application.get().validationOverrides().allows(ValidationId.deploymentRemoval, clock.instant()))
             throw new IllegalArgumentException(ValidationId.deploymentRemoval.value() + ": " + application.get().require(instance) +
                                                " is deployed in " +
                                                deploymentsToRemove.stream()
-                                                                   .map(deployment -> deployment.zone().region().value())
-                                                                   .collect(Collectors.joining(", ")) +
+                                                                  .map(zone -> zone.region().value())
+                                                                  .collect(Collectors.joining(", ")) +
                                                ", but does not include " +
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
                                                " in deployment.xml. " +
                                                ValidationOverrides.toAllowMessage(ValidationId.deploymentRemoval));
-
-        for (Deployment deployment : deploymentsToRemove)
-            application = deactivate(application, instance, deployment.zone());
+        // Remove the instance as well, if it is no longer referenced, and contains only production deployments that are removed now.
+        boolean removeInstance =    ! deploymentSpec.instanceNames().contains(instance)
+                                 &&   application.get().require(instance).deployments().size() == deploymentsToRemove.size();
+        for (ZoneId zone : deploymentsToRemove)
+            application = deactivate(application, instance, zone);
+        if (removeInstance)
+            application = application.without(instance);
         return application;
     }
 

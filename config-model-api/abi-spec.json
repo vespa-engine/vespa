@@ -349,6 +349,7 @@
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(com.yahoo.config.provision.InstanceName)",
+      "public java.util.List instanceNames()",
       "public java.util.List instances()",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.io.Reader)",
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String)",

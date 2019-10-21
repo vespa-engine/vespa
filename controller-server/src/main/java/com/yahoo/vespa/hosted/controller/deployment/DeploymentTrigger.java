@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -356,7 +358,7 @@ public class DeploymentTrigger {
                     for (Step step : steps.production()) {
                         List<JobType> stepJobs = steps.toJobs(step);
                         List<JobType> remainingJobs = stepJobs.stream().filter(job -> ! isComplete(change, change, instance, job)).collect(toList());
-                        if (!remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
+                        if ( ! remainingJobs.isEmpty()) { // Change is incomplete; trigger remaining jobs if ready, or their test jobs if untested.
                             for (JobType job : remainingJobs) {
                                 Versions versions = Versions.from(change, application, deploymentFor(instance, job),
                                                                   controller.systemVersion());
@@ -380,7 +382,7 @@ public class DeploymentTrigger {
                         }
                         else { // All jobs are complete; find the time of completion of this step.
                             if (stepJobs.isEmpty()) { // No jobs means this is a delay step.
-                                completedAt = completedAt.map(at -> at.plus(step.delay())).filter(at -> !at.isAfter(clock.instant()));
+                                completedAt = completedAt.map(at -> at.plus(step.delay())).filter(at -> ! at.isAfter(clock.instant()));
                                 reason += " after a delay of " + step.delay();
                             }
                             else {
