@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
@@ -117,6 +118,9 @@ public class RetiredExpirer extends Maintainer {
             orchestrator.acquirePermissionToRemove(new HostName(node.hostname()));
             log.info("Node " + node + " has been granted permission to be removed");
             return true;
+        } catch (UncheckedTimeoutException e) {
+            log.info("Timed out trying to aquire permission to remove " + node.hostname() + ": " + e.getMessage());
+            return false;
         } catch (OrchestrationException e) {
             log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());
             return false;

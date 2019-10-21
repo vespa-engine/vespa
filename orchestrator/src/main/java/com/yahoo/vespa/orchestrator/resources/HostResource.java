@@ -152,29 +152,34 @@ public class HostResource implements HostApi {
         return new UpdateHostResponse(hostName.s(), null);
     }
 
-    private static WebApplicationException webExceptionFromTimeout(String operationDescription, HostName hostName, UncheckedTimeoutException e) {
-        return createWebException(operationDescription, hostName, e, HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage());
+    private static WebApplicationException webExceptionFromTimeout(String operationDescription,
+                                                                   HostName hostName,
+                                                                   UncheckedTimeoutException e) {
+        return createWebException(operationDescription, hostName, e, HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage(),
+                Response.Status.GATEWAY_TIMEOUT);
     }
 
     private static WebApplicationException webExceptionWithDenialReason(
             String operationDescription,
             HostName hostName,
             HostStateChangeDeniedException e) {
-        return createWebException(operationDescription, hostName, e, e.getConstraintName(), e.getMessage());
+        return createWebException(operationDescription, hostName, e, e.getConstraintName(), e.getMessage(),
+                Response.Status.CONFLICT);
     }
 
     private static WebApplicationException createWebException(String operationDescription,
                                                               HostName hostname,
                                                               Exception e,
                                                               String constraint,
-                                                              String message) {
+                                                              String message,
+                                                              Response.Status status) {
         HostStateChangeDenialReason hostStateChangeDenialReason = new HostStateChangeDenialReason(
                 constraint, operationDescription + " failed: " + message);
         UpdateHostResponse response = new UpdateHostResponse(hostname.s(), hostStateChangeDenialReason);
         return new WebApplicationException(
                 hostStateChangeDenialReason.toString(),
                 e,
-                Response.status(Response.Status.CONFLICT)
+                Response.status(status)
                         .entity(response)
                         .type(MediaType.APPLICATION_JSON_TYPE)
                         .build());

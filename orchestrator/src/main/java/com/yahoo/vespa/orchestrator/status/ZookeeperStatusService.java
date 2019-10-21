@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -102,7 +103,7 @@ public class ZookeeperStatusService implements StatusService {
     @Override
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             OrchestratorContext context,
-            ApplicationInstanceReference applicationInstanceReference) {
+            ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException {
         Duration duration = context.getTimeLeft();
         String lockPath = applicationInstanceLock2Path(applicationInstanceReference);
         Lock lock = new Lock(lockPath, curator);
