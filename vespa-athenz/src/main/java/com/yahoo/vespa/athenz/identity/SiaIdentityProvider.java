@@ -32,7 +32,8 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         this(new AthenzService(config.athenzDomain(), config.athenzService()),
              SiaUtils.getPrivateKeyFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())).toFile(),
              SiaUtils.getCertificateFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())).toFile(),
-             new File(config.trustStorePath()));
+             new File(config.trustStorePath()),
+             config.trustStoreType());
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
@@ -41,16 +42,18 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         this(service,
              SiaUtils.getPrivateKeyFile(siaPath, service).toFile(),
              SiaUtils.getCertificateFile(siaPath, service).toFile(),
-             trustStoreFile);
+             trustStoreFile,
+             SiaProviderConfig.TrustStoreType.Enum.jks);
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
                                File privateKeyFile,
                                File certificateFile,
-                               File trustStoreFile) {
+                               File trustStoreFile,
+                               SiaProviderConfig.TrustStoreType.Enum trustStoreType) {
         this.service = service;
         this.keyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyFile.toPath(), certificateFile.toPath());
-        this.sslContext = createIdentitySslContext(keyManager, trustStoreFile.toPath());
+        this.sslContext = createIdentitySslContext(keyManager, trustStoreFile.toPath(), trustStoreType);
     }
 
     @Override
@@ -63,15 +66,22 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
         return sslContext;
     }
 
-    private static SSLContext createIdentitySslContext(AutoReloadingX509KeyManager keyManager, Path trustStoreFile) {
-        return new SslContextBuilder()
-                .withTrustStore(trustStoreFile, KeyStoreType.JKS)
-                .withKeyManager(keyManager)
-                .build();
+    private static SSLContext createIdentitySslContext(AutoReloadingX509KeyManager keyManager, Path trustStoreFile,
+                                                       SiaProviderConfig.TrustStoreType.Enum trustStoreType) {
+        var builder = new SslContextBuilder();
+        if (trustStoreType == SiaProviderConfig.TrustStoreType.Enum.pem) {
+            builder = builder.withTrustStore(trustStoreFile);
+        } else if (trustStoreType == SiaProviderConfig.TrustStoreType.Enum.jks) {
+            builder = builder.withTrustStore(trustStoreFile, KeyStoreType.JKS);
+        } else {
+            throw new IllegalArgumentException("Unsupported trust store type: " + trustStoreType);
+        }
+        return builder.withKeyManager(keyManager).build();
     }
 
     @Override
     public void deconstruct() {
         keyManager.close();
     }
+
 }
