@@ -105,6 +105,22 @@ StringAttributeTest::testMultiValue()
 
 }
 
+namespace {
+
+template <typename T0, typename T1>
+auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>& b) -> std::vector<std::pair<T0, T1>> {
+    std::vector<std::pair<T0, T1>> combined;
+    assert(a.size() == b.size());
+    for (size_t i = 0; i < a.size(); ++i) {
+        combined.emplace_back(a[i], b[i]);
+    }
+    std::sort(combined.begin(), combined.end(), [](const auto& lhs, const auto& rhs){
+        return (lhs.first < rhs.first);
+    });
+    return combined;
+}
+
+}
 
 template <typename Attribute>
 void
@@ -118,14 +134,16 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
     for (uint32_t i = 0; i < numDocs - 1; ++i) {
         char unique[16];
         sprintf(unique, i < 10 ? "enum0%u" : "enum%u", i);
-        uniqueStrings.push_back(vespalib::string(unique));
+        uniqueStrings.emplace_back(unique);
     }
+    ASSERT_TRUE(std::is_sorted(uniqueStrings.begin(), uniqueStrings.end()));
+
     std::vector<vespalib::string> newUniques;
     newUniques.reserve(numDocs - 1);
     for (uint32_t i = 0; i < numDocs - 1; ++i) {
         char unique[16];
         sprintf(unique, i < 10 ? "unique0%u" : "unique%u", i);
-        newUniques.push_back(vespalib::string(unique));
+        newUniques.emplace_back(unique);
     }
 
     // add docs
@@ -147,10 +165,10 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
 
         // test get first
         if (valueCount == 0) {
-            EXPECT_TRUE(attr.get(doc) == NULL);
+            EXPECT_TRUE(attr.get(doc) == nullptr);
             EXPECT_TRUE(attr.getEnum(doc) == std::numeric_limits<uint32_t>::max());
-        } else {
-            EXPECT_TRUE(strcmp(attr.get(doc), uniqueStrings[0].c_str()) == 0);
+        } else if (!attr.hasWeightedSetType()) {
+            EXPECT_EQUAL(vespalib::string(attr.get(doc)), uniqueStrings[0]);
             uint32_t e;
             EXPECT_TRUE(attr.findEnum(uniqueStrings[0].c_str(), e));
             EXPECT_EQUAL(1u, attr.findFoldedEnums(uniqueStrings[0].c_str()).size());
@@ -160,17 +178,17 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
 
         // test get all
         std::vector<vespalib::string> values(valueCount);
-        EXPECT_TRUE(attr.get(doc, &values[0], valueCount) == valueCount);
+        ASSERT_TRUE(attr.get(doc, &values[0], valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
-        EXPECT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, &enums[0], valueCount) == valueCount);
+        ASSERT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, &enums[0], valueCount) == valueCount);
 
+        auto combined = zipped_and_sorted_by_first(values, enums);
         for (uint32_t j = 0; j < valueCount; ++j) {
-            //LOG(info, "doc[%u][%u] = %s", doc, j, values[j].c_str());
-            EXPECT_TRUE(values[j] == uniqueStrings[j]);
+            EXPECT_TRUE(combined[j].first == uniqueStrings[j]);
             uint32_t e = 100;
-            EXPECT_TRUE(attr.findEnum(values[j].c_str(), e));
-            EXPECT_TRUE(enums[j] == e);
+            EXPECT_TRUE(attr.findEnum(combined[j].first.c_str(), e));
+            EXPECT_TRUE(combined[j].second == e);
         }
     }
 
@@ -207,12 +225,12 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
         std::vector<uint32_t> enums(valueCount);
         EXPECT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, &enums[0], valueCount) == valueCount);
 
+        auto combined = zipped_and_sorted_by_first(values, enums);
         for (uint32_t j = 0; j < valueCount; ++j) {
-            //LOG(info, "doc[%u][%u] = %s", doc, j, values[j].c_str());
-            EXPECT_TRUE(values[j] == newUniques[j]);
+            EXPECT_TRUE(combined[j].first == newUniques[j]);
             uint32_t e = 100;
-            EXPECT_TRUE(attr.findEnum(values[j].c_str(), e));
-            EXPECT_TRUE(enums[j] == e);
+            EXPECT_TRUE(attr.findEnum(combined[j].first.c_str(), e));
+            EXPECT_TRUE(combined[j].second == e);
         }
     }
 

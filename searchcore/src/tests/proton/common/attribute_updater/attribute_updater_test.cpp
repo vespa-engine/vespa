@@ -29,6 +29,7 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/generic_tensor_attribute.h>
+#include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -158,9 +159,14 @@ check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values)
     std::vector<T> buf(sz);
     uint32_t asz = vec->get(docId, &buf[0], sz);
     if (!EXPECT_EQUAL(sz, asz)) return false;
+    std::vector<T> wanted(values.begin(), values.end());
+    if (vec->hasWeightedSetType()) {
+        std::sort(wanted.begin(), wanted.end(), value_then_weight_order());
+        std::sort(buf.begin(), buf.end(), value_then_weight_order());
+    }
     for (uint32_t i = 0; i < values.size(); ++i) {
-        if (!EXPECT_EQUAL(buf[i].getValue(), values[i].getValue())) return false;
-        if (!EXPECT_EQUAL(buf[i].getWeight(), values[i].getWeight())) return false;
+        if (!EXPECT_EQUAL(buf[i].getValue(), wanted[i].getValue())) return false;
+        if (!EXPECT_EQUAL(buf[i].getWeight(), wanted[i].getWeight())) return false;
     }
     return true;
 }

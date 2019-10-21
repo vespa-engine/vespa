@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/test/weighted_type_test_utils.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("enum_attribute_compaction_test");
@@ -141,8 +142,13 @@ CompactionTest<VectorType>::check_values(uint32_t doc_id)
     buffer.fill(*_v, doc_id);
     if (_v->hasMultiValue()) {
         EXPECT_EQ(2u, buffer.size());
-        EXPECT_EQ(CheckType(buffer[0]), MyTestData::make_value(doc_id, 0));
-        EXPECT_EQ(CheckType(buffer[1]), MyTestData::make_value(doc_id, 1));
+        int i = 0, j = 1;
+        if (_v->hasWeightedSetType() && !(CheckType(buffer[0]) == MyTestData::make_value(doc_id, 0))) {
+            i = 1;
+            j = 0;
+        }
+        EXPECT_EQ(CheckType(buffer[i]), MyTestData::make_value(doc_id, 0));
+        EXPECT_EQ(CheckType(buffer[j]), MyTestData::make_value(doc_id, 1));
     } else {
         EXPECT_EQ(1u, buffer.size());
         EXPECT_EQ(CheckType(buffer[0]), MyTestData::make_value(doc_id, 0));

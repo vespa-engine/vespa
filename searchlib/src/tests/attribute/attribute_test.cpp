@@ -19,6 +19,7 @@
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <cmath>
@@ -135,6 +136,20 @@ replace_suffix(AttributeVector &v, const vespalib::string &suffix)
         name.resize(name.size() - suffix.size());
     }
     return name + suffix;
+}
+
+template <typename Container, typename V>
+bool contains(const Container& c, size_t elems, const V& value) {
+    auto end = c.begin() + elems;
+    return (std::find(c.begin(), end, value) != end);
+}
+
+template <typename Container, typename V>
+bool contains_value(const Container& c, size_t elems, const V& value) {
+    auto end = c.begin() + elems;
+    return (std::find_if(c.begin(), end, [&value](const auto& ws_elem) {
+        return (ws_elem.getValue() == value);
+    }) != end);
 }
 
 }
@@ -411,7 +426,13 @@ void AttributeTest::compare(VectorType & a, VectorType & b)
         ASSERT_TRUE(a.getValueCount(i) == b.getValueCount(i));
         EXPECT_EQUAL(static_cast<const AttributeVector &>(a).get(i, av, asz), static_cast<uint32_t>(a.getValueCount(i)));
         EXPECT_EQUAL(static_cast<const AttributeVector &>(b).get(i, bv, bsz), static_cast<uint32_t>(b.getValueCount(i)));
-        for(size_t j(0), k(std::min(a.getValueCount(i), b.getValueCount(i))); j < k; j++) {
+        const size_t min_common_value_count = std::min(a.getValueCount(i), b.getValueCount(i));
+        if (a.hasWeightedSetType()) {
+            ASSERT_TRUE(b.hasWeightedSetType());
+            std::sort(av, av + min_common_value_count, order_by_value());
+            std::sort(bv, bv + min_common_value_count, order_by_value());
+        }
+        for(size_t j = 0; j < min_common_value_count; j++) {
             EXPECT_EQUAL(av[j], bv[j]);
         }
     }
@@ -1076,6 +1097,9 @@ AttributeTest::testArray()
 // CollectionType::WSET
 //-----------------------------------------------------------------------------
 
+// This function makes the assumption that weights are unique, so that is has a way
+// of creating a deterministic comparison ordering of weighted sets without caring about
+// the templated values themselvecs.
 template <typename VectorType, typename BufferType>
 void
 AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<BufferType> & values)
@@ -1089,6 +1113,9 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
     uint32_t bufferSize = numDocs + 10;
     std::vector<BufferType> buffer(bufferSize);
 
+    std::vector<BufferType> ordered_values(values.begin(), values.end());
+    std::sort(ordered_values.begin(), ordered_values.end(), order_by_weight());
+
     // fill and check
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), 0u);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
@@ -1099,10 +1126,11 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
             EXPECT_TRUE(v.append(doc, values[j].getValue(), values[j].getWeight()));
         }
         commit(ptr);
-        EXPECT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount);
+        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount);
+        std::sort(buffer.begin(), buffer.begin() + valueCount, order_by_weight());
         for (uint32_t j = 0; j < valueCount; ++j) {
-            EXPECT_TRUE(buffer[j].getValue() == values[j].getValue());
-            EXPECT_TRUE(buffer[j].getWeight() == values[j].getWeight());
+            EXPECT_TRUE(buffer[j].getValue() == ordered_values[j].getValue());
+            EXPECT_TRUE(buffer[j].getWeight() == ordered_values[j].getWeight());
         }
     }
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), numDocs + (numDocs*(numDocs-1))/2);
@@ -1115,24 +1143,21 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
         // append non-existent value
         EXPECT_TRUE(v.append(doc, values[doc].getValue(), values[doc].getWeight()));
         commit(ptr);
-        EXPECT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
-        EXPECT_TRUE(buffer[doc].getValue() == values[doc].getValue());
-        EXPECT_TRUE(buffer[doc].getWeight() == values[doc].getWeight());
+        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
+        EXPECT_TRUE(contains(buffer, valueCount + 1, values[doc]));
 
         // append existent value
         EXPECT_TRUE(v.append(doc, values[doc].getValue(), values[doc].getWeight() + 10));
         commit(ptr);
-        EXPECT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
-        EXPECT_TRUE(buffer[doc].getValue() == values[doc].getValue());
-        EXPECT_TRUE(buffer[doc].getWeight() == values[doc].getWeight() + 10);
+        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
+        EXPECT_TRUE(contains(buffer, valueCount + 1, BufferType(values[doc].getValue(), values[doc].getWeight() + 10)));
 
         // append non-existent value two times
         EXPECT_TRUE(v.append(doc, values[doc + 1].getValue(), values[doc + 1].getWeight()));
         EXPECT_TRUE(v.append(doc, values[doc + 1].getValue(), values[doc + 1].getWeight() + 10));
         commit(ptr);
-        EXPECT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 2);
-        EXPECT_TRUE(buffer[doc + 1].getValue() == values[doc + 1].getValue());
-        EXPECT_TRUE(buffer[doc + 1].getWeight() == values[doc + 1].getWeight() + 10);
+        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 2);
+        EXPECT_TRUE(contains(buffer, valueCount + 2, BufferType(values[doc + 1].getValue(), values[doc + 1].getWeight() + 10)));
     }
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), numDocs + (numDocs*(numDocs-1))/2 + numDocs*4);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
@@ -1148,14 +1173,12 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
         EXPECT_TRUE(static_cast<uint32_t>(v.getValueCount(doc)) == valueCount + 2);
 
         // remove existent value
-        EXPECT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 2);
-        EXPECT_TRUE(buffer[doc + 1].getValue() == values[doc + 1].getValue());
+        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 2);
+        EXPECT_TRUE(contains_value(buffer, valueCount + 2, values[doc + 1].getValue()));
         EXPECT_TRUE(v.remove(doc, values[doc + 1].getValue(), 0));
         commit(ptr);
-        EXPECT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
-        for (uint32_t i = 0; i < valueCount + 1; ++i) {
-            EXPECT_TRUE(buffer[i].getValue() != values[doc + 1].getValue());
-        }
+        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
+        EXPECT_FALSE(contains_value(buffer, valueCount + 1, values[doc + 1].getValue()));
     }
     EXPECT_EQUAL(ptr->getStatus().getUpdateCount(), numDocs + (numDocs*(numDocs-1))/2 + numDocs*4 + numDocs * 2);
     EXPECT_EQUAL(ptr->getStatus().getNonIdempotentUpdateCount(), 0u);
@@ -1512,8 +1535,9 @@ AttributeTest::testMapValueUpdate(const AttributePtr & ptr, BufferType initValue
     ptr->commit();
     if (createIfNonExistant) {
         EXPECT_EQUAL(ptr->get(5, &buf[0], 2), uint32_t(2));
-        EXPECT_EQUAL(buf[0].getWeight(), 100);
-        EXPECT_EQUAL(buf[1].getWeight(), 10);
+        std::sort(buf.begin(), buf.begin() + 2, order_by_weight());
+        EXPECT_EQUAL(buf[0].getWeight(), 10);
+        EXPECT_EQUAL(buf[1].getWeight(), 100);
     } else {
         EXPECT_EQUAL(ptr->get(5, &buf[0], 2), uint32_t(1));
         EXPECT_EQUAL(buf[0].getWeight(), 100);
