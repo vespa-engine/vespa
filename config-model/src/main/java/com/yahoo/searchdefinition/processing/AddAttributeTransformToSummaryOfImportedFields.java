@@ -52,6 +52,10 @@ public class AddAttributeTransformToSummaryOfImportedFields extends Processor {
     }
 
     private static void setAttributeCombinerTransform(SummaryField summaryField) {
-        summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
+        if (summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER) {
+            summaryField.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+        } else {
+            summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
+        }
     }
 }
