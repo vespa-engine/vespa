@@ -2,7 +2,10 @@
 package com.yahoo.vespa.orchestrator.status;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
+import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Timer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -17,6 +20,7 @@ import org.apache.zookeeper.data.Stat;
 
 import javax.inject.Inject;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -42,18 +46,27 @@ public class ZookeeperStatusService implements StatusService {
 
     private final Curator curator;
     private final CuratorCounter counter;
+    private final Metric metric;
+    private final Timer timer;
+
+    /**
+     * A cache of metric contexts for each possible dimension map. In practice, there is one dimension map
+     * for each application, so up to hundreds of elements.
+     */
+    private final ConcurrentHashMap<Map<String, String>, Metric.Context> cachedContexts = new ConcurrentHashMap<>();
 
     /** A cache of hosts allowed to be down. Access only through {@link #getValidCache()}! */
-    private final Map<ApplicationInstanceReference, Set<HostName>> hostsDown;
+    private final Map<ApplicationInstanceReference, Set<HostName>> hostsDown = new ConcurrentHashMap<>();
 
     private volatile long cacheRefreshedAt;
 
     @Inject
-    public ZookeeperStatusService(@Component Curator curator) {
+    public ZookeeperStatusService(@Component Curator curator, @Component Metric metric, @Component Timer timer) {
         this.curator = curator;
         this.counter = new CuratorCounter(curator, HOST_STATUS_CACHE_COUNTER_PATH);
         this.cacheRefreshedAt = counter.get();
-        this.hostsDown = new ConcurrentHashMap<>();
+        this.metric = metric;
+        this.timer = timer;
     }
 
     @Override
@@ -104,18 +117,49 @@ public class ZookeeperStatusService implements StatusService {
     public MutableStatusRegistry lockApplicationInstance_forCurrentThreadOnly(
             OrchestratorContext context,
             ApplicationInstanceReference applicationInstanceReference) throws UncheckedTimeoutException {
+        ApplicationId applicationId = OrchestratorUtil.toApplicationId(applicationInstanceReference);
+        String app = applicationId.application().value() + "." + applicationId.instance().value();
+        Map<String, String> dimensions = Map.of(
+                "tenantName", applicationId.tenant().value(),
+                "applicationId", applicationId.toFullString(),
+                "app", app);
+        Metric.Context metricContext = cachedContexts.computeIfAbsent(dimensions, metric::createContext);
+
         Duration duration = context.getTimeLeft();
         String lockPath = applicationInstanceLock2Path(applicationInstanceReference);
         Lock lock = new Lock(lockPath, curator);
-        lock.acquire(duration);
+
+        Instant startTime = timer.currentTime();
+        Instant acquireEndTime;
+        boolean lockAcquired = false;
+        try {
+            lock.acquire(duration);
+            lockAcquired = true;
+        } finally {
+            acquireEndTime = timer.currentTime();
+            double seconds = durationInSeconds(startTime, acquireEndTime);
+            metric.set("orchestrator.lock.acquire-latency", seconds, metricContext);
+            metric.set("orchestrator.lock.acquired", lockAcquired ? 1 : 0, metricContext);
+        }
+
+        Runnable updateLockHoldMetric = () -> {
+            Instant lockReleasedTime = timer.currentTime();
+            double seconds = durationInSeconds(acquireEndTime, lockReleasedTime);
+            metric.set("orchestrator.lock.hold-latency", seconds, metricContext);
+        };
 
         try {
-            return new ZkMutableStatusRegistry(lock, applicationInstanceReference, context.isProbe());
+            return new ZkMutableStatusRegistry(lock, applicationInstanceReference, context.isProbe(), updateLockHoldMetric);
         } catch (Throwable t) {
             // In case the constructor throws an exception.
+            updateLockHoldMetric.run();
             lock.close();
             throw t;
         }
+    }
+
+    private double durationInSeconds(Instant startInstant, Instant endInstant) {
+        return Duration.between(startInstant, endInstant).toMillis() / 1000.0;
     }
 
     private void setHostStatus(ApplicationInstanceReference applicationInstanceReference,
@@ -237,13 +281,16 @@ public class ZookeeperStatusService implements StatusService {
         private final Lock lock;
         private final ApplicationInstanceReference applicationInstanceReference;
         private final boolean probe;
+        private final Runnable onLockRelease;
 
         public ZkMutableStatusRegistry(Lock lock,
                                        ApplicationInstanceReference applicationInstanceReference,
-                                       boolean probe) {
+                                       boolean probe,
+                                       Runnable onLockRelease) {
             this.lock = lock;
             this.applicationInstanceReference = applicationInstanceReference;
             this.probe = probe;
+            this.onLockRelease = onLockRelease;
         }
 
         @Override
@@ -293,6 +340,7 @@ public class ZookeeperStatusService implements StatusService {
 
         @Override
         public void close()  {
+            onLockRelease.run();
             try {
                 lock.close();
             } catch (RuntimeException e) {
