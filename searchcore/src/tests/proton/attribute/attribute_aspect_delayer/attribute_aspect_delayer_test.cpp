@@ -101,13 +101,18 @@ AttributesConfig::Attribute make_fa(const AttributesConfig::Attribute &cfg)
     return attr;
 }
 
-SummarymapConfig::Override make_attribute_override(const vespalib::string &name)
+SummarymapConfig::Override make_attribute_override(const vespalib::string &name, const vespalib::string &source)
 {
     SummarymapConfig::Override override;
     override.field = name;
     override.command = "attribute";
-    override.arguments = name;
+    override.arguments = source;
     return override;
+}
+
+SummarymapConfig::Override make_attribute_override(const vespalib::string &name)
+{
+    return make_attribute_override(name, name);
 }
 
 SummarymapConfig::Override make_geopos_override(const vespalib::string &name)
@@ -119,11 +124,35 @@ SummarymapConfig::Override make_geopos_override(const vespalib::string &name)
     return override;
 }
 
-SummarymapConfig::Override make_attribute_combiner_override(const vespalib::string &name)
+SummarymapConfig::Override make_attribute_combiner_override(const vespalib::string &name, const vespalib::string &source)
 {
     SummarymapConfig::Override override;
     override.field = name;
     override.command = "attributecombiner";
+    override.arguments = source;
+    return override;
+}
+
+SummarymapConfig::Override make_attribute_combiner_override(const vespalib::string &name)
+{
+    return make_attribute_combiner_override(name, "");
+}
+
+SummarymapConfig::Override make_matched_attribute_elements_filter_override(const vespalib::string &name, const vespalib::string &source)
+{
+    SummarymapConfig::Override override;
+    override.field = name;
+    override.command = "matchedattributeelementsfilter";
+    override.arguments = source;
+    return override;
+}
+
+SummarymapConfig::Override make_matched_elements_filter_override(const vespalib::string &name, const vespalib::string &source)
+{
+    SummarymapConfig::Override override;
+    override.field = name;
+    override.command = "matchedelementsfilter";
+    override.arguments = source;
     return override;
 }
 
@@ -241,6 +270,14 @@ TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_typ
     setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a", "integer")}), smCfg({make_geopos_override("a")}));
     assertAttributeConfig({});
     assertSummarymapConfig({make_geopos_override("a")});
+}
+
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_is_delayed_if_field_type_is_unchanged_mapped_summary)
+{
+    addFields({"a"});
+    setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg()}), sCfg({make_summary_field("a_mapped", "integer")}), smCfg({make_attribute_override("a_mapped", "a")}));
+    assertAttributeConfig({});
+    assertSummarymapConfig({});
 }
 
 TEST_F(DelayerTest, require_that_adding_attribute_is_not_delayed_if_field_type_changed)
@@ -388,6 +425,14 @@ TEST_F(DelayerTest, require_that_removing_attribute_aspect_from_struct_field_is_
     setup(attrCfg({make_int32_sv_cfg("array.a")}), smCfg({make_attribute_combiner_override("array")}), attrCfg({}), sCfg({make_summary_field("array", "jsonstring")}), smCfg({}));
     assertAttributeConfig({});
     assertSummarymapConfig({});
+}
+
+TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_delayed_if_field_type_is_unchanged_with_filtering_docsum)
+{
+    addFields({"array.a"});
+    setup(attrCfg({}), smCfg({}), attrCfg({make_int32_sv_cfg("array.a")}), sCfg({make_summary_field("array", "jsonstring")}), smCfg({make_attribute_combiner_override("array"), make_matched_attribute_elements_filter_override("array_filtered", "array")}));
+    assertAttributeConfig({});
+    assertSummarymapConfig({make_matched_elements_filter_override("array_filtered", "array")});
 }
 
 }

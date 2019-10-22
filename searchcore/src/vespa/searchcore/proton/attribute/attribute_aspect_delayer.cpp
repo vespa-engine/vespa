@@ -59,6 +59,14 @@ KnownSummaryFields::KnownSummaryFields(const SummaryConfig &summaryConfig)
 
 KnownSummaryFields::~KnownSummaryFields() = default;
 
+vespalib::string source_field(const SummarymapConfig::Override &override) {
+    if (override.arguments == "") {
+        return override.field;
+    } else {
+        return override.arguments;
+    }
+}
+
 }
 
 AttributeAspectDelayer::AttributeAspectDelayer()
@@ -134,14 +142,23 @@ handleNewAttributes(const AttributesConfig &oldAttributesConfig,
     }
     for (const auto &override : newSummarymapConfig.override) {
         if (override.command == "attribute") {
-            auto itr = delayed.find(override.field);
+            auto itr = delayed.find(source_field(override));
             if (itr == delayed.end()) {
                 summarymapConfig.override.emplace_back(override);
             }
         } else if (override.command == "attributecombiner") {
-            auto itr = delayedStruct.find(override.field);
+            auto itr = delayedStruct.find(source_field(override));
             if (itr == delayedStruct.end()) {
                 summarymapConfig.override.emplace_back(override);
+            }
+        } else if (override.command == "matchedattributeelementsfilter") {
+            auto itr = delayedStruct.find(source_field(override));
+            if (itr == delayedStruct.end()) {
+                summarymapConfig.override.emplace_back(override);
+            } else {
+                SummarymapConfig::Override mutated_override(override);
+                mutated_override.command = "matchedelementsfilter";
+                summarymapConfig.override.emplace_back(mutated_override);
             }
         } else {
             summarymapConfig.override.emplace_back(override);
@@ -178,7 +195,7 @@ handleOldAttributes(const AttributesConfig &oldAttributesConfig,
     }
     for (const auto &override : oldSummarymapConfig.override) {
         if (override.command == "attribute") {
-            auto itr = delayed.find(override.field);
+            auto itr = delayed.find(source_field(override));
             if (itr != delayed.end() && knownSummaryFields.known(override.field)) {
                 summarymapConfig.override.emplace_back(override);
             }
