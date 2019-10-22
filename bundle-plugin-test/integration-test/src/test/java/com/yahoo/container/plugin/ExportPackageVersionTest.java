@@ -22,12 +22,15 @@ import static org.junit.Assert.assertThat;
 public class ExportPackageVersionTest {
 
     private static Attributes mainAttributes;
+    private static String bundleVersion;
 
     @BeforeClass
     public static void setup() {
         try {
             File componentJar = findBundleJar("artifact-version-for-exports");
             mainAttributes = new JarFile(componentJar).getManifest().getMainAttributes();
+            bundleVersion = mainAttributes.getValue("Bundle-Version");
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -36,7 +39,6 @@ public class ExportPackageVersionTest {
     @Test
     public void artifact_version_without_qualifier_is_used_as_export_version() {
         // Bundle-Version is artifact version without qualifier
-        String bundleVersion = mainAttributes.getValue("Bundle-Version");
         String expectedExport = "ai.vespa.noversion;version=" + bundleVersion;
 
         String exportPackage = mainAttributes.getValue("Export-Package");
@@ -55,8 +57,10 @@ public class ExportPackageVersionTest {
     @Test
     public void artifact_version_of_dependency_is_used_as_export_version_for_package_in_compile_scoped_dependency() {
         String exportPackage = mainAttributes.getValue("Export-Package");
-        // Verify against the artifact version from the test bundle's pom.
-        assertThat(exportPackage, containsString("ai.vespa.noversion_dep;version=3.2.1"));
+
+        // TODO: This test should have checked for a fixed version of the dependency bundle, different than the main bundle version.
+        //       See comment in the dependency bundle's pom.xml for why this is not the case.
+        assertThat(exportPackage, containsString("ai.vespa.noversion_dep;version=" + bundleVersion));
     }
 
     @Test
