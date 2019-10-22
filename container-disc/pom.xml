@@ -166,7 +166,6 @@
                 defaults-jar-with-dependencies.jar,
                 component-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
-                zookeeper-server-jar-with-dependencies.jar,
                 <!-- Misc 3rd party bundles -->
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
