@@ -1384,7 +1384,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         RunId runId = controller.jobController().last(id, type).get().id();
         Slime slime = new Slime();
         Cursor rootObject = slime.setObject();
-        rootObject.setString("message", "Deployment started in " + runId);
+        rootObject.setString("message", "Deployment started in " + runId +
+                                        ". This may take about 15 minutes the first time.");
         rootObject.setLong("run", runId.number());
         return new SlimeJsonResponse(slime);
     }
