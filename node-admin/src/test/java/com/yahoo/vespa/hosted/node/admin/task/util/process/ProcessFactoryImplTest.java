@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
-import com.yahoo.jdisc.test.TestTimer;
+import com.yahoo.vespa.hosted.node.admin.task.util.time.TestTimer;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
