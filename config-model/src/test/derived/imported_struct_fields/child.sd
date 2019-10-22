@@ -15,5 +15,20 @@ search child {
     summary my_elem_map type map<string, elem> {}
     summary my_str_int_map type map<string, int> {}
   }
+
+  document-summary filtered {
+    summary elem_array_filtered type array<elem> {
+      source: my_elem_array
+      matched-elements-only
+    }
+    summary elem_map_filtered type map<string, elem> {
+      source: my_elem_map
+      matched-elements-only
+    }
+    summary str_int_map_filtered type map<string, int> {
+      source: my_str_int_map
+      matched-elements-only
+    }
+  }
 }
 

@@ -85,9 +85,12 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
     /**
      * Does this summary command name stand for a dynamic transform?
      * We need this because some model information is shared through configs instead of model - see usage
+     * A dynamic transform needs the query to perform its computations.
      */
     public static boolean isDynamicCommand(String commandName) {
-        return (commandName.equals("dynamicteaser") || commandName.equals("smartsummary"));
+        return (commandName.equals("dynamicteaser") ||
+                commandName.equals(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()) ||
+                commandName.equals(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
     }
 
     @Override

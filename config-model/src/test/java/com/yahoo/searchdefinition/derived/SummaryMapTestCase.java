@@ -167,6 +167,14 @@ public class SummaryMapTestCase extends SearchDefinitionTestCase {
                 "}"), "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName());
     }
 
+    @Test
+    public void commands_that_are_dynamic_and_require_the_query() {
+        assertTrue(SummaryMap.isDynamicCommand("dynamicteaser"));
+        assertTrue(SummaryMap.isDynamicCommand(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()));
+        assertTrue(SummaryMap.isDynamicCommand(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
+        assertFalse(SummaryMap.isDynamicCommand(SummaryTransform.ATTRIBUTE.getName()));
+    }
+
     private void assertOverride(String fieldContent, String expFieldName, String expCommand) throws ParseException {
         var summaryMap = new SummaryMap(buildSearch(fieldContent));
         var cfgBuilder = new SummarymapConfig.Builder();
