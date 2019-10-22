@@ -5,7 +5,6 @@ package com.yahoo.vespa.flags.json;
  * @author hakonhall
  */
 public class BlacklistCondition extends ListCondition {
-    public BlacklistCondition(CreateParams params) {
-        super(Type.BLACKLIST, params);
-    }
+    public static  BlacklistCondition create(CreateParams params) { return new BlacklistCondition(params); }
+    private BlacklistCondition(CreateParams params) { super(Type.BLACKLIST, params); }
 }

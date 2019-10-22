@@ -27,9 +27,6 @@ public class FetchVector {
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
 
-        /** Fully qualified hostname */
-        HOSTNAME,
-
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
         NODE_TYPE,
 
@@ -37,24 +34,30 @@ public class FetchVector {
         CLUSTER_TYPE,
 
         /**
-         * WARNING: DO SET THIS DIMENSION FOR A FLAG
+         * Fully qualified hostname.
          *
-         * <p>ALL flags can be set differently in different zones: This dimension is ONLY useful for the controller
-         * that needs to handle multiple zones.
-         *
-         * <p>Value from ZoneId::value is of the form environment.region.
+         * <p>NOTE: There is seldom any need to set HOSTNAME, as it is always set implicitly (in {@link Flags})
+         * from {@code Defaults.getDefaults().vespaHostname()}. The hostname may e.g. be overridden when
+         * fetching flag value for a Docker container node.
          */
-        ZONE_ID,
+        HOSTNAME,
 
         /**
-         * WARNING: DO SET THIS DIMENSION FOR A FLAG
+         * Vespa version from Version::toFullString of the form Major.Minor.Micro.
          *
-         * <p>The Vespa version is always fetched implicitly from {@link com.yahoo.component.Vtag#currentVersion}.
-         *
-         * <p>Value from Version::toFullString is of the form Major.Minor.Micro[.qualifier]. When ordering
-         * versions, note that 7.3 == 7.3.0.
+         * <p>NOTE: There is seldom any need to set VESPA_VERSION, as it is always set implicitly
+         * (in {@link Flags}) from {@link com.yahoo.component.Vtag#currentVersion}. The version COULD e.g.
+         * be overridden when fetching flag value for a Docker container node.
          */
-        VESPA_VERSION
+        VESPA_VERSION,
+
+        /**
+         * Zone from ZoneId::value of the form environment.region.
+         *
+         * <p>NOTE: There is seldom any need to set ZONE_ID, as all flags are set per zone anyways. The controller
+         * could PERHAPS use this where it handles multiple zones.
+         */
+        ZONE_ID
     }
 
     private final Map<Dimension, String> map;

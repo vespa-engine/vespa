@@ -33,7 +33,7 @@ public class FlagsDbImplTest {
         FlagsDbImpl db = new FlagsDbImpl(curator);
 
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME, List.of("host1"), Optional.empty());
-        Condition condition1 = new WhitelistCondition(params);
+        Condition condition1 = WhitelistCondition.create(params);
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
         FlagId flagId = new FlagId("id");
         FlagData data = new FlagData(flagId, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);

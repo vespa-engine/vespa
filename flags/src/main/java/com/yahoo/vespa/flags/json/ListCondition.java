@@ -20,6 +20,10 @@ public abstract class ListCondition implements Condition {
         this.dimension = params.dimension();
         this.values = List.copyOf(params.values());
         this.isWhitelist = type == Type.WHITELIST;
+
+        if (params.predicate().isPresent()) {
+            throw new IllegalArgumentException(getClass().getSimpleName() + " does not support the 'predicate' field");
+        }
     }
 
     @Override

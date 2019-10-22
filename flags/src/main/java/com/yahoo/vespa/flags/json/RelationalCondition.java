@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -16,6 +17,11 @@ public class RelationalCondition implements Condition {
     private final FetchVector.Dimension dimension;
 
     public static RelationalCondition create(CreateParams params) {
+        if (!params.values().isEmpty()) {
+            throw new IllegalArgumentException(RelationalCondition.class.getSimpleName() +
+                    " does not support the 'values' field");
+        }
+
         String predicate = params.predicate().orElseThrow(() ->
                 new IllegalArgumentException(RelationalCondition.class.getSimpleName() +
                         " requires the predicate field in the condition"));

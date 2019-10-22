@@ -237,7 +237,8 @@ public class Flags {
      *                           from the FlagSource.
      * @param <T>                The boxed type of the flag value, e.g. Boolean for flags guarding features.
      * @param <U>                The type of the unbound flag, e.g. UnboundBooleanFlag.
-     * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} environment. The ZONE environment
+     * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} and
+     *         {@link FetchVector.Dimension#VESPA_VERSION VESPA_VERSION} already set. The ZONE environment
      *         is typically implicit.
      */
     private static <T, U extends UnboundFlag<?, ?, ?>> U define(TypedUnboundFlagFactory<T, U> factory,

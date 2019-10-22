@@ -5,7 +5,6 @@ package com.yahoo.vespa.flags.json;
  * @author hakonhall
  */
 public class WhitelistCondition extends ListCondition {
-    public WhitelistCondition(CreateParams params) {
-        super(Type.WHITELIST, params);
-    }
+    public static WhitelistCondition create(CreateParams params) { return new WhitelistCondition(params); }
+    private WhitelistCondition(CreateParams params) { super(Type.WHITELIST, params); }
 }

@@ -19,7 +19,7 @@ public class ConditionTest {
     public void testWhitelist() {
         String hostname1 = "host1";
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME, List.of(hostname1), Optional.empty());
-        Condition condition = new WhitelistCondition(params);
+        Condition condition = WhitelistCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));
@@ -30,7 +30,7 @@ public class ConditionTest {
     public void testBlacklist() {
         String hostname1 = "host1";
         var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME, List.of(hostname1), Optional.empty());
-        Condition condition = new BlacklistCondition(params);
+        Condition condition = BlacklistCondition.create(params);
         assertTrue(condition.test(new FetchVector()));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.HOSTNAME, "bar")));

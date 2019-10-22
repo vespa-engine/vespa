@@ -60,8 +60,8 @@ public interface Condition extends Predicate<FetchVector> {
         var params = new CreateParams(dimension, values, predicate);
 
         switch (type) {
-            case WHITELIST: return new WhitelistCondition(params);
-            case BLACKLIST: return new BlacklistCondition(params);
+            case WHITELIST: return WhitelistCondition.create(params);
+            case BLACKLIST: return BlacklistCondition.create(params);
             case RELATIONAL: return RelationalCondition.create(params);
         }
 
