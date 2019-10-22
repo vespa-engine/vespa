@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status;
 
+import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Timer;
+import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.curator.Curator;
@@ -16,12 +19,18 @@ import org.hamcrest.TypeSafeMatcher;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -33,16 +42,26 @@ import java.util.logging.Logger;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ZookeeperStatusServiceTest {
     private TestingServer testingServer;
     private ZookeeperStatusService zookeeperStatusService;
     private Curator curator;
+    private final Timer timer = mock(Timer.class);
+    private final Metric metric = mock(Metric.class);
     private final OrchestratorContext context = mock(OrchestratorContext.class);
+
+    @Captor
+    private ArgumentCaptor<Map<String, String>> captor;
 
     @Before
     public void setUp() throws Exception {
@@ -50,9 +69,10 @@ public class ZookeeperStatusServiceTest {
 
         testingServer = new TestingServer();
         curator = createConnectedCurator(testingServer);
-        zookeeperStatusService = new ZookeeperStatusService(curator);
+        zookeeperStatusService = new ZookeeperStatusService(curator, metric, timer);
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
         when(context.isProbe()).thenReturn(false);
+        when(timer.currentTime()).thenReturn(Instant.ofEpochMilli(1));
     }
 
     private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
@@ -81,6 +101,11 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void setting_host_state_is_idempotent() {
+        when(timer.currentTime()).thenReturn(
+                Instant.ofEpochMilli((1)),
+                Instant.ofEpochMilli((3)),
+                Instant.ofEpochMilli(6));
+
         try (MutableStatusRegistry statusRegistry = zookeeperStatusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
@@ -96,11 +121,26 @@ public class ZookeeperStatusServiceTest {
                 }
             }
         }
+
+        // Time
+        //   1    Start before lock
+        //   3    After acquire => orchestrator.lock.acquire-latency = 3ms - 1ms
+        //   6    After release => orchestrator.lock.hold-latency = 6ms - 3ms
+        verify(metric).set(eq("orchestrator.lock.acquire-latency"), eq(0.002), any());
+        verify(metric).set(eq("orchestrator.lock.acquired"), eq(1), any());
+        verify(metric).set(eq("orchestrator.lock.hold-latency"), eq(0.003), any());
+        verify(metric).createContext(captor.capture());
+
+        assertEquals(
+                Map.of("app", "test-application.test-instance-key",
+                        "tenantName", "test-tenant",
+                        "applicationId", "test-tenant.test-application.test-instance-key"),
+                captor.getValue());
     }
 
     @Test
     public void locks_are_exclusive() throws Exception {
-        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
+        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator, mock(Metric.class), new TestTimer());
 
         final CompletableFuture<Void> lockedSuccessfullyFuture;
         try (MutableStatusRegistry statusRegistry = zookeeperStatusService
@@ -125,7 +165,7 @@ public class ZookeeperStatusServiceTest {
 
     @Test
     public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
-        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator);
+        ZookeeperStatusService zookeeperStatusService2 = new ZookeeperStatusService(curator, mock(Metric.class), new TestTimer());
 
         try (MutableStatusRegistry statusRegistry = zookeeperStatusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
