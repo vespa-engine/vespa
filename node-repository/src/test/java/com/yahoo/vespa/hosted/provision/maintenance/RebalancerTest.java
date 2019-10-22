@@ -35,8 +35,10 @@ public class RebalancerTest {
     @Test
     public void testRebalancing() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
+        MetricsReporterTest.TestMetric metric = new MetricsReporterTest.TestMetric();
         Rebalancer rebalancer = new Rebalancer(tester.nodeRepository(),
                                                new IdentityHostResourcesCalculator(),
+                                               metric,
                                                tester.clock(),
                                                Duration.ofMinutes(1));
 
@@ -54,12 +56,15 @@ public class RebalancerTest {
         rebalancer.maintain();
         assertFalse("No better place to move the skewed node, so no action is taken",
                     tester.nodeRepository().getNode(cpuSkewedNodeHostname).get().status().wantToRetire());
+        assertEquals(0.00325, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
         tester.makeReadyNodes(1, "cpu", NodeType.host, 8);
 
         rebalancer.maintain();
         assertTrue("We can now move the node to the cpu skewed host to reduce skew",
                    tester.nodeRepository().getNode(cpuSkewedNodeHostname).get().status().wantToRetire());
+        assertEquals("We're not actually moving the node here so skew remains steady",
+                     0.00325, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
         ApplicationId memApp = makeApplicationId("t2", "a2");
         deployApp(memApp, clusterSpec("c"), memResources, tester, 1);
@@ -69,6 +74,8 @@ public class RebalancerTest {
 
         tester.makeReadyNodes(1, "mem", NodeType.host, 8);
         rebalancer.maintain();
+        assertEquals("Deploying the mem skewed app increased skew",
+                     0.00752, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
         assertFalse("The mem skewed node is not set want to retire as the cpu skewed node still is",
                     tester.nodeRepository().getNode(memSkewedNodeHostname).get().status().wantToRetire());
 
