@@ -22,7 +22,7 @@ public interface Condition extends Predicate<FetchVector> {
 
         public static Type fromWire(String typeString) {
             for (Type type : values()) {
-                if (type.name().toLowerCase().equals(typeString.toLowerCase())) {
+                if (type.name().equalsIgnoreCase(typeString)) {
                     return type;
                 }
             }
