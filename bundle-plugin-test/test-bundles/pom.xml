@@ -20,35 +20,39 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
-            <plugin>
-                <!-- Trick to package bundles before test phase to allow running 'mvn test' -->
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>bundle-plugin</artifactId>
-                <version>${project.version}</version>
-                <executions>
-                    <execution>
-                        <id>generate-classpath-mappings</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>generate-bundle-classpath-mappings</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>package-test-bundles</id>
-                        <!-- Must be done after generating classpath-mappings and copying it in the 'main' bundle. -->
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>generate-osgi-manifest</goal>
-                            <goal>assemble-container-plugin</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <!-- The integration-test module should use the bundle jars instead of the ordinary artifacts. -->
-                    <AttachBundle>true</AttachBundle>
-                </configuration>
-            </plugin>
         </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <!-- Trick to package bundles before test phase to allow running 'mvn test' -->
+                    <groupId>com.yahoo.vespa</groupId>
+                    <artifactId>bundle-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <executions>
+                        <execution>
+                            <id>generate-classpath-mappings</id>
+                            <phase>generate-test-sources</phase>
+                            <goals>
+                                <goal>generate-bundle-classpath-mappings</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>package-test-bundles</id>
+                            <!-- Must be done after generating classpath-mappings and copying it in the 'main' bundle. -->
+                            <phase>test-compile</phase>
+                            <goals>
+                                <goal>generate-osgi-manifest</goal>
+                                <goal>assemble-container-plugin</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <!-- Make the integration-test module use the bundle jars instead of the ordinary artifacts. -->
+                        <AttachBundle>true</AttachBundle>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
     <modules>
         <module>artifact-version-for-exports</module>
