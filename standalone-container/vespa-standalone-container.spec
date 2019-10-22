@@ -70,6 +70,10 @@ done
 # vespajlib must be installed _without_ dependencies.
 cp vespajlib/target/vespajlib.jar "$jars_dir"
 
+# Copy from submodules, so must be done separately
+cp zookeeper-server/zookeeper-server-3.4/target/zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"
+cp zookeeper-server/zookeeper-server-3.5/target/zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"
+
 declare -a libexec_files=(
   standalone-container/src/main/sh/standalone-container.sh
   security-tools/src/main/sh/vespa-curl-wrapper
