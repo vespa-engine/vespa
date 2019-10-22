@@ -77,7 +77,7 @@ public class Deconstructor implements ComponentDeconstructor {
             log.info("Starting deconstruction of component " + component);
             try {
                 component.deconstruct();
-                log.info("Finished deconstructing of component " + component);
+                log.fine("Finished deconstructing of component " + component);
             }
             catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
                 log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
