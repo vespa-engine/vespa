@@ -2,8 +2,6 @@
 package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -74,8 +72,7 @@ public class HostResourceTest {
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
-    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZookeeperStatusService(
-            new MockCurator(), mock(Metric.class), new TestTimer());
+    private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZookeeperStatusService(new MockCurator());
 
     private static final InstanceLookupService mockInstanceLookupService = mock(InstanceLookupService.class);
     static {

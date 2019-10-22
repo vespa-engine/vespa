@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
-import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -38,14 +36,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.mockito.Mockito.mock;
-
 class ModelTestUtils {
 
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
-    private final StatusService statusService = new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+    private final StatusService statusService = new ZookeeperStatusService(new MockCurator());
     private final Orchestrator orchestrator = new OrchestratorImpl(clusterControllerClientFactory,
                                                                    statusService,
                                                                    new OrchestratorConfig(new Builder()),

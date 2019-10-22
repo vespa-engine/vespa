@@ -2,8 +2,6 @@
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -51,7 +49,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 /**
@@ -80,7 +77,7 @@ public class OrchestratorImplTest {
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(
                 clustercontroller,
-                new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
+                new ZookeeperStatusService(new MockCurator()),
                 new OrchestratorConfig(new OrchestratorConfig.Builder()),
                 new DummyInstanceLookupService());
 
@@ -314,7 +311,7 @@ public class OrchestratorImplTest {
     @Test
     public void testGetHost() throws Exception {
         ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
-        StatusService statusService = new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
+        StatusService statusService = new ZookeeperStatusService(new MockCurator());
 
         HostName hostName = new HostName("host.yahoo.com");
         TenantId tenantId = new TenantId("tenant");
