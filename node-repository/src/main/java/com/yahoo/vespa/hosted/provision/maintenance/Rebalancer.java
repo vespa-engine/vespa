@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -21,11 +22,17 @@ import java.util.stream.Stream;
 public class Rebalancer extends Maintainer {
 
     private final HostResourcesCalculator hostResourcesCalculator;
+    private final Metric metric;
     private final Clock clock;
 
-    public Rebalancer(NodeRepository nodeRepository, HostResourcesCalculator hostResourcesCalculator, Clock clock, Duration interval) {
+    public Rebalancer(NodeRepository nodeRepository,
+                      HostResourcesCalculator hostResourcesCalculator,
+                      Metric metric,
+                      Clock clock,
+                      Duration interval) {
         super(nodeRepository, interval);
         this.hostResourcesCalculator = hostResourcesCalculator;
+        this.metric = metric;
         this.clock = clock;
     }
 
@@ -34,11 +41,25 @@ public class Rebalancer extends Maintainer {
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().list();
 
+        updateSkewMetric(allNodes);
+
         if ( ! zoneIsStable(allNodes)) return;
 
         Move bestMove = findBestMove(allNodes);
         if (bestMove == Move.none) return;
         markWantToRetire(bestMove.node);
+    }
+
+    /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */
+    private void updateSkewMetric(NodeList allNodes) {
+        DockerHostCapacity capacity = new DockerHostCapacity(allNodes, hostResourcesCalculator);
+        double totalSkew = 0;
+        int hostCount = 0;
+        for (Node host : allNodes.nodeType((NodeType.host)).state(Node.State.active)) {
+            hostCount++;
+            totalSkew += Node.skew(host.flavor().resources(), capacity.freeCapacityOf(host));
+        }
+        metric.set("hostedVespa.docker.skew", totalSkew/hostCount, null);
     }
 
     private boolean zoneIsStable(NodeList allNodes) {
