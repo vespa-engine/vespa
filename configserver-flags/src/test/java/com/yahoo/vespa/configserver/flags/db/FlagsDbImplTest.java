@@ -30,7 +30,7 @@ public class FlagsDbImplTest {
         MockCurator curator = new MockCurator();
         FlagsDbImpl db = new FlagsDbImpl(curator);
 
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).setValues("host1");
+        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues("host1");
         Condition condition1 = WhitelistCondition.create(params);
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
         FlagId flagId = new FlagId("id");

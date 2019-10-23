@@ -38,13 +38,13 @@ public interface Condition extends Predicate<FetchVector> {
 
         public CreateParams(FetchVector.Dimension dimension) { this.dimension = Objects.requireNonNull(dimension); }
 
-        public CreateParams setValues(String... values) { return setValues(List.of(values)); }
-        public CreateParams setValues(List<String> values) {
+        public CreateParams withValues(String... values) { return withValues(List.of(values)); }
+        public CreateParams withValues(List<String> values) {
             this.values = List.copyOf(values);
             return this;
         }
 
-        public CreateParams setPredicate(String predicate) {
+        public CreateParams withPredicate(String predicate) {
             this.predicate = Optional.of(predicate);
             return this;
         }
@@ -63,11 +63,11 @@ public interface Condition extends Predicate<FetchVector> {
         var params = new CreateParams(dimension);
 
         if (wireCondition.values != null) {
-            params.setValues(wireCondition.values);
+            params.withValues(wireCondition.values);
         }
 
         if (wireCondition.predicate != null) {
-            params.setPredicate(wireCondition.predicate);
+            params.withPredicate(wireCondition.predicate);
         }
 
         switch (type) {
