@@ -77,20 +77,20 @@ public class JRTConfigRequester implements RequestWaiter {
      */
     public <T extends ConfigInstance> void request(JRTConfigSubscription<T> sub) {
         JRTClientConfigRequest req = JRTConfigRequestFactory.createFromSub(sub);
-        doRequest(sub, req, timingValues.getSubscribeTimeout());
+        doRequest(sub, req);
     }
 
-    private <T extends ConfigInstance> void doRequest(JRTConfigSubscription<T> sub, JRTClientConfigRequest req, long timeout) {
-        com.yahoo.vespa.config.Connection connection = connectionPool.getCurrent();
+    private <T extends ConfigInstance> void doRequest(JRTConfigSubscription<T> sub, JRTClientConfigRequest req) {
+        Connection connection = connectionPool.getCurrent();
         req.getRequest().setContext(new RequestContext(sub, req, connection));
-        boolean reqOK = req.validateParameters();
-        if (!reqOK) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
-        // Add some time to the timeout, we never want it to time out in JRT during normal operation
-        double jrtClientTimeout = getClientTimeout(timeout);
-        log.log(LogLevel.DEBUG, () -> "Requesting config for " + sub + " on connection " + connection
-                + " with RPC timeout " + jrtClientTimeout +
-                (log.isLoggable(LogLevel.SPAM) ? (",defcontent=" + req.getDefContent().asString()) : ""));
+        if ( ! req.validateParameters()) throw new ConfigurationRuntimeException("Error in parameters for config request: " + req);
 
+        double jrtClientTimeout = getClientTimeout(req);
+        if (log.isLoggable(LogLevel.DEBUG)) {
+            log.log(LogLevel.DEBUG, "Requesting config for " + sub + " on connection " + connection
+                    + " with client timeout " + jrtClientTimeout +
+                    (log.isLoggable(LogLevel.SPAM) ? (",defcontent=" + req.getDefContent().asString()) : ""));
+        }
         connection.invokeAsync(req.getRequest(), jrtClientTimeout, this);
     }
 
@@ -174,6 +174,7 @@ public class JRTConfigRequester implements RequestWaiter {
             delay = timingValues.getConfiguredErrorDelay();
         else
             delay = timingValues.getUnconfiguredDelay();
+
         if (errorCode == ErrorType.TRANSIENT) {
             delay = delay * Math.min((transientFailures + 1), timingValues.getMaxDelayMultiplier());
         } else {
@@ -274,7 +275,7 @@ public class JRTConfigRequester implements RequestWaiter {
         }
 
         public void run() {
-            doRequest(sub, jrtReq, jrtReq.getTimeout());
+            doRequest(sub, jrtReq);
         }
     }
 
@@ -323,7 +324,7 @@ public class JRTConfigRequester implements RequestWaiter {
         return connectionPool;
     }
 
-    private Double getClientTimeout(long serverTimeout) {
-        return (serverTimeout / 1000.0) + additionalTimeForClientTimeout;
+    private Double getClientTimeout(JRTClientConfigRequest request) {
+        return (request.getTimeout() / 1000.0) + additionalTimeForClientTimeout;
     }
 }
