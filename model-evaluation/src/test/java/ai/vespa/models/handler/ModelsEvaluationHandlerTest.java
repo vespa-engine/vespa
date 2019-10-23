@@ -81,6 +81,19 @@ public class ModelsEvaluationHandlerTest {
     }
 
     @Test
+    public void testXgBoostEvaluationWithMissingValue() {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("missing-value", "-1.0");
+        properties.put("f56", "0.2");
+        properties.put("f60", "0.3");
+        properties.put("f109", "0.4");
+        properties.put("non-existing-binding", "-1");
+        String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";
+        String expected = "{\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
+        assertResponse(url, properties, 200, expected);
+    }
+
+    @Test
     public void testMnistSoftmaxDetails() {
         String url = "http://localhost:8080/model-evaluation/v1/mnist_softmax";
         String expected = "{\"model\":\"mnist_softmax\",\"functions\":[{\"function\":\"default.add\",\"info\":\"http://localhost:8080/model-evaluation/v1/mnist_softmax/default.add\",\"eval\":\"http://localhost:8080/model-evaluation/v1/mnist_softmax/default.add/eval\",\"arguments\":[{\"name\":\"Placeholder\",\"type\":\"tensor(d0[],d1[784])\"}]}]}";
