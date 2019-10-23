@@ -7,7 +7,6 @@ import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
-import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -19,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -34,6 +34,30 @@ public class ModelsEvaluatorTest {
         function.bind("match", 3);
         function.bind("rankBoost", 5);
         assertEquals(32.0, function.evaluate().asDouble(), delta);
+    }
+
+    /** Tests a function defined as 4 * (var1 + var2) */
+    @Test
+    public void testSettingMissingValue() {
+        ModelsEvaluator models = createModels("src/test/resources/config/rankexpression/");
+
+        {
+            FunctionEvaluator function = models.evaluatorOf("macros", "secondphase");
+            assertTrue(Double.isNaN(function.evaluate().asDouble()));
+        }
+
+        {
+            FunctionEvaluator function = models.evaluatorOf("macros", "secondphase");
+            function.setMissingValue(5);
+            assertEquals(40.0, function.evaluate().asDouble(), delta);
+        }
+
+        {
+            FunctionEvaluator function = models.evaluatorOf("macros", "secondphase");
+            function.setMissingValue(5);
+            function.bind("match", 3);
+            assertEquals(32.0, function.evaluate().asDouble(), delta);
+        }
     }
 
     @Test

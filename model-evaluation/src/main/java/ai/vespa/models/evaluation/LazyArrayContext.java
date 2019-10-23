@@ -13,6 +13,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Arrays;
@@ -40,10 +41,17 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     LazyArrayContext(ExpressionFunction function,
                      Map<FunctionReference, ExpressionFunction> referencedFunctions,
                      List<Constant> constants,
-                     Model model,
-                     Value defaultFeatureValue) {
+                     Model model) {
         this.function = function;
-        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model, defaultFeatureValue);
+        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model);
+    }
+
+    /**
+     * Sets the value to use for lookups to existing values which are not set in this context.
+     * The default value that will be returned is NaN
+     */
+    public void setMissingValue(Tensor value) {
+        indexedBindings.setMissingValue(value);
     }
 
     /**
@@ -90,10 +98,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     @Override
     public double getDouble(int index) {
-        double value = get(index).asDouble();
-        if (value == Double.NaN)
-            throw new UnsupportedOperationException("Value at " + index + " has no double representation");
-        return value;
+        return get(index).asDouble();
     }
 
     @Override
@@ -125,7 +130,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     /** Returns the value which should be used when no value is set */
     public Value defaultValue() {
-        return indexedBindings.defaultValue;
+        return indexedBindings.missingValue;
     }
 
     /**
@@ -144,20 +149,21 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The names which needs to be bound externally when invoking this (i.e not constant or invocation */
         private final ImmutableSet<String> arguments;
 
-        /** The current values set, pre-converted to doubles */
+        /** The current values set */
         private final Value[] values;
 
-        /** The value to return if not set */
-        private final Value defaultValue;
+        /** The object instance which encodes "no value is set". The actual value of this is never used. */
+        private static final Value missing = new DoubleValue(Double.NaN).freeze();
+
+        /** The value to return for lookups where no value is set (default: NaN) */
+        private Value missingValue = new DoubleValue(Double.NaN).freeze();
 
         private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
                                 Value[] values,
-                                ImmutableSet<String> arguments,
-                                Value defaultValue) {
+                                ImmutableSet<String> arguments) {
             this.nameToIndex = nameToIndex;
             this.values = values;
             this.arguments = arguments;
-            this.defaultValue = defaultValue.freeze();
         }
 
         /**
@@ -168,17 +174,15 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                         Map<FunctionReference, ExpressionFunction> referencedFunctions,
                         List<Constant> constants,
                         LazyArrayContext owner,
-                        Model model,
-                        Value defaultFeatureValue) {
+                        Model model) {
             // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
             Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
             extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments);
 
             this.arguments = ImmutableSet.copyOf(arguments);
-            this.defaultValue = defaultFeatureValue.freeze();
             values = new Value[bindTargets.size()];
-            Arrays.fill(values, this.defaultValue);
+            Arrays.fill(values, missing);
 
             int i = 0;
             ImmutableMap.Builder<String, Integer> nameToIndexBuilder = new ImmutableMap.Builder<>();
@@ -201,6 +205,10 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                     values[index] = new LazyValue(referencedFunction.getKey(), owner, model);
                 }
             }
+        }
+
+        private void setMissingValue(Tensor value) {
+            missingValue = new TensorValue(value).freeze();
         }
 
         private void extractBindTargets(ExpressionNode node,
@@ -241,7 +249,11 @@ public final class LazyArrayContext extends Context implements ContextIndex {
             return reference.getName().equals("constant") && reference.getArguments().size() == 1;
         }
 
-        Value get(int index) { return values[index]; }
+        Value get(int index) {
+            Value value = values[index];
+            return value == missing ? missingValue : value;
+        }
+
         void set(int index, Value value) {
             values[index] = value;
         }
@@ -254,7 +266,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
             Value[] valueCopy = new Value[values.length];
             for (int i = 0; i < values.length; i++)
                 valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue) values[i]).copyFor(context) : values[i];
-            return new IndexedBindings(nameToIndex, valueCopy, arguments, defaultValue);
+            return new IndexedBindings(nameToIndex, valueCopy, arguments);
         }
 
     }

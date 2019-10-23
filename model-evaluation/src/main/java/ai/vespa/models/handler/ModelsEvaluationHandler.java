@@ -26,6 +26,9 @@ import java.util.concurrent.Executor;
 
 public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
 
+    /** A dash in this key ensures it does not collide with feature names */
+    private static final String missingValueKey = "missing-value";
+
     public static final String API_ROOT = "model-evaluation";
     public static final String VERSION_V1 = "v1";
     public static final String EVALUATE = "eval";
@@ -70,6 +73,9 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse evaluateModel(HttpRequest request, Model model, String[] function)  {
         FunctionEvaluator evaluator = model.evaluatorOf(function);
+
+        property(request, missingValueKey).ifPresent(missingValue -> evaluator.setMissingValue(Tensor.from(missingValue)));
+
         for (Map.Entry<String, TensorType> argument : evaluator.function().argumentTypes().entrySet()) {
             property(request, argument.getKey()).ifPresent(value -> evaluator.bind(argument.getKey(),
                                                                                    Tensor.from(argument.getValue(), value)));

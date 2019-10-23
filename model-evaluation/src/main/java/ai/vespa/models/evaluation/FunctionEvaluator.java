@@ -60,10 +60,31 @@ public class FunctionEvaluator {
         return bind(name, Tensor.Builder.of(TensorType.empty).cell(value).build());
     }
 
+    /**
+     * Sets the default value to use for variables which are not bound
+     *
+     * @param value the default value
+     * @return this for chaining
+     */
+    public FunctionEvaluator setMissingValue(Tensor value) {
+        if (evaluated)
+            throw new IllegalStateException("Cannot change the missing value in a used evaluator");
+        context.setMissingValue(value);
+        return this;
+    }
+
+    /**
+     * Sets the default value to use for variables which are not bound
+     *
+     * @param value the default value
+     * @return this for chaining
+     */
+    public FunctionEvaluator setMissingValue(double value) {
+        return setMissingValue(Tensor.Builder.of(TensorType.empty).cell(value).build());
+    }
+
     public Tensor evaluate() {
         for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
-            System.out.println("Checking " + argument.getKey() + " default " + context.defaultValue() + " is assignable to " + argument.getValue() +
-                               "? " + context.defaultValue().type().isAssignableTo(argument.getValue()));
             if (context.isMissing(argument.getKey()))
                 throw new IllegalStateException("Missing argument '" + argument.getKey() +
                                                 "': Must be bound to a value of type " + argument.getValue());
