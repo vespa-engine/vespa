@@ -13,6 +13,13 @@ import java.io.OutputStream;
  * @author ollivir
  */
 public class IO {
+    public static <T> T withFileInputStream(File file, ThrowingFunction<FileInputStream, T> f) {
+        try (FileInputStream fis = new FileInputStream(file)) {
+            return f.apply(fis);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * Creates a new file and all its parent directories, and provides a file output stream to the file.
