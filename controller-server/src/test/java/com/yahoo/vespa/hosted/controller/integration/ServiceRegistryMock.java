@@ -28,6 +28,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueH
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -69,6 +71,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockBuildService mockBuildService = new MockBuildService();
+    private final MockTenantCost mockTenantCost = new MockTenantCost();
 
     @Override
     public ConfigServer configServer() {
@@ -169,6 +172,9 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public NameService nameService() {
         return memoryNameService;
     }
+
+    @Override
+    public TenantCost tenantCost() { return mockTenantCost;}
 
     public ZoneRegistryMock zoneRegistryMock() {
         return zoneRegistryMock;
