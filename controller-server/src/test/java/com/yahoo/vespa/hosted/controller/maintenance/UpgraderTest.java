@@ -1377,4 +1377,25 @@ public class UpgraderTest {
         assertTrue("Upgrade complete", applications.get().change().isEmpty());
     }
 
+    @Test
+    public void testUpgradesPerMinute() {
+        assertEquals(0, Upgrader.numberOfApplicationsToUpgrade(10, 0, 0));
+
+        for (long now = 0; now < 60_000; now++)
+            assertEquals(7, Upgrader.numberOfApplicationsToUpgrade(60_000, now, 7));
+
+        // Upgrade an app after 8s, 16s, ..., 120s.
+        assertEquals(3, Upgrader.numberOfApplicationsToUpgrade(30_000,       0, 7.5));
+        assertEquals(4, Upgrader.numberOfApplicationsToUpgrade(30_000,  30_000, 7.5));
+        assertEquals(4, Upgrader.numberOfApplicationsToUpgrade(30_000,  60_000, 7.5));
+        assertEquals(4, Upgrader.numberOfApplicationsToUpgrade(30_000,  90_000, 7.5));
+        assertEquals(3, Upgrader.numberOfApplicationsToUpgrade(30_000, 120_000, 7.5));
+
+        // Run upgrades for 20 minutes.
+        int upgrades = 0;
+        for (int i = 0, now = 0; i < 30; i++, now += 40_000)
+            upgrades += Upgrader.numberOfApplicationsToUpgrade(40_000, now, 8.7);
+        assertEquals(174, upgrades);
+    }
+
 }
