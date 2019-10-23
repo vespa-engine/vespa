@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.identity;
 
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
+import java.time.Duration;
+
 /**
  * A maintainer that is responsible for providing and refreshing credentials for a container.
  *
@@ -18,4 +20,7 @@ public interface CredentialsMaintainer {
 
     /** Remove any existing credentials. This method is called just before container data is archived. */
     void clearCredentials(NodeAgentContext context);
+
+    /** Get time until the certificate expires. Invoked each time metrics are collected.  */
+    Duration certificateLifetime(NodeAgentContext context);
 }
