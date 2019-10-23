@@ -54,8 +54,8 @@ public class ContainerControllerTester {
     public ContainerControllerTester(JDisc container, String responseFilePath) {
         containerTester = new ContainerTester(container, responseFilePath);
         CuratorDb curatorDb = controller().curator();
-        curatorDb.writeUpgradesPerMinute(100);
         upgrader = new Upgrader(controller(), Duration.ofDays(1), new JobControl(curatorDb), curatorDb);
+        upgrader.setUpgradesPerMinute(100); // Anything to make it more than one per maintenance interval.
     }
 
     public Controller controller() { return containerTester.controller(); }
