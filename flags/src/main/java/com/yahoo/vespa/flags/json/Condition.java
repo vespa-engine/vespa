@@ -1,62 +1,83 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.json;
 
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.json.wire.WireCondition;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 /**
  * @author hakonhall
  */
-public class Condition implements Predicate<FetchVector> {
-    public enum Type { WHITELIST, BLACKLIST }
+public interface Condition extends Predicate<FetchVector> {
+    enum Type {
+        WHITELIST,
+        BLACKLIST,
+        RELATIONAL;
 
-    private final Type type;
-    private final FetchVector.Dimension dimension;
-    private final List<String> values;
+        public String toWire() { return name().toLowerCase(); }
 
-    public Condition(Type type, FetchVector.Dimension dimension, String... values) {
-        this(type, dimension, Arrays.asList(values));
-    }
+        public static Type fromWire(String typeString) {
+            for (Type type : values()) {
+                if (type.name().equalsIgnoreCase(typeString)) {
+                    return type;
+                }
+            }
 
-    public Condition(Type type, FetchVector.Dimension dimension, List<String> values) {
-        this.type = type;
-        this.dimension = dimension;
-        this.values = values;
-    }
-
-    @Override
-    public boolean test(FetchVector vector) {
-        boolean isMember = vector.getValue(dimension).filter(values::contains).isPresent();
-
-        switch (type) {
-            case WHITELIST: return isMember;
-            case BLACKLIST: return !isMember;
-            default: throw new IllegalArgumentException("Unknown type " + type);
+            throw new IllegalArgumentException("Unknown type: '" + typeString + "'");
         }
     }
 
-    public static Condition fromWire(WireCondition wireCondition) {
+    class CreateParams {
+        private final FetchVector.Dimension dimension;
+        private List<String> values = List.of();
+        private Optional<String> predicate = Optional.empty();
+
+        public CreateParams(FetchVector.Dimension dimension) { this.dimension = Objects.requireNonNull(dimension); }
+
+        public CreateParams withValues(String... values) { return withValues(List.of(values)); }
+        public CreateParams withValues(List<String> values) {
+            this.values = List.copyOf(values);
+            return this;
+        }
+
+        public CreateParams withPredicate(String predicate) {
+            this.predicate = Optional.of(predicate);
+            return this;
+        }
+
+        public FetchVector.Dimension dimension() { return dimension; }
+        public List<String> values() { return values; }
+        public Optional<String> predicate() { return predicate; }
+    }
+
+    static Condition fromWire(WireCondition wireCondition) {
         Objects.requireNonNull(wireCondition.type);
-        Type type = Type.valueOf(wireCondition.type.toUpperCase());
+        Condition.Type type = Condition.Type.fromWire(wireCondition.type);
 
         Objects.requireNonNull(wireCondition.dimension);
         FetchVector.Dimension dimension = DimensionHelper.fromWire(wireCondition.dimension);
+        var params = new CreateParams(dimension);
 
-        List<String> values = wireCondition.values == null ? List.of() : wireCondition.values;
+        if (wireCondition.values != null) {
+            params.withValues(wireCondition.values);
+        }
 
-        return new Condition(type, dimension, values);
+        if (wireCondition.predicate != null) {
+            params.withPredicate(wireCondition.predicate);
+        }
+
+        switch (type) {
+            case WHITELIST: return WhitelistCondition.create(params);
+            case BLACKLIST: return BlacklistCondition.create(params);
+            case RELATIONAL: return RelationalCondition.create(params);
+        }
+
+        throw new IllegalArgumentException("Unknown type '" + type + "'");
     }
 
-    public WireCondition toWire() {
-        WireCondition wire = new WireCondition();
-        wire.type = type.name().toLowerCase();
-        wire.dimension = DimensionHelper.toWire(dimension);
-        wire.values = values.isEmpty() ? null : values;
-        return wire;
-    }
+    WireCondition toWire();
 }

@@ -48,6 +48,11 @@ public class SerializationTest {
                 "                    \"type\": \"blacklist\",\n" +
                 "                    \"dimension\": \"hostname\",\n" +
                 "                    \"values\": [ \"h1\" ]\n" +
+                "                },\n" +
+                "                {\n" +
+                "                    \"type\": \"relational\",\n" +
+                "                    \"dimension\": \"vespa-version\",\n" +
+                "                    \"predicate\": \">=7.3.4\"\n" +
                 "                }\n" +
                 "            ],\n" +
                 "            \"value\": true\n" +
@@ -66,7 +71,7 @@ public class SerializationTest {
         assertThat(wireData.id, equalTo("id2"));
         // rule
         assertThat(wireData.rules.size(), equalTo(1));
-        assertThat(wireData.rules.get(0).andConditions.size(), equalTo(2));
+        assertThat(wireData.rules.get(0).andConditions.size(), equalTo(3));
         assertThat(wireData.rules.get(0).value.getNodeType(), equalTo(JsonNodeType.BOOLEAN));
         assertThat(wireData.rules.get(0).value.asBoolean(), equalTo(true));
         // first condition
@@ -79,6 +84,11 @@ public class SerializationTest {
         assertThat(blacklistCondition.type, equalTo("blacklist"));
         assertThat(blacklistCondition.dimension, equalTo("hostname"));
         assertThat(blacklistCondition.values, equalTo(List.of("h1")));
+        // third condition
+        WireCondition relationalCondition = wireData.rules.get(0).andConditions.get(2);
+        assertThat(relationalCondition.type, equalTo("relational"));
+        assertThat(relationalCondition.dimension, equalTo("vespa-version"));
+        assertThat(relationalCondition.predicate, equalTo(">=7.3.4"));
 
         // attributes
         assertThat(wireData.defaultFetchVector, notNullValue());

@@ -1,6 +1,7 @@
 // Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
+import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 
@@ -11,6 +12,7 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 
 /**
  * Definitions of feature flags.
@@ -235,7 +237,8 @@ public class Flags {
      *                           from the FlagSource.
      * @param <T>                The boxed type of the flag value, e.g. Boolean for flags guarding features.
      * @param <U>                The type of the unbound flag, e.g. UnboundBooleanFlag.
-     * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} environment. The ZONE environment
+     * @return An unbound flag with {@link FetchVector.Dimension#HOSTNAME HOSTNAME} and
+     *         {@link FetchVector.Dimension#VESPA_VERSION VESPA_VERSION} already set. The ZONE environment
      *         is typically implicit.
      */
     private static <T, U extends UnboundFlag<?, ?, ?>> U define(TypedUnboundFlagFactory<T, U> factory,
@@ -245,7 +248,11 @@ public class Flags {
                                                                 String modificationEffect,
                                                                 FetchVector.Dimension[] dimensions) {
         FlagId id = new FlagId(flagId);
-        FetchVector vector = new FetchVector().with(HOSTNAME, Defaults.getDefaults().vespaHostname());
+        FetchVector vector = new FetchVector()
+                .with(HOSTNAME, Defaults.getDefaults().vespaHostname())
+                // Warning: In unit tests and outside official Vespa releases, the currentVersion is e.g. 7.0.0
+                // (determined by the current major version). Consider not setting VESPA_VERSION if minor = micro = 0.
+                .with(VESPA_VERSION, Vtag.currentVersion.toFullString());
         U unboundFlag = factory.create(id, defaultValue, vector);
         FlagDefinition definition = new FlagDefinition(unboundFlag, description, modificationEffect, dimensions);
         flags.put(id, definition);

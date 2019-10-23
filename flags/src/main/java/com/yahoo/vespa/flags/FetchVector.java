@@ -24,27 +24,40 @@ public class FetchVector {
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
      */
     public enum Dimension {
-        /**
-         * WARNING: DO NOT USE
-         *
-         * <p>ALL flags can be set differently in different zones: This dimension is ONLY useful for the controller
-         * that needs to handle multiple zones.
-         *
-         * <p>Value from ZoneId::value is of the form environment.region.
-         */
-        ZONE_ID,
-
         /** Value from ApplicationId::serializedForm of the form tenant:applicationName:instance. */
         APPLICATION_ID,
-
-        /** Fully qualified hostname */
-        HOSTNAME,
 
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
         NODE_TYPE,
 
         /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
-        CLUSTER_TYPE
+        CLUSTER_TYPE,
+
+        /**
+         * Fully qualified hostname.
+         *
+         * <p>NOTE: There is seldom any need to set HOSTNAME, as it is always set implicitly (in {@link Flags})
+         * from {@code Defaults.getDefaults().vespaHostname()}. The hostname may e.g. be overridden when
+         * fetching flag value for a Docker container node.
+         */
+        HOSTNAME,
+
+        /**
+         * Vespa version from Version::toFullString of the form Major.Minor.Micro.
+         *
+         * <p>NOTE: There is seldom any need to set VESPA_VERSION, as it is always set implicitly
+         * (in {@link Flags}) from {@link com.yahoo.component.Vtag#currentVersion}. The version COULD e.g.
+         * be overridden when fetching flag value for a Docker container node.
+         */
+        VESPA_VERSION,
+
+        /**
+         * Zone from ZoneId::value of the form environment.region.
+         *
+         * <p>NOTE: There is seldom any need to set ZONE_ID, as all flags are set per zone anyways. The controller
+         * could PERHAPS use this where it handles multiple zones.
+         */
+        ZONE_ID
     }
 
     private final Map<Dimension, String> map;

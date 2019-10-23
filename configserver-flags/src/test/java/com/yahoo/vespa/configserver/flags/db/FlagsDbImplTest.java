@@ -8,6 +8,7 @@ import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.json.Condition;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.Rule;
+import com.yahoo.vespa.flags.json.WhitelistCondition;
 import org.junit.Test;
 
 import java.util.Map;
@@ -29,7 +30,8 @@ public class FlagsDbImplTest {
         MockCurator curator = new MockCurator();
         FlagsDbImpl db = new FlagsDbImpl(curator);
 
-        Condition condition1 = new Condition(Condition.Type.WHITELIST, FetchVector.Dimension.HOSTNAME, "host1");
+        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).withValues("host1");
+        Condition condition1 = WhitelistCondition.create(params);
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
         FlagId flagId = new FlagId("id");
         FlagData data = new FlagData(flagId, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);
