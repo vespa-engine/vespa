@@ -3,6 +3,7 @@ package com.yahoo.container.plugin.classanalysis;
 
 import com.yahoo.osgi.annotation.ExportPackage;
 import com.yahoo.osgi.annotation.Version;
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassVisitor;
@@ -27,8 +28,11 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     private Set<String> imports = new HashSet<>();
     private Optional<ExportPackageAnnotation> exportPackageAnnotation = Optional.empty();
 
-    AnalyzeClassVisitor() {
+    private final Optional<ArtifactVersion> defaultExportPackageVersion;
+
+    AnalyzeClassVisitor(ArtifactVersion defaultExportPackageVersion) {
         super(Opcodes.ASM7);
+        this.defaultExportPackageVersion = Optional.ofNullable(defaultExportPackageVersion);
     }
 
     @Override
@@ -99,9 +103,14 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
 
     private AnnotationVisitor visitExportPackage() {
         return new AnnotationVisitor(Opcodes.ASM7) {
-            private int major = defaultVersionValue("major");
-            private int minor = defaultVersionValue("minor");
-            private int micro = defaultVersionValue("micro");
+            private int major = defaultExportPackageVersion.map(ArtifactVersion::getMajorVersion)
+                    .orElse(defaultVersionValue("major"));
+            private int minor = defaultExportPackageVersion.map(ArtifactVersion::getMinorVersion)
+                    .orElse(defaultVersionValue("minor"));
+            private int micro = defaultExportPackageVersion.map(ArtifactVersion::getIncrementalVersion)
+                    .orElse(defaultVersionValue("micro"));
+
+            // Default qualifier is the empty string.
             private String qualifier = defaultVersionValue("qualifier");
 
             @Override
