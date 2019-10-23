@@ -8,7 +8,11 @@ using search::QueryTermList;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(UTF8SubStringFieldSearcher);
+std::unique_ptr<FieldSearcher>
+UTF8SubStringFieldSearcher::duplicate() const
+{
+    return std::make_unique<UTF8SubStringFieldSearcher>(*this);
+}
 
 size_t
 UTF8SubStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)

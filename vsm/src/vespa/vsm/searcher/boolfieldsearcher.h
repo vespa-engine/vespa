@@ -8,7 +8,7 @@ namespace vsm {
 class BoolFieldSearcher : public FieldSearcher
 {
 public:
-    DUPLICATE(BoolFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     BoolFieldSearcher(FieldIdT fId);
     ~BoolFieldSearcher();
     void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;

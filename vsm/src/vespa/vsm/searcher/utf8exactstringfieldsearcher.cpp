@@ -7,7 +7,11 @@ using search::QueryTermList;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(UTF8ExactStringFieldSearcher);
+std::unique_ptr<FieldSearcher>
+UTF8ExactStringFieldSearcher::duplicate() const
+{
+    return std::make_unique<UTF8ExactStringFieldSearcher>(*this);
+}
 
 size_t
 UTF8ExactStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)

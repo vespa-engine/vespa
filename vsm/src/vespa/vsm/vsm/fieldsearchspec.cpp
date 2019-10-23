@@ -52,6 +52,9 @@ FieldSearchSpec::FieldSearchSpec() :
 }
 FieldSearchSpec::~FieldSearchSpec() = default;
 
+FieldSearchSpec&
+FieldSearchSpec::operator=(FieldSearchSpec&& rhs) = default;
+
 FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & fname,
                                  VsmfieldsConfig::Fieldspec::Searchmethod searchDef,
                                  const vespalib::string & arg1, size_t maxLength_) :
@@ -72,36 +75,36 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
     case VsmfieldsConfig::Fieldspec::Searchmethod::SSE2UTF8:
     case VsmfieldsConfig::Fieldspec::Searchmethod::UTF8:
         if (arg1 == "substring") {
-            _searcher = UTF8SubStringFieldSearcher(fid);
+            _searcher = std::make_unique<UTF8SubStringFieldSearcher>(fid);
         } else if (arg1 == "suffix") {
-            _searcher = UTF8SuffixStringFieldSearcher(fid);
+            _searcher = std::make_unique<UTF8SuffixStringFieldSearcher>(fid);
         } else if (arg1 == "exact") {
-            _searcher = UTF8ExactStringFieldSearcher(fid);
+            _searcher = std::make_unique<UTF8ExactStringFieldSearcher>(fid);
         } else if (arg1 == "word") {
-            _searcher = UTF8ExactStringFieldSearcher(fid);
+            _searcher = std::make_unique<UTF8ExactStringFieldSearcher>(fid);
         } else if (searchDef == VsmfieldsConfig::Fieldspec::Searchmethod::UTF8) {
-            _searcher = UTF8StrChrFieldSearcher(fid);
+            _searcher = std::make_unique<UTF8StrChrFieldSearcher>(fid);
         } else {
-            _searcher = FUTF8StrChrFieldSearcher(fid);
+            _searcher = std::make_unique<FUTF8StrChrFieldSearcher>(fid);
         }
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::BOOL:
-        _searcher = BoolFieldSearcher(fid);
+        _searcher = std::make_unique<BoolFieldSearcher>(fid);
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::INT8:
     case VsmfieldsConfig::Fieldspec::Searchmethod::INT16:
     case VsmfieldsConfig::Fieldspec::Searchmethod::INT32:
     case VsmfieldsConfig::Fieldspec::Searchmethod::INT64:
-        _searcher = IntFieldSearcher(fid);
+        _searcher = std::make_unique<IntFieldSearcher>(fid);
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::FLOAT:
-        _searcher = FloatFieldSearcher(fid);
+        _searcher = std::make_unique<FloatFieldSearcher>(fid);
         break;
     case VsmfieldsConfig::Fieldspec::Searchmethod::DOUBLE:
-        _searcher = DoubleFieldSearcher(fid);
+        _searcher = std::make_unique<DoubleFieldSearcher>(fid);
         break;
     }
-    if (_searcher.valid()) {
+    if (_searcher) {
         setMatchType(_searcher, arg1);
         _searcher->maxFieldLength(maxLength());
     }
@@ -123,7 +126,7 @@ FieldSearchSpec::reconfig(const search::QueryTerm & term)
             (term.isExactstring() && _arg1 != "exact") ||
             (term.isPrefix() && _arg1 == "suffix"))
         {
-            _searcher = UTF8FlexibleStringFieldSearcher(id());
+            _searcher = std::make_unique<UTF8FlexibleStringFieldSearcher>(id());
             // preserve the basic match property of the searcher
             setMatchType(_searcher, _arg1);
             LOG(debug, "Reconfigured to use UTF8FlexibleStringFieldSearcher (%s) for field '%s' with id '%d'",
@@ -139,7 +142,7 @@ FieldSearchSpec::reconfig(const search::QueryTerm & term)
 vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpec & f)
 {
     os << f._id << ' ' << f._name << ' ';
-    if ( ! f._searcher.valid()) {
+    if ( ! f._searcher) {
         os << " No searcher defined.\n";
     }
     return os;
@@ -251,7 +254,7 @@ bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
         LOG(spam, "Parsing %s", cfs.name.c_str());
         FieldIdT fieldId = specMap().size();
         FieldSearchSpec fss(fieldId, cfs.name, cfs.searchmethod, cfs.arg1.c_str(), cfs.maxlength);
-        _specMap[fieldId] = fss;
+        _specMap[fieldId] = std::move(fss);
         _nameIdMap.add(cfs.name, fieldId);
         LOG(spam, "M in %d = %s", fieldId, cfs.name.c_str());
     }
@@ -298,7 +301,7 @@ void FieldSearchSpecMap::buildSearcherMap(const StringFieldIdTMapT & fieldsInQue
     for (const auto & entry : fieldsInQuery) {
         FieldIdT fId = entry.second;
         const FieldSearchSpec & spec = specMap().find(fId)->second;
-        fieldSearcherMap.push_back(spec.searcher());
+        fieldSearcherMap.emplace_back(spec.searcher().duplicate());
     }
     std::sort(fieldSearcherMap.begin(), fieldSearcherMap.end(), lesserField);
 }

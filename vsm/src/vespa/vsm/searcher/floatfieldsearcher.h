@@ -38,14 +38,14 @@ typedef FloatFieldSearcherT<double> FloatFieldSearcherTD;
 class FloatFieldSearcher : public FloatFieldSearcherTF
 {
 public:
-    DUPLICATE(FloatFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     FloatFieldSearcher(FieldIdT fId=0) : FloatFieldSearcherTF(fId) { }
 };
 
 class DoubleFieldSearcher : public FloatFieldSearcherTD
 {
 public:
-    DUPLICATE(DoubleFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     DoubleFieldSearcher(FieldIdT fId=0) : FloatFieldSearcherTD(fId) { }
 };
 

@@ -7,8 +7,17 @@ using search::QueryTermList;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(FloatFieldSearcher);
-IMPLEMENT_DUPLICATE(DoubleFieldSearcher);
+std::unique_ptr<FieldSearcher>
+FloatFieldSearcher::duplicate() const
+{
+    return std::make_unique<FloatFieldSearcher>(*this);
+}
+
+std::unique_ptr<FieldSearcher>
+DoubleFieldSearcher::duplicate() const
+{
+    return std::make_unique<DoubleFieldSearcher>(*this);
+}
 
 template<typename T>
 FloatFieldSearcherT<T>::FloatFieldSearcherT(FieldIdT fId) :

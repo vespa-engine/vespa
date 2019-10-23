@@ -26,7 +26,7 @@ private:
     virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 
 public:
-    DUPLICATE(UTF8FlexibleStringFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     UTF8FlexibleStringFieldSearcher();
     UTF8FlexibleStringFieldSearcher(FieldIdT fId);
 };

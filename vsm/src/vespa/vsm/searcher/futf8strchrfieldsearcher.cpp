@@ -10,7 +10,11 @@ using search::v16qi;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(FUTF8StrChrFieldSearcher);
+std::unique_ptr<FieldSearcher>
+FUTF8StrChrFieldSearcher::duplicate() const
+{
+    return std::make_unique<FUTF8StrChrFieldSearcher>(*this);
+}
 
 FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher()
     : UTF8StrChrFieldSearcher(),

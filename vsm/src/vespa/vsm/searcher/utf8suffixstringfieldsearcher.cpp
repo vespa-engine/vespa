@@ -7,7 +7,11 @@ using search::QueryTermList;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(UTF8SuffixStringFieldSearcher);
+std::unique_ptr<FieldSearcher>
+UTF8SuffixStringFieldSearcher::duplicate() const
+{
+    return std::make_unique<UTF8SuffixStringFieldSearcher>(*this);
+}
 
 size_t
 UTF8SuffixStringFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)

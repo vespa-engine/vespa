@@ -14,10 +14,11 @@ public:
                     VsmfieldsConfig::Fieldspec::Searchmethod searchMethod,
                     const vespalib::string & arg1, size_t maxLength);
     ~FieldSearchSpec();
+    FieldSearchSpec& operator=(FieldSearchSpec&& rhs);
     const FieldSearcher & searcher() const { return *_searcher; }
     const vespalib::string &  name() const { return _name; }
     FieldIdT                    id() const { return _id; }
-    bool                     valid() const { return _searcher.valid(); }
+    bool                     valid() const { return static_cast<bool>(_searcher); }
     size_t               maxLength() const { return _maxLength; }
 
     /**
