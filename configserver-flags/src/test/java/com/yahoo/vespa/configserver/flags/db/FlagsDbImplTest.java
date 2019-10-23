@@ -8,15 +8,12 @@ import com.yahoo.vespa.flags.JsonNodeRawFlag;
 import com.yahoo.vespa.flags.json.Condition;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.flags.json.Rule;
-import com.yahoo.vespa.flags.json.WhitelistCondition;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -32,8 +29,7 @@ public class FlagsDbImplTest {
         MockCurator curator = new MockCurator();
         FlagsDbImpl db = new FlagsDbImpl(curator);
 
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME, List.of("host1"), Optional.empty());
-        Condition condition1 = WhitelistCondition.create(params);
+        Condition condition1 = new Condition(Condition.Type.WHITELIST, FetchVector.Dimension.HOSTNAME, "host1");
         Rule rule1 = new Rule(Optional.of(JsonNodeRawFlag.fromJson("13")), condition1);
         FlagId flagId = new FlagId("id");
         FlagData data = new FlagData(flagId, new FetchVector().with(FetchVector.Dimension.ZONE_ID, "zone-a"), rule1);

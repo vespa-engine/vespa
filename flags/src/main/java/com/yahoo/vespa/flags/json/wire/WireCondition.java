@@ -16,5 +16,4 @@ public class WireCondition {
     @JsonProperty("type") public String type;
     @JsonProperty("dimension") public String dimension;
     @JsonProperty("values") public List<String> values;
-    @JsonProperty("predicate") public String predicate;
 }
