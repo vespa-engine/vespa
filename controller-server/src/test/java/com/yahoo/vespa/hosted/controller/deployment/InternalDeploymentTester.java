@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -172,7 +173,7 @@ public class InternalDeploymentTester {
         while ( ! (activeRuns = jobs().active(id)).isEmpty())
             for (Run run : activeRuns)
                 if (jobs.add(run.id().type())) {
-                    runJob(run.id().type());
+                    runJob(run.id().job());
                     tester.readyJobTrigger().run();
                 }
                 else
@@ -231,11 +232,10 @@ public class InternalDeploymentTester {
     }
 
     /** Returns the current run for the given job type, and verifies it is still running normally. */
-    public Run currentRun(JobType type) {
-        Run run = jobs.active().stream()
-                      .filter(r -> r.id().type() == type)
-                      .findAny()
-                      .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
+    public Run currentRun(JobId job) {
+        Run run = jobs.last(job)
+                      .filter(r -> r.id().type() == job.type())
+                      .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
         assertFalse(run.hasFailed());
         assertNotEquals(aborted, run.status());
         return run;
@@ -243,49 +243,79 @@ public class InternalDeploymentTester {
 
     /** Deploys tester and real app, and completes initial staging installation first if needed. */
     public void doDeploy(JobType type) {
-        RunId id = currentRun(type).id();
-        ZoneId zone = type.zone(tester.controller().system());
-        DeploymentId deployment = new DeploymentId(instanceId, zone);
+        doDeploy(new JobId(instanceId, type));
+    }
+
+    /** Deploys tester and real app, and completes initial staging installation first if needed. */
+    public void doDeploy(ApplicationId instanceId, JobType type) {
+        doDeploy(new JobId(instanceId, type));
+    }
+
+    /** Deploys tester and real app, and completes initial staging installation first if needed. */
+    public void doDeploy(JobId job) {
+        RunId id = currentRun(job).id();
+        ZoneId zone = job.type().zone(tester.controller().system());
+        DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         // First steps are always deployments.
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
 
-        if (type == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
+        if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installInitialReal));
-            currentRun(type).versions().sourcePlatform().ifPresent(version -> tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), version));
+            currentRun(job).versions().sourcePlatform().ifPresent(version -> tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), version));
             tester.configServer().convergeServices(instanceId, zone);
             setEndpoints(instanceId, zone);
-            runner.advance(currentRun(type));
+            runner.advance(currentRun(job));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installInitialReal));
         }
     }
 
     /** Upgrades nodes to target version. */
     public void doUpgrade(JobType type) {
-        RunId id = currentRun(type).id();
-        ZoneId zone = type.zone(tester.controller().system());
-        DeploymentId deployment = new DeploymentId(instanceId, zone);
+        doUpgrade(new JobId(instanceId, type));
+    }
+
+    /** Upgrades nodes to target version. */
+    public void doUpgrade(ApplicationId instanceId, JobType type) {
+        doUpgrade(new JobId(instanceId, type));
+    }
+
+    /** Upgrades nodes to target version. */
+    public void doUpgrade(JobId job) {
+        RunId id = currentRun(job).id();
+        ZoneId zone = job.type().zone(tester.controller().system());
+        DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
-        tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), currentRun(type).versions().targetPlatform());
-        runner.advance(currentRun(type));
+        tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), currentRun(job).versions().targetPlatform());
+        runner.advance(currentRun(job));
     }
 
     /** Lets nodes converge on new application version. */
     public void doConverge(JobType type) {
-        RunId id = currentRun(type).id();
-        ZoneId zone = type.zone(tester.controller().system());
+        doConverge(new JobId(instanceId, type));
+    }
+
+    /** Lets nodes converge on new application version. */
+    public void doConverge(ApplicationId instanceId, JobType type) {
+        doConverge(new JobId(instanceId, type));
+    }
+
+    /** Lets nodes converge on new application version. */
+    public void doConverge(JobId job) {
+        RunId id = currentRun(job).id();
+        ZoneId zone = job.type().zone(tester.controller().system());
 
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
         tester.configServer().convergeServices(instanceId, zone);
-        runner.advance(currentRun(type));
-        if ( ! (currentRun(type).versions().sourceApplication().isPresent() && type.isProduction())
-            && type != JobType.stagingTest) {
+        runner.advance(currentRun(job));
+        if (   ! (currentRun(job).versions().sourceApplication().isPresent() && job.type().isProduction())
+            &&   job.type() != JobType.stagingTest) {
             assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
             setEndpoints(instanceId, zone);
         }
-        runner.advance(currentRun(type));
-        if (type.environment().isManuallyDeployed()) {
+        runner.advance(currentRun(job));
+        if (job.type().environment().isManuallyDeployed()) {
             assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
             assertTrue(jobs.run(id).get().hasEnded());
             return;
@@ -295,24 +325,44 @@ public class InternalDeploymentTester {
 
     /** Installs tester and starts tests. */
     public void doInstallTester(JobType type) {
-        RunId id = currentRun(type).id();
-        ZoneId zone = type.zone(tester.controller().system());
+        doInstallTester(new JobId(instanceId, type));
+    }
+
+    /** Installs tester and starts tests. */
+    public void doInstallTester(ApplicationId instanceId, JobType type) {
+        doInstallTester(new JobId(instanceId, type));
+    }
+
+    /** Installs tester and starts tests. */
+    public void doInstallTester(JobId job) {
+        RunId id = currentRun(job).id();
+        ZoneId zone = job.type().zone(tester.controller().system());
 
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
-        tester.configServer().nodeRepository().doUpgrade(new DeploymentId(testerId.id(), zone), Optional.empty(), currentRun(type).versions().targetPlatform());
-        runner.advance(currentRun(type));
+        tester.configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), currentRun(job).versions().targetPlatform());
+        runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
         tester.configServer().convergeServices(testerId.id(), zone);
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
         setEndpoints(testerId.id(), zone);
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
     }
 
     /** Completes tests with success. */
     public void doTests(JobType type) {
-        RunId id = currentRun(type).id();
-        ZoneId zone = type.zone(tester.controller().system());
+        doTests(new JobId(instanceId, type));
+    }
+
+    /** Completes tests with success. */
+    public void doTests(ApplicationId instanceId, JobType type) {
+        doTests(new JobId(instanceId, type));
+    }
+
+    /** Completes tests with success. */
+    public void doTests(JobId job) {
+        RunId id = currentRun(job).id();
+        ZoneId zone = job.type().zone(tester.controller().system());
 
         // All installation is complete and endpoints are ready, so tests may begin.
         assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installTester));
@@ -320,68 +370,112 @@ public class InternalDeploymentTester {
 
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
         cloud.set(TesterCloud.Status.SUCCESS);
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
-        assertEquals(type.isProduction(), instance().deployments().containsKey(zone));
+        assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
         assertTrue(tester.configServer().nodeRepository().list(zone, testerId.id()).isEmpty());
     }
 
     /** Removes endpoints from routing layer — always call this. */
     public void doTeardown(JobType type) {
-        ZoneId zone = type.zone(tester.controller().system());
-        DeploymentId deployment = new DeploymentId(instanceId, zone);
+        doTeardown(new JobId(instanceId, type));
+    }
+
+    /** Removes endpoints from routing layer — always call this. */
+    public void doTeardown(ApplicationId instanceId, JobType type) {
+        doTeardown(new JobId(instanceId, type));
+    }
+
+    /** Removes endpoints from routing layer — always call this. */
+    public void doTeardown(JobId job) {
+        ZoneId zone = job.type().zone(tester.controller().system());
+        DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         if ( ! instance().deployments().containsKey(zone))
             routing.removeEndpoints(deployment);
-        routing.removeEndpoints(new DeploymentId(testerId.id(), zone));
+        routing.removeEndpoints(new DeploymentId(TesterId.of(job.application()).id(), zone));
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
     public void runJob(JobType type) {
+        runJob(instanceId, type);
+    }
+
+    /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
+    public void runJob(ApplicationId instanceId, JobType type) {
+        runJob(new JobId(instanceId, type));
+    }
+
+    /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
+    public void runJob(JobId job) {
         tester.readyJobTrigger().run();
-        doDeploy(type);
-        doUpgrade(type);
-        doConverge(type);
-        if (type.environment().isManuallyDeployed())
+        doDeploy(job);
+        doUpgrade(job);
+        doConverge(job);
+        if (job.type().environment().isManuallyDeployed())
             return;
 
-        doInstallTester(type);
-        doTests(type);
-        doTeardown(type);
+        doInstallTester(job);
+        doTests(job);
+        doTeardown(job);
     }
 
     public void failDeployment(JobType type) {
-        RunId id = currentRun(type).id();
+        failDeployment(new JobId(instanceId, type));
+    }
+
+    public void failDeployment(ApplicationId instanceId, JobType type) {
+        failDeployment(new JobId(instanceId, type));
+    }
+
+    public void failDeployment(JobId job) {
+        RunId id = currentRun(job).id();
         tester.readyJobTrigger().run();
         tester.configServer().throwOnNextPrepare(new IllegalArgumentException("Exception"));
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
-        doTeardown(type);
+        doTeardown(job);
     }
 
     public void timeOutUpgrade(JobType type) {
-        RunId id = currentRun(type).id();
+        timeOutUpgrade(new JobId(instanceId, type));
+    }
+
+    public void timeOutUpgrade(ApplicationId instanceId, JobType type) {
+        timeOutUpgrade(new JobId(instanceId, type));
+    }
+
+    public void timeOutUpgrade(JobId job) {
+        RunId id = currentRun(job).id();
         tester.readyJobTrigger().run();
-        doDeploy(type);
+        doDeploy(job);
         clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
-        doTeardown(type);
+        doTeardown(job);
     }
 
     public void timeOutConvergence(JobType type) {
-        RunId id = currentRun(type).id();
+        timeOutConvergence(new JobId(instanceId, type));
+    }
+
+    public void timeOutConvergence(ApplicationId instanceId, JobType type) {
+        timeOutConvergence(new JobId(instanceId, type));
+    }
+
+    public void timeOutConvergence(JobId job) {
+        RunId id = currentRun(job).id();
         tester.readyJobTrigger().run();
-        doDeploy(type);
-        doUpgrade(type);
+        doDeploy(job);
+        doUpgrade(job);
         clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
-        runner.advance(currentRun(type));
+        runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
-        doTeardown(type);
+        doTeardown(job);
     }
 
     public RunId startSystemTestTests() {
@@ -403,8 +497,8 @@ public class InternalDeploymentTester {
         tester.readyJobTrigger().maintain();
 
         if (type.isProduction()) {
-            runJob(JobType.systemTest);
-            runJob(JobType.stagingTest);
+            runJob(new JobId(instanceId, JobType.systemTest));
+            runJob(new JobId(instanceId, JobType.stagingTest));
             tester.readyJobTrigger().maintain();
         }
 
