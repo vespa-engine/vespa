@@ -107,6 +107,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         jsonArray.put(getStatusPacket());
         getPacketsForSnapshot(getSnapshot(), applicationName, timer.currentTimeMillis())
                 .forEach(jsonArray::put);
+        MetricGatherer.getAdditionalMetrics().forEach(jsonArray::put);
         root.put("metrics", jsonArray);
         return jsonToString(root)
                 .getBytes(StandardCharsets.UTF_8);
