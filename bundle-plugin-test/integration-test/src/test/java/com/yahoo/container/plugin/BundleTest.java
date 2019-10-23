@@ -14,9 +14,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 
 import static com.yahoo.osgi.maven.ProjectBundleClassPaths.CLASSPATH_MAPPINGS_FILENAME;
@@ -28,8 +31,8 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Verifies the bundle jar file built and its manifest.
@@ -38,6 +41,11 @@ import static org.junit.Assert.assertThat;
  */
 public class BundleTest {
     static final String TEST_BUNDLE_PATH = System.getProperty("test.bundle.path", ".") + "/";
+
+    // If bundle-plugin-test is compiled in a mvn command that also built dependencies, e.g. jrt,
+    // the artifact is jrt.jar, otherwise the installed and versioned artifact
+    // is used: jrt-7-SNAPSHOT.jar or e.g. jrt-7.123.45.jar.
+    private static String snapshotOrVersionOrNone = "(-\\d+((-SNAPSHOT)|((\\.\\d+(\\.\\d+)?)?))?)?\\.jar";
 
     private JarFile jarFile;
     private Attributes mainAttributes;
@@ -114,23 +122,28 @@ public class BundleTest {
     public void require_that_manifest_contains_bundle_class_path() {
         String bundleClassPath = mainAttributes.getValue("Bundle-ClassPath");
         assertThat(bundleClassPath, containsString(".,"));
-        // If bundle-plugin-test is compiled in a mvn command that also built jrt,
-        // the jrt artifact is jrt.jar, otherwise the installed and versioned artifact
-        // is used: jrt-7-SNAPSHOT.jar.
-        assertThat(bundleClassPath, anyOf(
-                containsString("dependencies/jrt-7-SNAPSHOT.jar"),
-                containsString("dependencies/jrt.jar")));
+
+        Pattern jrtPattern = Pattern.compile("dependencies/jrt" + snapshotOrVersionOrNone);
+        assertTrue("Bundle class path did not contain jrt.", jrtPattern.matcher(bundleClassPath).find());
     }
 
     @Test
     public void require_that_component_jar_file_contains_compile_artifacts() {
-        ZipEntry versionedEntry = jarFile.getEntry("dependencies/jrt-7-SNAPSHOT.jar");
-        ZipEntry unversionedEntry = jarFile.getEntry("dependencies/jrt.jar");
-        if (versionedEntry == null) {
-            assertNotNull(unversionedEntry);
-        } else {
-            assertNull(unversionedEntry);
+        String depJrt = "dependencies/jrt";
+        Pattern jrtPattern = Pattern.compile(depJrt + snapshotOrVersionOrNone);
+        ZipEntry jrtEntry = null;
+
+        Enumeration<JarEntry> entries = jarFile.entries();
+        while (entries.hasMoreElements()) {
+            var e = entries.nextElement();
+            if (e.getName().startsWith(depJrt)) {
+                if (jrtPattern.matcher(e.getName()).matches()) {
+                    jrtEntry = e;
+                    break;
+                }
+            }
         }
+        assertNotNull("Component jar file did not contain jrt dependency.", jrtEntry);
     }
 
 
@@ -166,7 +179,7 @@ public class BundleTest {
                 hasItems(
                         endsWith("target/classes"),
                         anyOf(
-                                allOf(containsString("jrt"), containsString(".jar"), containsString("m2/repository")),
-                                containsString("jrt/target/jrt.jar"))));
+                                allOf(containsString("/jrt-"), containsString(".jar")),
+                                containsString("/jrt.jar"))));
     }
 }
