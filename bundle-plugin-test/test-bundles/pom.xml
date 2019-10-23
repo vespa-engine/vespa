@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<!-- Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+        <artifactId>bundle-plugin-test</artifactId>
+        <version>7-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <artifactId>test-bundles</artifactId>
+    <version>7-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <!-- Trick to package bundles before test phase to allow running 'mvn test' -->
+                    <groupId>com.yahoo.vespa</groupId>
+                    <artifactId>bundle-plugin</artifactId>
+                    <version>${project.version}</version>
+                    <executions>
+                        <execution>
+                            <id>generate-classpath-mappings</id>
+                            <phase>generate-test-sources</phase>
+                            <goals>
+                                <goal>generate-bundle-classpath-mappings</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>package-test-bundles</id>
+                            <!-- Must be done after generating classpath-mappings and copying it in the 'main' bundle. -->
+                            <phase>test-compile</phase>
+                            <goals>
+                                <goal>generate-osgi-manifest</goal>
+                                <goal>assemble-container-plugin</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <!-- Make the integration-test module use the bundle jars instead of the ordinary artifacts. -->
+                        <AttachBundle>true</AttachBundle>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+    <modules>
+        <module>artifact-version-for-exports</module>
+        <module>artifact-version-for-exports-dep</module>
+        <module>main</module>
+    </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-dev</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+    </properties>
+</project>
