@@ -1,17 +1,18 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
+import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
-import static com.yahoo.container.plugin.util.IO.withFileInputStream;
 
 /**
  * Main entry point for class analysis
@@ -21,16 +22,20 @@ import static com.yahoo.container.plugin.util.IO.withFileInputStream;
  */
 public class Analyze {
     public static ClassFileMetaData analyzeClass(File classFile) {
+        return analyzeClass(classFile, null);
+    }
+
+    public static ClassFileMetaData analyzeClass(File classFile, ArtifactVersion artifactVersion) {
         try {
-            return withFileInputStream(classFile, Analyze::analyzeClass);
-        } catch (RuntimeException e) {
+            return analyzeClass(new FileInputStream(classFile), artifactVersion);
+        } catch (Exception e) {
             throw new RuntimeException("An error occurred when analyzing " + classFile.getPath(), e);
         }
     }
 
-    public static ClassFileMetaData analyzeClass(InputStream inputStream) {
+    public static ClassFileMetaData analyzeClass(InputStream inputStream, ArtifactVersion artifactVersion) {
         try {
-            AnalyzeClassVisitor visitor = new AnalyzeClassVisitor();
+            AnalyzeClassVisitor visitor = new AnalyzeClassVisitor(artifactVersion);
             new ClassReader(inputStream).accept(visitor, ClassReader.SKIP_DEBUG);
             return visitor.result();
         } catch (IOException e) {

@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!-- Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>com.yahoo.vespa.bundle-plugin</groupId>
+    <artifactId>test-bundles</artifactId>
+    <version>7-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>artifact-version-for-exports-dep</artifactId>
+  <!-- TODO: Should use a fixed version different than the dependent bundle.
+             But version is set to the release version by build scripts before building.
+             Then, the dependent bundle will not find the artifact. Skipping this step for a sub-module seems
+             impossible with the maven-versions-plugin, and cumbersome with factorylib. -->
+  <version>7-SNAPSHOT</version>
+  <packaging>container-plugin</packaging>
+  <dependencies>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>bundle-plugin</artifactId>
+        <version>${project.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <useArtifactVersionForExportPackages>true</useArtifactVersionForExportPackages>
+          <configGenVersion>${project.version}</configGenVersion>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
