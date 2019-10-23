@@ -8,6 +8,8 @@
     "methods": [
       "public ai.vespa.models.evaluation.FunctionEvaluator bind(java.lang.String, com.yahoo.tensor.Tensor)",
       "public ai.vespa.models.evaluation.FunctionEvaluator bind(java.lang.String, double)",
+      "public ai.vespa.models.evaluation.FunctionEvaluator setMissingValue(com.yahoo.tensor.Tensor)",
+      "public ai.vespa.models.evaluation.FunctionEvaluator setMissingValue(double)",
       "public com.yahoo.tensor.Tensor evaluate()",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction function()",
       "public ai.vespa.models.evaluation.LazyArrayContext context()"
@@ -24,6 +26,7 @@
       "final"
     ],
     "methods": [
+      "public void setMissingValue(com.yahoo.tensor.Tensor)",
       "public void put(java.lang.String, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
       "public final void put(int, double)",
       "public void put(int, com.yahoo.searchlib.rankingexpression.evaluation.Value)",
