@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 
@@ -70,7 +69,5 @@ public interface ServiceRegistry {
 
     // TODO: No longer used. Remove this once untangled from test code
     BuildService buildService();
-
-    TenantCost tenantCost();
 
 }
