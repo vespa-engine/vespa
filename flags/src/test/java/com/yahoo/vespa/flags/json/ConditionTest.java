@@ -4,9 +4,6 @@ package com.yahoo.vespa.flags.json;
 import com.yahoo.vespa.flags.FetchVector;
 import org.junit.Test;
 
-import java.util.List;
-import java.util.Optional;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -18,7 +15,7 @@ public class ConditionTest {
     @Test
     public void testWhitelist() {
         String hostname1 = "host1";
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME, List.of(hostname1), Optional.empty());
+        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).setValues(hostname1);
         Condition condition = WhitelistCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
         assertFalse(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
@@ -29,7 +26,7 @@ public class ConditionTest {
     @Test
     public void testBlacklist() {
         String hostname1 = "host1";
-        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME, List.of(hostname1), Optional.empty());
+        var params = new Condition.CreateParams(FetchVector.Dimension.HOSTNAME).setValues(hostname1);
         Condition condition = BlacklistCondition.create(params);
         assertTrue(condition.test(new FetchVector()));
         assertTrue(condition.test(new FetchVector().with(FetchVector.Dimension.APPLICATION_ID, "foo")));
@@ -47,7 +44,7 @@ public class ConditionTest {
         // Test with empty fetch vector along vespa version dimension (this should never happen as the
         // version is always available through Vtag, although Vtag has a dummy version number for e.g.
         // locally run unit tests that hasn't set the release Vespa version).
-        var params = new Condition.CreateParams(FetchVector.Dimension.VESPA_VERSION, List.of(), Optional.of(">=7.1.2"));
+        var params = new Condition.CreateParams(FetchVector.Dimension.VESPA_VERSION).setPredicate(">=7.1.2");
         Condition condition = RelationalCondition.create(params);
         assertFalse(condition.test(new FetchVector()));
     }
@@ -59,7 +56,7 @@ public class ConditionTest {
     }
 
     private boolean vespaVersionCondition(String vespaVersion, String predicate) {
-        var params = new Condition.CreateParams(FetchVector.Dimension.VESPA_VERSION, List.of(), Optional.of(predicate));
+        var params = new Condition.CreateParams(FetchVector.Dimension.VESPA_VERSION).setPredicate(predicate);
         Condition condition = RelationalCondition.create(params);
         return condition.test(new FetchVector().with(FetchVector.Dimension.VESPA_VERSION, vespaVersion));
     }

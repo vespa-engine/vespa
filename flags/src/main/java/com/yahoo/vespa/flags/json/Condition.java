@@ -33,13 +33,20 @@ public interface Condition extends Predicate<FetchVector> {
 
     class CreateParams {
         private final FetchVector.Dimension dimension;
-        private final List<String> values;
-        private final Optional<String> predicate;
+        private List<String> values = List.of();
+        private Optional<String> predicate = Optional.empty();
 
-        public CreateParams(FetchVector.Dimension dimension, List<String> values, Optional<String> predicate) {
-            this.dimension = Objects.requireNonNull(dimension);
-            this.values = Objects.requireNonNull(values);
-            this.predicate = Objects.requireNonNull(predicate);
+        public CreateParams(FetchVector.Dimension dimension) { this.dimension = Objects.requireNonNull(dimension); }
+
+        public CreateParams setValues(String... values) { return setValues(List.of(values)); }
+        public CreateParams setValues(List<String> values) {
+            this.values = List.copyOf(values);
+            return this;
+        }
+
+        public CreateParams setPredicate(String predicate) {
+            this.predicate = Optional.of(predicate);
+            return this;
         }
 
         public FetchVector.Dimension dimension() { return dimension; }
@@ -53,11 +60,15 @@ public interface Condition extends Predicate<FetchVector> {
 
         Objects.requireNonNull(wireCondition.dimension);
         FetchVector.Dimension dimension = DimensionHelper.fromWire(wireCondition.dimension);
+        var params = new CreateParams(dimension);
 
-        List<String> values = wireCondition.values == null ? List.of() : wireCondition.values;
-        Optional<String> predicate = Optional.ofNullable(wireCondition.predicate);
+        if (wireCondition.values != null) {
+            params.setValues(wireCondition.values);
+        }
 
-        var params = new CreateParams(dimension, values, predicate);
+        if (wireCondition.predicate != null) {
+            params.setPredicate(wireCondition.predicate);
+        }
 
         switch (type) {
             case WHITELIST: return WhitelistCondition.create(params);
