@@ -12,7 +12,11 @@ vespalib::stringref TRUE = "true";
 vespalib::stringref FALSE = "false";
 }
 
-IMPLEMENT_DUPLICATE(BoolFieldSearcher);
+std::unique_ptr<FieldSearcher>
+BoolFieldSearcher::duplicate() const
+{
+    return std::make_unique<BoolFieldSearcher>(*this);
+}
 
 BoolFieldSearcher::BoolFieldSearcher(FieldIdT fId) :
     FieldSearcher(fId),

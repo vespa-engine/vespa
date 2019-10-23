@@ -8,7 +8,7 @@ namespace vsm {
 class FUTF8StrChrFieldSearcher : public UTF8StrChrFieldSearcher
 {
 public:
-    DUPLICATE(FUTF8StrChrFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     FUTF8StrChrFieldSearcher();
     FUTF8StrChrFieldSearcher(FieldIdT fId);
     ~FUTF8StrChrFieldSearcher();

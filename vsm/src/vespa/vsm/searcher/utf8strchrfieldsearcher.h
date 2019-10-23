@@ -12,7 +12,7 @@ namespace vsm {
 class UTF8StrChrFieldSearcher : public UTF8StringFieldSearcherBase
 {
 public:
-    DUPLICATE(UTF8StrChrFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     UTF8StrChrFieldSearcher()             : UTF8StringFieldSearcherBase() { }
     UTF8StrChrFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
 

@@ -16,7 +16,7 @@ protected:
     virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 
 public:
-    DUPLICATE(UTF8ExactStringFieldSearcher);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
     UTF8ExactStringFieldSearcher()             : UTF8StringFieldSearcherBase() { }
     UTF8ExactStringFieldSearcher(FieldIdT fId) : UTF8StringFieldSearcherBase(fId) { }
 };

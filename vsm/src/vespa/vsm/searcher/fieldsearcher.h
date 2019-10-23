@@ -38,7 +38,7 @@ protected:
     search::v16qi  *_qtlFast;
 };
 
-class FieldSearcher : public FieldSearcherBase, public search::Object
+class FieldSearcher : public FieldSearcherBase
 {
 public:
     enum MatchType {
@@ -50,7 +50,8 @@ public:
     };
 
     FieldSearcher(const FieldIdT & fId, bool defaultPrefix=false);
-    ~FieldSearcher();
+    ~FieldSearcher() override;
+    virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
     virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf);
     const FieldIdT & field()         const { return _field; }
@@ -133,7 +134,7 @@ public:
     static search::byte _wordChar[256];
 };
 
-typedef search::ObjectContainer<FieldSearcher> FieldSearcherContainer;
+typedef std::unique_ptr<FieldSearcher> FieldSearcherContainer;
 typedef std::vector<FieldSearcherContainer> FieldIdTSearcherMapT;
 
 class FieldIdTSearcherMap : public FieldIdTSearcherMapT

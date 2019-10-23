@@ -7,7 +7,11 @@ using search::byte;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(UTF8StrChrFieldSearcher);
+std::unique_ptr<FieldSearcher>
+UTF8StrChrFieldSearcher::duplicate() const
+{
+    return std::make_unique<UTF8StrChrFieldSearcher>(*this);
+}
 
 size_t
 UTF8StrChrFieldSearcher::matchTerms(const FieldRef & f, const size_t mintsz)

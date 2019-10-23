@@ -49,7 +49,7 @@ private:
 public:
     typedef std::shared_ptr<UTF8SubstringSnippetModifier> SP;
 
-    DUPLICATE(UTF8SubstringSnippetModifier);
+    std::unique_ptr<FieldSearcher> duplicate() const override;
 
     UTF8SubstringSnippetModifier();
     UTF8SubstringSnippetModifier(FieldIdT fId);

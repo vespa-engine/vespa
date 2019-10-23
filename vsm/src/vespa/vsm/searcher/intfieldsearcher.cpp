@@ -6,7 +6,11 @@ using search::QueryTermList;
 
 namespace vsm {
 
-IMPLEMENT_DUPLICATE(IntFieldSearcher);
+std::unique_ptr<FieldSearcher>
+IntFieldSearcher::duplicate() const
+{
+    return std::make_unique<IntFieldSearcher>(*this);
+}
 
 IntFieldSearcher::IntFieldSearcher(FieldIdT fId) :
     FieldSearcher(fId),
