@@ -41,10 +41,9 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     LazyArrayContext(ExpressionFunction function,
                      Map<FunctionReference, ExpressionFunction> referencedFunctions,
                      List<Constant> constants,
-                     Model model,
-                     Value defaultFeatureValue) {
+                     Model model) {
         this.function = function;
-        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model, defaultFeatureValue);
+        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model);
     }
 
     /**
@@ -156,17 +155,15 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The object instance which encodes "no value is set". The actual value of this is never used. */
         private static final Value missing = new DoubleValue(Double.NaN).freeze();
 
-        /** The value to return for lookups where no value is set */
-        private Value defaultValue;
+        /** The value to return for lookups where no value is set (default: NaN) */
+        private Value defaultValue = new DoubleValue(Double.NaN).freeze();
 
         private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
                                 Value[] values,
-                                ImmutableSet<String> arguments,
-                                Value defaultValue) {
+                                ImmutableSet<String> arguments) {
             this.nameToIndex = nameToIndex;
             this.values = values;
             this.arguments = arguments;
-            this.defaultValue = defaultValue.freeze();
         }
 
         /**
@@ -177,15 +174,13 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                         Map<FunctionReference, ExpressionFunction> referencedFunctions,
                         List<Constant> constants,
                         LazyArrayContext owner,
-                        Model model,
-                        Value defaultFeatureValue) {
+                        Model model) {
             // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
             Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
             extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments);
 
             this.arguments = ImmutableSet.copyOf(arguments);
-            this.defaultValue = defaultFeatureValue.freeze();
             values = new Value[bindTargets.size()];
             Arrays.fill(values, missing);
 
@@ -271,7 +266,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
             Value[] valueCopy = new Value[values.length];
             for (int i = 0; i < values.length; i++)
                 valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue) values[i]).copyFor(context) : values[i];
-            return new IndexedBindings(nameToIndex, valueCopy, arguments, defaultValue);
+            return new IndexedBindings(nameToIndex, valueCopy, arguments);
         }
 
     }
