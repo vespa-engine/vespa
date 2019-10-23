@@ -40,9 +40,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
@@ -77,13 +75,10 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -92,7 +87,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Supplier;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
@@ -206,7 +200,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET cost for a month for a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1/cost/2018-01", GET).userIdentity(USER_ID).oktaAccessToken(OKTA_AT),
-                "{\"month\":\"2018-01\",\"items\":[]}");
+                "{}");
 
         // Add another Athens domain, so we can try to create more tenants
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN_2, USER_ID); // New domain to test tenant w/property ID
@@ -1075,44 +1069,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT),
                               new File("instance1-metering.json"));
-    }
-
-    @Test
-    public void testTenantCostResponse() {
-        ApplicationId applicationId = createTenantAndApplication();
-        MockTenantCost mockTenantCost = (MockTenantCost) controllerTester.containerTester().serviceRegistry().tenantCost();
-
-        mockTenantCost.setMonthsWithMetering(
-                new TreeSet<>(Set.of(
-                        YearMonth.of(2019, 10),
-                        YearMonth.of(2019, 9)
-                ))
-        );
-
-        tester.assertResponse(request("/application/v4/tenant/" + applicationId.tenant().value() + "/cost", GET)
-                        .userIdentity(USER_ID)
-                        .oktaAccessToken(OKTA_AT),
-                "{\"months\":[\"2019-09\",\"2019-10\"]}");
-
-        CostInfo costInfo1 = new CostInfo(applicationId, ZoneId.from("prod", "us-south-1"),
-                new BigDecimal("7.0"),
-                new BigDecimal("600.0"),
-                new BigDecimal("1000.0"),
-                35, 23, 10);
-        CostInfo costInfo2 = new CostInfo(applicationId, ZoneId.from("prod", "us-north-1"),
-                new BigDecimal("2.0"),
-                new BigDecimal("3.0"),
-                new BigDecimal("4.0"),
-                10, 20, 30);
-
-        mockTenantCost.setCostInfoList(
-                List.of(costInfo1, costInfo2)
-        );
-
-        tester.assertResponse(request("/application/v4/tenant/" + applicationId.tenant().value() + "/cost/2019-09", GET)
-                        .userIdentity(USER_ID)
-                        .oktaAccessToken(OKTA_AT),
-                new File("cost-report.json"));
     }
 
     @Test
