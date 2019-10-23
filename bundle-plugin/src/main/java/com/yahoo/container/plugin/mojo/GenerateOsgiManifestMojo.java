@@ -14,8 +14,6 @@ import com.yahoo.container.plugin.osgi.ImportPackages.Import;
 import com.yahoo.container.plugin.util.Strings;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.versioning.ArtifactVersion;
-import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -46,7 +44,8 @@ import static com.yahoo.container.plugin.osgi.ExportPackages.exportsByPackageNam
 import static com.yahoo.container.plugin.osgi.ImportPackages.calculateImports;
 import static com.yahoo.container.plugin.util.Files.allDescendantFiles;
 import static com.yahoo.container.plugin.util.IO.withFileOutputStream;
-
+import static com.yahoo.container.plugin.util.JarFiles.withInputStream;
+import static com.yahoo.container.plugin.util.JarFiles.withJarFile;
 
 /**
  * @author Tony Vaagenes
@@ -57,15 +56,6 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}")
     private MavenProject project = null;
-
-    /**
-     * If set to true, the artifact's version is used as default package version for ExportPackages.
-     * Packages from included (compile scoped) artifacts will use the version for their own artifact.
-     * If the package is exported with an explicit version in package-info.java, that version will be
-     * used regardless of this parameter.
-     */
-    @Parameter(alias = "UseArtifactVersionForExportPackages", defaultValue = "false")
-    private boolean useArtifactVersionForExportPackages;
 
     @Parameter
     private String discApplicationClass = null;
@@ -225,11 +215,8 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
             Map<String, Optional<String>> manualImports, Collection<Import> imports, PackageTally pluginPackageTally) {
         Map<String, String> ret = new HashMap<>();
         String importPackage = Stream.concat(manualImports.entrySet().stream().map(e -> asOsgiImport(e.getKey(), e.getValue())),
-                                             imports.stream().map(Import::asOsgiImport)).sorted()
-                .collect(Collectors.joining(","));
-
-        String exportPackage = osgiExportPackages(pluginPackageTally.exportedPackages()).stream().sorted()
-                .collect(Collectors.joining(","));
+                imports.stream().map(Import::asOsgiImport)).sorted().collect(Collectors.joining(","));
+        String exportPackage = osgiExportPackages(pluginPackageTally.exportedPackages()).stream().sorted().collect(Collectors.joining(","));
 
         for (Pair<String, String> element : Arrays.asList(//
                 Pair.of("Created-By", "vespa container maven plugin"), //
@@ -314,47 +301,34 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    private ArtifactVersion artifactVersionOrNull(String version) {
-        return useArtifactVersionForExportPackages ? new DefaultArtifactVersion(version) : null;
-    }
-
     private PackageTally getProjectClassesTally() {
         File outputDirectory = new File(project.getBuild().getOutputDirectory());
 
-        List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory)
-                .filter(file -> file.getName().endsWith(".class"))
-                .map(classFile -> Analyze.analyzeClass(classFile, artifactVersionOrNull(bundleVersion)))
-                .collect(Collectors.toList());
+        List<ClassFileMetaData> analyzedClasses = allDescendantFiles(outputDirectory).filter(file -> file.getName().endsWith(".class"))
+                .map(Analyze::analyzeClass).collect(Collectors.toList());
 
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);
     }
 
-    private PackageTally definedPackages(Collection<Artifact> jarArtifacts) {
-        List<PackageTally> tallies = new ArrayList<>();
-        for (var artifact : jarArtifacts) {
-            try {
-                tallies.add(definedPackages(new JarFile(artifact.getFile()), artifactVersionOrNull(artifact.getVersion())));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-        return PackageTally.combine(tallies);
+    private static PackageTally definedPackages(Collection<Artifact> jarArtifacts) {
+        return PackageTally.combine(jarArtifacts.stream().map(ja -> withJarFile(ja.getFile(), GenerateOsgiManifestMojo::definedPackages))
+                .collect(Collectors.toList()));
     }
 
-    private static PackageTally definedPackages(JarFile jarFile, ArtifactVersion version) throws MojoExecutionException {
+    private static PackageTally definedPackages(JarFile jarFile) throws MojoExecutionException {
         List<ClassFileMetaData> analyzedClasses = new ArrayList<>();
         for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements();) {
             JarEntry entry = entries.nextElement();
             if (! entry.isDirectory() && entry.getName().endsWith(".class")) {
-                analyzedClasses.add(analyzeClass(jarFile, entry, version));
+                analyzedClasses.add(analyzeClass(jarFile, entry));
             }
         }
         return PackageTally.fromAnalyzedClassFiles(analyzedClasses);
     }
 
-    private static ClassFileMetaData analyzeClass(JarFile jarFile, JarEntry entry, ArtifactVersion version) throws MojoExecutionException {
+    private static ClassFileMetaData analyzeClass(JarFile jarFile, JarEntry entry) throws MojoExecutionException {
         try {
-            return Analyze.analyzeClass(jarFile.getInputStream(entry), version);
+            return withInputStream(jarFile, entry, Analyze::analyzeClass);
         } catch (Exception e) {
             throw new MojoExecutionException(
                     String.format("While analyzing the class '%s' in jar file '%s'", entry.getName(), jarFile.getName()), e);
