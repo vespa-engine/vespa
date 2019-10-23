@@ -116,7 +116,11 @@ public class Upgrader extends Maintainer {
 
     /** Returns the number of applications to upgrade in this run */
     private int numberOfApplicationsToUpgrade() {
-        return Math.max(1, (int) (maintenanceInterval().getSeconds() * (upgradesPerMinute() / 60)));
+        long intervalMillis = maintenanceInterval().dividedBy(Math.max(1, controller().curator().cluster().size())).toMillis();
+        long intervalStart = ((controller().clock().millis() + intervalMillis / 2) / intervalMillis) * intervalMillis;
+
+        long upgradeIntervalMillis = upgradesPerMinute() > 60e3 ? 1 : upgradesPerMinute() < 60e-3 ? 1_000_000 : (long) (60_000 / upgradesPerMinute());
+        return (int) ((intervalStart + intervalMillis) / upgradeIntervalMillis - intervalStart / intervalMillis);
     }
 
     /** Returns number of upgrades per minute */
