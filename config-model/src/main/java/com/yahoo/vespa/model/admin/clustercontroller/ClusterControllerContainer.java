@@ -29,7 +29,7 @@ public class ClusterControllerContainer extends Container implements
         ZookeeperServerConfig.Producer
 {
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
-    private static final ComponentSpecification ZOOKEEPER_SERVER_BUNDLE = new ComponentSpecification("zkfacade");
+    private static final ComponentSpecification ZOOKEEPER_SERVER_BUNDLE = new ComponentSpecification("zookeeper-server");
 
     private final Set<String> bundles = new TreeSet<>();
 
@@ -59,6 +59,7 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("lib/jars/clustercontroller-apputil-jar-with-dependencies.jar");
         addFileBundle("lib/jars/clustercontroller-core-jar-with-dependencies.jar");
         addFileBundle("lib/jars/clustercontroller-utils-jar-with-dependencies.jar");
+        addFileBundle("lib/jars/zookeeper-server-jar-with-dependencies.jar");
     }
 
     @Override

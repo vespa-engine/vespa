@@ -62,6 +62,7 @@ declare -a modules=(
   vespa-athenz
   vespaclient-container-plugin
   zkfacade
+  zookeeper-server
 )
 for module in "${modules[@]}"; do
     cp "$module"/target/"$module"-jar-with-dependencies.jar "$jars_dir"
