@@ -32,6 +32,8 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,6 +69,7 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
     private final AthenzIdentity configserverIdentity;
     private final Clock clock;
     private final ServiceIdentityProvider hostIdentityProvider;
+    private final FileSystem fileSystem;
     private final IdentityDocumentClient identityDocumentClient;
     private final CsrGenerator csrGenerator;
     private final boolean useInternalZts;
@@ -80,16 +83,28 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
                                        String certificateDnsSuffix,
                                        ServiceIdentityProvider hostIdentityProvider,
                                        boolean useInternalZts) {
+        this(ztsEndpoint, trustStorePath, configServerInfo, certificateDnsSuffix, hostIdentityProvider, useInternalZts, Clock.systemUTC(), FileSystems.getDefault());
+    }
+
+    public AthenzCredentialsMaintainer(URI ztsEndpoint,
+                                       Path trustStorePath,
+                                       ConfigServerInfo configServerInfo,
+                                       String certificateDnsSuffix,
+                                       ServiceIdentityProvider hostIdentityProvider,
+                                       boolean useInternalZts,
+                                       Clock clock,
+                                       FileSystem fileSystem) {
         this.ztsEndpoint = ztsEndpoint;
         this.trustStorePath = trustStorePath;
         this.configserverIdentity = configServerInfo.getConfigServerIdentity();
         this.csrGenerator = new CsrGenerator(certificateDnsSuffix, configserverIdentity.getFullName());
         this.hostIdentityProvider = hostIdentityProvider;
+        this.fileSystem = fileSystem;
         this.identityDocumentClient = new DefaultIdentityDocumentClient(
                 configServerInfo.getLoadBalancerEndpoint(),
                 hostIdentityProvider,
                 new AthenzIdentityVerifier(singleton(configserverIdentity)));
-        this.clock = Clock.systemUTC();
+        this.clock = clock;
         this.useInternalZts = useInternalZts;
     }
 
@@ -143,6 +158,21 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         FileFinder.files(context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY))
                 .deleteRecursively(context);
         lastRefreshAttempt.remove(context.containerName());
+    }
+
+    @Override
+    public Duration certificateLifetime(NodeAgentContext context) {
+        Path containerSiaDirectory = fileSystem.getPath(context.pathOnHostFromPathInNode(CONTAINER_SIA_DIRECTORY).toString());
+        Path certificateFile = SiaUtils.getCertificateFile(containerSiaDirectory, context.identity());
+        try {
+            X509Certificate certificate = readCertificateFromFile(certificateFile);
+            Instant now = clock.instant();
+            Instant expiry = certificate.getNotAfter().toInstant();
+            return Duration.between(now, expiry);
+        } catch (IOException e) {
+            context.log(logger, LogLevel.ERROR, "Unable to read certificate at " + certificateFile, e);
+            return Duration.ZERO;
+        }
     }
 
     private boolean shouldRefreshCredentials(Duration age) {

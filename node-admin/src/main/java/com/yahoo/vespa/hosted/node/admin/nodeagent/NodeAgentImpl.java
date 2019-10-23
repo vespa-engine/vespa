@@ -547,4 +547,8 @@ public class NodeAgentImpl implements NodeAgent {
             }
         };
     }
+
+    protected Optional<CredentialsMaintainer> credentialsMaintainer() {
+        return credentialsMaintainer;
+    }
 }
