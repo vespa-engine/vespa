@@ -38,7 +38,7 @@ public class ModelsEvaluatorTest {
 
     /** Tests a function defined as 4 * (var1 + var2) */
     @Test
-    public void testSettingDefaultVariableValue() {
+    public void testSettingMissingValue() {
         ModelsEvaluator models = createModels("src/test/resources/config/rankexpression/");
 
         {
@@ -48,13 +48,13 @@ public class ModelsEvaluatorTest {
 
         {
             FunctionEvaluator function = models.evaluatorOf("macros", "secondphase");
-            function.setUnboundValue(5);
+            function.setMissingValue(5);
             assertEquals(40.0, function.evaluate().asDouble(), delta);
         }
 
         {
             FunctionEvaluator function = models.evaluatorOf("macros", "secondphase");
-            function.setUnboundValue(5);
+            function.setMissingValue(5);
             function.bind("match", 3);
             assertEquals(32.0, function.evaluate().asDouble(), delta);
         }

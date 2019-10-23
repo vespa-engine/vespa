@@ -66,10 +66,10 @@ public class FunctionEvaluator {
      * @param value the default value
      * @return this for chaining
      */
-    public FunctionEvaluator setUnboundValue(Tensor value) {
+    public FunctionEvaluator setMissingValue(Tensor value) {
         if (evaluated)
-            throw new IllegalStateException("Cannot change the unbound value in a used evaluator");
-        context.setUnboundValue(value);
+            throw new IllegalStateException("Cannot change the missing value in a used evaluator");
+        context.setMissingValue(value);
         return this;
     }
 
@@ -79,8 +79,8 @@ public class FunctionEvaluator {
      * @param value the default value
      * @return this for chaining
      */
-    public FunctionEvaluator setUnboundValue(double value) {
-        return setUnboundValue(Tensor.Builder.of(TensorType.empty).cell(value).build());
+    public FunctionEvaluator setMissingValue(double value) {
+        return setMissingValue(Tensor.Builder.of(TensorType.empty).cell(value).build());
     }
 
     public Tensor evaluate() {

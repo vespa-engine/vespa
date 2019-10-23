@@ -50,8 +50,8 @@ public final class LazyArrayContext extends Context implements ContextIndex {
      * Sets the value to use for lookups to existing values which are not set in this context.
      * The default value that will be returned is NaN
      */
-    public void setUnboundValue(Tensor value) {
-        indexedBindings.setUnboundValue(value);
+    public void setMissingValue(Tensor value) {
+        indexedBindings.setMissingValue(value);
     }
 
     /**
@@ -130,7 +130,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
     /** Returns the value which should be used when no value is set */
     public Value defaultValue() {
-        return indexedBindings.defaultValue;
+        return indexedBindings.missingValue;
     }
 
     /**
@@ -156,7 +156,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         private static final Value missing = new DoubleValue(Double.NaN).freeze();
 
         /** The value to return for lookups where no value is set (default: NaN) */
-        private Value defaultValue = new DoubleValue(Double.NaN).freeze();
+        private Value missingValue = new DoubleValue(Double.NaN).freeze();
 
         private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
                                 Value[] values,
@@ -207,8 +207,8 @@ public final class LazyArrayContext extends Context implements ContextIndex {
             }
         }
 
-        private void setUnboundValue(Tensor value) {
-            defaultValue = new TensorValue(value).freeze();
+        private void setMissingValue(Tensor value) {
+            missingValue = new TensorValue(value).freeze();
         }
 
         private void extractBindTargets(ExpressionNode node,
@@ -251,7 +251,7 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
         Value get(int index) {
             Value value = values[index];
-            return value == missing ? defaultValue : value;
+            return value == missing ? missingValue : value;
         }
 
         void set(int index, Value value) {
