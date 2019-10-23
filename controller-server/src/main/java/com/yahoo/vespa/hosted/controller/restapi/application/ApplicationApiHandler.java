@@ -8,6 +8,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
@@ -52,6 +53,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
@@ -92,6 +94,7 @@ import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.DigestInputStream;
@@ -100,7 +103,8 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -112,7 +116,6 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
@@ -367,10 +370,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse tenantCost(Tenant tenant, HttpRequest request) {
+        Set<YearMonth> months = controller.serviceRegistry().tenantCost().monthsWithMetering(tenant.name());
+
         var slime = new Slime();
         var objectCursor = slime.setObject();
         var monthsCursor = objectCursor.setArray("months");
 
+        months.forEach(month -> monthsCursor.addString(month.toString()));
         return new SlimeJsonResponse(slime);
     }
 
@@ -380,22 +386,37 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist"));
     }
 
-    private LocalDate tenantCostParseDate(String dateString) {
-        var monthPattern = Pattern.compile("^(?<year>[0-9]{4})-(?<month>[0-9]{2})$");
-        var matcher = monthPattern.matcher(dateString);
-
-        if (matcher.matches()) {
-            var year  = Integer.parseInt(matcher.group("year"));
-            var month = Integer.parseInt(matcher.group("month"));
-            return LocalDate.of(year, month, 1);
-        } else {
+    private YearMonth tenantCostParseDate(String dateString) {
+        try {
+            return YearMonth.parse(dateString);
+        } catch (DateTimeParseException e){
             throw new IllegalArgumentException("Could not parse year-month '" + dateString + "'");
         }
     }
 
-    private HttpResponse tenantCost(Tenant tenant, LocalDate month, HttpRequest request) {
+    private HttpResponse tenantCost(Tenant tenant, YearMonth month, HttpRequest request) {
         var slime = new Slime();
-        slime.setObject();
+        Cursor cursor = slime.setObject();
+        cursor.setString("month", month.toString());
+        List<CostInfo> costInfos = controller.serviceRegistry().tenantCost()
+                .getTenantCostOfMonth(tenant.name(), month);
+        Cursor array = cursor.setArray("items");
+
+        costInfos.forEach(costInfo -> {
+            Cursor costObject = array.addObject();
+            costObject.setString("applicationId", costInfo.getApplicationId().serializedForm());
+            costObject.setString("zoneId", costInfo.getZoneId().value());
+            Cursor cpu = costObject.setObject("cpu");
+            cpu.setDouble("usage", costInfo.getCpuHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
+            cpu.setLong("charge", costInfo.getCpuCost());
+            Cursor memory = costObject.setObject("memory");
+            memory.setDouble("usage", costInfo.getMemoryHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
+            memory.setLong("charge", costInfo.getMemoryCost());
+            Cursor disk = costObject.setObject("disk");
+            disk.setDouble("usage", costInfo.getDiskHours().setScale(1, RoundingMode.HALF_UP).doubleValue());
+            disk.setLong("charge", costInfo.getDiskCost());
+        });
+
         return new SlimeJsonResponse(slime);
     }
 
@@ -1128,7 +1149,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        MeteringInfo meteringInfo = controller.serviceRegistry().meteringService().getResourceSnapshots(tenant, application);
+        MeteringInfo meteringInfo = controller.serviceRegistry()
+                .meteringService()
+                .getResourceSnapshots(TenantName.from(tenant), ApplicationName.from(application));
 
         ResourceAllocation currentSnapshot = meteringInfo.getCurrentSnapshot();
         Cursor currentRate = root.setObject("currentrate");
