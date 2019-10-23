@@ -80,7 +80,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     static final int TRACELEVEL_DEBUG = 9;
     private static final String THREADPOOL_NAME = "rpcserver worker pool";
     private static final long SHUTDOWN_TIMEOUT = 60;
-    private static final int JRT_RPC_TRANSPORT_THREADS = 4;
+    private static final int JRT_RPC_TRANSPORT_THREADS = threadsToUse();
 
     private final Supervisor supervisor = new Supervisor(new Transport(JRT_RPC_TRANSPORT_THREADS));
     private Spec spec;
@@ -131,10 +131,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         this.metrics = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.hostLivenessTracker = hostLivenessTracker;
         BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>(config.maxgetconfigclients());
-        int numberOfRpcThreads = (config.numRpcThreads() == 0)
-                ? Math.max(8, Runtime.getRuntime().availableProcessors())
-                : config.numRpcThreads();
-        executorService = new ThreadPoolExecutor(numberOfRpcThreads, numberOfRpcThreads,
+        int rpcWorkerThreads = (config.numRpcThreads() == 0) ? threadsToUse() : config.numRpcThreads();
+        executorService = new ThreadPoolExecutor(rpcWorkerThreads, rpcWorkerThreads,
                 0, TimeUnit.SECONDS, workQueue, ThreadFactoryFactory.getThreadFactory(THREADPOOL_NAME));
         delayedConfigResponses = new DelayedConfigResponses(this, config.numDelayedResponseThreads());
         spec = new Spec(null, config.rpcport());
@@ -147,6 +145,10 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         downloader = fileServer.downloader();
         handlerProvider.setInstance(this);
         setUpHandlers();
+    }
+
+    private static int threadsToUse() {
+        return Math.max(8, Runtime.getRuntime().availableProcessors());
     }
 
     /**
