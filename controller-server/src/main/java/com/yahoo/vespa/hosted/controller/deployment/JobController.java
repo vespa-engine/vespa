@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -225,6 +226,11 @@ public class JobController {
         return runs(id.application(), id.type()).values().stream()
                                                 .filter(run -> run.id().equals(id))
                                                 .findAny();
+    }
+
+    /** Returns the last run of the given type, for the given application, if one has been run. */
+    public Optional<Run> last(JobId job) {
+        return curator.readLastRun(job.application(), job.type());
     }
 
     /** Returns the last run of the given type, for the given application, if one has been run. */
