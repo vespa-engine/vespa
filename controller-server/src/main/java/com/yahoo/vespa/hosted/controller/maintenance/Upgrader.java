@@ -122,12 +122,12 @@ public class Upgrader extends Maintainer {
     }
 
     /** Returns the number of applications to upgrade in the interval containing now */
-    static  int numberOfApplicationsToUpgrade(long intervalMillis, long nowMillis, double upgradesPerMinute) {
+    static int numberOfApplicationsToUpgrade(long intervalMillis, long nowMillis, double upgradesPerMinute) {
         long intervalStart = Math.round(nowMillis / (double) intervalMillis) * intervalMillis;
         double upgradesPerMilli = upgradesPerMinute / 60_000;
-        int upgradesAtStart = (int) (intervalStart * upgradesPerMilli);
-        int upgradesAtEnd = (int) ((intervalStart + intervalMillis) * upgradesPerMilli);
-        return upgradesAtEnd - upgradesAtStart;
+        long upgradesAtStart = (long) (intervalStart * upgradesPerMilli);
+        long upgradesAtEnd = (long) ((intervalStart + intervalMillis) * upgradesPerMilli);
+        return (int) (upgradesAtEnd - upgradesAtStart);
     }
 
     /** Returns number of upgrades per minute */

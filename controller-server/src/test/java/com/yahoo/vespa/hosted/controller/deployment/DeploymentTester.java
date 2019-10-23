@@ -75,6 +75,7 @@ public class DeploymentTester {
 
         JobControl jobControl = new JobControl(tester.curator());
         this.upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
+        this.upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
         this.outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
         this.readyJobTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
         this.nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofHours(12),
