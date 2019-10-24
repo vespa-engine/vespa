@@ -140,6 +140,10 @@ public class ZookeeperStatusService implements StatusService {
             double seconds = durationInSeconds(startTime, acquireEndTime);
             metric.set("orchestrator.lock.acquire-latency", seconds, metricContext);
             metric.set("orchestrator.lock.acquired", lockAcquired ? 1 : 0, metricContext);
+
+            metric.add("orchestrator.lock.acquire", 1, metricContext);
+            String acquireResultMetricName = lockAcquired ? "orchestrator.lock.acquire-success" : "orchestrator.lock.acquire-timedout";
+            metric.add(acquireResultMetricName, 1, metricContext);
         }
 
         Runnable updateLockHoldMetric = () -> {
