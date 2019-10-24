@@ -162,9 +162,6 @@ public class DeploymentSpec {
     }
 
     // TODO: Remove after October 2019
-    public Optional<String> globalServiceId() { return singleInstance().globalServiceId(); }
-
-    // TODO: Remove after October 2019
     public UpgradePolicy upgradePolicy() { return singleInstance().upgradePolicy(); }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
@@ -270,7 +267,7 @@ public class DeploymentSpec {
 
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
-                    .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones)step).steps.stream() : List.of(step).stream())
+                    .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones) step).steps.stream() : List.of(step).stream())
                     .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
                     .collect(Collectors.toList());
     }
