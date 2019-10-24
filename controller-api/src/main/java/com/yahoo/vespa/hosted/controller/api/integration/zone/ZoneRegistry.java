@@ -87,4 +87,7 @@ public interface ZoneRegistry {
     /** Returns a URL used to generate flashy badges from strings. */
     URI badgeUrl();
 
+    /** Returns a URL to the controller's api endpoint */
+    URI apiUrl();
+
 }

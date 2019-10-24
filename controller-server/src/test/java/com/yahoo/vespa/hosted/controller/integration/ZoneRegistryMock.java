@@ -165,6 +165,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public URI apiUrl() {
+        return URI.create("https://api.tld:4443/");
+    }
+
+    @Override
     public boolean hasZone(ZoneId zoneId) {
         return zones.stream().anyMatch(zone -> zone.getId().equals(zoneId));
     }
