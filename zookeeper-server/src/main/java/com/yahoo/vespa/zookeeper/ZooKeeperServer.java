@@ -18,17 +18,16 @@ import java.util.stream.Collectors;
  * Writes zookeeper config and starts zookeeper server.
  *
  * @author Ulf Lilleengen
- * @author Harald Musum
  */
-public class VespaZooKeeperServerImpl extends AbstractComponent implements Runnable, VespaZooKeeperServer {
+public class ZooKeeperServer extends AbstractComponent implements Runnable {
 
-    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperServerImpl.class.getName());
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(ZooKeeperServer.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
     private final Thread zkServerThread;
     private final ZookeeperServerConfig zookeeperServerConfig;
 
-    VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig, boolean startServer) {
+    ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig, boolean startServer) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
         System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
@@ -42,7 +41,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
     }
 
     @Inject
-    public VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig) {
+    public ZooKeeperServer(ZookeeperServerConfig zookeeperServerConfig) {
         this(zookeeperServerConfig, true);
     }
 

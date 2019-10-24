@@ -43,7 +43,7 @@ public class ClusterControllerContainer extends Container implements
                    "cluster/v2/*");
         if (runStandaloneZooKeeper) {
             addComponent("clustercontroller-zkrunner",
-                         "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl",
+                         "com.yahoo.vespa.zookeeper.ZooKeeperServer",
                          ZOOKEEPER_SERVER_BUNDLE);
             addComponent("clustercontroller-zkprovider",
                          "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StandaloneZooKeeperProvider",

@@ -6,7 +6,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
-import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -72,7 +72,7 @@ public class Curator implements AutoCloseable {
     // Depend on ZooKeeperServer to make sure it is started first
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
-    public Curator(ConfigserverConfig configserverConfig, VespaZooKeeperServer server) {
+    public Curator(ConfigserverConfig configserverConfig, ZooKeeperServer server) {
         this(configserverConfig, createConnectionSpec(configserverConfig));
     }
 
