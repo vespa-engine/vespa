@@ -97,8 +97,8 @@ public class GroupPreparer {
                     // At this point we have started provisioning of the hosts, the first priority is to make sure that
                     // the returned hosts are added to the node-repo so that they are tracked by the provision maintainers
                     List<Node> hosts = provisionedHosts.stream()
-                            .map(ProvisionedHost::generateHost)
-                            .collect(Collectors.toList());
+                                                       .map(ProvisionedHost::generateHost)
+                                                       .collect(Collectors.toList());
                     nodeRepository.addNodes(hosts);
 
                     // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit

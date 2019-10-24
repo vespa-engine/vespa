@@ -20,6 +20,7 @@ import net.jcip.annotations.Immutable;
  */
 @Immutable
 public class LocalProviderSpec {
+
     public static final Collection<ChainedComponentModel> searcherModels =
                     toSearcherModels(
                             com.yahoo.prelude.querytransform.CJKSearcher.class,
