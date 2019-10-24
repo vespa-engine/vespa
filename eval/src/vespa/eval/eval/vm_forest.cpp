@@ -112,24 +112,18 @@ double general_find_leaf(const double *input, const uint32_t *pos, uint32_t node
 //-----------------------------------------------------------------------------
 
 void encode_large_const(double value, std::vector<uint32_t> &model_out) {
-    union {
-        double   d[1];
-        uint32_t i[2];
-    } buf;
-    assert(sizeof(buf) == sizeof(double));
-    buf.d[0] = value;
-    model_out.push_back(buf.i[0]);
-    model_out.push_back(buf.i[1]);
+    uint32_t buf[2];
+    static_assert(sizeof(buf) == sizeof(value));
+    memcpy(buf, &value, sizeof(value));
+    model_out.push_back(buf[0]);
+    model_out.push_back(buf[1]);
 }
 
 void encode_const(float value, std::vector<uint32_t> &model_out) {
-    union {
-        float    f[1];
-        uint32_t i[1];
-    } buf;
-    assert(sizeof(buf) == sizeof(float));
-    buf.f[0] = value;
-    model_out.push_back(buf.i[0]);
+    uint32_t buf;
+    static_assert(sizeof(buf) == sizeof(value));
+    memcpy(&buf, &value, sizeof(value));
+    model_out.push_back(buf);
 }
 
 uint32_t encode_node(const nodes::Node &node_in, std::vector<uint32_t> &model_out);
