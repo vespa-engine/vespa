@@ -442,7 +442,7 @@ public class DeploymentTrigger {
         if (jobStatus.get().lastCompleted().isEmpty()) return true; // Never completed
         if (jobStatus.get().firstFailing().isEmpty()) return true; // Should not happen as firstFailing should be set for an unsuccessful job
         if ( ! versions.targetsMatch(jobStatus.get().lastCompleted().get())) return true; // Always trigger as targets have changed
-        if (deploymentSpec.upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
+        if (deploymentSpec.requireInstance(instance.name()).upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return true; // Don't throttle canaries
 
         Instant firstFailing = jobStatus.get().firstFailing().get().at();
         Instant lastCompleted = jobStatus.get().lastCompleted().get().at();
@@ -551,7 +551,8 @@ public class DeploymentTrigger {
     // ---------- Change management o_O ----------
 
     private boolean acceptNewApplicationVersion(Application application) {
-        if ( ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return false;
+        if ( ! application.deploymentSpec().instances().stream()
+                          .allMatch(instance -> instance.canChangeRevisionAt(clock.instant()))) return false;
         if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
         for (Instance instance : application.instances().values())
             if (instance.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.

@@ -1231,6 +1231,8 @@ public class DeploymentTriggerTest {
         iTester.newSubmission();
     }
 
+    @Test
+    @Ignore
     public void testMultipleInstances() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
