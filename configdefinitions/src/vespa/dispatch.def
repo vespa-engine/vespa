@@ -59,7 +59,3 @@ node[].host string
 
 # The rpc port of this search node
 node[].port int
-
-# The legacy fs4 port of this search node
-# Deprecated, will go away soon
-node[].fs4port int default=0

@@ -97,4 +97,36 @@ public class SummaryTestCase {
         assertTrue(logger.entries.isEmpty());
     }
 
+    @Test
+    public void testStructMemorySummary() throws ParseException {
+        String sd =
+                "search structmemorysummary {\n" +
+                        "  document structmemorysummary {\n" +
+                        "      struct elem {\n" +
+                        "        field name type string {}\n" +
+                        "        field weight type int {}\n" +
+                        "      }\n" +
+                        "      field elem_array type array<elem> {\n" +
+                        "          indexing: summary\n" +
+                        "          struct-field name {\n" +
+                        "              indexing: attribute\n" +
+                        "          }\n" +
+                        "          struct-field weight {\n" +
+                        "              indexing: attribute\n" +
+                        "          }\n" +
+                        "      }\n" +
+                        "  }\n" +
+                        "  document-summary filtered {\n" +
+                        "      summary elem_array_filtered type array<elem> {\n" +
+                        "          source: elem_array\n" +
+                        "          matched-elements-only\n" +
+                        "      }\n" +
+                        "  }\n" +
+                        "\n" +
+                        "}";
+        DeployLoggerStub logger = new DeployLoggerStub();
+        SearchBuilder.createFromString(sd, logger);
+        assertTrue(logger.entries.isEmpty());
+    }
+
 }

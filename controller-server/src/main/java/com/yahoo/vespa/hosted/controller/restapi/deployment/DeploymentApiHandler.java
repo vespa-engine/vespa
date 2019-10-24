@@ -142,7 +142,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                                    "/application/" +
                                                                    instance.id().application().value()).toString());
         object.setString("upgradePolicy", toString(controller.applications().requireApplication(TenantAndApplicationId.from(instance.id()))
-                                                             .deploymentSpec().requireInstance(instance.name()).upgradePolicy()));
+                                                             .deploymentSpec().upgradePolicy()));
     }
 
     private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {

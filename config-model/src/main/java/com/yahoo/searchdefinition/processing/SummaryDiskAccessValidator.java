@@ -7,10 +7,13 @@ import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
+import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Optional;
 import java.util.logging.Level;
+
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 
 /**
  * Emits a warning for summaries which accesses disk.
@@ -41,7 +44,7 @@ public class SummaryDiskAccessValidator extends Processor {
                     if (field == null && ! source.getName().equals(SummaryClass.DOCUMENT_ID_FIELD))
                         throw new IllegalArgumentException(summaryField + " in " + summary + " references " +
                                                            source + ", but this field does not exist");
-                    if ( ! isInMemory(field) && ! summary.isFromDisk()) {
+                    if ( ! isInMemory(field, summaryField) && ! summary.isFromDisk()) {
                         deployLogger.log(Level.WARNING, summaryField + " in " + summary + " references " +
                                                         source + ", which is not an attribute: Using this " +
                                                         "summary will cause disk accesses. " +
@@ -52,8 +55,13 @@ public class SummaryDiskAccessValidator extends Processor {
         }
     }
 
-    private boolean isInMemory(ImmutableSDField field) {
+    private boolean isInMemory(ImmutableSDField field, SummaryField summaryField) {
         if (field == null) return false; // For DOCUMENT_ID_FIELD, which may be implicit, but is then not in memory
+        if (isComplexFieldWithOnlyStructFieldAttributes(field) &&
+                (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER ||
+                        summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)) {
+            return true;
+        }
         return field.doesAttributing();
     }
 

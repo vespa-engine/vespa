@@ -10,7 +10,6 @@ package com.yahoo.vespa.model.search;
 public interface SearchInterface {
 
     NodeSpec getNodeSpec();
-    String getDispatcherConnectSpec();
     String getHostName();
 
 }

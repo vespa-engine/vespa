@@ -17,11 +17,6 @@ public class SearchNodeWrapper implements SearchInterface {
     }
 
     @Override
-    public String getDispatcherConnectSpec() {
-        return node.getDispatcherConnectSpec();
-    }
-
-    @Override
     public String getHostName() {
         return node.getHostName();
     }
