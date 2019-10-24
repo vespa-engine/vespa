@@ -263,8 +263,8 @@ public class InternalDeploymentTester {
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installInitialReal));
             currentRun(job).versions().sourcePlatform().ifPresent(version -> tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), version));
-            tester.configServer().convergeServices(instanceId, zone);
-            setEndpoints(instanceId, zone);
+            tester.configServer().convergeServices(id.application(), zone);
+            setEndpoints(id.application(), zone);
             runner.advance(currentRun(job));
             assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installInitialReal));
         }
@@ -307,12 +307,12 @@ public class InternalDeploymentTester {
         ZoneId zone = job.type().zone(tester.controller().system());
 
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
-        tester.configServer().convergeServices(instanceId, zone);
+        tester.configServer().convergeServices(id.application(), zone);
         runner.advance(currentRun(job));
         if (   ! (currentRun(job).versions().sourceApplication().isPresent() && job.type().isProduction())
             &&   job.type() != JobType.stagingTest) {
             assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
-            setEndpoints(instanceId, zone);
+            setEndpoints(id.application(), zone);
         }
         runner.advance(currentRun(job));
         if (job.type().environment().isManuallyDeployed()) {
@@ -342,10 +342,10 @@ public class InternalDeploymentTester {
         tester.configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), currentRun(job).versions().targetPlatform());
         runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
-        tester.configServer().convergeServices(testerId.id(), zone);
+        tester.configServer().convergeServices(TesterId.of(id.application()).id(), zone);
         runner.advance(currentRun(job));
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
-        setEndpoints(testerId.id(), zone);
+        setEndpoints(TesterId.of(id.application()).id(), zone);
         runner.advance(currentRun(job));
     }
 
@@ -365,6 +365,7 @@ public class InternalDeploymentTester {
         ZoneId zone = job.type().zone(tester.controller().system());
 
         // All installation is complete and endpoints are ready, so tests may begin.
+        assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
         assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installTester));
         assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.startTests));
 
@@ -374,7 +375,7 @@ public class InternalDeploymentTester {
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
         assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
-        assertTrue(tester.configServer().nodeRepository().list(zone, testerId.id()).isEmpty());
+        assertTrue(tester.configServer().nodeRepository().list(zone, TesterId.of(id.application()).id()).isEmpty());
     }
 
     /** Removes endpoints from routing layer — always call this. */

@@ -551,7 +551,8 @@ public class DeploymentTrigger {
     // ---------- Change management o_O ----------
 
     private boolean acceptNewApplicationVersion(Application application) {
-        if ( ! application.deploymentSpec().canChangeRevisionAt(clock.instant())) return false;
+        if ( ! application.deploymentSpec().instances().stream()
+                          .allMatch(instance -> instance.canChangeRevisionAt(clock.instant()))) return false;
         if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
         for (Instance instance : application.instances().values())
             if (instance.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
