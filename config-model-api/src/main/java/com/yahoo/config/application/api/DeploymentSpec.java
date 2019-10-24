@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -72,6 +73,7 @@ public class DeploymentSpec {
         this.athenzService = athenzService;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
+        validateUpgradePoliciesOfIncreasingConservativeness(steps);
     }
 
     // TODO: Remove after October 2019
@@ -145,6 +147,23 @@ public class DeploymentSpec {
         if (totalDelaySeconds > Duration.ofHours(24).getSeconds())
             throw new IllegalArgumentException("The total delay specified is " + Duration.ofSeconds(totalDelaySeconds) +
                                                " but max 24 hours is allowed");
+    }
+
+    /** Throws an IllegalArgumentException if any instance has a looser upgrade policy than the previous */
+    private void validateUpgradePoliciesOfIncreasingConservativeness(List<Step> steps) {
+        UpgradePolicy previous = Collections.min(List.of(UpgradePolicy.values()));
+        for (Step step : steps) {
+            UpgradePolicy strictest = previous;
+            List<DeploymentInstanceSpec> specs = instances(List.of(step));
+            for (DeploymentInstanceSpec spec : specs) {
+                if (spec.upgradePolicy().compareTo(previous) < 0)
+                    throw new IllegalArgumentException("Instance '" + spec.name() + "' cannot have a looser upgrade " +
+                                                       "policy than the previous of '" + previous + "'");
+
+                strictest = Comparables.max(strictest, spec.upgradePolicy());
+            }
+            previous = strictest;
+        }
     }
 
     // TODO: Remove after October 2019
