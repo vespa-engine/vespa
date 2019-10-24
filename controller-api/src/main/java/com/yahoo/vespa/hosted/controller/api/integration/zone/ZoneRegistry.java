@@ -39,8 +39,8 @@ public interface ZoneRegistry {
     /** Returns the API endpoints of all known config servers in the given zone */
     List<URI> getConfigServerUris(ZoneId zoneId);
 
-    /** Returns the URI for the config server VIP in the given zone, or Optional.empty() if no VIP exists */
-    default Optional<URI> getConfigServerVipUri(ZoneId zoneId) { return Optional.empty(); }
+    /** Returns the URI for the config server VIP in the given zone */
+    URI getConfigServerVipUri(ZoneId zoneId);
 
     /** Returns all possible API endpoints of all known config servers and config server VIPs in the given zone */
     List<URI> getConfigServerApiUris(ZoneId zoneId);
@@ -86,5 +86,8 @@ public interface ZoneRegistry {
 
     /** Returns a URL used to generate flashy badges from strings. */
     URI badgeUrl();
+
+    /** Returns a URL to the controller's api endpoint */
+    URI apiUrl();
 
 }

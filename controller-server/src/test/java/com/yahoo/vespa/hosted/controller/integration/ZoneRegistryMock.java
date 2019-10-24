@@ -165,6 +165,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public URI apiUrl() {
+        return URI.create("https://api.tld:4443/");
+    }
+
+    @Override
     public boolean hasZone(ZoneId zoneId) {
         return zones.stream().anyMatch(zone -> zone.getId().equals(zoneId));
     }
@@ -175,8 +180,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public Optional<URI> getConfigServerVipUri(ZoneId zoneId) {
-        return Optional.of(URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value())));
+    public URI getConfigServerVipUri(ZoneId zoneId) {
+        return URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
     }
 
     @Override
