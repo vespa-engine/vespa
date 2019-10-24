@@ -79,7 +79,13 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
 
-        List<URI> allServers = getConfigserverEndpoints(zoneId);
+        // Make a local copy of the list as we want to manipulate it in case of ping problems.
+        List<URI> allServers = zoneRegistry.getConfigServerVipUri(zoneId)
+                // TODO: Use config server VIP for all zones that have one
+                .filter(zone -> zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-"))
+
+                .map(Collections::singletonList)
+                .orElseGet(() -> new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId)));
 
         StringBuilder errorBuilder = new StringBuilder();
         if (queueFirstServerIfDown(allServers, proxyRequest)) {
@@ -94,16 +100,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         // TODO Add logging, for now, experimental and we want to not add more noise.
         throw new ProxyException(ErrorResponse.internalServerError("Failed talking to config servers: "
                 + errorBuilder.toString()));
-    }
-
-    private List<URI> getConfigserverEndpoints(ZoneId zoneId) {
-        // TODO: Use config server VIP for all zones that have one
-        // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
-            return Collections.singletonList(zoneRegistry.getConfigServerVipUri(zoneId));
-        } else {
-            return new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
-        }
     }
 
     private static class DiscoveryResponseStructure {
