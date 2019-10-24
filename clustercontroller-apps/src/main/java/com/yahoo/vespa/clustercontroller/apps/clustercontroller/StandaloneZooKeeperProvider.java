@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
-import com.yahoo.vespa.zookeeper.ZooKeeperServer;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 /**
  * ZooKeeper provider that ensures we are running our own instance of zookeeper.
@@ -10,7 +10,7 @@ import com.yahoo.vespa.zookeeper.ZooKeeperServer;
  */
 public class StandaloneZooKeeperProvider implements ZooKeeperProvider {
 
-    public StandaloneZooKeeperProvider(ZooKeeperServer server) {
+    public StandaloneZooKeeperProvider(VespaZooKeeperServer server) {
     }
 
 }
