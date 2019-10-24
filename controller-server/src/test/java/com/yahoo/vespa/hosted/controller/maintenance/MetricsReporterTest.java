@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -24,9 +23,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
@@ -77,7 +74,7 @@ public class MetricsReporterTest {
 
     @Test
     public void deployment_average_duration() {
-        DeploymentTester tester = new DeploymentTester();
+        var tester = new InternalDeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -85,28 +82,30 @@ public class MetricsReporterTest {
 
         MetricsReporter reporter = createReporter(tester.controller());
 
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
-        tester.deployCompletely(app, applicationPackage);
+        Application app = tester.createApplication("app1", "tenant1", "default");
+        tester.deployNewSubmission(app.id(), tester.newSubmission(app.id(), applicationPackage));
         reporter.maintain();
         assertEquals(Duration.ZERO, getAverageDeploymentDuration(app.id().defaultInstance())); // An exceptionally fast deployment :-)
 
         // App spends 3 hours deploying
-        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
+        tester.newSubmission(app.id(), applicationPackage);
         tester.clock().advance(Duration.ofHours(1));
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, systemTest);
+        tester.runJob(app.id().defaultInstance(), systemTest);
 
         tester.clock().advance(Duration.ofMinutes(30));
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, stagingTest);
+        tester.runJob(app.id().defaultInstance(), stagingTest);
 
+        tester.triggerJobs();
         tester.clock().advance(Duration.ofMinutes(90));
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, productionUsWest1);
+        tester.runJob(app.id().defaultInstance(), productionUsWest1);
         reporter.maintain();
 
         // Average time is 1 hour (system-test) + 90 minutes (staging-test runs in parallel with system-test) + 90 minutes (production) / 3 jobs
         assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(app.id().defaultInstance()));
 
         // Another deployment starts and stalls for 12 hours
-        tester.jobCompletion(component).application(app).nextBuildNumber(2).uploadArtifact(applicationPackage).submit();
+        tester.newSubmission(app.id(), applicationPackage);
+        tester.triggerJobs();
         tester.clock().advance(Duration.ofHours(12));
         reporter.maintain();
 
@@ -119,50 +118,51 @@ public class MetricsReporterTest {
 
     @Test
     public void deployments_failing_upgrade() {
-        DeploymentTester tester = new DeploymentTester();
+        var tester = new InternalDeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
         MetricsReporter reporter = createReporter(tester.controller());
-        Application app = tester.createApplication("app1", "tenant1", 1, 11L);
+        Application app = tester.createApplication("app1", "tenant1", "default");
 
         // Initial deployment without failures
-        tester.deployCompletely(app, applicationPackage);
+        tester.deployNewSubmission(app.id(), tester.newSubmission(app.id(), applicationPackage));
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Failing application change is not counted
-        tester.jobCompletion(component).application(app).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, systemTest);
+        var submission = tester.newSubmission(app.id(), applicationPackage);
+        tester.triggerJobs();
+        tester.failDeployment(app.id().defaultInstance(), systemTest);
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Application change completes
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, systemTest);
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, stagingTest);
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, productionUsWest1);
+        tester.deployNewSubmission(app.id(), submission);
         assertFalse("Change deployed", tester.controller().applications().requireApplication(app.id()).change().hasTargets());
 
         // New versions is released and upgrade fails in test environments
         Version version = Version.fromString("7.1");
-        tester.upgradeSystem(version);
+        tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, systemTest);
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, stagingTest);
+        tester.triggerJobs();
+        tester.failDeployment(app.id().defaultInstance(), systemTest);
+        tester.failDeployment(app.id().defaultInstance(), stagingTest);
         reporter.maintain();
         assertEquals(2, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Test and staging pass and upgrade fails in production
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, systemTest);
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, stagingTest);
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), false, productionUsWest1);
+        tester.runJob(app.id().defaultInstance(), systemTest);
+        tester.runJob(app.id().defaultInstance(), stagingTest);
+        tester.triggerJobs();
+        tester.failDeployment(app.id().defaultInstance(), productionUsWest1);
         reporter.maintain();
         assertEquals(1, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
 
         // Upgrade eventually succeeds
-        tester.deployAndNotify(app.id().defaultInstance(), Optional.of(applicationPackage), true, productionUsWest1);
+        tester.runJob(app.id().defaultInstance(), productionUsWest1);
         assertFalse("Upgrade deployed", tester.controller().applications().requireApplication(app.id()).change().hasTargets());
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
