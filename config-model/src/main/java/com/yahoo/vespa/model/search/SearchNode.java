@@ -64,8 +64,8 @@ public class SearchNode extends AbstractService implements
     private final Optional<Tuning> tuning;
     private final Optional<ResourceLimits> resourceLimits;
     private static final int RPC_PORT = 0;
-    private static final int FS4_PORT = 1;
-    private static final int FUTURE_HEALTH_PORT = 2;
+    private static final int UNUSED_1 = 1;
+    private static final int UNUSED_2 = 2;
     private static final int UNUSED_3 = 3;
     private static final int HEALTH_PORT = 4;
 
@@ -123,8 +123,8 @@ public class SearchNode extends AbstractService implements
         this.clusterName = clusterName;
         this.flushOnShutdown = flushOnShutdown;
         portsMeta.on(RPC_PORT).tag("rpc").tag("rtc").tag("admin").tag("status");
-        portsMeta.on(FS4_PORT).tag("fs4");
-        portsMeta.on(FUTURE_HEALTH_PORT).tag("unused");
+        portsMeta.on(UNUSED_1).tag("unused");
+        portsMeta.on(UNUSED_2).tag("unused");
         portsMeta.on(UNUSED_3).tag("unused");
         portsMeta.on(HEALTH_PORT).tag("http").tag("json").tag("health").tag("state");
         // Properties are set in DomSearchBuilder
@@ -156,7 +156,7 @@ public class SearchNode extends AbstractService implements
         this.redundancy = redundancy;
     }
 
-    public void updatePartition(int partitionId) {
+    void updatePartition(int partitionId) {
         nodeSpec = new NodeSpec(nodeSpec.groupIndex(), partitionId);
     }
 
@@ -169,8 +169,8 @@ public class SearchNode extends AbstractService implements
     public void allocatePorts(int start, PortAllocBridge from) {
         // NB: ignore "start"
         from.allocatePort("rpc");
-        from.allocatePort("fs4");
-        from.allocatePort("future/4");
+        from.allocatePort("unused/1");
+        from.allocatePort("unused/2");
         from.allocatePort("unused/3");
         from.allocatePort("health");
     }
@@ -208,20 +208,6 @@ public class SearchNode extends AbstractService implements
         return distributionKey;
     }
 
-    /**
-     * Returns the connection spec string that resolves to the dispatcher service
-     * on this node.
-     *
-     * @return The connection string.
-     */
-    public String getDispatcherConnectSpec() {
-        return "tcp/" + getHost().getHostname() + ":" + getDispatchPort();
-    }
-
-    public int getDispatchPort() {
-        return getRelativePort(FS4_PORT);
-    }
-
     private int getHttpPort() {
         return getRelativePort(HEALTH_PORT);
     }
@@ -236,7 +222,7 @@ public class SearchNode extends AbstractService implements
         return getHostName();
     }
 
-    public TransactionLogServer getTransactionLogServer() {
+    private TransactionLogServer getTransactionLogServer() {
         return tls;
     }
 
@@ -269,7 +255,6 @@ public class SearchNode extends AbstractService implements
     @Override
     public void getConfig(ProtonConfig.Builder builder) {
         builder.
-            ptport(getDispatchPort()).
             rpcport(getRpcPort()).
             httpport(getHttpPort()).
             partition(getNodeSpec().partitionId()).
