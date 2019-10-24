@@ -66,6 +66,9 @@ private:
 
     uint64_t getTotalValueCount() const override;
 
+    void apply_attribute_changes_to_array(DocumentValues& docValues);
+    void apply_attribute_changes_to_wset(DocumentValues& docValues);
+
 public:
     void clearDocs(DocId lidLow, DocId lidLimit) override;
     void onShrinkLidSpace() override ;
