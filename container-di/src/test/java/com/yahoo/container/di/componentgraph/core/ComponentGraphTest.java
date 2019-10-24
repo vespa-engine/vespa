@@ -105,6 +105,17 @@ public class ComponentGraphTest {
     }
 
     @Test
+    public void interface_implementation_can_be_injected() {
+        ComponentGraph componentGraph = new ComponentGraph();
+        componentGraph.add(mockComponentNode(ComponentImpl.class));
+        componentGraph.add(mockComponentNode(ComponentTakingInterface.class));
+        componentGraph.complete();
+
+        ComponentTakingInterface instance = componentGraph.getInstance(ComponentTakingInterface.class);
+        assertTrue(instance.injected instanceof ComponentImpl);
+    }
+
+    @Test
     public void all_components_of_a_type_can_be_injected() {
         ComponentGraph componentGraph = new ComponentGraph();
         componentGraph.add(mockComponentNode(SimpleComponent.class));
@@ -472,6 +483,15 @@ public class ComponentGraphTest {
     }
 
     public static class SimpleDerivedComponent extends SimpleComponent {
+    }
+
+    public interface ComponentBase { }
+    public static class ComponentImpl implements ComponentBase { }
+    public static class ComponentTakingInterface {
+        ComponentBase injected;
+        public ComponentTakingInterface(ComponentBase componentBase) {
+            injected = componentBase;
+        }
     }
 
     public static class ComponentTakingConfig extends SimpleComponent {
