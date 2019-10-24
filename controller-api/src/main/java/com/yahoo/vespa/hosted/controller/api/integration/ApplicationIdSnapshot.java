@@ -6,43 +6,43 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * @author freva
  */
 public class ApplicationIdSnapshot {
-    private final Map<TenantName, Map<ApplicationName, List<InstanceName>>> instanceByApplicationByTenantName;
+    private final Map<TenantName, Map<ApplicationName, Set<InstanceName>>> instanceByApplicationByTenantName;
 
-    public ApplicationIdSnapshot(Map<TenantName, Map<ApplicationName, List<InstanceName>>> instanceByApplicationByTenantName) {
+    public ApplicationIdSnapshot(Map<TenantName, Map<ApplicationName, Set<InstanceName>>> instanceByApplicationByTenantName) {
         this.instanceByApplicationByTenantName = instanceByApplicationByTenantName.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> e.getValue().entrySet().stream()
-                        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, f -> List.copyOf(f.getValue())))));
+                        .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, f -> Set.copyOf(f.getValue())))));
     }
 
-    public List<TenantName> tenants() {
-        return List.copyOf(instanceByApplicationByTenantName.keySet());
+    public Set<TenantName> tenants() {
+        return instanceByApplicationByTenantName.keySet();
     }
 
-    public List<ApplicationName> applications(TenantName tenantName) {
+    public Set<ApplicationName> applications(TenantName tenantName) {
         return Optional.ofNullable(instanceByApplicationByTenantName.get(tenantName))
-                .map(a -> List.copyOf(a.keySet()))
-                .orElseGet(List::of);
+                .map(Map::keySet)
+                .orElseGet(Set::of);
     }
 
-    public List<InstanceName> instances(TenantName tenantName, ApplicationName applicationName) {
+    public Set<InstanceName> instances(TenantName tenantName, ApplicationName applicationName) {
         return instanceByApplicationByTenantName.getOrDefault(tenantName, Map.of())
-                .getOrDefault(applicationName, List.of());
+                .getOrDefault(applicationName, Set.of());
     }
 
 
     public static class Builder {
-        private final Map<TenantName, Map<ApplicationName, List<InstanceName>>> instanceByApplicationByTenantName = new HashMap<>();
+        private final Map<TenantName, Map<ApplicationName, Set<InstanceName>>> instanceByApplicationByTenantName = new HashMap<>();
 
         public Builder add(TenantName tenantName) {
             instanceByApplicationByTenantName.computeIfAbsent(tenantName, t -> new HashMap<>());
@@ -51,7 +51,7 @@ public class ApplicationIdSnapshot {
 
         public Builder add(TenantName tenantName, ApplicationName applicationName) {
             instanceByApplicationByTenantName.computeIfAbsent(tenantName, t -> new HashMap<>())
-                    .computeIfAbsent(applicationName, a -> new ArrayList<>());
+                    .computeIfAbsent(applicationName, a -> new HashSet<>());
             return this;
         }
 
