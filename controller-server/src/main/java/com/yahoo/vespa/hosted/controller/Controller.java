@@ -5,22 +5,21 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
-import com.yahoo.vespa.hosted.controller.metric.ConfigServerMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
+import com.yahoo.vespa.hosted.controller.metric.ConfigServerMetrics;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
@@ -33,7 +32,6 @@ import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.time.Clock;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -281,19 +279,14 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
     }
 
     @Override
-    public List<ApplicationId> listApplications() {
-        return applications().asList().stream()
-                             .flatMap(application -> application.instances().keySet().stream()
-                                                                .map(application.id()::instance))
-                             .collect(Collectors.toUnmodifiableList());
-    }
+    public ApplicationIdSnapshot applicationIdSnapshot() {
+        ApplicationIdSnapshot.Builder snapshotBuilder = new ApplicationIdSnapshot.Builder();
+        tenants().asList().forEach(tenant -> snapshotBuilder.add(tenant.name()));
+        applications().asList().forEach(application -> {
+            snapshotBuilder.add(application.id().tenant(), application.id().application());
+            application.instances().values().stream().map(Instance::id).forEach(snapshotBuilder::add);
+        });
 
-    @Override
-    public List<ApplicationId> listApplications(TenantName tenant) {
-        return applications().asList(tenant).stream()
-                             .flatMap(application -> application.instances().keySet().stream()
-                                                                .map(application.id()::instance))
-                             .collect(Collectors.toUnmodifiableList());
+        return snapshotBuilder.build();
     }
-
 }
