@@ -351,7 +351,6 @@ public class DeploymentSpecTest {
     @Test
     public void testEmpty() {
         assertFalse(DeploymentSpec.empty.requireInstance("default").globalServiceId().isPresent());
-        assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, DeploymentSpec.empty.upgradePolicy());
         assertTrue(DeploymentSpec.empty.steps().isEmpty());
         assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
     }
