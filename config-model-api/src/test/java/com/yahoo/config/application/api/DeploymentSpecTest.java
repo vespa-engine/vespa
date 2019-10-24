@@ -310,16 +310,16 @@ public class DeploymentSpecTest {
                 "<deployment version='1.0'>" +
                 "   <upgrade policy='canary'/>" +
                 "   <instance id='instance1'>" +
+                "      <upgrade policy='conservative'/>" +
                 "   </instance>" +
                 "   <instance id='instance2'>" +
-                "      <upgrade policy='conservative'/>" +
                 "   </instance>" +
                 "</deployment>"
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals("canary", spec.requireInstance("instance1").upgradePolicy().toString());
-        assertEquals("conservative", spec.requireInstance("instance2").upgradePolicy().toString());
+        assertEquals("conservative", spec.requireInstance("instance1").upgradePolicy().toString());
+        assertEquals("canary", spec.requireInstance("instance2").upgradePolicy().toString());
     }
 
     @Test
@@ -498,72 +498,6 @@ public class DeploymentSpecTest {
         } catch (IllegalArgumentException e) {
             assertEquals("prod.us-west-1 is listed twice in deployment.xml", e.getMessage());
         }
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void deploymentSpecWithIncreasinglyStrictUpgradePolicies() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "   <instance id='instance1'>" +
-                "      <upgrade policy='conservative'/>" +
-                "   </instance>" +
-                "   <instance id='instance2' />" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void deploymentSpecWithIncreasinglyStrictUpgradePoliciesInParallel() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "  <instance />" +
-                "  <parallel>" +
-                "     <instance id='instance1'>" +
-                "        <upgrade policy='conservative'/>" +
-                "     </instance>" +
-                "     <instance id='instance2'>" +
-                "        <upgrade policy='canary'/>" +
-                "     </instance>" +
-                "  </parallel>" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void deploymentSpecWithIncreasinglyStrictUpgradePoliciesAfterParallel() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "  <parallel>" +
-                "     <instance id='instance1'>" +
-                "        <upgrade policy='conservative'/>" +
-                "     </instance>" +
-                "     <instance id='instance2'>" +
-                "        <upgrade policy='canary'/>" +
-                "     </instance>" +
-                "  </parallel>" +
-                "  <instance />" +
-                "</deployment>"
-        );
-        DeploymentSpec.fromXml(r);
-    }
-
-    @Test
-    public void deploymentSpecWithDifferentUpgradePoliciesInParallel() {
-        StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "  <parallel>" +
-                "     <instance id='instance1'>" +
-                "        <upgrade policy='conservative'/>" +
-                "     </instance>" +
-                "     <instance id='instance2' />" +
-                "  </parallel>" +
-                "</deployment>"
-        );
-        DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(DeploymentSpec.UpgradePolicy.conservative, spec.requireInstance("instance1").upgradePolicy());
-        assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("instance2").upgradePolicy());
     }
 
     @Test(expected = IllegalArgumentException.class)
