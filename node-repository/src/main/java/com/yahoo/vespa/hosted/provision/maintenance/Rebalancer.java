@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
+import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 
@@ -22,22 +23,27 @@ import java.util.stream.Stream;
 public class Rebalancer extends Maintainer {
 
     private final HostResourcesCalculator hostResourcesCalculator;
+    private final Optional<HostProvisioner> hostProvisioner;
     private final Metric metric;
     private final Clock clock;
 
     public Rebalancer(NodeRepository nodeRepository,
                       HostResourcesCalculator hostResourcesCalculator,
+                      Optional<HostProvisioner> hostProvisioner,
                       Metric metric,
                       Clock clock,
                       Duration interval) {
         super(nodeRepository, interval);
         this.hostResourcesCalculator = hostResourcesCalculator;
+        this.hostProvisioner = hostProvisioner;
         this.metric = metric;
         this.clock = clock;
     }
 
     @Override
     protected void maintain() {
+        if (hostProvisioner.isPresent()) return; // All nodes will be allocated on new hosts, so rebalancing makes no sense
+
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().list();
 

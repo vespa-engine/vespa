@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,6 +39,7 @@ public class RebalancerTest {
         MetricsReporterTest.TestMetric metric = new MetricsReporterTest.TestMetric();
         Rebalancer rebalancer = new Rebalancer(tester.nodeRepository(),
                                                new IdentityHostResourcesCalculator(),
+                                               Optional.empty(),
                                                metric,
                                                tester.clock(),
                                                Duration.ofMinutes(1));
