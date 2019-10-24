@@ -11,7 +11,6 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.core.restapiv2.ClusterControllerStateRestAPI;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.zookeeper.ZooKeeperServer;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

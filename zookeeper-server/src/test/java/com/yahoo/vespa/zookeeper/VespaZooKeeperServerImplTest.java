@@ -17,7 +17,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 /**
  * Tests the zookeeper server.
  */
-public class ZooKeeperServerTest {
+public class VespaZooKeeperServerImplTest {
 
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
@@ -53,7 +53,7 @@ public class ZooKeeperServerTest {
     }
 
     private void createServer(ZookeeperServerConfig.Builder builder) {
-        new ZooKeeperServer(new ZookeeperServerConfig(builder), false);
+        new VespaZooKeeperServerImpl(new ZookeeperServerConfig(builder), false);
     }
 
     @Test(expected = RuntimeException.class)
@@ -77,12 +77,12 @@ public class ZooKeeperServerTest {
         builder.myidFile(idFile.getAbsolutePath());
 
         createServer(builder);
-        assertThat(System.getProperty(ZooKeeperServer.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + new ZookeeperServerConfig(builder).juteMaxBuffer()));
+        assertThat(System.getProperty(VespaZooKeeperServerImpl.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + new ZookeeperServerConfig(builder).juteMaxBuffer()));
 
         final int max_buffer = 1;
         builder.juteMaxBuffer(max_buffer);
         createServer(builder);
-        assertThat(System.getProperty(ZooKeeperServer.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + max_buffer));
+        assertThat(System.getProperty(VespaZooKeeperServerImpl.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + max_buffer));
     }
 
     private ZookeeperServerConfig.Server.Builder newServer(int id, String hostName, int electionPort, int quorumPort) {

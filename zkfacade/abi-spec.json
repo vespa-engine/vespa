@@ -68,7 +68,7 @@
     "methods": [
       "public static com.yahoo.vespa.curator.Curator create(java.lang.String)",
       "public void <init>(com.yahoo.cloud.config.ConfigserverConfig)",
-      "public void <init>(com.yahoo.cloud.config.ConfigserverConfig, com.yahoo.vespa.zookeeper.ZooKeeperServer)",
+      "public void <init>(com.yahoo.cloud.config.ConfigserverConfig, com.yahoo.vespa.zookeeper.VespaZooKeeperServer)",
       "protected void <init>(java.lang.String, java.lang.String, java.util.function.Function)",
       "public java.lang.String connectionSpec()",
       "public org.apache.curator.framework.recipes.atomic.DistributedAtomicLong createAtomicCounter(java.lang.String)",
