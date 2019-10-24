@@ -41,8 +41,8 @@ public class MetricsReporterTest {
     private final MetricsMock metrics = new MetricsMock();
 
     @Test
-    public void test_deployment_fail_ratio() {
-        DeploymentTester tester = new DeploymentTester();
+    public void deployment_fail_ratio() {
+        var tester = new InternalDeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -53,28 +53,30 @@ public class MetricsReporterTest {
         assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // Deploy all apps successfully
-        Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
-        Application app2 = tester.createApplication("app2", "tenant1", 2, 22L);
-        Application app3 = tester.createApplication("app3", "tenant1", 3, 33L);
-        Application app4 = tester.createApplication("app4", "tenant1", 4, 44L);
-        tester.deployCompletely(app1, applicationPackage);
-        tester.deployCompletely(app2, applicationPackage);
-        tester.deployCompletely(app3, applicationPackage);
-        tester.deployCompletely(app4, applicationPackage);
+        Application app1 = tester.createApplication("app1", "tenant1", "default");
+        Application app2 = tester.createApplication("app2", "tenant1", "default");
+        Application app3 = tester.createApplication("app3", "tenant1", "default");
+        Application app4 = tester.createApplication("app4", "tenant1", "default");
+        var version1 = tester.newSubmission(app1.id(), applicationPackage);
+        tester.deployNewSubmission(app1.id(), version1);
+        tester.deployNewSubmission(app2.id(), tester.newSubmission(app2.id(), applicationPackage));
+        tester.deployNewSubmission(app3.id(), tester.newSubmission(app3.id(), applicationPackage));
+        tester.deployNewSubmission(app4.id(), tester.newSubmission(app4.id(), applicationPackage));
 
         metricsReporter.maintain();
         assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // 1 app fails system-test
-        tester.jobCompletion(component).application(app4).nextBuildNumber().uploadArtifact(applicationPackage).submit();
-        tester.deployAndNotify(app4.id().defaultInstance(), Optional.of(applicationPackage), false, systemTest);
+        tester.newSubmission(app4.id(), applicationPackage);
+        tester.triggerJobs();
+        tester.failDeployment(app4.id().defaultInstance(), systemTest);
 
         metricsReporter.maintain();
         assertEquals(25.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
     }
 
     @Test
-    public void test_deployment_average_duration() {
+    public void deployment_average_duration() {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -116,7 +118,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_deployments_failing_upgrade() {
+    public void deployments_failing_upgrade() {
         DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
@@ -167,25 +169,25 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_deployment_warnings_metric() {
-        DeploymentTester tester = new DeploymentTester();
+    public void deployment_warnings_metric() {
+        var tester = new InternalDeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", 1, 11L);
+        Application application = tester.createApplication("app1", "tenant1", "default");
         tester.configServer().generateWarnings(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-west-1")), 3);
         tester.configServer().generateWarnings(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-east-3")), 4);
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployNewSubmission(application.id(), tester.newSubmission(application.id(), applicationPackage));
         reporter.maintain();
         assertEquals(4, getDeploymentWarnings(application.id().defaultInstance()));
     }
 
     @Test
-    public void test_build_time_reporting() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+    public void build_time_reporting() {
+        var tester = new InternalDeploymentTester();
         ApplicationVersion version = tester.newSubmission();
         tester.deployNewSubmission(version);
         assertEquals(1000, version.buildTime().get().toEpochMilli());
@@ -197,8 +199,8 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_name_service_queue_size_metric() {
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(), false);
+    public void name_service_queue_size_metric() {
+        var tester = new InternalDeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .globalServiceId("default")
@@ -206,11 +208,11 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", 1, 11L);
+        Application application = tester.createApplication("app1", "tenant1", "default");
         reporter.maintain();
         assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
-        tester.deployCompletely(application, applicationPackage);
+        tester.deployNewSubmission(application.id(), tester.newSubmission(application.id(), applicationPackage));
         reporter.maintain();
         assertEquals("Deployment queues name services requests", 6, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
@@ -220,13 +222,13 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_nodes_failing_system_upgrade() {
-        var tester = new DeploymentTester();
+    public void nodes_failing_system_upgrade() {
+        var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone1 = ZoneApiMock.fromId("prod.eu-west-1");
-        tester.controllerTester().zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone1));
+        tester.zoneRegistry().setUpgradePolicy(UpgradePolicy.create().upgrade(zone1));
         var systemUpgrader = new SystemUpgrader(tester.controller(), Duration.ofDays(1),
-                                                new JobControl(tester.controllerTester().curator()));
+                                                new JobControl(tester.curator()));
         tester.configServer().bootstrap(List.of(zone1.getId()), SystemApplication.configServer);
 
         // System on initial version
@@ -265,14 +267,14 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void test_nodes_failing_os_upgrade() {
-        var tester = new DeploymentTester();
+    public void nodes_failing_os_upgrade() {
+        var tester = new ControllerTester();
         var reporter = createReporter(tester.controller());
         var zone = ZoneApiMock.fromId("prod.eu-west-1");
         var cloud = CloudName.defaultName();
-        tester.controllerTester().zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(zone));
+        tester.zoneRegistry().setOsUpgradePolicy(cloud, UpgradePolicy.create().upgrade(zone));
         var osUpgrader = new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                                        new JobControl(tester.controllerTester().curator()), CloudName.defaultName());;
+                                        new JobControl(tester.curator()), CloudName.defaultName());;
         var statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
                                                        new JobControl(tester.controller().curator()));
         tester.configServer().bootstrap(List.of(zone.getId()), SystemApplication.configServerHost, SystemApplication.tenantHost);

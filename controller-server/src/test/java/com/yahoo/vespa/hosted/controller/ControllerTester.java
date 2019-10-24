@@ -6,19 +6,20 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.slime.Slime;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -26,10 +27,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
@@ -40,9 +40,11 @@ import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
+import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -180,6 +182,44 @@ public final class ControllerTester {
     public void createAndDeploy(String tenantName, String domainName, String applicationName, Environment environment, long projectId) {
         createAndDeploy(tenantName, domainName, applicationName, environment, projectId, null);
     }
+
+    /** Upgrade controller to given version */
+    public void upgradeController(Version version, String commitSha, Instant commitDate) {
+        controller().curator().writeControllerVersion(controller().hostname(), new ControllerVersion(version, commitSha, commitDate));
+        computeVersionStatus();
+    }
+
+    public void upgradeController(Version version) {
+        upgradeController(version, "badc0ffee", Instant.EPOCH);
+    }
+
+    /** Upgrade system applications in all zones to given version */
+    public void upgradeSystemApplications(Version version) {
+        upgradeSystemApplications(version, SystemApplication.all());
+    }
+
+    /** Upgrade given system applications in all zones to version */
+    public void upgradeSystemApplications(Version version, List<SystemApplication> systemApplications) {
+        for (ZoneApi zone : zoneRegistry().zones().all().zones()) {
+            for (SystemApplication application : systemApplications) {
+                configServer().setVersion(application.id(), zone.getId(), version);
+                configServer().convergeServices(application.id(), zone.getId());
+            }
+        }
+        computeVersionStatus();
+    }
+
+    /** Upgrade entire system to given version */
+    public void upgradeSystem(Version version) {
+        upgradeController(version);
+        upgradeSystemApplications(version);
+    }
+
+    /** Re-compute and write version status */
+    public void computeVersionStatus() {
+        controller().updateVersionStatus(VersionStatus.compute(controller()));
+    }
+
 
     public ZoneId toZone(Environment environment) {
         switch (environment) {

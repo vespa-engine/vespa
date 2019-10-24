@@ -132,27 +132,28 @@ public class DeploymentTester {
         return controller().applications().requireInstance(application);
     }
 
-    /** Re-compute and write version status */
+    // TODO(mpolden): Change callers to use ControllerTester#computeVersionStatus and remove this
     public void computeVersionStatus() {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
+    // TODO(mpolden): Change callers to use ControllerTester#upgradeController and remove this
     public void upgradeController(Version version) {
         upgradeController(version, "badc0ffee", Instant.EPOCH);
     }
 
-    /** Upgrade controller to given version */
+    // TODO(mpolden): Change callers to use ControllerTester#upgradeController and remove this
     public void upgradeController(Version version, String commitSha, Instant commitDate) {
         controller().curator().writeControllerVersion(controller().hostname(), new ControllerVersion(version, commitSha, commitDate));
         computeVersionStatus();
     }
 
-    /** Upgrade system applications in all zones to given version */
+    // TODO(mpolden): Change callers to use ControllerTester#upgradeSystemApplications and remove this
     public void upgradeSystemApplications(Version version) {
         upgradeSystemApplications(version, SystemApplication.all());
     }
 
-    /** Upgrade given system applications in all zones to version */
+    // TODO(mpolden): Change callers to use ControllerTester#upgradeSystemApplications and remove this
     public void upgradeSystemApplications(Version version, List<SystemApplication> systemApplications) {
         for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
             for (SystemApplication application : systemApplications) {
@@ -163,7 +164,7 @@ public class DeploymentTester {
         computeVersionStatus();
     }
 
-    /** Upgrade entire system to given version */
+    // TODO(mpolden): Change callers to use ControllerTester#upgradeSystem and remove this
     public void upgradeSystem(Version version) {
         upgradeController(version);
         upgradeSystemApplications(version);
@@ -171,7 +172,7 @@ public class DeploymentTester {
         readyJobTrigger().maintain();
     }
 
-    /** Flush all pending name services requests */
+    // TODO(mpolden): Change callers to use InternalDeploymentTester#flushDnsRequests and remove this
     public void flushDnsRequests() {
         nameServiceDispatcher.run();
         assertTrue("All name service requests dispatched",

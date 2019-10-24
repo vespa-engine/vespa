@@ -14,6 +14,7 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
+import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
@@ -33,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
+import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -45,6 +47,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
@@ -85,6 +89,11 @@ public class InternalDeploymentTester {
     private final RoutingGeneratorMock routing;
     private final MockTesterCloud cloud;
     private final JobRunner runner;
+    private final NameServiceDispatcher nameServiceDispatcher;
+
+    private final AtomicLong nextPropertyId = new AtomicLong(1);
+    private final AtomicInteger nextProjectId = new AtomicInteger(1);
+    private final AtomicInteger nextDomainId = new AtomicInteger(100);
 
     public DeploymentTester tester() { return tester; }
     public JobController jobs() { return jobs; }
@@ -92,6 +101,7 @@ public class InternalDeploymentTester {
     public MockTesterCloud cloud() { return cloud; }
     public JobRunner runner() { return runner; }
     public ConfigServerMock configServer() { return tester.configServer(); }
+    public Controller controller() { return tester.controller(); }
     public ApplicationController applications() { return tester.applications(); }
     public ManualClock clock() { return tester.clock(); }
     public Application application() { return tester.application(appId); }
@@ -99,15 +109,15 @@ public class InternalDeploymentTester {
 
     public InternalDeploymentTester() {
         tester = new DeploymentTester();
-        tester.controllerTester().createApplication(tester.controllerTester().createTenant(instanceId.tenant().value(), athenzDomain, 1L),
-                                                    instanceId.application().value(),
-                                                    instanceId.instance().value(),
-                                                    1);
+        createApplication(instanceId.tenant().value(), instanceId.application().value(), instanceId.instance().value());
         jobs = tester.controller().jobController();
         routing = tester.controllerTester().serviceRegistry().routingGeneratorMock();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
+        this.nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), Duration.ofHours(12),
+                                                               new JobControl(tester.controller().curator()),
+                                                               Integer.MAX_VALUE);
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
 
         // Get deployment job logs to stderr.
@@ -120,6 +130,16 @@ public class InternalDeploymentTester {
         domain.services.put(ATHENZ_SERVICE, new AthenzDbMock.Service(true));
     }
 
+    /** Create a new application with given tenant and application name */
+    public Application createApplication(String tenantName, String applicationName, String instanceName) {
+        return tester.controllerTester().createApplication(tester.controllerTester().createTenant(tenantName,
+                                                                                                  athenzDomain + nextDomainId.getAndIncrement(),
+                                                                                                  nextPropertyId.getAndIncrement()),
+                                                           applicationName,
+                                                           instanceName,
+                                                           nextProjectId.getAndIncrement());
+    }
+
     /** Submits a new application, and returns the version of the new submission. */
     public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage,
                                             SourceRevision revision, String authorEmail, long projectId) {
@@ -128,7 +148,8 @@ public class InternalDeploymentTester {
 
     /** Submits a new application, and returns the version of the new submission. */
     public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage) {
-        return newSubmission(id, applicationPackage, BuildJob.defaultSourceRevision, "a@b", 2);
+        var projectId = tester.application(id).projectId().orElseThrow(() -> new IllegalArgumentException("No project ID set for " + id));
+        return newSubmission(id, applicationPackage, BuildJob.defaultSourceRevision, "a@b", projectId);
     }
 
     /**
@@ -374,7 +395,7 @@ public class InternalDeploymentTester {
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());
-        assertEquals(job.type().isProduction(), instance().deployments().containsKey(zone));
+        assertEquals(job.type().isProduction(), tester.instance(job.application()).deployments().containsKey(zone));
         assertTrue(tester.configServer().nodeRepository().list(zone, TesterId.of(id.application()).id()).isEmpty());
     }
 
@@ -528,6 +549,13 @@ public class InternalDeploymentTester {
 
     public void assertRunning(ApplicationId id, JobType type) {
         assertTrue(jobs.active().stream().anyMatch(run -> run.id().application().equals(id) && run.id().type() == type));
+    }
+
+    /** Flush all pending name services requests */
+    public void flushDnsRequests() {
+        nameServiceDispatcher.run();
+        assertTrue("All name service requests dispatched",
+                   controller().curator().readNameServiceQueue().requests().isEmpty());
     }
 
 }
