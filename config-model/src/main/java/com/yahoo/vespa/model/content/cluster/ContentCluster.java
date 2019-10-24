@@ -50,7 +50,6 @@ import com.yahoo.vespa.model.content.engines.PersistenceEngine;
 import com.yahoo.vespa.model.content.engines.ProtonEngine;
 import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.MultilevelDispatchValidator;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
 
@@ -318,7 +317,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                 if (clusterControllers == null) {
                     List<HostResource> hosts = admin.getClusterControllerHosts();
                     if (hosts.size() > 1) {
-                        context.getDeployState().getDeployLogger().log(Level.INFO, "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
+                        context.getDeployState().getDeployLogger().log(Level.INFO,
+                                                                       "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
                     clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);
@@ -348,10 +348,20 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
-            List<HostResource> hosts = drawContentHostsRecursively(count, rootGroup);
+            List<HostResource> hosts = drawControllerHosts(count, false, rootGroup, containers);
+            List<HostResource> retiredHosts = drawControllerHosts(count, true, rootGroup, containers);
+
+            // preserve the cluster state in case all pre-existing controllers are on retired nodes
+            List<HostResource> all = new ArrayList<>(hosts);
+            all.addAll(retiredHosts);
+            return all;
+        }
+
+        private List<HostResource> drawControllerHosts(int count, boolean retired, StorageGroup rootGroup, Collection<ContainerModel> containers) {
+            List<HostResource> hosts = drawContentHostsRecursively(count, retired, rootGroup);
             // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
             //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
-            if (hosts.size() % 2 == 0) // ZK clusters of even sizes are less available (even in the size=2 case)
+            if (hosts.size() % 2 == 0 && ! hosts.isEmpty()) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
         }
@@ -425,16 +435,16 @@ public class ContentCluster extends AbstractConfigProducer implements
          */
         // Note: This method cannot be changed to draw different nodes without ensuring that it will draw nodes
         //       which overlaps with previously drawn nodes as that will prevent rolling upgrade
-        private List<HostResource> drawContentHostsRecursively(int count, StorageGroup group) {
+        private List<HostResource> drawContentHostsRecursively(int count, boolean retired, StorageGroup group) {
             Set<HostResource> hosts = new HashSet<>();
             if (group.getNodes().isEmpty()) {
                 int hostsPerSubgroup = (int)Math.ceil((double)count / group.getSubgroups().size());
                 for (StorageGroup subgroup : group.getSubgroups())
-                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, subgroup));
+                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, retired, subgroup));
             }
             else {
                 hosts.addAll(group.getNodes().stream()
-                     .filter(node -> ! node.isRetired()) // Avoid retired controllers to avoid surprises on expiry
+                     .filter(node -> node.isRetired() == retired)
                      .map(StorageNode::getHostResource).collect(Collectors.toList()));
             }
 

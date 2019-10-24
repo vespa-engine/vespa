@@ -636,7 +636,7 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testClusterControllersAreNotPlacedOnRetiredNodes() {
+    public void testClusterControllersIncludeNonRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>" +
@@ -662,11 +662,14 @@ public class ModelProvisioningTest {
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
         ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(3, clusterControllers.getContainers().size());
+        assertEquals(3 + 3, clusterControllers.getContainers().size()); // 3 new + 3 retired
         assertEquals("bar-controllers", clusterControllers.getName());
-        assertEquals("Skipping retired default09", "node-1-3-9-08", clusterControllers.getContainers().get(0).getHostName());
-        assertEquals("Skipping retired default06", "node-1-3-9-05", clusterControllers.getContainers().get(1).getHostName());
-        assertEquals("Skipping retired default03", "node-1-3-9-02", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("Non-retired", "node-1-3-9-08", clusterControllers.getContainers().get(0).getHostName());
+        assertEquals("Non-retired", "node-1-3-9-05", clusterControllers.getContainers().get(1).getHostName());
+        assertEquals("Non-retired", "node-1-3-9-02", clusterControllers.getContainers().get(2).getHostName());
+        assertEquals("Retired",     "node-1-3-9-09", clusterControllers.getContainers().get(3).getHostName());
+        assertEquals("Retired",     "node-1-3-9-06", clusterControllers.getContainers().get(4).getHostName());
+        assertEquals("Retired",     "node-1-3-9-03", clusterControllers.getContainers().get(5).getHostName());
     }
 
     @Test
