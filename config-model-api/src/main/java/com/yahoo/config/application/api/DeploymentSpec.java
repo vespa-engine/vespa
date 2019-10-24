@@ -161,6 +161,9 @@ public class DeploymentSpec {
                                            instances.stream().map(Step::toString).collect(Collectors.joining(",")));
     }
 
+    // TODO: Remove after October 2019
+    public UpgradePolicy upgradePolicy() { return singleInstance().upgradePolicy(); }
+
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
