@@ -45,6 +45,7 @@ public class DeploymentSpecDeprecatedAPITest {
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
         assertFalse(spec.includes(Environment.staging, Optional.empty()));
         assertFalse(spec.includes(Environment.prod, Optional.empty()));
+        assertFalse(spec.globalServiceId().isPresent());
     }
 
     @Test
@@ -77,6 +78,7 @@ public class DeploymentSpecDeprecatedAPITest {
         assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
         assertTrue(spec.includes(Environment.staging, Optional.empty()));
         assertFalse(spec.includes(Environment.prod, Optional.empty()));
+        assertFalse(spec.globalServiceId().isPresent());
     }
 
     @Test
@@ -109,6 +111,7 @@ public class DeploymentSpecDeprecatedAPITest {
         assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(spec.globalServiceId().isPresent());
         
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.upgradePolicy());
     }
@@ -205,6 +208,7 @@ public class DeploymentSpecDeprecatedAPITest {
         assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
         assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertFalse(spec.includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(spec.globalServiceId().isPresent());
     }
 
     @Test
@@ -219,6 +223,7 @@ public class DeploymentSpecDeprecatedAPITest {
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(spec.globalServiceId(), Optional.of("query"));
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -239,6 +244,24 @@ public class DeploymentSpecDeprecatedAPITest {
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
+    }
+
+    @Test
+    public void productionSpecWithGlobalServiceIdBeforeStaging() {
+        StringReader r = new StringReader(
+            "<deployment>" +
+            "  <test/>" +
+            "  <prod global-service-id='qrs'>" +
+            "    <region active='true'>us-west-1</region>" +
+            "    <region active='true'>us-central-1</region>" +
+            "    <region active='true'>us-east-3</region>" +
+            "  </prod>" +
+            "  <staging/>" +
+            "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals("qrs", spec.globalServiceId().get());
     }
 
     @Test
@@ -284,6 +307,7 @@ public class DeploymentSpecDeprecatedAPITest {
 
     @Test
     public void testEmpty() {
+        assertFalse(DeploymentSpec.empty.globalServiceId().isPresent());
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, DeploymentSpec.empty.upgradePolicy());
         assertTrue(DeploymentSpec.empty.steps().isEmpty());
         assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
@@ -342,7 +366,7 @@ public class DeploymentSpecDeprecatedAPITest {
                 "  <block-change days='mon,tue' hours='15-16'/>\n" +
                 "</deployment>"
         );
-        DeploymentSpec.fromXml(r);
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
     }
 
     @Test(expected = IllegalArgumentException.class)
