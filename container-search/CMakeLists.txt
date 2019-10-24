@@ -17,7 +17,6 @@ install_config_definition(src/main/resources/configdefinitions/query-profiles.de
 install_config_definition(src/main/resources/configdefinitions/rate-limiting.def search.config.rate-limiting.def)
 install_config_definition(src/main/resources/configdefinitions/resolvers.def search.pagetemplates.resolvers.def)
 install_config_definition(src/main/resources/configdefinitions/rewrites.def search.query.rewrite.rewrites.def)
-install_config_definition(src/main/resources/configdefinitions/search-nodes.def search.config.dispatchprototype.search-nodes.def)
 install_config_definition(src/main/resources/configdefinitions/search-with-renderer-handler.def search.handler.search-with-renderer-handler.def)
 install_config_definition(src/main/resources/configdefinitions/searchchain-forward.def search.federation.searchchain-forward.def)
 install_config_definition(src/main/resources/configdefinitions/semantic-rules.def prelude.semantics.semantic-rules.def)
