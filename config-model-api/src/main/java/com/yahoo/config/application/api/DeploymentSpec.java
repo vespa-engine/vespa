@@ -170,15 +170,6 @@ public class DeploymentSpec {
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
-    // TODO: Remove after November 2019
-    public boolean canUpgradeAt(Instant instant) { return singleInstance().canUpgradeAt(instant); }
-
-    // TODO: Remove after November 2019
-    public boolean canChangeRevisionAt(Instant instant) { return singleInstance().canChangeRevisionAt(instant); }
-
-    // TODO: Remove after November 2019
-    public List<ChangeBlocker> changeBlocker() { return singleInstance().changeBlocker(); }
-
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
         if (hasSingleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019

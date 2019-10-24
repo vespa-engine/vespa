@@ -177,7 +177,8 @@ public class ApplicationList {
 
     /** Returns the subset of applications that are allowed to upgrade at the given time */
     public ApplicationList canUpgradeAt(Instant instant) {
-        return filteredOn(application -> application.deploymentSpec().canUpgradeAt(instant));
+        return filteredOn(application -> application.deploymentSpec().instances().stream()
+                                                    .allMatch(instance -> instance.canUpgradeAt(instant)));
     }
 
     /** Returns the subset of applications that have at least one assigned rotation */
