@@ -422,6 +422,12 @@ public class InternalDeploymentTester {
         routing.removeEndpoints(new DeploymentId(TesterId.of(job.application()).id(), zone));
     }
 
+    /** Starts a manual deployment of the given package, and then runs the whole of the given job, successfully. */
+    public void runJob(ApplicationId instanceId, JobType type, ApplicationPackage applicationPackage) {
+        jobs.deploy(instanceId, type, Optional.empty(), applicationPackage);
+        runJob(new JobId(instanceId, type));
+    }
+
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
     public void runJob(JobType type) {
         runJob(instanceId, type);
@@ -429,11 +435,13 @@ public class InternalDeploymentTester {
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
     public void runJob(ApplicationId instanceId, JobType type) {
+        if (type.environment().isManuallyDeployed())
+            throw new IllegalArgumentException("Use overload with application package for dev/perf jobs");
         runJob(new JobId(instanceId, type));
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
-    public void runJob(JobId job) {
+    private void runJob(JobId job) {
         triggerJobs();
         doDeploy(job);
         doUpgrade(job);
