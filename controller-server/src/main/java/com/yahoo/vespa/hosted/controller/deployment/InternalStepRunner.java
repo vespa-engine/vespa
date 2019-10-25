@@ -657,7 +657,8 @@ public class InternalStepRunner implements StepRunner {
                                                  .orElse(zone.region().value().contains("aws-") ?
                                                          DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
-        byte[] deploymentXml = deploymentXml(spec.athenzDomain(), spec.athenzService(zone.environment(), zone.region()));
+        byte[] deploymentXml = deploymentXml(spec.requireInstance(id.application().instance()).athenzDomain(),
+                                             spec.requireInstance(id.application().instance()).athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
             zipBuilder.add(testPackage);

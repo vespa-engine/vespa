@@ -95,8 +95,7 @@ public class InternalStepRunnerTest {
                                     .application(app.testerId().id(), JobType.stagingTest.zone(system())).get()
                                     .applicationPackage().deploymentSpec();
         assertEquals("domain", spec.athenzDomain().get().value());
-        ZoneId zone = JobType.stagingTest.zone(system());
-        assertEquals("service", spec.athenzService(zone.environment(), zone.region()).get().value());
+        assertEquals("service", spec.athenzService().get().value());
     }
 
     @Test
