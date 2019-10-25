@@ -119,8 +119,7 @@ public class JobControllerApiHandlerHelperTest {
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(instanceId, productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.tester().controller(), instanceId, URI.create("https://some.url:43/root/")), "overview.json");
 
-        tester.jobs().deploy(instanceId, JobType.devAwsUsEast2a, Optional.empty(), applicationPackage);
-        tester.runJob(JobType.devAwsUsEast2a);
+        tester.runJob(instanceId, JobType.devAwsUsEast2a, applicationPackage);
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(instanceId, devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
     }
 
