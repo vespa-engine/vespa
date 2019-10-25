@@ -4,17 +4,24 @@ package ai.vespa.metricsproxy.node;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
+import ai.vespa.metricsproxy.metric.model.MetricId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
+import com.yahoo.container.jdisc.state.CoredumpGatherer;
+import com.yahoo.container.jdisc.state.FileWrapper;
+import com.yahoo.container.jdisc.state.HostLifeGatherer;
+import com.yahoo.yolean.Exceptions;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ai.vespa.metricsproxy.node.CoredumpMetricGatherer.gatherCoredumpMetrics;
-import static ai.vespa.metricsproxy.node.HostLifeGatherer.gatherHostLifeMetrics;
 import static ai.vespa.metricsproxy.node.ServiceHealthGatherer.gatherServiceHealthMetrics;
 
 /**
@@ -45,11 +52,13 @@ public class NodeMetricGatherer {
     public List<MetricsPacket> gatherMetrics()  {
         FileWrapper fileWrapper = new FileWrapper();
         List<MetricsPacket.Builder> metricPacketBuilders = new ArrayList<>();
-        metricPacketBuilders.add(gatherCoredumpMetrics(fileWrapper));
         metricPacketBuilders.addAll(gatherServiceHealthMetrics(vespaServices));
 
+        JSONObject coredumpPacket = CoredumpGatherer.gatherCoredumpMetrics(fileWrapper);
+        addObjectToBuilders(metricPacketBuilders, coredumpPacket);
         if (SystemPollerProvider.runningOnLinux()) {
-            metricPacketBuilders.add(gatherHostLifeMetrics(fileWrapper));
+            JSONObject packet = HostLifeGatherer.getHostLifePacket(fileWrapper);
+            addObjectToBuilders(metricPacketBuilders, packet);
         }
 
         return metricPacketBuilders.stream()
@@ -58,6 +67,26 @@ public class NodeMetricGatherer {
                     .putDimensionsIfAbsent(nodeDimensions.getDimensions())
                     .putDimensionsIfAbsent(metricsManager.getExtraDimensions()).build()
         ).collect(Collectors.toList());
+    }
+
+    protected static void addObjectToBuilders(List<MetricsPacket.Builder> builders, JSONObject object)  {
+        try {
+            MetricsPacket.Builder builder = new MetricsPacket.Builder(ServiceId.toServiceId(object.getString("application")));
+            builder.timestamp(object.getLong("timestamp"));
+            if (object.has("status_code")) builder.statusCode(object.getInt("status_code"));
+            if (object.has("status_msg")) builder.statusMessage(object.getString("status_msg"));
+            if (object.has("metrics")) {
+                JSONObject metrics = object.getJSONObject("metrics");
+                Iterator<?> keys = metrics.keys();
+                while(keys.hasNext()) {
+                    String key = (String) keys.next();
+                    builder.putMetric(MetricId.toMetricId(key), metrics.getLong(key));
+                }
+            }
+            builders.add(builder);
+        } catch (JSONException e) {
+            Exceptions.toMessageString(e);
+        }
     }
 
 }

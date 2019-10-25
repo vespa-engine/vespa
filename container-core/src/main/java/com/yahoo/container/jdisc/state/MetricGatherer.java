@@ -13,10 +13,11 @@ import java.util.List;
 public class MetricGatherer {
 
     static List<JSONObject> getAdditionalMetrics() {
+        FileWrapper fileWrapper = new FileWrapper();
         List<JSONObject> packetList = new ArrayList<>();
-        packetList.add(CoredumpGatherer.gatherCoredumpMetrics());
+        packetList.add(CoredumpGatherer.gatherCoredumpMetrics(fileWrapper));
         if (System.getProperty("os.name").contains("nux"))
-                packetList.add(HostLifeGatherer.getHostLifePacket());
+                packetList.add(HostLifeGatherer.getHostLifePacket(fileWrapper));
         return packetList;
     }
 }

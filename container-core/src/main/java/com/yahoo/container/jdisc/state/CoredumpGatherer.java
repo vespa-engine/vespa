@@ -20,13 +20,13 @@ public class CoredumpGatherer {
 
     private static final Path COREDUMP_PATH = Path.of(Defaults.getDefaults().underVespaHome("var/crash/processing"));
 
-    protected static JSONObject gatherCoredumpMetrics() {
-        int coredumps = getNumberOfCoredumps();
+    public static JSONObject gatherCoredumpMetrics(FileWrapper fileWrapper) {
+        int coredumps = getNumberOfCoredumps(fileWrapper);
         JSONObject packet = new JSONObject();
 
         try {
             packet.put("status_code", coredumps == 0 ? 0 : 1);
-            packet.put("status_msg", coredumps == 0 ? "OK" : String.format("Found %d coredumps", coredumps));
+            packet.put("status_msg", coredumps == 0 ? "OK" : String.format("Found %d coredump(s)", coredumps));
             packet.put("timestamp", Instant.now().getEpochSecond());
             packet.put("application", "system-coredumps-processing");
 
@@ -34,10 +34,10 @@ public class CoredumpGatherer {
         return packet;
     }
 
-    private static int getNumberOfCoredumps() {
+    private static int getNumberOfCoredumps(FileWrapper fileWrapper) {
         try {
-            return (int) Files.walk(COREDUMP_PATH)
-                    .filter(Files::isRegularFile)
+            return (int) fileWrapper.walkTree(COREDUMP_PATH)
+                    .filter(fileWrapper::isRegularFile)
                     .count();
         } catch (NoSuchFileException e) {
             return 0;

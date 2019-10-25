@@ -1,7 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.metricsproxy.node;
+package com.yahoo.container.jdisc.state;
 
-import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import java.nio.file.Path;
@@ -9,17 +10,20 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 
+
 /**
  * @author olaa
  */
 public class CoredumpGathererTest {
 
     @Test
-    public void finds_one_coredump() {
-    MetricsPacket packet = CoredumpMetricGatherer.gatherCoredumpMetrics(new MockFileWrapper()).build();
+    public void finds_one_coredump() throws JSONException {
+    JSONObject packet = CoredumpGatherer.gatherCoredumpMetrics(new MockFileWrapper());
 
-    assertEquals("system-coredumps-processing", packet.service.id);
-    assertEquals(1, packet.statusCode);
+    assertEquals("system-coredumps-processing", packet.getString("application"));
+    assertEquals(1, packet.getInt("status_code"));
+    assertEquals("Found 1 coredump(s)", packet.getString("status_msg"));
+
     }
 
     static class MockFileWrapper extends FileWrapper {
