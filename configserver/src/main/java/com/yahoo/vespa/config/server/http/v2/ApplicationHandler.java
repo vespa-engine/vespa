@@ -20,7 +20,6 @@ import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -149,8 +148,9 @@ public class ApplicationHandler extends HttpHandler {
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
+                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
                 "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
-                "http://*/application/v2/tenant/*/application/*/logs",
+                "http://*/application/v2/tenant/*/application/*/logs", // TODO: Remove once all clients switched to handler with instance name
                 "http://*/application/v2/tenant/*/application/*");
     }
 
@@ -165,8 +165,8 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isLogRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 4 &&
-                request.getUri().getPath().endsWith("/logs");
+        return request.getUri().getPath().endsWith("/logs") &&
+                (getBindingMatch(request).groupCount() == 4 || getBindingMatch(request).groupCount() == 7);
     }
 
     private static boolean isServiceConvergeListRequest(HttpRequest request) {
