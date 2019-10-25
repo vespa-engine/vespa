@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -106,19 +107,21 @@ public class RoutingPolicies {
     private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, DeploymentSpec spec, @SuppressWarnings("unused") Lock lock) {
         Set<RoutingPolicy> policies = new LinkedHashSet<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
-            RoutingPolicy policy = createPolicy(loadBalancers.application, spec, loadBalancers.zone, loadBalancer);
-            if (!policies.add(policy)) {
-                policies.remove(policy);
-                policies.add(policy);
-            }
+            spec.instance(loadBalancer.application().instance()).ifPresent(instanceSpec -> {
+                RoutingPolicy policy = createPolicy(loadBalancers.application, instanceSpec, loadBalancers.zone, loadBalancer);
+                if (!policies.add(policy)) {
+                    policies.remove(policy);
+                    policies.add(policy);
+                }
+            });
         }
         db.writeRoutingPolicies(loadBalancers.application, policies);
     }
 
     /** Create a policy for given load balancer and register a CNAME for it */
-    private RoutingPolicy createPolicy(ApplicationId application, DeploymentSpec deploymentSpec, ZoneId zone,
+    private RoutingPolicy createPolicy(ApplicationId application, DeploymentInstanceSpec instanceSpec, ZoneId zone,
                                        LoadBalancer loadBalancer) {
-        var endpoints = endpointIdsOf(loadBalancer, zone, deploymentSpec);
+        var endpoints = endpointIdsOf(loadBalancer, zone, instanceSpec);
         var routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone,
                                               loadBalancer.hostname(), loadBalancer.dnsZone(),
                                               endpoints);
@@ -162,9 +165,11 @@ public class RoutingPolicies {
     private static Set<RoutingId> routingIdsFrom(AllocatedLoadBalancers loadBalancers, DeploymentSpec spec) {
         Set<RoutingId> routingIds = new LinkedHashSet<>();
         for (var loadBalancer : loadBalancers.list) {
-            for (var endpointId : endpointIdsOf(loadBalancer, loadBalancers.zone, spec)) {
-                routingIds.add(new RoutingId(loadBalancer.application(), endpointId));
-            }
+            spec.instance(loadBalancer.application().instance()).ifPresent(instanceSpec -> {
+                for (var endpointId : endpointIdsOf(loadBalancer, loadBalancers.zone, instanceSpec)) {
+                    routingIds.add(new RoutingId(loadBalancer.application(), endpointId));
+                }
+            });
         }
         return Collections.unmodifiableSet(routingIds);
     }
@@ -183,7 +188,7 @@ public class RoutingPolicies {
     }
 
     /** Compute all endpoint IDs of given load balancer */
-    private static Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer, ZoneId zone, DeploymentSpec spec) {
+    private static Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer, ZoneId zone, DeploymentInstanceSpec spec) {
         return spec.endpoints().stream()
                    .filter(endpoint -> endpoint.containerId().equals(loadBalancer.cluster().value()))
                    .filter(endpoint -> endpoint.regions().contains(zone.region()))

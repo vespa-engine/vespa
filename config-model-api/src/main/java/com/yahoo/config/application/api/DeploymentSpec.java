@@ -211,9 +211,6 @@ public class DeploymentSpec {
     //    to have environment, instance or region variants on those.
     public Optional<AthenzService> athenzService() { return this.athenzService; }
 
-    // TODO: Remove after November 2019
-    public List<Endpoint> endpoints() { return singleInstance().endpoints(); }
-
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
