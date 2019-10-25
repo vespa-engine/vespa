@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -14,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -24,10 +22,8 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
@@ -67,12 +63,6 @@ public class DeploymentIssueReporterTest {
     @Test
     public void testDeploymentFailureReporting() {
         tester.controllerTester().upgradeSystem(Version.fromString("6.2"));
-
-        /*
-        tester.controllerTester().createTenant("tenant1", "domain1", 1L, contact);
-        tester.controllerTester().createTenant("tenant2", "domain2", 1L, contact);
-        tester.controllerTester().createTenant("tenant3", "domain3", 1L, contact);
-        */
 
         // Create and deploy one application for each of three tenants.
         Application app1 = tester.createApplication("application1", "tenant1", "default");

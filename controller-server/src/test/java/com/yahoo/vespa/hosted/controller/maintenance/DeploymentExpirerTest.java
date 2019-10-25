@@ -6,10 +6,11 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
@@ -24,7 +25,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class DeploymentExpirerTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private final InternalDeploymentTester tester = new InternalDeploymentTester();
 
     @Test
     public void testDeploymentExpiry() {
@@ -34,20 +35,21 @@ public class DeploymentExpirerTest {
         );
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),
                                                           new JobControl(new MockCuratorDb()));
-        Application devApp = tester.createApplication("app1", "tenant1", 123L, 1L);
-        Application prodApp = tester.createApplication("app2", "tenant2", 456L, 2L);
+        Application devApp = tester.createApplication("tenant1", "app1", "default");
+        Application prodApp = tester.createApplication("tenant2", "app2", "default");
 
-        Instance devInstance = tester.defaultInstance(devApp.id());
-        Instance prodInstance = tester.defaultInstance(prodApp.id());
-
-        // Deploy dev
-        tester.controllerTester().deploy(devInstance.id(), tester.controllerTester().toZone(Environment.dev));
-
-        // Deploy prod
-        ApplicationPackage prodAppPackage = new ApplicationPackageBuilder()
+        ApplicationPackage appPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();
-        tester.deployCompletely(prodApp, prodAppPackage);
+
+        Instance devInstance = tester.instance(devApp.id().defaultInstance());
+        Instance prodInstance = tester.instance(prodApp.id().defaultInstance());
+
+        // Deploy dev
+        tester.runJob(devInstance.id(), JobType.devUsEast1, appPackage);
+
+        // Deploy prod
+        tester.deployNewSubmission(prodApp.id(), tester.newSubmission(prodApp.id(), appPackage));
 
         assertEquals(1, permanentDeployments(devInstance).size());
         assertEquals(1, permanentDeployments(prodInstance).size());
