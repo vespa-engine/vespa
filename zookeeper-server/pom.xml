@@ -9,19 +9,47 @@
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>zookeeper-server</artifactId>
-  <packaging>pom</packaging>
+  <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
-  <modules>
-    <module>zookeeper-server-common</module>
-    <module>zookeeper-server-3.4</module>
-    <module>zookeeper-server-3.5</module>
-  </modules>
   <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>defaults</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-dev</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespajlib</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespalog</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+    </dependency>
+    <dependency>
+      <!-- Needed to have the same version as slf4j-api -->
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.5</version>
     </dependency>
   </dependencies>
   <build>
