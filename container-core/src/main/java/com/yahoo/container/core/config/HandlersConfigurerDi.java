@@ -100,6 +100,7 @@ public class HandlersConfigurerDi {
         }
 
 
+        // TODO Vespa 8: Remove, only used for Jersey
         @Override
         public BundleClasses getBundleClasses(ComponentSpecification bundleSpec, Set<String> packagesToScan) {
             //Temporary hack: Using class name since ClassLoaderOsgiFramework is not available at compile time in this bundle.
