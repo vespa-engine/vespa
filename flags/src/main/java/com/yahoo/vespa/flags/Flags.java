@@ -172,9 +172,9 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart.",
             APPLICATION_ID);
 
-    public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.4.14",
-            "The version of ZooKeeper server to use",
+    public static final UnboundStringFlag ZOOKEEPER_SERVER_MAJOR_MINOR_VERSION = defineStringFlag(
+            "zookeeper-server-version", "3.4",
+            "The version of ZooKeeper server to use (major.minor, not full version)",
             "Takes effect on restart of Docker container",
             HOSTNAME);
 
