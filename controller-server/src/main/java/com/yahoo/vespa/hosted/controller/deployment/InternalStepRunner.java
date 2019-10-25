@@ -580,7 +580,7 @@ public class InternalStepRunner implements StepRunner {
     /** Sends a mail with a notification of a failed run, if one should be sent. */
     private void sendNotification(Run run, DualLogger logger) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
-        Notifications notifications = application.deploymentSpec().notifications();
+        Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
         boolean newCommit = application.change().application()
                                     .map(run.versions().targetApplication()::equals)
                                     .orElse(false);

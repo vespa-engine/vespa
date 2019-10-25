@@ -340,36 +340,6 @@ public class DeploymentSpecDeprecatedAPITest {
     }
 
     @Test
-    public void noNotifications() {
-        assertEquals(Notifications.none(),
-                     DeploymentSpec.fromXml("<deployment />").notifications());
-    }
-
-    @Test
-    public void emptyNotifications() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
-                                                     "  <notifications />" +
-                                                     "</deployment>");
-        assertEquals(Notifications.none(),
-                     spec.notifications());
-    }
-
-    @Test
-    public void someNotifications() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
-                                                     "  <notifications when=\"failing\">\n" +
-                                                     "    <email role=\"author\"/>\n" +
-                                                     "    <email address=\"john@dev\" when=\"failing-commit\"/>\n" +
-                                                     "    <email address=\"jane@dev\"/>\n" +
-                                                     "  </notifications>\n" +
-                                                     "</deployment>");
-        assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failing));
-        assertEquals(ImmutableSet.of(author), spec.notifications().emailRolesFor(failingCommit));
-        assertEquals(ImmutableSet.of("john@dev", "jane@dev"), spec.notifications().emailAddressesFor(failingCommit));
-        assertEquals(ImmutableSet.of("jane@dev"), spec.notifications().emailAddressesFor(failing));
-    }
-
-    @Test
     public void customTesterFlavor() {
         DeploymentSpec spec = DeploymentSpec.fromXml("<deployment>\n" +
                                                      "  <test tester-flavor=\"d-1-4-20\" />\n" +
