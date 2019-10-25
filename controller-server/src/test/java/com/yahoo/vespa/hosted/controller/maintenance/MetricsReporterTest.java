@@ -7,11 +7,8 @@ import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -50,23 +47,22 @@ public class MetricsReporterTest {
         assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // Deploy all apps successfully
-        Application app1 = tester.createApplication("app1", "tenant1", "default");
-        Application app2 = tester.createApplication("app2", "tenant1", "default");
-        Application app3 = tester.createApplication("app3", "tenant1", "default");
-        Application app4 = tester.createApplication("app4", "tenant1", "default");
-        var version1 = tester.newSubmission(app1.id(), applicationPackage);
-        tester.deployNewSubmission(app1.id(), version1);
-        tester.deployNewSubmission(app2.id(), tester.newSubmission(app2.id(), applicationPackage));
-        tester.deployNewSubmission(app3.id(), tester.newSubmission(app3.id(), applicationPackage));
-        tester.deployNewSubmission(app4.id(), tester.newSubmission(app4.id(), applicationPackage));
+        var context1 = tester.newDeploymentContext("app1", "tenant1", "default");
+        var context2 = tester.newDeploymentContext("app2", "tenant1", "default");
+        var context3 = tester.newDeploymentContext("app3", "tenant1", "default");
+        var context4 = tester.newDeploymentContext("app4", "tenant1", "default");
+        context1.submit(applicationPackage).deploy();
+        context2.submit(applicationPackage).deploy();
+        context3.submit(applicationPackage).deploy();
+        context4.submit(applicationPackage).deploy();
 
         metricsReporter.maintain();
         assertEquals(0.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
 
         // 1 app fails system-test
-        tester.newSubmission(app4.id(), applicationPackage);
-        tester.triggerJobs();
-        tester.failDeployment(app4.id().defaultInstance(), systemTest);
+        context1.submit(applicationPackage)
+                .triggerJobs()
+                .failDeployment(systemTest);
 
         metricsReporter.maintain();
         assertEquals(25.0, metrics.getMetric(MetricsReporter.DEPLOYMENT_FAIL_METRIC));
@@ -82,30 +78,31 @@ public class MetricsReporterTest {
 
         MetricsReporter reporter = createReporter(tester.controller());
 
-        Application app = tester.createApplication("app1", "tenant1", "default");
-        tester.deployNewSubmission(app.id(), tester.newSubmission(app.id(), applicationPackage));
+        var context = tester.deploymentContext()
+                            .submit(applicationPackage)
+                            .deploy();
         reporter.maintain();
-        assertEquals(Duration.ZERO, getAverageDeploymentDuration(app.id().defaultInstance())); // An exceptionally fast deployment :-)
+        assertEquals(Duration.ZERO, getAverageDeploymentDuration(context.instanceId())); // An exceptionally fast deployment :-)
 
         // App spends 3 hours deploying
-        tester.newSubmission(app.id(), applicationPackage);
+        context.submit(applicationPackage);
         tester.clock().advance(Duration.ofHours(1));
-        tester.runJob(app.id().defaultInstance(), systemTest);
+        context.runJob(systemTest);
 
         tester.clock().advance(Duration.ofMinutes(30));
-        tester.runJob(app.id().defaultInstance(), stagingTest);
+        context.runJob(stagingTest);
 
         tester.triggerJobs();
         tester.clock().advance(Duration.ofMinutes(90));
-        tester.runJob(app.id().defaultInstance(), productionUsWest1);
+        context.runJob(productionUsWest1);
         reporter.maintain();
 
         // Average time is 1 hour (system-test) + 90 minutes (staging-test runs in parallel with system-test) + 90 minutes (production) / 3 jobs
-        assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(app.id().defaultInstance()));
+        assertEquals(Duration.ofMinutes(80), getAverageDeploymentDuration(context.instanceId()));
 
         // Another deployment starts and stalls for 12 hours
-        tester.newSubmission(app.id(), applicationPackage);
-        tester.triggerJobs();
+        context.submit(applicationPackage)
+               .triggerJobs();
         tester.clock().advance(Duration.ofHours(12));
         reporter.maintain();
 
@@ -113,7 +110,7 @@ public class MetricsReporterTest {
                              .plus(Duration.ofHours(12)) // hanging staging-test
                              .plus(Duration.ofMinutes(90)) // previous production job
                              .dividedBy(3), // Total number of orchestrated jobs
-                     getAverageDeploymentDuration(app.id().defaultInstance()));
+                     getAverageDeploymentDuration(context.instanceId()));
     }
 
     @Test
@@ -125,47 +122,47 @@ public class MetricsReporterTest {
                 .build();
 
         MetricsReporter reporter = createReporter(tester.controller());
-        Application app = tester.createApplication("app1", "tenant1", "default");
+        var context = tester.deploymentContext();
 
         // Initial deployment without failures
-        tester.deployNewSubmission(app.id(), tester.newSubmission(app.id(), applicationPackage));
+        context.submit(applicationPackage).deploy();
         reporter.maintain();
-        assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
+        assertEquals(0, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Failing application change is not counted
-        var submission = tester.newSubmission(app.id(), applicationPackage);
-        tester.triggerJobs();
-        tester.failDeployment(app.id().defaultInstance(), systemTest);
+        context.submit(applicationPackage)
+               .triggerJobs()
+               .failDeployment(systemTest);
         reporter.maintain();
-        assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
+        assertEquals(0, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Application change completes
-        tester.deployNewSubmission(app.id(), submission);
-        assertFalse("Change deployed", tester.controller().applications().requireApplication(app.id()).change().hasTargets());
+        context.deploy();
+        assertFalse("Change deployed", context.application().change().hasTargets());
 
         // New versions is released and upgrade fails in test environments
         Version version = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
-        tester.triggerJobs();
-        tester.failDeployment(app.id().defaultInstance(), systemTest);
-        tester.failDeployment(app.id().defaultInstance(), stagingTest);
+        context.triggerJobs()
+               .failDeployment(systemTest)
+               .failDeployment(stagingTest);
         reporter.maintain();
-        assertEquals(2, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
+        assertEquals(2, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Test and staging pass and upgrade fails in production
-        tester.runJob(app.id().defaultInstance(), systemTest);
-        tester.runJob(app.id().defaultInstance(), stagingTest);
-        tester.triggerJobs();
-        tester.failDeployment(app.id().defaultInstance(), productionUsWest1);
+        context.runJob(systemTest)
+               .runJob(stagingTest)
+               .triggerJobs()
+               .failDeployment(productionUsWest1);
         reporter.maintain();
-        assertEquals(1, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
+        assertEquals(1, getDeploymentsFailingUpgrade(context.instanceId()));
 
         // Upgrade eventually succeeds
-        tester.runJob(app.id().defaultInstance(), productionUsWest1);
-        assertFalse("Upgrade deployed", tester.controller().applications().requireApplication(app.id()).change().hasTargets());
+        context.runJob(productionUsWest1);
+        assertFalse("Upgrade deployed", context.application().change().hasTargets());
         reporter.maintain();
-        assertEquals(0, getDeploymentsFailingUpgrade(app.id().defaultInstance()));
+        assertEquals(0, getDeploymentsFailingUpgrade(context.instanceId()));
     }
 
     @Test
@@ -177,25 +174,27 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", "default");
-        tester.configServer().generateWarnings(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-west-1")), 3);
-        tester.configServer().generateWarnings(new DeploymentId(application.id().defaultInstance(), ZoneId.from("prod", "us-east-3")), 4);
-        tester.deployNewSubmission(application.id(), tester.newSubmission(application.id(), applicationPackage));
+        var context = tester.deploymentContext();
+        tester.configServer().generateWarnings(context.deploymentIdIn(ZoneId.from("prod", "us-west-1")), 3);
+        tester.configServer().generateWarnings(context.deploymentIdIn(ZoneId.from("prod", "us-west-1")), 4);
+        context.submit(applicationPackage).deploy();
         reporter.maintain();
-        assertEquals(4, getDeploymentWarnings(application.id().defaultInstance()));
+        assertEquals(4, getDeploymentWarnings(context.instanceId()));
     }
 
     @Test
     public void build_time_reporting() {
         var tester = new InternalDeploymentTester();
-        ApplicationVersion version = tester.newSubmission();
-        tester.deployNewSubmission(version);
-        assertEquals(1000, version.buildTime().get().toEpochMilli());
+        var applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
+        var context = tester.deploymentContext()
+                            .submit(applicationPackage)
+                            .deploy();
+        assertEquals(1000, context.lastSubmission().get().buildTime().get().toEpochMilli());
 
         MetricsReporter reporter = createReporter(tester.tester().controller());
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
-                     getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, tester.instance().id()));
+                     getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, context.instanceId()));
     }
 
     @Test
@@ -208,15 +207,16 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        Application application = tester.createApplication("app1", "tenant1", "default");
+        var context = tester.deploymentContext()
+                            .deferDnsUpdates();
         reporter.maintain();
         assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
-        tester.deployNewSubmission(application.id(), tester.newSubmission(application.id(), applicationPackage));
+        context.submit(applicationPackage).deploy();
         reporter.maintain();
         assertEquals("Deployment queues name services requests", 6, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
 
-        tester.flushDnsRequests();
+        context.flushDnsUpdates();
         reporter.maintain();
         assertEquals("Queue consumed", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
     }

@@ -12,21 +12,21 @@ import com.yahoo.vespa.hosted.controller.api.integration.certificates.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
@@ -41,7 +41,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -149,7 +148,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public TesterCloud testerCloud() {
+    public MockTesterCloud testerCloud() {
         return mockTesterCloud;
     }
 
