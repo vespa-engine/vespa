@@ -1,2 +1,4 @@
 # Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install_fat_java_artifact(zookeeper-server)
+add_subdirectory(zookeeper-server-common)
+add_subdirectory(zookeeper-server-3.4)
+add_subdirectory(zookeeper-server-3.5)
