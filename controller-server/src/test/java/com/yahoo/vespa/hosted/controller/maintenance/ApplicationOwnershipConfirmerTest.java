@@ -3,28 +3,26 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.ApplicationSummary;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -36,11 +34,11 @@ public class ApplicationOwnershipConfirmerTest {
 
     private MockOwnershipIssues issues;
     private ApplicationOwnershipConfirmer confirmer;
-    private DeploymentTester tester;
+    private InternalDeploymentTester tester;
 
     @Before
     public void setup() {
-        tester = new DeploymentTester();
+        tester = new InternalDeploymentTester();
         issues = new MockOwnershipIssues();
         confirmer = new ApplicationOwnershipConfirmer(tester.controller(), Duration.ofDays(1), new JobControl(new MockCuratorDb()), issues);
     }
@@ -48,14 +46,17 @@ public class ApplicationOwnershipConfirmerTest {
     @Test
     public void testConfirmation() {
         Optional<Contact> contact = Optional.of(tester.controllerTester().serviceRegistry().contactRetrieverMock().contact());
-        TenantName property = tester.controllerTester().createTenant("property", "domain", 1L, contact);
-        tester.createAndDeploy(property, "application", 1, "default");
-        Supplier<Application> propertyApp = () -> tester.controller().applications().requireApplication(TenantAndApplicationId.from("property", "application"));
+        tester.controller().tenants().lockOrThrow(appId.tenant(), LockedTenant.Athenz.class, tenant ->
+                tester.controller().tenants().store(tenant.with(contact.get())));
+        Supplier<Application> propertyApp = tester::application;
+        tester.deployNewSubmission(tester.newSubmission());
 
         UserTenant user = UserTenant.create("by-user", contact);
         tester.controller().tenants().createUser(user);
-        tester.createAndDeploy(user.name(), "application", 2, "default");
-        Supplier<Application> userApp = () -> tester.controller().applications().requireApplication(TenantAndApplicationId.from("by-user", "application"));
+        tester.createApplication(user.name().value(), "application", "default");
+        TenantAndApplicationId userAppId = TenantAndApplicationId.from("by-user", "application");
+        Supplier<Application> userApp = () -> tester.controller().applications().requireApplication(userAppId);
+        tester.deployNewSubmission(userAppId, tester.newSubmission(userAppId, InternalDeploymentTester.applicationPackage));
 
         assertFalse("No issue is initially stored for a new application.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is initially stored for a new application.", userApp.get().ownershipIssueId().isPresent());
@@ -85,15 +86,9 @@ public class ApplicationOwnershipConfirmerTest {
         assertEquals("Confirmation issue reference is not updated when no issue id is returned.", issueId, userApp.get().ownershipIssueId());
 
         // The user deletes all production deployments — see that the issue is forgotten.
-        assertEquals("Confirmation issue for user is sitll open.", issueId, userApp.get().ownershipIssueId());
-        tester.controller().applications().deactivate(userApp.get().id().defaultInstance(),
-                                                      userApp.get().productionDeployments().values().stream()
-                                                             .flatMap(List::stream)
-                                                             .findAny().get().zone());
-        tester.controller().applications().deactivate(userApp.get().id().defaultInstance(),
-                                                      userApp.get().productionDeployments().values().stream()
-                                                             .flatMap(List::stream)
-                                                             .findAny().get().zone());
+        assertEquals("Confirmation issue for user is still open.", issueId, userApp.get().ownershipIssueId());
+        userApp.get().productionDeployments().values().stream().flatMap(List::stream)
+               .forEach(deployment -> tester.controller().applications().deactivate(userAppId.defaultInstance(), deployment.zone()));
         assertTrue("No production deployments are listed for user.", userApp.get().require(InstanceName.defaultName()).productionDeployments().isEmpty());
         confirmer.maintain();
 
