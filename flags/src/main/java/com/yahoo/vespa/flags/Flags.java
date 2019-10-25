@@ -172,6 +172,12 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart.",
             APPLICATION_ID);
 
+    public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
+            "zookeeper-server-version", "3.4.14",
+            "The version of ZooKeeper server to use",
+            "Takes effect on restart of Docker container",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
