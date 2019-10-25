@@ -256,14 +256,9 @@ public class CapacityCheckerTester {
         }
 
         NodeResources.DiskSpeed diskSpeed;
-        // According to @kraune, container tenants are not fuzzy about disk type
-        if (membership != null && nodeModel.type == NodeType.tenant && membership.cluster().type() == ClusterSpec.Type.container) {
-            diskSpeed = NodeResources.DiskSpeed.any;
-        } else {
-            diskSpeed = nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow;
-        }
         NodeResources nr = new NodeResources(nodeModel.minCpuCores, nodeModel.minMainMemoryAvailableGb,
-                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000, diskSpeed);
+                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000,
+                nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
         Flavor f = new Flavor(nr);
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
