@@ -154,13 +154,17 @@ public class ApplicationList {
     }
 
     /** Returns the subset of applications which has the given upgrade policy */
+    // TODO jonmv: Make this instance based when instances are orchestrated, and deployments reported per instance.
     public ApplicationList with(UpgradePolicy policy) {
-        return filteredOn(application ->  application.deploymentSpec().upgradePolicy() == policy);
+        return filteredOn(application ->  application.deploymentSpec().instances().stream()
+                                                     .anyMatch(instance -> instance.upgradePolicy() == policy));
     }
 
     /** Returns the subset of applications which does not have the given upgrade policy */
+    // TODO jonmv: Make this instance based when instances are orchestrated, and deployments reported per instance.
     public ApplicationList without(UpgradePolicy policy) {
-        return filteredOn(application ->  application.deploymentSpec().upgradePolicy() != policy);
+        return filteredOn(application ->  application.deploymentSpec().instances().stream()
+                                                     .allMatch(instance -> instance.upgradePolicy() != policy));
     }
 
     /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
