@@ -62,6 +62,7 @@ declare -a modules=(
   vespa-athenz
   vespaclient-container-plugin
   zkfacade
+  zookeeper-server
 )
 for module in "${modules[@]}"; do
     cp "$module"/target/"$module"-jar-with-dependencies.jar "$jars_dir"
@@ -69,13 +70,6 @@ done
 
 # vespajlib must be installed _without_ dependencies.
 cp vespajlib/target/vespajlib.jar "$jars_dir"
-
-# Copy from submodules, so must be done separately
-cp zookeeper-server/zookeeper-server-common/target/zookeeper-server-common-jar-with-dependencies.jar "$jars_dir"
-cp zookeeper-server/zookeeper-server-3.4/target/zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"
-cp zookeeper-server/zookeeper-server-3.5/target/zookeeper-server-3.5-jar-with-dependencies.jar "$jars_dir"
-# Symlink to default version
-ln -s "$jars_dir"/zookeeper-server-3.4-jar-with-dependencies.jar "$jars_dir"/zookeeper-server-jar-with-dependencies.jar
 
 declare -a libexec_files=(
   standalone-container/src/main/sh/standalone-container.sh
