@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static java.util.Collections.singletonList;
+
 /**
  * <p>This is a utility class to help with installing, starting, stopping and uninstalling OSGi Bundles. You can choose
  * to inject an instance of this class, or it can be created explicitly by reference to a {@link OsgiFramework}.</p>
@@ -74,7 +76,7 @@ public final class BundleInstaller {
             throw new BundleException("OSGi header '" + OsgiHeader.APPLICATION + "' not allowed for " +
                                       "non-application bundle " + bundle.getSymbolicName() + ".");
         }
-        osgiFramework.startBundles(Arrays.asList(bundle), false);
+        osgiFramework.startBundles(singletonList(bundle), false);
     }
 
     private void stop(Bundle bundle) throws BundleException {
