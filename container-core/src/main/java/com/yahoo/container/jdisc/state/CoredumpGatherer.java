@@ -12,6 +12,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * @author olaa
@@ -35,8 +36,8 @@ public class CoredumpGatherer {
     }
 
     private static int getNumberOfCoredumps(FileWrapper fileWrapper) {
-        try {
-            return (int) fileWrapper.walkTree(COREDUMP_PATH)
+        try (Stream<Path> stream = fileWrapper.walkTree(COREDUMP_PATH)){
+            return (int) stream
                     .filter(fileWrapper::isRegularFile)
                     .count();
         } catch (NoSuchFileException e) {
