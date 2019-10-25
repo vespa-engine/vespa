@@ -542,6 +542,11 @@ public class NodeAgentImpl implements NodeAgent {
             }
 
             @Override
+            public void addDirectory(Path pathInContainer) {
+                throw new UnsupportedOperationException("addDirectory not implemented");
+            }
+
+            @Override
             public void createSymlink(Path symlink, Path target) {
                 throw new UnsupportedOperationException("createSymlink not implemented");
             }

@@ -18,6 +18,13 @@ public interface ContainerData {
     void addFile(Path pathInContainer, String data);
 
     /**
+     * Add directory in container at path.
+     *
+     * @param pathInContainer The path to the directory inside the container, absolute or relative root /.
+     */
+    void addDirectory(Path pathInContainer);
+
+    /**
      * Symlink to a file in container at path.
      *
      * @param symlink The path to the symlink inside the container, absolute or relative root /.
