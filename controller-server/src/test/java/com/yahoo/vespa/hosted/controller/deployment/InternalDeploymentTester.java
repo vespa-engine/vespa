@@ -262,7 +262,7 @@ public class InternalDeploymentTester {
                       .filter(r -> r.id().type() == job.type())
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
         assertFalse(run.hasFailed());
-        assertNotEquals(aborted, run.status());
+        assertFalse(run.hasEnded());
         return run;
     }
 
@@ -287,7 +287,8 @@ public class InternalDeploymentTester {
 
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installInitialReal));
-            currentRun(job).versions().sourcePlatform().ifPresent(version -> tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), version));
+            Versions versions = currentRun(job).versions();
+            tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), versions.sourcePlatform().orElse(versions.targetPlatform()));
             tester.configServer().convergeServices(id.application(), zone);
             setEndpoints(id.application(), zone);
             runner.advance(currentRun(job));
@@ -430,7 +431,7 @@ public class InternalDeploymentTester {
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
     public void runJob(JobId job) {
-        tester.readyJobTrigger().run();
+        triggerJobs();
         doDeploy(job);
         doUpgrade(job);
         doConverge(job);
@@ -442,6 +443,22 @@ public class InternalDeploymentTester {
         doTeardown(job);
     }
 
+    public void jobAborted(JobType type) {
+        jobAborted(new JobId(instanceId, type));
+    }
+
+    public void jobAborted(ApplicationId instanceId, JobType type) {
+        jobAborted(new JobId(instanceId, type));
+    }
+
+    public void jobAborted(JobId job) {
+        triggerJobs();
+        RunId id = currentRun(job).id();
+        runner.advance(currentRun(job));
+        assertEquals(aborted, jobs.run(id).get().status());
+        assertTrue(jobs.run(id).get().hasEnded());
+    }
+
     public void failDeployment(JobType type) {
         failDeployment(new JobId(instanceId, type));
     }
@@ -451,8 +468,8 @@ public class InternalDeploymentTester {
     }
 
     public void failDeployment(JobId job) {
+        triggerJobs();
         RunId id = currentRun(job).id();
-        tester.readyJobTrigger().run();
         tester.configServer().throwOnNextPrepare(new IllegalArgumentException("Exception"));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
@@ -469,8 +486,8 @@ public class InternalDeploymentTester {
     }
 
     public void timeOutUpgrade(JobId job) {
+        triggerJobs();
         RunId id = currentRun(job).id();
-        tester.readyJobTrigger().run();
         doDeploy(job);
         clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
         runner.advance(currentRun(job));
@@ -488,8 +505,8 @@ public class InternalDeploymentTester {
     }
 
     public void timeOutConvergence(JobId job) {
+        triggerJobs();
         RunId id = currentRun(job).id();
-        tester.readyJobTrigger().run();
         doDeploy(job);
         doUpgrade(job);
         clock().advance(InternalStepRunner.installationTimeout.plusSeconds(1));
