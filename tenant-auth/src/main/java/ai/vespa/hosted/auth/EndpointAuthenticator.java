@@ -50,8 +50,8 @@ public class EndpointAuthenticator implements ai.vespa.hosted.api.EndpointAuthen
             else {
                 if (Properties.dataPlaneCertificateFile().isPresent())
                     certificateFile = Properties.dataPlaneCertificateFile().get();
-                if (Properties.dataPlanePrivateKeyFile().isPresent())
-                    privateKeyFile = Properties.dataPlanePrivateKeyFile().get();
+                if (Properties.dataPlaneKeyFile().isPresent())
+                    privateKeyFile = Properties.dataPlaneKeyFile().get();
             }
             if (certificateFile != null && privateKeyFile != null) {
                 X509Certificate certificate = X509CertificateUtils.fromPem(new String(Files.readAllBytes(certificateFile)));

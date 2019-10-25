@@ -7,22 +7,17 @@ import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
-import com.yahoo.search.config.dispatchprototype.SearchNodesConfig;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.LocalProviderSpec;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
-import com.yahoo.vespa.model.search.SearchNode;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 
 /**
  * Config producer for search chain responsible for sending queries to a local cluster.
@@ -34,8 +29,7 @@ public class LocalProvider extends Provider implements
         ClusterConfig.Producer,
         AttributesConfig.Producer,
         QrMonitorConfig.Producer,
-        RankProfilesConfig.Producer,
-        SearchNodesConfig.Producer {
+        RankProfilesConfig.Producer {
 
     private final LocalProviderSpec providerSpec;
     private volatile AbstractSearchCluster searchCluster;
@@ -69,22 +63,6 @@ public class LocalProvider extends Provider implements
         int requestTimeout = federationOptions().getTimeoutInMilliseconds();
         if (requestTimeout != -1) {
             builder.requesttimeout(requestTimeout);
-        }
-    }
-
-    @Override
-    public void getConfig(final SearchNodesConfig.Builder builder) {
-        if (!(searchCluster instanceof IndexedSearchCluster)) {
-            log.warning("Could not build SearchNodesConfig: Only supported for IndexedSearchCluster, got "
-                    + searchCluster.getClass().getCanonicalName());
-            return;
-        }
-        final IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster) searchCluster;
-        for (final SearchNode searchNode : indexedSearchCluster.getSearchNodes()) {
-            builder.search_node(
-                    new SearchNodesConfig.Search_node.Builder()
-                            .host(searchNode.getHostName())
-                            .port(searchNode.getDispatchPort()));
         }
     }
 
@@ -124,7 +102,7 @@ public class LocalProvider extends Provider implements
         return providerSpec.clusterName;
     }
 
-    public void setSearchCluster(AbstractSearchCluster searchCluster) {
+    void setSearchCluster(AbstractSearchCluster searchCluster) {
         this.searchCluster = searchCluster;
     }
 

@@ -42,18 +42,18 @@ public class Properties {
     }
 
     /** Returns the path of the API private key. This must be set with the 'privateKeyFile' property. */
-    public static Path apiPrivateKeyFile() {
-        return Paths.get(requireNonBlankProperty("privateKeyFile"));
+    public static Path apiKeyFile() {
+        return Paths.get(requireNonBlankProperty("apiKeyFile"));
     }
 
     /** Returns the path of the API certificate, if this is set with the 'certificateFile' property. */
     public static Optional<Path> apiCertificateFile() {
-        return getNonBlankProperty("certificateFile").map(Paths::get);
+        return getNonBlankProperty("apiCertificateFile").map(Paths::get);
     }
 
     /** Returns the actual private key as a string */
-    public static Optional<String> privateKey() {
-        return getNonBlankProperty("privateKey");
+    public static Optional<String> apiKey() {
+        return getNonBlankProperty("apiKey");
     }
 
     /** Returns the path of the data plane certificate file, if this is set with the 'dataPlaneCertificateFile' property. */
@@ -61,8 +61,8 @@ public class Properties {
         return getNonBlankProperty("dataPlaneCertificateFile").map(Paths::get);
     }
 
-    /** Returns the path of the data plane private key file, if this is set with the 'dataPlanePrivateKeyFile' property. */
-    public static Optional<Path> dataPlanePrivateKeyFile() {
+    /** Returns the path of the data plane private key file, if this is set with the 'dataPlaneKeyFile' property. */
+    public static Optional<Path> dataPlaneKeyFile() {
         return getNonBlankProperty("dataPlaneKeyFile").map(Paths::get);
     }
 

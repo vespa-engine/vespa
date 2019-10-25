@@ -117,10 +117,6 @@ public class ClusterTest {
         assertEquals(19118, config.node(1).port());
         assertEquals(19130, config.node(2).port());
 
-        assertEquals(19107, config.node(0).fs4port());
-        assertEquals(19119, config.node(1).fs4port());
-        assertEquals(19131, config.node(2).fs4port());
-
         assertEquals(0, config.node(0).group());
         assertEquals(0, config.node(1).group());
         assertEquals(0, config.node(2).group());

@@ -163,7 +163,7 @@ class JobControllerApiHandlerHelper {
         VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
         VespaVersion.Confidence targetConfidence = Map.of(defaultPolicy, normal,
                                                           conservative, high)
-                                                      .getOrDefault(application.deploymentSpec().requireInstance(instance.name()).upgradePolicy(), broken);
+                                                      .getOrDefault(application.deploymentSpec().upgradePolicy(), broken);
         for (VespaVersion version : controller.versionStatus().versions())
             if (   ! version.versionNumber().isAfter(controller.systemVersion())
                 &&   version.confidence().equalOrHigherThan(targetConfidence))

@@ -270,9 +270,13 @@
                             <application>${application}</application>
                             <tenant>${tenant}</tenant>
                             <instance>${instance}</instance>
+                            <environment>${environment}</environment>
+                            <region>${region}</region>
                             <endpoint>${endpoint}</endpoint>
-                            <privateKeyFile>${privateKeyFile}</privateKeyFile>
-                            <certificateFile>${certificateFile}</certificateFile>
+                            <apiKeyFile>${apiKeyFile}</apiKeyFile>
+                            <apiCertificateFile>${apiCertificateFile}</apiCertificateFile>
+                            <dataPlaneKeyFile>${dataPlaneKeyFile}</dataPlaneKeyFile>
+                            <dataPlaneCertificateFile>${dataPlaneCertificateFile}</dataPlaneCertificateFile>
                         </systemPropertyVariables>
                     </configuration>
                 </plugin>

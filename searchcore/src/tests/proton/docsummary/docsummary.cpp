@@ -765,12 +765,14 @@ Test::requireThatAttributesAreUsed()
 
     EXPECT_EQUAL(2u, rep->docsums.size());
 
+    // FIXME the expected output ordering of weighted set fields is currently inherently linked
+    // to the internal ordering of such attributes. Should be decoupled, as this is very fragile.
     EXPECT_TRUE(assertSlime("{ba:10,bb:10.1,"
                             "bc:'foo',"
                             "bd:[20,30],"
                             "be:[20.2,30.3],"
                             "bf:['bar','baz'],"
-                            "bg:[{item:40,weight:2},{item:50,weight:3}],"
+                            "bg:[{item:50,weight:3},{item:40,weight:2}],"
                             "bh:[{item:40.4,weight:4},{item:50.5,weight:5}],"
                             "bi:[{item:'quux',weight:7},{item:'qux',weight:6}],"
                             "bj:'0x01020178017901016601674008000000000000'}", *rep, 0, true));
