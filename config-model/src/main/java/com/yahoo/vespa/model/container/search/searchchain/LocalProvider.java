@@ -18,7 +18,11 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.SearchNode;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
 
 /**
  * Config producer for search chain responsible for sending queries to a local cluster.
@@ -31,8 +35,7 @@ public class LocalProvider extends Provider implements
         AttributesConfig.Producer,
         QrMonitorConfig.Producer,
         RankProfilesConfig.Producer,
-        SearchNodesConfig.Producer,
-        DispatchConfig.Producer {
+        SearchNodesConfig.Producer {
 
     private final LocalProviderSpec providerSpec;
     private volatile AbstractSearchCluster searchCluster;
@@ -122,7 +125,6 @@ public class LocalProvider extends Provider implements
     }
 
     public void setSearchCluster(AbstractSearchCluster searchCluster) {
-        assert (this.searchCluster == null);
         this.searchCluster = searchCluster;
     }
 
@@ -176,13 +178,4 @@ public class LocalProvider extends Provider implements
         return (visibilityDelay < 1.0d) ? 0.0d : visibilityDelay;
     }
 
-    @Override
-    public void getConfig(DispatchConfig.Builder builder) {
-        if (!(searchCluster instanceof IndexedSearchCluster)) {
-            log.warning("Could not build DispatchConfig: Only supported for IndexedSearchCluster, got "
-                        + searchCluster.getClass().getCanonicalName());
-            return;
-        }
-        ((IndexedSearchCluster) searchCluster).getConfig(builder);
-    }
 }

@@ -16,8 +16,9 @@ import java.util.TreeSet;
 
 
 public class SourcesTarget extends Target {
-    private ComponentRegistry<ComponentAdaptor<SearchChainInvocationSpec>> providerSources =
-            new ComponentRegistry<ComponentAdaptor<SearchChainInvocationSpec>>() {};
+
+    private ComponentRegistry<ComponentAdaptor<SearchChainInvocationSpec>> providerSources = new ComponentRegistry<>() {};
+
     private SearchChainInvocationSpec defaultProviderSource;
 
     public SourcesTarget(ComponentId sourceId) {

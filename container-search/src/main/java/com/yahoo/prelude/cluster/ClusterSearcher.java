@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
-import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
@@ -22,7 +21,6 @@ import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 import org.apache.commons.lang.StringUtils;
 
@@ -48,7 +46,7 @@ import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.S
 @After("*")
 public class ClusterSearcher extends Searcher {
 
-    private final String clusterModelName;
+    private final String searchClusterName;
 
     // The set of document types contained in this search cluster
     private final Set<String> documentTypes;
@@ -68,16 +66,14 @@ public class ClusterSearcher extends Searcher {
                            QrSearchersConfig qrsConfig,
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
-                           DispatchConfig dispatchConfig,
-                           ClusterInfoConfig clusterInfoConfig,
-                           Metric metric,
+                           ComponentRegistry<Dispatcher> dispatchers,
                            FS4ResourcePool fs4ResourcePool,
                            VipStatus vipStatus) {
         super(id);
 
         int searchClusterIndex = clusterConfig.clusterId();
-        clusterModelName = clusterConfig.clusterName();
-        QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, clusterModelName);
+        searchClusterName = clusterConfig.clusterName();
+        QrSearchersConfig.Searchcluster searchClusterConfig = getSearchClusterConfigFromClusterName(qrsConfig, searchClusterName);
         documentTypes = new LinkedHashSet<>();
 
         maxQueryTimeout = ParameterParser.asMilliSeconds(clusterConfig.maxQueryTimeout(), DEFAULT_MAX_QUERY_TIMEOUT);
@@ -102,8 +98,8 @@ public class ClusterSearcher extends Searcher {
             addBackendSearcher(searcher);
             vipStatus.addToRotation(searcher.getName());
         } else {
-            Dispatcher dispatcher = Dispatcher.create(id.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus, metric);
-            FastSearcher searcher = searchDispatch(searchClusterIndex, fs4ResourcePool.getServerId(), docSumParams, documentDbConfig, dispatcher);
+            FastSearcher searcher = searchDispatch(searchClusterIndex, searchClusterName, fs4ResourcePool.getServerId(),
+                                                   docSumParams, documentDbConfig, dispatchers);
             addBackendSearcher(searcher);
 
         }
@@ -126,11 +122,17 @@ public class ClusterSearcher extends Searcher {
     }
 
     private static FastSearcher searchDispatch(int searchclusterIndex,
+                                               String searchClusterName,
                                                String serverId,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
-                                               Dispatcher dispatcher) {
+                                               ComponentRegistry<Dispatcher> dispatchers) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
+        ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
+        Dispatcher dispatcher = dispatchers.getComponent(dispatcherComponentId);
+        if (dispatcher == null)
+            throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId +
+                                               " is configured");
         return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
 
@@ -154,7 +156,7 @@ public class ClusterSearcher extends Searcher {
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> documentTypes) {
         this.documentTypes = documentTypes;
-        clusterModelName = "testScenario";
+        searchClusterName = "testScenario";
         maxQueryTimeout = DEFAULT_MAX_QUERY_TIMEOUT;
         maxQueryCacheTimeout = DEFAULT_MAX_QUERY_CACHE_TIMEOUT;
     }

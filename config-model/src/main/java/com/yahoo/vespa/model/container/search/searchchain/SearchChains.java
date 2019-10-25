@@ -29,7 +29,7 @@ public class SearchChains extends Chains<SearchChain> {
         LocalClustersCreator.addDefaultLocalProviders(this, searchClustersByName.keySet());
         VespaSearchChainsCreator.addVespaSearchChains(this);
 
-        validateSourceGroups(); //must be done before initializing searchers since they are used by FederationSearchers.
+        validateSourceGroups(); //must be done before initializing searchers since they are used by FederationSearchers
         initializeComponents(searchClustersByName);
     }
 

@@ -9,7 +9,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
  * A component that only needs a simple ComponentModel.
  *
  * @author gjoranv
- * @since 5.1.9
  */
 public class SimpleComponent extends Component<AbstractConfigProducer<?>, ComponentModel> {
 

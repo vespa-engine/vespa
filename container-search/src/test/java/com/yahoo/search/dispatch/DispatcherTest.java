@@ -38,14 +38,12 @@ public class DispatcherTest {
 
     @Test
     public void requireDispatcherToIgnoreMultilevelConfigurations() {
-        SearchCluster cl = new MockSearchCluster("1", 2, 2);
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        builder.useMultilevelDispatch(true);
-        DispatchConfig dc = new DispatchConfig(builder);
+        SearchCluster searchCluster = new MockSearchCluster("1", 2, 2);
+        DispatchConfig dispatchConfig = new DispatchConfig.Builder().useMultilevelDispatch(true).build();
 
-        var invokerFactory = new MockInvokerFactory(cl);
+        var invokerFactory = new MockInvokerFactory(searchCluster);
 
-        Dispatcher disp = new Dispatcher(cl, dc, invokerFactory, invokerFactory, new MockMetric());
+        Dispatcher disp = new Dispatcher(searchCluster, dispatchConfig, invokerFactory, invokerFactory, new MockMetric());
         assertThat(disp.getSearchInvoker(query(), null).isPresent(), is(false));
     }
 
@@ -113,6 +111,7 @@ public class DispatcherTest {
     }
 
     private static class MockInvokerFactory extends InvokerFactory implements PingFactory {
+
         private final FactoryStep[] events;
         private int step = 0;
 

@@ -1,7 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch;
 
+import com.google.inject.Inject;
+import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.ComponentId;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -78,22 +81,38 @@ public class Dispatcher extends AbstractComponent {
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    public static Dispatcher create(String clusterId,
-                                    DispatchConfig dispatchConfig,
-                                    int containerClusterSize,
-                                    VipStatus vipStatus,
-                                    Metric metric) {
-        var searchCluster = new SearchCluster(clusterId, dispatchConfig, containerClusterSize, vipStatus);
-        var rpcFactory = new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster);
-
-        return new Dispatcher(searchCluster, dispatchConfig, rpcFactory, rpcFactory, metric);
+    @Inject
+    public Dispatcher(ComponentId clusterId,
+                      DispatchConfig dispatchConfig,
+                      ClusterInfoConfig clusterInfoConfig,
+                      VipStatus vipStatus,
+                      Metric metric) {
+        this(new SearchCluster(clusterId.stringValue(), dispatchConfig, clusterInfoConfig.nodeCount(), vipStatus),
+             dispatchConfig,
+             metric);
     }
 
-    public Dispatcher(SearchCluster searchCluster,
+    private Dispatcher(SearchCluster searchCluster,
                       DispatchConfig dispatchConfig,
-                      InvokerFactory invokerFactory,
-                      PingFactory pingFactory,
                       Metric metric) {
+        this(searchCluster,
+             dispatchConfig,
+             new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster),
+             metric);
+    }
+
+    protected Dispatcher(SearchCluster searchCluster,
+                         DispatchConfig dispatchConfig,
+                         RpcInvokerFactory rcpInvokerFactory,
+                         Metric metric) {
+        this(searchCluster, dispatchConfig, rcpInvokerFactory, rcpInvokerFactory, metric);
+    }
+
+    protected Dispatcher(SearchCluster searchCluster,
+                         DispatchConfig dispatchConfig,
+                         InvokerFactory invokerFactory,
+                         PingFactory pingFactory,
+                         Metric metric) {
         this.searchCluster = searchCluster;
         this.loadBalancer = new LoadBalancer(searchCluster,
                                   dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);

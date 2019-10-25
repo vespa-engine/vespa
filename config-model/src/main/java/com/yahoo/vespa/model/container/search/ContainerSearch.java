@@ -15,6 +15,7 @@ import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.StreamingSearchCluster;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +34,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         SemanticRulesConfig.Producer,
     	PageTemplatesConfig.Producer {
 
-    private final List<AbstractSearchCluster> systems = new LinkedList<>();
+    private ApplicationContainerCluster owningCluster;
+    private final List<AbstractSearchCluster> searchClusters = new LinkedList<>();
     private final Options options;
 
     private QueryProfiles queryProfiles;
@@ -42,12 +44,22 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     public ContainerSearch(ApplicationContainerCluster cluster, SearchChains chains, Options options) {
         super(chains);
+        this.owningCluster = cluster;
         this.options = options;
     }
 
     public void connectSearchClusters(Map<String, AbstractSearchCluster> searchClusters) {
-        systems.addAll(searchClusters.values());
+        this.searchClusters.addAll(searchClusters.values());
+        initializeDispatchers(searchClusters.values());
         initializeSearchChains(searchClusters);
+    }
+
+    /** Adds a Dispatcher component to the owning container cluster for each search cluster */
+    private void initializeDispatchers(Collection<AbstractSearchCluster> searchClusters) {
+        for (AbstractSearchCluster searchCluster : searchClusters) {
+            if ( ! ( searchCluster instanceof IndexedSearchCluster)) continue;
+            owningCluster.addComponent(new DispatcherComponent((IndexedSearchCluster)searchCluster));
+        }
     }
 
     // public for testing
@@ -56,12 +68,12 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
         QrsCache defaultCacheOptions = getOptions().cacheSettings.get("");
         if (defaultCacheOptions != null) {
-            for (LocalProvider localProvider: getChains().localProviders()) {
+            for (LocalProvider localProvider : getChains().localProviders()) {
                 localProvider.setCacheSize(defaultCacheOptions.size);
             }
         }
 
-        for (LocalProvider localProvider: getChains().localProviders()) {
+        for (LocalProvider localProvider : getChains().localProviders()) {
             QrsCache cacheOptions = getOptions().cacheSettings.get(localProvider.getClusterName());
             if (cacheOptions != null) {
                 localProvider.setCacheSize(cacheOptions.size);
@@ -83,39 +95,39 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     @Override
     public void getConfig(QueryProfilesConfig.Builder builder) {
-        if (queryProfiles!=null) {
+        if (queryProfiles != null) {
             queryProfiles.getConfig(builder);
         }
     }
 
     @Override
     public void getConfig(SemanticRulesConfig.Builder builder) {
-        if (semanticRules!=null) semanticRules.getConfig(builder);
+        if (semanticRules != null) semanticRules.getConfig(builder);
     }
 
     @Override
     public void getConfig(PageTemplatesConfig.Builder builder) {
-        if (pageTemplates!=null) pageTemplates.getConfig(builder);
+        if (pageTemplates != null) pageTemplates.getConfig(builder);
     }
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
-        for (AbstractSearchCluster sc : systems) {
+        for (AbstractSearchCluster sc : searchClusters) {
             sc.getConfig(builder);
         }
     }
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        for (AbstractSearchCluster sc : systems) {
+        for (AbstractSearchCluster sc : searchClusters) {
             sc.getConfig(builder);
         }
     }
 
     @Override
     public void getConfig(QrSearchersConfig.Builder builder) {
-        for (int i = 0; i < systems.size(); i++) {
-    	    AbstractSearchCluster sys = findClusterWithId(systems, i);
+        for (int i = 0; i < searchClusters.size(); i++) {
+    	    AbstractSearchCluster sys = findClusterWithId(searchClusters, i);
     		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
     				name(sys.getClusterName());
     		for (AbstractSearchCluster.SearchDefinitionSpec spec : sys.getLocalSDS()) {
@@ -133,9 +145,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     private static AbstractSearchCluster findClusterWithId(List<AbstractSearchCluster> clusters, int index) {
         for (AbstractSearchCluster sys : clusters) {
-            if (sys.getClusterIndex() == index) {
+            if (sys.getClusterIndex() == index)
                 return sys;
-            }
         }
         throw new IllegalArgumentException("No search cluster with index " + index + " exists");
     }
@@ -144,10 +155,11 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         return options;
     }
 
-    /**
-     * Struct that encapsulates qrserver options.
-     */
+    /** Encapsulates qrserver options. */
     public static class Options {
+
         Map<String, QrsCache> cacheSettings = new LinkedHashMap<>();
+
     }
+
 }

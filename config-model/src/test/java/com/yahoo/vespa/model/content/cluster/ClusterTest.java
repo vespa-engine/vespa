@@ -24,7 +24,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class ClusterTest {
 
-    static final double DELTA = 1E-12;
+    private static final double DELTA = 1E-12;
+
     @Test
     public void requireThatContentSearchIsApplied() {
         ContentCluster cluster = newContentCluster(joinLines("<search>",
