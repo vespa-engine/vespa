@@ -99,9 +99,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         RoutingProviderConfig.Producer,
-        ConfigserverConfig.Producer
-
-{
+        ConfigserverConfig.Producer {
 
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
@@ -268,6 +266,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      *
      * @return the removed component, or null if it was not present
      */
+    @SuppressWarnings("unused") // Used from other repositories
     public Component removeComponent(ComponentId componentId) {
         return componentGroup.removeComponent(componentId);
     }
@@ -298,7 +297,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void addContainer(CONTAINER container) {
         container.setClusterName(name);
         container.setProp("clustername", name)
-                .setProp("index", this.containers.size());
+                 .setProp("index", this.containers.size());
         containers.add(container);
     }
 
@@ -330,7 +329,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public SearchChains getSearchChains() {
         if (containerSearch == null)
             throw new IllegalStateException("Search components not found in container cluster '" + getSubId() +
-                                                    "': Add <search/> to the cluster in services.xml");
+                                            "': Add <search/> to the cluster in services.xml");
         return containerSearch.getChains();
     }
 

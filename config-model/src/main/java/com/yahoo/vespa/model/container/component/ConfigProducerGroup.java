@@ -55,9 +55,7 @@ public class ConfigProducerGroup<CHILD extends AbstractConfigProducer<?>> extend
         return Collections.unmodifiableCollection(result);
     }
 
-    /**
-     * @return A map of all components in this group, with (local) component ID as key.
-     */
+    /** Returns a map of all components in this group, with (local) component ID as key. */
     public Map<ComponentId, CHILD> getComponentMap() {
         return Collections.unmodifiableMap(producerById);
     }

@@ -6,6 +6,7 @@ import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
 /**
  * A search chain that is intended to be used for federation (i.e. providers, sources)
+ *
  * @author Tony Vaagenes
  */
 abstract public class GenericTarget extends SearchChain {

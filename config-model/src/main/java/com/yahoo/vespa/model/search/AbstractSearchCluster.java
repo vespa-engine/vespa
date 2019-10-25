@@ -29,13 +29,62 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
     protected int index;
     private Double visibilityDelay = 0.0;
     private List<String> documentNames = new ArrayList<>();
+    private List<SearchDefinitionSpec> localSDS = new LinkedList<>();
 
-    protected List<SearchDefinitionSpec> localSDS = new LinkedList<>();
+    public AbstractSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
+        super(parent, "cluster." + clusterName);
+        this.clusterName = clusterName;
+        this.index = index;
+    }
 
     public void prepareToDistributeFiles(List<SearchNode> backends) {
         for (SearchDefinitionSpec sds : localSDS)
             sds.getSearchDefinition().getSearch().rankingConstants().sendTo(backends);
     }
+
+    public void addDocumentNames(SearchDefinition searchDefinition) {
+        String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
+        documentNames.add(dName);
+    }
+
+    /** Returns a List with document names used in this search cluster */
+    public List<String> getDocumentNames() { return documentNames; }
+
+    public List<SearchDefinitionSpec> getLocalSDS() {
+        return localSDS;
+    }
+
+    public String getClusterName()              { return clusterName; }
+    public final String getIndexingModeName()   { return getIndexingMode().getName(); }
+    public final boolean isRealtime()           { return getIndexingMode() == IndexingMode.REALTIME; }
+    public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
+
+    public final AbstractSearchCluster setQueryTimeout(Double to) {
+        this.queryTimeout=to;
+        return this;
+    }
+
+    public final AbstractSearchCluster setVisibilityDelay(double delay) {
+        this.visibilityDelay=delay;
+        return this;
+    }
+
+    protected abstract IndexingMode getIndexingMode();
+    public final Double getVisibilityDelay() { return visibilityDelay; }
+    public final Double getQueryTimeout() { return queryTimeout; }
+    public abstract int getRowBits();
+    public final void setClusterIndex(int index) { this.index = index; }
+    public final int getClusterIndex() { return index; }
+    protected abstract void assureSdConsistent();
+
+    @Override
+    public abstract void getConfig(DocumentdbInfoConfig.Builder builder);
+    @Override
+    public abstract void getConfig(IndexInfoConfig.Builder builder);
+    @Override
+    public abstract void getConfig(IlscriptsConfig.Builder builder);
+    public abstract void getConfig(RankProfilesConfig.Builder builder);
+    public abstract void getConfig(AttributesConfig.Builder builder);
 
     public static final class IndexingMode {
 
@@ -74,52 +123,5 @@ public abstract class AbstractSearchCluster extends AbstractConfigProducer
             return userConfigRepo;
         }
     }
-
-    public AbstractSearchCluster(AbstractConfigProducer parent, String clusterName, int index) {
-        super(parent, "cluster." + clusterName);
-        this.clusterName = clusterName;
-        this.index = index;
-    }
-
-    public void addDocumentNames(SearchDefinition searchDefinition) {
-        String dName = searchDefinition.getSearch().getDocument().getDocumentName().getName();
-        documentNames.add(dName);
-    }
-
-    /** Returns a List with document names used in this search cluster */
-    public List<String> getDocumentNames() { return documentNames; }
-
-    public List<SearchDefinitionSpec> getLocalSDS() {
-        return localSDS;
-    }
-
-    public String getClusterName()              { return clusterName; }
-    public final String getIndexingModeName()   { return getIndexingMode().getName(); }
-    public final boolean isRealtime()           { return getIndexingMode() == IndexingMode.REALTIME; }
-    public final boolean isStreaming()          { return getIndexingMode() == IndexingMode.STREAMING; }
-    public final AbstractSearchCluster setQueryTimeout(Double to) {
-        this.queryTimeout=to;
-        return this;
-    }
-    public final AbstractSearchCluster setVisibilityDelay(double delay) {
-        this.visibilityDelay=delay;
-        return this;
-    }
-    protected abstract IndexingMode getIndexingMode();
-    public final Double getVisibilityDelay() { return visibilityDelay; }
-    public final Double getQueryTimeout() { return queryTimeout; }
-    public abstract int getRowBits();
-    public final void setClusterIndex(int index) { this.index = index; }
-    public final int getClusterIndex() { return index; }
-    protected abstract void assureSdConsistent();
-
-    @Override
-    public abstract void getConfig(DocumentdbInfoConfig.Builder builder);
-    @Override
-    public abstract void getConfig(IndexInfoConfig.Builder builder);
-    @Override
-    public abstract void getConfig(IlscriptsConfig.Builder builder);
-    public abstract void getConfig(RankProfilesConfig.Builder builder);
-    public abstract void getConfig(AttributesConfig.Builder builder);
 
 }

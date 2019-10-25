@@ -30,53 +30,9 @@ import java.util.List;
 public class IndexedSearchCluster extends SearchCluster
     implements
         DocumentdbInfoConfig.Producer,
-        // TODO consider removing, these only produced by UnionConfiguration and DocumentDatabase?
         IndexInfoConfig.Producer,
         IlscriptsConfig.Producer,
-        DispatchConfig.Producer
-{
-
-    /**
-     * Class used to retrieve combined configuration from multiple document databases.
-     * It is not a {@link com.yahoo.config.ConfigInstance.Producer} of those configs,
-     * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
-     * which is the parent to this. This avoids building the config multiple times.
-     */
-    public static class UnionConfiguration
-        extends AbstractConfigProducer
-        implements AttributesConfig.Producer {
-        private final List<DocumentDatabase> docDbs;
-
-        public void getConfig(IndexInfoConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(IlscriptsConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        @Override
-        public void getConfig(AttributesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        public void getConfig(RankProfilesConfig.Builder builder) {
-            for (DocumentDatabase docDb : docDbs) {
-                docDb.getConfig(builder);
-            }
-        }
-
-        private UnionConfiguration(AbstractConfigProducer parent, List<DocumentDatabase> docDbs) {
-            super(parent, "union");
-            this.docDbs = docDbs;
-        }
-    }
+        DispatchConfig.Producer {
 
     private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
     private String indexingChainName = null;
@@ -386,5 +342,47 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     public int getRowBits() { return 8; }
+
+    /**
+     * Class used to retrieve combined configuration from multiple document databases.
+     * It is not a {@link com.yahoo.config.ConfigInstance.Producer} of those configs,
+     * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
+     * which is the parent to this. This avoids building the config multiple times.
+     */
+    public static class UnionConfiguration
+            extends AbstractConfigProducer
+            implements AttributesConfig.Producer {
+        private final List<DocumentDatabase> docDbs;
+
+        public void getConfig(IndexInfoConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(IlscriptsConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        @Override
+        public void getConfig(AttributesConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        public void getConfig(RankProfilesConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        private UnionConfiguration(AbstractConfigProducer parent, List<DocumentDatabase> docDbs) {
+            super(parent, "union");
+            this.docDbs = docDbs;
+        }
+    }
 
 }

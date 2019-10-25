@@ -166,8 +166,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireProtonStreamingOnly()
-    {
+    public void requireProtonStreamingOnly() {
         VespaModel model = getStreamingVespaModel();
         // TODO
         // HostResource h = model.getHostSystem().getHosts().get(0);
@@ -185,8 +184,7 @@ public class IndexedTest extends ContentBaseTest {
     }
 
     @Test
-    public void requireCorrectClusterList()
-    {
+    public void requireCorrectClusterList() {
         VespaModel model = getStreamingVespaModel();
         ContentCluster s = model.getContentClusters().get("test");
         assertNotNull(s);

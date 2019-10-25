@@ -26,7 +26,6 @@ public class Chain<T extends ChainedComponent<?>> extends AbstractConfigProducer
     private final ComponentGroup<T> innerComponentsGroup;
     private static final Type.Enum TYPE = Type.SEARCH;
 
-
     public Chain(ChainSpecification specWithoutInnerComponents) {
         super(specWithoutInnerComponents.componentId.stringValue());
 

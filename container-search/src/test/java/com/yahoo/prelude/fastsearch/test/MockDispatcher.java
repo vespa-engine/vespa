@@ -12,6 +12,7 @@ import com.yahoo.vespa.config.search.DispatchConfig;
 import java.util.List;
 
 class MockDispatcher extends Dispatcher {
+
     public static MockDispatcher create(List<Node> nodes) {
         var rpcResourcePool = new RpcResourcePool(toDispatchConfig(nodes));
 
@@ -30,7 +31,7 @@ class MockDispatcher extends Dispatcher {
     }
 
     private MockDispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, RpcInvokerFactory invokerFactory) {
-        super(searchCluster, dispatchConfig, invokerFactory, invokerFactory, new MockMetric());
+        super(searchCluster, dispatchConfig, invokerFactory, new MockMetric());
     }
 
     private static DispatchConfig toDispatchConfig(List<Node> nodes) {
@@ -46,4 +47,5 @@ class MockDispatcher extends Dispatcher {
         }
         return new DispatchConfig(dispatchConfigBuilder);
     }
+
 }

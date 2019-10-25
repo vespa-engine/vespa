@@ -48,9 +48,8 @@ public class ContainerModel extends ConfigModel {
         List<AbstractSearchCluster> searchClusters = Content.getSearchClusters(configModelRepo);
 
         Map<String, AbstractSearchCluster> searchClustersByName = new TreeMap<>();
-        for (AbstractSearchCluster c : searchClusters) {
+        for (AbstractSearchCluster c : searchClusters)
             searchClustersByName.put(c.getClusterName(), c);
-        }
 
         getCluster().initialize(searchClustersByName);
     }

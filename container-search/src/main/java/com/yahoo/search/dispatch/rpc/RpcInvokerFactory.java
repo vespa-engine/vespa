@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
  * @author ollivir
  */
 public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
+
     /** Unless turned off this will fill summaries by dispatching directly to search nodes over RPC when possible */
     private final static CompoundName dispatchSummaries = new CompoundName("dispatch.summaries");
 

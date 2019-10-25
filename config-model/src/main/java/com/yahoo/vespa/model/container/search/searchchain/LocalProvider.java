@@ -7,14 +7,12 @@ import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.LocalProviderSpec;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
-import com.yahoo.vespa.model.search.IndexedSearchCluster;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -31,8 +29,7 @@ public class LocalProvider extends Provider implements
         ClusterConfig.Producer,
         AttributesConfig.Producer,
         QrMonitorConfig.Producer,
-        RankProfilesConfig.Producer,
-        DispatchConfig.Producer {
+        RankProfilesConfig.Producer {
 
     private final LocalProviderSpec providerSpec;
     private volatile AbstractSearchCluster searchCluster;
@@ -106,7 +103,6 @@ public class LocalProvider extends Provider implements
     }
 
     void setSearchCluster(AbstractSearchCluster searchCluster) {
-        assert (this.searchCluster == null);
         this.searchCluster = searchCluster;
     }
 
@@ -160,13 +156,4 @@ public class LocalProvider extends Provider implements
         return (visibilityDelay < 1.0d) ? 0.0d : visibilityDelay;
     }
 
-    @Override
-    public void getConfig(DispatchConfig.Builder builder) {
-        if (!(searchCluster instanceof IndexedSearchCluster)) {
-            log.warning("Could not build DispatchConfig: Only supported for IndexedSearchCluster, got "
-                        + searchCluster.getClass().getCanonicalName());
-            return;
-        }
-        ((IndexedSearchCluster) searchCluster).getConfig(builder);
-    }
 }

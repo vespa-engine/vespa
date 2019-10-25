@@ -46,8 +46,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         RankProfilesConfig.Producer,
         RankingConstantsConfig.Producer,
         ServletPathsConfig.Producer,
-        ContainerMbusConfig.Producer
-{
+        ContainerMbusConfig.Producer {
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 

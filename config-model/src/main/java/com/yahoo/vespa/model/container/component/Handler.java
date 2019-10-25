@@ -11,17 +11,13 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * <p>
  * Models a jdisc RequestHandler (including ClientProvider).
  * RequestHandlers always have at least one server binding,
  * while ClientProviders have at least one client binding.
- * </p>
  * <p>
  * Note that this is also used to model vespa handlers (which do not have any bindings)
- * </p>
  *
  * @author gjoranv
- * @since 5.1.6
  */
 public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<CHILD, ComponentModel> {
 

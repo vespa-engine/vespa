@@ -28,7 +28,6 @@ public class BundleMapper {
 
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
 
-
     public static final String searchAndDocprocBundle = "container-search-and-docproc";
 
     private static final Map<String, String> bundleFromClass;
@@ -110,7 +109,6 @@ public class BundleMapper {
         bundleFromClass.put("com.yahoo.search.pagetemplates.engine.Resolver", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.pagetemplates.engine.resolvers.DeterministicResolver", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.pagetemplates.engine.resolvers.RandomResolver", searchAndDocprocBundle);
-        bundleFromClass.put("com.yahoo.search.pagetemplates.model.Renderer", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.pagetemplates.model.Renderer", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.query.rewrite.QueryRewriteSearcher", searchAndDocprocBundle);
         bundleFromClass.put("com.yahoo.search.query.rewrite.SearchChainDispatcherSearcher", searchAndDocprocBundle);

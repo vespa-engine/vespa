@@ -3,6 +3,7 @@ package com.yahoo.prelude.cluster;
 
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
@@ -19,6 +20,7 @@ import com.yahoo.prelude.fastsearch.test.MockMetric;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.config.ClusterConfig;
+import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -492,8 +494,7 @@ public class ClusterSearcherTestCase {
     }
 
     private static ClusterSearcher createSearcher(String clusterName, Double maxQueryTimeout, Double maxQueryCacheTimeout,
-                                                  boolean streamingMode, VipStatus vipStatus)
-    {
+                                                  boolean streamingMode, VipStatus vipStatus) {
         QrSearchersConfig.Builder qrSearchersConfig = new QrSearchersConfig.Builder();
         QrSearchersConfig.Searchcluster.Builder searchClusterConfig = new QrSearchersConfig.Searchcluster.Builder();
         searchClusterConfig.name(clusterName);
@@ -512,13 +513,19 @@ public class ClusterSearcherTestCase {
         DocumentdbInfoConfig.Builder documentDbConfig = new DocumentdbInfoConfig.Builder();
         documentDbConfig.documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1"));
 
+        Dispatcher dispatcher = new Dispatcher(new ComponentId("test-id"),
+                                               new DispatchConfig.Builder().build(),
+                                               createClusterInfoConfig(),
+                                               vipStatus,
+                                               new MockMetric());
+        ComponentRegistry<Dispatcher> dispatchers = new ComponentRegistry<>();
+        dispatchers.register(new ComponentId("dispatcher." + clusterName), dispatcher);
+
         return new ClusterSearcher(new ComponentId("test-id"),
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
-                                   new DispatchConfig.Builder().build(),
-                                   createClusterInfoConfig(),
-                                   new MockMetric(),
+                                   dispatchers,
                                    new FS4ResourcePool(new QrConfig.Builder().build()),
                                    vipStatus);
     }
