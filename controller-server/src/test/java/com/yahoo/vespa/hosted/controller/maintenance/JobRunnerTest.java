@@ -3,13 +3,12 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -77,14 +76,14 @@ public class JobRunnerTest {
 
     @Test
     public void multiThreadedExecutionFinishes() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         JobController jobs = tester.controller().jobController();
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
         Phaser phaser = new Phaser(1);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          phasedExecutor(phaser), stepRunner);
 
-        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
@@ -110,13 +109,13 @@ public class JobRunnerTest {
 
     @Test
     public void stepLogic() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
-        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
         Supplier<Run> run = () -> jobs.last(id, systemTest).get();
@@ -198,14 +197,14 @@ public class JobRunnerTest {
 
     @Test
     public void locksAndGarbage() throws InterruptedException, BrokenBarrierException {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Hang during tester deployment, until notified.
         CyclicBarrier barrier = new CyclicBarrier(2);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          Executors.newFixedThreadPool(32), waitingRunner(barrier));
 
-        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
@@ -237,12 +236,12 @@ public class JobRunnerTest {
 
     @Test
     public void historyPruning() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         JobController jobs = tester.controller().jobController();
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), (id, step) -> Optional.of(running));
 
-        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
@@ -265,13 +264,13 @@ public class JobRunnerTest {
 
     @Test
     public void timeout() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), mappedRunner(outcomes));
 
-        TenantAndApplicationId appId = tester.createApplication("real", "tenant", 1, 1L).id();
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
         ApplicationId id = appId.defaultInstance();
         jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 2, applicationPackage, new byte[0]);
 
