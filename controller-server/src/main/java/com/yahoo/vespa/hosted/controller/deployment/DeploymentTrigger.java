@@ -112,9 +112,8 @@ public class DeploymentTrigger {
                 application = application.withChange(application.get().change().with(version))
                                          .withOutstandingChange(Change.empty());
                 if (application.get().internal())
-                    for (Run run : jobs.active())
-                        if (   ! run.id().type().environment().isManuallyDeployed()
-                            && TenantAndApplicationId.from(run.id().application()).equals(id))
+                    for (Run run : jobs.active(id))
+                        if ( ! run.id().type().environment().isManuallyDeployed())
                             jobs.abort(run.id());
             }
             else
