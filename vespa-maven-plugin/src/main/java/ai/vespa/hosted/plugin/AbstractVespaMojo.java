@@ -37,14 +37,14 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
     @Parameter(property = "instance")
     protected String instance;
 
-    @Parameter(property = "privateKey")
-    protected String privateKey;
+    @Parameter(property = "apiKey")
+    protected String apiKey;
 
-    @Parameter(property = "privateKeyFile")
-    protected String privateKeyFile;
+    @Parameter(property = "apiKeyFile")
+    protected String apiKeyFile;
 
-    @Parameter(property = "certificateFile")
-    protected String certificateFile;
+    @Parameter(property = "apiCertificateFile")
+    protected String apiCertificateFile;
 
     // Fields set up as part of setup().
     protected ApplicationId id;
@@ -73,12 +73,12 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
         instance = firstNonBlank(instance, project.getProperties().getProperty("instance", Properties.user()));
         id = ApplicationId.from(tenant, application, instance);
 
-        if (privateKey != null) {
-            controller = ControllerHttpClient.withSignatureKey(URI.create(endpoint), privateKey, id);
-        } else if (privateKeyFile != null) {
-            controller = certificateFile == null
-                    ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(privateKeyFile), id)
-                    : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(privateKeyFile), Paths.get(certificateFile));
+        if (apiKey != null) {
+            controller = ControllerHttpClient.withSignatureKey(URI.create(endpoint), apiKey, id);
+        } else if (apiKeyFile != null) {
+            controller = apiCertificateFile == null
+                    ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(apiKeyFile), id)
+                    : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(apiKeyFile), Paths.get(apiCertificateFile));
         } else {
             throw new IllegalArgumentException("One of the properties 'privateKey' or 'privateKeyFile' is required.");
         }
