@@ -61,8 +61,8 @@ public class Properties {
         return getNonBlankProperty("dataPlaneCertificateFile").map(Paths::get);
     }
 
-    /** Returns the path of the data plane private key file, if this is set with the 'dataPlanePrivateKeyFile' property. */
-    public static Optional<Path> dataPlanePrivateKeyFile() {
+    /** Returns the path of the data plane private key file, if this is set with the 'dataPlaneKeyFile' property. */
+    public static Optional<Path> dataPlaneKeyFile() {
         return getNonBlankProperty("dataPlaneKeyFile").map(Paths::get);
     }
 
