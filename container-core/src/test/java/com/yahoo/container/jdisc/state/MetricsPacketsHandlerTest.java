@@ -121,22 +121,7 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         assertEquals(3, packets.size());
     }
-
-    @Test
-    public void get_metrics_in_json_array() throws Exception {
-        metric.add("counter", 1, null);
-        incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
-        String response = requestAsString("http://localhost/metrics-packets?array-formatted");
-        List<JsonNode> responseJson = toJsonPackets(response);
-        assertEquals(1, responseJson.size());
-        JsonNode metricsNode = responseJson.get(0).get(METRICS_KEY);
-        assertEquals(2,  metricsNode.size());
-
-        JsonNode counterPacket = metricsNode.get(1);
-        assertCountMetric(counterPacket, "counter.count", 1);
-
-    }
-
+    
     private List<JsonNode> incrementTimeAndGetJsonPackets() throws Exception {
         incrementCurrentTimeAndAssertSnapshot(SNAPSHOT_INTERVAL);
         String response = requestAsString("http://localhost/metrics-packets");
