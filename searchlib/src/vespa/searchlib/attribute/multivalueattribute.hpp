@@ -3,6 +3,8 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/multivalueattribute.h>
+#include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace search {
 
@@ -27,9 +29,7 @@ MultiValueAttribute(const vespalib::string &baseFileName,
 }
 
 template <typename B, typename M>
-MultiValueAttribute<B, M>::~MultiValueAttribute()
-{
-}
+MultiValueAttribute<B, M>::~MultiValueAttribute() = default;
 
 template <typename B, typename M>
 int32_t MultiValueAttribute<B, M>::getWeight(DocId doc, uint32_t idx) const
@@ -38,99 +38,161 @@ int32_t MultiValueAttribute<B, M>::getWeight(DocId doc, uint32_t idx) const
     return ((idx < values.size()) ? values[idx].weight() : 1);
 }
 
+namespace {
+
+template <typename T>
+struct HashFn {
+    using type = vespalib::hash<T>;
+};
+
+template <>
+struct HashFn<search::datastore::EntryRef> {
+    struct EntryRefHasher {
+        size_t operator() (const search::datastore::EntryRef& v) const noexcept {
+            return v.ref();
+        }
+    };
+    using type = EntryRefHasher;
+};
+
+}
 
 template <typename B, typename M>
 void
 MultiValueAttribute<B, M>::applyAttributeChanges(DocumentValues & docValues)
 {
-    // compute new values for each document with changes
-    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
-        DocId doc = current->_doc;
-
-        MultiValueArrayRef oldValues(_mvMapping.get(doc));
-        ValueVector newValues(oldValues.cbegin(), oldValues.cend());
-
-        // find last clear doc
-        ChangeVectorIterator lastClearDoc = end;
-        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
-            if (iter->_type == ChangeBase::CLEARDOC) {
-                lastClearDoc = iter;
-            }
-        }
-
-        // use last clear doc if found
-        if (lastClearDoc != end) {
-            current = lastClearDoc;
-        }
-
-        // iterate through all changes for this document
-        for (; (current != end) && (current->_doc == doc); ++current) {
-
-            if (current->_type == ChangeBase::CLEARDOC) {
-                newValues.clear();
-                continue;
-            }
-
-            ValueType data;
-            bool hasData = extractChangeData(*current, data);
-
-            if (current->_type == ChangeBase::APPEND) {
-                if (hasData) {
-                    if (this->hasArrayType()) {
-                        newValues.push_back(MultiValueType(data, current->_weight));
-                    } else if (this->hasWeightedSetType()) {
-                        ValueVectorIterator witer;
-                        for (witer = newValues.begin(); witer != newValues.end(); ++witer) {
-                            if (witer->value() == data) {
-                                break;
-                            }
-                        }
-                        if (witer != newValues.end()) {
-                            witer->setWeight(current->_weight);
-                        } else {
-                            newValues.push_back(MultiValueType(data, current->_weight));
-                        }
-                    }
-                }
-            } else if (current->_type == ChangeBase::REMOVE) {
-                if (hasData) {
-                    for (ValueVectorIterator witer = newValues.begin(); witer != newValues.end(); ) {
-                        if (witer->value() == data) {
-                            witer = newValues.erase(witer);
-                        } else {
-                            ++witer;
-                        }
-                    }
-                }
-            } else if ((current->_type >= ChangeBase::INCREASEWEIGHT) && (current->_type <= ChangeBase::DIVWEIGHT)) {
-                if (this->hasWeightedSetType() && hasData) {
-                    ValueVectorIterator witer;
-                    for (witer = newValues.begin(); witer != newValues.end(); ++witer) {
-                        if (witer->value() == data) {
-                            break;
-                        }
-                    }
-                    if (witer != newValues.end()) {
-                        witer->setWeight(this->applyWeightChange(witer->weight(), *current));
-                        if (witer->weight() == 0 && this->getInternalCollectionType().removeIfZero()) {
-                            newValues.erase(witer);
-                        }
-                    } else if (this->getInternalCollectionType().createIfNonExistant()) {
-                        int32_t weight = this->applyWeightChange(0, *current);
-                        if (weight != 0 || !this->getInternalCollectionType().removeIfZero()) {
-                            newValues.push_back(MultiValueType(data, weight));
-                        }
-                    }
-                }
-            }
-        }
-        this->checkSetMaxValueCount(newValues.size());
-
-        docValues.push_back(std::make_pair(doc, ValueVector()));
-        docValues.back().second.swap(newValues);
+    if (this->hasArrayType()) {
+        apply_attribute_changes_to_array(docValues);
+        return;
+    } else if (this->hasWeightedSetType()) {
+        apply_attribute_changes_to_wset(docValues);
+        return;
     }
 }
 
+template <typename B, typename M>
+void
+MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docValues)
+{
+    // compute new values for each document with changes
+    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
+        DocId doc = current->_doc;
+        // find last clear doc
+        ChangeVectorIterator last_clear_doc = end;
+        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
+            if (iter->_type == ChangeBase::CLEARDOC) {
+                last_clear_doc = iter;
+            }
+        }
+        // use last clear doc if found
+        if (last_clear_doc != end) {
+            current = last_clear_doc;
+        }
+        MultiValueArrayRef old_values(_mvMapping.get(doc));
+        ValueVector new_values(old_values.cbegin(), old_values.cend());
+        vespalib::hash_map<ValueType, size_t, typename HashFn<ValueType>::type> tombstones;
+
+        // iterate through all changes for this document
+        for (; (current != end) && (current->_doc == doc); ++current) {
+            if (current->_type == ChangeBase::CLEARDOC) {
+                new_values.clear();
+                tombstones.clear();
+                continue;
+            }
+            ValueType data;
+            bool hasData = extractChangeData(*current, data);
+            if (!hasData) {
+                continue;
+            }
+            if (current->_type == ChangeBase::APPEND) {
+                new_values.emplace_back(data, current->_weight);
+            } else if (current->_type == ChangeBase::REMOVE) {
+                // Defer all removals to the very end by tracking when, during value vector build time,
+                // a removal was encountered for a particular value. All values < this index will be ignored.
+                tombstones[data] = new_values.size();
+            }
+        }
+        // Optimize for the case where nothing was explicitly removed.
+        if (!tombstones.empty()) {
+            ValueVector culled;
+            culled.reserve(new_values.size());
+            for (size_t i = 0; i < new_values.size(); ++i) {
+                auto iter = tombstones.find(new_values[i].value());
+                if (iter == tombstones.end() || (iter->second <= i)) {
+                    culled.emplace_back(new_values[i]);
+                }
+            }
+            culled.swap(new_values);
+        }
+        this->checkSetMaxValueCount(new_values.size());
+        docValues.emplace_back(doc, std::move(new_values));
+    }
+}
+
+template <typename B, typename M>
+void
+MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docValues)
+{
+    // compute new values for each document with changes
+    for (ChangeVectorIterator current(this->_changes.begin()), end(this->_changes.end()); (current != end); ) {
+        const DocId doc = current->_doc;
+        // find last clear doc
+        ChangeVectorIterator last_clear_doc = end;
+        size_t max_elems_inserted = 0;
+        for (ChangeVectorIterator iter = current; (iter != end) && (iter->_doc == doc); ++iter) {
+            if (iter->_type == ChangeBase::CLEARDOC) {
+                last_clear_doc = iter;
+            }
+            ++max_elems_inserted;
+        }
+        // use last clear doc if found
+        if (last_clear_doc != end) {
+            current = last_clear_doc;
+        }
+        MultiValueArrayRef old_values(_mvMapping.get(doc));
+        vespalib::hash_map<ValueType, int32_t, typename HashFn<ValueType>::type> wset_inserted;
+        wset_inserted.resize((old_values.size() + max_elems_inserted) * 2);
+        for (const auto& e : old_values) {
+            wset_inserted[e.value()] = e.weight();
+        }
+        // iterate through all changes for this document
+        for (; (current != end) && (current->_doc == doc); ++current) {
+            if (current->_type == ChangeBase::CLEARDOC) {
+                wset_inserted.clear();
+                continue;
+            }
+            ValueType data;
+            bool hasData = extractChangeData(*current, data);
+            if (!hasData) {
+                continue;
+            }
+            if (current->_type == ChangeBase::APPEND) {
+                wset_inserted[data] = current->_weight;
+            } else if (current->_type == ChangeBase::REMOVE) {
+                wset_inserted.erase(data);
+            } else if ((current->_type >= ChangeBase::INCREASEWEIGHT) && (current->_type <= ChangeBase::DIVWEIGHT)) {
+                auto existing = wset_inserted.find(data);
+                if (existing != wset_inserted.end()) {
+                    existing->second = this->applyWeightChange(existing->second, *current);
+                    if ((existing->second == 0) && this->getInternalCollectionType().removeIfZero()) {
+                        wset_inserted.erase(existing);
+                    }
+                } else if (this->getInternalCollectionType().createIfNonExistant()) {
+                    int32_t weight = this->applyWeightChange(0, *current);
+                    if (weight != 0 || !this->getInternalCollectionType().removeIfZero()) {
+                        wset_inserted.insert(std::make_pair(data, weight));
+                    }
+                }
+            }
+        }
+        std::vector<MultiValueType> new_values;
+        new_values.reserve(wset_inserted.size());
+        wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(e.first, e.second); });
+
+        this->checkSetMaxValueCount(new_values.size());
+        docValues.emplace_back(doc, std::move(new_values));
+    }
+}
 
 template <typename B, typename M>
 vespalib::AddressSpace
