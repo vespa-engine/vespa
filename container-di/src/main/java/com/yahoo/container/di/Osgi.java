@@ -13,6 +13,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.emptySet;
+
 /**
  * @author gjoranv
  * @author Tony Vaagenes
@@ -23,8 +25,13 @@ public interface Osgi {
         return new BundleClasses(new MockBundle(), Collections.emptySet());
     }
 
-    default void useBundles(Collection<FileReference> bundles) {
+    /**
+     * Returns the set of bundles that is not used by the current application generation,
+     * and therefore should be scheduled for uninstalling.
+     */
+    default Set<Bundle> useBundles(Collection<FileReference> bundles) {
         System.out.println("useBundles " + bundles.stream().map(Object::toString).collect(Collectors.joining(", ")));
+        return emptySet();
     }
 
     default Class<?> resolveClass(BundleInstantiationSpecification spec) {

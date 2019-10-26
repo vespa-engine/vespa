@@ -153,6 +153,7 @@ public class FelixFramework implements OsgiFramework {
         return Arrays.asList(felix.getBundleContext().getBundles());
     }
 
+    @Override
     public List<Bundle> getBundles(Bundle requestingBundle) {
         return Arrays.asList(requestingBundle.getBundleContext().getBundles());
     }
