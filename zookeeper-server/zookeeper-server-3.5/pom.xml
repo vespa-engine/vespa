@@ -4,24 +4,28 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zookeeper-server</artifactId>
     <version>7-SNAPSHOT</version>
-    <relativePath>../parent/pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-server</artifactId>
-  <packaging>pom</packaging>
+  <artifactId>zookeeper-server-3.5</artifactId>
+  <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
-  <modules>
-    <module>zookeeper-server-common</module>
-    <module>zookeeper-server-3.4</module>
-    <module>zookeeper-server-3.5</module>
-  </modules>
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-dev</artifactId>
+      <artifactId>zookeeper-server-common</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <version>3.5.6</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <build>
@@ -57,6 +61,7 @@
         <extensions>true</extensions>
         <configuration>
           <importPackage>com.sun.management</importPackage>
+          <bundleSymbolicName>zookeeper-server</bundleSymbolicName>
         </configuration>
       </plugin>
     </plugins>
