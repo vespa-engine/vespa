@@ -37,7 +37,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>zookeeper-server</artifactId>
+      <artifactId>zookeeper-server-common</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -80,6 +80,7 @@
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
+      <version>${zookeeper.client.version}</version>
     </dependency>
   </dependencies>
   <build>
