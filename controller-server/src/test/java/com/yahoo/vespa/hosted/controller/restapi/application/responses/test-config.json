@@ -1,16 +1,16 @@
 {
-  "application": "tenant1:application1:instance1",
+  "application": "tenant1:application1:my-user",
   "zone": "prod.us-central-1",
   "system": "main",
   "isCI": false,
   "endpoints": {
     "prod.us-central-1": [
-      "http://old-endpoint.vespa.yahooapis.com:4080"
+      "https://us-central-1.prod.default"
     ]
   },
   "zoneEndpoints": {
     "prod.us-central-1": {
-      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+      "default": "https://us-central-1.prod.default"
     }
   },
   "clusters": {

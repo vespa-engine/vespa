@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
@@ -45,6 +46,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -577,11 +580,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .oktaAccessToken(OKTA_AT),
                               new File("delete-with-active-deployments.json"), 400);
 
-        // GET test-config for local tests against a prod deployment
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/test-config", GET)
-                                      .userIdentity(USER_ID),
-                              new File("test-config.json"));
-
         // DELETE (deactivate) a deployment - dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-west-1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID),
@@ -598,7 +596,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID),
                               "{\"message\":\"Deactivated tenant1.application1.instance1 in prod.us-central-1\"}");
 
-        // GET test-config for local tests against a dev deployment
+        // Setup for test config tests
         tester.controller().applications().deploy(ApplicationId.from("tenant1", "application1", "default"),
                                                   ZoneId.from("prod", "us-central-1"),
                                                   Optional.of(applicationPackageDefault),
@@ -607,13 +605,23 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                   ZoneId.from("dev", "us-east-1"),
                                                   Optional.of(applicationPackageDefault),
                                                   new DeployOptions(false, Optional.empty(), false, false));
+        tester.serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(ApplicationId.from("tenant1", "application1", "default"), ZoneId.from("prod", "us-central-1")),
+                                                                     List.of(new RoutingEndpoint("https://us-central-1.prod.default", "host", false, "upstream")));
+        tester.serviceRegistry().routingGeneratorMock().putEndpoints(new DeploymentId(ApplicationId.from("tenant1", "application1", "my-user"), ZoneId.from("dev", "us-east-1")),
+                                                                     List.of(new RoutingEndpoint("https://us-east-1.dev.my-user", "host", false, "upstream")));
+        // GET test-config for local tests against a dev deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user/job/dev-us-east-1/test-config", GET)
                                       .userIdentity(USER_ID),
                               new File("test-config-dev.json"));
+        // GET test-config for local tests against a prod deployment
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user/job/production-us-central-1/test-config", GET)
+                                      .userIdentity(USER_ID),
+                              new File("test-config.json"));
         tester.controller().applications().deactivate(ApplicationId.from("tenant1", "application1", "default"),
                                                       ZoneId.from("prod", "us-central-1"));
         tester.controller().applications().deactivate(ApplicationId.from("tenant1", "application1", "my-user"),
                                                       ZoneId.from("dev", "us-east-1"));
+        // teardown for test config tests
 
         // POST an application package to start a deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploy/dev-us-east-1", POST)
