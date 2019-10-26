@@ -184,7 +184,7 @@ public class Container {
         }
     }
 
-    public void installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
+    private void installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
         BundlesConfig bundlesConfig = getConfig(bundlesConfigKey, configsIncludingBootstrapConfigs);
         osgi.useBundles(bundlesConfig.bundle());
     }
@@ -209,7 +209,7 @@ public class Container {
     private void addNodes(ComponentsConfig componentsConfig, ComponentGraph graph) {
 
         for (ComponentsConfig.Components config : componentsConfig.components()) {
-            BundleInstantiationSpecification specification = bundleInstatiationSpecification(config);
+            BundleInstantiationSpecification specification = bundleInstantiationSpecification(config);
             Class<?> componentClass = osgi.resolveClass(specification);
             Node componentNode;
 
@@ -234,7 +234,7 @@ public class Container {
         }
     }
 
-    public void shutdownConfigurer() {
+    void shutdownConfigurer() {
         configurer.shutdown();
     }
 
@@ -258,7 +258,7 @@ public class Container {
         return key.getConfigClass().cast(inst);
     }
 
-    public static BundleInstantiationSpecification bundleInstatiationSpecification(ComponentsConfig.Components config) {
+    private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
     }
 
