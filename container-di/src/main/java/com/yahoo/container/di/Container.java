@@ -69,7 +69,7 @@ public class Container {
         IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
         oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
         newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
-        oldComponents.keySet().forEach(componentDeconstructor::deconstruct);
+        componentDeconstructor.deconstruct(oldComponents.keySet());
     }
 
     public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
@@ -184,7 +184,7 @@ public class Container {
         }
     }
 
-    public void installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
+    private void installBundles(Map<ConfigKey<? extends ConfigInstance>, ConfigInstance> configsIncludingBootstrapConfigs) {
         BundlesConfig bundlesConfig = getConfig(bundlesConfigKey, configsIncludingBootstrapConfigs);
         osgi.useBundles(bundlesConfig.bundle());
     }
@@ -209,7 +209,7 @@ public class Container {
     private void addNodes(ComponentsConfig componentsConfig, ComponentGraph graph) {
 
         for (ComponentsConfig.Components config : componentsConfig.components()) {
-            BundleInstantiationSpecification specification = bundleInstatiationSpecification(config);
+            BundleInstantiationSpecification specification = bundleInstantiationSpecification(config);
             Class<?> componentClass = osgi.resolveClass(specification);
             Node componentNode;
 
@@ -234,7 +234,7 @@ public class Container {
         }
     }
 
-    public void shutdownConfigurer() {
+    void shutdownConfigurer() {
         configurer.shutdown();
     }
 
@@ -244,7 +244,7 @@ public class Container {
     }
 
     private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
-        graph.allConstructedComponentsAndProviders().forEach(deconstructor::deconstruct);
+        deconstructor.deconstruct(graph.allConstructedComponentsAndProviders());
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,
@@ -258,7 +258,7 @@ public class Container {
         return key.getConfigClass().cast(inst);
     }
 
-    public static BundleInstantiationSpecification bundleInstatiationSpecification(ComponentsConfig.Components config) {
+    private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
     }
 

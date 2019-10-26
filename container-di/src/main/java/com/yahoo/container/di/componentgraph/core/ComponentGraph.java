@@ -158,14 +158,14 @@ public class ComponentGraph {
         // reset instances with modified dependencies
         for (Node node : topologicalSort(nodes())) {
             for (Node usedComponent : node.usedComponents()) {
-                if (!usedComponent.instance.isPresent()) {
+                if (usedComponent.instance.isEmpty()) {
                     node.instance = Optional.empty();
                 }
             }
         }
     }
 
-    public Collection<?> allConstructedComponentsAndProviders() {
+    public Collection<Object> allConstructedComponentsAndProviders() {
         return nodes().stream().map(node -> node.constructedInstance().get()).collect(Collectors.toList());
     }
 
@@ -252,7 +252,7 @@ public class ComponentGraph {
 
     private Node lookupOrCreateGlobalComponent(Node node, Injector fallbackInjector, Class<?> clazz, Key<?> key) {
         Optional<Node> component = lookupGlobalComponent(key);
-        if (!component.isPresent()) {
+        if (component.isEmpty()) {
             Object instance;
             try {
                 log.log(LogLevel.DEBUG, "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
