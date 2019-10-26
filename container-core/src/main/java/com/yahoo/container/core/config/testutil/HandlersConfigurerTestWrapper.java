@@ -19,6 +19,7 @@ import com.yahoo.osgi.MockOsgi;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
@@ -102,15 +103,12 @@ public class HandlersConfigurerTestWrapper {
     }
 
     private ComponentDeconstructor getTestDeconstructor() {
-        return new ComponentDeconstructor() {
-            @Override
-            public void deconstruct(Object component) {
-                if (component instanceof AbstractComponent) {
-                    AbstractComponent abstractComponent = (AbstractComponent) component;
-                    if (abstractComponent.isDeconstructable())
-                        ((AbstractComponent) component).deconstruct();
+        return components -> components.forEach(component -> {
+            if (component instanceof AbstractComponent) {
+                AbstractComponent abstractComponent = (AbstractComponent) component;
+                if (abstractComponent.isDeconstructable()) abstractComponent.deconstruct();
             }
-        }};
+        });
     }
 
     public void reloadConfig() {

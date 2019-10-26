@@ -69,7 +69,7 @@ public class Container {
         IdentityHashMap<Object, Object> oldComponents = new IdentityHashMap<>();
         oldGraph.allConstructedComponentsAndProviders().forEach(c -> oldComponents.put(c, null));
         newGraph.allConstructedComponentsAndProviders().forEach(oldComponents::remove);
-        oldComponents.keySet().forEach(componentDeconstructor::deconstruct);
+        componentDeconstructor.deconstruct(oldComponents.keySet());
     }
 
     public ComponentGraph getNewComponentGraph(ComponentGraph oldGraph, Injector fallbackInjector, boolean restartOnRedeploy) {
@@ -244,7 +244,7 @@ public class Container {
     }
 
     private void deconstructAllComponents(ComponentGraph graph, ComponentDeconstructor deconstructor) {
-        graph.allConstructedComponentsAndProviders().forEach(deconstructor::deconstruct);
+        deconstructor.deconstruct(graph.allConstructedComponentsAndProviders());
     }
 
     public static <T extends ConfigInstance> T getConfig(ConfigKey<T> key,

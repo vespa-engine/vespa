@@ -165,7 +165,7 @@ public class ComponentGraph {
         }
     }
 
-    public Collection<?> allConstructedComponentsAndProviders() {
+    public Collection<Object> allConstructedComponentsAndProviders() {
         return nodes().stream().map(node -> node.constructedInstance().get()).collect(Collectors.toList());
     }
 

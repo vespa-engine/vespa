@@ -9,6 +9,7 @@ import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -36,21 +37,23 @@ public class Deconstructor implements ComponentDeconstructor {
 
 
     @Override
-    public void deconstruct(Object component) {
-        if (component instanceof AbstractComponent) {
-            AbstractComponent abstractComponent = (AbstractComponent) component;
-            if (abstractComponent.isDeconstructable()) {
-                executor.schedule(new DestructComponentTask(abstractComponent), delay.getSeconds(), TimeUnit.SECONDS);
+    public void deconstruct(Collection<Object> components) {
+        for (var component : components) {
+            if (component instanceof AbstractComponent) {
+                AbstractComponent abstractComponent = (AbstractComponent) component;
+                if (abstractComponent.isDeconstructable()) {
+                    executor.schedule(new DestructComponentTask(abstractComponent), delay.getSeconds(), TimeUnit.SECONDS);
+                }
+            } else if (component instanceof Provider) {
+                // TODO Providers should most likely be deconstructed similarily to AbstractComponent
+                log.info("Starting deconstruction of provider " + component);
+                ((Provider<?>) component).deconstruct();
+                log.info("Finished deconstruction of provider " + component);
+            } else if (component instanceof SharedResource) {
+                log.info("Releasing container reference to resource " + component);
+                // No need to delay release, as jdisc does ref-counting
+                ((SharedResource) component).release();
             }
-        } else if (component instanceof Provider) {
-            // TODO Providers should most likely be deconstructed similarily to AbstractComponent
-            log.info("Starting deconstruction of provider " + component);
-            ((Provider<?>)component).deconstruct();
-            log.info("Finished deconstruction of provider " + component);
-        } else if (component instanceof SharedResource) {
-            log.info("Releasing container reference to resource " + component);
-            // No need to delay release, as jdisc does ref-counting
-            ((SharedResource)component).release();
         }
     }
 

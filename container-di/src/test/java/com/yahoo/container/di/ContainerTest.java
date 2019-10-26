@@ -15,6 +15,7 @@ import com.yahoo.container.di.config.RestApiContext;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -282,17 +283,13 @@ public class ContainerTest extends ContainerTestBase {
     public void providers_are_destructed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
-        ComponentDeconstructor deconstructor = new ComponentDeconstructor() {
-            @Override
-            public void deconstruct(Object component) {
-                if (component instanceof AbstractComponent) {
-                    ((AbstractComponent) component).deconstruct();
-                    ;
-                } else if (component instanceof Provider) {
-                    ((Provider<?>) component).deconstruct();
-                }
+        ComponentDeconstructor deconstructor = components -> components.forEach(component -> {
+            if (component instanceof AbstractComponent) {
+                ((AbstractComponent) component).deconstruct();
+            } else if (component instanceof Provider) {
+                ((Provider<?>) component).deconstruct();
             }
-        };
+        });
 
         Container container = newContainer(dirConfigSource, deconstructor);
 
@@ -376,11 +373,13 @@ public class ContainerTest extends ContainerTestBase {
 
     public static class TestDeconstructor implements ComponentDeconstructor {
         @Override
-        public void deconstruct(Object component) {
-            if (component instanceof DestructableComponent) {
-                DestructableComponent vespaComponent = (DestructableComponent) component;
-                vespaComponent.deconstruct();
-            }
+        public void deconstruct(Collection<Object> components) {
+            components.forEach(component -> {
+                if (component instanceof DestructableComponent) {
+                    DestructableComponent vespaComponent = (DestructableComponent) component;
+                    vespaComponent.deconstruct();
+                }
+            });
         }
     }
 
