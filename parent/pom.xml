@@ -651,15 +651,6 @@
                 <version>1.7</version>
             </dependency>
             <dependency>
-            <!-- Explicitly force Zookeeper version,
-                     can be excluded if you want the Zookeeper version
-                     used by curator by default
-            -->
-                <groupId>org.apache.zookeeper</groupId>
-                <artifactId>zookeeper</artifactId>
-                <version>${zookeeper.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.assertj</groupId>
                 <artifactId>assertj-core</artifactId>
                 <version>3.11.1</version>
@@ -788,7 +779,7 @@
         <protobuf.version>3.7.0</protobuf.version>
         <surefire.version>2.22.0</surefire.version>
         <tensorflow.version>1.12.0</tensorflow.version>
-        <zookeeper.version>3.4.14</zookeeper.version>
+        <zookeeper.client.version>3.4.14</zookeeper.client.version>
 
         <doclint>all</doclint>
         <test.hide>true</test.hide>
