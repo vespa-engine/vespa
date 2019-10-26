@@ -5,18 +5,18 @@
   "isCI": false,
   "endpoints": {
     "dev.us-east-1": [
-      "http://old-endpoint.vespa.yahooapis.com:4080"
+      "https://us-east-1.dev.my-user"
     ],
     "prod.us-central-1": [
-      "http://old-endpoint.vespa.yahooapis.com:4080"
+      "https://us-central-1.prod.default"
     ]
   },
   "zoneEndpoints": {
     "dev.us-east-1": {
-      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+      "default": "https://us-east-1.dev.my-user"
     },
     "prod.us-central-1": {
-      "default": "http://old-endpoint.vespa.yahooapis.com:4080"
+      "default": "https://us-central-1.prod.default"
     }
   },
   "clusters": {

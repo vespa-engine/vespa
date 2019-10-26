@@ -222,7 +222,7 @@ public abstract class ControllerHttpClient {
     }
 
     private static String jobNameOf(ZoneId zone) {
-        return zone.environment().value() + "-" + zone.region().value();
+        return (zone.environment().isProduction() ? "production" : zone.environment().value()) + "-" + zone.region().value();
     }
 
     /** Returns a response with a 2XX status code, with up to 10 attempts, or throws. */

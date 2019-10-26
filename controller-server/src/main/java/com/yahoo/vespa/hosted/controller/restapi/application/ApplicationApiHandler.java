@@ -1581,6 +1581,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
+    /** Returns test config for indicated job, with production deployments of the default instance. */
     private HttpResponse testConfig(ApplicationId id, JobType type) {
         // TODO jonmv: Support non-default instances as well; requires API change in clients.
         ApplicationId defaultInstanceId = TenantAndApplicationId.from(id).defaultInstance();
@@ -1591,12 +1592,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                     .collect(Collectors.toSet());
         var testedZone = type.zone(controller.system());
 
-        // This should not happen, unless one asks for test-config for a production job, which one shouldn't have use for.
-        if (deployments.stream().anyMatch(deploymentId ->      deploymentId.zoneId().equals(testedZone)
-                                                          && ! deploymentId.applicationId().equals(id)))
-            throw new IllegalStateException("Conflict: " + testedZone + " contains both default and " + id.instance().value() + " instances");
+        // If a production job is specified, the production deployment of the _default instance_ is the relevant one,
+        // as user instances should not exist in prod. TODO jonmv: Remove this when multiple instances are supported (above).
+        if ( ! type.isProduction())
+            deployments.add(new DeploymentId(id, testedZone));
 
-        deployments.add(new DeploymentId(id, testedZone));
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
