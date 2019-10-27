@@ -9,6 +9,7 @@ import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.Executors;
@@ -35,17 +36,17 @@ public class Deconstructor implements ComponentDeconstructor {
         this.delay = delayDeconstruction ? Duration.ofSeconds(60) : Duration.ZERO;
     }
 
-
     @Override
     public void deconstruct(Collection<Object> components) {
+        Collection<AbstractComponent> destructibleComponents = new ArrayList<>();
         for (var component : components) {
             if (component instanceof AbstractComponent) {
                 AbstractComponent abstractComponent = (AbstractComponent) component;
                 if (abstractComponent.isDeconstructable()) {
-                    executor.schedule(new DestructComponentTask(abstractComponent), delay.getSeconds(), TimeUnit.SECONDS);
+                    destructibleComponents.add(abstractComponent);
                 }
             } else if (component instanceof Provider) {
-                // TODO Providers should most likely be deconstructed similarily to AbstractComponent
+                // TODO Providers should most likely be deconstructed similarly to AbstractComponent
                 log.info("Starting deconstruction of provider " + component);
                 ((Provider<?>) component).deconstruct();
                 log.info("Finished deconstruction of provider " + component);
@@ -55,15 +56,17 @@ public class Deconstructor implements ComponentDeconstructor {
                 ((SharedResource) component).release();
             }
         }
+        if (! destructibleComponents.isEmpty())
+            executor.schedule(new DestructComponentTask(destructibleComponents), delay.getSeconds(), TimeUnit.SECONDS);
     }
 
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
-        private final AbstractComponent component;
+        private final Collection<AbstractComponent> components;
 
-        DestructComponentTask(AbstractComponent component) {
-            this.component = component;
+        DestructComponentTask(Collection<AbstractComponent> components) {
+            this.components = components;
         }
 
         /**
@@ -77,29 +80,29 @@ public class Deconstructor implements ComponentDeconstructor {
 
         @Override
         public void run() {
-            log.info("Starting deconstruction of component " + component);
-            try {
-                component.deconstruct();
-                log.info("Finished deconstructing of component " + component);
-            }
-            catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
-                log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
-            }
-            catch (Error e) {
+            log.info("Starting deconstruction of " + components.size() + " components");
+            for (var component : components) {
+                log.info("Starting deconstruction of component " + component);
                 try {
-                    Duration shutdownDelay = getRandomizedShutdownDelay();
-                    log.log(LogLevel.FATAL, "Error when deconstructing component " + component + ". Will sleep for " +
-                                            shutdownDelay.getSeconds() + " seconds then restart", e);
-                    Thread.sleep(shutdownDelay.toMillis());
+                    component.deconstruct();
+                    log.info("Finished deconstructing of component " + component);
+                } catch (Exception | NoClassDefFoundError e) { // May get class not found due to it being already unloaded
+                    log.log(WARNING, "Exception thrown when deconstructing component " + component, e);
+                } catch (Error e) {
+                    try {
+                        Duration shutdownDelay = getRandomizedShutdownDelay();
+                        log.log(LogLevel.FATAL, "Error when deconstructing component " + component + ". Will sleep for " +
+                                shutdownDelay.getSeconds() + " seconds then restart", e);
+                        Thread.sleep(shutdownDelay.toMillis());
+                    } catch (InterruptedException exception) {
+                        log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
+                    }
+                    com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing component " + component);
+                } catch (Throwable e) {
+                    log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
                 }
-                catch (InterruptedException exception) {
-                    log.log(WARNING, "Randomized wait before dying disrupted. Dying now.");
-                }
-                com.yahoo.protect.Process.logAndDie("Shutting down due to error when deconstructing component " + component);
             }
-            catch (Throwable e) {
-                log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
-            }
+            log.info("Finished deconstructing " + components.size() + " components");
         }
     }
 
