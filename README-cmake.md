@@ -45,7 +45,7 @@ If it is not set, the library takes its name from the target name.
 
 ### DEPENDS [other-target-or-lib ...]
 The `DEPENDS` parameter takes a list of targets or external libraries to link to, with the following exception:
-* If `target-name` is an object library and `other-target-or-lib` is another target, instead add an dependency on `other-target-or-lib` (like `AFTER`).
+* If `target-name` is an object library and `other-target-or-lib` is another target, instead add a dependency on `other-target-or-lib` (like `AFTER`).
 This parameter is optional.
 
 ### AFTER [other-target ...]
