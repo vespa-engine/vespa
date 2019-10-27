@@ -35,7 +35,6 @@ public class QueryProfileCompiler {
             DimensionalMap.Builder<CompoundName, QueryProfileType> types = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, Object> references = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
-            System.out.println("Compiling " + in.toString());
 
             // Resolve values for each existing variant and combine into a single data structure
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
@@ -43,7 +42,6 @@ public class QueryProfileCompiler {
             log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
-                System.out.println("  Compiling variant " + variant);
                 for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet()) {
                     values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
                 }
