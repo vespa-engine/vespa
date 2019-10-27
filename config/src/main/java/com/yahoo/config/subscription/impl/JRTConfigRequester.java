@@ -48,7 +48,7 @@ public class JRTConfigRequester implements RequestWaiter {
     private final ConnectionPool connectionPool;
     static final float randomFraction = 0.2f;
     /* Time to be added to server timeout to create client timeout. This is the time allowed for the server to respond after serverTimeout has elapsed. */
-    private static final Double additionalTimeForClientTimeout = 5.0;
+    private static final Double additionalTimeForClientTimeout = 10.0;
 
     /**
      * Returns a new requester
