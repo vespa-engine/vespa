@@ -8,7 +8,9 @@ import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
+import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
@@ -67,6 +69,30 @@ public class QueryProfileVariantsTestCase {
         assertGet("a.1.*.5","a", new String[] {"x1","y?","z5"}, profile, cprofile);
         assertGet("a.1.5.*","a", new String[] {"x1","y5","z5"}, profile, cprofile); // Left dimension gets precedence
         assertGet("a.2.*.*","a", new String[] {"x2","y?","z?"}, profile, cprofile);
+    }
+
+    @Test
+    public void testVariantInReferencedAndParentWithOtherMatchingVariant() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile parent = new QueryProfile("parent");
+        parent.setDimensions(new String[] { "x", "y" } );
+        parent.set("other", "otherValue", new String[] { "x1", "y1" }, registry );
+        QueryProfile profile = new QueryProfile("test");
+        profile.addInherited(parent);
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.setDimensions(new String[] { "x", "y", "z" });
+        registry.register(parent);
+        registry.register(profile);
+        registry.register(referenced);
+        profile.set("feed.main", referenced, registry);
+        referenced.set("streams", "default_value", registry);
+        referenced.set("streams", "variant_value", new String[] { "x1", null, "z1" }, registry);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertEquals("default_value", new Query("?", cTest).properties().get("feed.main.streams"));
+        assertEquals("variant_value", new Query("?x=x1&y=y1&z=z1", cTest).properties().get("feed.main.streams"));
     }
 
     @Test

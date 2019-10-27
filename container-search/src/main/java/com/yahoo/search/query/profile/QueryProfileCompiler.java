@@ -7,12 +7,9 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.DimensionalMap;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +35,7 @@ public class QueryProfileCompiler {
             DimensionalMap.Builder<CompoundName, QueryProfileType> types = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, Object> references = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
+            System.out.println("Compiling " + in.toString());
 
             // Resolve values for each existing variant and combine into a single data structure
             Set<DimensionBindingForPath> variants = collectVariants(CompoundName.empty, in, DimensionBinding.nullBinding);
@@ -45,6 +43,7 @@ public class QueryProfileCompiler {
             log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
+                System.out.println("  Compiling variant " + variant);
                 for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet()) {
                     values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
                 }
@@ -85,12 +84,12 @@ public class QueryProfileCompiler {
             variants.addAll(combined(variants, parentVariants)); // parents and children may have different variant dimensions
         }
 
-        variants.addAll(leftExpanded(variants));
+        variants.addAll(wildcardExpanded(variants));
         return variants;
     }
 
     /**
-     * For variants which are underspecified on the left we must explicitly resolve each possible combination
+     * For variants which are underspecified we must explicitly resolve each possible combination
      * of actual left-side values.
      *
      * I.e if we have the variants [-,b=b1], [a=a1,-], [a=a2,-],
@@ -100,16 +99,16 @@ public class QueryProfileCompiler {
      * lead us to the compiled profile [a=a1,-], which may contain default values for properties where
      * we should have preferred variant values in [-,b=b1].
      */
-    private static Set<DimensionBindingForPath> leftExpanded(Set<DimensionBindingForPath> variants) {
+    private static Set<DimensionBindingForPath> wildcardExpanded(Set<DimensionBindingForPath> variants) {
         Set<DimensionBindingForPath> expanded = new HashSet<>();
         for (var variant : variants) {
-            if (hasLeftWildcard(variant.binding()))
-                expanded.addAll(leftExpanded(variant, variants));
+            if (hasWildcardBeforeEnd(variant.binding()))
+                expanded.addAll(wildcardExpanded(variant, variants));
         }
         return expanded;
     }
 
-    private static boolean hasLeftWildcard(DimensionBinding variant) {
+    private static boolean hasWildcardBeforeEnd(DimensionBinding variant) {
         for (int i = 0; i < variant.getValues().size() - 1; i++) { // -1 to not check the rightmost
             if (variant.getValues().get(i) == null)
                 return true;
@@ -117,15 +116,15 @@ public class QueryProfileCompiler {
         return false;
     }
 
-    private static Set<DimensionBindingForPath> leftExpanded(DimensionBindingForPath variantToExpand,
-                                                             Set<DimensionBindingForPath> variants) {
+    private static Set<DimensionBindingForPath> wildcardExpanded(DimensionBindingForPath variantToExpand,
+                                                                 Set<DimensionBindingForPath> variants) {
         Set<DimensionBindingForPath> expanded = new HashSet<>();
         for (var variant : variants) {
-            if ( ! variantToExpand.path().equals(variant.path())) continue;
-
-            DimensionBinding combined = variantToExpand.binding().combineWith(variant.binding);
-            if ( ! combined.isInvalid() )
+            if (variant.binding().isNull()) continue;
+            DimensionBinding combined = variantToExpand.binding().combineWith(variant.binding());
+            if ( ! combined.isInvalid() ) {
                 expanded.add(new DimensionBindingForPath(combined, variantToExpand.path()));
+            }
         }
         return expanded;
     }
@@ -136,10 +135,11 @@ public class QueryProfileCompiler {
                                                          Set<DimensionBindingForPath> v2s) {
         Set<DimensionBindingForPath> combinedVariants = new HashSet<>();
         for (DimensionBindingForPath v1 : v1s) {
+            if (v1.binding().isNull()) continue;
             for (DimensionBindingForPath v2 : v2s) {
-                if ( ! v1.path().equals(v2.path())) continue;
+                if (v1.binding().isNull()) continue;
 
-                DimensionBinding combined = v1.binding().combineWith(v2.binding);
+                DimensionBinding combined = v1.binding().combineWith(v2.binding());
                 if ( combined.isInvalid() ) continue;
 
                 combinedVariants.add(new DimensionBindingForPath(combined, v1.path()));
