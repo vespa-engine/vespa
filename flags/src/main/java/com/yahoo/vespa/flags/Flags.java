@@ -148,12 +148,6 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBooleanFlag MULTIPLE_GLOBAL_ENDPOINTS = defineFeatureFlag(
-            "multiple-global-endpoints", false,
-            "Allow applications to use new endpoints syntax in deployment.xml",
-            "Takes effect on deployment through controller",
-            APPLICATION_ID);
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             "Node resource memory in Gb for admin cluster nodes",
