@@ -116,20 +116,7 @@
       <binding>http://*/application/v2/tenant/*/application/</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.ApplicationHandler' bundle='configserver'>
-      <!-- WARNING: THIS LIST *MUST* MATCH THE ONE IN ApplicationHandler::getBindingMatch -->
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/converge</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*</binding>
       <binding>http://*/application/v2/tenant/*/application/*</binding>
-      <binding>http://*/application/v2/tenant/*/application/*/logs</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.v2.HttpGetConfigHandler' bundle='configserver'>
       <binding>http://*/config/v2/tenant/*/application/*/*</binding>

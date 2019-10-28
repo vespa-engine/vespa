@@ -13,6 +13,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.http.ContentHandler;
 import com.yahoo.vespa.config.server.http.ContentRequest;
@@ -22,7 +23,11 @@ import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Operations on applications (delete, wait for config convergence, restart, application content etc.)
@@ -30,6 +35,22 @@ import java.util.Optional;
  * @author hmusum
  */
 public class ApplicationHandler extends HttpHandler {
+
+    private static final List<UriPattern> URI_PATTERNS = Stream.of(
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
+            "http://*/application/v2/tenant/*/application/*/logs", // TODO: Remove once all clients switched to handler with instance name
+            "http://*/application/v2/tenant/*/application/*")
+            .map(UriPattern::new)
+            .collect(Collectors.toList());
 
     private final Zone zone;
     private final ApplicationRepository applicationRepository;
@@ -138,20 +159,15 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static BindingMatch<?> getBindingMatch(HttpRequest request) {
-        return HttpConfigRequests.getBindingMatch(request,
-                // WARNING: UPDATE src/main/resources/configserver-app/services.xml IF YOU MAKE ANY CHANGES TO THESE BINDINGS!
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/filedistributionstatus",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/restart",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/suspended",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/serviceconverge/*",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/clustercontroller/*/status/*",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
-                "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
-                "http://*/application/v2/tenant/*/application/*/logs", // TODO: Remove once all clients switched to handler with instance name
-                "http://*/application/v2/tenant/*/application/*");
+        return URI_PATTERNS.stream()
+                .map(pattern -> {
+                    UriPattern.Match match = pattern.match(request.getUri());
+                    if (match == null) return null;
+                    return new BindingMatch<>(match, new Object(), pattern);
+                })
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Illegal url for config request: " + request.getUri()));
     }
 
     private static boolean isIsSuspendedRequest(HttpRequest request) {
