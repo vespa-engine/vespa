@@ -25,12 +25,18 @@ abstract class PrefixQueryProfileVisitor extends QueryProfileVisitor {
     }
 
     @Override
-    public final void onQueryProfile(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
+    public final void onQueryProfile(QueryProfile profile,
+                                     DimensionBinding binding,
+                                     QueryProfile owner,
+                                     DimensionValues variant) {
         if (prefixComponentIndex < prefix.size()) return; // Not in the prefix yet
-        onQueryProfileInsidePrefix(profile, binding, owner);
+        onQueryProfileInsidePrefix(profile, binding, owner, variant);
     }
 
-    protected abstract void onQueryProfileInsidePrefix(QueryProfile profile, DimensionBinding binding, QueryProfile owner);
+    protected abstract void onQueryProfileInsidePrefix(QueryProfile profile,
+                                                       DimensionBinding binding,
+                                                       QueryProfile owner,
+                                                       DimensionValues variant);
 
     @Override
     public final boolean enter(String name) {

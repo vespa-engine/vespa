@@ -15,19 +15,19 @@ import java.util.List;
 final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
 
     /** The value found, or null if none */
-    private Object value=null;
+    private Object value = null;
 
     private final List<String> name;
 
-    private int nameIndex=-1;
+    private int nameIndex = -1;
 
     private final boolean allowQueryProfileResult;
 
-    private boolean enteringContent=true;
+    private boolean enteringContent = true;
 
-    public SingleValueQueryProfileVisitor(List<String> name,boolean allowQueryProfileResult) {
-        this.name=name;
-        this.allowQueryProfileResult=allowQueryProfileResult;
+    public SingleValueQueryProfileVisitor(List<String> name, boolean allowQueryProfileResult) {
+        this.name = name;
+        this.allowQueryProfileResult = allowQueryProfileResult;
     }
 
     @Override
@@ -37,12 +37,12 @@ final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
 
     @Override
     public boolean enter(String name) {
-        if (nameIndex+1<this.name.size()) {
+        if (nameIndex+1 < this.name.size()) {
             nameIndex++;
-            enteringContent=true;
+            enteringContent = true;
         }
         else {
-            enteringContent=false;
+            enteringContent = false;
         }
         return enteringContent;
     }
@@ -53,13 +53,19 @@ final class SingleValueQueryProfileVisitor extends QueryProfileVisitor {
     }
 
     @Override
-    public void onValue(String key,Object value, DimensionBinding binding, QueryProfile owner) {
-        if (nameIndex==name.size()-1)
-            this.value=value;
+    public void onValue(String key,Object value,
+                        DimensionBinding binding,
+                        QueryProfile owner,
+                        DimensionValues variant) {
+        if (nameIndex == name.size()-1)
+            this.value = value;
     }
 
     @Override
-    public void onQueryProfile(QueryProfile profile,DimensionBinding binding, QueryProfile owner) {
+    public void onQueryProfile(QueryProfile profile,
+                               DimensionBinding binding,
+                               QueryProfile owner,
+                               DimensionValues variant) {
         if (enteringContent) return; // still waiting for content
         if (allowQueryProfileResult)
             this.value = profile;

@@ -12,7 +12,6 @@ import com.yahoo.search.query.profile.types.QueryProfileType;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,7 +30,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     private final QueryProfileType type;
 
     /** The values of this */
-    private final DimensionalMap<CompoundName, Object> entries;
+    private final DimensionalMap<CompoundName, ValueWithSource> entries;
 
     /** Keys which have a type in this */
     private final DimensionalMap<CompoundName, QueryProfileType> types;
@@ -47,7 +46,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      */
     public CompiledQueryProfile(ComponentId id,
                                 QueryProfileType type,
-                                DimensionalMap<CompoundName, Object> entries,
+                                DimensionalMap<CompoundName, ValueWithSource> entries,
                                 DimensionalMap<CompoundName, QueryProfileType> types,
                                 DimensionalMap<CompoundName, Object> references,
                                 DimensionalMap<CompoundName, Object> unoverridables,
@@ -105,6 +104,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      */
     public final Map<String, Object> listValues(CompoundName prefix) {  return listValues(prefix, Collections.<String,String>emptyMap()); }
     public final Map<String, Object> listValues(String prefix) { return listValues(new CompoundName(prefix)); }
+
     /**
      * Return all objects that start with the given prefix path. Use "" to list all.
      * <p>
@@ -114,6 +114,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public final Map<String, Object> listValues(String prefix, Map<String, String> context) {
         return listValues(new CompoundName(prefix), context);
     }
+
     /**
      * Return all objects that start with the given prefix path. Use "" to list all.
      * <p>
@@ -123,6 +124,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public final Map<String, Object> listValues(CompoundName prefix, Map<String, String> context) {
         return listValues(prefix, context, null);
     }
+
     /**
      * Adds all objects that start with the given path prefix to the given value map. Use "" to list all.
      * <p>
@@ -131,16 +133,37 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      */
     public Map<String, Object> listValues(CompoundName prefix, Map<String, String> context, Properties substitution) {
         Map<String, Object> values = new HashMap<>();
-        for (Map.Entry<CompoundName, DimensionalValue<Object>> entry : entries.entrySet()) {
+        for (Map.Entry<CompoundName, DimensionalValue<ValueWithSource>> entry : entries.entrySet()) {
             if ( entry.getKey().size() <= prefix.size()) continue;
             if ( ! entry.getKey().hasPrefix(prefix)) continue;
 
-            Object value = entry.getValue().get(context);
+            ValueWithSource valueWithSource = entry.getValue().get(context);
+            if (valueWithSource == null) continue;
+
+            Object value = valueWithSource.value();
             if (value == null) continue;
 
             value = substitute(value, context, substitution);
             CompoundName suffixName = entry.getKey().rest(prefix.size());
             values.put(suffixName.toString(), value);
+        }
+        return values;
+    }
+
+    public Map<String, ValueWithSource> listValuesWithSources(CompoundName prefix,
+                                                              Map<String, String> context,
+                                                              Properties substitution) {
+        Map<String, ValueWithSource> values = new HashMap<>();
+        for (Map.Entry<CompoundName, DimensionalValue<ValueWithSource>> entry : entries.entrySet()) {
+            if ( entry.getKey().size() <= prefix.size()) continue;
+            if ( ! entry.getKey().hasPrefix(prefix)) continue;
+
+            ValueWithSource valueWithSource = entry.getValue().get(context);
+            if (valueWithSource == null) continue;
+
+            valueWithSource = valueWithSource.withValue(substitute(valueWithSource.value(), context, substitution));
+            CompoundName suffixName = entry.getKey().rest(prefix.size());
+            values.put(suffixName.toString(), valueWithSource);
         }
         return values;
     }
@@ -155,7 +178,9 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
         return get(new CompoundName(name), context, substitution);
     }
     public final Object get(CompoundName name, Map<String, String> context, Properties substitution) {
-        return substitute(entries.get(name, context), context, substitution);
+        ValueWithSource value = entries.get(name, context);
+        if (value == null) return null;
+        return substitute(value.value(), context, substitution);
     }
 
     private Object substitute(Object value, Map<String, String> context, Properties substitution) {

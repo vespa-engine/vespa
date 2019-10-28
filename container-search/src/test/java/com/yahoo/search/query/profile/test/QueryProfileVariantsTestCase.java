@@ -3,6 +3,7 @@ package com.yahoo.search.query.profile.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
@@ -11,6 +12,7 @@ import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
+import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
@@ -93,6 +95,32 @@ public class QueryProfileVariantsTestCase {
 
         assertEquals("default_value", new Query("?", cTest).properties().get("feed.main.streams"));
         assertEquals("variant_value", new Query("?x=x1&y=y1&z=z1", cTest).properties().get("feed.main.streams"));
+
+        {
+            Map<String, ValueWithSource> values = cRegistry.findQueryProfile("test")
+                                                           .listValuesWithSources(new CompoundName(""),
+                                                                                  new HashMap<>(),
+                                                                                  null);
+            assertEquals(1, values.size());
+            assertEquals("default_value", values.get("feed.main.streams").value());
+            assertEquals("referenced", values.get("feed.main.streams").source());
+            assertTrue(values.get("feed.main.streams").variant().isEmpty());
+        }
+
+        {
+            Map<String, ValueWithSource> values = cRegistry.findQueryProfile("test")
+                                                           .listValuesWithSources(new CompoundName(""),
+                                                                                  toMap("x=x1", "y=y1", "z=z1"),
+                                                                                  null);
+            assertEquals(2, values.size());
+            assertEquals("variant_value", values.get("feed.main.streams").value());
+            assertEquals("referenced", values.get("feed.main.streams").source());
+            assertEquals("[x1, *, z1]", values.get("feed.main.streams").variant().get().toString());
+
+            assertEquals("otherValue", values.get("other").value());
+            assertEquals("parent", values.get("other").source());
+            assertEquals("[x1, y1]", values.get("other").variant().get().toString());
+        }
     }
 
     @Test

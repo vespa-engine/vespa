@@ -22,11 +22,17 @@ final class AllTypesQueryProfileVisitor extends PrefixQueryProfileVisitor {
     }
 
     @Override
-    public void onValue(String name, Object value, DimensionBinding binding, QueryProfile owner) {}
+    public void onValue(String name, Object value,
+                        DimensionBinding binding,
+                        QueryProfile owner,
+                        DimensionValues variant) {}
 
 
     @Override
-    public void onQueryProfileInsidePrefix(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
+    public void onQueryProfileInsidePrefix(QueryProfile profile,
+                                           DimensionBinding binding,
+                                           QueryProfile owner,
+                                           DimensionValues variant) {
         if (profile.getType() != null)
             addReachableTypes(currentPrefix, profile.getType());
     }

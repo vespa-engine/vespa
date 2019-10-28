@@ -18,9 +18,6 @@ import static org.junit.Assert.assertEquals;
  */
 public class QueryProfileVariantsCloneTestCase {
 
-    /**
-     * Test for Ticket 4882480.
-     */
     @Test
     public void test_that_interior_and_leaf_values_on_a_path_are_preserved_when_cloning() {
         Map<String, String> dimensionBinding = createDimensionBinding("location", "norway");

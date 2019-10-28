@@ -362,7 +362,7 @@ public class JsonRendererTestCase {
                 + "                \"message\": \"No query profile is used\""
                 + "            },"
                 + "            {"
-                + "                \"message\": \"Resolved properties:\\ntracelevel=10 (value from request)\\nquery=a (value from request)\\n\""
+                + "                \"message\": \"Resolved properties:\\ntracelevel: 10 (from request)\\nquery: a (from request)\\n\""
                 + "            },"
                 + "            {"
                 + "                \"children\": ["
@@ -395,7 +395,7 @@ public class JsonRendererTestCase {
             Map<String, Object> subtrace = (Map<String, Object>) children1.get(2);
             List<Object> children2 = (List<Object>) subtrace.get("children");
             Map<String, Object> traceElement = (Map<String, Object>) children2.get(0);
-            traceElement.put("timestamp", Integer.valueOf(42));
+            traceElement.put("timestamp", 42);
         }
         assertEquals(exp, gen);
     }

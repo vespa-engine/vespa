@@ -93,7 +93,6 @@ public class QueryTestCase {
                 and.addItem(new WordItem(token.getTokenString(), "body"));
         }
         query.getModel().getQueryTree().setRoot(and);
-        System.out.println(query);
     }
 
     // TODO: YQL work in progress (jon)
@@ -380,8 +379,6 @@ public class QueryTestCase {
         Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),testProfile.compile(null));
         String trace = q.getContext(false).getTrace().toString();
         String[] traceLines = trace.split("\n");
-        for (String line : traceLines)
-            System.out.println(line);
     }
 
     @Test
@@ -515,12 +512,12 @@ public class QueryTestCase {
         Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),testProfile.compile(null));
         String trace = q.getContext(false).getTrace().toString();
         String[] traceLines = trace.split("\n");
-        assertTrue(contains("query=a:>5 (value from request)", traceLines));
-        assertTrue(contains("traceLevel=5 (value from request)", traceLines));
-        assertTrue(contains("a=b (value from request)", traceLines));
-        assertTrue(contains("sources=[a, b] (value from request)", traceLines));
-        assertTrue(contains("d=e (value from query profile)", traceLines));
-        assertTrue(contains("u=11 (value from query profile - unoverridable, ignoring request value)", traceLines));
+        assertTrue(contains("query: a:>5 (from request)", traceLines));
+        assertTrue(contains("traceLevel: 5 (from request)", traceLines));
+        assertTrue(contains("a: b (from request)", traceLines));
+        assertTrue(contains("sources: [a, b] (from request)", traceLines));
+        assertTrue(contains("d: e (from query profile 'test')", traceLines));
+        assertTrue(contains("u: 11 (from query profile - unoverridable, ignoring request value)", traceLines));
     }
 
     @Test
@@ -547,8 +544,8 @@ public class QueryTestCase {
         Query q = new Query(QueryTestCase.httpEncode("?query=dvd&a.b=foo&tracelevel=9"), defaultProfile.compile(null));
         String trace = q.getContext(false).getTrace().toString();
         String[] traceLines = trace.split("\n");
-        assertTrue(contains("query=dvd (value from request)", traceLines));
-        assertTrue(contains("a.b=foo (value from request)", traceLines));
+        assertTrue(contains("query: dvd (from request)", traceLines));
+        assertTrue(contains("a.b: foo (from request)", traceLines));
     }
 
     @Test
@@ -574,7 +571,7 @@ public class QueryTestCase {
             assertEquals("a.b-x1-value", propertyList.get("a.b"));
             String trace = q.getContext(false).getTrace().toString();
             String[] traceLines = trace.split("\n");
-            assertTrue(contains("a.b=a.b-x1-value (value from query profile)", traceLines));
+            assertTrue(contains("a.b: a.b-x1-value (from query profile 'default' variant [x1])", traceLines));
         }
 
         {
@@ -590,7 +587,7 @@ public class QueryTestCase {
             assertEquals("a.b-x2-value", propertyList.get("a.b"));
             String trace = q.getContext(false).getTrace().toString();
             String[] traceLines = trace.split("\n");
-            assertTrue(contains("a.b=a.b-x2-value (value from query profile)", traceLines));
+            assertTrue(contains("a.b: a.b-x2-value (from query profile 'default' variant [x2])", traceLines));
         }
     }
 

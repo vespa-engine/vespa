@@ -19,16 +19,25 @@ final class AllUnoverridableQueryProfileVisitor extends PrefixQueryProfileVisito
     }
 
     @Override
-    public void onValue(String name, Object value, DimensionBinding binding, QueryProfile owner) {
+    public void onValue(String name, Object value,
+                        DimensionBinding binding,
+                        QueryProfile owner,
+                        DimensionValues variant) {
         addUnoverridable(name, currentPrefix.append(name), binding, owner);
     }
 
     @Override
-    public void onQueryProfileInsidePrefix(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
+    public void onQueryProfileInsidePrefix(QueryProfile profile,
+                                           DimensionBinding binding,
+                                           QueryProfile owner,
+                                           DimensionValues variant) {
         addUnoverridable(currentPrefix.last(), currentPrefix, binding, owner);
     }
 
-    private void addUnoverridable(String localName, CompoundName fullName, DimensionBinding binding, QueryProfile owner) {
+    private void addUnoverridable(String localName,
+                                  CompoundName fullName,
+                                  DimensionBinding binding,
+                                  QueryProfile owner) {
         if (owner == null) return;
 
         Boolean isOverridable = owner.isLocalOverridable(localName, binding);

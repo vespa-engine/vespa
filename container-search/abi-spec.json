@@ -5526,6 +5526,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.search.query.profile.QueryProfile)",
+      "public java.lang.String getSource()",
       "public synchronized void freeze()",
       "protected java.lang.Object localLookup(java.lang.String, com.yahoo.search.query.profile.DimensionBinding)",
       "protected java.lang.Boolean isLocalInstanceOverridable(java.lang.String)",
@@ -5654,6 +5655,7 @@
     ],
     "methods": [
       "protected void <init>()",
+      "protected void <init>(java.lang.String)",
       "protected java.lang.Object checkAndConvertAssignment(java.lang.String, java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "protected com.yahoo.search.query.profile.QueryProfile createSubProfile(java.lang.String, com.yahoo.search.query.profile.DimensionBinding)",
       "public com.yahoo.search.query.profile.OverridableQueryProfile clone()",
@@ -5676,6 +5678,8 @@
     "methods": [
       "public void <init>(com.yahoo.component.ComponentId)",
       "public void <init>(java.lang.String)",
+      "public void <init>(com.yahoo.component.ComponentId, java.lang.String)",
+      "public java.lang.String getSource()",
       "public com.yahoo.search.query.profile.types.QueryProfileType getType()",
       "public void setType(com.yahoo.search.query.profile.types.QueryProfileType)",
       "public com.yahoo.search.query.profile.QueryProfileVariants getVariants()",
@@ -6007,6 +6011,7 @@
       "public final java.util.Map listValues(java.lang.String, java.util.Map)",
       "public final java.util.Map listValues(com.yahoo.processing.request.CompoundName, java.util.Map)",
       "public java.util.Map listValues(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
+      "public java.util.Map listValuesWithSources(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public final java.lang.Object get(java.lang.String)",
       "public final java.lang.Object get(java.lang.String, java.util.Map)",
       "public final java.lang.Object get(java.lang.String, java.util.Map, com.yahoo.processing.request.Properties)",
@@ -6086,6 +6091,22 @@
       "public void <init>(java.util.List)",
       "public java.lang.Object get(java.util.Map)",
       "public boolean isEmpty()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.query.profile.compiled.ValueWithSource": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.Object, java.lang.String, com.yahoo.search.query.profile.DimensionValues)",
+      "public java.lang.Object value()",
+      "public java.lang.String source()",
+      "public com.yahoo.search.query.profile.compiled.ValueWithSource withValue(java.lang.Object)",
+      "public java.util.Optional variant()",
       "public java.lang.String toString()"
     ],
     "fields": []

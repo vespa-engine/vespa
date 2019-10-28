@@ -14,18 +14,18 @@ import java.util.*;
 */
 public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVariant> {
 
-    private List<QueryProfile> inherited=null;
+    private List<QueryProfile> inherited = null;
 
     private DimensionValues dimensionValues;
 
-    private Map<String,Object> values;
+    private Map<String, Object> values;
 
-    private boolean frozen=false;
+    private boolean frozen = false;
 
     private QueryProfile owner;
 
     public QueryProfileVariant(DimensionValues dimensionValues, QueryProfile owner) {
-        this.dimensionValues=dimensionValues;
+        this.dimensionValues = dimensionValues;
         this.owner = owner;
     }
 
@@ -36,11 +36,11 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
      * if this is not frozen.
      */
     public Map<String,Object> values() {
-        if (values==null) {
+        if (values == null) {
             if (frozen)
                 return Collections.emptyMap();
             else
-                values=new HashMap<>();
+                values = new HashMap<>();
         }
         return values;
     }
@@ -50,18 +50,18 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
      * if this is not frozen.
      */
     public List<QueryProfile> inherited() {
-        if (inherited==null) {
+        if (inherited == null) {
             if (frozen)
                 return Collections.emptyList();
             else
-                inherited=new ArrayList<>();
+                inherited = new ArrayList<>();
         }
         return inherited;
     }
 
     public void set(String key, Object newValue) {
-        if (values==null)
-            values=new HashMap<>();
+        if (values == null)
+            values = new HashMap<>();
 
         Object oldValue = values.get(key);
 
@@ -76,8 +76,8 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
     }
 
     public void inherit(QueryProfile profile) {
-        if (inherited==null)
-            inherited=new ArrayList<>(1);
+        if (inherited == null)
+            inherited = new ArrayList<>(1);
         inherited.add(profile);
     }
 
@@ -98,20 +98,23 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
     }
 
     /** Accepts a visitor to the values of this */
-    public void accept(boolean allowContent,QueryProfileType type,QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {
+    public void accept(boolean allowContent,
+                       QueryProfileType type,
+                       QueryProfileVisitor visitor,
+                       DimensionBinding dimensionBinding) {
         // Visit this
         if (allowContent) {
-            String key=visitor.getLocalKey();
-            if (key!=null) {
-                if (type!=null)
+            String key = visitor.getLocalKey();
+            if (key != null) {
+                if (type != null)
                     type.unalias(key);
 
-                visitor.acceptValue(key, values().get(key), dimensionBinding, owner);
+                visitor.acceptValue(key, values().get(key), dimensionBinding, owner, dimensionValues);
                 if (visitor.isDone()) return;
             }
             else {
-                for (Map.Entry<String,Object> entry : values().entrySet()) {
-                    visitor.acceptValue(entry.getKey(), entry.getValue(), dimensionBinding, owner);
+                for (Map.Entry<String, Object> entry : values().entrySet()) {
+                    visitor.acceptValue(entry.getKey(), entry.getValue(), dimensionBinding, owner, dimensionValues);
                     if (visitor.isDone()) return;
                 }
             }
@@ -120,7 +123,7 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
         // Visit inherited
         for (QueryProfile profile : inherited()) {
             if (visitor.visitInherited()) {
-                profile.accept(allowContent,visitor,dimensionBinding.createFor(profile.getDimensions()), owner);
+                profile.accept(allowContent, visitor, dimensionBinding.createFor(profile.getDimensions()), owner);
             }
             if (visitor.isDone()) return;
         }
@@ -138,11 +141,11 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
     public QueryProfileVariant clone() {
         if (frozen) return this;
        try {
-           QueryProfileVariant clone=(QueryProfileVariant)super.clone();
-           if (this.inherited!=null)
-               clone.inherited=new ArrayList<>(this.inherited); // TODO: Deep clone is more correct, but probably does not matter in practice
+           QueryProfileVariant clone = (QueryProfileVariant)super.clone();
+           if (this.inherited != null)
+               clone.inherited = new ArrayList<>(this.inherited); // TODO: Deep clone is more correct, but probably does not matter in practice
 
-           clone.values=CopyOnWriteContent.deepClone(this.values);
+           clone.values = CopyOnWriteContent.deepClone(this.values);
 
            return clone;
        }

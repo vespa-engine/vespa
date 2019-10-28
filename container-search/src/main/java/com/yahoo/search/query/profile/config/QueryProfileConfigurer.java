@@ -74,7 +74,7 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
     }
 
     private static void createProfile(QueryProfilesConfig.Queryprofile config, QueryProfileRegistry registry) {
-        QueryProfile profile = new QueryProfile(config.id());
+        QueryProfile profile = new QueryProfile(new ComponentId(config.id()), config.id());
         try {
             String typeId = config.type();
             if (typeId != null && ! typeId.isEmpty())
