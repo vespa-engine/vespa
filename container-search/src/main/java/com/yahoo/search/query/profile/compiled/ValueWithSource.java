@@ -14,24 +14,24 @@ public class ValueWithSource {
 
     private final Object value;
 
-    /** The id of the query profile having a value */
-    private final String ownerId;
+    /** The source of the query profile having a value */
+    private final String ownerSource;
 
     /** The dimension values specifying a variant in that profile, or null if it is not in a variant */
     private final DimensionValues variant;
 
-    public ValueWithSource(Object value, String ownerId, DimensionValues variant) {
+    public ValueWithSource(Object value, String ownerSource, DimensionValues variant) {
         this.value = value;
-        this.ownerId = ownerId;
+        this.ownerSource = ownerSource;
         this.variant = variant;
     }
 
     public Object value() { return value; }
 
-    public String ownerId() { return ownerId; }
+    public String ownerSource() { return ownerSource; }
 
     public ValueWithSource withValue(Object value) {
-        return new ValueWithSource(value, ownerId, variant);
+        return new ValueWithSource(value, ownerSource, variant);
     }
 
     /** Returns the variant having this value, or empty if it's not in a variant */
@@ -40,7 +40,7 @@ public class ValueWithSource {
     @Override
     public String toString() {
         return value +
-               " (from query profile '" + ownerId + "'" +
+               " (from query profile '" + ownerSource + "'" +
                ( variant != null ? " variant " + variant : "") +
                ")";
     }
