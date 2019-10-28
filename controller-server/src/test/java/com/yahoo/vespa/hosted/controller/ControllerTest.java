@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -68,7 +69,7 @@ import static org.junit.Assert.fail;
  */
 public class ControllerTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private final InternalDeploymentTester tester = new InternalDeploymentTester();
 
     @Test
     public void testDeployment() {
@@ -80,7 +81,7 @@ public class ControllerTest {
                 .build();
 
         // staging job - succeeding
-        Version version1 = tester.defaultPlatformVersion();
+        Version version1 = tester.configServer().initialVersion();
         Application app1 = tester.createApplication("app1", "tenant1", 1, 11L);
         Instance instance = tester.defaultInstance(app1.id());
         tester.jobCompletion(component).application(app1).uploadArtifact(applicationPackage).submit();
@@ -886,7 +887,7 @@ public class ControllerTest {
 
     private void runDeployment(DeploymentTester tester, Instance app, ApplicationVersion version,
                                Optional<Version> upgrade, Optional<ApplicationPackage> applicationPackage) {
-        Version vespaVersion = upgrade.orElseGet(tester::defaultPlatformVersion);
+        Version vespaVersion = upgrade.orElseGet(() -> tester.configServer().initialVersion());
 
         // Deploy in test
         tester.deployAndNotify(app.id(), applicationPackage, true, systemTest);

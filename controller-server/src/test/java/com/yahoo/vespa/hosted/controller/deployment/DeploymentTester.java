@@ -183,10 +183,6 @@ public class DeploymentTester {
         while (deploymentTrigger().triggerReadyJobs() > 0);
     }
 
-    public Version defaultPlatformVersion() {
-        return configServer().initialVersion();
-    }
-
     public Application createApplication(String applicationName, String tenantName, long projectId, long propertyId) {
         return createApplication("default", applicationName, tenantName, projectId, propertyId);
     }
@@ -197,11 +193,6 @@ public class DeploymentTester {
     }
 
     public void restartController() { tester.createNewController(); }
-
-    public int hourOfDayAfter(Duration duration) {
-        tester.clock().advance(duration);
-        return tester.controller().clock().instant().atOffset(ZoneOffset.UTC).getHour();
-    }
 
     /** Notify the controller about a job completing */
     public BuildJob jobCompletion(JobType job) {

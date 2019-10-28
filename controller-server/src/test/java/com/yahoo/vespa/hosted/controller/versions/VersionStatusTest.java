@@ -14,7 +14,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -51,7 +53,7 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionIsControllerVersionIfConfigServersAreNewer() {
-        DeploymentTester tester = new DeploymentTester();
+        ControllerTester tester = new ControllerTester();
         Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
         tester.upgradeSystemApplications(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
@@ -60,11 +62,11 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionIsVersionOfOldestConfigServer() {
-        DeploymentTester tester = new DeploymentTester();
+        ControllerTester tester = new ControllerTester();
         Version version0 = Version.fromString("6.1");
         Version version1 = Version.fromString("6.5");
         // Upgrade some config servers
-        for (ZoneApi zone : tester.controllerTester().zoneRegistry().zones().all().zones()) {
+        for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
             for (Node node : tester.configServer().nodeRepository().list(zone.getId(), SystemApplication.configServer.id())) {
                 Node upgradedNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), version1, node.wantedVersion());
                 tester.configServer().nodeRepository().putByHostname(zone.getId(), upgradedNode);
@@ -101,7 +103,7 @@ public class VersionStatusTest {
 
     @Test
     public void testSystemVersionNeverShrinks() {
-        DeploymentTester tester = new DeploymentTester();
+        ControllerTester tester = new ControllerTester();
         Version version0 = Version.fromString("6.2");
         tester.upgradeSystem(version0);
         assertEquals(version0, tester.controller().systemVersion());
@@ -122,7 +124,7 @@ public class VersionStatusTest {
 
     @Test
     public void testVersionStatusAfterApplicationUpdates() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .environment(Environment.prod)
@@ -132,95 +134,141 @@ public class VersionStatusTest {
 
         Version version1 = new Version("6.2");
         Version version2 = new Version("6.3");
-        tester.upgradeSystem(version1);
+        tester.controllerTester().upgradeSystem(version1);
 
         // Setup applications
-        Application app1 = tester.createAndDeploy("app1", 11, applicationPackage);
-        Application app2 = tester.createAndDeploy("app2", 22, applicationPackage);
-        Application app3 = tester.createAndDeploy("app3", 33, applicationPackage);
+        var context1 = tester.newDeploymentContext("tenant1", "app1", "default").submit(applicationPackage).deploy();
+        var context2 = tester.newDeploymentContext("tenant1", "app2", "default").submit(applicationPackage).deploy();
+        var context3 = tester.newDeploymentContext("tenant1", "app3", "default").submit(applicationPackage).deploy();
 
         // version2 is released
-        tester.upgradeSystem(version2);
-        tester.triggerUntilQuiescence();
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
 
         // - app1 is in production on version1, but then fails in system test on version2
-        tester.completeUpgradeWithError(app1, version2, applicationPackage, systemTest);
+        context1.submit(applicationPackage)
+                .timeOutConvergence(systemTest);
         // - app2 is partially in production on version1 and partially on version2
-        tester.completeUpgradeWithError(app2, version2, applicationPackage, productionUsEast3);
+        context2.submit(applicationPackage)
+                .runJob(systemTest)
+                .runJob(stagingTest)
+                .runJob(productionUsWest1)
+                .failDeployment(productionUsEast3);
         // - app3 is in production on version1, but then fails in staging test on version2
-        tester.completeUpgradeWithError(app3, version2, applicationPackage, stagingTest);
+        context3.submit(applicationPackage)
+                .timeOutUpgrade(stagingTest);
 
-        tester.computeVersionStatus();
+        tester.controllerTester().computeVersionStatus();
         List<VespaVersion> versions = tester.controller().versionStatus().versions();
         assertEquals("The two versions above exist", 2, versions.size());
 
         VespaVersion v1 = versions.get(0);
         assertEquals(version1, v1.versionNumber());
         assertEquals("No applications are failing on version1.", ImmutableSet.of(), v1.statistics().failing());
-        assertEquals("All applications have at least one active production deployment on version 1.", ImmutableSet.of(app1.id().defaultInstance(), app2.id().defaultInstance(), app3.id().defaultInstance()), v1.statistics().production());
+        assertEquals("All applications have at least one active production deployment on version 1.", ImmutableSet.of(context1.instanceId(), context2.instanceId(), context3.instanceId()), v1.statistics().production());
         assertEquals("No applications have active deployment jobs on version1.", ImmutableSet.of(), v1.statistics().deploying());
 
         VespaVersion v2 = versions.get(1);
         assertEquals(version2, v2.versionNumber());
-        assertEquals("All applications have failed on version2 in at least one zone.", ImmutableSet.of(app1.id().defaultInstance(), app2.id().defaultInstance(), app3.id().defaultInstance()), v2.statistics().failing());
-        assertEquals("Only app2 has successfully deployed to production on version2.", ImmutableSet.of(app2.id().defaultInstance()), v2.statistics().production());
+        assertEquals("All applications have failed on version2 in at least one zone.", ImmutableSet.of(context1.instanceId(), context2.instanceId(), context3.instanceId()), v2.statistics().failing());
+        assertEquals("Only app2 has successfully deployed to production on version2.", ImmutableSet.of(context2.instanceId()), v2.statistics().production());
         // Should test the below, but can't easily be done with current test framework. This test passes in DeploymentApiTest.
         // assertEquals("All applications are being retried on version2.", ImmutableSet.of(app1.id(), app2.id(), app3.id()), v2.statistics().deploying());
     }
     
     @Test
     public void testVersionConfidence() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         Version version0 = new Version("6.2");
-        tester.upgradeSystem(version0);
+        tester.controllerTester().upgradeSystem(version0);
+        tester.upgrader().maintain();
+
+        var builder = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3");
 
         // Setup applications - all running on version0
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 2, "canary");
-        Application canary2 = tester.createAndDeploy("canary2", 3, "canary");
-        Application default0 = tester.createAndDeploy("default0", 4, "default");
-        Application default1 = tester.createAndDeploy("default1", 5, "default");
-        Application default2 = tester.createAndDeploy("default2", 6, "default");
-        Application default3 = tester.createAndDeploy("default3", 7, "default");
-        Application default4 = tester.createAndDeploy("default4", 8, "default");
-        Application default5 = tester.createAndDeploy("default5", 9, "default");
-        Application default6 = tester.createAndDeploy("default6", 10, "default");
-        Application default7 = tester.createAndDeploy("default7", 11, "default");
-        Application default8 = tester.createAndDeploy("default8", 12, "default");
-        Application default9 = tester.createAndDeploy("default9", 13, "default");
-        Application conservative0 = tester.createAndDeploy("conservative1", 14, "conservative");
+        builder.upgradePolicy("canary");
+        var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
+                            .submit(builder.build())
+                            .deploy();
+        var canary1 = tester.newDeploymentContext("tenant1", "canary1", "default")
+                            .submit(builder.build())
+                            .deploy();
+        var canary2 = tester.newDeploymentContext("tenant1", "canary2", "default")
+                            .submit(builder.build())
+                            .deploy();
+
+        builder.upgradePolicy("default");
+        var default0 = tester.newDeploymentContext("tenant1", "default0", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default1 = tester.newDeploymentContext("tenant1", "default1", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default2 = tester.newDeploymentContext("tenant1", "default2", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default3 = tester.newDeploymentContext("tenant1", "default3", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default4 = tester.newDeploymentContext("tenant1", "default4", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default5 = tester.newDeploymentContext("tenant1", "default5", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default6 = tester.newDeploymentContext("tenant1", "default6", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default7 = tester.newDeploymentContext("tenant1", "default7", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default8 = tester.newDeploymentContext("tenant1", "default8", "default")
+                             .submit(builder.build())
+                             .deploy();
+        var default9 = tester.newDeploymentContext("tenant1", "default9", "default")
+                            .submit(builder.build())
+                            .deploy();
+
+        builder.upgradePolicy("conservative");
+        var conservative0 = tester.newDeploymentContext("tenant1", "conservative0", "default")
+                .submit(builder.build())
+                .deploy();
 
         // Applications that do not affect confidence calculation:
 
         // Application without deployment
-        Application ignored0 = tester.createApplication("ignored0", "tenant1", 1000, 1000L);
+        var ignored0 = tester.newDeploymentContext("tenant1", "ignored0", "default");
 
         assertEquals("All applications running on this version: High",
                      Confidence.high, confidence(tester.controller(), version0));
 
         // New version is released
         Version version1 = new Version("6.3");
-        tester.upgradeSystem(version1);
-        tester.triggerUntilQuiescence();
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
 
         // Canaries upgrade to new versions and fail
-        tester.completeUpgrade(canary0, version1, "canary");
-        tester.completeUpgradeWithError(canary1, version1, "canary", productionUsWest1);
-        tester.computeVersionStatus();
+        canary0.deployPlatform(version1);
+        canary1.runJob(systemTest)
+               .runJob(stagingTest)
+               .failDeployment(productionUsWest1);
+        tester.controllerTester().computeVersionStatus();
         assertEquals("One canary failed: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
 
         // New version is released
         Version version2 = new Version("6.4");
-        tester.upgradeSystem(version2);
-        tester.triggerUntilQuiescence();
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
         assertEquals("Confidence defaults to low for version with no applications",
                      Confidence.low, confidence(tester.controller(), version2));
 
         // All canaries upgrade successfully
-        tester.completeUpgrade(canary0, version2, "canary");
-        tester.jobCompletion(productionUsWest1).application(canary1).unsuccessful().submit();
-        tester.completeUpgrade(canary1, version2, "canary");
+        canary0.deployPlatform(version2);
+        canary1.deployPlatform(version2);
 
         assertEquals("Confidence for remains unchanged for version1: Broken",
                      Confidence.broken, confidence(tester.controller(), version1));
@@ -228,26 +276,26 @@ public class VersionStatusTest {
                      Confidence.low, confidence(tester.controller(), version2));
 
         // Remaining canary upgrades to version2 which raises confidence to normal and more apps upgrade
-        tester.jobCompletion(systemTest).application(canary2).unsuccessful().submit();
-        tester.jobCompletion(stagingTest).application(canary2).submit();
-        tester.completeUpgrade(canary2, version2, "canary");
-        tester.computeVersionStatus();
+        canary2.failDeployment(systemTest);
+        canary2.runJob(stagingTest);
+        canary2.deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
-        tester.triggerUntilQuiescence();
+        tester.triggerJobs();
         assertEquals("Canaries have upgraded: Normal",
                      Confidence.normal, confidence(tester.controller(), version2));
-        tester.completeUpgrade(default0, version2, "default");
-        tester.completeUpgrade(default1, version2, "default");
-        tester.completeUpgrade(default2, version2, "default");
-        tester.completeUpgrade(default3, version2, "default");
-        tester.completeUpgrade(default4, version2, "default");
-        tester.completeUpgrade(default5, version2, "default");
-        tester.completeUpgrade(default6, version2, "default");
-        tester.completeUpgrade(default7, version2, "default");
-        tester.computeVersionStatus();
+        default0.deployPlatform(version2);
+        default1.deployPlatform(version2);
+        default2.deployPlatform(version2);
+        default3.deployPlatform(version2);
+        default4.deployPlatform(version2);
+        default5.deployPlatform(version2);
+        default6.deployPlatform(version2);
+        default7.deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
 
         // Remember confidence across restart
-        tester.restartController();
+        tester.controllerTester().createNewController();
 
         assertEquals("Confidence remains unchanged for version0: High",
                      Confidence.high, confidence(tester.controller(), version0));
@@ -258,9 +306,9 @@ public class VersionStatusTest {
                            .noneMatch(vespaVersion -> vespaVersion.versionNumber().equals(version1)));
 
         // Another default application upgrades, raising confidence to high
-        tester.completeUpgrade(default8, version2, "default");
-        tester.completeUpgrade(default9, version2, "default");
-        tester.computeVersionStatus();
+        default8.deployPlatform(version2);
+        default9.deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
 
         assertEquals("Confidence remains unchanged for version0: High",
                      Confidence.high, confidence(tester.controller(), version0));
@@ -270,18 +318,20 @@ public class VersionStatusTest {
         // A new version is released, all canaries upgrade successfully, but enough "default" apps fail to mark version
         // as broken
         Version version3 = new Version("6.5");
-        tester.upgradeSystem(version3);
-        tester.triggerUntilQuiescence();
-        tester.completeUpgrade(canary0, version3, "canary");
-        tester.completeUpgrade(canary1, version3, "canary");
-        tester.completeUpgrade(canary2, version3, "canary");
-        tester.upgradeSystem(version3);
-        tester.triggerUntilQuiescence();
-        tester.completeUpgradeWithError(default0, version3, "default", stagingTest);
-        tester.completeUpgradeWithError(default1, version3, "default", stagingTest);
-        tester.completeUpgradeWithError(default2, version3, "default", stagingTest);
-        tester.completeUpgradeWithError(default9, version3, "default", stagingTest);
-        tester.computeVersionStatus();
+        tester.controllerTester().upgradeSystem(version3);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
+        canary0.deployPlatform(version3);
+        canary1.deployPlatform(version3);
+        canary2.deployPlatform(version3);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        tester.triggerJobs();
+        default0.failDeployment(stagingTest);
+        default1.failDeployment(stagingTest);
+        default2.failDeployment(stagingTest);
+        default3.failDeployment(stagingTest);
+        tester.controllerTester().computeVersionStatus();
 
         assertEquals("Confidence remains unchanged for version0: High",
                      Confidence.high, confidence(tester.controller(), version0));
@@ -305,25 +355,28 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceOverride() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         Version version0 = new Version("6.2");
-        tester.upgradeSystem(version0);
+        tester.controllerTester().upgradeSystem(version0);
 
         // Create and deploy application on current version
-        Application app = tester.createAndDeploy("app", 1, "canary");
-        tester.computeVersionStatus();
+        var app = tester.newDeploymentContext("tenant1", "app1", "default")
+                        .submit(DeploymentContext.applicationPackage)
+                        .deploy();
+        tester.controllerTester().computeVersionStatus();
         assertEquals(Confidence.high, confidence(tester.controller(), version0));
 
         // Override confidence
         tester.upgrader().overrideConfidence(version0, Confidence.broken);
-        tester.computeVersionStatus();
+        tester.controllerTester().computeVersionStatus();
         assertEquals(Confidence.broken, confidence(tester.controller(), version0));
 
         // New version is released and application upgrades
         Version version1 = new Version("6.3");
-        tester.upgradeSystem(version1);
-        tester.completeUpgrade(app, version1, "canary");
-        tester.computeVersionStatus();
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        app.deployPlatform(version1);
+        tester.controllerTester().computeVersionStatus();
         assertEquals(Confidence.high, confidence(tester.controller(), version1));
 
         // Stale override was removed
@@ -333,25 +386,25 @@ public class VersionStatusTest {
 
     @Test
     public void testCommitDetailsPreservation() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         // Commit details are set for initial version
         var version0 = new Version("6.2");
         var commitSha0 = "badc0ffee";
         var commitDate0 = Instant.EPOCH;
-        tester.upgradeSystem(version0);
+        tester.controllerTester().upgradeSystem(version0);
         assertEquals(version0, tester.controller().versionStatus().systemVersion().get().versionNumber());
         assertEquals(commitSha0, tester.controller().versionStatus().systemVersion().get().releaseCommit());
         assertEquals(commitDate0, tester.controller().versionStatus().systemVersion().get().committedAt());
 
         // Deploy app on version0 to keep computing statistics for that version
-        tester.createAndDeploy("app", 1, "canary");
+        tester.deploymentContext().submit().deploy();
 
         // Commit details are updated for new version
         var version1 = new Version("6.3");
         var commitSha1 = "deadbeef";
         var commitDate1 = Instant.ofEpochMilli(123);
-        tester.upgradeController(version1, commitSha1, commitDate1);
-        tester.upgradeSystemApplications(version1);
+        tester.controllerTester().upgradeController(version1, commitSha1, commitDate1);
+        tester.controllerTester().upgradeSystemApplications(version1);
         assertEquals(version1, tester.controller().versionStatus().systemVersion().get().versionNumber());
         assertEquals(commitSha1, tester.controller().versionStatus().systemVersion().get().releaseCommit());
         assertEquals(commitDate1, tester.controller().versionStatus().systemVersion().get().committedAt());
@@ -363,70 +416,78 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceChangeRespectsTimeWindow() {
-        DeploymentTester tester = new DeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester();
         // Canaries and normal application deploys on initial version
-        assertEquals(5, tester.hourOfDayAfter(Duration.ZERO));
+        assertEquals(5, tester.controllerTester().hourOfDayAfter(Duration.ZERO));
         Version version0 = Version.fromString("7.1");
-        tester.upgradeSystem(version0);
-        Application canary0 = tester.createAndDeploy("canary0", 1, "canary");
-        Application canary1 = tester.createAndDeploy("canary1", 1, "canary");
-        Application default0 = tester.createAndDeploy("default0", 1, "default");
-        tester.computeVersionStatus();
+        tester.controllerTester().upgradeSystem(version0);
+        var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
+                            .submit(new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build())
+                            .deploy();
+        var canary1 = tester.newDeploymentContext("tenant1", "canary1", "default")
+                            .submit(new ApplicationPackageBuilder().upgradePolicy("canary").region("us-west-1").build())
+                            .deploy();
+        var default0 = tester.newDeploymentContext("tenant1", "default0", "default")
+                            .submit(new ApplicationPackageBuilder().upgradePolicy("default").region("us-west-1").build())
+                            .deploy();
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.high, tester.controller().versionStatus().version(version0).confidence());
 
         // System and canary0 is upgraded within allowed time window
         Version version1 = Version.fromString("7.2");
-        tester.upgradeSystem(version1);
-        tester.completeUpgrade(canary0, version1, "canary");
-        tester.computeVersionStatus();
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+        canary0.deployPlatform(version1);
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.low, tester.controller().versionStatus().version(version1).confidence());
 
         // canary1 breaks just outside allowed upgrade window
-        assertEquals(12, tester.hourOfDayAfter(Duration.ofHours(7)));
-        tester.completeUpgradeWithError(canary1, version1, "canary", systemTest);
-        tester.computeVersionStatus();
+        assertEquals(12, tester.controllerTester().hourOfDayAfter(Duration.ofHours(7)));
+        canary1.failDeployment(systemTest);
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.broken, tester.controller().versionStatus().version(version1).confidence());
 
         // Second canary is fixed later in the day. All canaries are now fixed, but confidence is not raised as we're
         // outside the allowed time window
-        assertEquals(20, tester.hourOfDayAfter(Duration.ofHours(8)));
-        tester.completeUpgrade(canary1, version1, "canary");
-        tester.computeVersionStatus();
+        assertEquals(20, tester.controllerTester().hourOfDayAfter(Duration.ofHours(8)));
+        canary1.deployPlatform(version1);
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.broken, tester.controller().versionStatus().version(version1).confidence());
 
         // Early morning arrives, confidence is raised and normal application upgrades
-        assertEquals(5, tester.hourOfDayAfter(Duration.ofHours(9)));
-        tester.computeVersionStatus();
+        assertEquals(5, tester.controllerTester().hourOfDayAfter(Duration.ofHours(9)));
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.normal, tester.controller().versionStatus().version(version1).confidence());
         tester.upgrader().maintain();
-        tester.triggerUntilQuiescence();
-        tester.completeUpgrade(default0, version1, "default");
+        tester.triggerJobs();
+        default0.deployPlatform(version1);
 
         // Another version is released. System and canaries upgrades late, confidence stays low
         Version version2 = Version.fromString("7.3");
-        tester.upgradeSystem(version2);
-        assertEquals(14, tester.hourOfDayAfter(Duration.ofHours(9)));
-        tester.completeUpgrade(canary0, version2, "canary");
-        tester.completeUpgrade(canary1, version2, "canary");
-        tester.computeVersionStatus();
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+        assertEquals(14, tester.controllerTester().hourOfDayAfter(Duration.ofHours(9)));
+        canary0.deployPlatform(version2);
+        canary1.deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.low, tester.controller().versionStatus().version(version2).confidence());
 
         // Confidence override takes precedence over time window constraints
         tester.upgrader().overrideConfidence(version2, Confidence.normal);
-        tester.computeVersionStatus();
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.normal, tester.controller().versionStatus().version(version2).confidence());
         tester.upgrader().overrideConfidence(version2, Confidence.low);
-        tester.computeVersionStatus();
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.low, tester.controller().versionStatus().version(version2).confidence());
         tester.upgrader().removeConfidenceOverride(version2);
 
         // Next morning arrives, confidence is raised and normal application upgrades
-        assertEquals(7, tester.hourOfDayAfter(Duration.ofHours(17)));
-        tester.computeVersionStatus();
+        assertEquals(7, tester.controllerTester().hourOfDayAfter(Duration.ofHours(17)));
+        tester.controllerTester().computeVersionStatus();
         assertSame(Confidence.normal, tester.controller().versionStatus().version(version2).confidence());
         tester.upgrader().maintain();
-        tester.triggerUntilQuiescence();
-        tester.completeUpgrade(default0, version2, "default");
+        tester.triggerJobs();
+        default0.deployPlatform(version2);
     }
 
     private static void writeControllerVersion(HostName hostname, Version version, CuratorDb db) {
