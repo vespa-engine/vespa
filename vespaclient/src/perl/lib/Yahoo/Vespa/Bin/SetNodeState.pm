@@ -22,6 +22,7 @@ our $wanted_state_description;
 our $nodes_attempted_set;
 our $success;
 our $no_wait;
+our $safe_mode;
 
 return 1;
 
@@ -63,6 +64,12 @@ EOS
     setOptionHeader("Options related to operation visibility:");
     setFlagOption(['n', 'no-wait'], \$no_wait, "Do not wait for node state "
                 . "changes to be visible in the cluster before returning.");
+    setFlagOption(['a', 'safe'], \$safe_mode, "Only carries out state changes "
+                . "if deemed safe by the cluster controller. For maintenance mode, "
+                . "will also set the distributor with the same distribution key "
+                . "to down atomically as part of the same state change. For up "
+                . "mode, transition is only allowed if the content node reports "
+                . "itself as up. Only supported for type storage.");
 
     Yahoo::Vespa::ContentNodeSelection::registerCommandLineArguments();
     Yahoo::Vespa::VespaModel::registerCommandLineArguments();
@@ -115,6 +122,6 @@ sub setNodeStateForNode {
     my ($cluster, $type, $index) = (
             $$info{'cluster'}, $$info{'type'}, $$info{'index'});
     $success &&= setNodeUserState($cluster, $type, $index, $wanted_state,
-                                  $wanted_state_description, $no_wait);
+                                  $wanted_state_description, $no_wait, $safe_mode);
     ++$nodes_attempted_set;
 }
