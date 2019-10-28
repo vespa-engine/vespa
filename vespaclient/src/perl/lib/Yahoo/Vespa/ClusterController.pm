@@ -80,8 +80,8 @@ sub detectClusterController { # ()
         enableAutomaticLineBreaks($oldVal);
     }
 }
-sub setNodeUserState { # (ClusterName, NodeType, Index, State, Reason, NoWait)
-    my ($cluster, $service, $index, $state, $reason, $no_wait) = @_;
+sub setNodeUserState { # (ClusterName, NodeType, Index, State, Reason, NoWait, SafeMode)
+    my ($cluster, $service, $index, $state, $reason, $no_wait, $safe_mode) = @_;
     my @params = ();
     my @headers = (
         'Content-Type' => 'application/json'
@@ -102,6 +102,9 @@ sub setNodeUserState { # (ClusterName, NodeType, Index, State, Reason, NoWait)
     };
     if ($no_wait) {
         $request->{'response-wait'} = 'no-wait';
+    }
+    if ($safe_mode) {
+        $request->{'condition'} = 'safe';
     }
     my $content = Json::encode($request);
 
