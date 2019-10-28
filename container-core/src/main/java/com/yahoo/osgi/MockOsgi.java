@@ -40,12 +40,4 @@ public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
         return Collections.emptyList();
     }
 
-    @Override
-    public void uninstall(Bundle bundle) {
-    }
-
-    @Override
-    public void refreshPackages() {
-    }
-
 }

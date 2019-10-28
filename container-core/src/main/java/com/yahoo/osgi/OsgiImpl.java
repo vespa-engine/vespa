@@ -159,20 +159,6 @@ public class OsgiImpl implements Osgi {
         jdiscOsgi.allowDuplicateBundles(bundles);
     }
 
-    @Override
-    public void uninstall(Bundle bundle) {
-        try {
-            bundle.uninstall();
-        } catch (BundleException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void refreshPackages() {
-        jdiscOsgi.refreshPackages();
-    }
-
     private static Bundle firstNonFrameworkBundle(List<Bundle> bundles) {
         for (Bundle b : bundles) {
             if (! (b instanceof Framework))

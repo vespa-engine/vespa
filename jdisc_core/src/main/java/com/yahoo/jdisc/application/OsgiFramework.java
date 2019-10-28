@@ -60,6 +60,8 @@ public interface OsgiFramework {
     /**
      * Synchronously refresh all bundles currently loaded. Once this method returns, the
      * class loaders of all bundles will reflect on the current set of loaded bundles.
+     *
+     * NOTE: This method is no longer used by the Jdisc container framework, but kept for completeness.
      */
     void refreshPackages();
 

@@ -25,10 +25,4 @@ public interface Osgi {
 
     void allowDuplicateBundles(Collection<Bundle> bundles);
 
-    // TODO: remove
-    void uninstall(Bundle bundle);
-
-    // TODO: remove
-    void refreshPackages();
-
 }

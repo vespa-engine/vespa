@@ -117,6 +117,9 @@ public class FelixFramework implements OsgiFramework {
         return sb.toString();
     }
 
+    /**
+     * NOTE: This method is no longer used by the Jdisc container framework, but kept for completeness.
+     */
     @Override
     public void refreshPackages() {
         FrameworkWiring wiring = felix.adapt(FrameworkWiring.class);
