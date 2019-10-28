@@ -34,7 +34,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
@@ -56,7 +56,7 @@ public class JobControllerApiHandlerHelperTest {
         // Revision 1 gets deployed everywhere.
         ApplicationVersion revision1 = tester.newSubmission();
         tester.deployNewSubmission(revision1);
-        assertEquals(1, tester.application().projectId().getAsLong());
+        assertEquals(1000, tester.application().projectId().getAsLong());
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.

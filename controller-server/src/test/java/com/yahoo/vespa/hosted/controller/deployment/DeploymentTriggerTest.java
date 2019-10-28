@@ -161,7 +161,7 @@ public class DeploymentTriggerTest {
     public void abortsInternalJobsOnNewApplicationChange() {
         Instance instance = iTester.instance();
         Application application = iTester.application();
-        ApplicationPackage applicationPackage = InternalDeploymentTester.applicationPackage;
+        ApplicationPackage applicationPackage = DeploymentContext.applicationPackage;
 
         tester.jobCompletion(component).application(application).uploadArtifact(applicationPackage).submit();
         tester.deployAndNotify(instance.id(), Optional.empty(), true, systemTest);

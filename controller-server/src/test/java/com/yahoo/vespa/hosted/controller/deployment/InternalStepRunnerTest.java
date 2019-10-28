@@ -52,8 +52,8 @@ import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.in
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.applicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.publicCdApplicationPackage;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -93,7 +93,7 @@ public class InternalStepRunnerTest {
     @Test
     public void canSwitchFromScrewdriverAndBackAgain() {
         // Deploys a default application package with default build number.
-        tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage);
+        tester.tester().deployCompletely(tester.application(), DeploymentContext.applicationPackage);
         tester.setEndpoints(instanceId, JobType.productionUsCentral1.zone(system()));
         tester.setEndpoints(instanceId, JobType.productionUsWest1.zone(system()));
         tester.setEndpoints(instanceId, JobType.productionUsEast3.zone(system()));
@@ -111,11 +111,11 @@ public class InternalStepRunnerTest {
 
         tester.jobs().unregister(appId);
         try {
-            tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 1);
+            tester.tester().deployCompletely(tester.application(), DeploymentContext.applicationPackage, BuildJob.defaultBuildNumber + 1);
             throw new IllegalStateException("Component job should get even again with build numbers to produce a change.");
         }
         catch (AssertionError expected) { }
-        tester.tester().deployCompletely(tester.application(), InternalDeploymentTester.applicationPackage, BuildJob.defaultBuildNumber + 2);
+        tester.tester().deployCompletely(tester.application(), DeploymentContext.applicationPackage, BuildJob.defaultBuildNumber + 2);
     }
 
     @Test

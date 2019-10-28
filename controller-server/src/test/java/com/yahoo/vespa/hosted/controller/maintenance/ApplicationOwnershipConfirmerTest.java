@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
@@ -56,7 +56,7 @@ public class ApplicationOwnershipConfirmerTest {
         tester.createApplication(user.name().value(), "application", "default");
         TenantAndApplicationId userAppId = TenantAndApplicationId.from("by-user", "application");
         Supplier<Application> userApp = () -> tester.controller().applications().requireApplication(userAppId);
-        tester.deployNewSubmission(userAppId, tester.newSubmission(userAppId, InternalDeploymentTester.applicationPackage));
+        tester.deployNewSubmission(userAppId, tester.newSubmission(userAppId, DeploymentContext.applicationPackage));
 
         assertFalse("No issue is initially stored for a new application.", propertyApp.get().ownershipIssueId().isPresent());
         assertFalse("No issue is initially stored for a new application.", userApp.get().ownershipIssueId().isPresent());

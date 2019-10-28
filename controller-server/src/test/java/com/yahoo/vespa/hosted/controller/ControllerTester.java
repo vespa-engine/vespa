@@ -49,6 +49,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
@@ -73,6 +75,9 @@ public final class ControllerTester {
     private final ServiceRegistryMock serviceRegistry;
     private final CuratorDb curator;
     private final RotationsConfig rotationsConfig;
+    private final AtomicLong nextPropertyId = new AtomicLong(1000);
+    private final AtomicInteger nextProjectId = new AtomicInteger(1000);
+    private final AtomicInteger nextDomainId = new AtomicInteger(1000);
 
     private Controller controller;
 
@@ -262,6 +267,11 @@ public final class ControllerTester {
         return name;
     }
 
+    public TenantName createTenant(String tenantName) {
+        return createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(),
+                            nextPropertyId.getAndIncrement());
+    }
+
     public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
         return createTenant(tenantName, domainName, propertyId, Optional.empty());
     }
@@ -270,6 +280,10 @@ public final class ControllerTester {
         return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                 domain,
                                                                 new OktaAccessToken("okta-token")));
+    }
+
+    public Application createApplication(TenantName tenant, String applicationName, String instanceName) {
+        return createApplication(tenant, applicationName, instanceName, nextProjectId.getAndIncrement());
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {

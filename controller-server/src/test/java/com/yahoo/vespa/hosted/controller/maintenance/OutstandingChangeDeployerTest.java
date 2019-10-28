@@ -5,14 +5,11 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -20,7 +17,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -52,8 +48,7 @@ public class OutstandingChangeDeployerTest {
         assertFalse(tester.application(app1.id()).outstandingChange().hasTargets());
 
         assertEquals(1, tester.application(app1.id()).latestVersion().get().buildNumber().getAsLong());
-        tester.newSubmission(app1.id(), applicationPackage, new SourceRevision("repository1","master", "cafed00d"),
-                             "author@domain", app1.projectId().getAsLong());
+        tester.newSubmission(app1.id(), applicationPackage, new SourceRevision("repository1", "master", "cafed00d"));
 
         ApplicationId instanceId = app1.id().defaultInstance();
         assertTrue(tester.application(app1.id()).outstandingChange().hasTargets());
