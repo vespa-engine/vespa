@@ -39,7 +39,10 @@ public class ValueWithSource {
 
     @Override
     public String toString() {
-        return value + " from " + ownerId + ( variant != null ? " variant " + variant : "");
+        return value +
+               " (from query profile '" + ownerId + "'" +
+               ( variant != null ? " variant " + variant : "") +
+               ")";
     }
 
 }

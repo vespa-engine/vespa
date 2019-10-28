@@ -22,15 +22,15 @@ public class OverridableQueryProfile extends QueryProfile {
 
     @Override
     protected Object checkAndConvertAssignment(String localName, Object inputValue, QueryProfileRegistry registry) {
-        Object value=super.checkAndConvertAssignment(localName, inputValue, registry);
-        if (value!=null && value.getClass() == QueryProfile.class) { // We are assigning a query profile - make it overridable
+        Object value = super.checkAndConvertAssignment(localName, inputValue, registry);
+        if (value != null && value.getClass() == QueryProfile.class) { // We are assigning a query profile - make it overridable
             return new BackedOverridableQueryProfile((QueryProfile)value);
         }
         return value;
     }
 
     @Override
-    protected QueryProfile createSubProfile(String name,DimensionBinding binding) {
+    protected QueryProfile createSubProfile(String name, DimensionBinding binding) {
         return new OverridableQueryProfile(); // Nothing is set in this branch, so nothing to override, but need override checking
     }
 
@@ -38,7 +38,7 @@ public class OverridableQueryProfile extends QueryProfile {
     @Override
     public OverridableQueryProfile clone() {
         if (isFrozen()) return this;
-        OverridableQueryProfile clone=(OverridableQueryProfile)super.clone();
+        OverridableQueryProfile clone = (OverridableQueryProfile)super.clone();
         clone.initId(ComponentId.createAnonymousComponentId(simpleClassName));
         return clone;
     }

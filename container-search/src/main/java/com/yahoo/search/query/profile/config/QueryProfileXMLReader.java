@@ -135,7 +135,7 @@ public class QueryProfileXMLReader {
             ComponentId id = new ComponentId(idString);
             validateFileNameToId(reader.getName(), id, "query profile");
 
-            QueryProfile queryProfile = new QueryProfile(id);
+            QueryProfile queryProfile = new QueryProfile(id, reader.getName());
             String typeId = root.getAttribute("type");
             if (typeId != null && ! typeId.equals("")) {
                 QueryProfileType type = registry.getType(typeId);

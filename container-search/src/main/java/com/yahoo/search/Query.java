@@ -482,14 +482,14 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 resolvedValue = requestProperty.getValue();
 
             b.append(requestProperty.getKey());
-            b.append("=");
+            b.append(": ");
             b.append(resolvedValue); // (may be null)
             b.append(" (");
 
             if (profile != null && ! profile.isOverridable(new CompoundName(requestProperty.getKey()), requestProperties()))
-                b.append("value from query profile - unoverridable, ignoring request value");
+                b.append("from query profile - unoverridable, ignoring request value");
             else
-                b.append("value from request");
+                b.append("from request");
             b.append(")\n");
             mentioned.add(requestProperty.getKey());
         }
@@ -504,9 +504,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
 
     private void appendQueryProfileProperties(CompiledQueryProfile profile, Set<String> mentioned, StringBuilder b) {
-        for (Map.Entry<String,Object> property : profile.listValues(CompoundName.empty, requestProperties(), properties()).entrySet()) {
+        for (var property : profile.listValuesWithSources(CompoundName.empty, requestProperties(), properties()).entrySet()) {
             if ( ! mentioned.contains(property.getKey()))
-                b.append(property.getKey()).append("=").append(property.getValue()).append(" (value from query profile)\n");
+                b.append(property.getKey()).append(": ").append(property.getValue()).append("\n");
         }
     }
 

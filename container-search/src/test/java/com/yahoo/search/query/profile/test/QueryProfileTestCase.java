@@ -601,7 +601,7 @@ public class QueryProfileTestCase {
 
         Query query = new Query("?foo=value&tracelevel=4", cProfile);
         assertEquals("value", query.properties().get("property"));
-        assertTrue(traceContains("foo=value", query));
+        assertTrue(traceContains("foo: value", query));
     }
 
     // NB: NOT RECURSIVE

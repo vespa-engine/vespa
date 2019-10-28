@@ -44,21 +44,23 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
 
     @Override
     protected Object localLookup(String localName, DimensionBinding dimensionBinding) {
-        Object valueInThis=super.localLookup(localName,dimensionBinding);
-        if (valueInThis!=null) return valueInThis;
-        return backingProfile.localLookup(localName,dimensionBinding);
+        Object valueInThis = super.localLookup(localName, dimensionBinding);
+        if (valueInThis != null) return valueInThis;
+        return backingProfile.localLookup(localName, dimensionBinding);
     }
 
     protected Boolean isLocalInstanceOverridable(String localName) {
-        Boolean valueInThis=super.isLocalInstanceOverridable(localName);
-        if (valueInThis!=null) return valueInThis;
+        Boolean valueInThis = super.isLocalInstanceOverridable(localName);
+        if (valueInThis != null) return valueInThis;
         return backingProfile.isLocalInstanceOverridable(localName);
     }
 
     @Override
-    protected QueryProfile createSubProfile(String name,DimensionBinding dimensionBinding) {
-        Object backing=backingProfile.lookup(new CompoundName(name),true,dimensionBinding.createFor(backingProfile.getDimensions()));
-        if (backing!=null && backing instanceof QueryProfile)
+    protected QueryProfile createSubProfile(String name, DimensionBinding dimensionBinding) {
+        Object backing = backingProfile.lookup(new CompoundName(name),
+                                               true,
+                                               dimensionBinding.createFor(backingProfile.getDimensions()));
+        if (backing instanceof QueryProfile)
             return new BackedOverridableQueryProfile((QueryProfile)backing);
         else
             return new OverridableQueryProfile(); // Nothing is set in this branch, so nothing to override, but need override checking
@@ -67,8 +69,7 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
     /** Returns a clone of this which can be independently overridden, but which refers to the same backing profile */
     @Override
     public BackedOverridableQueryProfile clone() {
-        BackedOverridableQueryProfile clone=(BackedOverridableQueryProfile)super.clone();
-        return clone;
+        return (BackedOverridableQueryProfile)super.clone();
     }
 
     /** Returns the query profile backing this */

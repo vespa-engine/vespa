@@ -104,6 +104,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
      */
     public final Map<String, Object> listValues(CompoundName prefix) {  return listValues(prefix, Collections.<String,String>emptyMap()); }
     public final Map<String, Object> listValues(String prefix) { return listValues(new CompoundName(prefix)); }
+
     /**
      * Return all objects that start with the given prefix path. Use "" to list all.
      * <p>
@@ -113,6 +114,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public final Map<String, Object> listValues(String prefix, Map<String, String> context) {
         return listValues(new CompoundName(prefix), context);
     }
+
     /**
      * Return all objects that start with the given prefix path. Use "" to list all.
      * <p>
@@ -122,6 +124,7 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
     public final Map<String, Object> listValues(CompoundName prefix, Map<String, String> context) {
         return listValues(prefix, context, null);
     }
+
     /**
      * Adds all objects that start with the given path prefix to the given value map. Use "" to list all.
      * <p>
@@ -143,6 +146,24 @@ public class CompiledQueryProfile extends AbstractComponent implements Cloneable
             value = substitute(value, context, substitution);
             CompoundName suffixName = entry.getKey().rest(prefix.size());
             values.put(suffixName.toString(), value);
+        }
+        return values;
+    }
+
+    public Map<String, ValueWithSource> listValuesWithSources(CompoundName prefix,
+                                                              Map<String, String> context,
+                                                              Properties substitution) {
+        Map<String, ValueWithSource> values = new HashMap<>();
+        for (Map.Entry<CompoundName, DimensionalValue<ValueWithSource>> entry : entries.entrySet()) {
+            if ( entry.getKey().size() <= prefix.size()) continue;
+            if ( ! entry.getKey().hasPrefix(prefix)) continue;
+
+            ValueWithSource valueWithSource = entry.getValue().get(context);
+            if (valueWithSource == null) continue;
+
+            valueWithSource = valueWithSource.withValue(substitute(valueWithSource.value(), context, substitution));
+            CompoundName suffixName = entry.getKey().rest(prefix.size());
+            values.put(suffixName.toString(), valueWithSource);
         }
         return values;
     }
