@@ -233,7 +233,7 @@ public class DeploymentContext {
 
     /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
     public DeploymentContext completeRollout() {
-        readyJobsTrigger.run();
+        triggerJobs();
         Set<JobType> jobs = new HashSet<>();
         List<Run> activeRuns;
         while ( ! (activeRuns = this.jobs.active(applicationId)).isEmpty())
