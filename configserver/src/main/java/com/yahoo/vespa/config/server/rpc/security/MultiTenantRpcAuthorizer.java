@@ -39,38 +39,31 @@ import java.util.logging.Logger;
  */
 public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
-    public enum Mode { LOG_ONLY, ENFORCE }
-
     private static final Logger log = Logger.getLogger(MultiTenantRpcAuthorizer.class.getName());
 
     private final NodeIdentifier nodeIdentifier;
     private final HostRegistry<TenantName> hostRegistry;
     private final RequestHandlerProvider handlerProvider;
     private final Executor executor;
-    private final Mode mode;
 
     public MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
                                     HostRegistries hostRegistries,
                                     RequestHandlerProvider handlerProvider,
-                                    Mode mode,
                                     int threadPoolSize) {
         this(nodeIdentifier,
              hostRegistries.getTenantHostRegistry(),
              handlerProvider,
-             Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("multi-tenant-rpc-authorizer-")),
-             mode);
+             Executors.newFixedThreadPool(threadPoolSize, new DaemonThreadFactory("multi-tenant-rpc-authorizer-")));
     }
 
     MultiTenantRpcAuthorizer(NodeIdentifier nodeIdentifier,
                              HostRegistry<TenantName> hostRegistry,
                              RequestHandlerProvider handlerProvider,
-                             Executor executor,
-                             Mode mode) {
+                             Executor executor) {
         this.nodeIdentifier = nodeIdentifier;
         this.hostRegistry = hostRegistry;
         this.handlerProvider = handlerProvider;
         this.executor = executor;
-        this.mode = mode;
     }
 
     @Override
@@ -158,15 +151,13 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     }
 
     private void handleAuthorizationFailure(Request request, Throwable throwable) {
-        String errorMessage = String.format("For request '%s' from '%s' (mode=%s): %s", request.methodName(), request.target().toString(), mode.toString(), throwable.getMessage());
+        String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
         log.log(LogLevel.INFO, errorMessage);
         log.log(LogLevel.DEBUG, throwable, throwable::getMessage);
-        if (mode == Mode.ENFORCE) {
-            JrtErrorCode error = throwable instanceof AuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
-            request.setError(error.code, errorMessage);
-            request.returnRequest();
-            throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).
-        }
+        JrtErrorCode error = throwable instanceof AuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
+        request.setError(error.code, errorMessage);
+        request.returnRequest();
+        throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).
     }
 
     // TODO Make peer identity mandatory once TLS mixed mode is removed

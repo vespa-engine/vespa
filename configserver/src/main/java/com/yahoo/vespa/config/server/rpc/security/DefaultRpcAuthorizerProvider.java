@@ -24,23 +24,13 @@ public class DefaultRpcAuthorizerProvider implements Provider<RpcAuthorizer> {
     public DefaultRpcAuthorizerProvider(ConfigserverConfig config,
                                         NodeIdentifier nodeIdentifier,
                                         HostRegistries hostRegistries,
-                                        RequestHandlerProvider handlerProvider,
-                                        FlagSource flagSource) {
-        String authorizerMode = Flags.CONFIGSERVER_RPC_AUTHORIZER.bindTo(flagSource).value();
+                                        RequestHandlerProvider handlerProvider) {
         boolean useMultiTenantAuthorizer =
-                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa() && !authorizerMode.equals("disable");
+                TransportSecurityUtils.isTransportSecurityEnabled() && config.multitenant() && config.hostedVespa();
         this.rpcAuthorizer =
                 useMultiTenantAuthorizer
-                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider, toMultiTenantRpcAuthorizerMode(authorizerMode), getThreadPoolSize(config))
+                        ? new MultiTenantRpcAuthorizer(nodeIdentifier, hostRegistries, handlerProvider, getThreadPoolSize(config))
                         : new NoopRpcAuthorizer();
-    }
-
-    private static MultiTenantRpcAuthorizer.Mode toMultiTenantRpcAuthorizerMode(String authorizerMode) {
-        switch (authorizerMode) {
-            case "log-only": return MultiTenantRpcAuthorizer.Mode.LOG_ONLY;
-            case "enforce": return MultiTenantRpcAuthorizer.Mode.ENFORCE;
-            default: throw new IllegalArgumentException("Invalid authorizer mode: " + authorizerMode);
-        }
     }
 
     private static int getThreadPoolSize(ConfigserverConfig config) {

@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
-import static com.yahoo.vespa.config.server.rpc.security.MultiTenantRpcAuthorizer.Mode.ENFORCE;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.hamcrest.core.IsInstanceOf.instanceOf;
 import static org.mockito.Mockito.mock;
@@ -236,8 +235,7 @@ public class MultiTenantRpcAuthorizerTest {
                 new StaticNodeIdentifier(identity),
                 hostRegistry,
                 createRequestHandlerProviderMock(),
-                new DirectExecutor(),
-                ENFORCE);
+                new DirectExecutor());
     }
 
     private static Request createConfigRequest(ConfigKey<?> configKey, HostName hostName) {
