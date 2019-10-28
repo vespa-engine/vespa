@@ -108,6 +108,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1585,11 +1586,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse testConfig(ApplicationId id, JobType type) {
         // TODO jonmv: Support non-default instances as well; requires API change in clients.
         ApplicationId defaultInstanceId = TenantAndApplicationId.from(id).defaultInstance();
-        var deployments = controller.applications()
+        HashSet<DeploymentId> deployments = controller.applications()
                                     .getInstance(defaultInstanceId).stream()
                                     .flatMap(instance -> instance.productionDeployments().keySet().stream())
                                     .map(zone -> new DeploymentId(defaultInstanceId, zone))
-                                    .collect(Collectors.toSet());
+                                    .collect(Collectors.toCollection(HashSet::new));
         var testedZone = type.zone(controller.system());
 
         // If a production job is specified, the production deployment of the _default instance_ is the relevant one,
