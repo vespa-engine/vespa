@@ -234,11 +234,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * will return {"d" =&gt; "a.d-value","e" =&gt; "a.e-value"}
      */
     public Map<String, Object> listValues(CompoundName prefix, Map<String, String> context, Properties substitution) {
-        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(),context);
-
-        AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix);
-        accept(visitor,dimensionBinding, null);
-        Map<String, Object>  values = visitor.getResult();
+        Map<String, Object> values = visitValues(prefix, context).values();
 
         if (substitution == null) return values;
         for (Map.Entry<String, Object> entry : values.entrySet()) {
@@ -248,6 +244,14 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             }
         }
         return values;
+    }
+
+    AllValuesQueryProfileVisitor visitValues(CompoundName prefix, Map<String, String> context) {
+        DimensionBinding dimensionBinding = DimensionBinding.createFrom(getDimensions(), context);
+
+        AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix);
+        accept(visitor, dimensionBinding, null);
+        return visitor;
     }
 
     /**
@@ -510,7 +514,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     protected Object lookup(CompoundName name,
                             boolean allowQueryProfileResult,
                             DimensionBinding dimensionBinding) {
-        SingleValueQueryProfileVisitor visitor = new SingleValueQueryProfileVisitor(name.asList(), allowQueryProfileResult);
+        SingleValueQueryProfileVisitor visitor = new SingleValueQueryProfileVisitor(name.asList(),
+                                                                                    allowQueryProfileResult);
         accept(visitor, dimensionBinding, null);
         return visitor.getResult();
     }

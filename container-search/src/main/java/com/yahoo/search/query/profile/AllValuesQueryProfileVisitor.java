@@ -2,8 +2,9 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.query.profile.compiled.ValueSource;
+import com.yahoo.search.query.profile.compiled.ValueWithSource;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,8 +13,7 @@ import java.util.Map;
  */
 final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
 
-    private Map<String, Object> values = new HashMap<>();
-    private Map<String, ValueSource> sources = new HashMap<>();
+    private Map<String, ValueWithSource> values = new HashMap<>();
 
     /* Lists all values starting at prefix */
     public AllValuesQueryProfileVisitor(CompoundName prefix) {
@@ -43,12 +43,19 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
         if (fullName.isEmpty()) return; // Avoid putting a non-leaf (subtree) root in the list
         if (values.containsKey(fullName.toString())) return; // The first value encountered has priority
 
-        values.put(fullName.toString(), value);
-        sources.put(fullName.toString(), new ValueSource(owner, variant));
+        values.put(fullName.toString(), new ValueWithSource(value, owner.getIdString(), variant));
     }
 
     /** Returns the values resulting from this visiting */
-    public Map<String, Object> getResult() { return values; }
+    public Map<String, Object> values() {
+        Map<String, Object> values = new HashMap<>();
+        for (var entry : this.values.entrySet())
+            values.put(entry.getKey(), entry.getValue().value());
+        return values;
+    }
+
+    /** Returns the values with source resulting from this visiting */
+    public Map<String, ValueWithSource> valuesWithSource() { return Collections.unmodifiableMap(values); }
 
     /** Returns false - we are not done until we have seen all */
     public boolean isDone() { return false; }

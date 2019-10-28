@@ -5,6 +5,7 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.DimensionalMap;
+import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.HashSet;
@@ -31,7 +32,7 @@ public class QueryProfileCompiler {
 
     public static CompiledQueryProfile compile(QueryProfile in, CompiledQueryProfileRegistry registry) {
         try {
-            DimensionalMap.Builder<CompoundName, Object> values = new DimensionalMap.Builder<>();
+            DimensionalMap.Builder<CompoundName, ValueWithSource> values = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, QueryProfileType> types = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, Object> references = new DimensionalMap.Builder<>();
             DimensionalMap.Builder<CompoundName, Object> unoverridables = new DimensionalMap.Builder<>();
@@ -42,7 +43,7 @@ public class QueryProfileCompiler {
             log.fine(() -> "Compiling " + in.toString() + " having " + variants.size() + " variants");
             for (DimensionBindingForPath variant : variants) {
                 log.finer(() -> "  Compiling variant " + variant);
-                for (Map.Entry<String, Object> entry : in.listValues(variant.path(), variant.binding().getContext(), null).entrySet()) {
+                for (Map.Entry<String, ValueWithSource> entry : in.visitValues(variant.path(), variant.binding().getContext()).valuesWithSource().entrySet()) {
                     values.put(variant.path().append(entry.getKey()), variant.binding(), entry.getValue());
                 }
                 for (Map.Entry<CompoundName, QueryProfileType> entry : in.listTypes(variant.path(), variant.binding().getContext()).entrySet())

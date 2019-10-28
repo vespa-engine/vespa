@@ -168,12 +168,14 @@ public class DimensionalValue<VALUE> {
                 return value;
             }
 
+            // TODO: Move this
             @SuppressWarnings("unchecked")
             private VALUE substituteIfRelative(VALUE value,
                                                DimensionBinding variant,
                                                Map<CompoundName, DimensionalValue.Builder<VALUE>> entries) {
-                if (value instanceof SubstituteString) {
-                    SubstituteString substitute = (SubstituteString)value;
+                if (value instanceof ValueWithSource && ((ValueWithSource)value).value() instanceof SubstituteString) {
+                    ValueWithSource valueWithSource = (ValueWithSource)value;
+                    SubstituteString substitute = (SubstituteString)valueWithSource.value();
                     if (substitute.hasRelative()) {
                         List<SubstituteString.Component> resolvedComponents = new ArrayList<>(substitute.components().size());
                         for (SubstituteString.Component component : substitute.components()) {
@@ -184,14 +186,14 @@ public class DimensionalValue<VALUE> {
                                     throw new IllegalArgumentException("Could not resolve local substitution '" +
                                                                        relativeComponent.fieldName() + "' in variant " +
                                                                        variant);
-                                String resolved = substituteValues.valueFor(variant).toString();
-                                resolvedComponents.add(new SubstituteString.StringComponent(resolved));
+                                ValueWithSource resolved = (ValueWithSource)substituteValues.valueFor(variant);
+                                resolvedComponents.add(new SubstituteString.StringComponent(resolved.value().toString()));
                             }
                             else {
                                 resolvedComponents.add(component);
                             }
                         }
-                        return (VALUE)new SubstituteString(resolvedComponents, substitute.stringValue());
+                        return (VALUE)valueWithSource.withValue(new SubstituteString(resolvedComponents, substitute.stringValue()));
                     }
                 }
                 return value;
