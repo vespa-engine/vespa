@@ -8,10 +8,13 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
+
+import static com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 
 /**
  * Ensure that summary field transforms for fields having the same name
@@ -33,6 +36,7 @@ public class SummaryConsistency extends Processor {
             for (SummaryField summaryField : summary.getSummaryFields() ) {
                 assertConsistency(summaryField, search, validate);
                 makeAttributeTransformIfAppropriate(summaryField, search);
+                makeAttributeCombinerTransformIfAppropriate(summaryField, search);
             }
         }
     }
@@ -61,6 +65,17 @@ public class SummaryConsistency extends Processor {
         Attribute attribute = search.getAttribute(summaryField.getSingleSource());
         if (attribute == null) return;
         summaryField.setTransform(SummaryTransform.ATTRIBUTE);
+    }
+
+    /** If the source is a complex field with only struct field attributes then make this use the attribute combiner transform */
+    private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField,Search search) {
+        if (summaryField.getTransform() == SummaryTransform.NONE) {
+            String source_field_name = summaryField.getSingleSource();
+            ImmutableSDField source = search.getField(source_field_name);
+            if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
+                summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
+            }
+        }
     }
 
     private void assertConsistentTypes(SummaryField existing, SummaryField seen) {
