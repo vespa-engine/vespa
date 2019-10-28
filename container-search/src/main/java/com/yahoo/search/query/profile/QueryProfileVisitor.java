@@ -48,8 +48,13 @@ abstract class QueryProfileVisitor {
      * @param value the value
      * @param binding the binding this holds for
      * @param owner the query profile having this value, or null only when profile is the root profile
+     * @param variant the variant having this value, or null if it is not in a variant
      */
-    public abstract void onValue(String localName, Object value, DimensionBinding binding, QueryProfile owner);
+    public abstract void onValue(String localName,
+                                 Object value,
+                                 DimensionBinding binding,
+                                 QueryProfile owner,
+                                 DimensionValues variant);
 
     /**
      * Called when a query profile is encountered.
@@ -57,8 +62,12 @@ abstract class QueryProfileVisitor {
      * @param profile the query profile reference encountered
      * @param binding the binding this holds for
      * @param owner the profile making this reference, or null only when profile is the root profile
+     * @param variant the variant having this value, or null if it is not in a variant
      */
-    public abstract void onQueryProfile(QueryProfile profile, DimensionBinding binding, QueryProfile owner);
+    public abstract void onQueryProfile(QueryProfile profile,
+                                        DimensionBinding binding,
+                                        QueryProfile owner,
+                                        DimensionValues variant);
 
     /** Returns whether this visitor is done visiting what it needed to visit at this point */
     public abstract boolean isDone();
@@ -72,15 +81,23 @@ abstract class QueryProfileVisitor {
      */
     public abstract String getLocalKey();
 
-    /** Calls onValue or onQueryProfile on this and visits the content if it's a profile */
-    final void acceptValue(String key, Object value, DimensionBinding dimensionBinding, QueryProfile owner) {
-        if (value==null) return;
+    /**
+     * Calls onValue or onQueryProfile on this and visits the content if it's a profile
+     *
+     * @param variant the variant having this value, or null if it is not in a variant
+     */
+    final void acceptValue(String key,
+                           Object value,
+                           DimensionBinding dimensionBinding,
+                           QueryProfile owner,
+                           DimensionValues variant) {
+        if (value == null) return;
         if (value instanceof QueryProfile) {
-            QueryProfile queryProfileValue=(QueryProfile)value;
+            QueryProfile queryProfileValue = (QueryProfile)value;
             queryProfileValue.acceptAndEnter(key, this, dimensionBinding.createFor(queryProfileValue.getDimensions()), owner);
         }
         else {
-            onValue(key, value, dimensionBinding, owner);
+            onValue(key, value, dimensionBinding, owner, variant);
         }
     }
 

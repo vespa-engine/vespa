@@ -238,7 +238,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
         AllValuesQueryProfileVisitor visitor = new AllValuesQueryProfileVisitor(prefix);
         accept(visitor,dimensionBinding, null);
-        Map<String,Object>  values = visitor.getResult();
+        Map<String, Object>  values = visitor.getResult();
 
         if (substitution == null) return values;
         for (Map.Entry<String, Object> entry : values.entrySet()) {
@@ -507,17 +507,24 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         return overridable.get(localName);
     }
 
-    protected Object lookup(CompoundName name, boolean allowQueryProfileResult, DimensionBinding dimensionBinding) {
+    protected Object lookup(CompoundName name,
+                            boolean allowQueryProfileResult,
+                            DimensionBinding dimensionBinding) {
         SingleValueQueryProfileVisitor visitor = new SingleValueQueryProfileVisitor(name.asList(), allowQueryProfileResult);
         accept(visitor, dimensionBinding, null);
         return visitor.getResult();
     }
 
-    protected final void accept(QueryProfileVisitor visitor,DimensionBinding dimensionBinding, QueryProfile owner) {
+    protected final void accept(QueryProfileVisitor visitor,
+                                DimensionBinding dimensionBinding,
+                                QueryProfile owner) {
         acceptAndEnter("", visitor, dimensionBinding, owner);
     }
 
-    void acceptAndEnter(String key, QueryProfileVisitor visitor,DimensionBinding dimensionBinding, QueryProfile owner) {
+    void acceptAndEnter(String key,
+                        QueryProfileVisitor visitor,
+                        DimensionBinding dimensionBinding,
+                        QueryProfile owner) {
         boolean allowContent = visitor.enter(key);
         accept(allowContent, visitor, dimensionBinding, owner);
         if (allowContent)
@@ -531,11 +538,14 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * @param visitor the visitor
      * @param dimensionBinding the dimension binding to use
      */
-    final void accept(boolean allowContent,QueryProfileVisitor visitor, DimensionBinding dimensionBinding, QueryProfile owner) {
-        visitor.onQueryProfile(this, dimensionBinding, owner);
+    final void accept(boolean allowContent,
+                      QueryProfileVisitor visitor,
+                      DimensionBinding dimensionBinding,
+                      QueryProfile owner) {
+        visitor.onQueryProfile(this, dimensionBinding, owner, null);
         if (visitor.isDone()) return;
 
-        visitVariants(allowContent,visitor,dimensionBinding);
+        visitVariants(allowContent, visitor, dimensionBinding);
         if (visitor.isDone()) return;
 
         if (allowContent) {
@@ -547,31 +557,37 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
             visitInherited(allowContent, visitor, dimensionBinding, owner);
     }
 
-    protected void visitVariants(boolean allowContent,QueryProfileVisitor visitor,DimensionBinding dimensionBinding) {
+    protected void visitVariants(boolean allowContent, QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {
         if (getVariants() != null)
             getVariants().accept(allowContent, getType(), visitor, dimensionBinding);
     }
 
-    protected void visitInherited(boolean allowContent,QueryProfileVisitor visitor,DimensionBinding dimensionBinding, QueryProfile owner) {
+    protected void visitInherited(boolean allowContent,
+                                  QueryProfileVisitor visitor,
+                                  DimensionBinding dimensionBinding,
+                                  QueryProfile owner) {
         if (inherited == null) return;
         for (QueryProfile inheritedProfile : inherited) {
-            inheritedProfile.accept(allowContent, visitor, dimensionBinding.createFor(inheritedProfile.getDimensions()), owner);
+            inheritedProfile.accept(allowContent,
+                                    visitor,
+                                    dimensionBinding.createFor(inheritedProfile.getDimensions()),
+                                    owner);
             if (visitor.isDone()) return;
         }
     }
 
-    private void visitContent(QueryProfileVisitor visitor,DimensionBinding dimensionBinding) {
+    private void visitContent(QueryProfileVisitor visitor, DimensionBinding dimensionBinding) {
         String contentKey = visitor.getLocalKey();
 
         // Visit this' content
         if (contentKey != null) { // Get only the content of the current key
             if (type != null)
                 contentKey = type.unalias(contentKey);
-            visitor.acceptValue(contentKey, getContent(contentKey), dimensionBinding, this);
+            visitor.acceptValue(contentKey, getContent(contentKey), dimensionBinding, this, null);
         }
         else { // get all content in this
             for (Map.Entry<String,Object> entry : getContent().entrySet()) {
-                visitor.acceptValue(entry.getKey(), entry.getValue(), dimensionBinding, this);
+                visitor.acceptValue(entry.getKey(), entry.getValue(), dimensionBinding, this, null);
                 if (visitor.isDone()) return;
             }
         }

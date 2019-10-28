@@ -32,20 +32,20 @@ public class DimensionValues implements Comparable<DimensionValues> {
      *               The input array is copied by this.
      */
     private DimensionValues(String[] values) {
-        if (values==null) throw new NullPointerException("Dimension values cannot be null");
-        this.values=Arrays.copyOf(values,values.length);
+        if (values == null) throw new NullPointerException("Dimension values cannot be null");
+        this.values=Arrays.copyOf(values, values.length);
     }
 
     /** Returns true if this is has the same value every place it has a value as the givenValues. */
     public boolean matches(DimensionValues givenValues) {
-        for (int i=0; i<this.size() || i<givenValues.size() ; i++)
-            if ( ! matches(this.get(i),givenValues.get(i)))
+        for (int i = 0; i < this.size() || i < givenValues.size() ; i++)
+            if ( ! matches(this.get(i), givenValues.get(i)))
                 return false;
         return true;
     }
 
-    private final boolean matches(String conditionString,String checkString) {
-        if (conditionString==null) return true;
+    private final boolean matches(String conditionString, String checkString) {
+        if (conditionString == null) return true;
         return conditionString.equals(checkString);
     }
 
@@ -61,10 +61,10 @@ public class DimensionValues implements Comparable<DimensionValues> {
      */
     @Override
     public int compareTo(DimensionValues other) {
-        for (int i=0; i<this.size() || i<other.size(); i++) {
-            if (get(i)!=null && other.get(i)==null)
+        for (int i=0; i < this.size() || i < other.size(); i++) {
+            if (get(i) != null && other.get(i) == null)
                 return -1;
-            if (get(i)==null && other.get(i)!=null)
+            if (get(i) == null && other.get(i) != null)
                 return 1;
         }
         return 0;
@@ -77,12 +77,12 @@ public class DimensionValues implements Comparable<DimensionValues> {
 
     @Override
     public boolean equals(Object o) {
-        if (this==o) return true;
+        if (this == o) return true;
         if ( ! (o instanceof DimensionValues)) return false;
-        DimensionValues other=(DimensionValues)o;
-        for (int i=0; i<this.size() || i<other.size(); i++) {
-            if (get(i)==null) {
-                if (other.get(i)!=null) return false;
+        DimensionValues other = (DimensionValues)o;
+        for (int i = 0; i < this.size() || i < other.size(); i++) {
+            if (get(i) == null) {
+                if (other.get(i) != null) return false;
             }
             else {
                 if ( ! get(i).equals(other.get(i))) return false;
@@ -112,7 +112,7 @@ public class DimensionValues implements Comparable<DimensionValues> {
 
     private static boolean containsAllNulls(String[] values) {
         for (String value : values)
-            if (value!=null) return false;
+            if (value != null) return false;
         return true;
     }
 

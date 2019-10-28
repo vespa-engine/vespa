@@ -46,14 +46,21 @@ final class FieldDescriptionQueryProfileVisitor extends QueryProfileVisitor {
     }
 
     @Override
-    public void onValue(String name,Object value, DimensionBinding binding, QueryProfile owner) {
+    public void onValue(String name,
+                        Object value,
+                        DimensionBinding binding,
+                        QueryProfile owner,
+                        DimensionValues variant) {
     }
 
     @Override
-    public void onQueryProfile(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
+    public void onQueryProfile(QueryProfile profile,
+                               DimensionBinding binding,
+                               QueryProfile owner,
+                               DimensionValues variant) {
         if (enteringContent) return; // not at leaf query profile
         if (profile.getType() == null) return;
-        result = profile.getType().getField(name.get(name.size()-1));
+        result = profile.getType().getField(name.get(name.size() - 1));
     }
 
     @Override

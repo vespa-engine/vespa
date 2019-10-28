@@ -2,8 +2,8 @@
 package com.yahoo.search.query.profile;
 
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.profile.compiled.ValueSource;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,7 +12,8 @@ import java.util.Map;
  */
 final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
 
-    private Map<String,Object> values=new HashMap<>();
+    private Map<String, Object> values = new HashMap<>();
+    private Map<String, ValueSource> sources = new HashMap<>();
 
     /* Lists all values starting at prefix */
     public AllValuesQueryProfileVisitor(CompoundName prefix) {
@@ -20,21 +21,30 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
     }
 
     @Override
-    public void onValue(String localName, Object value, DimensionBinding binding, QueryProfile owner) {
-        putValue(localName, value, values);
+    public void onValue(String localName,
+                        Object value,
+                        DimensionBinding binding,
+                        QueryProfile owner,
+                        DimensionValues variant) {
+        putValue(localName, value, owner, variant);
     }
 
     @Override
-    public void onQueryProfileInsidePrefix(QueryProfile profile, DimensionBinding binding, QueryProfile owner) {
-        putValue("", profile.getValue(), values);
+    public void onQueryProfileInsidePrefix(QueryProfile profile,
+                                           DimensionBinding binding,
+                                           QueryProfile owner,
+                                           DimensionValues variant) {
+        putValue("", profile.getValue(), owner, variant);
     }
 
-    private final void putValue(String key, Object value, Map<String, Object> values) {
+    private void putValue(String key, Object value, QueryProfile owner, DimensionValues variant) {
         if (value == null) return;
         CompoundName fullName = currentPrefix.append(key);
         if (fullName.isEmpty()) return; // Avoid putting a non-leaf (subtree) root in the list
         if (values.containsKey(fullName.toString())) return; // The first value encountered has priority
+
         values.put(fullName.toString(), value);
+        sources.put(fullName.toString(), new ValueSource(owner, variant));
     }
 
     /** Returns the values resulting from this visiting */
