@@ -43,7 +43,9 @@ final class AllValuesQueryProfileVisitor extends PrefixQueryProfileVisitor {
         if (fullName.isEmpty()) return; // Avoid putting a non-leaf (subtree) root in the list
         if (values.containsKey(fullName.toString())) return; // The first value encountered has priority
 
-        values.put(fullName.toString(), new ValueWithSource(value, owner.getSource(), variant));
+        values.put(fullName.toString(), new ValueWithSource(value,
+                                                            owner == null ? "anonymous" : owner.getSource(),
+                                                            variant));
     }
 
     /** Returns the values resulting from this visiting */

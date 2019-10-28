@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * An immutable set of dimension values.
@@ -104,7 +105,9 @@ public class DimensionValues implements Comparable<DimensionValues> {
     }
 
     @Override
-    public String toString() { return Arrays.toString(values); }
+    public String toString() {
+        return "[" + Arrays.stream(values).map(value -> value == null ? "*" : value).collect(Collectors.joining(", ")) + "]";
+    }
 
     public boolean isEmpty() {
         return this==empty;

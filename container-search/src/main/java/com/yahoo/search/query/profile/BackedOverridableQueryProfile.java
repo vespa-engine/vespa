@@ -33,8 +33,11 @@ public class BackedOverridableQueryProfile extends OverridableQueryProfile imple
     public BackedOverridableQueryProfile(QueryProfile backingProfile) {
         Validator.ensureNotNull("An overridable query profile must be backed by a real query profile",backingProfile);
         setType(backingProfile.getType());
-        this.backingProfile=backingProfile;
+        this.backingProfile = backingProfile;
     }
+
+    @Override
+    public String getSource() { return backingProfile.getSource(); }
 
     @Override
     public synchronized void freeze() {

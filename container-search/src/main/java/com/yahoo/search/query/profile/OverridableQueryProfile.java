@@ -17,7 +17,11 @@ public class OverridableQueryProfile extends QueryProfile {
 
     /** Creates an unbacked overridable query profile */
     protected OverridableQueryProfile() {
-        super(ComponentId.createAnonymousComponentId(simpleClassName));
+        this("");
+    }
+
+    protected OverridableQueryProfile(String sourceName) {
+        super(ComponentId.createAnonymousComponentId(simpleClassName), sourceName);
     }
 
     @Override
@@ -31,7 +35,7 @@ public class OverridableQueryProfile extends QueryProfile {
 
     @Override
     protected QueryProfile createSubProfile(String name, DimensionBinding binding) {
-        return new OverridableQueryProfile(); // Nothing is set in this branch, so nothing to override, but need override checking
+        return new OverridableQueryProfile(getSource()); // Nothing is set in this branch, so nothing to override, but need override checking
     }
 
     /** Returns a clone of this which can be independently overridden */

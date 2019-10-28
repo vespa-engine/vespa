@@ -3,16 +3,19 @@ package com.yahoo.search.query.profile.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -500,9 +503,32 @@ public class QueryProfileTestCase {
         QueryProfile p = new QueryProfile("test");
         p.set("a","a-value", null);
         p.set("a.b","a.b-value", null);
-        Map<String,Object> values = p.compile(null).listValues("a");
-        assertEquals(1,values.size());
-        assertEquals("a.b-value",values.get("b"));
+        Map<String, Object> values = p.compile(null).listValues("a");
+        assertEquals(1, values.size());
+        assertEquals("a.b-value", values.get("b"));
+    }
+
+    @Test
+    public void testListingSources() {
+        QueryProfile p = new QueryProfile("test");
+        p.set("a","a-value", null);
+        p.set("a.b","a.b-value", null);
+
+        {
+            Map<String, ValueWithSource> values = p.compile(null).listValuesWithSources(new CompoundName(""), new HashMap<>(), null);
+            assertEquals(2, values.size());
+            assertEquals("a-value", values.get("a").value());
+            assertEquals("test", values.get("a").source());
+            assertEquals("a.b-value", values.get("a.b").value());
+            assertEquals("test", values.get("a.b").source());
+        }
+
+        {
+            Map<String, ValueWithSource> values = p.compile(null).listValuesWithSources(new CompoundName("a"), new HashMap<>(), null);
+            assertEquals(1, values.size());
+            assertEquals("a.b-value", values.get("b").value());
+            assertEquals("test", values.get("b").source());
+        }
     }
 
     @Test
