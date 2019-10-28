@@ -5,13 +5,11 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.application.OsgiFramework;
-import com.yahoo.jdisc.test.NonWorkingOsgiFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,19 +29,13 @@ public class OsgiImpl implements Osgi {
     public OsgiImpl(OsgiFramework jdiscOsgi) {
         this.jdiscOsgi = jdiscOsgi;
 
-        if (jdiscOsgi instanceof NonWorkingOsgiFramework) {
-            initialBundles = Collections.emptyList();
-            alwaysCurrentBundle = null;
-        } else {
+        this.initialBundles = jdiscOsgi.bundles();
+        if (initialBundles.isEmpty())
+            throw new IllegalStateException("No initial bundles!");
 
-            this.initialBundles = jdiscOsgi.bundles();
-            if (initialBundles.isEmpty())
-                throw new IllegalStateException("No initial bundles!");
-
-            alwaysCurrentBundle = firstNonFrameworkBundle(initialBundles);
-            if (alwaysCurrentBundle == null)
-                throw new IllegalStateException("The initial bundles only contained the framework bundle!");
-        }
+        alwaysCurrentBundle = firstNonFrameworkBundle(initialBundles);
+        if (alwaysCurrentBundle == null)
+            throw new IllegalStateException("The initial bundles only contained the framework bundle!");
     }
 
     @Override

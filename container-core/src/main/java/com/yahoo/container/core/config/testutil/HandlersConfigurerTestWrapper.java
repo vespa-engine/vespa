@@ -89,7 +89,7 @@ public class HandlersConfigurerTestWrapper {
 
     public HandlersConfigurerTestWrapper(Container container, String configId) {
         createFiles(configId);
-        MockOsgi mockOsgi = new MockOsgi();
+        MockOsgiWrapper mockOsgiWrapper = new MockOsgiWrapper();
         ComponentDeconstructor testDeconstructor = getTestDeconstructor();
         configurer = new HandlersConfigurerDi(
                 new CloudSubscriberFactory(configSources),
@@ -97,7 +97,7 @@ public class HandlersConfigurerTestWrapper {
                 configId,
                 testDeconstructor,
                 guiceInjector(),
-                mockOsgi);
+                mockOsgiWrapper);
         this.container = container;
     }
 
