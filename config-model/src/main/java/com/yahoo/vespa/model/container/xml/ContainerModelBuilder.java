@@ -316,16 +316,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         // If the deployment contains certificate/private key reference, setup TLS port
         if (deployState.tlsSecrets().isPresent()) {
-            addTlsPort(deployState, spec, cluster);
+            addTlsPort(deployState, cluster);
         }
     }
 
-    private void addTlsPort(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        boolean authorizeClient = XML.getChild(spec, "client-authorize") != null;
-        if (authorizeClient) {
-            if (deployState.tlsClientAuthority().isEmpty()) {
-                throw new RuntimeException("client-authorize set, but security/clients.pem is missing");
-            }
+    private void addTlsPort(DeployState deployState, ApplicationContainerCluster cluster) {
+        boolean authorizeClient = deployState.zone().system().isPublic();
+        if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
+            throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://vespa.ai/documentation/security-model#data-plane");
         }
         if(cluster.getHttp() == null) {
             Http http = new Http(Collections.emptyList());

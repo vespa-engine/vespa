@@ -63,6 +63,7 @@ public class TestProperties implements ModelContext.Properties {
         defaultTermwiseLimit = limit;
         return this;
     }
+
     public TestProperties setApplicationId(ApplicationId applicationId) {
         this.applicationId = applicationId;
         return this;

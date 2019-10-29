@@ -17,6 +17,7 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -661,26 +662,27 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void client_ca_carts_fail_with_missing_clients_pem() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <client-authorize />",
-                "</container>");
+    public void missing_security_clients_pem_fails_in_public() {
+        Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
+
         try {
-            DeployState state = new DeployState.Builder().properties(
-                    new TestProperties()
-                            .setHostedVespa(true)
-                            .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY")))).build();
+            DeployState state = new DeployState.Builder()
+                    .properties(
+                        new TestProperties()
+                                .setHostedVespa(true)
+                                .setTlsSecrets(Optional.of(new TlsSecrets("CERT", "KEY"))))
+                    .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                    .build();
             createModel(root, state, null, clusterElem);
         } catch (RuntimeException e) {
-            assertEquals(e.getMessage(), "client-authorize set, but security/clients.pem is missing");
+            assertEquals(e.getMessage(), "Client certificate authority security/clients.pem is missing - see: https://vespa.ai/documentation/security-model#data-plane");
             return;
         }
         fail();
     }
 
     @Test
-    public void client_ca_carts_succeeds_with_client_authorize_and_clients_pem() {
+    public void client_ca_certs_succeeds_with_client_authorize_and_clients_pem() {
         var applicationPackage = new MockApplicationPackage.Builder()
                 .withRoot(applicationFolder.getRoot())
                 .build();
@@ -690,10 +692,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         var deployState = DeployState.createTestState(applicationPackage);
 
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <client-authorize />",
-                "</container>");
+        Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
 
         createModel(root, deployState, null, clusterElem);
         assertEquals(Optional.of("I am a very nice certificate"), getContainerCluster("container").getTlsClientAuthority());
