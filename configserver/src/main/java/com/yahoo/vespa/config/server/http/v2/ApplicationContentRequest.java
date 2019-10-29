@@ -2,12 +2,10 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.application.api.ApplicationFile;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.jdisc.application.BindingMatch;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.http.ContentRequest;
-import com.yahoo.vespa.config.server.http.Utils;
 
 /**
  * Represents a content request for an application.
@@ -17,7 +15,6 @@ import com.yahoo.vespa.config.server.http.Utils;
  */
 public class ApplicationContentRequest extends ContentRequest {
 
-    private static final String uriPattern = "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/content/*";
     private final ApplicationId applicationId;
     private final Zone zone;
 
@@ -30,11 +27,6 @@ public class ApplicationContentRequest extends ContentRequest {
         super(request, sessionId, contentPath, applicationFile);
         this.applicationId = applicationId;
         this.zone = zone;
-    }
-
-    static String getContentPath(HttpRequest request) {
-        BindingMatch<?> bm = Utils.getBindingMatch(request, uriPattern);
-        return bm.group(7);
     }
 
     @Override
