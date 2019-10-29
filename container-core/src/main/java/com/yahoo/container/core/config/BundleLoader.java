@@ -174,6 +174,7 @@ public class BundleLoader {
     public synchronized Set<Bundle> use(List<FileReference> bundles) {
         Set<Bundle> bundlesToUninstall = retainOnly(bundles);
         osgi.allowDuplicateBundles(bundlesToUninstall);
+        log.info(() -> bundlesToUninstall.isEmpty() ? "Adding bundles to allowed duplicates: " + bundlesToUninstall : "");
         install(bundles);
         startBundles();
 

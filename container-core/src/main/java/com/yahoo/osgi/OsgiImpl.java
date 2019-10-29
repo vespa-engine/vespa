@@ -11,12 +11,14 @@ import org.osgi.framework.launch.Framework;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author Tony Vaagenes
  * @author bratseth
  */
 public class OsgiImpl implements Osgi {
+    private static Logger log = Logger.getLogger(OsgiImpl.class.getName());
 
     private final OsgiFramework jdiscOsgi;
 
@@ -36,6 +38,7 @@ public class OsgiImpl implements Osgi {
         alwaysCurrentBundle = firstNonFrameworkBundle(initialBundles);
         if (alwaysCurrentBundle == null)
             throw new IllegalStateException("The initial bundles only contained the framework bundle!");
+        log.info("Using " + alwaysCurrentBundle + " to lookup current bundles.");
     }
 
     @Override
@@ -111,6 +114,7 @@ public class OsgiImpl implements Osgi {
      * @return the bundle match having the highest version, or null if there was no matches
      */
     public Bundle getBundle(ComponentSpecification id) {
+        log.fine(() -> "Getting bundle for component " + id + ". Set of current bundles: " + getCurrentBundles());
         Bundle highestMatch = null;
         for (Bundle bundle : getCurrentBundles()) {
             assert bundle.getSymbolicName() != null : "ensureHasBundleSymbolicName not called during installation";
