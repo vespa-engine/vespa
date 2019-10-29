@@ -5,10 +5,9 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
-import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -17,13 +16,17 @@ import java.util.Set;
  */
 public interface ZmsClient extends AutoCloseable {
 
-    void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token);
+    void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService,
+                       OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
-    void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token);
+    void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService,
+                       OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
-    void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token);
+    void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
+                                     Set<RoleAction> roleActions, OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
-    void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, OktaAccessToken token);
+    void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
+                                     OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
     boolean getMembership(AthenzRole role, AthenzIdentity identity);
 

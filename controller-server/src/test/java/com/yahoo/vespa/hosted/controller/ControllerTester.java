@@ -13,6 +13,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -258,7 +259,8 @@ public final class ControllerTester {
                                                            domain,
                                                            new Property("Property" + propertyId),
                                                            Optional.ofNullable(propertyId).map(Object::toString).map(PropertyId::new));
-        AthenzCredentials credentials = new AthenzCredentials(new AthenzPrincipal(user), domain, new OktaAccessToken("okta-token"));
+        AthenzCredentials credentials = new AthenzCredentials(
+                new AthenzPrincipal(user), domain, new OktaIdentityToken("okta-identity-token"), new OktaAccessToken("okta-access-token"));
         controller().tenants().create(tenantSpec, credentials);
         if (contact.isPresent())
             controller().tenants().lockOrThrow(name, LockedTenant.Athenz.class, tenant ->
@@ -279,7 +281,8 @@ public final class ControllerTester {
     public Optional<Credentials> credentialsFor(TenantAndApplicationId id) {
         return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
                                                                 domain,
-                                                                new OktaAccessToken("okta-token")));
+                                                                new OktaIdentityToken("okta-identity-token"),
+                                                                new OktaAccessToken("okta-access-token")));
     }
 
     public Application createApplication(TenantName tenant, String applicationName, String instanceName) {
