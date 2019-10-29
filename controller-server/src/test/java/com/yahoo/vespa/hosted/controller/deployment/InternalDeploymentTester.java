@@ -82,7 +82,11 @@ public class InternalDeploymentTester {
     public Instance instance(ApplicationId id) { return tester.instance(id); }
 
     public InternalDeploymentTester() {
-        tester = new DeploymentTester();
+        this(new ControllerTester());
+    }
+
+    public InternalDeploymentTester(ControllerTester controllerTester) {
+        tester = new DeploymentTester(controllerTester);
         jobs = tester.controller().jobController();
         routing = tester.controllerTester().serviceRegistry().routingGeneratorMock();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
