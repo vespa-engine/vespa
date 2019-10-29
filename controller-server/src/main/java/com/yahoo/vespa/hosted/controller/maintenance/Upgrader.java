@@ -102,7 +102,9 @@ public class Upgrader extends Maintainer {
         applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
-        applications = applications.first(numberOfApplicationsToUpgrade()); // throttle upgrades
+        if (!containsOnlyCanaries(applications)) { // throttle upgrades of non-canaries
+            applications = applications.first(numberOfApplicationsToUpgrade());
+        }
         for (Application application : applications.asList())
             controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
     }
@@ -169,6 +171,11 @@ public class Upgrader extends Maintainer {
     /** Remove confidence override for given version */
     public void removeConfidenceOverride(Version version) {
         controller().removeConfidenceOverride(version::equals);
+    }
+
+    /** Returns whether all given applications are canaries */
+    private static boolean containsOnlyCanaries(ApplicationList applications) {
+        return applications.asList().stream().allMatch(application -> application.deploymentSpec().upgradePolicy() == UpgradePolicy.canary);
     }
 
 }
