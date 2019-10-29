@@ -7,9 +7,9 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersion;
@@ -35,12 +35,12 @@ public class OsUpgraderTest {
     private static final ZoneApi zone4 = ZoneApiMock.newBuilder().withId("prod.us-east-3").build();
     private static final ZoneApi zone5 = ZoneApiMock.newBuilder().withId("prod.us-north-1").withCloud("other").build();
 
-    private DeploymentTester tester;
+    private ControllerTester tester;
     private OsVersionStatusUpdater statusUpdater;
 
     @Before
     public void before() {
-        tester = new DeploymentTester();
+        tester = new ControllerTester();
         statusUpdater = new OsVersionStatusUpdater(tester.controller(), Duration.ofDays(1),
                                                    new JobControl(tester.controller().curator()));
     }
@@ -176,16 +176,16 @@ public class OsUpgraderTest {
     }
 
     private NodeRepositoryMock nodeRepository() {
-        return tester.controllerTester().configServer().nodeRepository();
+        return tester.configServer().nodeRepository();
     }
 
     private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, SystemName system) {
-        tester.controllerTester().zoneRegistry()
+        tester.zoneRegistry()
               .setZones(zone1, zone2, zone3, zone4, zone5)
               .setSystemName(system)
               .setOsUpgradePolicy(CloudName.defaultName(), upgradePolicy);
         return new OsUpgrader(tester.controller(), Duration.ofDays(1),
-                              new JobControl(tester.controllerTester().curator()), CloudName.defaultName());
+                              new JobControl(tester.curator()), CloudName.defaultName());
     }
 
 }

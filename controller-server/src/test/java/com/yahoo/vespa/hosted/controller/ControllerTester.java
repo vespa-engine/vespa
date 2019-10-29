@@ -44,7 +44,9 @@ import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -225,6 +227,10 @@ public final class ControllerTester {
         controller().updateVersionStatus(VersionStatus.compute(controller()));
     }
 
+    public int hourOfDayAfter(Duration duration) {
+        clock().advance(duration);
+        return controller().clock().instant().atOffset(ZoneOffset.UTC).getHour();
+    }
 
     public ZoneId toZone(Environment environment) {
         switch (environment) {

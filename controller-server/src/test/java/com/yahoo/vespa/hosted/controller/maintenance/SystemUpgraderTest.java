@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -31,11 +31,11 @@ public class SystemUpgraderTest {
     private static final ZoneApi zone3 = ZoneApiMock.fromId("prod.us-central-1");
     private static final ZoneApi zone4 = ZoneApiMock.fromId("prod.us-east-3");
 
-    private DeploymentTester tester;
+    private ControllerTester tester;
 
     @Before
     public void before() {
-        tester = new DeploymentTester();
+        tester = new ControllerTester();
     }
 
     @Test
@@ -271,7 +271,8 @@ public class SystemUpgraderTest {
         convergeServices(SystemApplication.proxy, zone1);
 
         // Confidence is reduced to broken and next zone is not scheduled for upgrade
-        tester.upgrader().overrideConfidence(version2, VespaVersion.Confidence.broken);
+        new Upgrader(tester.controller(), Duration.ofDays(1), new JobControl(tester.curator()), tester.curator())
+                .overrideConfidence(version2, VespaVersion.Confidence.broken);
         tester.computeVersionStatus();
         systemUpgrader.maintain();
         assertWantedVersion(List.of(SystemApplication.configServerHost, SystemApplication.proxyHost,
@@ -309,7 +310,7 @@ public class SystemUpgraderTest {
 
     private void convergeServices(SystemApplication application, ZoneApi... zones) {
         for (ZoneApi zone : zones) {
-            tester.controllerTester().configServer().convergeServices(application.id(), zone.getId());
+            tester.configServer().convergeServices(application.id(), zone.getId());
         }
     }
 
@@ -368,13 +369,13 @@ public class SystemUpgraderTest {
     }
 
     private NodeRepositoryMock nodeRepository() {
-        return tester.controllerTester().configServer().nodeRepository();
+        return tester.configServer().nodeRepository();
     }
 
     private SystemUpgrader systemUpgrader(UpgradePolicy upgradePolicy) {
-        tester.controllerTester().zoneRegistry().setUpgradePolicy(upgradePolicy);
+        tester.zoneRegistry().setUpgradePolicy(upgradePolicy);
         return new SystemUpgrader(tester.controller(), Duration.ofDays(1),
-                                  new JobControl(tester.controllerTester().curator()));
+                                  new JobControl(tester.curator()));
     }
 
     private static <T> T[] requireNonEmpty(T[] args) {
