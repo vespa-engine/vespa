@@ -100,10 +100,12 @@ import static java.util.logging.Level.WARNING;
 public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
-    private static final NodeResources DEFAULT_TESTER_RESOURCES = new NodeResources(1, 4, 50, 0.3);
+    private static final NodeResources DEFAULT_TESTER_RESOURCES =
+            new NodeResources(1, 4, 50, 0.3, NodeResources.DiskSpeed.any);
     // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
     // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
-    private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS = new NodeResources(2, 8, 50, 0.3);
+    private static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
+            new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
     static final Duration endpointTimeout = Duration.ofMinutes(15);
     static final Duration testerTimeout = Duration.ofMinutes(30);
