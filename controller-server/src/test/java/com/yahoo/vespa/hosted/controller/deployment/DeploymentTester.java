@@ -6,13 +6,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -27,8 +26,6 @@ import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -134,40 +131,32 @@ public class DeploymentTester {
 
     // TODO(mpolden): Change callers to use ControllerTester#computeVersionStatus and remove this
     public void computeVersionStatus() {
-        controller().updateVersionStatus(VersionStatus.compute(controller()));
+        tester.computeVersionStatus();
     }
 
     // TODO(mpolden): Change callers to use ControllerTester#upgradeController and remove this
     public void upgradeController(Version version) {
-        upgradeController(version, "badc0ffee", Instant.EPOCH);
+        tester.upgradeController(version);
     }
 
     // TODO(mpolden): Change callers to use ControllerTester#upgradeController and remove this
     public void upgradeController(Version version, String commitSha, Instant commitDate) {
-        controller().curator().writeControllerVersion(controller().hostname(), new ControllerVersion(version, commitSha, commitDate));
-        computeVersionStatus();
+        tester.upgradeController(version, commitSha, commitDate);
     }
 
     // TODO(mpolden): Change callers to use ControllerTester#upgradeSystemApplications and remove this
     public void upgradeSystemApplications(Version version) {
-        upgradeSystemApplications(version, SystemApplication.all());
+        tester.upgradeSystemApplications(version);
     }
 
     // TODO(mpolden): Change callers to use ControllerTester#upgradeSystemApplications and remove this
     public void upgradeSystemApplications(Version version, List<SystemApplication> systemApplications) {
-        for (ZoneApi zone : tester.zoneRegistry().zones().all().zones()) {
-            for (SystemApplication application : systemApplications) {
-                tester.configServer().setVersion(application.id(), zone.getId(), version);
-                tester.configServer().convergeServices(application.id(), zone.getId());
-            }
-        }
-        computeVersionStatus();
+        tester.upgradeSystemApplications(version, systemApplications);
     }
 
     // TODO(mpolden): Change callers to use ControllerTester#upgradeSystem and remove this
     public void upgradeSystem(Version version) {
-        upgradeController(version);
-        upgradeSystemApplications(version);
+        tester.upgradeSystem(version);
         upgrader().maintain();
         readyJobTrigger().maintain();
     }

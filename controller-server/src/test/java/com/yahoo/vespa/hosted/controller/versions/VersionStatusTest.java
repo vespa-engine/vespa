@@ -386,9 +386,16 @@ public class VersionStatusTest {
 
     @Test
     public void testCommitDetailsPreservation() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        HostName controller1 = HostName.from("controller-1");
+        HostName controller2 = HostName.from("controller-2");
+        HostName controller3 = HostName.from("controller-3");
+        MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
+                                                   .map(hostName -> hostName.value() + ":2222")
+                                                   .collect(Collectors.joining(",")));
+        InternalDeploymentTester tester = new InternalDeploymentTester(new ControllerTester(db));
+
         // Commit details are set for initial version
-        var version0 = new Version("6.2");
+        var version0 = new Version("7.2");
         var commitSha0 = "badc0ffee";
         var commitDate0 = Instant.EPOCH;
         tester.controllerTester().upgradeSystem(version0);
@@ -400,7 +407,7 @@ public class VersionStatusTest {
         tester.deploymentContext().submit().deploy();
 
         // Commit details are updated for new version
-        var version1 = new Version("6.3");
+        var version1 = new Version("7.3");
         var commitSha1 = "deadbeef";
         var commitDate1 = Instant.ofEpochMilli(123);
         tester.controllerTester().upgradeController(version1, commitSha1, commitDate1);
