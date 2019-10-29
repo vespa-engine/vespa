@@ -99,6 +99,11 @@ public class VersionStatus {
         }
         infrastructureVersions.putAll(systemApplicationVersions.asVersionMap());
 
+        // The controller version is the lowest controller version of all controllers
+        ControllerVersion controllerVersion = controllerVersions.keySet().stream()
+                                                                .min(Comparator.naturalOrder())
+                                                                .get();
+
         // The system version is the oldest infrastructure version, if that version is newer than the current system
         // version
         Version newSystemVersion = infrastructureVersions.keySet().stream().min(Comparator.naturalOrder()).get();
@@ -129,7 +134,7 @@ public class VersionStatus {
             try {
                 boolean isReleased = Collections.binarySearch(releasedVersions, statistics.version()) >= 0;
                 VespaVersion vespaVersion = createVersion(statistics,
-                                                          controllerVersions.keySet(),
+                                                          controllerVersion,
                                                           systemVersion,
                                                           isReleased,
                                                           systemApplicationVersions.matching(statistics.version()),
@@ -235,13 +240,11 @@ public class VersionStatus {
     }
 
     private static VespaVersion createVersion(DeploymentStatistics statistics,
-                                              Set<ControllerVersion> controllerVersions,
+                                              ControllerVersion controllerVersion,
                                               Version systemVersion,
                                               boolean isReleased,
                                               NodeVersions nodeVersions,
                                               Controller controller) {
-        var latestVersion = controllerVersions.stream().max(Comparator.naturalOrder()).get();
-        var controllerVersion = controllerVersions.stream().min(Comparator.naturalOrder()).get();
         var isSystemVersion = statistics.version().equals(systemVersion);
         var isControllerVersion = statistics.version().equals(controllerVersion.version());
         var confidence = controller.curator().readConfidenceOverrides().get(statistics.version());
@@ -260,8 +263,8 @@ public class VersionStatus {
         }
 
         // Preserve existing commit details if we've previously computed status for this version
-        var commitSha = latestVersion.commitSha();
-        var commitDate = latestVersion.commitDate();
+        var commitSha = controllerVersion.commitSha();
+        var commitDate = controllerVersion.commitDate();
         if (previousStatus != null) {
             commitSha = previousStatus.releaseCommit();
             commitDate = previousStatus.committedAt();
@@ -272,7 +275,6 @@ public class VersionStatus {
                 confidence = previousStatus.confidence();
             }
         }
-
         return new VespaVersion(statistics,
                                 commitSha,
                                 commitDate,
