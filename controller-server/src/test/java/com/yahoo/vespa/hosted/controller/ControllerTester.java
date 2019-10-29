@@ -81,6 +81,7 @@ public final class ControllerTester {
     private final AtomicLong nextPropertyId = new AtomicLong(1000);
     private final AtomicInteger nextProjectId = new AtomicInteger(1000);
     private final AtomicInteger nextDomainId = new AtomicInteger(1000);
+    private final AtomicInteger nextMinorVersion = new AtomicInteger(ControllerVersion.CURRENT.version().getMinor() + 1);
 
     private Controller controller;
 
@@ -162,6 +163,15 @@ public final class ControllerTester {
 
     public Optional<Record> findCname(String name) {
         return serviceRegistry.nameService().findRecords(Record.Type.CNAME, RecordName.from(name)).stream().findFirst();
+    }
+
+    /**
+     * Returns a version suitable as the next system version, i.e. a version that is always higher than the compiled-in
+     * controller version.
+     */
+    public Version nextVersion() {
+        var current = ControllerVersion.CURRENT.version();
+        return new Version(current.getMajor(), nextMinorVersion.getAndIncrement(), current.getMicro());
     }
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */

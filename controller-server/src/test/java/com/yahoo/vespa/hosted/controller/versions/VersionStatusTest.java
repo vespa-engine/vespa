@@ -7,7 +7,6 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -395,7 +393,7 @@ public class VersionStatusTest {
         InternalDeploymentTester tester = new InternalDeploymentTester(new ControllerTester(db));
 
         // Commit details are set for initial version
-        var version0 = new Version("7.2");
+        var version0 = tester.controllerTester().nextVersion();
         var commitSha0 = "badc0ffee";
         var commitDate0 = Instant.EPOCH;
         tester.controllerTester().upgradeSystem(version0);
@@ -407,7 +405,7 @@ public class VersionStatusTest {
         tester.deploymentContext().submit().deploy();
 
         // Commit details are updated for new version
-        var version1 = new Version("7.3");
+        var version1 = tester.controllerTester().nextVersion();
         var commitSha1 = "deadbeef";
         var commitDate1 = Instant.ofEpochMilli(123);
         tester.controllerTester().upgradeController(version1, commitSha1, commitDate1);
