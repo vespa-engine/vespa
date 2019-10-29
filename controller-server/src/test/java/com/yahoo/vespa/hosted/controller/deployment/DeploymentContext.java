@@ -47,6 +47,8 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinishe
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -269,6 +271,25 @@ public class DeploymentContext {
         doInstallTester(job);
         doTests(job);
         doTeardown(job);
+        return this;
+    }
+
+    /** Abort the running job of the given type and. */
+    public DeploymentContext abortJob(JobType type) {
+        var job = jobId(type);
+        assertNotSame(RunStatus.aborted, currentRun(job).status());
+        jobs.abort(currentRun(job).id());
+        jobAborted(type);
+        return this;
+    }
+
+    /** Finish an already aborted run of the given type. */
+    public DeploymentContext jobAborted(JobType type) {
+        Run run = jobs.last(instanceId, type).get();
+        assertSame(RunStatus.aborted, run.status());
+        assertFalse(run.hasEnded());
+        runner.advance(run);
+        assertTrue(jobs.run(run.id()).get().hasEnded());
         return this;
     }
 
