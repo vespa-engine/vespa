@@ -159,7 +159,7 @@ public class Flags {
             "zookeeper-server-version", "3.4",
             "The version of ZooKeeper server to use (major.minor, not full version)",
             "Takes effect on restart of Docker container",
-            NODE_TYPE);
+            NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
