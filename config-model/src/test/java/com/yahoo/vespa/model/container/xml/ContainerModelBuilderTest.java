@@ -682,7 +682,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void client_ca_certs_succeeds_with_client_authorize_and_clients_pem() {
+    public void security_clients_pem_is_picked_up() {
         var applicationPackage = new MockApplicationPackage.Builder()
                 .withRoot(applicationFolder.getRoot())
                 .build();
