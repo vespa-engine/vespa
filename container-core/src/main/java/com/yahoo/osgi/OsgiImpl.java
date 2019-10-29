@@ -7,19 +7,43 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.application.OsgiFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleException;
+import org.osgi.framework.launch.Framework;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author Tony Vaagenes
  * @author bratseth
  */
 public class OsgiImpl implements Osgi {
+    private static final Logger log = Logger.getLogger(OsgiImpl.class.getName());
 
     private final OsgiFramework jdiscOsgi;
 
+    // The initial bundles are never scheduled for uninstall
+    private final List<Bundle> initialBundles;
+
+    // An initial bundle that is not the framework, and can hence be used to look up current bundles
+    private final Bundle alwaysCurrentBundle;
+
     public OsgiImpl(OsgiFramework jdiscOsgi) {
         this.jdiscOsgi = jdiscOsgi;
+
+        this.initialBundles = jdiscOsgi.bundles();
+        if (initialBundles.isEmpty())
+            throw new IllegalStateException("No initial bundles!");
+
+        alwaysCurrentBundle = firstNonFrameworkBundle(initialBundles);
+        if (alwaysCurrentBundle == null)
+            throw new IllegalStateException("The initial bundles only contained the framework bundle!");
+        log.info("Using " + alwaysCurrentBundle + " to lookup current bundles.");
+    }
+
+    @Override
+    public List<Bundle> getInitialBundles() {
+        return initialBundles;
     }
 
     @Override
@@ -28,6 +52,10 @@ public class OsgiImpl implements Osgi {
         return bundles.toArray(new Bundle[bundles.size()]);
     }
 
+    @Override
+    public List<Bundle> getCurrentBundles() {
+        return jdiscOsgi.getBundles(alwaysCurrentBundle);
+    }
 
     public Class<Object> resolveClass(BundleInstantiationSpecification spec) {
         Bundle bundle = getBundle(spec.bundle);
@@ -86,8 +114,9 @@ public class OsgiImpl implements Osgi {
      * @return the bundle match having the highest version, or null if there was no matches
      */
     public Bundle getBundle(ComponentSpecification id) {
+        log.fine(() -> "Getting bundle for component " + id + ". Set of current bundles: " + getCurrentBundles());
         Bundle highestMatch = null;
-        for (Bundle bundle : getBundles()) {
+        for (Bundle bundle : getCurrentBundles()) {
             assert bundle.getSymbolicName() != null : "ensureHasBundleSymbolicName not called during installation";
 
             if ( ! bundle.getSymbolicName().equals(id.getName())) continue;
@@ -122,17 +151,16 @@ public class OsgiImpl implements Osgi {
     }
 
     @Override
-    public void uninstall(Bundle bundle) {
-        try {
-            bundle.uninstall();
-        } catch (BundleException e) {
-            throw new RuntimeException(e);
-        }
+    public void allowDuplicateBundles(Collection<Bundle> bundles) {
+        jdiscOsgi.allowDuplicateBundles(bundles);
     }
 
-    @Override
-    public void refreshPackages() {
-        jdiscOsgi.refreshPackages();
+    private static Bundle firstNonFrameworkBundle(List<Bundle> bundles) {
+        for (Bundle b : bundles) {
+            if (! (b instanceof Framework))
+                return b;
+        }
+        return null;
     }
 
 }

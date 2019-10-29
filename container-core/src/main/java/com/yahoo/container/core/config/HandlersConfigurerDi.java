@@ -9,6 +9,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
+import com.yahoo.container.core.config.testutil.MockOsgiWrapper;
 import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.Container;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
@@ -20,10 +21,9 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
-import com.yahoo.language.Linguistics;
-import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.log.LogLevel;
 import com.yahoo.osgi.OsgiImpl;
+import com.yahoo.osgi.OsgiWrapper;
 import com.yahoo.statistics.Statistics;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleWiring;
@@ -81,19 +81,30 @@ public class HandlersConfigurerDi {
                                 Injector discInjector,
                                 OsgiFramework osgiFramework) {
 
-        this.vespaContainer = vespaContainer;
-        osgiWrapper = new OsgiWrapper(osgiFramework, new BundleLoader(new OsgiImpl(osgiFramework)));
+        this(subscriberFactory, vespaContainer, configId, deconstructor, discInjector,
+             new ContainerAndDiOsgi(osgiFramework, new BundleLoader(new OsgiImpl(osgiFramework))));
+    }
 
+    // Only public for testing
+    public HandlersConfigurerDi(SubscriberFactory subscriberFactory,
+                                com.yahoo.container.Container vespaContainer,
+                                String configId,
+                                ComponentDeconstructor deconstructor,
+                                Injector discInjector,
+                                OsgiWrapper osgiWrapper) {
+
+        this.vespaContainer = vespaContainer;
+        this.osgiWrapper = osgiWrapper;
         container = new Container(subscriberFactory, configId, deconstructor, osgiWrapper);
         getNewComponentGraph(discInjector, false);
     }
 
-    private static class OsgiWrapper extends OsgiImpl implements com.yahoo.container.di.Osgi {
+    private static class ContainerAndDiOsgi extends OsgiImpl implements OsgiWrapper {
 
         private final OsgiFramework osgiFramework;
         private final BundleLoader bundleLoader;
 
-        public OsgiWrapper(OsgiFramework osgiFramework, BundleLoader bundleLoader) {
+        public ContainerAndDiOsgi(OsgiFramework osgiFramework, BundleLoader bundleLoader) {
             super(osgiFramework);
             this.osgiFramework = osgiFramework;
             this.bundleLoader = bundleLoader;
@@ -121,14 +132,9 @@ public class HandlersConfigurerDi {
         }
 
         @Override
-        public void useBundles(Collection<FileReference> bundles) {
+        public Set<Bundle> useBundles(Collection<FileReference> bundles) {
             log.info("Installing bundles from the latest application");
-
-            int bundlesRemovedOrInstalled = bundleLoader.use(new ArrayList<>(bundles));
-
-            if (bundlesRemovedOrInstalled > 0) {
-                refreshPackages();
-            }
+            return bundleLoader.use(new ArrayList<>(bundles));
         }
     }
 
