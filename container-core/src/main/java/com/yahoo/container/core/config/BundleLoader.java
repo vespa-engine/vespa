@@ -10,7 +10,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRevision;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,12 +51,11 @@ public class BundleLoader {
         return osgi.install(file.getAbsolutePath());
     }
 
-    /** Returns the number of bundles installed by this call. */
     private void install(List<FileReference> references) {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
 
         // This is just an optimization, as installing a bundle with the same location id returns the already installed bundle.
-        // It has no effect that pendingUninstall fileRefs are removed from the map, as they are NOT in the new set of bundles..
+        // It's ok that fileRefs pending uninstall are removed from the map, because they are never in the new set of bundles..
         bundlesToInstall.removeAll(reference2Bundles.keySet());
 
         PredicateSplit<FileReference> bundlesToInstall_isDisk = partition(bundlesToInstall, BundleLoader::isDiskBundle);
