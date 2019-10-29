@@ -704,7 +704,8 @@ public class InternalStepRunner implements StepRunner {
         int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
 
         String resourceString = String.format(Locale.ENGLISH,
-                "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\"/>", resources.vcpu(), resources.memoryGb(), resources.diskGb());
+                                              "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\"/>",
+                                              resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name());
 
         AthenzDomain idDomain = ("vespa.vespa.cd".equals(domain.value()) ? AthenzDomain.from("vespa.vespa") : domain);
         String servicesXml =
