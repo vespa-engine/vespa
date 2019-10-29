@@ -147,9 +147,10 @@ public class BundleLoader {
     }
 
     /**
-     * Returns the bundles to schedule for uninstall after their components have been deconstructed.
+     * Returns the bundles to schedule for uninstall after their components have been deconstructed
+     * and removes the same bundles from the map of active bundles.
      */
-    private Set<Bundle> retainOnly(List<FileReference> newReferences) {
+    private Set<Bundle> getBundlesToUninstall(List<FileReference> newReferences) {
         Set<Bundle> bundlesToRemove = new HashSet<>(osgi.getCurrentBundles());
 
         for (FileReference fileReferenceToKeep: newReferences) {
@@ -158,24 +159,27 @@ public class BundleLoader {
         }
 
         bundlesToRemove.removeAll(osgi.getInitialBundles());
+        removeInactiveFileReferences(newReferences);
 
+        return bundlesToRemove;
+    }
+
+    private void removeInactiveFileReferences(List<FileReference> newReferences) {
         // Clean up the map of active bundles
         Set<FileReference> fileReferencesToRemove = new HashSet<>(reference2Bundles.keySet());
         fileReferencesToRemove.removeAll(newReferences);
         fileReferencesToRemove.forEach(reference2Bundles::remove);
-
-        return bundlesToRemove;
     }
 
     /**
      * Installs the given set of bundles and returns the set of bundles that is no longer used
      * by the application, and should therefore be scheduled for uninstall.
      */
-    public synchronized Set<Bundle> use(List<FileReference> bundles) {
-        Set<Bundle> bundlesToUninstall = retainOnly(bundles);
+    public synchronized Set<Bundle> use(List<FileReference> newBundles) {
+        Set<Bundle> bundlesToUninstall = getBundlesToUninstall(newBundles);
         osgi.allowDuplicateBundles(bundlesToUninstall);
         log.info(() -> bundlesToUninstall.isEmpty() ? "Adding bundles to allowed duplicates: " + bundlesToUninstall : "");
-        install(bundles);
+        install(newBundles);
         startBundles();
 
         log.info(installedBundlesMessage());
