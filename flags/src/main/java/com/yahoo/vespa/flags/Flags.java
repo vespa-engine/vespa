@@ -155,12 +155,6 @@ public class Flags {
             "Takes effect on next tick or on host-admin restart (may vary where used).",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_INTERNAL_ZTS = defineFeatureFlag(
-            "use-internal-zts", false,
-            "Decides if certificate in public should be requested from 'zts' configserver or mapped in",
-            "Takes effect on next tick or on host-admin restart.",
-            APPLICATION_ID);
-
     public static final UnboundStringFlag ZOOKEEPER_SERVER_MAJOR_MINOR_VERSION = defineStringFlag(
             "zookeeper-server-version", "3.4",
             "The version of ZooKeeper server to use (major.minor, not full version)",
