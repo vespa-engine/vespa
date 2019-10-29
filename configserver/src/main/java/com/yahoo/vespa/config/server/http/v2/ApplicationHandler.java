@@ -94,7 +94,7 @@ public class ApplicationHandler extends HttpHandler {
 
         if (isContentRequest(request)) {
             long sessionId = applicationRepository.getSessionIdForApplication(applicationId);
-            String contentPath = ApplicationContentRequest.getContentPath(request);
+            String contentPath = getBindingMatch(request).group(7);
             ApplicationFile applicationFile =
                     applicationRepository.getApplicationFileFromSession(applicationId.tenant(),
                                                                         sessionId,
