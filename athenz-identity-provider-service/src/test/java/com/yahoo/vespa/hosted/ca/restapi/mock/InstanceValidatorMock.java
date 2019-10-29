@@ -4,6 +4,9 @@ package com.yahoo.vespa.hosted.ca.restapi.mock;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceConfirmation;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator;
 
+/**
+ * @author mortent
+ */
 public class InstanceValidatorMock extends InstanceValidator {
 
     public InstanceValidatorMock() {

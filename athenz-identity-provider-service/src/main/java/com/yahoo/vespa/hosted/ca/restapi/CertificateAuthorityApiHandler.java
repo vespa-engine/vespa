@@ -6,12 +6,12 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
-import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmatio
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator;
 import com.yahoo.vespa.hosted.ca.Certificates;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
+import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
@@ -30,12 +31,13 @@ import java.io.UncheckedIOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * REST API for issuing and refreshing node certificates in a hosted Vespa system.
@@ -95,8 +97,8 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         var instanceRegistration = deserializeRequest(request, InstanceSerializer::registrationFromSlime);
 
         InstanceConfirmation confirmation = new InstanceConfirmation(instanceRegistration.provider(), instanceRegistration.domain(), instanceRegistration.service(), EntityBindingsMapper.toSignedIdentityDocumentEntity(instanceRegistration.attestationData()));
-        confirmation.set(InstanceValidator.SAN_IPS_ATTRNAME, getSubjectAlternativeNames(instanceRegistration.csr(), SubjectAlternativeName.Type.IP_ADDRESS));
-        confirmation.set(InstanceValidator.SAN_DNS_ATTRNAME, getSubjectAlternativeNames(instanceRegistration.csr(), SubjectAlternativeName.Type.DNS_NAME));
+        confirmation.set(InstanceValidator.SAN_IPS_ATTRNAME, Certificates.getSubjectAlternativeNames(instanceRegistration.csr(), SubjectAlternativeName.Type.IP_ADDRESS));
+        confirmation.set(InstanceValidator.SAN_DNS_ATTRNAME, Certificates.getSubjectAlternativeNames(instanceRegistration.csr(), SubjectAlternativeName.Type.DNS_NAME));
         if (!instanceValidator.isValidInstance(confirmation)) {
             log.log(LogLevel.INFO, "Invalid instance registration for " + instanceRegistration.toString());
             return ErrorResponse.forbidden("Unable to launch service: " +instanceRegistration.service());
@@ -108,30 +110,26 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(InstanceSerializer.identityToSlime(identity));
     }
 
-    private String getSubjectAlternativeNames(Pkcs10Csr csr, SubjectAlternativeName.Type sanType) {
-        return csr.getSubjectAlternativeNames().stream()
-                .map(SubjectAlternativeName::decode)
-                .filter(san -> san.getType() == sanType)
-                .map(SubjectAlternativeName::getValue)
-                .collect(Collectors.joining(","));
-    }
-
     private HttpResponse refreshInstance(HttpRequest request, String provider, String service, String instanceId) {
         var instanceRefresh = deserializeRequest(request, InstanceSerializer::refreshFromSlime);
         var instanceIdFromCsr = Certificates.instanceIdFrom(instanceRefresh.csr());
+        var athenzService = new AthenzService(request.getJDiscRequest().getUserPrincipal().getName());
         if (!instanceIdFromCsr.equals(instanceId)) {
             throw new IllegalArgumentException("Mismatch between instance ID in URL path and instance ID in CSR " +
                                                "[instanceId=" + instanceId + ",instanceIdFromCsr=" + instanceIdFromCsr +
                                                "]");
         }
-        AthenzService athenzService = new AthenzService(request.getJDiscRequest().getUserPrincipal().getName());
-        List<String> commonNames = X509CertificateUtils.getCommonNames(instanceRefresh.csr().getSubject());
-        if(commonNames.size() != 1 && !Objects.equals(commonNames.get(0), athenzService.getFullName())) {
-            throw new IllegalArgumentException(String.format("Invalid request, trying to refresh service %s using service %s.", instanceRefresh.csr().getSubject().getName(), athenzService.getFullName()));
-        }
+
+        // Verify that the csr instance id matches one of the certificates in the chain
+        refreshesSameInstanceId(instanceIdFromCsr, request);
+
+
+        // Validate that there is no privilege escalation (can only refresh same service)
+        refreshesSameService(instanceRefresh, athenzService);
+
         InstanceConfirmation instanceConfirmation = new InstanceConfirmation(provider, athenzService.getDomain().getName(), athenzService.getName(), null);
-        instanceConfirmation.set(InstanceValidator.SAN_IPS_ATTRNAME, getSubjectAlternativeNames(instanceRefresh.csr(), SubjectAlternativeName.Type.IP_ADDRESS));
-        instanceConfirmation.set(InstanceValidator.SAN_DNS_ATTRNAME, getSubjectAlternativeNames(instanceRefresh.csr(), SubjectAlternativeName.Type.DNS_NAME));
+        instanceConfirmation.set(InstanceValidator.SAN_IPS_ATTRNAME, Certificates.getSubjectAlternativeNames(instanceRefresh.csr(), SubjectAlternativeName.Type.IP_ADDRESS));
+        instanceConfirmation.set(InstanceValidator.SAN_DNS_ATTRNAME, Certificates.getSubjectAlternativeNames(instanceRefresh.csr(), SubjectAlternativeName.Type.DNS_NAME));
         if(!instanceValidator.isValidRefresh(instanceConfirmation)) {
             return ErrorResponse.forbidden("Unable to refresh cert: " + instanceRefresh.csr().getSubject().toString());
         }
@@ -141,9 +139,37 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(InstanceSerializer.identityToSlime(identity));
     }
 
+    public void refreshesSameInstanceId(String csrInstanceId, HttpRequest request) {
+        String certificateInstanceId = getRequestCertificateChain(request).stream()
+                .map(Certificates::instanceIdFrom)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findAny().orElseThrow(() -> new IllegalArgumentException("No client certificate with instance id in request."));
+
+        if(! Objects.equals(certificateInstanceId, csrInstanceId)) {
+            throw new IllegalArgumentException("Mismatch between instance ID in client certificate and instance ID in CSR " +
+                                               "[instanceId=" + certificateInstanceId + ",instanceIdFromCsr=" + csrInstanceId +
+                                               "]");
+        }
+    }
+
+    private void refreshesSameService(InstanceRefresh instanceRefresh, AthenzService athenzService) {
+        List<String> commonNames = X509CertificateUtils.getCommonNames(instanceRefresh.csr().getSubject());
+        if(commonNames.size() != 1 && !Objects.equals(commonNames.get(0), athenzService.getFullName())) {
+            throw new IllegalArgumentException(String.format("Invalid request, trying to refresh service %s using service %s.", instanceRefresh.csr().getSubject().getName(), athenzService.getFullName()));
+        }
+    }
+
     /** Returns CA certificate from secret store */
     private X509Certificate caCertificate() {
         return X509CertificateUtils.fromPem(secretStore.getSecret(caCertificateSecretName));
+    }
+
+    private List<X509Certificate> getRequestCertificateChain(HttpRequest request) {
+        return Optional.ofNullable(request.getJDiscRequest().context().get(ServletRequest.JDISC_REQUEST_X509CERT))
+                .map(X509Certificate[].class::cast)
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     /** Returns CA private key from secret store */

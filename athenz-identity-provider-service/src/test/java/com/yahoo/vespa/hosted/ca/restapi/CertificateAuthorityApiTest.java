@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.ca.restapi;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -22,10 +23,13 @@ import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author mpolden
@@ -34,6 +38,8 @@ public class CertificateAuthorityApiTest extends ContainerTester {
 
     private static final String INSTANCE_ID = "1.cluster1.default.app1.tenant1.us-north-1.prod.node";
     private static final String INSTANCE_ID_WITH_SUFFIX = INSTANCE_ID + ".instanceid.athenz.dev-us-north-1.vespa.aws.oath.cloud";
+    private static final String INVALID_INSTANCE_ID = "1.cluster1.default.otherapp.othertenant.us-north-1.prod.node";
+    private static final String INVALID_INSTANCE_ID_WITH_SUFFIX = INVALID_INSTANCE_ID + ".instanceid.athenz.dev-us-north-1.vespa.aws.oath.cloud";
 
     @Before
     public void before() {
@@ -49,7 +55,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
                                            Request.Method.POST));
 
         // POST instance registration with ZTS client
-        var ztsClient = new TestZtsClient(new AthenzPrincipal(new AthenzService("vespa.external.tenant-host")), URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
+        var ztsClient = new TestZtsClient(new AthenzPrincipal(new AthenzService("vespa.external.tenant-host")), null, URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
         var instanceIdentity = ztsClient.registerInstance(new AthenzService("vespa.external", "provider_prod_us-north-1"),
                                                           new AthenzService("vespa.external", "tenant"),
                                                           getAttestationData(),
@@ -57,18 +63,39 @@ public class CertificateAuthorityApiTest extends ContainerTester {
         assertEquals("CN=Vespa CA", instanceIdentity.certificate().getIssuerX500Principal().getName());
     }
 
+    private X509Certificate registerInstance() throws Exception {
+        // POST instance registration
+        var csr = CertificateTester.createCsr(List.of("node1.example.com", INSTANCE_ID_WITH_SUFFIX));
+        assertIdentityResponse(new Request("http://localhost:12345/ca/v1/instance/",
+                                           instanceRegistrationJson(csr),
+                                           Request.Method.POST));
+
+        // POST instance registration with ZTS client
+        var ztsClient = new TestZtsClient(new AthenzPrincipal(new AthenzService("vespa.external.tenant-host")), null, URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
+        var instanceIdentity = ztsClient.registerInstance(new AthenzService("vespa.external", "provider_prod_us-north-1"),
+                                                          new AthenzService("vespa.external", "tenant"),
+                                                          getAttestationData(),
+                                                          csr);
+        return instanceIdentity.certificate();
+    }
+
     @Test
     public void refresh_instance() throws Exception {
+        // Register instance to get cert
+        var certificate = registerInstance();
+
         // POST instance refresh
         var csr = CertificateTester.createCsr(List.of("node1.example.com", INSTANCE_ID_WITH_SUFFIX));
         var principal = new AthenzPrincipal(new AthenzService("vespa.external.tenant"));
-        assertIdentityResponse(new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/" + INSTANCE_ID,
+        var request = new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/" + INSTANCE_ID,
                                            instanceRefreshJson(csr),
                                            Request.Method.POST,
-                                           principal));
+                                           principal);
+        request.getAttributes().put(ServletRequest.JDISC_REQUEST_X509CERT, new X509Certificate[]{certificate});
+        assertIdentityResponse(request);
 
         // POST instance refresh with ZTS client
-        var ztsClient = new TestZtsClient(principal, URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
+        var ztsClient = new TestZtsClient(principal, certificate, URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
         var instanceIdentity = ztsClient.refreshInstance(new AthenzService("vespa.external", "provider_prod_us-north-1"),
                                                           new AthenzService("vespa.external", "tenant"),
                                                           INSTANCE_ID,
@@ -77,7 +104,7 @@ public class CertificateAuthorityApiTest extends ContainerTester {
     }
 
     @Test
-    public void invalid_requests() {
+    public void invalid_requests() throws Exception {
         // POST instance registration with missing fields
         assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/ failed: Missing required field 'provider'\"}",
                        new Request("http://localhost:12345/ca/v1/instance/",
@@ -98,11 +125,28 @@ public class CertificateAuthorityApiTest extends ContainerTester {
                                    Request.Method.POST));
 
         // POST instance refresh where instanceId does not match CSR dnsName
+        var principal = new AthenzPrincipal(new AthenzService("vespa.external.tenant"));
         csr = CertificateTester.createCsr(List.of("node1.example.com", INSTANCE_ID_WITH_SUFFIX));
         assertResponse(400, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/foobar failed: Mismatch between instance ID in URL path and instance ID in CSR [instanceId=foobar,instanceIdFromCsr=1.cluster1.default.app1.tenant1.us-north-1.prod.node]\"}",
                        new Request("http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/foobar",
                                    instanceRefreshJson(csr),
-                                   Request.Method.POST));
+                                   Request.Method.POST,
+                                   principal));
+
+        // POST instance refresh using zts client where client cert does not contain instanceid
+        var certificate = registerInstance();
+        var ztsClient = new TestZtsClient(principal, certificate, URI.create("http://localhost:12345/ca/v1/"), SSLContext.getDefault());
+        try {
+            var invalidCsr = CertificateTester.createCsr(List.of("node1.example.com", INVALID_INSTANCE_ID_WITH_SUFFIX));
+            var instanceIdentity = ztsClient.refreshInstance(new AthenzService("vespa.external", "provider_prod_us-north-1"),
+                                                             new AthenzService("vespa.external", "tenant"),
+                                                             INSTANCE_ID,
+                                                             invalidCsr);
+            fail("Refresh instance should have failed");
+        } catch (Exception e) {
+            String expectedMessage = "Received error from ZTS: code=0, message=\"POST http://localhost:12345/ca/v1/instance/vespa.external.provider_prod_us-north-1/vespa.external/tenant/1.cluster1.default.app1.tenant1.us-north-1.prod.node failed: Mismatch between instance ID in URL path and instance ID in CSR [instanceId=1.cluster1.default.app1.tenant1.us-north-1.prod.node,instanceIdFromCsr=1.cluster1.default.otherapp.othertenant.us-north-1.prod.node]\"";
+            assertEquals(expectedMessage, e.getMessage());
+        }
     }
 
     private void setCaCertificateAndKey() {
@@ -169,16 +213,22 @@ public class CertificateAuthorityApiTest extends ContainerTester {
     private static class TestZtsClient extends DefaultZtsClient {
 
         private final Principal principal;
+        private final X509Certificate certificate;
 
-        public TestZtsClient(Principal principal, URI ztsUrl, SSLContext sslContext) {
+        public TestZtsClient(Principal principal, X509Certificate certificate, URI ztsUrl, SSLContext sslContext) {
             super(ztsUrl, sslContext);
             this.principal = principal;
+            this.certificate = certificate;
         }
 
         @Override
         protected <T> T execute(HttpUriRequest request, ResponseHandler<T> responseHandler) {
-                request.addHeader("PRINCIPAL", principal.getName());
-                return super.execute(request, responseHandler);
+            request.addHeader("PRINCIPAL", principal.getName());
+            Optional.ofNullable(certificate).ifPresent(cert -> {
+                var pem = X509CertificateUtils.toPem(certificate);
+                request.addHeader("CERTIFICATE", StringUtilities.escape(pem));
+            });
+            return super.execute(request, responseHandler);
         }
     }
 }
