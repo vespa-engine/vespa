@@ -119,8 +119,8 @@ public class ClusterMetricsRetriever {
                         values.field("query_latency.sum").asDouble(),
                         values.field("query_latency.count").asDouble());
                 metricsAggregator.addFeedLatency(
-                        values.field("feed_latency.sum").asDouble(),
-                        values.field("feed_latency.count").asDouble());
+                        values.field("feed.latency.sum").asDouble(),
+                        values.field("feed.latency.count").asDouble());
                 break;
             case "vespa.qrserver":
                 metricsAggregator.addQrLatency(
