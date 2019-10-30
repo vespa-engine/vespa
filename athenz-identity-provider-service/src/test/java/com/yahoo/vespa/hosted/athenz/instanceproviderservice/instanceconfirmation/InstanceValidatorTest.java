@@ -11,6 +11,7 @@ import com.yahoo.config.model.api.SuperModel;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
@@ -228,7 +229,10 @@ public class InstanceValidatorTest {
 
     private List<Node> allocateNode(List<Node> nodeList, Node node, ApplicationId applicationId) {
         nodeList.removeIf(n -> n.id().equals(node.id()));
-        nodeList.add(node.allocate(applicationId, ClusterMembership.from("container/default/0/0", Version.fromString("6.123.4")), Instant.now()));
+        nodeList.add(node.allocate(applicationId,
+                                   ClusterMembership.from("container/default/0/0", Version.fromString("6.123.4")),
+                                   new NodeResources(1, 1, 1, 1),
+                                   Instant.now()));
         return nodeList;
     }
 }
