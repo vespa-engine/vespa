@@ -928,7 +928,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                         .cluster(cluster)
                         .fromState(fromState)
                         .toState(toState)
-                        .currentTimeMs(timeNowMs));
+                        .currentTimeMs(timeNowMs)
+                        .maxMaintenanceGracePeriodTimeMs(options.storageNodeMaxTransitionTimeMs()));
         for (Event event : deltaEvents) {
             eventLog.add(event, isMaster);
         }

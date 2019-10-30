@@ -12,7 +12,9 @@ import java.util.Optional;
 
 import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForNode.hasStateReasonForNode;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
+import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.distributorNode;
 
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -340,6 +342,8 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .1.s:d"));
+        assertThat(state.getNodeStateReasons(),
+                hasStateReasonForNode(storageNode(1), NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD));
     }
 
     @Test
@@ -355,6 +359,8 @@ public class ClusterStateGeneratorTest {
 
         final AnnotatedClusterState state = ClusterStateGenerator.generatedStateFrom(params);
         assertThat(state.toString(), equalTo("distributor:5 .2.s:d storage:5"));
+        assertThat(state.getNodeStateReasons(),
+                not(hasStateReasonForNode(distributorNode(1), NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD)));
     }
 
     @Test

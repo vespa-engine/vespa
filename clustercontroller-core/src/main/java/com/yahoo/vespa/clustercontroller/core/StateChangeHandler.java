@@ -305,10 +305,6 @@ public class StateChangeHandler {
         if (nodeStillUnavailableAfterTransitionTimeExceeded(
                 currentTime, node, currentStateInSystem, lastReportedState))
         {
-            eventLog.add(NodeEvent.forBaseline(node, String.format(
-                        "%d milliseconds without contact. Marking node down.",
-                        currentTime - node.getTransitionTime()),
-                    NodeEvent.Type.CURRENT, currentTime), isMaster);
             triggeredAnyTimers = true;
         }
 
