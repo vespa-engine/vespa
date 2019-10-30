@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
@@ -72,7 +73,8 @@ public class ContainerControllerTester {
     public Application createApplication(String athensDomain, String tenant, String application, String instance) {
         AthenzDomain domain1 = addTenantAthenzDomain(athensDomain, "user");
         AthenzPrincipal user = new AthenzPrincipal(new AthenzUser("user"));
-        AthenzCredentials credentials = new AthenzCredentials(user, domain1, new OktaAccessToken("okta-token"));
+        AthenzCredentials credentials = new AthenzCredentials(
+                user, domain1, new OktaIdentityToken("okta-identity-token"), new OktaAccessToken("okta-access-token"));
         AthenzTenantSpec tenantSpec = new AthenzTenantSpec(TenantName.from(tenant),
                                                            domain1,
                                                            new Property("property1"),

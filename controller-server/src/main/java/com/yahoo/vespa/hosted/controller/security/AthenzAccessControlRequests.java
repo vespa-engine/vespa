@@ -7,6 +7,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -16,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * Extracts access control data for Athenz or user tenants from HTTP requests.
@@ -44,13 +46,22 @@ public class AthenzAccessControlRequests implements AccessControlRequests {
         return new AthenzCredentials(requireAthenzPrincipal(request),
                                      tenants.get(tenant).map(AthenzTenant.class::cast).map(AthenzTenant::domain)
                                             .orElseGet(() -> new AthenzDomain(required("athensDomain", requestObject))),
+                                     requireOktaIdentityToken(request),
                                      requireOktaAccessToken(request));
     }
 
+    private static OktaIdentityToken requireOktaIdentityToken(HttpRequest request) {
+        return requireToken(request, OktaIdentityToken::new, "okta.identity-token", "No Okta Identity Token provided");
+    }
+
     private static OktaAccessToken requireOktaAccessToken(HttpRequest request) {
-        return Optional.ofNullable(request.context().get("okta.access-token"))
-                       .map(attribute -> new OktaAccessToken((String) attribute))
-                       .orElseThrow(() -> new IllegalArgumentException("No Okta Access Token provided"));
+        return requireToken(request, OktaAccessToken::new, "okta.access-token", "No Okta Access Token provided");
+    }
+
+    private static <T> T requireToken(HttpRequest request, Function<String, T> tokenFactory, String attribute, String errorMessage) {
+        return Optional.ofNullable(request.context().get(attribute))
+                .map(value -> tokenFactory.apply((String) value))
+                .orElseThrow(() -> new IllegalArgumentException(errorMessage));
     }
 
     private static String required(String fieldName, Inspector object) {

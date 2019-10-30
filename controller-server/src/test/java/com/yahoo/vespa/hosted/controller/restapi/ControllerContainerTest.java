@@ -9,6 +9,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import org.junit.After;
 import org.junit.Before;
@@ -18,6 +19,7 @@ import java.nio.charset.CharacterCodingException;
 
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.IDENTITY_HEADER_NAME;
 import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.OKTA_ACCESS_TOKEN_HEADER_NAME;
+import static com.yahoo.vespa.hosted.controller.integration.AthenzFilterMock.OKTA_IDENTITY_TOKEN_HEADER_NAME;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -151,6 +153,11 @@ public class ControllerContainerTest {
 
     protected static Request addIdentityToRequest(Request request, AthenzIdentity identity) {
         request.getHeaders().put(IDENTITY_HEADER_NAME, identity.getFullName());
+        return request;
+    }
+
+    protected static Request addOktaIdentityToken(Request request, OktaIdentityToken token) {
+        request.getHeaders().put(OKTA_IDENTITY_TOKEN_HEADER_NAME, token.token());
         return request;
     }
 

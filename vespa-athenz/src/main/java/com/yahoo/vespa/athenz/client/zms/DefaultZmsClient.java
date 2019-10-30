@@ -6,6 +6,7 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
+import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.athenz.client.common.ClientBase;
 import com.yahoo.vespa.athenz.client.zms.bindings.AccessResponseEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.DomainListResponseEntity;
@@ -54,43 +55,45 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
-    public void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token) {
+    public void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/tenancy/%s", tenantDomain.getName(), providerService.getFullName()));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
-                .addHeader(creatOktaAccessTokenHeader(token))
+                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
                 .setEntity(toJsonStringEntity(new TenancyRequestEntity(tenantDomain, providerService, Collections.emptyList())))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
-    public void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaAccessToken token) {
+    public void deleteTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/tenancy/%s", tenantDomain.getName(), providerService.getFullName()));
         HttpUriRequest request = RequestBuilder.delete()
                 .setUri(uri)
-                .addHeader(creatOktaAccessTokenHeader(token))
+                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override
-    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, Set<RoleAction> roleActions, OktaAccessToken token) {
+    public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
+                                            Set<RoleAction> roleActions, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
         HttpUriRequest request = RequestBuilder.put()
                 .setUri(uri)
-                .addHeader(creatOktaAccessTokenHeader(token))
+                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
                 .setEntity(toJsonStringEntity(new ProviderResourceGroupRolesRequestEntity(providerService, tenantDomain, roleActions, resourceGroup)))
                 .build();
         execute(request, response -> readEntity(response, Void.class)); // Note: The ZMS API will actually return a json object that is similar to ProviderResourceGroupRolesRequestEntity
     }
 
     @Override
-    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup, OktaAccessToken token) {
+    public void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
+                                            OktaIdentityToken identityToken, OktaAccessToken accessToken) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
         HttpUriRequest request = RequestBuilder.delete()
                 .setUri(uri)
-                .addHeader(creatOktaAccessTokenHeader(token))
+                .addHeader(createCookieHeaderWithOktaTokens(identityToken, accessToken))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }
@@ -132,7 +135,8 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
         });
     }
 
-    private static Header creatOktaAccessTokenHeader(OktaAccessToken token) {
-        return new BasicHeader("Cookie", String.format("okta_at=%s", token.token()));
+    private static Header createCookieHeaderWithOktaTokens(OktaIdentityToken identityToken, OktaAccessToken accessToken) {
+        return new BasicHeader("Cookie", String.format("okta_at=%s; okta_it=%s", accessToken.token(), identityToken.token()));
     }
+
 }
