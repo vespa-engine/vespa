@@ -4,17 +4,14 @@ package com.yahoo.vespa.hosted.ca;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
@@ -56,22 +53,14 @@ public class Certificates {
 
     /** Returns instance ID parsed from the Subject Alternative Names in given csr */
     public static String instanceIdFrom(Pkcs10Csr csr) {
-        return getInstanceIdFromSAN(csr.getSubjectAlternativeNames())
-                .orElseThrow(() -> new IllegalArgumentException("No instance ID found in CSR"));
-    }
-
-    public static Optional<String> instanceIdFrom(X509Certificate certificate) {
-        return getInstanceIdFromSAN(X509CertificateUtils.getSubjectAlternativeNames(certificate));
-    }
-
-    private static Optional<String> getInstanceIdFromSAN(List<SubjectAlternativeName> subjectAlternativeNames) {
-        return subjectAlternativeNames.stream()
-                .filter(san -> san.getType() == DNS_NAME)
-                .map(SubjectAlternativeName::getValue)
-                .map(Certificates::parseInstanceId)
-                .flatMap(Optional::stream)
-                .map(VespaUniqueInstanceId::asDottedString)
-                .findFirst();
+        return csr.getSubjectAlternativeNames().stream()
+                  .filter(san -> san.getType() == DNS_NAME)
+                  .map(SubjectAlternativeName::getValue)
+                  .map(Certificates::parseInstanceId)
+                  .flatMap(Optional::stream)
+                  .map(VespaUniqueInstanceId::asDottedString)
+                  .findFirst()
+                  .orElseThrow(() -> new IllegalArgumentException("No instance ID found in CSR"));
     }
 
     private static Optional<VespaUniqueInstanceId> parseInstanceId(String dnsName) {
@@ -85,11 +74,4 @@ public class Certificates {
         }
     }
 
-    public static String getSubjectAlternativeNames(Pkcs10Csr csr, SubjectAlternativeName.Type sanType) {
-        return csr.getSubjectAlternativeNames().stream()
-                .map(SubjectAlternativeName::decode)
-                .filter(san -> san.getType() == sanType)
-                .map(SubjectAlternativeName::getValue)
-                .collect(Collectors.joining(","));
-    }
 }
