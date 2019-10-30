@@ -812,8 +812,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
         // Send getNodeState requests to zero or more nodes.
         didWork |= stateGatherer.sendMessages(cluster, communicator, this);
-        // Important: timer events must use a consolidated state, or they might trigger edge events multiple times.
-        didWork |= stateChangeHandler.watchTimers(cluster, consolidatedClusterState(), this);
+        // Important: timer events must use a state with pending changes visible, or they might
+        // trigger edge events multiple times.
+        didWork |= stateChangeHandler.watchTimers(cluster, stateVersionTracker.getLatestCandidateState().getClusterState(), this);
 
         didWork |= recomputeClusterStateIfRequired();
 
