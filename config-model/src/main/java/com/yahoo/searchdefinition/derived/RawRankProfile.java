@@ -76,9 +76,14 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         if (propertiesString.isEmpty()) return ImmutableList.of();
 
         ImmutableList.Builder<Pair<String, String>> properties = new ImmutableList.Builder<>();
-        for (String propertyString : propertiesString.split(valueEndMarker)) {
-            String[] property = propertyString.split(keyEndMarker);
-            properties.add(new Pair<>(property[0], property[1]));
+        for (int pos = 0; pos < propertiesString.length();) {
+            int keyEndPos = propertiesString.indexOf(keyEndMarker, pos);
+            String key = propertiesString.substring(pos, keyEndPos);
+            pos = keyEndPos + keyEndMarker.length();
+            int valueEndPos = propertiesString.indexOf(valueEndMarker, pos);
+            String value = propertiesString.substring(pos, valueEndPos);
+            pos = valueEndPos + valueEndMarker.length();
+            properties.add(new Pair<>(key, value));
         }
         return properties.build();
     }
