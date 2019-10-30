@@ -27,16 +27,21 @@ import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunnerTest;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
+import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -62,6 +67,7 @@ public class InternalDeploymentTester {
     private final MockTesterCloud cloud;
     private final JobRunner runner;
     private final ReadyJobsTrigger readyJobsTrigger;
+    private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final NameServiceDispatcher nameServiceDispatcher;
 
     public DeploymentTester tester() { return tester; }
@@ -90,6 +96,7 @@ public class InternalDeploymentTester {
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), jobControl,
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
         readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
+        outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), maintenanceInterval, jobControl,
                                                           Integer.MAX_VALUE);
         defaultContext = newDeploymentContext(instanceId);
@@ -109,8 +116,22 @@ public class InternalDeploymentTester {
         return readyJobsTrigger;
     }
 
+    public OutstandingChangeDeployer outstandingChangeDeployer() { return outstandingChangeDeployer; }
+
     public NameServiceDispatcher nameServiceDispatcher() {
         return nameServiceDispatcher;
+    }
+
+    public InternalDeploymentTester atHourOfDay(int hour) {
+        var dateTime = tester.clock().instant().atZone(ZoneOffset.UTC);
+        return at(LocalDateTime.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDayOfMonth(), hour,
+                                   dateTime.getMinute(), dateTime.getSecond())
+                               .toInstant(ZoneOffset.UTC));
+    }
+
+    public InternalDeploymentTester at(Instant instant) {
+        tester.clock().setInstant(instant);
+        return this;
     }
 
     /** Returns the default deployment context owned by this */
@@ -189,6 +210,15 @@ public class InternalDeploymentTester {
     /** Completely deploys the given, new platform. */
     public void deployNewPlatform(TenantAndApplicationId id, Version version) {
         newDeploymentContext(id.defaultInstance()).deployPlatform(version);
+    }
+
+    public void abortAll() {
+        triggerJobs();
+        for (Run run : jobs.active()) {
+            jobs.abort(run.id());
+            runner.advance(jobs.run(run.id()).get());
+            assertTrue(jobs.run(run.id()).get().hasEnded());
+        }
     }
 
     public void triggerJobs() {
