@@ -2,16 +2,11 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
@@ -28,14 +23,11 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -72,15 +64,15 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
-
+        HostnameVerifier hostnameVerifier = createHostnameVerifier(zoneId);
         List<URI> allServers = getConfigserverEndpoints(zoneId);
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers, proxyRequest)) {
+        if (queueFirstServerIfDown(allServers, hostnameVerifier)) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
         for (URI uri : allServers) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
+            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, hostnameVerifier, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
@@ -107,7 +99,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return url;
     }
 
-    private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
+    private Optional<ProxyResponse> proxyCall(
+            URI uri, ProxyRequest proxyRequest, HostnameVerifier hostnameVerifier, StringBuilder errorBuilder)
             throws ProxyException {
         String fullUri = uri.toString() + removeFirstSlashIfAny(proxyRequest.getConfigServerRequest());
         final HttpRequestBase requestBase = createHttpBaseRequest(
@@ -120,7 +113,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
                 .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
                 CloseableHttpResponse response = client.execute(requestBase)
         ) {
             String content = getContent(response);
@@ -208,7 +201,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
      * if it is not responding, we try the other servers first. False positive/negatives are not critical,
      * but will increase latency to some extent.
      */
-    private boolean queueFirstServerIfDown(List<URI> allServers, ProxyRequest proxyRequest) {
+    private boolean queueFirstServerIfDown(List<URI> allServers, HostnameVerifier hostnameVerifier) {
         if (allServers.size() < 2) {
             return false;
         }
@@ -221,7 +214,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout).build();
         try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
                 CloseableHttpResponse response = client.execute(httpget)
 
         ) {
@@ -238,56 +231,19 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return true;
     }
 
-    @SuppressWarnings("deprecation")
+    private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
+        return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
+    }
+
     private static CloseableHttpClient createHttpClient(RequestConfig config,
                                                         ServiceIdentityProvider sslContextProvider,
-                                                        ZoneRegistry zoneRegistry,
-                                                        ProxyRequest proxyRequest) {
-        AthenzIdentityVerifier hostnameVerifier =
-                new AthenzIdentityVerifier(
-                        singleton(
-                                zoneRegistry.getConfigServerHttpsIdentity(
-                                        ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
+                                                        HostnameVerifier hostnameVerifier) {
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")
                 .setSslcontext(sslContextProvider.getIdentitySslContext())
-                .setHostnameVerifier(new AthenzIdentityVerifierAdapter(hostnameVerifier))
+                .setSSLHostnameVerifier(hostnameVerifier)
                 .setDefaultRequestConfig(config)
                 .build();
-    }
-
-    @SuppressWarnings("deprecation")
-    private static class AthenzIdentityVerifierAdapter implements X509HostnameVerifier {
-
-        private final AthenzIdentityVerifier verifier;
-
-        AthenzIdentityVerifierAdapter(AthenzIdentityVerifier verifier) {
-            this.verifier = verifier;
-        }
-
-        @Override
-        public boolean verify(String hostname, SSLSession sslSession) {
-            return verifier.verify(hostname, sslSession);
-        }
-
-        @Override
-        public void verify(String host, SSLSocket ssl) { /* All sockets accepted */}
-
-        @Override
-        public void verify(String hostname, X509Certificate certificate) throws SSLException {
-            AthenzIdentity identity = AthenzIdentities.from(certificate);
-            if (!verifier.isTrusted(identity)) {
-                throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
-            }
-        }
-
-        @Override
-        public void verify(String hostname, String[] cns, String[] subjectAlts) throws SSLException {
-            AthenzIdentity identity = AthenzIdentities.from(cns[0]);
-            if (!verifier.isTrusted(identity)) {
-                throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
-            }
-        }
     }
 
 }
