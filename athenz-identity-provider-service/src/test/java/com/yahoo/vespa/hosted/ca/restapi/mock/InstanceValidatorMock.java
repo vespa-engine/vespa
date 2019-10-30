@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmatio
 public class InstanceValidatorMock extends InstanceValidator {
 
     public InstanceValidatorMock() {
-        super(null, null, null, null);
+        super(null, null, null, null, null);
     }
 
     @Override

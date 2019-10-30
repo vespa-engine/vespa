@@ -14,6 +14,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -34,7 +35,6 @@ import java.util.stream.Stream;
  */
 public class InstanceValidator {
 
-    private static final AthenzService TENANT_DOCKER_CONTAINER_IDENTITY = new AthenzService("vespa.vespa.tenant");
     private static final Logger log = Logger.getLogger(InstanceValidator.class.getName());
     static final String SERVICE_PROPERTIES_DOMAIN_KEY = "identity.domain";
     static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
@@ -43,6 +43,7 @@ public class InstanceValidator {
     public static final String SAN_IPS_ATTRNAME = "sanIP";
     public static final String SAN_DNS_ATTRNAME = "sanDNS";
 
+    private final AthenzService tenantDockerContainerIdentity;
     private final IdentityDocumentSigner signer;
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
@@ -51,18 +52,21 @@ public class InstanceValidator {
     @Inject
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
-                             NodeRepository nodeRepository) {
-        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner());
+                             NodeRepository nodeRepository,
+                             AthenzProviderServiceConfig config) {
+        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.domain(), "tenant"));
     }
 
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
-                             IdentityDocumentSigner identityDocumentSigner){
+                             IdentityDocumentSigner identityDocumentSigner,
+                             AthenzService tenantIdentity){
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
         this.nodeRepository = nodeRepository;
         this.signer = identityDocumentSigner;
+        this.tenantDockerContainerIdentity = tenantIdentity;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
@@ -187,7 +191,7 @@ public class InstanceValidator {
             return false;
         }
 
-        if (TENANT_DOCKER_CONTAINER_IDENTITY.equals(new AthenzService(domain, service))) {
+        if (tenantDockerContainerIdentity.equals(new AthenzService(domain, service))) {
             return true;
         }
 
