@@ -148,7 +148,6 @@ public class DeploymentContext {
                                                                        .anyMatch(instance -> instance.deployments().values().stream()
                                                                                                      .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));
         assertEquals(lastSubmission, application().change().application().get());
-        assertFalse(application().change().platform().isPresent());
         completeRollout();
         assertFalse(application().change().hasTargets());
         return this;
@@ -156,7 +155,7 @@ public class DeploymentContext {
 
     /** Upgrade platform of this to given version */
     public DeploymentContext deployPlatform(Version version) {
-        assertEquals(tester.controller().systemVersion(), version);
+        assertEquals(application().change().platform().get(), version);
         assertFalse(application().instances().values().stream()
                           .anyMatch(instance -> instance.deployments().values().stream()
                                                         .anyMatch(deployment -> deployment.version().equals(version))));
@@ -247,7 +246,7 @@ public class DeploymentContext {
             for (Run run : activeRuns)
                 if (jobs.add(run.id().type())) {
                     runJob(run.id().type());
-                    readyJobsTrigger.run();
+                    triggerJobs();
                 }
                 else
                     throw new AssertionError("Job '" + run.id().type() + "' was run twice for '" + instanceId + "'");
@@ -257,6 +256,12 @@ public class DeploymentContext {
             flushDnsUpdates();
         }
         return this;
+    }
+
+    /** Runs a deployment of the given package to the given dev/perf job. */
+    public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage) {
+        jobs.deploy(instanceId, type, Optional.empty(), applicationPackage);
+        return runJob(type);
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
@@ -394,8 +399,8 @@ public class DeploymentContext {
         Run run = jobs.last(job)
                       .filter(r -> r.id().type() == job.type())
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
-        assertFalse(run.hasFailed());
-        assertFalse(run.hasEnded());
+        assertFalse(run.id() + " should not have failed yet", run.hasFailed());
+        assertFalse(run.id() + " should not have ended yet", run.hasEnded());
         return run;
     }
 
