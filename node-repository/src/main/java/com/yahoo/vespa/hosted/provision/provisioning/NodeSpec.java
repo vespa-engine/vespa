@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A specification of a set of nodes.
@@ -60,6 +61,9 @@ public interface NodeSpec {
      */
     Node assignRequestedFlavor(Node node);
 
+    /** Returns the resources requested by this or empty if none are explicitly requested */
+    Optional<NodeResources> resources();
+
     static NodeSpec from(int nodeCount, NodeResources flavor, boolean exclusive, boolean canFail) {
         return new CountNodeSpec(nodeCount, flavor, exclusive, canFail);
     }
@@ -83,8 +87,9 @@ public interface NodeSpec {
             this.canFail = canFail;
         }
 
-        public NodeResources resources() {
-            return requestedNodeResources;
+        @Override
+        public Optional<NodeResources> resources() {
+            return Optional.of(requestedNodeResources);
         }
 
         @Override
@@ -197,6 +202,9 @@ public interface NodeSpec {
 
         @Override
         public Node assignRequestedFlavor(Node node) { return node; }
+
+        @Override
+        public Optional<NodeResources> resources() { return Optional.empty(); }
 
         @Override
         public String toString() { return "request for all nodes of type '" + type + "'"; }

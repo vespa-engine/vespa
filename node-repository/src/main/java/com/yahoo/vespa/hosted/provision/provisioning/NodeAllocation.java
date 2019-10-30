@@ -140,6 +140,7 @@ class NodeAllocation {
                 }
                 offeredPriority.node = offered.allocate(application,
                                                         ClusterMembership.from(cluster, highestIndex.add(1)),
+                                                        requestedNodes.resources().orElse(offeredPriority.node.flavor().resources()),
                                                         clock.instant());
                 accepted.add(acceptNode(offeredPriority, false));
             }
@@ -223,6 +224,10 @@ class NodeAllocation {
 
     private Node acceptNode(PrioritizableNode prioritizableNode, boolean wantToRetire) {
         Node node = prioritizableNode.node;
+
+        if (node.allocation().isPresent()) // Record the currently requested resources
+            node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
+
         if (! wantToRetire) {
             if ( ! node.state().equals(Node.State.active)) {
                 // reactivated node - make sure its not retired
@@ -278,14 +283,13 @@ class NodeAllocation {
      * Returns {@link FlavorCount} describing the docker node deficit for the given {@link NodeSpec}.
      *
      * @return empty if the requested spec is not count based or the requested flavor type is not docker or
-     * the request is already fulfilled. Otherwise returns {@link FlavorCount} containing the required flavor
-     * and node count to cover the deficit.
+     *         the request is already fulfilled. Otherwise returns {@link FlavorCount} containing the required flavor
+     *         and node count to cover the deficit.
      */
     Optional<FlavorCount> getFulfilledDockerDeficit() {
         return Optional.of(requestedNodes)
                 .filter(NodeSpec.CountNodeSpec.class::isInstance)
-                .map(NodeSpec.CountNodeSpec.class::cast)
-                .map(spec -> new FlavorCount(spec.resources(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
+                .map(spec -> new FlavorCount(spec.resources().get(), spec.fulfilledDeficitCount(acceptedOfRequestedFlavor)))
                 .filter(flavorCount -> flavorCount.getCount() > 0);
     }
 

@@ -49,6 +49,7 @@ public class AllocatedHostsSerializer {
     private static final String flavorKey = "flavor";
 
     private static final String resourcesKey = "resources";
+    private static final String requestedResourcesKey = "requestedResources";
     private static final String vcpuKey = "vcpu";
     private static final String memoryKey = "memory";
     private static final String diskKey = "disk";
@@ -75,16 +76,17 @@ public class AllocatedHostsSerializer {
             toSlime(host, array.addObject().setObject(hostSpecKey));
     }
 
-    private static void toSlime(HostSpec host, Cursor cursor) {
-        cursor.setString(hostSpecHostNameKey, host.hostname());
-        aliasesToSlime(host, cursor);
+    private static void toSlime(HostSpec host, Cursor object) {
+        object.setString(hostSpecHostNameKey, host.hostname());
+        aliasesToSlime(host, object);
         host.membership().ifPresent(membership -> {
-            cursor.setString(hostSpecMembershipKey, membership.stringValue());
-            cursor.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
+            object.setString(hostSpecMembershipKey, membership.stringValue());
+            object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
         });
-        host.flavor().ifPresent(flavor -> toSlime(flavor, cursor));
-        host.version().ifPresent(version -> cursor.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
-        host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, cursor.setArray(hostSpecNetworkPortsKey)));
+        host.flavor().ifPresent(flavor -> toSlime(flavor, object));
+        host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
+        host.version().ifPresent(version -> object.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
+        host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(hostSpecNetworkPortsKey)));
     }
 
     private static void aliasesToSlime(HostSpec spec, Cursor cursor) {
@@ -95,20 +97,19 @@ public class AllocatedHostsSerializer {
     }
 
     private static void toSlime(Flavor flavor, Cursor object) {
-        if (flavor.isConfigured()) {
+        if (flavor.isConfigured())
             object.setString(flavorKey, flavor.name());
-        }
-        else {
-            NodeResources resources = flavor.resources();
-            Cursor resourcesObject = object.setObject(resourcesKey);
-            resourcesObject.setDouble(vcpuKey, resources.vcpu());
-            resourcesObject.setDouble(memoryKey, resources.memoryGb());
-            resourcesObject.setDouble(diskKey, resources.diskGb());
-            resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
-            resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
-        }
+        else
+            toSlime(flavor.resources(), object.setObject(resourcesKey));
     }
 
+    private static void toSlime(NodeResources resources, Cursor resourcesObject) {
+        resourcesObject.setDouble(vcpuKey, resources.vcpu());
+        resourcesObject.setDouble(memoryKey, resources.memoryGb());
+        resourcesObject.setDouble(diskKey, resources.diskGb());
+        resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
+        resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
+    }
 
     public static AllocatedHosts fromJson(byte[] json, Optional<NodeFlavors> nodeFlavors) {
         return fromSlime(SlimeUtils.jsonToSlime(json).get(), nodeFlavors);
@@ -122,14 +123,13 @@ public class AllocatedHostsSerializer {
     }
 
     private static HostSpec hostFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
-        Optional<ClusterMembership> membership =
-                object.field(hostSpecMembershipKey).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty();
-        Optional<Flavor> flavor = flavorFromSlime(object, nodeFlavors);
-        Optional<com.yahoo.component.Version> version =
-                optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new);
-        Optional<NetworkPorts> networkPorts =
-                NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey));
-        return new HostSpec(object.field(hostSpecHostNameKey).asString(), aliasesFromSlime(object), flavor, membership, version, networkPorts);
+        return new HostSpec(object.field(hostSpecHostNameKey).asString(),
+                            aliasesFromSlime(object),
+                            flavorFromSlime(object, nodeFlavors),
+                            object.field(hostSpecMembershipKey).valid() ? Optional.of(membershipFromSlime(object)) : Optional.empty(),
+                            optionalString(object.field(hostSpecCurrentVespaVersionKey)).map(com.yahoo.component.Version::new),
+                            NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)),
+                            nodeResourcesFromSlime(object.field(requestedResourcesKey)));
     }
 
     private static List<String> aliasesFromSlime(Inspector object) {
@@ -140,20 +140,19 @@ public class AllocatedHostsSerializer {
     }
 
     private static Optional<Flavor> flavorFromSlime(Inspector object, Optional<NodeFlavors> nodeFlavors) {
-        if (object.field(flavorKey).valid() && nodeFlavors.isPresent() && nodeFlavors.get().exists(object.field(flavorKey).asString())) {
+        if (object.field(flavorKey).valid() && nodeFlavors.isPresent() && nodeFlavors.get().exists(object.field(flavorKey).asString()))
             return nodeFlavors.get().getFlavor(object.field(flavorKey).asString());
-        }
-        else if (object.field(resourcesKey).valid()) {
-            Inspector resources = object.field(resourcesKey);
-            return Optional.of(new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
-                                                            resources.field(memoryKey).asDouble(),
-                                                            resources.field(diskKey).asDouble(),
-                                                            resources.field(bandwidthKey).asDouble(),
-                                                            diskSpeedFromSlime(resources.field(diskSpeedKey)))));
-        }
-        else {
-            return Optional.empty();
-        }
+        else
+            return nodeResourcesFromSlime(object.field(resourcesKey)).map(resources -> new Flavor(resources));
+    }
+
+    private static Optional<NodeResources> nodeResourcesFromSlime(Inspector resources) {
+        if ( ! resources.valid()) return Optional.empty();
+        return Optional.of(new NodeResources(resources.field(vcpuKey).asDouble(),
+                                             resources.field(memoryKey).asDouble(),
+                                             resources.field(diskKey).asDouble(),
+                                             resources.field(bandwidthKey).asDouble(),
+                                             diskSpeedFromSlime(resources.field(diskSpeedKey))));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {

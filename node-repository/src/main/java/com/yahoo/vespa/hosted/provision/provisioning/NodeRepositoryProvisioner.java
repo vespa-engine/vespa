@@ -103,7 +103,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
             effectiveGroups = 1; // type request with multiple groups is not supported
         }
 
-        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups));
+        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups),
+                             requestedCapacity.nodeResources());
     }
 
     @Override
@@ -123,7 +124,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         loadBalancerProvisioner.ifPresent(lbProvisioner -> lbProvisioner.deactivate(application, transaction));
     }
 
-    private List<HostSpec> asSortedHosts(List<Node> nodes) {
+    private List<HostSpec> asSortedHosts(List<Node> nodes, Optional<NodeResources> requestedResources) {
         nodes.sort(Comparator.comparingInt(node -> node.allocation().get().membership().index()));
         List<HostSpec> hosts = new ArrayList<>(nodes.size());
         for (Node node : nodes) {
@@ -134,7 +135,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                    Optional.of(node.flavor()),
                                    Optional.of(nodeAllocation.membership()),
                                    node.status().vespaVersion(),
-                                   nodeAllocation.networkPorts()));
+                                   nodeAllocation.networkPorts(),
+                                   requestedResources));
             if (nodeAllocation.networkPorts().isPresent()) {
                 log.log(LogLevel.DEBUG, () -> "Prepared node " + node.hostname() + " has port allocations");
             }

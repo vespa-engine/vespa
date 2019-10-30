@@ -140,7 +140,7 @@ public class InfraDeployerImplTest {
         Optional<Node> nodeWithAllocation = wantedVespaVersion.map(version -> {
             ClusterSpec clusterSpec = application.getClusterSpecWithVersion(version).with(Optional.of(ClusterSpec.Group.from(0)));
             ClusterMembership membership = ClusterMembership.from(clusterSpec, 1);
-            Allocation allocation = new Allocation(application.getApplicationId(), membership, Generation.initial(), false);
+            Allocation allocation = new Allocation(application.getApplicationId(), membership, node.flavor().resources(), Generation.initial(), false);
             return node.with(allocation);
         });
         return nodeRepository.database().writeTo(state, nodeWithAllocation.orElse(node), Agent.system, Optional.empty());

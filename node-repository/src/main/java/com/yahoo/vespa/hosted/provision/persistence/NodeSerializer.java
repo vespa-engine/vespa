@@ -92,6 +92,7 @@ public class NodeSerializer {
     private static final String applicationIdKey = "applicationId";
     private static final String instanceIdKey = "instanceId";
     private static final String serviceIdKey = "serviceId"; // legacy name, TODO: change to membership with backwards compat
+    private static final String requestedResourcesKey = "requestedResources";
     private static final String restartGenerationKey = "restartGeneration";
     private static final String currentRestartGenerationKey = "currentRestartGeneration";
     private static final String removableKey = "removable";
@@ -155,17 +156,20 @@ public class NodeSerializer {
             }
         }
         else {
-            NodeResources resources = flavor.resources();
-            Cursor resourcesObject = object.setObject(resourcesKey);
-            resourcesObject.setDouble(vcpuKey, resources.vcpu());
-            resourcesObject.setDouble(memoryKey, resources.memoryGb());
-            resourcesObject.setDouble(diskKey, resources.diskGb());
-            resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
-            resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
+            toSlime(flavor.resources(), object.setObject(resourcesKey));
         }
     }
 
+    private void toSlime(NodeResources resources, Cursor resourcesObject) {
+        resourcesObject.setDouble(vcpuKey, resources.vcpu());
+        resourcesObject.setDouble(memoryKey, resources.memoryGb());
+        resourcesObject.setDouble(diskKey, resources.diskGb());
+        resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
+        resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
+    }
+
     private void toSlime(Allocation allocation, Cursor object) {
+        toSlime(allocation.requestedResources(), object.setObject(requestedResourcesKey));
         object.setString(tenantIdKey, allocation.owner().tenant().value());
         object.setString(applicationIdKey, allocation.owner().application().value());
         object.setString(instanceIdKey, allocation.owner().instance().value());
@@ -200,15 +204,16 @@ public class NodeSerializer {
     }
 
     private Node nodeFromSlime(Node.State state, Inspector object) {
+        Flavor flavor = flavorFromSlime(object);
         return new Node(object.field(idKey).asString(),
                         new IP.Config(ipAddressesFromSlime(object, ipAddressesKey),
                                       ipAddressesFromSlime(object, ipAddressPoolKey)),
                         object.field(hostnameKey).asString(),
                         parentHostnameFromSlime(object),
-                        flavorFromSlime(object),
+                        flavor,
                         statusFromSlime(object),
                         state,
-                        allocationFromSlime(object.field(instanceKey)),
+                        allocationFromSlime(flavor.resources(), object.field(instanceKey)),
                         historyFromSlime(object.field(historyKey)),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
@@ -235,18 +240,25 @@ public class NodeSerializer {
             return flavor.with(FlavorOverrides.ofDisk(resources.field(diskKey).asDouble()));
         }
         else {
-            return new Flavor(new NodeResources(resources.field(vcpuKey).asDouble(),
-                                                resources.field(memoryKey).asDouble(),
-                                                resources.field(diskKey).asDouble(),
-                                                resources.field(bandwidthKey).asDouble(),
-                                                diskSpeedFromSlime(resources.field(diskSpeedKey))));
+            return new Flavor(resourcesFromSlime(resources).get());
         }
     }
 
-    private Optional<Allocation> allocationFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
+    private Optional<NodeResources> resourcesFromSlime(Inspector resources) {
+        if ( ! resources.valid()) return Optional.empty();
+
+        return Optional.of(new NodeResources(resources.field(vcpuKey).asDouble(),
+                                             resources.field(memoryKey).asDouble(),
+                                             resources.field(diskKey).asDouble(),
+                                             resources.field(bandwidthKey).asDouble(),
+                                             diskSpeedFromSlime(resources.field(diskSpeedKey))));
+    }
+
+    private Optional<Allocation> allocationFromSlime(NodeResources assignedResources, Inspector object) {
+        if ( ! object.valid()) return Optional.empty(); // TODO: Remove this line (and to the simplifications that follows) after November 2019
         return Optional.of(new Allocation(applicationIdFromSlime(object),
                                           clusterMembershipFromSlime(object),
+                                          resourcesFromSlime(object.field(requestedResourcesKey)).orElse(assignedResources),
                                           generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
                                           object.field(removableKey).asBool(),
                                           NetworkPortsSerializer.fromSlime(object.field(networkPortsKey))));
@@ -367,8 +379,6 @@ public class NodeSerializer {
     }
 
     private Agent eventAgentFromSlime(Inspector eventAgentField) {
-        if ( ! eventAgentField.valid()) return Agent.system; // TODO: Remove after April 2017
-
         switch (eventAgentField.asString()) {
             case "application" : return Agent.application;
             case "system" : return Agent.system;
@@ -416,7 +426,6 @@ public class NodeSerializer {
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
-        if ( ! diskSpeed.valid()) return NodeResources.DiskSpeed.fast; // TODO: Remove this line after June 2019
         switch (diskSpeed.asString()) {
             case "fast" : return NodeResources.DiskSpeed.fast;
             case "slow" : return NodeResources.DiskSpeed.slow;

@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NetworkPorts;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.host.FlavorOverrides;
@@ -70,6 +71,7 @@ public class SerializationTest {
     @Test
     public void testReservedNodeSerialization() {
         Node node = createNode();
+        NodeResources requestedResources = new NodeResources(1.2, 3.4, 5.6, 7.8, NodeResources.DiskSpeed.any);
 
         clock.advance(Duration.ofMinutes(3));
         assertEquals(0, node.history().events().size());
@@ -77,6 +79,7 @@ public class SerializationTest {
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
                              ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                             requestedResources,
                              clock.instant());
         assertEquals(1, node.history().events().size());
         node = node.withRestart(new Generation(1, 2));
@@ -99,21 +102,11 @@ public class SerializationTest {
         assertEquals(2, copy.status().failCount());
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
+        assertEquals(node.allocation().get().requestedResources(), copy.allocation().get().requestedResources());
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
         assertEquals(1, copy.history().events().size());
         assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.reserved).get().at());
         assertEquals(NodeType.tenant, copy.type());
-    }
-
-    @Test
-    public void testDefaultType() {
-        Node node = createNode().allocate(ApplicationId.from(TenantName.from("myTenant"),
-                ApplicationName.from("myApplication"),
-                InstanceName.from("myInstance")),
-                ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
-                clock.instant());
-        Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
-        assertEquals(NodeType.host, copy.type());
     }
 
     @Test
@@ -127,11 +120,13 @@ public class SerializationTest {
                 "   \"history\" : [\n" +
                 "      {\n" +
                 "         \"type\" : \"provisioned\",\n" +
-                "         \"at\" : 1444391401389\n" +
+                "         \"at\" : 1444391401389,\n" +
+                "         \"agent\" : \"system\"\n" +
                 "      },\n" +
                 "      {\n" +
                 "         \"type\" : \"reserved\",\n" +
-                "         \"at\" : 1444391402611\n" +
+                "         \"at\" : 1444391402611,\n" +
+                "         \"agent\" : \"system\"\n" +
                 "      }\n" +
                 "   ],\n" +
                 "   \"instance\" : {\n" +
@@ -172,6 +167,7 @@ public class SerializationTest {
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
                              ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                             node.flavor().resources(),
                              clock.instant());
         assertEquals(1, node.history().events().size());
         clock.advance(Duration.ofMinutes(2));
@@ -221,6 +217,7 @@ public class SerializationTest {
                              ApplicationName.from("myApplication"),
                              InstanceName.from("myInstance")),
                              ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                             node.flavor().resources(),
                              clock.instant());
 
         node = node.with(node.status().setFailCount(0));
@@ -405,6 +402,7 @@ public class SerializationTest {
                 ApplicationName.from("myApplication"),
                 InstanceName.from("myInstance")),
                 ClusterMembership.from("content/myId/0/0", Vtag.currentVersion),
+                node.flavor().resources(),
                 clock.instant());
         assertTrue(node.allocation().isPresent());
         node = node.with(node.allocation().get().withNetworkPorts(ports));
@@ -437,7 +435,13 @@ public class SerializationTest {
     }
 
     private Node createNode() {
-        return Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("default"), NodeType.host);
+        return Node.create("myId",
+                           new IP.Config(Set.of("127.0.0.1"), Set.of()),
+                           "myHostname",
+                           Optional.empty(),
+                           Optional.empty(),
+                           nodeFlavors.getFlavorOrThrow("default"),
+                           NodeType.tenant);
     }
 
 }

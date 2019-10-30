@@ -29,6 +29,8 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<NetworkPorts> networkPorts;
 
+    private Optional<NodeResources> requestedResources;
+
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
     }
@@ -61,15 +63,22 @@ public class HostSpec implements Comparable<HostSpec> {
     public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
                     Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
                     Optional<NetworkPorts> networkPorts) {
+        this(hostname, aliases, flavor, membership, version, networkPorts, Optional.empty());
+    }
+
+    public HostSpec(String hostname, List<String> aliases, Optional<Flavor> flavor,
+                    Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
+                    Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
-        Objects.requireNonNull(version, "Version cannot be null but can be empty");
-        Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");
+
+
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
         this.flavor = flavor;
         this.membership = membership;
-        this.version = version;
-        this.networkPorts = networkPorts;
+        this.version = Objects.requireNonNull(version, "Version cannot be null but can be empty");;
+        this.networkPorts = Objects.requireNonNull(networkPorts, "Network ports cannot be null but can be empty");;
+        this.requestedResources = Objects.requireNonNull(requestedResources, "RequestedResources cannot be null");
     }
 
     /** Returns the name identifying this host */
@@ -88,6 +97,9 @@ public class HostSpec implements Comparable<HostSpec> {
 
     /** Returns the network port allocations on this host, or empty if not present */
     public Optional<NetworkPorts> networkPorts() { return networkPorts; }
+
+    /** Returns the requested resources leading to this host being provisioned, or empty if not known */
+    public Optional<NodeResources> requestedResources() { return requestedResources; }
 
     @Override
     public String toString() {

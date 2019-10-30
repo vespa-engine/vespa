@@ -320,6 +320,38 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void requested_resources_info_is_retained() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+
+        tester.makeReadyNodes(13, defaultResources, NodeType.host, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.host);
+        ApplicationId application = tester.makeApplicationId();
+
+        {
+            // Deploy with disk-speed any and make sure that information is retained
+            SystemState state = prepare(application, 0, 0, 3, 3,
+                                        defaultResources.anySpeed(),
+                                        tester);
+            assertEquals(6, state.allHosts.size());
+            tester.activate(application, state.allHosts);
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(tester.nodeRepository().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+        }
+
+        {
+            // Deploy (with some additional nodes) with disk-speed fast and make sure *that* information is retained
+            // even though it does not lead to new nodes
+            SystemState state = prepare(application, 0, 0, 5, 3,
+                                        defaultResources,
+                                        tester);
+            assertEquals(8, state.allHosts.size());
+            tester.activate(application, state.allHosts);
+            assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.fast));
+            assertTrue(tester.nodeRepository().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.fast));
+        }
+    }
+
+    @Test
     public void deploy_specific_vespa_version() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
 

@@ -138,21 +138,21 @@ class Activator {
         return notFoundHosts.isEmpty();
     }
 
-    /**
-     * Returns the input nodes with the changes resulting from applying the settings in hosts to the given list of nodes.
-     */
+    /** Returns the input nodes with the changes resulting from applying the settings in hosts to the given list of nodes. */
     private List<Node> updateFrom(Collection<HostSpec> hosts, List<Node> nodes) {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retire(nodeRepository.clock().instant()) : node.unretire();
-            Allocation allocation = node.allocation().get().with(hostSpec.membership().get());
-            if (hostSpec.networkPorts().isPresent()) {
-                allocation = allocation.withNetworkPorts(hostSpec.networkPorts().get());
-            }
-            node = node.with(allocation);
             if (hostSpec.flavor().isPresent()) // Docker nodes may change flavor
                 node = node.with(hostSpec.flavor().get());
+            Allocation allocation = node.allocation().get()
+                                        .with(hostSpec.membership().get())
+                                        .withRequestedResources(hostSpec.requestedResources()
+                                                                        .orElse(node.flavor().resources()));
+            if (hostSpec.networkPorts().isPresent())
+                allocation = allocation.withNetworkPorts(hostSpec.networkPorts().get());
+            node = node.with(allocation);
             updated.add(node);
         }
         return updated;
