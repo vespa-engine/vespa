@@ -145,11 +145,12 @@ public class CapacityChecker {
      * Computes a heuristic for each host, with a lower score indicating a higher perceived likelihood that removing
      * the host causes an unrecoverable state
      */
-    private Map<Node, Integer> computeMaximalRepeatedRemovals(List<Node> hosts, Map<Node, List<Node>> nodeChildren,
+    private Map<Node, Integer> computeMaximalRepeatedRemovals(List<Node> hosts,
+                                                              Map<Node, List<Node>> nodeChildren,
                                                               Map<Node, AllocationResources> availableResources) {
         Map<Node, Integer> timesNodeCanBeRemoved = hosts.stream().collect(Collectors.toMap(
                 Function.identity(),
-                _x -> Integer.MAX_VALUE
+                __ -> Integer.MAX_VALUE
         ));
         for (Node host : hosts) {
             List<Node> children = nodeChildren.get(host);
@@ -159,7 +160,7 @@ public class CapacityChecker {
 
             int timesHostCanBeRemoved = 0;
             Optional<Node> unallocatedNode;
-            while (timesHostCanBeRemoved < 1000) { // Arbritrary upper bound
+            while (timesHostCanBeRemoved < 1000) { // Arbitrary upper bound
                 unallocatedNode = tryAllocateNodes(nodeChildren.get(host), hosts, resourceMap, containedAllocations);
                 if (unallocatedNode.isEmpty()) {
                     timesHostCanBeRemoved++;
@@ -225,13 +226,15 @@ public class CapacityChecker {
     /**
      * Attempts to allocate the listed nodes to a new host, mutating availableResources and containedAllocations,
      * optionally returning the first node to fail, if one does.
-     * */
-    private Optional<Node> tryAllocateNodes(List<Node> nodes, List<Node> hosts,
+     */
+    private Optional<Node> tryAllocateNodes(List<Node> nodes,
+                                            List<Node> hosts,
                                             Map<Node, AllocationResources> availableResources,
                                             Map<Node, List<Allocation>> containedAllocations) {
         return tryAllocateNodes(nodes, hosts, availableResources, containedAllocations, false);
     }
-    private Optional<Node> tryAllocateNodes(List<Node> nodes, List<Node> hosts,
+    private Optional<Node> tryAllocateNodes(List<Node> nodes,
+                                            List<Node> hosts,
                                             Map<Node, AllocationResources> availableResources,
                                             Map<Node, List<Allocation>> containedAllocations, boolean withHistory) {
         for (var node : nodes) {
@@ -251,13 +254,12 @@ public class CapacityChecker {
         return Optional.empty();
     }
 
-    /**
-     * @return The parent to which the node was allocated, if it was successfully allocated.
-     */
-    private Optional<Node> tryAllocateNode(Node node, List<Node> hosts,
-                                    Map<Node, AllocationResources> availableResources,
-                                    Map<Node, List<Allocation>> containedAllocations) {
-        AllocationResources requiredNodeResources = AllocationResources.from(node.flavor().resources());
+    /** Returns the parent to which the node was allocated, if it was successfully allocated. */
+    private Optional<Node> tryAllocateNode(Node node,
+                                           List<Node> hosts,
+                                           Map<Node, AllocationResources> availableResources,
+                                           Map<Node, List<Allocation>> containedAllocations) {
+        AllocationResources requiredNodeResources = AllocationResources.from(node);
         for (var host : hosts) {
             var availableHostResources = availableResources.get(host);
             if (violatesParentHostPolicy(node, host, containedAllocations)) {
@@ -366,12 +368,18 @@ public class CapacityChecker {
         }
     }
 
-    /**
-     * Used to describe the resources required for a tenant, and available to a host.
-     */
+    /** Used to describe the resources required for a tenant, and available to a host. */
     private static class AllocationResources {
+
         NodeResources nodeResources;
         int availableIPs;
+
+        public static AllocationResources from(Node node) {
+            if (node.allocation().isPresent())
+                return from(node.allocation().get().requestedResources());
+            else
+                return from(node.flavor().resources());
+        }
 
         public static AllocationResources from(NodeResources nodeResources) {
             return new AllocationResources(nodeResources, 1);

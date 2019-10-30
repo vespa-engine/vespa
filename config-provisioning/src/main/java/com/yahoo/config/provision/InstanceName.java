@@ -8,7 +8,6 @@ import java.util.Objects;
  * in order to provide a type safe API for defining environments.
  *
  * @author Ulf Lilleengen
- * @since 5.25
  */
 public class InstanceName implements Comparable<InstanceName> {
 
