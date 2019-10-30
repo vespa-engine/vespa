@@ -20,6 +20,9 @@ Source0:        vespa-%{version}.tar.gz
 BuildRequires: epel-release
 %if 0%{?el7}
 BuildRequires: centos-release-scl
+%endif
+%endif
+%if 0%{?el7}
 BuildRequires: devtoolset-8-gcc-c++
 BuildRequires: devtoolset-8-libatomic-devel
 BuildRequires: devtoolset-8-binutils
@@ -32,13 +35,11 @@ BuildRequires: gcc-c++
 BuildRequires: libatomic
 BuildRequires: maven
 %endif
-%endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
 BuildRequires: libatomic
 %endif
 BuildRequires: Judy-devel
-%if 0%{?centos}
 %if 0%{?el7}
 BuildRequires: cmake3
 BuildRequires: llvm5.0-devel
@@ -54,7 +55,6 @@ BuildRequires: boost-devel >= 1.66
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-protobuf-devel >= 3.7.0-4
-%endif
 %endif
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
@@ -132,7 +132,6 @@ Requires: libicu
 Requires: perf
 Requires: gdb
 Requires: net-tools
-%if 0%{?centos}
 %if 0%{?el7}
 Requires: llvm5.0
 Requires: vespa-openssl >= 1.1.1c-1
@@ -148,7 +147,6 @@ Requires: openssl-libs
 %define _vespa_llvm_version 7.0
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include
-%endif
 %endif
 %if 0%{?fedora}
 Requires: vespa-protobuf >= 3.7.0-4
