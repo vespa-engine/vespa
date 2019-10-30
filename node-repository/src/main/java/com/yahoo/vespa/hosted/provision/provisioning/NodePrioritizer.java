@@ -219,7 +219,7 @@ public class NodePrioritizer {
 
     private static NodeResources resources(NodeSpec requestedNodes) {
         if ( ! (requestedNodes instanceof NodeSpec.CountNodeSpec)) return null;
-        return ((NodeSpec.CountNodeSpec)requestedNodes).resources();
+        return requestedNodes.resources().get();
     }
 
     private boolean isDocker() {

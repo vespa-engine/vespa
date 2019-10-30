@@ -199,6 +199,7 @@ public class DynamicProvisioningMaintainerTest {
                     .map(app -> new Allocation(
                             app,
                             ClusterMembership.from("container/default/0/0", Version.fromString("7.3")),
+                            flavor.resources(),
                             Generation.initial(),
                             false));
             var ipConfig = new IP.Config(state == Node.State.active ? Set.of("::1") : Set.of(), Set.of());

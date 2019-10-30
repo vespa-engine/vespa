@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -51,7 +52,7 @@ class Preparer {
      // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
-    public List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
+    private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
         MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));

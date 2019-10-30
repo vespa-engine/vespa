@@ -42,7 +42,12 @@ public class AllocatedHostsSerializerTest {
         hosts.add(new HostSpec("flavor-from-resources-1",
                                Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1))));
         hosts.add(new HostSpec("flavor-from-resources-2",
-                               Collections.emptyList(), new Flavor(new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any))));
+                               Collections.emptyList(),
+                               Optional.of(new Flavor(new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow))),
+                               Optional.empty(),
+                               Optional.empty(),
+                               Optional.empty(),
+                               Optional.of(new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any))));
         hosts.add(new HostSpec("configured-flavor",
                                Collections.emptyList(), configuredFlavors.getFlavorOrThrow("C/12/45/100")));
         hosts.add(new HostSpec("with-version",
@@ -67,6 +72,7 @@ public class AllocatedHostsSerializerTest {
             assertEquals(expectedHost.version(), deserializedHost.version());
             assertEquals(expectedHost.networkPorts(), deserializedHost.networkPorts());
             assertEquals(expectedHost.aliases(), deserializedHost.aliases());
+            assertEquals(expectedHost.requestedResources(), deserializedHost.requestedResources());
         }
     }
 

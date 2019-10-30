@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
@@ -54,6 +55,7 @@ public class IdentityDocumentGeneratorTest {
                 TenantName.from("tenant"), ApplicationName.from("application"), InstanceName.from("default"));
         Allocation allocation = new Allocation(appid,
                                                ClusterMembership.from("container/default/0/0", Version.fromString("1.2.3")),
+                                               new NodeResources(1, 1, 1, 1),
                                                Generation.initial(),
                                                false);
         Node parentNode = Node.create("ostkid",

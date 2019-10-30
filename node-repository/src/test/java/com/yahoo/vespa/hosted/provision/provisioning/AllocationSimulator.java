@@ -80,7 +80,7 @@ public class AllocationSimulator {
     private Node node(String hostname, Flavor flavor, Optional<String> parent, Optional<String> tenant) {
         var ipConfig = new IP.Config(Set.of("127.0.0.1"), parent.isPresent() ? Set.of() : getAdditionalIP());
         return new Node("fake", ipConfig, hostname, parent, flavor, Status.initial(),
-                        parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant), History.empty(),
+                        parent.isPresent() ? Node.State.ready : Node.State.active, allocation(tenant, flavor), History.empty(),
                         parent.isPresent() ? NodeType.tenant : NodeType.host, new Reports(), Optional.empty());
     }
 
@@ -90,10 +90,11 @@ public class AllocationSimulator {
         return h;
     }
 
-    private Optional<Allocation> allocation(Optional<String> tenant) {
+    private Optional<Allocation> allocation(Optional<String> tenant, Flavor flavor) {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
                                                    ClusterMembership.from("container/id1/3", new Version()),
+                                                   flavor.resources(),
                                                    Generation.initial(),
                                                    false);
             return Optional.of(allocation);

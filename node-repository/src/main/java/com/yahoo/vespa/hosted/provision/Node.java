@@ -249,8 +249,9 @@ public final class Node {
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
-    public Node allocate(ApplicationId owner, ClusterMembership membership, Instant at) {
-        return this.with(new Allocation(owner, membership, new Generation(0, 0), false))
+    public Node allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
+        return this
+                .with(new Allocation(owner, membership, requestedResources, new Generation(0, 0), false))
                 .with(history.with(new History.Event(History.Event.Type.reserved, Agent.application, at)));
     }
 

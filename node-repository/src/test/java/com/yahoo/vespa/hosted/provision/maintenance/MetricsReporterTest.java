@@ -126,12 +126,12 @@ public class MetricsReporterTest {
 
         Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
                                                 "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant);
-        container1 = container1.with(allocation(Optional.of("app1")).get());
+        container1 = container1.with(allocation(Optional.of("app1"), container1).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), nodeRepository.lockAllocation()));
 
         Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
                                                 "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant);
-        container2 = container2.with(allocation(Optional.of("app2")).get());
+        container2 = container2.with(allocation(Optional.of("app2"), container2).get());
         nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), nodeRepository.lockAllocation()));
 
         Orchestrator orchestrator = mock(Orchestrator.class);
@@ -171,10 +171,11 @@ public class MetricsReporterTest {
                 .instanceName("default").build();
     }
 
-    private Optional<Allocation> allocation(Optional<String> tenant) {
+    private Optional<Allocation> allocation(Optional<String> tenant, Node owner) {
         if (tenant.isPresent()) {
             Allocation allocation = new Allocation(app(tenant.get()),
                                                    ClusterMembership.from("container/id1/0/3", new Version()),
+                                                   owner.flavor().resources(),
                                                    Generation.initial(),
                                                    false);
             return Optional.of(allocation);

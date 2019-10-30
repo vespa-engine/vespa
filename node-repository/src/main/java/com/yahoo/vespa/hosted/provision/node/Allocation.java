@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.NetworkPorts;
+import com.yahoo.config.provision.NodeResources;
 
 import java.util.Optional;
 
@@ -16,6 +17,8 @@ public class Allocation {
 
     private final ApplicationId owner;
     private final ClusterMembership clusterMembership;
+
+    private final NodeResources requestedResources;
 
     /**
      * Restart generation, see {@link com.yahoo.vespa.hosted.provision.node.Generation},
@@ -30,15 +33,16 @@ public class Allocation {
     private final Optional<NetworkPorts> networkPorts;
 
 
-    public Allocation(ApplicationId owner, ClusterMembership clusterMembership,
+    public Allocation(ApplicationId owner, ClusterMembership clusterMembership, NodeResources requestedResources,
                       Generation restartGeneration, boolean removable) {
-        this(owner, clusterMembership, restartGeneration, removable, Optional.empty());
+        this(owner, clusterMembership, requestedResources, restartGeneration, removable, Optional.empty());
     }
 
-    public Allocation(ApplicationId owner, ClusterMembership clusterMembership,
+    public Allocation(ApplicationId owner, ClusterMembership clusterMembership, NodeResources requestedResources,
                       Generation restartGeneration, boolean removable, Optional<NetworkPorts> networkPorts) {
         this.owner = owner;
         this.clusterMembership = clusterMembership;
+        this.requestedResources = requestedResources;
         this.restartGeneration = restartGeneration;
         this.removable = removable;
         this.networkPorts = networkPorts;
@@ -50,6 +54,9 @@ public class Allocation {
     /** Returns the role this node is allocated to */
     public ClusterMembership membership() { return clusterMembership; }
 
+    /** Returns the node resources requested, leading to this allocation on this node */
+    public NodeResources requestedResources() { return requestedResources; }
+
     /** Returns the restart generation (wanted and current) of this */
     public Generation restartGeneration() { return restartGeneration; }
 
@@ -58,33 +65,37 @@ public class Allocation {
 
     /** Returns a copy of this which is retired */
     public Allocation retire() {
-        return new Allocation(owner, clusterMembership.retire(), restartGeneration, removable, networkPorts);
+        return new Allocation(owner, clusterMembership.retire(), requestedResources, restartGeneration, removable, networkPorts);
     }
 
     /** Returns a copy of this which is not retired */
     public Allocation unretire() {
-        return new Allocation(owner, clusterMembership.unretire(), restartGeneration, removable, networkPorts);
+        return new Allocation(owner, clusterMembership.unretire(), requestedResources, restartGeneration, removable, networkPorts);
     }
 
     /** Return whether this node is ready to be removed from the application */
     public boolean isRemovable() { return removable; }
 
+    public Allocation withRequestedResources(NodeResources resources) {
+        return new Allocation(owner, clusterMembership, resources, restartGeneration, removable, networkPorts);
+    }
+
     /** Returns a copy of this with the current restart generation set to generation */
     public Allocation withRestart(Generation generation) {
-        return new Allocation(owner, clusterMembership, generation, removable, networkPorts);
+        return new Allocation(owner, clusterMembership, requestedResources, generation, removable, networkPorts);
     }
 
     /** Returns a copy of this allocation where removable is set to true */
     public Allocation removable() {
-        return new Allocation(owner, clusterMembership, restartGeneration, true, networkPorts);
+        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, true, networkPorts);
     }
 
     public Allocation with(ClusterMembership newMembership) {
-        return new Allocation(owner, newMembership, restartGeneration, removable, networkPorts);
+        return new Allocation(owner, newMembership, requestedResources, restartGeneration, removable, networkPorts);
     }
 
     public Allocation withNetworkPorts(NetworkPorts ports) {
-        return new Allocation(owner, clusterMembership, restartGeneration, removable, Optional.of(ports));
+        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, removable, Optional.of(ports));
     }
 
     @Override

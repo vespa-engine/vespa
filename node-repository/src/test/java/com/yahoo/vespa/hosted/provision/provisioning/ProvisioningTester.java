@@ -148,12 +148,13 @@ public class ProvisioningTester {
         return hosts1;
     }
 
-    public void activate(ApplicationId application, Collection<HostSpec> hosts) {
+    public Collection<HostSpec> activate(ApplicationId application, Collection<HostSpec> hosts) {
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(new CuratorTransaction(curator));
         provisioner.activate(transaction, application, hosts);
         transaction.commit();
         assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
+        return hosts;
     }
 
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {

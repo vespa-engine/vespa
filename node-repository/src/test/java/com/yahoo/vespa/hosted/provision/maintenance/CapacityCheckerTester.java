@@ -266,7 +266,7 @@ public class CapacityCheckerTester {
                 nodeModel.parentHostname, f, nodeModel.type);
 
         if (membership != null) {
-            return node.allocate(owner, membership, Instant.now());
+            return node.allocate(owner, membership, node.flavor().resources(), Instant.now());
         } else {
             return node;
         }
