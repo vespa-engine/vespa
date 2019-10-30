@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * The possible types of nodes in the node repository
  * 
@@ -9,39 +12,42 @@ package com.yahoo.config.provision;
 public enum NodeType {
 
     /** A node to be assigned to a tenant to run application workloads */
-    tenant(null, "Tenant node"),
+    tenant("Tenant node"),
 
     /** A host of a set of (Docker) tenant nodes */
-    host(tenant, "Tenant docker host"),
+    host("Tenant docker host", tenant),
 
     /** Nodes running the shared proxy layer */
-    proxy(null, "Proxy node"),
+    proxy("Proxy node"),
 
     /** A host of a (Docker) proxy node */
-    proxyhost(proxy, "Proxy docker host"),
+    proxyhost("Proxy docker host", proxy),
 
     /** A config server */
-    config(null, "Config server"),
+    config("Config server"),
 
     /** A host of a (Docker) config server node */
-    confighost(config, "Config docker host"),
+    confighost("Config docker host", config),
 
     /** A controller */
-    controller(null, "Controller"),
+    controller("Controller"),
 
     /** A host of a (Docker) controller node */
-    controllerhost(controller, "Controller host");
+    controllerhost("Controller host", controller),
 
-    private final NodeType childNodeType;
+    /** A host of multiple nodes, only used in {@link SystemName#dev} */
+    devhost("Dev host", tenant, config, controller);
+
+    private final List<NodeType> childNodeTypes;
     private final String description;
 
-    NodeType(NodeType childNodeType, String description) {
-        this.childNodeType = childNodeType;
+    NodeType(String description, NodeType... childNodeTypes) {
+        this.childNodeTypes = List.copyOf(Set.of(childNodeTypes));
         this.description = description;
     }
 
     public boolean isDockerHost() {
-        return childNodeType != null;
+        return !childNodeTypes.isEmpty();
     }
 
     public String description() {
@@ -53,9 +59,17 @@ public enum NodeType {
      * @throws IllegalStateException if this type is not a host
      */
     public NodeType childNodeType() {
+        return childNodeTypes().get(0);
+    }
+
+    /**
+     * @return all {@link NodeType}s that can run on this host
+     * @throws IllegalStateException if this type is not a host
+     */
+    public List<NodeType> childNodeTypes() {
         if (! isDockerHost())
             throw new IllegalStateException(this + " has no children");
-
-        return childNodeType;
+        return childNodeTypes;
     }
+
 }
