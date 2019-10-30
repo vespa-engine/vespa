@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -73,10 +71,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        if (proxyRequest.isDiscoveryRequest()) {
-            return createDiscoveryResponse(proxyRequest);
-        }
-
         ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
 
         List<URI> allServers = getConfigserverEndpoints(zoneId);
@@ -104,27 +98,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         } else {
             return new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
         }
-    }
-
-    private static class DiscoveryResponseStructure {
-        public List<String> uris = new ArrayList<>();
-    }
-
-    private ProxyResponse createDiscoveryResponse(ProxyRequest proxyRequest) {
-        ObjectMapper mapper = new ObjectMapper();
-        DiscoveryResponseStructure responseStructure = new DiscoveryResponseStructure();
-        String environmentName = proxyRequest.getEnvironment();
-
-        ZoneList zones = zoneRegistry.zones().all();
-        if ( ! environmentName.isEmpty())
-            zones = zones.in(Environment.from(environmentName));
-
-        for (ZoneApi zone : zones.zones()) {
-            responseStructure.uris.add(proxyRequest.getScheme() + "://" + proxyRequest.getControllerPrefix() +
-                                       zone.getEnvironment().value() + "/" + zone.getRegionName().value());
-        }
-        JsonNode node = mapper.valueToTree(responseStructure);
-        return new ProxyResponse(proxyRequest, node.toString(), 200, Optional.empty(), "application/json");
     }
 
     private static String removeFirstSlashIfAny(String url) {
@@ -168,7 +141,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 contentType = "application/json";
             }
             // Send response back
-            return Optional.of(new ProxyResponse(proxyRequest, content, status, Optional.of(uri), contentType));
+            return Optional.of(new ProxyResponse(proxyRequest, content, status, uri, contentType));
         } catch (Exception e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());

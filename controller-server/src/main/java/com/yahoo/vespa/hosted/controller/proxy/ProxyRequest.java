@@ -74,12 +74,6 @@ public class ProxyRequest {
         this.scheme = requestUri.getScheme();
     }
 
-    /**
-     * A discovery query lists environments and regions.
-     */
-    public boolean isDiscoveryRequest() {
-        return region.isEmpty();
-    }
 
     public String getRegion() {
         return region;

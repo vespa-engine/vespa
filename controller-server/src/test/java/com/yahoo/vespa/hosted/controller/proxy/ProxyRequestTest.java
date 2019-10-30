@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Haakon Dybdahl
@@ -34,24 +32,6 @@ public class ProxyRequestTest {
     public void testBadUri() throws Exception {
         exception.expectMessage("Request not starting with /zone/v2/");
         testRequest(URI.create("http://foo"), "/zone/v2/");
-    }
-
-    @Test
-    public void testConfigRequestEmpty() throws Exception {
-        ProxyRequest proxyRequest = testRequest(URI.create("http://foo/zone/v2/foo/bar"), "/zone/v2/");
-        assertEquals("foo", proxyRequest.getEnvironment());
-        assertEquals("bar", proxyRequest.getRegion());
-        assertFalse(proxyRequest.isDiscoveryRequest());
-        assertTrue(proxyRequest.getConfigServerRequest().isEmpty());
-
-    }
-
-    @Test
-    public void testDiscoveryRequest() throws Exception {
-        ProxyRequest proxyRequest = testRequest(URI.create("http://foo/zone/v2/foo"), "/zone/v2/");
-        assertEquals("foo", proxyRequest.getEnvironment());
-        assertTrue(proxyRequest.isDiscoveryRequest());
-
     }
 
     @Test
