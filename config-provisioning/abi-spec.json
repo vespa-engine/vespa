@@ -644,8 +644,7 @@
       "public static com.yahoo.config.provision.NodeType valueOf(java.lang.String)",
       "public boolean isDockerHost()",
       "public java.lang.String description()",
-      "public com.yahoo.config.provision.NodeType childNodeType()",
-      "public java.util.List childNodeTypes()"
+      "public com.yahoo.config.provision.NodeType childNodeType()"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.NodeType tenant",
@@ -655,8 +654,7 @@
       "public static final enum com.yahoo.config.provision.NodeType config",
       "public static final enum com.yahoo.config.provision.NodeType confighost",
       "public static final enum com.yahoo.config.provision.NodeType controller",
-      "public static final enum com.yahoo.config.provision.NodeType controllerhost",
-      "public static final enum com.yahoo.config.provision.NodeType devhost"
+      "public static final enum com.yahoo.config.provision.NodeType controllerhost"
     ]
   },
   "com.yahoo.config.provision.OutOfCapacityException": {
