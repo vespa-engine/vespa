@@ -49,6 +49,10 @@ public class ValuesFetcher {
                 .collect(Collectors.toList());
     }
 
+    public List<MetricsPacket> fetchAllMetrics() throws JsonRenderingException {
+        return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());
+    }
+
     private ConsumerId getConsumerOrDefault(String consumer) {
         if (consumer == null) return DEFAULT_PUBLIC_CONSUMER_ID;
 
