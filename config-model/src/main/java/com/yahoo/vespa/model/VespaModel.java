@@ -3,6 +3,7 @@ package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModel;
 import com.yahoo.collections.Pair;
+import com.yahoo.component.Version;
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigInstance.Builder;
@@ -96,6 +97,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private static final long serialVersionUID = 1L;
 
     public static final Logger log = Logger.getLogger(VespaModel.class.getPackage().toString());
+
+    private final Version version;
     private final ConfigModelRepo configModelRepo = new ConfigModelRepo();
     private final AllocatedHosts allocatedHosts;
 
@@ -155,6 +158,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private VespaModel(ConfigModelRegistry configModelRegistry, DeployState deployState, boolean complete, FileDistributor fileDistributor)
             throws IOException, SAXException {
         super("vespamodel");
+        this.version = deployState.getVespaVersion();
         this.validationOverrides = deployState.validationOverrides();
         configModelRegistry = new VespaConfigModelRegistry(configModelRegistry);
         VespaModelBuilder builder = new VespaDomBuilder();
@@ -290,6 +294,11 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     @Override
     public boolean skipOldConfigModels(Instant now) {
         return validationOverrides.allows(ValidationId.skipOldConfigModels, now);
+    }
+
+    @Override
+    public Version version() {
+        return version;
     }
 
     /**

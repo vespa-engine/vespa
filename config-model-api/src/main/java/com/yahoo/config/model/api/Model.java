@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.api;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.vespa.config.ConfigKey;
@@ -78,5 +79,10 @@ public interface Model {
      * or clients requesting config for those old models will not get config at all.
      */
     default boolean skipOldConfigModels(Instant now) { return false; }
+
+    /**
+     * Returns the version of this model
+     */
+    default Version version() { return Version.emptyVersion; };
     
 }

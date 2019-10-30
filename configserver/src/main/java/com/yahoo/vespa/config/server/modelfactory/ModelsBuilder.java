@@ -131,7 +131,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 }
             }
         }
-        log.log(LogLevel.DEBUG, "Done building models for " + applicationId);
+        log.log(LogLevel.DEBUG, "Done building models for " + applicationId + ". Built models for versions " +
+                allApplicationModels.stream().map(result -> result.getModel().version())) ;
         return allApplicationModels;
     }
 

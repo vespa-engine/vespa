@@ -1,5 +1,6 @@
 package com.yahoo.vespa.config.server.metrics;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.HostInfo;
