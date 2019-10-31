@@ -191,7 +191,7 @@ public class MetricsReporterTest {
                             .deploy();
         assertEquals(1000, context.lastSubmission().get().buildTime().get().toEpochMilli());
 
-        MetricsReporter reporter = createReporter(tester.tester().controller());
+        MetricsReporter reporter = createReporter(tester.controller());
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
                      getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, context.instanceId()));

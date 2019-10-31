@@ -61,44 +61,46 @@ public class InternalDeploymentTester {
     public static final String athenzDomain = "domain";
 
     private final DeploymentContext defaultContext;
-    private final DeploymentTester tester;
+    private final ControllerTester tester;
     private final JobController jobs;
     private final RoutingGeneratorMock routing;
     private final MockTesterCloud cloud;
     private final JobRunner runner;
+    private final Upgrader upgrader;
     private final ReadyJobsTrigger readyJobsTrigger;
     private final OutstandingChangeDeployer outstandingChangeDeployer;
     private final NameServiceDispatcher nameServiceDispatcher;
 
-    public DeploymentTester tester() { return tester; }
     public JobController jobs() { return jobs; }
     public RoutingGeneratorMock routing() { return routing; }
     public MockTesterCloud cloud() { return cloud; }
     public JobRunner runner() { return runner; }
     public ConfigServerMock configServer() { return tester.configServer(); }
     public Controller controller() { return tester.controller(); }
-    public DeploymentTrigger deploymentTrigger() { return tester.deploymentTrigger(); }
-    public ControllerTester controllerTester() { return tester.controllerTester(); }
-    public Upgrader upgrader() { return tester.upgrader(); }
-    public ApplicationController applications() { return tester.applications(); }
+    public DeploymentTrigger deploymentTrigger() { return applications().deploymentTrigger(); }
+    public ControllerTester controllerTester() { return tester; }
+    public Upgrader upgrader() { return upgrader; }
+    public ApplicationController applications() { return tester.controller().applications(); }
     public ManualClock clock() { return tester.clock(); }
-    public Application application() { return tester.application(appId); }
-    public Application application(TenantAndApplicationId id ) { return tester.application(id); }
-    public Instance instance() { return tester.instance(instanceId); }
-    public Instance instance(ApplicationId id) { return tester.instance(id); }
+    public Application application() { return application(appId); }
+    public Application application(TenantAndApplicationId id ) { return applications().requireApplication(id); }
+    public Instance instance() { return instance(instanceId); }
+    public Instance instance(ApplicationId id) { return applications().requireInstance(id); }
 
     public InternalDeploymentTester() {
         this(new ControllerTester());
     }
 
     public InternalDeploymentTester(ControllerTester controllerTester) {
-        tester = new DeploymentTester(controllerTester);
+        tester = controllerTester;
         jobs = tester.controller().jobController();
-        routing = tester.controllerTester().serviceRegistry().routingGeneratorMock();
+        routing = tester.serviceRegistry().routingGeneratorMock();
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         var jobControl = new JobControl(tester.controller().curator());
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), jobControl,
                                JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
+        upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
+        upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
         readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);
         outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), maintenanceInterval, jobControl,
@@ -109,10 +111,10 @@ public class InternalDeploymentTester {
         // Get deployment job logs to stderr.
         Logger.getLogger("").setLevel(LogLevel.DEBUG);
         Logger.getLogger(InternalStepRunner.class.getName()).setLevel(LogLevel.DEBUG);
-        tester.controllerTester().configureDefaultLogHandler(handler -> handler.setLevel(LogLevel.DEBUG));
+        tester.configureDefaultLogHandler(handler -> handler.setLevel(LogLevel.DEBUG));
 
         // Mock Athenz domain to allow launch of service
-        AthenzDbMock.Domain domain = tester.controllerTester().athenzDb().getOrCreateDomain(new com.yahoo.vespa.athenz.api.AthenzDomain(ATHENZ_DOMAIN));
+        AthenzDbMock.Domain domain = tester.athenzDb().getOrCreateDomain(new com.yahoo.vespa.athenz.api.AthenzDomain(ATHENZ_DOMAIN));
         domain.services.put(ATHENZ_SERVICE, new AthenzDbMock.Service(true));
     }
 

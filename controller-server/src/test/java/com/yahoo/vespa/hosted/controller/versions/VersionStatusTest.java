@@ -177,11 +177,10 @@ public class VersionStatusTest {
     
     @Test
     public void testVersionConfidence() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester().atHourOfDay(5);
         Version version0 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().maintain();
-
         var builder = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3");
 
         // Setup applications - all running on version0
@@ -421,9 +420,8 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceChangeRespectsTimeWindow() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        InternalDeploymentTester tester = new InternalDeploymentTester().atHourOfDay(5);
         // Canaries and normal application deploys on initial version
-        assertEquals(5, tester.controllerTester().hourOfDayAfter(Duration.ZERO));
         Version version0 = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version0);
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")

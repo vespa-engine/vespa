@@ -17,13 +17,6 @@ import java.util.function.Consumer;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 
-/**
- * Create a build job for testing purposes. In most cases this should be constructed by calling
- * {@link DeploymentTester#jobCompletion(JobType)} or {@link ContainerControllerTester#jobCompletion(JobType)}.
- *
- * @author mpolden
- */
-
 public class BuildJob {
 
     public static final long defaultBuildNumber = 42;
