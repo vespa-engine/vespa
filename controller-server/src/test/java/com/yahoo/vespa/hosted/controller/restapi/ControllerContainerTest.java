@@ -92,6 +92,10 @@ public class ControllerContainerTest {
                "    <binding>http://*/zone/v2</binding>\n" +
                "    <binding>http://*/zone/v2/*</binding>\n" +
                "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.configserver.ConfigServerApiHandler'>\n" +
+               "    <binding>http://*/configserver/v1</binding>\n" +
+               "    <binding>http://*/configserver/v1/*</binding>\n" +
+               "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>\n" +
                "    <binding>http://*/flags/v1</binding>\n" +
                "    <binding>http://*/flags/v1/*</binding>\n" +
