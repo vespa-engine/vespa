@@ -541,6 +541,12 @@ public class RankProfile implements Serializable, Cloneable {
         return rankingExpressionFunction;
     }
 
+    public RankingExpressionFunction findFunction(String name) {
+        RankingExpressionFunction function = functions.get(name);
+        return ((function == null) && (getInherited() != null))
+                ? getInherited().findFunction(name)
+                : function;
+    }
     /** Returns an unmodifiable snapshot of the functions in this */
     public Map<String, RankingExpressionFunction> getFunctions() {
         if (functions.isEmpty() && getInherited() == null) return Collections.emptyMap();
