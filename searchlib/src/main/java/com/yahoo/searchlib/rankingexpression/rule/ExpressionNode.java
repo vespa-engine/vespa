@@ -19,7 +19,7 @@ import java.util.Deque;
 public abstract class ExpressionNode implements Serializable {
 
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return toString().hashCode();
     }
 

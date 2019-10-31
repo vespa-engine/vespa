@@ -42,6 +42,9 @@ public final class ReferenceNode extends CompositeNode {
         return reference.name();
     }
 
+    public int hashCode() {
+        return reference.hashCode();
+    }
     /** Returns the arguments, never null */
     public Arguments getArguments() { return reference.arguments(); }
 
