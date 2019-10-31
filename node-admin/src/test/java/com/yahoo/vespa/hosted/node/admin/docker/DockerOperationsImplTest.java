@@ -98,7 +98,7 @@ public class DockerOperationsImplTest {
         InetAddress ipV6Local = InetAddresses.forString("::1");
         InetAddress ipV4Local = InetAddresses.forString("127.0.0.1");
 
-        dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), ipV6Local);
+        dockerOperations.addEtcHosts(containerData, hostname, Optional.empty(), Optional.of(ipV6Local));
 
         verify(containerData, times(1)).addFile(
                 Paths.get("/etc/hosts"),
@@ -111,7 +111,7 @@ public class DockerOperationsImplTest {
                         "ff02::2	ip6-allrouters\n" +
                         "0:0:0:0:0:0:0:1	hostname\n");
 
-        dockerOperations.addEtcHosts(containerData, hostname, Optional.of(ipV4Local), ipV6Local);
+        dockerOperations.addEtcHosts(containerData, hostname, Optional.of(ipV4Local), Optional.of(ipV6Local));
 
         verify(containerData, times(1)).addFile(
                 Paths.get("/etc/hosts"),
