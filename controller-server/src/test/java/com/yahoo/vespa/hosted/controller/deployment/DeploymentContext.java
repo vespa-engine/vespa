@@ -83,6 +83,7 @@ public class DeploymentContext {
             .emailAddress("b@a")
             .trust(generateCertificate())
             .build();
+    public static final SourceRevision defaultSourceRevision = new SourceRevision("repository1", "master", "commit1");
 
     private final TenantAndApplicationId applicationId;
     private final ApplicationId instanceId;
@@ -196,7 +197,7 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage) {
-        return submit(applicationPackage, BuildJob.defaultSourceRevision);
+        return submit(applicationPackage, defaultSourceRevision);
     }
 
     /** Submit given application package for deployment */

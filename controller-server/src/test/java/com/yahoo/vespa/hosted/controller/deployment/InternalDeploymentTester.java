@@ -164,7 +164,7 @@ public class InternalDeploymentTester {
     }
 
     public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage) {
-        return newSubmission(id, applicationPackage, BuildJob.defaultSourceRevision);
+        return newSubmission(id, applicationPackage, DeploymentContext.defaultSourceRevision);
     }
 
     /**
