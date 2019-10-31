@@ -2,14 +2,27 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.PositionDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldTypeAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.HashSet;
@@ -20,7 +33,7 @@ import java.util.Set;
  */
 public class IndexingValidation extends Processor {
 
-    public IndexingValidation(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    IndexingValidation(Search search, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(search, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
@@ -83,7 +96,7 @@ public class IndexingValidation extends Processor {
 
         final Search search;
 
-        public MyAdapter(Search search) {
+        MyAdapter(Search search) {
             this.search = search;
         }
 

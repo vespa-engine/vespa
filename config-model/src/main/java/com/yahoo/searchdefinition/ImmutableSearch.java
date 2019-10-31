@@ -21,7 +21,8 @@ public interface ImmutableSearch {
 
     String getName();
     Index getIndex(String name);
-    SDField getConcreteField(String name);
+    ImmutableSDField getConcreteField(String name);
+    //TODO split in mutating/immutable by returning List<ImmutableSDField>
     List<SDField> allConcreteFields();
     List<Index> getExplicitIndices();
     Reader getRankingExpression(String fileName);

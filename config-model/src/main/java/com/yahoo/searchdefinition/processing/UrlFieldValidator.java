@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
@@ -21,7 +21,7 @@ public class UrlFieldValidator extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
 
-        for (SDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : search.allConcreteFields()) {
             if  ( ! field.getDataType().equals(DataType.URI)) continue;
 
             if (field.doesAttributing())

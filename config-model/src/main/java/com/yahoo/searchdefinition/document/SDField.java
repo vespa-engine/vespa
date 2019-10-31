@@ -220,9 +220,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     @Override
-    public ImmutableSDField getBackingField() { return this; }
-
-    @Override
     public boolean doesAttributing() {
         return containsExpression(AttributeExpression.class);
     }
@@ -521,12 +518,9 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return Collections.singletonList(getName()).iterator();
     }
 
-    /** Returns 1 if this is indexed, 0 if it is not indexed */ // TODO: Replace by a boolean method, or something, see hasIndex
-    public int getIndexToCount() {
-        if (getIndexingScript() == null) return 0;
-        if (!doesIndexing()) return 0;
-
-        return 1;
+    @Override
+    public boolean hasIndex() {
+        return  (getIndexingScript() != null) && doesIndexing();
     }
 
     /** Sets the literal boost of this field */
@@ -537,12 +531,14 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * when a query term matched as query term exactly (unnormalized and unstemmed).
      * Default is non-positive.
      */
+    @Override
     public int getLiteralBoost() { return literalBoost; }
 
     /** Sets the weight of this field */
     public void setWeight(int weight) { this.weight=weight; }
 
     /** Returns the weight of this field, or 0 if nothing is set */
+    @Override
     public int getWeight() { return weight; }
 
     /**
@@ -600,6 +596,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Returns an index if this field has one (implicitly or
      * explicitly) targeting the given name.
      */
+    @Override
     public boolean existsIndex(String name) {
         if (indices.get(name) != null) return true;
         if (name.equals(getName())) {
@@ -614,6 +611,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Defined indices on this field
      * @return defined indices on this
      */
+    @Override
     public Map<String, Index> getIndices() {
         return indices;
     }
@@ -638,6 +636,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public Ranking getRanking() { return ranking; }
 
     /** Returns the default rank type of indices of this field, or null if nothing is set */
+    @Override
     public RankType getRankType() { return this.rankType; }
 
     /**
@@ -712,6 +711,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Returns a summary field defined (implicitly or explicitly) by this field.
      * Returns null if there is no such summary field defined.
      */
+    @Override
     public SummaryField getSummaryField(String name) {
         return summaryFields.get(name);
     }

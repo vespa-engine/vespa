@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -21,7 +22,7 @@ public class AttributeProperties extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : search.allConcreteFields()) {
             String fieldName = field.getName();
 
             // For each attribute, check if the attribute has been created
@@ -56,7 +57,7 @@ public class AttributeProperties extends Processor {
      * @param attributeName name of the attribute
      * @return true if the attribute has been created by this field, else false
      */
-    static boolean attributeCreated(SDField field, String attributeName) {
+    static boolean attributeCreated(ImmutableSDField field, String attributeName) {
         if ( ! field.doesAttributing()) {
             return false;
         }

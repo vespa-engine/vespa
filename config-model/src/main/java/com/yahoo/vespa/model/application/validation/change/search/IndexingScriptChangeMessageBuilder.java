@@ -2,9 +2,9 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.searchdefinition.Search;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.NormalizeLevel;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -19,12 +19,12 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 public class IndexingScriptChangeMessageBuilder {
 
     private final Search currentSearch;
-    private final SDField currentField;
+    private final ImmutableSDField currentField;
     private final Search nextSearch;
-    private final SDField nextField;
+    private final ImmutableSDField nextField;
 
-    public IndexingScriptChangeMessageBuilder(Search currentSearch, SDField currentField,
-                                              Search nextSearch, SDField nextField) {
+    public IndexingScriptChangeMessageBuilder(Search currentSearch, ImmutableSDField currentField,
+                                              Search nextSearch, ImmutableSDField nextField) {
         this.currentSearch = currentSearch;
         this.currentField = currentField;
         this.nextSearch = nextSearch;

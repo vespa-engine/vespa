@@ -52,7 +52,6 @@ public class Processing {
                 Bolding::new,
                 AttributeProperties::new,
                 SetRankTypeEmptyOnFilters::new,
-                IndexSettingsNonFieldNames::new,
                 SummaryDynamicStructsArrays::new,
                 StringSettingsOnNonStringFields::new,
                 IndexingOutputs::new,

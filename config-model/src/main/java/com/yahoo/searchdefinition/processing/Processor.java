@@ -2,7 +2,8 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;

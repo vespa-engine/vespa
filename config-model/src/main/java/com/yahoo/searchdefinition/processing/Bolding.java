@@ -4,7 +4,7 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
-import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -24,7 +24,7 @@ public class Bolding extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         if ( ! validate) return;
-        for (SDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : search.allConcreteFields()) {
             for (SummaryField summary : field.getSummaryFields().values()) {
                 if (summary.getTransform().isBolded() &&
                     !((summary.getDataType() == DataType.STRING) || (summary.getDataType() == DataType.URI)))

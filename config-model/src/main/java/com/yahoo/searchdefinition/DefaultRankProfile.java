@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -41,7 +40,7 @@ public class DefaultRankProfile extends RankProfile {
         RankSetting setting = super.getRankSetting(fieldOrIndex,type);
         if (setting != null) return setting;
 
-        SDField field = getSearch().getConcreteField(fieldOrIndex);
+        ImmutableSDField field = getSearch().getConcreteField(fieldOrIndex);
         if (field != null) {
             setting = toRankSetting(field,type);
             if (setting != null)
@@ -58,7 +57,7 @@ public class DefaultRankProfile extends RankProfile {
         return null;
     }
 
-    private RankSetting toRankSetting(SDField field,RankSetting.Type type) {
+    private RankSetting toRankSetting(ImmutableSDField field,RankSetting.Type type) {
         if (type.equals(RankSetting.Type.WEIGHT) && field.getWeight()>0 && field.getWeight()!=100)
             return new RankSetting(field.getName(),type,field.getWeight());
         if (type.equals(RankSetting.Type.RANKTYPE))
@@ -90,7 +89,7 @@ public class DefaultRankProfile extends RankProfile {
     public Set<RankSetting> rankSettings() {
         Set<RankSetting> settings = new LinkedHashSet<>(20);
         settings.addAll(this.rankSettings);
-        for (SDField field : getSearch().allConcreteFields() ) {
+        for (ImmutableSDField field : getSearch().allConcreteFields() ) {
             addSetting(field, RankSetting.Type.WEIGHT, settings);
             addSetting(field, RankSetting.Type.RANKTYPE, settings);
             addSetting(field, RankSetting.Type.LITERALBOOST, settings);
@@ -104,7 +103,7 @@ public class DefaultRankProfile extends RankProfile {
         return settings;
     }
 
-    private void addSetting(SDField field, RankSetting.Type type, Set<RankSetting> settings) {
+    private void addSetting(ImmutableSDField field, RankSetting.Type type, Set<RankSetting> settings) {
         if (type.isIndexLevel()) {
             addIndexSettings(field, type, settings);
         }
@@ -115,14 +114,12 @@ public class DefaultRankProfile extends RankProfile {
         }
     }
 
-    private void addIndexSettings(SDField field, RankSetting.Type type, Set<RankSetting> settings) {
-        for (Iterator i = field.getFieldNameAsIterator(); i.hasNext(); ) {
-            String indexName = (String)i.next();
+    private void addIndexSettings(ImmutableSDField field, RankSetting.Type type, Set<RankSetting> settings) {
+        String indexName = field.getName();
 
-            // TODO: Make a ranking object in the index override the field level ranking object
-            if (type.equals(RankSetting.Type.PREFERBITVECTOR) && field.getRanking().isFilter()) {
-                settings.add(new RankSetting(indexName, type, true));
-            }
+        // TODO: Make a ranking object in the index override the field level ranking object
+        if (type.equals(RankSetting.Type.PREFERBITVECTOR) && field.getRanking().isFilter()) {
+            settings.add(new RankSetting(indexName, type, true));
         }
     }
 

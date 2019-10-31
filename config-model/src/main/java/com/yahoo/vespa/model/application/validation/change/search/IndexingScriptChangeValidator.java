@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.searchdefinition.Search;
-import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
@@ -35,9 +35,9 @@ public class IndexingScriptChangeValidator {
 
     public List<VespaConfigChangeAction> validate(ValidationOverrides overrides, Instant now) {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        for (SDField nextField : nextSearch.allConcreteFields()) {
+        for (ImmutableSDField nextField : nextSearch.allConcreteFields()) {
             String fieldName = nextField.getName();
-            SDField currentField = currentSearch.getConcreteField(fieldName);
+            ImmutableSDField currentField = currentSearch.getConcreteField(fieldName);
             if (currentField != null) {
                 validateScripts(currentField, nextField, overrides, now).ifPresent(r -> result.add(r));
             }
@@ -45,7 +45,7 @@ public class IndexingScriptChangeValidator {
         return result;
     }
 
-    private Optional<VespaConfigChangeAction> validateScripts(SDField currentField, SDField nextField,
+    private Optional<VespaConfigChangeAction> validateScripts(ImmutableSDField currentField, ImmutableSDField nextField,
                                                               ValidationOverrides overrides, Instant now) {
         ScriptExpression currentScript = currentField.getIndexingScript();
         ScriptExpression nextScript = nextField.getIndexingScript();
