@@ -20,7 +20,7 @@ public class FeatureNames {
     }
 
     public static Reference asAttributeFeature(String attributeName) {
-        return Reference.simple("attribute", quoteIfNecessary(attributeName));
+        return Reference.simple("attribute", attributeName);
     }
 
     public static Reference asQueryFeature(String propertyName) {
