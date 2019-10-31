@@ -6,9 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -18,7 +16,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.net.URI;
@@ -39,7 +37,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class RoutingPoliciesTest {
 
-    private final InternalDeploymentTester tester = new InternalDeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     private final DeploymentContext context1 = tester.newDeploymentContext(ApplicationId.from("tenant1", "app1", "default"));
     private final DeploymentContext context2 = tester.newDeploymentContext(ApplicationId.from("tenant1", "app2", "default"));

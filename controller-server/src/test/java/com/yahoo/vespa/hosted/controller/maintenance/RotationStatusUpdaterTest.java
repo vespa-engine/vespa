@@ -6,7 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RotationStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import org.junit.Test;
 
@@ -21,7 +21,7 @@ public class RotationStatusUpdaterTest {
 
     @Test
     public void updates_rotation_status() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         var globalRotationService = tester.controllerTester().serviceRegistry().globalRoutingServiceMock();
         var updater = new RotationStatusUpdater(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()));
 

@@ -57,10 +57,10 @@ import static org.junit.Assert.assertTrue;
  * A deployment context for an application. This allows fine-grained control of the deployment of an application's
  * instances.
  *
- * References to this should be acquired through {@link InternalDeploymentTester#deploymentContext}.
+ * References to this should be acquired through {@link DeploymentTester#deploymentContext}.
  *
  * Tester code that is not specific to deployments should be added to either {@link ControllerTester} or
- * {@link InternalDeploymentTester} instead of this class.
+ * {@link DeploymentTester} instead of this class.
  *
  * @author mpolden
  */
@@ -99,7 +99,7 @@ public class DeploymentContext {
     private ApplicationVersion lastSubmission = null;
     private boolean deferDnsUpdates = false;
 
-    public DeploymentContext(ApplicationId instanceId, InternalDeploymentTester tester) {
+    public DeploymentContext(ApplicationId instanceId, DeploymentTester tester) {
 
         this.applicationId = TenantAndApplicationId.from(instanceId);
         this.instanceId = instanceId;

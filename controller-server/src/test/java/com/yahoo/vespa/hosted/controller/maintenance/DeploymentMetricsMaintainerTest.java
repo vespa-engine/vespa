@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -31,7 +31,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class DeploymentMetricsMaintainerTest {
 
-    private final InternalDeploymentTester tester = new InternalDeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void updates_metrics() {

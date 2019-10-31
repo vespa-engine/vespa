@@ -32,7 +32,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
@@ -68,7 +68,7 @@ import static org.junit.Assert.fail;
  */
 public class ControllerTest {
 
-    private final InternalDeploymentTester tester = new InternalDeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testDeployment() {

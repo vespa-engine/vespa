@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,13 +48,13 @@ public class RotationRepositoryTest {
             .region("us-west-1")
             .build();
 
-    private InternalDeploymentTester tester;
+    private DeploymentTester tester;
     private RotationRepository repository;
     private DeploymentContext application;
 
     @Before
     public void before() {
-        tester = new InternalDeploymentTester(new ControllerTester(rotationsConfig));
+        tester = new DeploymentTester(new ControllerTester(rotationsConfig));
         repository = tester.applications().rotationRepository();
         application = tester.newDeploymentContext("tenant1", "app1", "default");
     }
@@ -82,7 +82,7 @@ public class RotationRepositoryTest {
     
     @Test
     public void strips_whitespace_in_rotation_fqdn() {
-        tester = new InternalDeploymentTester(new ControllerTester(rotationsConfigWhitespaces));
+        tester = new DeploymentTester(new ControllerTester(rotationsConfigWhitespaces));
         RotationRepository repository = tester.controller().applications().rotationRepository();
         var application2 = tester.newDeploymentContext("tenant1", "app2", "default");
 

@@ -9,7 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -33,9 +33,9 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -50,7 +50,7 @@ public class JobControllerApiHandlerHelperTest {
 
     @Test
     public void testResponses() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         tester.clock().setInstant(Instant.EPOCH);
 
         // Revision 1 gets deployed everywhere.
@@ -127,7 +127,7 @@ public class JobControllerApiHandlerHelperTest {
 
     @Test
     public void testDevResponses() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         tester.clock().setInstant(Instant.EPOCH);
 
         ZoneId zone = JobType.devUsEast1.zone(tester.controller().system());
@@ -146,7 +146,7 @@ public class JobControllerApiHandlerHelperTest {
 
     @Test
     public void testResponsesWithDirectDeployment() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         tester.clock().setInstant(Instant.EPOCH);
         var region = "us-west-1";
         var applicationPackage = new ApplicationPackageBuilder().region(region).build();

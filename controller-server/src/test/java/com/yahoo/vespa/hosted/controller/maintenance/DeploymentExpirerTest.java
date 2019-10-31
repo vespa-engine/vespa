@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
 
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class DeploymentExpirerTest {
 
-    private final InternalDeploymentTester tester = new InternalDeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testDeploymentExpiry() {

@@ -50,11 +50,10 @@ import java.util.concurrent.Future;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -70,11 +69,11 @@ import static org.junit.Assert.fail;
  */
 public class InternalStepRunnerTest {
 
-    private InternalDeploymentTester tester;
+    private DeploymentTester tester;
 
     @Before
     public void setup() {
-        tester = new InternalDeploymentTester();
+        tester = new DeploymentTester();
     }
 
     private SystemName system() {
@@ -91,7 +90,7 @@ public class InternalStepRunnerTest {
         tester.newRun(JobType.stagingTest);
         tester.runner().run();
         DeploymentSpec spec = tester.configServer()
-                                    .application(InternalDeploymentTester.testerId.id(), JobType.stagingTest.zone(system())).get()
+                                    .application(DeploymentTester.testerId.id(), JobType.stagingTest.zone(system())).get()
                                     .applicationPackage().deploymentSpec();
         assertEquals("domain", spec.athenzDomain().get().value());
         ZoneId zone = JobType.stagingTest.zone(system());
