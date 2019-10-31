@@ -10,8 +10,8 @@ import com.yahoo.searchdefinition.document.FieldSet;
 /**
  * The field sets owned by a {@link Search}
  * Both built in and user defined.
- * @author vegardh
  *
+ * @author vegardh
  */
 public class FieldSets {
 
@@ -46,18 +46,12 @@ public class FieldSets {
         builtInFieldSets.get(setName).addFieldName(field);
     }
 
-    /**
-     * The built in field sets, unmodifiable
-     * @return built in field sets
-     */
+    /** Returns the built in field sets, unmodifiable */
     public Map<String, FieldSet> builtInFieldSets() {
         return Collections.unmodifiableMap(builtInFieldSets);
     }
     
-    /**
-     * The user defined field sets, unmodifiable
-     * @return user field sets
-     */
+    /** Returns the user defined field sets, unmodifiable */
     public Map<String, FieldSet> userFieldSets() {
         return Collections.unmodifiableMap(userFieldSets);
     }

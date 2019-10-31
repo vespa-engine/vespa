@@ -312,6 +312,16 @@ public class QueryTestCase {
     }
 
     @Test
+    public void testQueryProfileSourceAccess() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("myField", "Profile: %{queryProfile}", null);
+        Query query = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+
+        String source = query.properties().getInstance(com.yahoo.search.query.profile.QueryProfileProperties.class).getQueryProfile().listValuesWithSources(new CompoundName(""), query.getHttpRequest().propertyMap(), query.properties()).get("myField").source();
+        assertEquals("myProfile", source);
+    }
+
+    @Test
     public void testBooleanParameter() {
         QueryProfile profile = new QueryProfile("myProfile");
         Query query = new Query("/?query=something&ranking.softtimeout.enable=false", profile.compile(null));

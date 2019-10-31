@@ -16,14 +16,15 @@ import java.util.Set;
  * Two indices are equal if they have the same name and the same settings, except
  * alias settings (which are excluded).
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class Index implements Cloneable, Serializable {
 
-    public static enum Type {
+    public enum Type {
+
         VESPA("vespa");
         private String name;
-        private Type(String name) { this.name = name; }
+        Type(String name) { this.name = name; }
         public String getName() { return name; }
 
     }
@@ -34,7 +35,7 @@ public class Index implements Cloneable, Serializable {
     private String name;
 
     /** The rank type of this index */
-    private RankType rankType=null;
+    private RankType rankType = null;
 
    /** Whether this index supports prefix search */
     private boolean prefix;
@@ -46,10 +47,10 @@ public class Index implements Cloneable, Serializable {
      * The stemming setting of this field, or null to use the default.
      * Default is determined by the owning search definition.
      */
-    private Stemming stemming=null;
+    private Stemming stemming = null;
 
     /** Whether the content of this index is normalized */
-    private boolean normalized=true;
+    private boolean normalized = true;
 
     private Type type = Type.VESPA;
 
@@ -64,16 +65,16 @@ public class Index implements Cloneable, Serializable {
     }
 
     public Index(String name, boolean prefix) {
-        this.name=name;
-        this.prefix=prefix;
+        this.name = name;
+        this.prefix = prefix;
     }
 
-    public void setName(String name) { this.name=name; }
+    public void setName(String name) { this.name = name; }
 
     public String getName() { return name; }
 
     /** Sets the rank type of this field */
-    public void setRankType(RankType rankType) { this.rankType=rankType; }
+    public void setRankType(RankType rankType) { this.rankType = rankType; }
 
     /** Returns the rank type of this field, or null if nothing is set */
     public RankType getRankType() { return rankType; }
@@ -86,7 +87,7 @@ public class Index implements Cloneable, Serializable {
      * this is never null
      */
     public Stemming getStemming(Search search) {
-        if (stemming!=null)
+        if (stemming != null)
             return stemming;
         else
             return search.getStemming();
@@ -95,7 +96,7 @@ public class Index implements Cloneable, Serializable {
     /**
      * Sets how this field should be stemmed, or set to null to use the default.
      */
-    public void setStemming(Stemming stemming) { this.stemming=stemming; }
+    public void setStemming(Stemming stemming) { this.stemming = stemming; }
 
     /** Returns whether this index supports prefix search, default is false */
     public boolean isPrefix() { return prefix; }
@@ -113,10 +114,12 @@ public class Index implements Cloneable, Serializable {
         return Collections.unmodifiableSet(aliases).iterator();
     }
 
+    @Override
     public int hashCode() {
             return name.hashCode() + ( prefix ? 17 : 0 );
     }
 
+    @Override
     public boolean equals(Object object) {
             if ( ! (object instanceof Index)) return false;
 
@@ -137,6 +140,7 @@ public class Index implements Cloneable, Serializable {
     }
 
     /** Makes a deep copy of this index */
+    @Override
     public Object clone() {
         try {
             Index copy=(Index)super.clone();
@@ -152,34 +156,22 @@ public class Index implements Cloneable, Serializable {
         return (Index)clone();
     }
 
-    /**
-     * The index engine type
-     * @return the type
-     */
+    /** Returns the index engine type */
     public Type getType() {
         return type;
     }
 
-    /**
-     * Sets the index engine type
-     * @param type a index engine type
-     */
+    /** Sets the index engine type */
     public void setType(Type type) {
         this.type = type;
     }
 
-    /**
-     * The boolean index definition
-     * @return the boolean index definition
-     */
+    /** Returns the boolean index definition */
     public BooleanIndexDefinition getBooleanIndexDefiniton() {
         return boolIndex;
     }
 
-    /**
-     * Sets the boolean index definition
-     * @param def boolean index definition
-     */
+    /** Sets the boolean index definition */
     public void setBooleanIndexDefiniton(BooleanIndexDefinition def) {
         boolIndex = def;
     }
