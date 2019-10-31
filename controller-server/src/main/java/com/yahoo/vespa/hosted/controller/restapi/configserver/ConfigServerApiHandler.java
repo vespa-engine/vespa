@@ -18,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.yolean.Exceptions;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 
 import javax.net.ssl.HostnameVerifier;
 import java.net.URI;
@@ -129,7 +130,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
-        if (CONTROLLER_ZONE.equals(zoneId)) return null;
+        if (CONTROLLER_ZONE.equals(zoneId)) return new DefaultHostnameVerifier();
         return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
     }
 }
