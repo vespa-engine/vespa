@@ -6,6 +6,7 @@ import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.derived.SummaryClass;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -40,7 +41,7 @@ import java.util.stream.Stream;
 // TODO: Make a class owned by this, for each of these responsibilities:
 // Managing indexes, managing attributes, managing summary classes.
 // Ensure that after the processing step, all implicit instances of the above types are explicitly represented
-public class Search implements Serializable, ImmutableSearch {
+public class Search implements ImmutableSearch {
 
     private static final Logger log = Logger.getLogger(Search.class.getName());
     private static final String SD_DOC_FIELD_NAME = "sddocname";
@@ -53,7 +54,7 @@ public class Search implements Serializable, ImmutableSearch {
         return RESERVED_NAMES.contains(name);
     }
 
-    private FieldSets fieldSets = new FieldSets();
+    private final FieldSets fieldSets = new FieldSets();
 
     /** The unique name of this search definition */
     private String name;
@@ -68,26 +69,27 @@ public class Search implements Serializable, ImmutableSearch {
     private SDDocumentType docType;
 
     /** The extra fields of this search definition */
-    private Map<String, SDField> fields = new LinkedHashMap<>();
+    private final Map<String, SDField> fields = new LinkedHashMap<>();
 
     /** The explicitly defined indices of this search definition */
-    private Map<String, Index> indices = new LinkedHashMap<>();
+    private final Map<String, Index> indices = new LinkedHashMap<>();
 
     /** The explicitly defined summaries of this search definition. _Must_ preserve order. */
-    private Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
+    private final Map<String, DocumentSummary> summaries = new LinkedHashMap<>();
 
     /** Ranking constants of this */
-    private RankingConstants rankingConstants = new RankingConstants();
+    private final RankingConstants rankingConstants = new RankingConstants();
 
     private Optional<TemporaryImportedFields> temporaryImportedFields = Optional.of(new TemporaryImportedFields());
     private Optional<ImportedFields> importedFields = Optional.empty();
 
-    private ApplicationPackage applicationPackage;
+    private final ApplicationPackage applicationPackage;
 
     /**
      * Creates a search definition which just holds a set of documents which should not (here, directly) be searchable
      */
     protected Search() {
+        applicationPackage = null;
         documentsOnly = true;
     }
 
@@ -106,6 +108,7 @@ public class Search implements Serializable, ImmutableSearch {
         this.name = name;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -154,6 +157,7 @@ public class Search implements Serializable, ImmutableSearch {
         docType = document;
     }
 
+    @Override
     public RankingConstants rankingConstants() { return rankingConstants; }
 
     public Optional<TemporaryImportedFields> temporaryImportedFields() {
@@ -188,12 +192,18 @@ public class Search implements Serializable, ImmutableSearch {
     }
 
     @Override
-    public Stream<ImmutableSDField> allFields() {
-        Stream<ImmutableSDField> extraFields = extraFieldList().stream().map(ImmutableSDField.class::cast);
-        Stream<ImmutableSDField> documentFields = docType.fieldSet().stream().map(ImmutableSDField.class::cast);
-        return Stream.concat(
-                extraFields,
-                Stream.concat(documentFields, allImportedFields()));
+    public List<ImmutableSDField> allFieldsList() {
+        List<ImmutableSDField> all = new ArrayList<>();
+        all.addAll(extraFieldList());
+        for (Field field : docType.fieldSet()) {
+            all.add((ImmutableSDField) field);
+        }
+        if (importedFields.isPresent()) {
+            for (ImportedField imported : importedFields.get().fields().values()) {
+                all.add(imported.asImmutableSDField());
+            }
+        }
+        return all;
     }
 
     /**
@@ -228,6 +238,7 @@ public class Search implements Serializable, ImmutableSearch {
      * they inherit, and all extra fields. The caller receives ownership to the list - subsequent changes to it will not
      * impact this
      */
+    @Override
     public List<SDField> allConcreteFields() {
         List<SDField> allFields = new ArrayList<>();
         allFields.addAll(extraFieldList());
@@ -240,10 +251,12 @@ public class Search implements Serializable, ImmutableSearch {
     /**
      * Returns the content of a ranking expression file
      */
+    @Override
     public Reader getRankingExpression(String fileName) {
         return applicationPackage.getRankingExpression(fileName);
     }
 
+    @Override
     public ApplicationPackage applicationPackage() { return applicationPackage; }
 
     /**
@@ -253,6 +266,7 @@ public class Search implements Serializable, ImmutableSearch {
      * @param name of the field
      * @return the SDField representing the field
      */
+    @Override
     public SDField getConcreteField(String name) {
         SDField field = getExtraField(name);
         if (field != null) {
@@ -331,6 +345,7 @@ public class Search implements Serializable, ImmutableSearch {
      * @param name the name of the index to get
      * @return the index requested
      */
+    @Override
     public Index getIndex(String name) {
         List<Index> sameIndices = new ArrayList<>(1);
         Index searchIndex = indices.get(name);
@@ -405,6 +420,7 @@ public class Search implements Serializable, ImmutableSearch {
      *
      * @return The list of explicit defined indexes.
      */
+    @Override
     public List<Index> getExplicitIndices() {
         List<Index> allIndices = new ArrayList<>(indices.values());
         for (SDField field : allConcreteFields()) {

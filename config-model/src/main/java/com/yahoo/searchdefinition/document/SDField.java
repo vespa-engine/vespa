@@ -1,7 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.document;
 
-import com.yahoo.document.*;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.StructDataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.searchdefinition.Index;
@@ -12,12 +17,25 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
-import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.TreeMap;
+
 
 /**
  * The field class represents a document field. It is used in
@@ -28,7 +46,7 @@ import java.util.*;
  *
  * @author bratseth
  */
-public class SDField extends Field implements TypedKey, FieldOperationContainer, ImmutableSDField, Serializable {
+public class SDField extends Field implements TypedKey, FieldOperationContainer, ImmutableSDField {
 
     /** Use this field for modifying index-structure, even if it doesn't have any indexing code */
     private boolean indexStructureField = false;
@@ -89,7 +107,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     private Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
 
     /** The document that this field was declared in, or null*/
-    protected SDDocumentType ownerDocType = null;
+    private SDDocumentType ownerDocType = null;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
     private Map<String, String> aliasToName = new HashMap<>();
@@ -235,7 +253,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return findExpression(searchFor) != null;
     }
 
-    public <T extends Expression> T findExpression(Class<T> searchFor) {
+    private <T extends Expression> T findExpression(Class<T> searchFor) {
         return new ExpressionSearcher<>(searchFor).searchIn(indexingScript);
     }
 
@@ -401,7 +419,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return (dataType instanceof StructDataType) ? (StructDataType)dataType : null;
     }
 
-    public DataType getFirstStructOrMapRecursive() {
+    private DataType getFirstStructOrMapRecursive() {
         DataType dataType = getDataType();
         while (dataType instanceof CollectionDataType) { // Currently no nesting of collections
             dataType = ((CollectionDataType)dataType).getNestedType();
@@ -409,7 +427,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         return (dataType instanceof StructDataType || dataType instanceof MapDataType) ? dataType : null;
     }
 
-    public boolean usesStruct() {
+    private boolean usesStruct() {
         DataType dt = getFirstStructRecursive();
         return (dt != null);
     }
@@ -421,7 +439,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /** Parse an indexing expression which will use the simple linguistics implementatino suitable for testing */
-    @SuppressWarnings("deprecation")
     public void parseIndexingScript(String script) {
         parseIndexingScript(script, new SimpleLinguistics());
     }
@@ -770,7 +787,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * The document that this field was declared in, or null
      *
      */
-    public SDDocumentType getOwnerDocType() {
+    private SDDocumentType getOwnerDocType() {
         return ownerDocType;
     }
 

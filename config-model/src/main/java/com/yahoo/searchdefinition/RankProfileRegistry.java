@@ -20,8 +20,8 @@ import java.util.Set;
  */
 public class RankProfileRegistry {
 
-    private final Map<RankProfile, Search> rankProfileToSearch = new LinkedHashMap<>();
-    private final Map<Search, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();
+    private final Map<RankProfile, ImmutableSearch> rankProfileToSearch = new LinkedHashMap<>();
+    private final Map<ImmutableSearch, Map<String, RankProfile>> rankProfiles = new LinkedHashMap<>();
 
     /* These rank profiles can be overridden: 'default' rank profile, as that is documented to work. And 'unranked'. */
     static final Set<String> overridableRankProfileNames = new HashSet<>(Arrays.asList("default", "unranked"));
@@ -65,7 +65,7 @@ public class RankProfileRegistry {
      * @param name the name of the rank profile
      * @return the RankProfile to return.
      */
-    public RankProfile get(Search search, String name) {
+    public RankProfile get(ImmutableSearch search, String name) {
         Map<String, RankProfile> profiles = rankProfiles.get(search);
         if (profiles == null) return null;
         return profiles.get(name);
@@ -85,7 +85,7 @@ public class RankProfileRegistry {
      * @param search {@link Search} to get rank profiles for
      * @return a collection of {@link RankProfile} instances
      */
-    public Collection<RankProfile> rankProfilesOf(Search search) {
+    public Collection<RankProfile> rankProfilesOf(ImmutableSearch search) {
         Map<String, RankProfile> mapping = rankProfiles.get(search);
         if (mapping == null) {
             return Collections.emptyList();
