@@ -4,8 +4,7 @@
 #include <memory>
 #include <vector>
 
-namespace search {
-namespace grouping {
+namespace search::grouping {
 
 /**
  * Wrapper class used to handle merging of grouping results. All input
@@ -16,17 +15,16 @@ class MergingManager
 public:
     /**
      * Simple wrapper for all the grouping results from a single
-     * search/fdispatch node.
+     * search node.
      **/
     struct Entry {
         uint32_t    partId;
         uint32_t    rowId;
-        bool        mld;
         const char *data;
         size_t      length;
 
-        Entry(uint32_t part, uint32_t row, bool m, const char *pt, size_t len)
-            : partId(part), rowId(row), mld(m), data(pt), length(len) {}
+        Entry(uint32_t part, uint32_t row, const char *pt, size_t len)
+            : partId(part), rowId(row), data(pt), length(len) {}
     };
 
 private:
@@ -61,11 +59,10 @@ public:
      *
      * @param partId which partition these results came from
      * @param rowId which row these results came from
-     * @param mld true if the node below is a dispatch node
      * @param groupSpec group spec
      * @param groupSpecLen length of the group spec
      **/
-    void addResult(uint32_t partId, uint32_t rowId, bool mld,
+    void addResult(uint32_t partId, uint32_t rowId,
                    const char *groupResult, size_t groupResultLen);
 
     /**
@@ -98,6 +95,4 @@ public:
     char *stealGroupResult();
 };
 
-} // namespace search::grouping
-} // namespace search
-
+}

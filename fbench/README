@@ -127,23 +127,7 @@ mark optional parameters and default values):
 |  <port>     : the port to use when contacting the host.
 
 The only mandatory parameters are the hostname and the port of the
-server you want to benchmark. If you are measuring server performance,
-you should ensure that the caches are cleared between each run. This
-may be done either by stopping and starting fsearch and fdispatch or
-by using the geturl program to fetch '/admin?command=clear_caches'
-from the http port on each fsearch and fdispatch (this requires that
-you are running from a host that is known as privileged by the
-fastserver nodes or that fastserver was compiled to accept all hosts
-as privileged).
-
-| usage: geturl <host> <port> <url>
-
-You may clear the caches by doing:
-
-$ bin/geturl <host> <port> "/admin?command=clear_caches"
-
-This must be done for each fsearch and fdispatch http port to clear
-all caches.
+server you want to benchmark.
 
 Example: You want to test just how well fastserver does under massive
 preassure by letting 200 clients search continuously as fast as they
@@ -318,8 +302,7 @@ on.  (vespa-fbench is run as 'bin/vespa-fbench' etc.).
 
 Example: You want to see how well fastserver performs with varying
 client count and cycle time. Assume that you have already prepared 200
-query files and that you have edited the 'pretest.sh' script to make
-it clear all fsearch and fdispatch caches. To test with client count
+query files. To test with client count
 from 10 to 200 with intervals of 10 clients and cycle time from 0 to
 5000 milliseconds with 500 ms intervals you may do the following:
 

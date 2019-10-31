@@ -12,13 +12,10 @@
 1102982424.265538	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=77878 exitcode=0
 1102982424.568381	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102982424.579411	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102982424.692296	old-14	85730	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982425.173218	old-14	85710	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102982425.230195	old-14	85726	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102982426.160344	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=85706 exitcode=0
 1102982445.460313	old-13	9793	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102982445.688144	old-13	9794	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
-1102982445.782239	old-15	4164	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982446.443455	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=9785 exitcode=0
 1102982446.158143	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4160 exitcode=0
 1102982446.563421	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=9789 exitcode=0
@@ -49,13 +46,10 @@
 1102982585.518023	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
 1102982585.836419	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102982585.880747	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102982585.613681	old-15	4310	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982585.958543	old-13	9923	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102982586.029369	old-13	9961	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982586.486119	old-13	9960	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102982586.826370	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=9919 exitcode=0
 1102982610.719714	old-14	85726	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102982610.727868	old-14	85730	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982611.596130	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=85721 exitcode=0
 1102982611.601210	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=85722 exitcode=0
 1102982673.173296	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
@@ -81,7 +75,6 @@
 1102982701.608896	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78142 exitcode=0
 1102982701.918709	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102982701.927503	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102982702.035645	old-14	85892	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982702.578492	old-14	85890	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102982702.747752	old-14	85856	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102982703.728761	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=85852 exitcode=0
@@ -95,11 +88,8 @@
 1102982719.336948	old-16	55674	rtc.rtc	rtc	event	started/1 name="rtc"
 1102982719.467483	old-16	55670	rtc	nc	event	starting/1 name="rtc.dispatch0"
 1102982719.570918	old-16	55670	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55674 exitcode=1
-1102982720.197551	old-16	55686	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
-1102982722.181453	old-15	4310	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982723.056917	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4306 exitcode=0
 1102982722.405949	old-13	9960	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102982722.634184	old-13	9961	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982723.389279	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=9952 exitcode=0
 1102982723.509234	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=9956 exitcode=0
 1102982724.863213	old-16	55670	rtc	nc	event	starting/1 name="rtc.rtc"
@@ -137,7 +127,6 @@
 1102982813.999915	old-16	55879	rtc.rtc	rtc	event	started/1 name="rtc"
 1102982814.135036	old-16	55875	rtc	nc	event	starting/1 name="rtc.dispatch0"
 1102982814.233205	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55879 exitcode=1
-1102982814.234523	old-16	55889	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982819.966141	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
 1102982820.076415	old-16	55903	rtc.rtc	rtc	event	started/1 name="rtc"
 1102982820.306584	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=55903 exitcode=1
@@ -177,10 +166,8 @@
 1102982859.925635	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102982860.100099	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78345 exitcode=0
 1102982860.175193	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102982860.270961	old-15	4448	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982860.490413	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102982860.532069	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102982860.656080	old-13	10102	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982860.716739	old-13	10085	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102982861.091956	old-13	10101	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102982861.592103	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10081 exitcode=0
@@ -197,7 +184,6 @@
 1102982881.460052	old-16	56036	rtc.rtc	rtc	event	started/1 name="rtc"
 1102982881.694862	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56036 exitcode=1
 1102982884.649620	old-14	85890	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102982884.759568	old-14	85892	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982885.634538	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=85884 exitcode=0
 1102982885.639725	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=85883 exitcode=0
 1102982887.538177	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
@@ -221,7 +207,6 @@
 1102982924.459348	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
 1102982924.567161	old-16	56111	rtc.rtc	rtc	event	started/1 name="rtc"
 1102982924.801296	old-16	55875	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56111 exitcode=1
-1102982925.443676	old-16	55889	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982926.429705	old-16	55875	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=55885 exitcode=0
 1102982930.629580	old-16	55875	rtc	nc	event	starting/1 name="rtc.rtc"
 1102982930.760908	old-16	56122	rtc.rtc	rtc	event	started/1 name="rtc"
@@ -252,16 +237,12 @@
 1102984777.735043	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102984777.781644	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
 1102984777.402397	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102984777.498183	old-15	7190	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
-1102984777.913693	old-13	11182	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102984778.059907	old-13	11160	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102984778.351858	old-13	11181	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102984779.042265	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11156 exitcode=0
 1102984801.999193	old-14	86959	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102984802.008047	old-14	86963	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102984802.872560	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86954 exitcode=0
 1102984802.882530	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86955 exitcode=0
-1102984805.631482	old-16	59311	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102984806.087444	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59307 exitcode=0
 1102984870.706385	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
 1102984870.790934	old-14	87051	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
@@ -287,16 +268,12 @@
 1102984913.401871	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=80829 exitcode=0
 1102984913.670821	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102984913.683526	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102984913.797198	old-14	87116	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102984913.979101	old-14	87099	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102984913.989465	old-14	87112	rtc.search0	fsearch	event	started/1 name="fsearch"
-1102984913.613733	old-16	59443	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102984914.965980	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87095 exitcode=0
 1102984937.512157	old-13	11181	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102984937.528481	old-13	11182	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102984938.385574	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11173 exitcode=0
 1102984938.423498	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11177 exitcode=0
-1102984946.290883	old-15	7190	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102984946.836599	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7186 exitcode=0
 1102985007.942647	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
 1102985008.088765	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87160 exitcode=0
@@ -318,20 +295,16 @@
 1102985039.737230	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
 1102985040.277473	old-13	11318	rtc.search2	fsearch	event	started/1 name="fsearch"
 1102985052.439380	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985052.535221	old-15	7300	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985052.185871	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102985052.365617	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=80930 exitcode=0
 1102985052.750320	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102985052.778439	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985052.903049	old-13	11338	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985053.081624	old-13	11318	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985053.347641	old-13	11337	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985054.068022	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11314 exitcode=0
 1102985076.567887	old-14	87112	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102985076.593279	old-14	87116	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985077.550922	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87107 exitcode=0
 1102985077.570977	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87108 exitcode=0
-1102985081.929791	old-16	59443	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985082.946038	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59439 exitcode=0
 1102985145.952973	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
 1102985146.038260	old-14	87206	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
@@ -356,17 +329,13 @@
 1102985188.204403	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81171 exitcode=0
 1102985188.494004	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102985188.508392	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985188.618695	old-14	87274	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985188.780877	old-14	87257	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985188.313370	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985188.419471	old-16	59566	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985189.143927	old-14	87270	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985189.764318	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87253 exitcode=0
 1102985212.527157	old-13	11337	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102985212.543364	old-13	11338	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985213.401420	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11329 exitcode=0
 1102985213.426389	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11333 exitcode=0
-1102985221.549425	old-15	7300	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985221.865258	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7296 exitcode=0
 1102985283.672312	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
 1102985283.817178	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87311 exitcode=0
@@ -388,20 +357,16 @@
 1102985325.425581	old-13	9277	rtc	nc	event	starting/1 name="rtc.search2"
 1102985325.963456	old-13	11476	rtc.search2	fsearch	event	started/1 name="fsearch"
 1102985338.258960	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985338.354738	old-15	7432	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985338.599275	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102985338.645855	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985338.776413	old-13	11493	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985338.007689	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102985338.186794	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81272 exitcode=0
 1102985338.819496	old-13	11476	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985339.203747	old-13	11492	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985339.804418	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11472 exitcode=0
 1102985362.416626	old-14	87270	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102985362.524282	old-14	87274	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985363.399656	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87265 exitcode=0
 1102985363.509611	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87266 exitcode=0
-1102985368.448703	old-16	59566	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985368.694694	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59562 exitcode=0
 1102985422.540132	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
 1102985422.648022	old-14	87362	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
@@ -423,20 +388,16 @@
 1102985450.905111	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
 1102985451.411910	old-14	87402	rtc.search2	fsearch	event	started/1 name="fsearch"
 1102985463.886153	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985463.992395	old-16	59696	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985463.602049	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102985463.777789	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81510 exitcode=0
 1102985464.051579	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102985464.061606	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985464.180789	old-14	87422	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985464.278631	old-14	87402	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985464.612377	old-14	87418	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985465.252739	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87398 exitcode=0
 1102985488.331150	old-13	11492	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102985488.339190	old-13	11493	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985489.317280	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11484 exitcode=0
 1102985489.351467	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11488 exitcode=0
-1102985495.337998	old-15	7432	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985495.583781	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7428 exitcode=0
 1102985559.980099	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
 1102985560.125488	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87451 exitcode=0
@@ -459,19 +420,15 @@
 1102985592.769319	old-13	11633	rtc.search2	fsearch	event	started/1 name="fsearch"
 1102985604.499469	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102985604.759895	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985604.861837	old-15	7559	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985604.679525	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81615 exitcode=0
 1102985605.093908	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102985605.140522	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985605.272289	old-13	11650	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985605.636678	old-13	11633	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985605.699630	old-13	11649	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985606.509778	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11629 exitcode=0
 1102985629.241620	old-14	87418	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102985629.247103	old-14	87422	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985630.117778	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87413 exitcode=0
 1102985630.227676	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87414 exitcode=0
-1102985632.886825	old-16	59696	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985633.322757	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59692 exitcode=0
 1102985697.173221	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
 1102985697.256604	old-14	87500	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
@@ -493,20 +450,16 @@
 1102985727.572242	old-14	85124	rtc	nc	event	starting/1 name="rtc.search2"
 1102985728.080322	old-14	87561	rtc.search2	fsearch	event	started/1 name="fsearch"
 1102985740.452074	old-16	59141	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985740.558202	old-16	59825	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985740.161408	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102985740.340832	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81861 exitcode=0
 1102985740.597833	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102985740.608385	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985740.734989	old-14	87578	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985740.914042	old-14	87561	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985741.160724	old-14	87574	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985741.901075	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=87557 exitcode=0
 1102985764.916422	old-13	11649	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102985764.924985	old-13	11650	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985765.793179	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=11641 exitcode=0
 1102985765.830252	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=11645 exitcode=0
-1102985772.886691	old-15	7559	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985773.162542	old-15	6902	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=7555 exitcode=0
 1102985834.098801	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
 1102985834.243854	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=87608 exitcode=0
@@ -530,18 +483,14 @@
 1102985878.804002	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102985878.992074	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=81960 exitcode=0
 1102985879.082822	old-15	6902	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985879.178672	old-15	7688	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985879.459680	old-13	11769	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985879.479439	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102985879.515248	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102985879.641363	old-13	11805	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102985880.105424	old-13	11804	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102985880.445670	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=11765 exitcode=0
-1102985903.567758	old-14	87578	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985904.556172	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=87570 exitcode=0
 1102985904.560190	old-14	87574	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102985905.546045	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=87569 exitcode=0
-1102985908.625243	old-16	59825	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102985908.761216	old-16	59141	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=59821 exitcode=0
 1102985971.929848	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
 1102985972.015182	old-14	87656	rtc.index0	flexindexer	event	started/1 name="flexindexer.init"
@@ -590,12 +539,9 @@
 1102982974.580826	old-14	86014	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102982974.791879	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102982974.869852	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102982974.986256	old-14	86031	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102982975.272076	old-14	86030	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102982975.457015	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86010 exitcode=0
 1102982994.921631	old-13	10101	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102982994.929122	old-13	10102	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
-1102982995.790031	old-15	4448	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102982995.794897	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10093 exitcode=0
 1102982995.915047	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10097 exitcode=0
 1102982996.665560	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4444 exitcode=0
@@ -662,7 +608,6 @@
 1102983111.464977	old-16	56815	rtc.rtc	rtc	event	started/1 name="rtc"
 1102983111.624631	old-16	56769	rtc	nc	event	starting/1 name="rtc.dispatch0"
 1102983111.694912	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56815 exitcode=1
-1102983111.718760	old-16	56825	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983117.535240	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
 1102983117.644597	old-16	56837	rtc.rtc	rtc	event	started/1 name="rtc"
 1102983117.872760	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56837 exitcode=1
@@ -680,10 +625,8 @@
 1102983136.195702	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	starting/1 name="rtx.validate"
 1102983136.372805	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78699 exitcode=0
 1102983136.446910	old-15	3729	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983136.542716	old-15	4602	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983136.816766	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102983136.857452	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983136.985730	old-13	10261	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983137.044120	old-13	10242	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983137.447497	old-13	10260	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983138.027972	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10238 exitcode=0
@@ -700,7 +643,6 @@
 1102983160.058334	old-16	56939	rtc.rtc	rtc	event	started/1 name="rtc"
 1102983160.304685	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=56939 exitcode=1
 1102983161.016507	old-14	86030	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102983161.021332	old-14	86031	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983161.892728	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86022 exitcode=0
 1102983162.002790	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86026 exitcode=0
 1102983166.146748	old-16	56769	rtc	nc	event	starting/1 name="rtc.rtc"
@@ -768,7 +710,6 @@
 1102983248.944256	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=78766 exitcode=0
 1102983249.227183	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102983249.237161	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983249.348837	old-14	86188	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983249.785138	old-14	86184	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983249.851043	old-14	86167	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983250.725373	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86163 exitcode=0
@@ -779,10 +720,8 @@
 1102983258.028820	old-16	57127	rtc.rtc	rtc	event	started/1 name="rtc"
 1102983258.257644	old-16	56769	rtc	nc	event	stopped/1 name="rtc.rtc" pid=57127 exitcode=1
 1102983269.137311	old-13	10260	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102983269.144791	old-13	10261	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983270.010666	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10252 exitcode=0
 1102983270.042184	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10256 exitcode=0
-1102983272.118338	old-15	4602	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983272.854135	old-15	3729	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=4598 exitcode=0
 1102983362.503050	old-14	85124	rtc	nc	event	starting/1 name="rtc.indexremove0"
 1102983362.649049	old-14	85124	rtc	nc	event	stopped/1 name="rtc.indexremove0" pid=86230 exitcode=0
@@ -808,13 +747,10 @@
 1102983411.938135	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79018 exitcode=0
 1102983412.352170	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102983412.392827	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983412.555009	old-13	10413	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983412.666661	old-13	10396	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102983412.115149	old-15	4729	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983412.953280	old-13	10412	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983413.543584	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10392 exitcode=0
 1102983434.184986	old-14	86184	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102983434.189809	old-14	86188	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983435.171112	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86180 exitcode=0
 1102983435.176508	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86179 exitcode=0
 1102983499.729687	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
@@ -840,11 +776,9 @@
 1102983524.277311	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79105 exitcode=0
 1102983524.618894	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102983524.626268	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983524.735847	old-14	86343	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983525.150609	old-14	86326	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983525.183478	old-14	86342	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983526.023732	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86322 exitcode=0
-1102983544.521213	old-13	10413	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983544.621272	old-13	10412	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983545.486398	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10404 exitcode=0
 1102983545.518155	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10408 exitcode=0
@@ -871,12 +805,10 @@
 1102983663.408294	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79347 exitcode=0
 1102983663.802410	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102983663.847086	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983663.970470	old-13	10569	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983664.245161	old-13	10549	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983664.418499	old-13	10568	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983665.228936	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10545 exitcode=0
 1102983684.194271	old-14	86342	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102983684.413550	old-14	86343	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983685.178577	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86334 exitcode=0
 1102983685.288749	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86335 exitcode=0
 1102983775.331147	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
@@ -902,11 +834,9 @@
 1102983799.550019	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79445 exitcode=0
 1102983799.815919	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102983799.825466	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983799.933088	old-14	86499	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983800.124646	old-14	86495	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983800.349296	old-14	86478	rtc.search2	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983801.222147	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86474 exitcode=0
-1102983820.147150	old-13	10569	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983820.248595	old-13	10568	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
 1102983821.122118	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10560 exitcode=0
 1102983821.155033	old-13	9277	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=10564 exitcode=0
@@ -934,11 +864,9 @@
 1102983938.571920	tc3.trondheim.corp.yahoo.com	76277	rtx	nc	event	stopped/1 name="rtx.validate" pid=79691 exitcode=0
 1102983939.111733	old-13	9277	rtc	nc	event	starting/1 name="rtc.search0"
 1102983939.146855	old-13	9277	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102983939.269781	old-13	10716	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102983939.714359	old-13	10715	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983939.914719	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search2" pid=10695 exitcode=0
 1102983959.590654	old-14	86495	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102983959.598406	old-14	86499	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102983960.467110	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search0" pid=86490 exitcode=0
 1102983960.472296	old-14	85124	rtc	nc	event	stopped/1 name="rtc.dispatch0" pid=86491 exitcode=0
 1102984050.398552	old-14	85124	rtc	nc	event	starting/1 name="rtc.index0"
@@ -966,7 +894,6 @@
 1102984075.655564	old-14	85124	rtc	nc	event	stopped/1 name="rtc.search2" pid=86613 exitcode=0
 1102984075.660995	old-14	85124	rtc	nc	event	starting/1 name="rtc.search0"
 1102984075.670714	old-14	85124	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102984075.780693	old-14	86634	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102984076.220183	old-14	86630	rtc.search0	fsearch	event	started/1 name="fsearch"
 1102983417.075842	old-15	3726	logd	logdemon	event	stopping/1 name="logdemon" why="done ok."
 1102983417.084537	old-15	3725	config-sentinel	config-sentinel.service	event	stopped/1 name="logd" pid=3726 exitcode=0
@@ -985,14 +912,12 @@
 1102984083.556253	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"
 1102984083.718924	old-15	6652	rtc.rtc	rtc	event	started/1 name="rtc"
 1102984083.897858	old-15	6648	rtc	nc	event	starting/1 name="rtc.dispatch0"
-1102984084.017068	old-15	6663	rtc.dispatch0	fdispatch	event	started/1 name="fdispatch"
 1102984085.385198	old-15	6648	rtc	nc	event	stopped/1 name="rtc.rtc" pid=6652 exitcode=1
 1102984089.589460	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"
 1102984089.731154	old-15	6676	rtc.rtc	rtc	event	started/1 name="rtc"
 1102984090.244728	old-15	6648	rtc	nc	event	stopped/1 name="rtc.rtc" pid=6676 exitcode=1
 1102984095.669627	old-15	6648	rtc	nc	event	starting/1 name="rtc.rtc"
 1102984095.494894	old-13	10715	rtc.search0	fsearch	event	stopping/1 name="fsearch" why="exit"
-1102984095.639737	old-13	10716	rtc.dispatch0	fdispatch	event	stopping/1 name="fdispatch" why="exit"
 1102984095.807128	old-15	6688	rtc.rtc	rtc	event	started/1 name="rtc"
 1102984096.335289	old-15	6648	rtc	nc	event	stopped/1 name="rtc.rtc" pid=6688 exitcode=1
 1102984096.477880	old-13	9277	rtc	nc	event	stopped/1 name="rtc.search0" pid=10707 exitcode=0
