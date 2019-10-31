@@ -20,7 +20,8 @@ import java.util.Set;
 enum PathGroup {
 
     /** Paths used for system management by operators. */
-    operator("/controller/v1/{*}",
+    operator("/configserver/v1/{*}",
+             "/controller/v1/{*}",
              "/flags/v1/{*}",
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}",
