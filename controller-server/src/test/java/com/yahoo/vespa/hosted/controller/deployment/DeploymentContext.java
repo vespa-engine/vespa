@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -34,6 +35,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
@@ -220,11 +222,25 @@ public class DeploymentContext {
     }
 
     /** Fail current deployment in given job */
+    public DeploymentContext outOfCapacity(JobType type) {
+        return failDeployment(type,
+                              new ConfigServerException(URI.create("https://config.server"),
+                                                        "Out of capacity",
+                                                        ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
+                                                        new RuntimeException("Out of capacity from test code")));
+    }
+
+    /** Fail current deployment in given job */
     public DeploymentContext failDeployment(JobType type) {
+        return failDeployment(type, new IllegalArgumentException("Exception from test code"));
+    }
+
+    /** Fail current deployment in given job */
+    private DeploymentContext failDeployment(JobType type, RuntimeException exception) {
         triggerJobs();
         var job = jobId(type);
         RunId id = currentRun(job).id();
-        configServer().throwOnNextPrepare(new IllegalArgumentException("Exception"));
+        configServer().throwOnNextPrepare(exception);
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
@@ -361,6 +377,16 @@ public class DeploymentContext {
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
         return id;
+    }
+
+    public void assertRunning(JobType type) {
+        assertTrue(jobId(type) + " should be among the active: " + jobs.active(),
+                   jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
+    }
+
+    public void assertNotRunning(JobType type) {
+        assertFalse(jobId(type) + " should not be among the active: " + jobs.active(),
+                    jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
     }
 
     /** Deploys tester and real app, and completes initial staging installation first if needed. */

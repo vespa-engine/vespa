@@ -168,8 +168,11 @@ public class DeploymentTester {
                    controller().curator().readNameServiceQueue().requests().isEmpty());
     }
 
-    public void triggerUntilQuiescence() {
-        while (deploymentTrigger().triggerReadyJobs() > 0);
+    /** Triggers jobs until nothing more triggers, and returns the number of triggered jobs. */
+    public int triggerUntilQuiescence() {
+        int triggered = 0;
+        while (triggered != (triggered += deploymentTrigger().triggerReadyJobs()));
+        return triggered;
     }
 
     public Application createApplication(String applicationName, String tenantName, long projectId, long propertyId) {
