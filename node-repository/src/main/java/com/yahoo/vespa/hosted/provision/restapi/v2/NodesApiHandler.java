@@ -239,7 +239,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Flavor flavorFromSlime(Inspector inspector) {
         Inspector flavorInspector = inspector.field("flavor");
-        log.info("flavorFromSlime: " + flavorInspector.valid());
         if (!flavorInspector.valid()) {
             return new Flavor(new NodeResources(
                     requiredField(inspector, "minCpuCores", Inspector::asDouble),
@@ -260,7 +259,6 @@ public class NodesApiHandler extends LoggingRequestHandler {
             flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidthGbps").asDouble()));
         if (inspector.field("fastDisk").valid())
             flavor = flavor.with(flavor.resources().withDiskSpeed(inspector.field("fastDisk").asBool() ? fast : slow));
-        log.info("should not be here");
         return flavor;
     }
 
