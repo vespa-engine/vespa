@@ -49,11 +49,11 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
     @Test
     public void test_requests() {
         // GET /configserver/v1
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/configserver/v1"),
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1"),
                 new File("root.json"));
 
         // GET /configserver/v1/nodes/v2/node/?recursive=true
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node/?recursive=true"),
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node/?recursive=true"),
                 "ok");
         assertLastRequest("https://cfg.prod.us-north-1.test.vip:4443/", "GET");
 
@@ -85,11 +85,11 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
     @Test
     public void test_allowed_apis() {
         // GET /configserver/v1/prod/us-north-1
-        tester.containerTester().assertResponse(() -> authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1"),
+        tester.containerTester().assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1"),
                 "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access '/' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/\"}",
                 403);
 
-        tester.containerTester().assertResponse(() -> authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1/application/v2/tenant/vespa"),
+        tester.containerTester().assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/application/v2/tenant/vespa"),
                 "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access '/application/v2/tenant/vespa' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/\"}",
                 403);
     }
@@ -102,6 +102,39 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such zone: prod.us-north-42\"}", 400);
         assertFalse(proxy.lastReceived().isPresent());
     }
+
+    @Test
+    public void non_operators_are_forbidden() {
+        // Read request
+        tester.containerTester().assertResponse(() -> authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node"),
+                "{\n" +
+                "  \"code\" : 403,\n" +
+                "  \"message\" : \"Access denied\"\n" +
+                "}", 403);
+
+        // Write request
+        tester.containerTester().assertResponse(() -> authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node", "", Request.Method.POST),
+                "{\n" +
+                "  \"code\" : 403,\n" +
+                "  \"message\" : \"Access denied\"\n" +
+                "}", 403);
+    }
+
+    @Test
+    public void unauthenticated_request_are_unauthorized() {
+        {
+            // Read request
+            Request request = new Request("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node", "", Request.Method.GET);
+            tester.containerTester().assertResponse(() -> request, "{\n  \"message\" : \"Not authenticated\"\n}", 401);
+        }
+
+        {
+            // Write request
+            Request request = new Request("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node", "", Request.Method.POST);
+            tester.containerTester().assertResponse(() -> request, "{\n  \"message\" : \"Not authenticated\"\n}", 401);
+        }
+    }
+
 
     private void assertLastRequest(String target, String method) {
         ProxyRequest last = proxy.lastReceived().orElseThrow();

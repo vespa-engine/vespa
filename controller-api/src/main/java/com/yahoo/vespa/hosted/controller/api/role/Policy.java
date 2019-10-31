@@ -115,7 +115,7 @@ enum Policy {
 
     /** Read access to all information in select systems. */
     classifiedRead(Privilege.grant(Action.read)
-                            .on(PathGroup.all())
+                            .on(PathGroup.allExcept(PathGroup.classifiedOperator))
                             .in(SystemName.main, SystemName.cd, SystemName.dev)),
 
     /** Read access to public info. */
