@@ -67,18 +67,11 @@ public class ContainerTester {
                "    <ztsUrl>https://localhost:123/</ztsUrl>\n" +
                "  </config>\n" +
                "  <component id='com.yahoo.vespa.hosted.ca.restapi.mock.SecretStoreMock'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.ca.restapi.mock.InstanceValidatorMock'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.ca.restapi.CertificateAuthorityApiHandler'>\n" +
                "    <binding>http://*/ca/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <http>\n" +
                "    <server id='default' port='12345'/>\n" +
-               "    <filtering>\n" +
-               "      <request-chain id=\"my-default-chain\">\n" +
-               "        <filter id='com.yahoo.vespa.hosted.ca.restapi.mock.PrincipalFromHeaderFilter' />\n" +
-               "        <binding>http://*/*</binding>\n" +
-               "      </request-chain>\n" +
-               "    </filtering>\n" +
                "  </http>\n" +
                "</container>";
     }
