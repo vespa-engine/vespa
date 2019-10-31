@@ -15,7 +15,7 @@ import java.nio.charset.StandardCharsets;
  *
  * @author Haakon Dybdahl
  */
-public class ProxyResponse  extends HttpResponse {
+public class ProxyResponse extends HttpResponse {
 
     private final String bodyResponseRewritten;
     private final String contentType;
@@ -29,11 +29,6 @@ public class ProxyResponse  extends HttpResponse {
         super(statusResponse);
         this.contentType = contentType;
 
-        if (controllerRequest.getControllerPrefix().isEmpty()) {
-            bodyResponseRewritten = bodyResponse;
-            return;
-        }
-
         final String configServerPrefix;
         final String controllerRequestPrefix;
         try {
@@ -41,12 +36,9 @@ public class ProxyResponse  extends HttpResponse {
                     .setScheme(configServer.getScheme())
                     .setHost(configServer.getHost())
                     .setPort(configServer.getPort())
+                    .setPath("/")
                     .build().toString();
-            controllerRequestPrefix = new URIBuilder()
-                    .setScheme(controllerRequest.getScheme())
-                    // controller prefix is more than host, so it is a bit hackish, but verified by tests.
-                    .setHost(controllerRequest.getControllerPrefix())
-                    .build().toString();
+            controllerRequestPrefix = controllerRequest.getControllerPrefixUri().toString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

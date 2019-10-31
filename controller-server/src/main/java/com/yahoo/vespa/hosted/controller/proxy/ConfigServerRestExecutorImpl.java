@@ -17,7 +17,6 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -26,7 +25,6 @@ import org.apache.http.util.EntityUtils;
 import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,7 +35,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static java.util.Collections.singleton;
+import static com.yahoo.yolean.Exceptions.uncheck;
+
 
 /**
  * @author Haakon Dybdahl
@@ -55,17 +54,15 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private final ServiceIdentityProvider sslContextProvider;
 
     @Inject
-    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry,
-                                        ServiceIdentityProvider sslContextProvider) {
+    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
         this.zoneRegistry = zoneRegistry;
         this.sslContextProvider = sslContextProvider;
     }
 
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
-        HostnameVerifier hostnameVerifier = createHostnameVerifier(zoneId);
-        List<URI> allServers = getConfigserverEndpoints(zoneId);
+        HostnameVerifier hostnameVerifier = createHostnameVerifier(proxyRequest.getZoneId());
+        List<URI> allServers = getConfigserverEndpoints(proxyRequest.getZoneId());
 
         StringBuilder errorBuilder = new StringBuilder();
         if (queueFirstServerIfDown(allServers, hostnameVerifier)) {
@@ -86,25 +83,17 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         // TODO: Use config server VIP for all zones that have one
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
         if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
-            return Collections.singletonList(zoneRegistry.getConfigServerVipUri(zoneId));
+            return List.of(zoneRegistry.getConfigServerVipUri(zoneId));
         } else {
             return new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
         }
     }
 
-    private static String removeFirstSlashIfAny(String url) {
-        if (url.startsWith("/")) {
-            return url.substring(1);
-        }
-        return url;
-    }
-
     private Optional<ProxyResponse> proxyCall(
             URI uri, ProxyRequest proxyRequest, HostnameVerifier hostnameVerifier, StringBuilder errorBuilder)
             throws ProxyException {
-        String fullUri = uri.toString() + removeFirstSlashIfAny(proxyRequest.getConfigServerRequest());
         final HttpRequestBase requestBase = createHttpBaseRequest(
-                proxyRequest.getMethod(), fullUri, proxyRequest.getData());
+                proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
         copyHeaders(proxyRequest.getHeaders(), requestBase);
 
@@ -145,20 +134,12 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
     private static String getContent(CloseableHttpResponse response) {
         return Optional.ofNullable(response.getEntity())
-                .map(entity ->
-                     {
-                         try {
-                             return EntityUtils.toString(entity);
-                         } catch (IOException e) {
-                             throw new UncheckedIOException(e);
-                         }
-                     }
-                ).orElse("");
+                .map(entity -> uncheck(() -> EntityUtils.toString(entity)))
+                .orElse("");
     }
 
-    private static HttpRequestBase createHttpBaseRequest(String method, String uri, InputStream data) throws ProxyException {
-        Method enumMethod =  Method.valueOf(method);
-        switch (enumMethod) {
+    private static HttpRequestBase createHttpBaseRequest(Method method, URI uri, InputStream data) throws ProxyException {
+        switch (method) {
             case GET:
                 return new HttpGet(uri);
             case POST:
@@ -216,7 +197,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         try (
                 CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
                 CloseableHttpResponse response = client.execute(httpget)
-
         ) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;
@@ -226,8 +206,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             // We ignore this, if server is restarting this might happen.
         }
         // Some error happened, move this server to the back. The other servers should be running.
-        allServers.remove(0);
-        allServers.add(uri);
+        Collections.rotate(allServers, -1);
         return true;
     }
 

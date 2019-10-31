@@ -6,12 +6,14 @@ import com.yahoo.application.container.handler.Request.Method;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
+import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
@@ -59,53 +61,33 @@ public class ZoneApiTest extends ControllerContainerTest {
         // GET /zone/v2/prod/us-north-1
         tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1"),
                                                 "ok");
-        assertEquals("prod", proxy.lastReceived().get().getEnvironment());
-        assertEquals("us-north-1", proxy.lastReceived().get().getRegion());
-        assertEquals("", proxy.lastReceived().get().getConfigServerRequest());
-        assertEquals("GET", proxy.lastReceived().get().getMethod());
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), "GET");
 
         // GET /zone/v2/nodes/v2/node/?recursive=true
         tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/?recursive=true"),
                                                 "ok");
-
-        assertEquals("prod", proxy.lastReceived().get().getEnvironment());
-        assertEquals("us-north-1", proxy.lastReceived().get().getRegion());
-        assertEquals("/nodes/v2/node/?recursive=true", proxy.lastReceived().get().getConfigServerRequest());
-        assertEquals("GET", proxy.lastReceived().get().getMethod());
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), "GET");
 
         // POST /zone/v2/dev/us-north-2/nodes/v2/command/restart?hostname=node1
         tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/zone/v2/dev/us-north-2/nodes/v2/command/restart?hostname=node1",
                                                             new byte[0], Method.POST),
                                                 "ok");
-        assertEquals("dev", proxy.lastReceived().get().getEnvironment());
-        assertEquals("us-north-2", proxy.lastReceived().get().getRegion());
-        assertEquals("/nodes/v2/command/restart?hostname=node1", proxy.lastReceived().get().getConfigServerRequest());
-        assertEquals("POST", proxy.lastReceived().get().getMethod());
 
         // PUT /zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1
         tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1",
                                                             new byte[0], Method.PUT), "ok");
-        assertEquals("prod", proxy.lastReceived().get().getEnvironment());
-        assertEquals("us-north-1", proxy.lastReceived().get().getRegion());
-        assertEquals("/nodes/v2/state/dirty/node1", proxy.lastReceived().get().getConfigServerRequest());
-        assertEquals("PUT", proxy.lastReceived().get().getMethod());
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), "PUT");
 
         // DELETE /zone/v2/prod/us-north-1/nodes/v2/node/node1
         tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1",
                                                             new byte[0], Method.DELETE), "ok");
-        assertEquals("prod", proxy.lastReceived().get().getEnvironment());
-        assertEquals("us-north-1", proxy.lastReceived().get().getRegion());
-        assertEquals("/nodes/v2/node/node1", proxy.lastReceived().get().getConfigServerRequest());
-        assertEquals("DELETE", proxy.lastReceived().get().getMethod());
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), "DELETE");
 
         // PATCH /zone/v2/prod/us-north-1/nodes/v2/node/node1
         tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1",
                                                             Utf8.toBytes("{\"currentRestartGeneration\": 1}"),
                                                             Method.PATCH), "ok");
-        assertEquals("prod", proxy.lastReceived().get().getEnvironment());
-        assertEquals("us-north-1", proxy.lastReceived().get().getRegion());
-        assertEquals("/nodes/v2/node/node1", proxy.lastReceived().get().getConfigServerRequest());
-        assertEquals("PATCH", proxy.lastReceived().get().getMethod());
+        assertLastRequest(ZoneId.from("prod", "us-north-1"), "PATCH");
         assertEquals("{\"currentRestartGeneration\": 1}", proxy.lastRequestBody().get());
 
         assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
@@ -118,6 +100,12 @@ public class ZoneApiTest extends ControllerContainerTest {
                                                             new byte[0], Method.POST),
                                                 new File("unknown-zone.json"), 400);
         assertFalse(proxy.lastReceived().isPresent());
+    }
+
+    private void assertLastRequest(ZoneId zoneId, String method) {
+        ProxyRequest last = proxy.lastReceived().orElseThrow();
+        assertEquals(zoneId, last.getZoneId());
+        assertEquals(com.yahoo.jdisc.http.HttpRequest.Method.valueOf(method), last.getMethod());
     }
 
     private static Request hostedOperatorRequest(String uri, byte[] body, Request.Method method) {
