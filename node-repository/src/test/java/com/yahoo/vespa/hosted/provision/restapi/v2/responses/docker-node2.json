@@ -29,6 +29,7 @@
   "currentRestartGeneration": 0,
   "wantedDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.42.0",
   "wantedVespaVersion": "6.42.0",
+  "requestedResources": { "vcpu":4.0, "memoryGb":32.0, "diskGb":1600.0, "bandwidthGbps":20.0, "diskSpeed":"fast" },
   "allowedToBeDown": false,
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,

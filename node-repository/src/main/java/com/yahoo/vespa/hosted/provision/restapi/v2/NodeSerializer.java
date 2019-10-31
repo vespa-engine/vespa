@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi.v2;
 
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
@@ -66,6 +67,15 @@ public class NodeSerializer {
             case controllerhost: return "controllerhost";
             case devhost: return "devhost";
             default: throw new IllegalArgumentException("Unknown node type '" + type.name() + "'");
+        }
+    }
+
+    public String toString(NodeResources.DiskSpeed diskSpeed) {
+        switch (diskSpeed) {
+            case fast : return "fast";
+            case slow : return "slow";
+            case any  : return "any";
+            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
         }
     }
 
