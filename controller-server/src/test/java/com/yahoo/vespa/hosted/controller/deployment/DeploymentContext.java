@@ -275,10 +275,15 @@ public class DeploymentContext {
         return this;
     }
 
+    /** Runs a deployment of the given package to the given dev/perf job, on the given version. */
+    public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage, Version vespaVersion) {
+        jobs.deploy(instanceId, type, Optional.ofNullable(vespaVersion), applicationPackage);
+        return runJob(type);
+    }
+
     /** Runs a deployment of the given package to the given dev/perf job. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage) {
-        jobs.deploy(instanceId, type, Optional.empty(), applicationPackage);
-        return runJob(type);
+        return runJob(type, applicationPackage, null);
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
