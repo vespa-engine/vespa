@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -162,6 +163,7 @@ class NodesResponse extends HttpResponse {
             object.setLong("currentRestartGeneration", allocation.restartGeneration().current());
             object.setString("wantedDockerImage", dockerImageFor(node.type()).withTag(allocation.membership().cluster().vespaVersion()).asString());
             object.setString("wantedVespaVersion", allocation.membership().cluster().vespaVersion().toFullString());
+            toSlime(allocation.requestedResources(), object.setObject("requestedResources"));
             allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray("networkPorts")));
             orchestrator.apply(new HostName(node.hostname()))
                         .map(status -> status == HostStatus.ALLOWED_TO_BE_DOWN)
@@ -210,6 +212,14 @@ class NodesResponse extends HttpResponse {
             object.setLong("at", event.at().toEpochMilli());
             object.setString("agent", normalizedAgentUntilV6IsGone(event.agent()).name());
         }
+    }
+
+    private void toSlime(NodeResources resources, Cursor object) {
+        object.setDouble("vcpu", resources.vcpu());
+        object.setDouble("memoryGb", resources.memoryGb());
+        object.setDouble("diskGb", resources.diskGb());
+        object.setDouble("bandwithGgps", resources.bandwidthGbps());
+        object.setString("disk-speed", serializer.toString(resources.diskSpeed()));
     }
 
     // Hack: For non-docker noder, return current docker image as default prefix + current Vespa version
