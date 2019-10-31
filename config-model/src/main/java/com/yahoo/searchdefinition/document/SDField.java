@@ -29,7 +29,6 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -510,14 +509,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
         this.indexStructureField = indexStructureField;
     }
 
-    /**
-     * Returns an iterator of the index names this should index to
-     * (whether set explicitly or not)
-     */
-    public Iterator<String> getFieldNameAsIterator() { // TODO: Replace usage by getName
-        return Collections.singletonList(getName()).iterator();
-    }
-
     @Override
     public boolean hasIndex() {
         return  (getIndexingScript() != null) && doesIndexing();
@@ -599,12 +590,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     @Override
     public boolean existsIndex(String name) {
         if (indices.get(name) != null) return true;
-        if (name.equals(getName())) {
-            if (doesIndexing()) {
-                return true;
-            }
-        }
-        return false;
+        return name.equals(getName()) && doesIndexing();
     }
 
     /**
