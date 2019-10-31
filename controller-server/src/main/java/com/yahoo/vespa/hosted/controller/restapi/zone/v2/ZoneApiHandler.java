@@ -11,6 +11,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
@@ -19,6 +20,10 @@ import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.yolean.Exceptions;
 
+import javax.net.ssl.HostnameVerifier;
+import java.net.URI;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -82,7 +87,8 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("No such zone: " + zoneId.value());
         }
         try {
-            return proxy.handle(new ProxyRequest(request, zoneId, path.getRest()));
+            return proxy.handle(new ProxyRequest(
+                    request, getConfigserverEndpoints(zoneId), createHostnameVerifier(zoneId), path.getRest()));
         } catch (ProxyException e) {
             throw new RuntimeException(e);
         }
@@ -109,5 +115,18 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse notFound(Path path) {
         return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private List<URI> getConfigserverEndpoints(ZoneId zoneId) {
+        // TODO: Use config server VIP for all zones that have one
+        if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
+            return List.of(zoneRegistry.getConfigServerVipUri(zoneId));
+        } else {
+            return zoneRegistry.getConfigServerUris(zoneId);
+        }
+    }
+
+    private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
+        return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
     }
 }

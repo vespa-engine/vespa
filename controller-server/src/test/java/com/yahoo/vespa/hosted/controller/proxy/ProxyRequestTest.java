@@ -1,13 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.http.HttpRequest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -23,7 +23,7 @@ public class ProxyRequestTest {
     @Test
     public void testEmpty() throws Exception {
         exception.expectMessage("Request must be non-null");
-        new ProxyRequest(HttpRequest.Method.GET, null, Map.of(), null, ZoneId.from("dev", "us-north-1"), "/zone/v2");
+        new ProxyRequest(HttpRequest.Method.GET, null, Map.of(), null, List.of(), null, "/zone/v2");
     }
 
     @Test
@@ -69,6 +69,6 @@ public class ProxyRequestTest {
 
     private static ProxyRequest testRequest(String url, String pathPrefix) throws ProxyException {
         return new ProxyRequest(
-                HttpRequest.Method.GET, URI.create(url), Map.of(), null, ZoneId.from("dev", "us-north-1"), pathPrefix);
+                HttpRequest.Method.GET, URI.create(url), Map.of(), null, List.of(), null, pathPrefix);
     }
 }

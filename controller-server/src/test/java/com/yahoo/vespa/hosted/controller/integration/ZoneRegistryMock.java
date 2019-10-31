@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import com.google.common.collect.ImmutableList;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
@@ -24,8 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +35,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     private final Map<ZoneId, Duration> deploymentTimeToLive = new HashMap<>();
     private final Map<Environment, RegionName> defaultRegionForEnvironment = new HashMap<>();
-    private List<ZoneApi> zones = new ArrayList<>();
+    private List<ZoneApi> zones = List.of();
     private SystemName system;
     private UpgradePolicy upgradePolicy = null;
     private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
@@ -136,7 +133,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public List<UpgradePolicy> osUpgradePolicies() {
-        return ImmutableList.copyOf(osUpgradePolicies.values());
+        return List.copyOf(osUpgradePolicies.values());
     }
 
     @Override
@@ -176,7 +173,9 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public List<URI> getConfigServerUris(ZoneId zoneId) {
-        return Collections.singletonList(URI.create(String.format("https://cfg.%s.test:4443/", zoneId.value())));
+        return List.of(
+                URI.create(String.format("https://cfg1.%s.test:4443/", zoneId.value())),
+                URI.create(String.format("https://cfg2.%s.test:4443/", zoneId.value())));
     }
 
     @Override
@@ -186,11 +185,9 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     @Override
     public List<URI> getConfigServerApiUris(ZoneId zoneId) {
-        List<URI> uris = new ArrayList<URI>();
-        uris.add(URI.create(String.format("https://cfg.%s.test:4443/", zoneId.value())));
-        uris.add(URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value())));
-
-        return uris;
+        return List.of(
+                URI.create(String.format("https://cfg.%s.test:4443/", zoneId.value())),
+                URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value())));
     }
 
     @Override

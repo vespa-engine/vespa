@@ -1,7 +1,7 @@
 {
   "uris": [
     "http://localhost:8080/zone/v2/prod/us-north-1",
-    "http://localhost:8080/zone/v2/dev/us-north-2",
+    "http://localhost:8080/zone/v2/dev/aws-us-north-2",
     "http://localhost:8080/zone/v2/test/us-north-3",
     "http://localhost:8080/zone/v2/staging/us-north-4"
   ],
@@ -12,7 +12,7 @@
     },
     {
       "environment": "dev",
-      "region": "us-north-2"
+      "region": "aws-us-north-2"
     },
     {
       "environment": "test",

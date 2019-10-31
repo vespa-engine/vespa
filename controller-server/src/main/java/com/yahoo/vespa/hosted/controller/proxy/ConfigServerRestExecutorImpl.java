@@ -2,12 +2,9 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
-import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -50,26 +47,24 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private static final Set<String> HEADERS_TO_COPY = Set.of("X-HTTP-Method-Override", "Content-Type");
 
-    private final ZoneRegistry zoneRegistry;
     private final ServiceIdentityProvider sslContextProvider;
 
     @Inject
-    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
-        this.zoneRegistry = zoneRegistry;
+    public ConfigServerRestExecutorImpl(ServiceIdentityProvider sslContextProvider) {
         this.sslContextProvider = sslContextProvider;
     }
 
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        HostnameVerifier hostnameVerifier = createHostnameVerifier(proxyRequest.getZoneId());
-        List<URI> allServers = getConfigserverEndpoints(proxyRequest.getZoneId());
+        // Make a local copy of the list as we want to manipulate it in case of ping problems.
+        List<URI> allServers = new ArrayList<>(proxyRequest.getTargets());
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers, hostnameVerifier)) {
+        if (queueFirstServerIfDown(allServers, proxyRequest.getTargetHostnameVerifier())) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
         for (URI uri : allServers) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, hostnameVerifier, errorBuilder);
+            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
@@ -79,18 +74,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 + errorBuilder.toString()));
     }
 
-    private List<URI> getConfigserverEndpoints(ZoneId zoneId) {
-        // TODO: Use config server VIP for all zones that have one
-        // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
-            return List.of(zoneRegistry.getConfigServerVipUri(zoneId));
-        } else {
-            return new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
-        }
-    }
-
-    private Optional<ProxyResponse> proxyCall(
-            URI uri, ProxyRequest proxyRequest, HostnameVerifier hostnameVerifier, StringBuilder errorBuilder)
+    private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
             throws ProxyException {
         final HttpRequestBase requestBase = createHttpBaseRequest(
                 proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
@@ -102,7 +86,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
                 .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
+                CloseableHttpClient client = createHttpClient(
+                        config, sslContextProvider, proxyRequest.getTargetHostnameVerifier());
                 CloseableHttpResponse response = client.execute(requestBase)
         ) {
             String content = getContent(response);
@@ -208,10 +193,6 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         // Some error happened, move this server to the back. The other servers should be running.
         Collections.rotate(allServers, -1);
         return true;
-    }
-
-    private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
-        return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
     }
 
     private static CloseableHttpClient createHttpClient(RequestConfig config,
