@@ -218,8 +218,8 @@ class NodesResponse extends HttpResponse {
         object.setDouble("vcpu", resources.vcpu());
         object.setDouble("memoryGb", resources.memoryGb());
         object.setDouble("diskGb", resources.diskGb());
-        object.setDouble("bandwithGgps", resources.bandwidthGbps());
-        object.setString("disk-speed", serializer.toString(resources.diskSpeed()));
+        object.setDouble("bandwithGbps", resources.bandwidthGbps());
+        object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
     }
 
     // Hack: For non-docker noder, return current docker image as default prefix + current Vespa version
