@@ -27,6 +27,7 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
+import com.yahoo.log.LogLevel;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
@@ -238,6 +239,7 @@ public class RestApi extends LoggingRequestHandler {
                                                 RestUri.apiErrorCodes.PARSER_ERROR);
         }
         catch (RuntimeException systemException) {
+            log.log(LogLevel.WARNING, "Internal runtime exception during Document V1 request handling", systemException);
             return Response.createErrorResponse(500, Exceptions.toMessageString(systemException),
                                                 restUri,
                                                 RestUri.apiErrorCodes.UNSPECIFIED);
