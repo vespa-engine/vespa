@@ -32,6 +32,7 @@ public class EventDiffCalculatorTest {
         Map<String, AnnotatedClusterState.Builder> derivedBefore = new HashMap<>();
         Map<String, AnnotatedClusterState.Builder> derivedAfter = new HashMap<>();
         long currentTimeMs = 0;
+        long maxMaintenanceGracePeriodTimeMs = 10_000;
 
         EventFixture(int nodeCount) {
             this.clusterFixture = ClusterFixture.forFlatCluster(nodeCount);
@@ -65,6 +66,10 @@ public class EventDiffCalculatorTest {
             this.currentTimeMs = timeMs;
             return this;
         }
+        EventFixture maxMaintenanceGracePeriodTimeMs(long timeMs) {
+            this.maxMaintenanceGracePeriodTimeMs = timeMs;
+            return this;
+        }
         EventFixture derivedClusterStateBefore(String bucketSpace, String stateStr) {
             getBuilder(derivedBefore, bucketSpace).clusterState(stateStr);
             return this;
@@ -91,7 +96,8 @@ public class EventDiffCalculatorTest {
                             .cluster(clusterFixture.cluster())
                             .fromState(ClusterStateBundle.of(baselineBefore.build(), toDerivedStates(derivedBefore)))
                             .toState(ClusterStateBundle.of(baselineAfter.build(), toDerivedStates(derivedAfter)))
-                            .currentTimeMs(currentTimeMs));
+                            .currentTimeMs(currentTimeMs)
+                            .maxMaintenanceGracePeriodTimeMs(maxMaintenanceGracePeriodTimeMs));
         }
 
         private static Map<String, AnnotatedClusterState> toDerivedStates(Map<String, AnnotatedClusterState.Builder> derivedBuilders) {
@@ -405,6 +411,37 @@ public class EventDiffCalculatorTest {
                 eventForNode(storageNode(0)),
                 nodeEventForBaseline(),
                 nodeEventWithDescription("Altered node state in cluster state from 'U' to 'M'"))));
+    }
+
+    @Test
+    public void storage_node_passed_maintenance_grace_period_emits_event() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3 .0.s:m")
+                .clusterStateAfter("distributor:3 storage:3 .0.s:d")
+                .maxMaintenanceGracePeriodTimeMs(123_456)
+                .storageNodeReasonAfter(0, NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD);
+
+        final List<Event> events = fixture.computeEventDiff();
+        // Down edge event + event explaining why the node went down
+        assertThat(events.size(), equalTo(2));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(0)),
+                nodeEventWithDescription("Exceeded implicit maintenance mode grace period of 123456 milliseconds. Marking node down."),
+                nodeEventForBaseline())));
+    }
+
+    @Test
+    public void storage_node_maintenance_grace_period_event_only_emitted_on_maintenance_to_down_edge() {
+        final EventFixture fixture = EventFixture.createForNodes(3)
+                .clusterStateBefore("distributor:3 storage:3 .0.s:u")
+                .clusterStateAfter("distributor:3 storage:3 .0.s:d")
+                .maxMaintenanceGracePeriodTimeMs(123_456)
+                .storageNodeReasonAfter(0, NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD);
+        final List<Event> events = fixture.computeEventDiff();
+        assertThat(events.size(), equalTo(1));
+        assertThat(events, hasItem(allOf(
+                eventForNode(storageNode(0)),
+                nodeEventForBaseline())));
     }
 
 }

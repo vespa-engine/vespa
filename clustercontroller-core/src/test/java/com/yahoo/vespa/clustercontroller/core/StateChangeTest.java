@@ -247,7 +247,7 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.0: Failed to get node state: D: Closed at other end\n" +
                 "Event: storage.0: Stopped or possibly crashed after 1000 ms, which is before stable state time period. Premature crash count is now 1.\n" +
                 "Event: storage.0: Altered node state in cluster state from 'U' to 'M: Closed at other end'\n" +
-                "Event: storage.0: 5001 milliseconds without contact. Marking node down.\n" +
+                "Event: storage.0: Exceeded implicit maintenance mode grace period of 5000 milliseconds. Marking node down.\n" +
                 "Event: storage.0: Altered node state in cluster state from 'M: Closed at other end' to 'D: Closed at other end'\n" +
                 "Event: storage.0: Now reporting state U, t 12345679\n" +
                 "Event: storage.0: Altered node state in cluster state from 'D: Closed at other end' to 'U, t 12345679'\n");
@@ -326,7 +326,7 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.0: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.0: Failed to get node state: D: controlled shutdown\n" +
                 "Event: storage.0: Altered node state in cluster state from 'U' to 'M: controlled shutdown'\n" +
-                "Event: storage.0: 5001 milliseconds without contact. Marking node down.\n" +
+                "Event: storage.0: Exceeded implicit maintenance mode grace period of 5000 milliseconds. Marking node down.\n" +
                 "Event: storage.0: Altered node state in cluster state from 'M: controlled shutdown' to 'D: controlled shutdown'\n" +
                 "Event: storage.0: Now reporting state U\n" +
                 "Event: storage.0: Altered node state in cluster state from 'D: controlled shutdown' to 'U'\n");
@@ -569,7 +569,7 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
                 "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'\n" +
-                "Event: storage.6: 100000 milliseconds without contact. Marking node down.\n" +
+                "Event: storage.6: Exceeded implicit maintenance mode grace period of 5000 milliseconds. Marking node down.\n" +
                 "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'D: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.00100 (ls)\n" +
                 "Event: storage.6: Now reporting state I, i 0.100 (read)\n" +
@@ -650,7 +650,7 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.6: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.6: Failed to get node state: D: Connection error: Closed at other end\n" +
                 "Event: storage.6: Altered node state in cluster state from 'U' to 'M: Connection error: Closed at other end'\n" +
-                "Event: storage.6: 1000000 milliseconds without contact. Marking node down.\n" +
+                "Event: storage.6: Exceeded implicit maintenance mode grace period of 5000 milliseconds. Marking node down.\n" +
                 "Event: storage.6: Altered node state in cluster state from 'M: Connection error: Closed at other end' to 'D: Connection error: Closed at other end'\n" +
                 "Event: storage.6: Now reporting state I, i 0.100 (read)\n" +
                 "Event: storage.6: Altered node state in cluster state from 'D: Connection error: Closed at other end' to 'I, i 0.100 (read)'\n" +
@@ -1213,8 +1213,11 @@ public class StateChangeTest extends FleetControllerTest {
                 "Event: storage.2: Altered node state in cluster state from 'D: Node not seen in slobrok.' to 'U'\n" +
                 "Event: storage.2: Failed to get node state: D: foo\n" +
                 "Event: storage.2: Stopped or possibly crashed after 500 ms, which is before stable state time period. Premature crash count is now 1.\n" +
-                "Event: storage.2: Altered node state in cluster state from 'U' to 'M: foo'\n" +
-                "Event: storage.2: 5000 milliseconds without contact. Marking node down.\n");
+                "Event: storage.2: Altered node state in cluster state from 'U' to 'M: foo'\n");
+        // Note: even though max transition time has passed, events are now emitted only on cluster state
+        // publish edges. These are currently suppressed when the cluster state is down, as all cluster down
+        // states are considered similar to other cluster down states. This is not necessarily optimal, but
+        // if the cluster is down there are bigger problems than not having some debug events logged.
     }
 
     @Test

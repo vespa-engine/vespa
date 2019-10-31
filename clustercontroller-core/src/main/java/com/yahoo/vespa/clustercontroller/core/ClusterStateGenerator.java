@@ -132,7 +132,7 @@ public class ClusterStateGenerator {
         final Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
 
         for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
-            final NodeState nodeState = computeEffectiveNodeState(nodeInfo, params);
+            final NodeState nodeState = computeEffectiveNodeState(nodeInfo, params, nodeStateReasons);
             workingState.setNodeState(nodeInfo.getNode(), nodeState);
         }
 
@@ -159,7 +159,10 @@ public class ClusterStateGenerator {
         baseline.setDescription(wanted.getDescription());
     }
 
-    private static NodeState computeEffectiveNodeState(final NodeInfo nodeInfo, final Params params) {
+    private static NodeState computeEffectiveNodeState(final NodeInfo nodeInfo,
+                                                       final Params params,
+                                                       Map<Node, NodeStateReason> nodeStateReasons)
+    {
         final NodeState reported = nodeInfo.getReportedState();
         final NodeState wanted   = nodeInfo.getWantedState();
         final NodeState baseline = reported.clone();
@@ -171,7 +174,7 @@ public class ClusterStateGenerator {
             baseline.setStartTimestamp(0);
         }
         if (nodeInfo.isStorage()) {
-            applyStorageSpecificStateTransforms(nodeInfo, params, reported, wanted, baseline);
+            applyStorageSpecificStateTransforms(nodeInfo, params, reported, wanted, baseline, nodeStateReasons);
         }
         if (baseline.above(wanted)) {
             applyWantedStateToBaselineState(baseline, wanted);
@@ -181,7 +184,8 @@ public class ClusterStateGenerator {
     }
 
     private static void applyStorageSpecificStateTransforms(NodeInfo nodeInfo, Params params, NodeState reported,
-                                                            NodeState wanted, NodeState baseline)
+                                                            NodeState wanted, NodeState baseline,
+                                                            Map<Node, NodeStateReason> nodeStateReasons)
     {
         if (reported.getState() == State.INITIALIZING) {
             if (timedOutWithoutNewInitProgress(reported, nodeInfo, params)
@@ -195,7 +199,7 @@ public class ClusterStateGenerator {
             }
         }
         // TODO ensure that maintenance cannot override Down for any other cases
-        if (withinTemporalMaintenancePeriod(nodeInfo, baseline, params) && wanted.getState() != State.DOWN) {
+        if (withinTemporalMaintenancePeriod(nodeInfo, baseline, nodeStateReasons, params) && wanted.getState() != State.DOWN) {
             baseline.setState(State.MAINTENANCE);
         }
     }
@@ -244,13 +248,18 @@ public class ClusterStateGenerator {
      */
     private static boolean withinTemporalMaintenancePeriod(final NodeInfo nodeInfo,
                                                            final NodeState baseline,
+                                                           Map<Node, NodeStateReason> nodeStateReasons,
                                                            final Params params)
     {
         final Integer transitionTime = params.transitionTimes.get(nodeInfo.getNode().getType());
         if (transitionTime == 0 || !baseline.getState().oneOf("sd")) {
             return false;
         }
-        return nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis;
+        if (nodeInfo.getTransitionTime() + transitionTime > params.currentTimeInMillis) {
+            return true;
+        }
+        nodeStateReasons.put(nodeInfo.getNode(), NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD);
+        return false;
     }
 
     private static void takeDownGroupsWithTooLowAvailability(final ClusterState workingState,

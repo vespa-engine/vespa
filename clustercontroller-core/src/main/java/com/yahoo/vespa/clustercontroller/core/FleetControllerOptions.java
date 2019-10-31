@@ -157,6 +157,10 @@ public class FleetControllerOptions implements Cloneable {
         this.maxDeferredTaskVersionWaitTime = maxDeferredTaskVersionWaitTime;
     }
 
+    public long storageNodeMaxTransitionTimeMs() {
+        return maxTransitionTime.getOrDefault(NodeType.STORAGE, 10_000);
+    }
+
     public FleetControllerOptions clone() {
         try {
             // TODO: This should deep clone

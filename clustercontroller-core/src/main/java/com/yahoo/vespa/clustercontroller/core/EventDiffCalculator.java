@@ -31,6 +31,7 @@ public class EventDiffCalculator {
         ClusterStateBundle fromState;
         ClusterStateBundle toState;
         long currentTime;
+        long maxMaintenanceGracePeriodTimeMs;
 
         public Params cluster(ContentCluster cluster) {
             this.cluster = cluster;
@@ -48,6 +49,10 @@ public class EventDiffCalculator {
             this.currentTime = time;
             return this;
         }
+        public Params maxMaintenanceGracePeriodTimeMs(long timeMs) {
+            this.maxMaintenanceGracePeriodTimeMs = timeMs;
+            return this;
+        }
     }
 
     public static Params params() { return new Params(); }
@@ -58,17 +63,20 @@ public class EventDiffCalculator {
         final AnnotatedClusterState fromState;
         final AnnotatedClusterState toState;
         final long currentTime;
+        final long maxMaintenanceGracePeriodTimeMs;
 
         PerStateParams(ContentCluster cluster,
                        Optional<String> bucketSpace,
                        AnnotatedClusterState fromState,
                        AnnotatedClusterState toState,
-                       long currentTime) {
+                       long currentTime,
+                       long maxMaintenanceGracePeriodTimeMs) {
             this.cluster = cluster;
             this.bucketSpace = bucketSpace;
             this.fromState = fromState;
             this.toState = toState;
             this.currentTime = currentTime;
+            this.maxMaintenanceGracePeriodTimeMs = maxMaintenanceGracePeriodTimeMs;
         }
     }
 
@@ -86,7 +94,8 @@ public class EventDiffCalculator {
                 Optional.empty(),
                 params.fromState.getBaselineAnnotatedState(),
                 params.toState.getBaselineAnnotatedState(),
-                params.currentTime);
+                params.currentTime,
+                params.maxMaintenanceGracePeriodTimeMs);
     }
 
     private static void emitWholeClusterDiffEvent(final PerStateParams params, final List<Event> events) {
@@ -137,11 +146,10 @@ public class EventDiffCalculator {
         final NodeState nodeTo = toState.getNodeState(n);
         if (!nodeTo.equals(nodeFrom)) {
             final NodeInfo info = cluster.getNodeInfo(n);
-            events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
-                            nodeFrom.toString(true), nodeTo.toString(true)), params));
-
             NodeStateReason prevReason = params.fromState.getNodeStateReasons().get(n);
             NodeStateReason currReason = params.toState.getNodeStateReasons().get(n);
+            // Add specific reason events for node edge _before_ the actual transition event itself.
+            // This makes the timeline of events more obvious.
             if (isGroupDownEdge(prevReason, currReason)) {
                 events.add(createNodeEvent(info, "Group node availability is below configured threshold", params));
             } else if (isGroupUpEdge(prevReason, currReason)) {
@@ -150,7 +158,12 @@ public class EventDiffCalculator {
                 events.add(createNodeEvent(info, "Node may have merges pending", params));
             } else if (isMayHaveMergesPendingDownEdge(prevReason, currReason)) {
                 events.add(createNodeEvent(info, "Node no longer has merges pending", params));
+            } else if (isMaintenanceGracePeriodExceededDownEdge(prevReason, currReason, nodeFrom, nodeTo)) {
+                events.add(createNodeEvent(info, String.format("Exceeded implicit maintenance mode grace period of " +
+                        "%d milliseconds. Marking node down.", params.maxMaintenanceGracePeriodTimeMs), params));
             }
+            events.add(createNodeEvent(info, String.format("Altered node state in cluster state from '%s' to '%s'",
+                    nodeFrom.toString(true), nodeTo.toString(true)), params));
         }
     }
 
@@ -176,6 +189,14 @@ public class EventDiffCalculator {
 
     private static boolean isMayHaveMergesPendingDownEdge(NodeStateReason prevReason, NodeStateReason currReason) {
         return prevReason == NodeStateReason.MAY_HAVE_MERGES_PENDING && currReason != NodeStateReason.MAY_HAVE_MERGES_PENDING;
+    }
+
+    private static boolean isMaintenanceGracePeriodExceededDownEdge(NodeStateReason prevReason, NodeStateReason currReason,
+                                                                    NodeState prevState, NodeState currState) {
+        return (prevReason != NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD &&
+                currReason == NodeStateReason.NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD &&
+                prevState.getState() == State.MAINTENANCE &&
+                currState.getState() == State.DOWN);
     }
 
     private static boolean clusterHasTransitionedToUpState(ClusterState prevState, ClusterState currentState) {
@@ -207,7 +228,8 @@ public class EventDiffCalculator {
                 Optional.of(bucketSpace),
                 fromDerivedState,
                 toDerivedState,
-                params.currentTime);
+                params.currentTime,
+                params.maxMaintenanceGracePeriodTimeMs);
     }
 
 }

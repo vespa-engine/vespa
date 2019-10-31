@@ -6,8 +6,8 @@ public enum NodeStateReason {
     // FIXME some of these reasons may be unnecessary as they are reported implicitly by reported/wanted state changes
     NODE_TOO_UNSTABLE,
     WITHIN_MAINTENANCE_GRACE_PERIOD,
+    NODE_NOT_BACK_UP_WITHIN_GRACE_PERIOD,
     FORCED_INTO_MAINTENANCE,
     GROUP_IS_DOWN,
     MAY_HAVE_MERGES_PENDING
-
 }
