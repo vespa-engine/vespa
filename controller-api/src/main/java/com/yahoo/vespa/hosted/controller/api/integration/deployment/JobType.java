@@ -91,6 +91,9 @@ public enum JobType {
     devCdUsCentral1        ("dev-cd-us-central-1",
                             Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
 
+    devCdUsWest1           ("dev-cd-us-west-1",
+                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-west-1"))),
+
     devAwsUsEast1c         ("dev-aws-us-east-1c",
                             Map.of(Public,   ZoneId.from("dev", "aws-us-east-1c"),
                                    PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
