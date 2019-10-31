@@ -218,7 +218,7 @@ class NodesResponse extends HttpResponse {
         object.setDouble("vcpu", resources.vcpu());
         object.setDouble("memoryGb", resources.memoryGb());
         object.setDouble("diskGb", resources.diskGb());
-        object.setDouble("bandwithGbps", resources.bandwidthGbps());
+        object.setDouble("bandwidthGbps", resources.bandwidthGbps());
         object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
     }
 
