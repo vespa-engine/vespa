@@ -5,9 +5,6 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneApi;
-import com.yahoo.text.Utf8;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
@@ -29,7 +26,6 @@ import static org.junit.Assert.assertFalse;
  */
 public class ConfigServerApiHandlerTest extends ControllerContainerTest {
 
-    private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/configserver/responses/";
     private static final List<ZoneApi> zones = List.of(
             ZoneApiMock.fromId("prod.us-north-1"),
@@ -48,7 +44,6 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
                 .setZones(zones);
         this.tester = new ContainerControllerTester(container, responseFiles);
         this.proxy = (ConfigServerProxyMock) container.components().getComponent(ConfigServerProxyMock.class.getName());
-        addUserToHostedOperatorRole(HOSTED_VESPA_OPERATOR);
     }
 
     @Test
@@ -63,23 +58,23 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
         assertLastRequest("https://cfg.prod.us-north-1.test.vip:4443/", "GET");
 
         // POST /configserver/v1/dev/us-north-2/nodes/v2/command/restart?hostname=node1
-        tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
-                new byte[0], Request.Method.POST),
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
+                "", Request.Method.POST),
                 "ok");
 
         // PUT /configserver/v1/prod/us-north-1/nodes/v2/state/dirty/node1
-        tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/state/dirty/node1",
-                new byte[0], Request.Method.PUT), "ok");
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/state/dirty/node1",
+                "", Request.Method.PUT), "ok");
         assertLastRequest("https://cfg.prod.us-north-1.test.vip:4443/", "PUT");
 
         // DELETE /configserver/v1/prod/us-north-1/nodes/v2/node/node1
-        tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/configserver/v1/prod/controller/nodes/v2/node/node1",
-                new byte[0], Request.Method.DELETE), "ok");
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/prod/controller/nodes/v2/node/node1",
+                "", Request.Method.DELETE), "ok");
         assertLastRequest("https://api.tld:4443/", "DELETE");
 
         // PATCH /configserver/v1/prod/us-north-1/nodes/v2/node/node1
-        tester.containerTester().assertResponse(hostedOperatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/node/node1",
-                Utf8.toBytes("{\"currentRestartGeneration\": 1}"),
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/node/node1",
+                "{\"currentRestartGeneration\": 1}",
                 Request.Method.PATCH), "ok");
         assertLastRequest("https://cfg.dev.aws-us-north-2.test.vip:4443/", "PATCH");
         assertEquals("{\"currentRestartGeneration\": 1}", proxy.lastRequestBody().get());
@@ -102,8 +97,8 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
     @Test
     public void test_invalid_requests() {
         // POST /configserver/v1/prod/us-north-34/nodes/v2
-        tester.containerTester().assertResponse(() -> hostedOperatorRequest("http://localhost:8080/configserver/v1/prod/us-north-42/nodes/v2",
-                new byte[0], Request.Method.POST),
+        tester.containerTester().assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-42/nodes/v2",
+                "", Request.Method.POST),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such zone: prod.us-north-42\"}", 400);
         assertFalse(proxy.lastReceived().isPresent());
     }
@@ -113,9 +108,4 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
         assertEquals(List.of(URI.create(target)), last.getTargets());
         assertEquals(com.yahoo.jdisc.http.HttpRequest.Method.valueOf(method), last.getMethod());
     }
-
-    private static Request hostedOperatorRequest(String uri, byte[] body, Request.Method method) {
-        return addIdentityToRequest(new Request(uri, body, method), HOSTED_VESPA_OPERATOR);
-    }
-
 }
