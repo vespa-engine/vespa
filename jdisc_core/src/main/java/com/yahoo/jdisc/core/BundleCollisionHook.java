@@ -19,9 +19,10 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * A bundle {@link CollisionHook} that contains a set of bundles that are allowed to collide with
- * bundles that are about to be installed. In order to clean up when bundles are uninstalled, this
- * is also a bundle {@link EventHook}.
+ * A bundle {@link CollisionHook} that contains a set of bundles that are allowed to collide with bundles
+ * that are about to be installed. This class also implements a {@link FindHook} to provide a consistent
+ * view of bundles such that the two sets of duplicate bundles are invisible to each other.
+ * In order to clean up when bundles are uninstalled, this is also a bundle {@link EventHook}.
  *
  * Thread safe
  *
@@ -87,9 +88,6 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
      * If the given context represents one of the allowed duplicates, this method filters out all bundles
      * that are duplicates of the allowed duplicates. Otherwise this method filters out the allowed duplicates,
      * so they are not visible to other bundles.
-     *
-     * NOTE:  This hook method is added for a consistent view of the installed bundles, but is not actively
-     *        used by jdisc. The OSGi framework does not use FindHooks when calculating bundle wiring.
      */
     @Override
     public synchronized void find(BundleContext context, Collection<Bundle> bundles) {
