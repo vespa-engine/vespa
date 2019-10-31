@@ -24,3 +24,6 @@ athenzCaTrustStore                        string
 
 # Period between certificate updates
 updatePeriodDays                          int  default=1
+
+# Tenant Service id
+tenantService                             string default=vespa.vespa.tenant

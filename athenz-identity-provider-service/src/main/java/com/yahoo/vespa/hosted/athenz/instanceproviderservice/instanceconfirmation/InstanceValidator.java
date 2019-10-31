@@ -54,7 +54,7 @@ public class InstanceValidator {
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
                              AthenzProviderServiceConfig config) {
-        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.domain(), "tenant"));
+        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.tenantService()));
     }
 
     public InstanceValidator(KeyProvider keyProvider,
