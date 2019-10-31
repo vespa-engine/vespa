@@ -250,8 +250,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
         catch (ConfigServerException e) {
-            if (   e.getErrorCode() == OUT_OF_CAPACITY && type.isTest()
-                || e.getErrorCode() == ACTIVATION_CONFLICT
+            if (   e.getErrorCode() == ACTIVATION_CONFLICT
                 || e.getErrorCode() == APPLICATION_LOCK_FAILURE
                 || e.getErrorCode() == PARENT_HOST_NOT_READY
                 || e.getErrorCode() == CERTIFICATE_NOT_READY
@@ -560,10 +559,12 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
         try {
             controller.jobController().active(id).ifPresent(run -> {
-                JobReport report = JobReport.ofJob(run.id().application(),
+                        JobReport report = JobReport.ofJob(run.id().application(),
                                                    run.id().type(),
                                                    run.id().number(),
-                                                   run.hasFailed() ? Optional.of(DeploymentJobs.JobError.unknown) : Optional.empty());
+                                                   ! run.hasFailed() ? Optional.empty()
+                                                                     : Optional.of(run.status() == outOfCapacity ? DeploymentJobs.JobError.outOfCapacity
+                                                                                                                 : DeploymentJobs.JobError.unknown));
                 controller.applications().deploymentTrigger().notifyOfCompletion(report);
 
                 if (run.hasFailed())
