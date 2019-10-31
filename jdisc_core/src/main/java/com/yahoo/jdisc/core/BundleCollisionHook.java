@@ -8,6 +8,7 @@ import org.osgi.framework.Version;
 import org.osgi.framework.hooks.bundle.CollisionHook;
 import org.osgi.framework.hooks.bundle.EventHook;
 import org.osgi.framework.hooks.bundle.FindHook;
+import org.osgi.framework.launch.Framework;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -107,12 +108,24 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
                 }
             }
         }
-        log.info("Hiding bundles from bundle '" + context.getBundle() + "': " + bundlesToHide);
+        logHiddenBundles(context, bundlesToHide);
         bundles.removeAll(bundlesToHide);
     }
 
     private boolean isDuplicateOfAllowedDuplicates(Bundle bundle) {
         return ! allowedDuplicates.containsKey(bundle) && allowedDuplicates.containsValue(new BsnVersion(bundle));
+    }
+
+    private void logHiddenBundles(BundleContext requestingContext, Set<Bundle> hiddenBundles) {
+        if (hiddenBundles.isEmpty()) {
+            log.fine(() -> "No bundles to hide from bundle " + requestingContext.getBundle());
+        } else {
+            if (requestingContext.getBundle() instanceof Framework) {
+                log.fine(() -> "Requesting bundle is the Framework, so hidden bundles will be visible: " + hiddenBundles);
+            } else {
+                log.info("Hiding bundles from bundle '" + requestingContext.getBundle() + "': " + hiddenBundles);
+            }
+        }
     }
 
 
