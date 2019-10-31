@@ -2,7 +2,6 @@
 package com.yahoo.config.provision;
 
 import java.util.List;
-import java.util.Set;
 
 /**
  * The possible types of nodes in the node repository
@@ -36,13 +35,13 @@ public enum NodeType {
     controllerhost("Controller host", controller),
 
     /** A host of multiple nodes, only used in {@link SystemName#dev} */
-    devhost("Dev host", tenant, config, controller);
+    devhost("Dev host", config, controller, tenant);
 
     private final List<NodeType> childNodeTypes;
     private final String description;
 
     NodeType(String description, NodeType... childNodeTypes) {
-        this.childNodeTypes = List.copyOf(Set.of(childNodeTypes));
+        this.childNodeTypes = List.of(childNodeTypes);
         this.description = description;
     }
 
