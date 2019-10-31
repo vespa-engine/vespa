@@ -135,8 +135,7 @@ public final class ControllerTester {
         Arrays.stream(Logger.getLogger("").getHandlers())
               // Do not mess with log configuration if a custom one has been set
               .filter(ignored -> System.getProperty("java.util.logging.config.file") == null)
-              .findFirst()
-              .ifPresent(configureFunc);
+              .forEach(configureFunc);
     }
 
     public static BuildService.BuildJob buildJob(ApplicationId id, JobType jobType) {

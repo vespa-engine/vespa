@@ -107,8 +107,8 @@ public class InternalDeploymentTester {
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
 
         // Get deployment job logs to stderr.
-        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(LogLevel.DEBUG);
         Logger.getLogger("").setLevel(LogLevel.DEBUG);
+        Logger.getLogger(InternalStepRunner.class.getName()).setLevel(LogLevel.DEBUG);
         tester.controllerTester().configureDefaultLogHandler(handler -> handler.setLevel(LogLevel.DEBUG));
 
         // Mock Athenz domain to allow launch of service
@@ -216,6 +216,7 @@ public class InternalDeploymentTester {
         newDeploymentContext(id.defaultInstance()).deployPlatform(version);
     }
 
+    /** Aborts and finishes all running jobs. */
     public void abortAll() {
         triggerJobs();
         for (Run run : jobs.active()) {
@@ -225,8 +226,11 @@ public class InternalDeploymentTester {
         }
     }
 
-    public void triggerJobs() {
-        tester.triggerUntilQuiescence();
+    /** Triggers jobs until nothing more triggers, and returns the number of triggered jobs. */
+    public int triggerJobs() {
+        int triggered = 0;
+        while (triggered != (triggered += deploymentTrigger().triggerReadyJobs()));
+        return triggered;
     }
 
     /** Starts a manual deployment of the given package, and then runs the whole of the given job, successfully. */

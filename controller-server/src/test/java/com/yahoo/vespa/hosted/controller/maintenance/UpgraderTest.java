@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -19,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -31,14 +29,13 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.Cha
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
  */
 public class UpgraderTest {
 
-    InternalDeploymentTester tester = new InternalDeploymentTester().atHourOfDay(5);
+    private final InternalDeploymentTester tester = new InternalDeploymentTester().atHourOfDay(5);
 
     @Test
     public void testUpgrading() {
