@@ -42,7 +42,8 @@ public class ModelFactoryRegistry {
      */
     public ModelFactory getFactory(Version version) {
         if ( ! factories.containsKey(version))
-            throw new UnknownVespaVersionException("Unknown Vespa version '" + version + "', cannot build config model for this version");
+            throw new UnknownVespaVersionException("Unknown Vespa version '" + version +
+                                                   "', cannot build config model for this version, known versions: " + allVersions());
         return factories.get(version);
     }
 
