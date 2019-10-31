@@ -9,14 +9,13 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 
 /**
  * Response class that also rewrites URL from config server.
  *
  * @author Haakon Dybdahl
  */
-public class ProxyResponse  extends HttpResponse {
+public class ProxyResponse extends HttpResponse {
 
     private final String bodyResponseRewritten;
     private final String contentType;
@@ -25,29 +24,21 @@ public class ProxyResponse  extends HttpResponse {
             ProxyRequest controllerRequest,
             String bodyResponse,
             int statusResponse,
-            Optional<URI> configServer,
+            URI configServer,
             String contentType) {
         super(statusResponse);
         this.contentType = contentType;
-
-        if (! configServer.isPresent() || controllerRequest.getControllerPrefix().isEmpty()) {
-            bodyResponseRewritten = bodyResponse;
-            return;
-        }
 
         final String configServerPrefix;
         final String controllerRequestPrefix;
         try {
             configServerPrefix = new URIBuilder()
-                    .setScheme(configServer.get().getScheme())
-                    .setHost(configServer.get().getHost())
-                    .setPort(configServer.get().getPort())
+                    .setScheme(configServer.getScheme())
+                    .setHost(configServer.getHost())
+                    .setPort(configServer.getPort())
+                    .setPath("/")
                     .build().toString();
-            controllerRequestPrefix = new URIBuilder()
-                    .setScheme(controllerRequest.getScheme())
-                    // controller prefix is more than host, so it is a bit hackish, but verified by tests.
-                    .setHost(controllerRequest.getControllerPrefix())
-                    .build().toString();
+            controllerRequestPrefix = controllerRequest.getControllerPrefixUri().toString();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

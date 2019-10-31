@@ -1,20 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.http.HttpRequest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.io.IOException;
 import java.net.URI;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author Haakon Dybdahl
@@ -26,58 +22,53 @@ public class ProxyRequestTest {
 
     @Test
     public void testEmpty() throws Exception {
-        exception.expectMessage("Request not set.");
-        testRequest(null, "/zone/v2/");
+        exception.expectMessage("Request must be non-null");
+        new ProxyRequest(HttpRequest.Method.GET, null, Map.of(), null, ZoneId.from("dev", "us-north-1"), "/zone/v2");
     }
 
     @Test
     public void testBadUri() throws Exception {
-        exception.expectMessage("Request not starting with /zone/v2/");
-        testRequest(URI.create("http://foo"), "/zone/v2/");
+        exception.expectMessage("Request path '/path' does not end with proxy path '/zone/v2/'");
+        testRequest("http://domain.tld/path", "/zone/v2/");
     }
 
     @Test
-    public void testConfigRequestEmpty() throws Exception {
-        ProxyRequest proxyRequest = testRequest(URI.create("http://foo/zone/v2/foo/bar"), "/zone/v2/");
-        assertEquals("foo", proxyRequest.getEnvironment());
-        assertEquals("bar", proxyRequest.getRegion());
-        assertFalse(proxyRequest.isDiscoveryRequest());
-        assertTrue(proxyRequest.getConfigServerRequest().isEmpty());
+    public void testUris() throws Exception {
+        {
+            // Root request
+            ProxyRequest request = testRequest("http://controller.domain.tld/my/path", "");
+            assertEquals(URI.create("http://controller.domain.tld/my/path/"), request.getControllerPrefixUri());
+            assertEquals(URI.create("https://cfg.prod.us-north-1.domain.tld:1234/"),
+                    request.createConfigServerRequestUri(URI.create("https://cfg.prod.us-north-1.domain.tld:1234/")));
+        }
 
+        {
+            // Root request with trailing /
+            ProxyRequest request = testRequest("http://controller.domain.tld/my/path/", "/");
+            assertEquals(URI.create("http://controller.domain.tld/my/path/"), request.getControllerPrefixUri());
+            assertEquals(URI.create("https://cfg.prod.us-north-1.domain.tld:1234/"),
+                    request.createConfigServerRequestUri(URI.create("https://cfg.prod.us-north-1.domain.tld:1234/")));
+        }
+
+        {
+            // API path test
+            ProxyRequest request = testRequest("http://controller.domain.tld:1234/my/path/nodes/v2", "/nodes/v2");
+            assertEquals(URI.create("http://controller.domain.tld:1234/my/path/"), request.getControllerPrefixUri());
+            assertEquals(URI.create("https://cfg.prod.us-north-1.domain.tld/nodes/v2"),
+                    request.createConfigServerRequestUri(URI.create("https://cfg.prod.us-north-1.domain.tld")));
+        }
+
+        {
+            // API path test with query
+            ProxyRequest request = testRequest("http://controller.domain.tld:1234/my/path/nodes/v2/?some=thing", "/nodes/v2/");
+            assertEquals(URI.create("http://controller.domain.tld:1234/my/path/"), request.getControllerPrefixUri());
+            assertEquals(URI.create("https://cfg.prod.us-north-1.domain.tld/nodes/v2/?some=thing"),
+                    request.createConfigServerRequestUri(URI.create("https://cfg.prod.us-north-1.domain.tld")));
+        }
     }
 
-    @Test
-    public void testDiscoveryRequest() throws Exception {
-        ProxyRequest proxyRequest = testRequest(URI.create("http://foo/zone/v2/foo"), "/zone/v2/");
-        assertEquals("foo", proxyRequest.getEnvironment());
-        assertTrue(proxyRequest.isDiscoveryRequest());
-
+    private static ProxyRequest testRequest(String url, String pathPrefix) throws ProxyException {
+        return new ProxyRequest(
+                HttpRequest.Method.GET, URI.create(url), Map.of(), null, ZoneId.from("dev", "us-north-1"), pathPrefix);
     }
-
-    @Test
-    public void testProxyRequest() throws Exception {
-        ProxyRequest proxyRequest = testRequest(URI.create("http://foo/zone/v2/foo/bar/bla/bla/v1/something"),
-                                                "/zone/v2/");
-        assertEquals("foo", proxyRequest.getEnvironment());
-        assertEquals("/bla/bla/v1/something", proxyRequest.getConfigServerRequest());
-    }
-
-    @Test
-    public void testProxyRequestWithParameters() throws Exception {
-        ProxyRequest proxyRequest = testRequest(URI.create("http://foo/zone/v2/foo/bar/something?p=v&q=y"),
-                                                "/zone/v2/");
-        assertEquals("foo", proxyRequest.getEnvironment());
-        assertEquals("/something?p=v&q=y", proxyRequest.getConfigServerRequest());
-    }
-
-    private static ProxyRequest testRequest(URI url, String pathPrefix) throws IOException, ProxyException {
-        return new ProxyRequest(url, headers("controller:49152"), null, "GET", pathPrefix);
-    }
-
-    private static Map<String, List<String>> headers(String hostPort) {
-        Map<String, List<String>> headers = new HashMap<>();
-        headers.put("host", Collections.singletonList(hostPort));
-        return Collections.unmodifiableMap(headers);
-    }
-
 }

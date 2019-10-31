@@ -1,19 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
-import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.apache.http.Header;
 import org.apache.http.client.config.RequestConfig;
@@ -24,20 +17,15 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.net.URI;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,7 +35,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static java.util.Collections.singleton;
+import static com.yahoo.yolean.Exceptions.uncheck;
+
 
 /**
  * @author Haakon Dybdahl
@@ -65,28 +54,22 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
     private final ServiceIdentityProvider sslContextProvider;
 
     @Inject
-    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry,
-                                        ServiceIdentityProvider sslContextProvider) {
+    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
         this.zoneRegistry = zoneRegistry;
         this.sslContextProvider = sslContextProvider;
     }
 
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        if (proxyRequest.isDiscoveryRequest()) {
-            return createDiscoveryResponse(proxyRequest);
-        }
-
-        ZoneId zoneId = ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion());
-
-        List<URI> allServers = getConfigserverEndpoints(zoneId);
+        HostnameVerifier hostnameVerifier = createHostnameVerifier(proxyRequest.getZoneId());
+        List<URI> allServers = getConfigserverEndpoints(proxyRequest.getZoneId());
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers, proxyRequest)) {
+        if (queueFirstServerIfDown(allServers, hostnameVerifier)) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
         for (URI uri : allServers) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
+            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, hostnameVerifier, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
@@ -100,45 +83,17 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         // TODO: Use config server VIP for all zones that have one
         // Make a local copy of the list as we want to manipulate it in case of ping problems.
         if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
-            return Collections.singletonList(zoneRegistry.getConfigServerVipUri(zoneId));
+            return List.of(zoneRegistry.getConfigServerVipUri(zoneId));
         } else {
             return new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
         }
     }
 
-    private static class DiscoveryResponseStructure {
-        public List<String> uris = new ArrayList<>();
-    }
-
-    private ProxyResponse createDiscoveryResponse(ProxyRequest proxyRequest) {
-        ObjectMapper mapper = new ObjectMapper();
-        DiscoveryResponseStructure responseStructure = new DiscoveryResponseStructure();
-        String environmentName = proxyRequest.getEnvironment();
-
-        ZoneList zones = zoneRegistry.zones().all();
-        if ( ! environmentName.isEmpty())
-            zones = zones.in(Environment.from(environmentName));
-
-        for (ZoneApi zone : zones.zones()) {
-            responseStructure.uris.add(proxyRequest.getScheme() + "://" + proxyRequest.getControllerPrefix() +
-                                       zone.getEnvironment().value() + "/" + zone.getRegionName().value());
-        }
-        JsonNode node = mapper.valueToTree(responseStructure);
-        return new ProxyResponse(proxyRequest, node.toString(), 200, Optional.empty(), "application/json");
-    }
-
-    private static String removeFirstSlashIfAny(String url) {
-        if (url.startsWith("/")) {
-            return url.substring(1);
-        }
-        return url;
-    }
-
-    private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
+    private Optional<ProxyResponse> proxyCall(
+            URI uri, ProxyRequest proxyRequest, HostnameVerifier hostnameVerifier, StringBuilder errorBuilder)
             throws ProxyException {
-        String fullUri = uri.toString() + removeFirstSlashIfAny(proxyRequest.getConfigServerRequest());
         final HttpRequestBase requestBase = createHttpBaseRequest(
-                proxyRequest.getMethod(), fullUri, proxyRequest.getData());
+                proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
         copyHeaders(proxyRequest.getHeaders(), requestBase);
 
@@ -147,7 +102,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
                 .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
                 CloseableHttpResponse response = client.execute(requestBase)
         ) {
             String content = getContent(response);
@@ -168,7 +123,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 contentType = "application/json";
             }
             // Send response back
-            return Optional.of(new ProxyResponse(proxyRequest, content, status, Optional.of(uri), contentType));
+            return Optional.of(new ProxyResponse(proxyRequest, content, status, uri, contentType));
         } catch (Exception e) {
             errorBuilder.append("Talking to server ").append(uri.getHost());
             errorBuilder.append(" got exception ").append(e.getMessage());
@@ -179,20 +134,12 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
 
     private static String getContent(CloseableHttpResponse response) {
         return Optional.ofNullable(response.getEntity())
-                .map(entity ->
-                     {
-                         try {
-                             return EntityUtils.toString(entity);
-                         } catch (IOException e) {
-                             throw new UncheckedIOException(e);
-                         }
-                     }
-                ).orElse("");
+                .map(entity -> uncheck(() -> EntityUtils.toString(entity)))
+                .orElse("");
     }
 
-    private static HttpRequestBase createHttpBaseRequest(String method, String uri, InputStream data) throws ProxyException {
-        Method enumMethod =  Method.valueOf(method);
-        switch (enumMethod) {
+    private static HttpRequestBase createHttpBaseRequest(Method method, URI uri, InputStream data) throws ProxyException {
+        switch (method) {
             case GET:
                 return new HttpGet(uri);
             case POST:
@@ -235,7 +182,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
      * if it is not responding, we try the other servers first. False positive/negatives are not critical,
      * but will increase latency to some extent.
      */
-    private boolean queueFirstServerIfDown(List<URI> allServers, ProxyRequest proxyRequest) {
+    private boolean queueFirstServerIfDown(List<URI> allServers, HostnameVerifier hostnameVerifier) {
         if (allServers.size() < 2) {
             return false;
         }
@@ -248,9 +195,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout).build();
         try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, zoneRegistry, proxyRequest);
+                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
                 CloseableHttpResponse response = client.execute(httpget)
-
         ) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;
@@ -260,61 +206,23 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
             // We ignore this, if server is restarting this might happen.
         }
         // Some error happened, move this server to the back. The other servers should be running.
-        allServers.remove(0);
-        allServers.add(uri);
+        Collections.rotate(allServers, -1);
         return true;
     }
 
-    @SuppressWarnings("deprecation")
+    private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
+        return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
+    }
+
     private static CloseableHttpClient createHttpClient(RequestConfig config,
                                                         ServiceIdentityProvider sslContextProvider,
-                                                        ZoneRegistry zoneRegistry,
-                                                        ProxyRequest proxyRequest) {
-        AthenzIdentityVerifier hostnameVerifier =
-                new AthenzIdentityVerifier(
-                        singleton(
-                                zoneRegistry.getConfigServerHttpsIdentity(
-                                        ZoneId.from(proxyRequest.getEnvironment(), proxyRequest.getRegion()))));
+                                                        HostnameVerifier hostnameVerifier) {
         return HttpClientBuilder.create()
                 .setUserAgent("config-server-proxy-client")
                 .setSslcontext(sslContextProvider.getIdentitySslContext())
-                .setHostnameVerifier(new AthenzIdentityVerifierAdapter(hostnameVerifier))
+                .setSSLHostnameVerifier(hostnameVerifier)
                 .setDefaultRequestConfig(config)
                 .build();
-    }
-
-    @SuppressWarnings("deprecation")
-    private static class AthenzIdentityVerifierAdapter implements X509HostnameVerifier {
-
-        private final AthenzIdentityVerifier verifier;
-
-        AthenzIdentityVerifierAdapter(AthenzIdentityVerifier verifier) {
-            this.verifier = verifier;
-        }
-
-        @Override
-        public boolean verify(String hostname, SSLSession sslSession) {
-            return verifier.verify(hostname, sslSession);
-        }
-
-        @Override
-        public void verify(String host, SSLSocket ssl) { /* All sockets accepted */}
-
-        @Override
-        public void verify(String hostname, X509Certificate certificate) throws SSLException {
-            AthenzIdentity identity = AthenzIdentities.from(certificate);
-            if (!verifier.isTrusted(identity)) {
-                throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
-            }
-        }
-
-        @Override
-        public void verify(String hostname, String[] cns, String[] subjectAlts) throws SSLException {
-            AthenzIdentity identity = AthenzIdentities.from(cns[0]);
-            if (!verifier.isTrusted(identity)) {
-                throw new SSLException("Athenz identity is not trusted: " + identity.getFullName());
-            }
-        }
     }
 
 }
