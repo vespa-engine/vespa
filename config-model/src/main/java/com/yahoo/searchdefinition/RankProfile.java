@@ -49,13 +49,13 @@ import java.util.stream.Stream;
  *
  * @author bratseth
  */
-public class RankProfile implements Serializable, Cloneable {
+public class RankProfile implements Cloneable {
 
     /** The search definition-unique name of this rank profile */
     private final String name;
 
     /** The search definition owning this profile, or null if global (owned by a model) */
-    private final Search search;
+    private final ImmutableSearch search;
 
     /** The model owning this profile if it is global, or null if it is owned by a search definition */
     private final VespaModel model;
@@ -64,7 +64,7 @@ public class RankProfile implements Serializable, Cloneable {
     private String inheritedName = null;
 
     /** The match settings of this profile */
-    protected MatchPhaseSettings matchPhaseSettings = null;
+    private MatchPhaseSettings matchPhaseSettings = null;
 
     /** The rank settings of this profile */
     protected Set<RankSetting> rankSettings = new java.util.LinkedHashSet<>();
@@ -112,6 +112,8 @@ public class RankProfile implements Serializable, Cloneable {
 
     private final TypeSettings queryFeatureTypes = new TypeSettings();
 
+    private List<ImmutableSDField> allFieldsList;
+
     /**
      * Creates a new rank profile for a particular search definition
      *
@@ -143,7 +145,7 @@ public class RankProfile implements Serializable, Cloneable {
     public String getName() { return name; }
 
     /** Returns the search definition owning this, or null if it is global */
-    public Search getSearch() { return search; }
+    public ImmutableSearch getSearch() { return search; }
 
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
@@ -156,7 +158,11 @@ public class RankProfile implements Serializable, Cloneable {
     }
 
     private Stream<ImmutableSDField> allFields() {
-        return search != null ? search.allFields() : Stream.empty();
+        if (search == null) return Stream.empty();
+        if (allFieldsList == null) {
+            allFieldsList = search.allFieldsList();
+        }
+        return allFieldsList.stream();
     }
 
     private Stream<ImmutableSDField> allImportedFields() {
@@ -237,7 +243,7 @@ public class RankProfile implements Serializable, Cloneable {
      * @param type  the type that the field is required to be.
      * @return the rank setting found, or null.
      */
-    public RankSetting getDeclaredRankSetting(String field, RankSetting.Type type) {
+    RankSetting getDeclaredRankSetting(String field, RankSetting.Type type) {
         for (Iterator<RankSetting> i = declaredRankSettingIterator(); i.hasNext();) {
             RankSetting setting = i.next();
             if (setting.getFieldName().equals(field) &&
@@ -342,7 +348,7 @@ public class RankProfile implements Serializable, Cloneable {
         return null;
     }
 
-    public void setFirstPhaseRanking(RankingExpression rankingExpression) {
+    void setFirstPhaseRanking(RankingExpression rankingExpression) {
         this.firstPhaseRanking = rankingExpression;
     }
 
@@ -385,7 +391,7 @@ public class RankProfile implements Serializable, Cloneable {
         return Collections.emptySet();
     }
 
-    public void addSummaryFeature(ReferenceNode feature) {
+    private void addSummaryFeature(ReferenceNode feature) {
         if (summaryFeatures == null)
             summaryFeatures = new LinkedHashSet<>();
         summaryFeatures.add(feature);
@@ -409,7 +415,7 @@ public class RankProfile implements Serializable, Cloneable {
         return Collections.emptySet();
     }
 
-    public void addRankFeature(ReferenceNode feature) {
+    private void addRankFeature(ReferenceNode feature) {
         if (rankFeatures == null)
             rankFeatures = new LinkedHashSet<>();
         rankFeatures.add(feature);
@@ -925,7 +931,7 @@ public class RankProfile implements Serializable, Cloneable {
         /** True if this should be inlined into calling expressions. Useful for very cheap functions. */
         private final boolean inline;
 
-        public RankingExpressionFunction(ExpressionFunction function, boolean inline) {
+        RankingExpressionFunction(ExpressionFunction function, boolean inline) {
             this.function = function;
             this.inline = inline;
         }
@@ -940,7 +946,7 @@ public class RankProfile implements Serializable, Cloneable {
             return inline && function.arguments().isEmpty(); // only inline no-arg functions;
         }
 
-        public RankingExpressionFunction withExpression(RankingExpression expression) {
+        RankingExpressionFunction withExpression(RankingExpression expression) {
             return new RankingExpressionFunction(function.withBody(expression), inline);
         }
 
@@ -968,7 +974,7 @@ public class RankProfile implements Serializable, Cloneable {
         public double getCutoffFactor() { return cutoffFactor; }
         public Diversity.CutoffStrategy getCutoffStrategy() { return cutoffStrategy; }
 
-        public void checkValid() {
+        void checkValid() {
             if (attribute == null || attribute.isEmpty()) {
                 throw new IllegalArgumentException("'diversity' did not set non-empty diversity attribute name.");
             }
@@ -1026,7 +1032,7 @@ public class RankProfile implements Serializable, Cloneable {
 
         private final Map<String, String> types = new HashMap<>();
 
-        public void addType(String name, String type) {
+        void addType(String name, String type) {
             types.put(name, type);
         }
 
