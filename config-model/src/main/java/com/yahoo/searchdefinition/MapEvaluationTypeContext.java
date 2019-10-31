@@ -42,8 +42,9 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     /** For invocation loop detection */
     private final Deque<Reference> currentResolutionCallStack;
 
-    MapEvaluationTypeContext(Collection<ExpressionFunction> functions) {
+    MapEvaluationTypeContext(Collection<ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
+        this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack =  new ArrayDeque<>();
     }
 
