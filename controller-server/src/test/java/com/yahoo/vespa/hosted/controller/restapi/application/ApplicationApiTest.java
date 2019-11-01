@@ -17,6 +17,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
@@ -1646,6 +1647,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .projectId(projectId);
         job.type(JobType.component).uploadArtifact(applicationPackage).submit();
         controllerTester.deploy(app.id().defaultInstance(), applicationPackage, TEST_ZONE);
+        ((ManualClock) controllerTester.controller().clock()).advance(Duration.ofSeconds(1));
         job.type(JobType.systemTest).submit();
 
         // Notifying about job started not by the controller fails

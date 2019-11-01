@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevisi
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import org.junit.Test;
@@ -29,7 +29,7 @@ public class OutstandingChangeDeployerTest {
 
     @Test
     public void testChangeDeployer() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         OutstandingChangeDeployer deployer = new OutstandingChangeDeployer(tester.controller(), Duration.ofMinutes(10),
                                                                            new JobControl(new MockCuratorDb()));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

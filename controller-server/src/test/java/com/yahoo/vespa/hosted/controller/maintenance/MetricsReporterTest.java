@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -36,7 +36,7 @@ public class MetricsReporterTest {
 
     @Test
     public void deployment_fail_ratio() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -70,7 +70,7 @@ public class MetricsReporterTest {
 
     @Test
     public void deployment_average_duration() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -115,7 +115,7 @@ public class MetricsReporterTest {
 
     @Test
     public void deployments_failing_upgrade() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -167,7 +167,7 @@ public class MetricsReporterTest {
 
     @Test
     public void deployment_warnings_metric() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -184,14 +184,14 @@ public class MetricsReporterTest {
 
     @Test
     public void build_time_reporting() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         var applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
         var context = tester.deploymentContext()
                             .submit(applicationPackage)
                             .deploy();
         assertEquals(1000, context.lastSubmission().get().buildTime().get().toEpochMilli());
 
-        MetricsReporter reporter = createReporter(tester.tester().controller());
+        MetricsReporter reporter = createReporter(tester.controller());
         reporter.maintain();
         assertEquals(tester.clock().instant().getEpochSecond() - 1,
                      getMetric(MetricsReporter.DEPLOYMENT_BUILD_AGE_SECONDS, context.instanceId()));
@@ -199,7 +199,7 @@ public class MetricsReporterTest {
 
     @Test
     public void name_service_queue_size_metric() {
-        var tester = new InternalDeploymentTester();
+        var tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .globalServiceId("default")

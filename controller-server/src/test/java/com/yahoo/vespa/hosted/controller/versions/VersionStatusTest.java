@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -122,7 +122,7 @@ public class VersionStatusTest {
 
     @Test
     public void testVersionStatusAfterApplicationUpdates() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .upgradePolicy("default")
                 .environment(Environment.prod)
@@ -177,11 +177,10 @@ public class VersionStatusTest {
     
     @Test
     public void testVersionConfidence() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester().atHourOfDay(5);
         Version version0 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().maintain();
-
         var builder = new ApplicationPackageBuilder().region("us-west-1").region("us-east-3");
 
         // Setup applications - all running on version0
@@ -353,7 +352,7 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceOverride() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         Version version0 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version0);
 
@@ -390,7 +389,7 @@ public class VersionStatusTest {
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
                                                    .collect(Collectors.joining(",")));
-        InternalDeploymentTester tester = new InternalDeploymentTester(new ControllerTester(db));
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(db));
 
         // Commit details are set for initial version
         var version0 = tester.controllerTester().nextVersion();
@@ -421,9 +420,8 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceChangeRespectsTimeWindow() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester().atHourOfDay(5);
         // Canaries and normal application deploys on initial version
-        assertEquals(5, tester.controllerTester().hourOfDayAfter(Duration.ZERO));
         Version version0 = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version0);
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")

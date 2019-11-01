@@ -14,7 +14,7 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static org.junit.Assert.assertEquals;
 
 /**

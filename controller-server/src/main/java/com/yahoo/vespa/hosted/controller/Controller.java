@@ -84,14 +84,13 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
                       MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry) {
         this(curator, rotationsConfig, zoneRegistry,
-             Clock.systemUTC(), accessControl,
+             accessControl,
              com.yahoo.net.HostName::getLocalhost, flagSource,
              mavenRepository, serviceRegistry);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig,
                       ZoneRegistry zoneRegistry,
-                      Clock clock,
                       AccessControl accessControl,
                       Supplier<String> hostnameSupplier,
                       FlagSource flagSource, MavenRepository mavenRepository,
@@ -101,7 +100,7 @@ public class Controller extends AbstractComponent implements ApplicationIdSource
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry, "ZoneRegistry cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
-        this.clock = Objects.requireNonNull(clock, "Clock cannot be null");
+        this.clock = Objects.requireNonNull(serviceRegistry.clock(), "Clock cannot be null");
         this.flagSource = Objects.requireNonNull(flagSource, "FlagSource cannot be null");
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
 

@@ -50,11 +50,10 @@ import java.util.concurrent.Future;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.warning;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.instanceId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.testerId;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -70,52 +69,20 @@ import static org.junit.Assert.fail;
  */
 public class InternalStepRunnerTest {
 
-    private InternalDeploymentTester tester;
+    private DeploymentTester tester;
 
     @Before
     public void setup() {
-        tester = new InternalDeploymentTester();
+        tester = new DeploymentTester();
     }
 
     private SystemName system() {
-        return tester.tester().controller().system();
+        return tester.controller().system();
     }
 
     @Test
     public void canRegisterAndRunDirectly() {
-        tester.deployNewSubmission(tester.newSubmission());
-
-        Version version = new Version("7.1");
-        tester.tester().upgradeSystem(version);
-        tester.deployNewPlatform(version);
-    }
-
-    @Test
-    public void canSwitchFromScrewdriverAndBackAgain() {
-        // Deploys a default application package with default build number.
-        tester.tester().deployCompletely(tester.application(), DeploymentContext.applicationPackage);
-        tester.setEndpoints(instanceId, JobType.productionUsCentral1.zone(system()));
-        tester.setEndpoints(instanceId, JobType.productionUsWest1.zone(system()));
-        tester.setEndpoints(instanceId, JobType.productionUsEast3.zone(system()));
-
-        // Let application have an ongoing upgrade when it switches (but kill the jobs, as the tester assumes they aren't running).
-        tester.tester().upgradeSystem(new Version("7.1"));
-        tester.tester().buildService().clear();
-
-        tester.deployNewSubmission(tester.newSubmission());
-        tester.deployNewSubmission(tester.newSubmission());
-
-        Version version = new Version("7.2");
-        tester.tester().upgradeSystem(version);
-        tester.deployNewPlatform(version);
-
-        tester.jobs().unregister(appId);
-        try {
-            tester.tester().deployCompletely(tester.application(), DeploymentContext.applicationPackage, BuildJob.defaultBuildNumber + 1);
-            throw new IllegalStateException("Component job should get even again with build numbers to produce a change.");
-        }
-        catch (AssertionError expected) { }
-        tester.tester().deployCompletely(tester.application(), DeploymentContext.applicationPackage, BuildJob.defaultBuildNumber + 2);
+        tester.deploymentContext().submit().deploy();
     }
 
     @Test
@@ -123,7 +90,7 @@ public class InternalStepRunnerTest {
         tester.newRun(JobType.stagingTest);
         tester.runner().run();
         DeploymentSpec spec = tester.configServer()
-                                    .application(InternalDeploymentTester.testerId.id(), JobType.stagingTest.zone(system())).get()
+                                    .application(DeploymentTester.testerId.id(), JobType.stagingTest.zone(system())).get()
                                     .applicationPackage().deploymentSpec();
         assertEquals("domain", spec.athenzDomain().get().value());
         ZoneId zone = JobType.stagingTest.zone(system());
@@ -247,13 +214,13 @@ public class InternalStepRunnerTest {
         assertEquals(unfinished, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installReal));
         assertEquals(unfinished, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installTester));
 
-        tester.tester().controller().curator().writeRoutingPolicies(instanceId, Set.of(new RoutingPolicy(instanceId,
+        tester.controller().curator().writeRoutingPolicies(instanceId, Set.of(new RoutingPolicy(instanceId,
                                                                                                          ClusterSpec.Id.from("default"),
                                                                                                          JobType.systemTest.zone(system()),
                                                                                                          HostName.from("host"),
                                                                                                          Optional.empty(),
                                                                                                          emptySet())));
-        tester.tester().controller().curator().writeRoutingPolicies(testerId.id(), Set.of(new RoutingPolicy(testerId.id(),
+        tester.controller().curator().writeRoutingPolicies(testerId.id(), Set.of(new RoutingPolicy(testerId.id(),
                                                                                                             ClusterSpec.Id.from("default"),
                                                                                                             JobType.systemTest.zone(system()),
                                                                                                             HostName.from("host"),
@@ -367,7 +334,7 @@ public class InternalStepRunnerTest {
         tester.configServer().setVersion(instanceId, zone, version);
         tester.runner().run();
         assertEquals(1, tester.jobs().active().size());
-        assertEquals(version, tester.tester().instance(instanceId).deployments().get(zone).version());
+        assertEquals(version, tester.instance(instanceId).deployments().get(zone).version());
 
         try {
             tester.jobs().deploy(instanceId, JobType.productionApNortheast1, Optional.empty(), applicationPackage);
@@ -381,7 +348,7 @@ public class InternalStepRunnerTest {
         tester.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
-        MockMailer mailer = ((MockMailer) tester.tester().controller().serviceRegistry().mailer());
+        MockMailer mailer = ((MockMailer) tester.controller().serviceRegistry().mailer());
         assertEquals(1, mailer.inbox("a@b").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
                      mailer.inbox("a@b").get(0).subject());
@@ -415,8 +382,8 @@ public class InternalStepRunnerTest {
 
     @Test
     public void certificateTimeoutAbortsJob() {
-        tester.tester().controllerTester().zoneRegistry().setSystemName(SystemName.PublicCd);
-        tester.tester().controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        tester.controllerTester().zoneRegistry().setSystemName(SystemName.PublicCd);
+        tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.aws-us-east-1c"));
         RunId id = tester.startSystemTestTests();
 
         List<X509Certificate> trusted = new ArrayList<>(publicCdApplicationPackage.trustedCertificates());

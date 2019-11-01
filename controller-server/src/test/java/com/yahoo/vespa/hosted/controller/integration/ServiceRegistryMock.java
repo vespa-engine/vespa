@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
@@ -42,6 +43,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClien
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 
+import java.time.Clock;
+
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
  *
@@ -49,6 +52,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
  */
 public class ServiceRegistryMock extends AbstractComponent implements ServiceRegistry {
 
+    private final ManualClock clock = new ManualClock();
     private final ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock();
     private final ConfigServerMock configServerMock = new ConfigServerMock(zoneRegistryMock);
     private final MemoryNameService memoryNameService = new MemoryNameService();
@@ -75,6 +79,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ConfigServer configServer() {
         return configServerMock;
+    }
+
+    @Override
+    public ManualClock clock() {
+        return clock;
     }
 
     @Override

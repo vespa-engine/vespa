@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class UpgraderTest {
 
-    private final InternalDeploymentTester tester = new InternalDeploymentTester().atHourOfDay(5);
+    private final DeploymentTester tester = new DeploymentTester().atHourOfDay(5);
 
     @Test
     public void testUpgrading() {

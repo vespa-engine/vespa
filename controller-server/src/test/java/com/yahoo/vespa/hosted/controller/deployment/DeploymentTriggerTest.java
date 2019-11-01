@@ -3,28 +3,20 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
@@ -32,8 +24,6 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.ControllerTester.buildJob;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -42,7 +32,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester.appId;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -59,7 +48,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentTriggerTest {
 
-    private final InternalDeploymentTester tester = new InternalDeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester();
 
     @Test
     public void testTriggerFailing() {
@@ -104,12 +93,13 @@ public class DeploymentTriggerTest {
         assertEquals("Job is not triggered when no projectId is present", 0, tester.jobs().active().size());
     }
 
+    /*
     @Test
     @Ignore
     // TODO jonmv: Re-enable, but changed, when instances are orchestrated.
     public void testIndependentInstances() {
-        Application app1 = tester.tester().createApplication("instance1", "app", "tenant", 1, 1L);
-        Application app2 = tester.tester().createApplication("instance2", "app", "tenant", 2, 1L);
+        var app1 = tester.tester().createApplication("instance1", "app", "tenant", 1, 1L);
+        var app2 = tester.tester().createApplication("instance2", "app", "tenant", 2, 1L);
         Instance instance1 = tester.tester().instance(app1.id().instance(InstanceName.from("instance1")));
         Instance instance2 = tester.tester().instance(app2.id().instance(InstanceName.from("instance2")));
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -147,6 +137,7 @@ public class DeploymentTriggerTest {
         assertEquals(newVersion, instance1Version);
         assertEquals(version, instance2Version);
     }
+    */
 
     @Test
     public void abortsJobsOnNewApplicationChange() {
@@ -201,11 +192,11 @@ public class DeploymentTriggerTest {
 
         // Test jobs pass
         app.runJob(systemTest).runJob(stagingTest);
-        tester.tester().deploymentTrigger().triggerReadyJobs();
+        tester.triggerJobs();
 
         // No jobs have started yet, as 30 seconds have not yet passed.
         assertEquals(0, tester.jobs().active().size());
-        tester.tester().clock().advance(Duration.ofSeconds(30));
+        tester.clock().advance(Duration.ofSeconds(30));
         tester.triggerJobs();
 
         // 30 seconds later, the first jobs may trigger.
@@ -213,7 +204,7 @@ public class DeploymentTriggerTest {
         app.assertRunning(productionUsWest1);
 
         // 3 minutes pass, delayed trigger does nothing as us-west-1 is still in progress
-        tester.tester().clock().advance(Duration.ofMinutes(3));
+        tester.clock().advance(Duration.ofMinutes(3));
         tester.triggerJobs();
         assertEquals(1, tester.jobs().active().size());
         app.assertRunning(productionUsWest1);
@@ -226,18 +217,18 @@ public class DeploymentTriggerTest {
         assertTrue("No more jobs triggered at this time", tester.jobs().active().isEmpty());
 
         // 3 minutes pass, us-central-1 is still not triggered
-        tester.tester().clock().advance(Duration.ofMinutes(3));
+        tester.clock().advance(Duration.ofMinutes(3));
         tester.triggerJobs();
         assertTrue("No more jobs triggered at this time", tester.jobs().active().isEmpty());
 
         // 4 minutes pass, us-central-1 is triggered
-        tester.tester().clock().advance(Duration.ofMinutes(1));
+        tester.clock().advance(Duration.ofMinutes(1));
         tester.triggerJobs();
         app.runJob(productionUsCentral1);
         assertTrue("All jobs consumed", tester.jobs().active().isEmpty());
 
         // Delayed trigger job runs again, with nothing to trigger
-        tester.tester().clock().advance(Duration.ofMinutes(10));
+        tester.clock().advance(Duration.ofMinutes(10));
         tester.triggerJobs();
         assertTrue("All jobs consumed", tester.jobs().active().isEmpty());
     }
@@ -423,15 +414,15 @@ public class DeploymentTriggerTest {
         app.assertNotRunning(productionUsWest1);
 
         // us-west-1 triggers when no longer paused, but does not retry when paused again.
-        tester.tester().clock().advance(Duration.ofMillis(1500));
+        tester.clock().advance(Duration.ofMillis(1500));
         tester.triggerJobs();
         app.assertRunning(productionUsWest1);
-        tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsWest1, tester.tester().clock().instant().plus(Duration.ofSeconds(1)));
+        tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsWest1, tester.clock().instant().plus(Duration.ofSeconds(1)));
         app.failDeployment(productionUsWest1);
         tester.triggerJobs();
         app.assertNotRunning(productionUsWest1);
 
-        tester.tester().clock().advance(Duration.ofMillis(1000));
+        tester.clock().advance(Duration.ofMillis(1000));
         tester.triggerJobs();
         app.runJob(productionUsWest1);
 
@@ -466,7 +457,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(appVersion1), app.application().change());
 
         // Now cancel the change as is done through the web API.
-        tester.tester().deploymentTrigger().cancelChange(app.application().id(), ALL);
+        tester.deploymentTrigger().cancelChange(app.application().id(), ALL);
         assertEquals(Change.empty(), app.application().change());
 
         // A new version is released, which should now deploy the currently deployed application version to avoid downgrades.
@@ -681,13 +672,13 @@ public class DeploymentTriggerTest {
                      initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
 
         // Failure again -- failingSince should remain the same
-        tester.tester().clock().advance(Duration.ofMillis(1000));
+        tester.clock().advance(Duration.ofMillis(1000));
         app.failDeployment(systemTest);
         assertEquals("Failure age is right at second consecutive failure",
                      initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
 
         // Success resets failingSince
-        tester.tester().clock().advance(Duration.ofMillis(1000));
+        tester.clock().advance(Duration.ofMillis(1000));
         app.runJob(systemTest);
         assertFalse(app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().isPresent());
 
@@ -696,8 +687,8 @@ public class DeploymentTriggerTest {
 
         // Two repeated failures again.
         // Initial failure
-        tester.tester().clock().advance(Duration.ofMillis(1000));
-        initialFailure = tester.tester().clock().instant().truncatedTo(MILLIS);
+        tester.clock().advance(Duration.ofMillis(1000));
+        initialFailure = tester.clock().instant().truncatedTo(MILLIS);
 
         app.submit(applicationPackage);
         app.failDeployment(systemTest);
@@ -705,7 +696,7 @@ public class DeploymentTriggerTest {
                      initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
 
         // Failure again -- failingSince should remain the same
-        tester.tester().clock().advance(Duration.ofMillis(1000));
+        tester.clock().advance(Duration.ofMillis(1000));
         app.failDeployment(systemTest);
         assertEquals("Failure age is right at second consecutive failure",
                      initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
@@ -767,10 +758,10 @@ public class DeploymentTriggerTest {
 
         // all applications: system-test completes successfully with some time in between, to determine trigger order.
         app2.runJob(systemTest);
-        tester.tester().clock().advance(Duration.ofMinutes(1));
+        tester.clock().advance(Duration.ofMinutes(1));
 
         app1.runJob(systemTest);
-        tester.tester().clock().advance(Duration.ofMinutes(1));
+        tester.clock().advance(Duration.ofMinutes(1));
 
         app3.runJob(systemTest);
 
@@ -879,8 +870,8 @@ public class DeploymentTriggerTest {
                 .build();
         var app = tester.deploymentContext().submit(applicationPackage); // TODO jonmv: support instances in deployment context>
         app.deploy();
-        assertEquals(2, tester.tester().application(appId).instances().size());
-        assertEquals(2, tester.tester().application(appId).productionDeployments().values().stream()
+        assertEquals(2, app.application().instances().size());
+        assertEquals(2, app.application().productionDeployments().values().stream()
                               .mapToInt(Collection::size)
                               .sum());
     }

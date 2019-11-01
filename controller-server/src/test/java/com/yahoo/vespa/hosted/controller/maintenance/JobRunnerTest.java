@@ -8,7 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -76,7 +76,7 @@ public class JobRunnerTest {
 
     @Test
     public void multiThreadedExecutionFinishes() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
         Phaser phaser = new Phaser(1);
@@ -109,7 +109,7 @@ public class JobRunnerTest {
 
     @Test
     public void stepLogic() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
@@ -197,7 +197,7 @@ public class JobRunnerTest {
 
     @Test
     public void locksAndGarbage() throws InterruptedException, BrokenBarrierException {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         // Hang during tester deployment, until notified.
         CyclicBarrier barrier = new CyclicBarrier(2);
@@ -236,7 +236,7 @@ public class JobRunnerTest {
 
     @Test
     public void historyPruning() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), (id, step) -> Optional.of(running));
@@ -264,7 +264,7 @@ public class JobRunnerTest {
 
     @Test
     public void timeout() {
-        InternalDeploymentTester tester = new InternalDeploymentTester();
+        DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
         Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
