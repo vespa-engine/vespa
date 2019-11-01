@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.document.MapDataType;
@@ -34,7 +35,7 @@ public class DisallowComplexMapAndWsetKeyTypes extends Processor {
         }
     }
 
-    private void checkFieldType(SDField field, DataType dataType) {
+    private void checkFieldType(Field field, DataType dataType) {
         if (dataType instanceof ArrayDataType) {
             DataType nestedType = ((ArrayDataType) dataType).getNestedType();
             checkFieldType(field, nestedType);

@@ -10,7 +10,6 @@ import com.yahoo.searchdefinition.processing.multifieldresolver.RankTypeResolver
 import com.yahoo.searchdefinition.processing.multifieldresolver.StemmingResolver;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -39,11 +38,7 @@ public class MultifieldIndexHarmonizer extends Processor {
     private void populateIndexToFields(Search search) {
         for (SDField field : search.allConcreteFields() ) {
             if ( ! field.doesIndexing()) continue;
-
-            for (Iterator j = field.getFieldNameAsIterator(); j.hasNext();) {
-                String indexName = (String)j.next();
-                addIndexField(indexName, field);
-            }
+            addIndexField(field.getName(), field);
         }
     }
 

@@ -3,12 +3,12 @@ package com.yahoo.searchdefinition;
 
 import static org.junit.Assert.*;
 
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.yahoo.document.DataType;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.parser.ParseException;
 
 /**
@@ -65,7 +65,7 @@ public class PredicateDataTypeTestCase {
                                             upperBoundParameter(upperBound))));
 
         SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (SDField field : sb.getSearch().allConcreteFields()) {
+        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertTrue(index.getBooleanIndexDefiniton().hasArity());
@@ -92,7 +92,7 @@ public class PredicateDataTypeTestCase {
                                             upperBoundParameter(upperBound))));
 
         SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (SDField field : sb.getSearch().allConcreteFields()) {
+        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
               if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertEquals(arity, index.getBooleanIndexDefiniton().getArity());
@@ -110,7 +110,7 @@ public class PredicateDataTypeTestCase {
                             attributeFieldSd(
                                     arityParameter(2))));
         SearchBuilder sb = SearchBuilder.createFromString(sd);
-        for (SDField field : sb.getSearch().allConcreteFields()) {
+        for (ImmutableSDField field : sb.getSearch().allConcreteFields()) {
             if (field.getDataType() == DataType.PREDICATE) {
                 for (Index index : field.getIndices().values()) {
                     assertTrue(index.getBooleanIndexDefiniton().hasArity());

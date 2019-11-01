@@ -2,7 +2,8 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
@@ -79,12 +80,10 @@ public abstract class Processor {
         implementationField.setStemming(Stemming.NONE);
         implementationField.getNormalizing().inferCodepoint();
         implementationField.parseIndexingScript(indexing);
-        for (Iterator i = field.getFieldNameAsIterator(); i.hasNext();) {
-            String indexName = (String)i.next();
-            String implementationIndexName = indexName + "_" + suffix;
-            Index implementationIndex = new Index(implementationIndexName);
-            search.addIndex(implementationIndex);
-        }
+        String indexName = field.getName();
+        String implementationIndexName = indexName + "_" + suffix;
+        Index implementationIndex = new Index(implementationIndexName);
+        search.addIndex(implementationIndex);
         if (queryCommand != null) {
             field.addQueryCommand(queryCommand);
         }

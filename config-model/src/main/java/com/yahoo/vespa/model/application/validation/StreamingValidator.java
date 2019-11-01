@@ -7,8 +7,8 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.document.ReferenceDataType;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
@@ -38,7 +38,7 @@ public class StreamingValidator extends Validator {
 
     private static void warnStreamingGramMatching(SearchCluster sc, DeployLogger logger) {
         if (sc.getSdConfig() != null) {
-            for (SDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
+            for (ImmutableSDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
                 if (sd.getMatching().getType().equals(Matching.Type.GRAM)) {
                     logger.log(Level.WARNING, "For streaming search cluster '" + sc.getClusterName() +
                             "', SD field '" + sd.getName() + "': n-gram matching is not supported for streaming search.");
@@ -55,7 +55,7 @@ public class StreamingValidator extends Validator {
      */
     private static void warnStreamingAttributes(SearchCluster sc, DeployLogger logger) {
         if (sc.getSdConfig() != null) {
-            for (SDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
+            for (ImmutableSDField sd : sc.getSdConfig().getSearch().allConcreteFields()) {
                 if (sd.doesAttributing()) {
                     warnStreamingAttribute(sc, sd, logger);
                 }
@@ -63,7 +63,7 @@ public class StreamingValidator extends Validator {
         }
     }
 
-    private static void warnStreamingAttribute(SearchCluster sc, SDField sd, DeployLogger logger) {
+    private static void warnStreamingAttribute(SearchCluster sc, ImmutableSDField sd, DeployLogger logger) {
         // If the field is numeric, we can't print this, because we may have converted the field to
         // attribute indexing ourselves (IntegerIndex2Attribute)
         if (sd.getDataType() instanceof NumericDataType) return;

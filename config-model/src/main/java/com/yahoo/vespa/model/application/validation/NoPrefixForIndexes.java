@@ -2,8 +2,8 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
@@ -29,7 +29,7 @@ public class NoPrefixForIndexes extends Validator {
                 for (DocumentDatabase docDb : sc.getDocumentDbs()) {
                     DerivedConfiguration sdConfig = docDb.getDerivedConfiguration();
                     Search search = sdConfig.getSearch();
-                    for (SDField field : search.allConcreteFields()) {
+                    for (ImmutableSDField field : search.allConcreteFields()) {
                         if (field.doesIndexing()) {
                             //if (!field.getIndexTo().isEmpty() && !field.getIndexTo().contains(field.getName())) continue;
                             if (field.getMatching().getAlgorithm().equals(Matching.Algorithm.PREFIX)) {
@@ -47,7 +47,7 @@ public class NoPrefixForIndexes extends Validator {
         }
     }
 
-    private void failField(Search search, SDField field) {
+    private void failField(Search search, ImmutableSDField field) {
         throw new IllegalArgumentException("For search '" + search.getName() + "', field '" + field.getName() +
                                            "': match/index:prefix is not supported for indexes.");
     }

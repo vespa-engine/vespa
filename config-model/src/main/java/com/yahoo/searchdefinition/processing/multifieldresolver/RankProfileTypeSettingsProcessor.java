@@ -14,7 +14,6 @@ import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.ImportedField;
 import com.yahoo.searchdefinition.document.ImportedFields;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -45,7 +44,7 @@ public class RankProfileTypeSettingsProcessor extends Processor {
 
     private void processAttributeFields() {
         if (search == null) return; // we're processing global profiles
-        for (SDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : search.allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(field.getName());
             if (attribute != null && attribute.tensorType().isPresent()) {
                 addAttributeTypeToRankProfiles(attribute.getName(), attribute.tensorType().get().toString());

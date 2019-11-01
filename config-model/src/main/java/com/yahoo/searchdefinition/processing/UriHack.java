@@ -2,8 +2,11 @@
 package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.CollectionDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.document.*;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
@@ -20,7 +23,7 @@ public class UriHack extends Processor {
     private static final List<String> URL_SUFFIX =
             Arrays.asList("scheme", "host", "port", "path", "query", "fragment", "hostname");
 
-    public UriHack(Search search,
+    UriHack(Search search,
                    DeployLogger deployLogger,
                    RankProfileRegistry rankProfileRegistry,
                    QueryProfiles queryProfiles) {

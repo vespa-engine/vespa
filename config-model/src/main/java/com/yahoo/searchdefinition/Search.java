@@ -17,7 +17,6 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.io.Reader;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -353,7 +352,7 @@ public class Search implements ImmutableSearch {
             sameIndices.add(searchIndex);
         }
 
-        for (SDField field : allConcreteFields()) {
+        for (ImmutableSDField field : allConcreteFields()) {
             Index index = field.getIndex(name);
             if (index != null) {
                 sameIndices.add(index);
@@ -372,7 +371,7 @@ public class Search implements ImmutableSearch {
         if (indices.get(name) != null) {
             return true;
         }
-        for (SDField field : allConcreteFields()) {
+        for (ImmutableSDField field : allConcreteFields()) {
             if (field.existsIndex(name)) {
                 return true;
             }
@@ -423,7 +422,7 @@ public class Search implements ImmutableSearch {
     @Override
     public List<Index> getExplicitIndices() {
         List<Index> allIndices = new ArrayList<>(indices.values());
-        for (SDField field : allConcreteFields()) {
+        for (ImmutableSDField field : allConcreteFields()) {
             for (Index index : field.getIndices().values()) {
                 allIndices.add(index);
             }
@@ -546,7 +545,7 @@ public class Search implements ImmutableSearch {
      * @return The Attribute with given name.
      */
     public Attribute getAttribute(String name) {
-        for (SDField field : allConcreteFields()) {
+        for (ImmutableSDField field : allConcreteFields()) {
             Attribute attribute = field.getAttributes().get(name);
             if (attribute != null) {
                 return attribute;

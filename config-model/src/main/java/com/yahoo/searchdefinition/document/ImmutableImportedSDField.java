@@ -24,7 +24,7 @@ public class ImmutableImportedSDField implements ImmutableSDField {
 
     private final ImportedField importedField;
 
-    public ImmutableImportedSDField(ImportedField importedField) {
+    ImmutableImportedSDField(ImportedField importedField) {
         this.importedField = importedField;
     }
 
@@ -63,11 +63,13 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
-    public ImmutableSDField getBackingField() { return importedField.targetField(); }
-
-    @Override
     public boolean isIndexStructureField() {
         return importedField.targetField().isIndexStructureField();
+    }
+
+    @Override
+    public boolean hasIndex() {
+        return importedField.targetField().hasIndex();
     }
 
     @Override
@@ -78,6 +80,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public DataType getDataType() {
         return importedField.targetField().getDataType();
+    }
+
+    @Override
+    public SummaryField getSummaryField(String name) {
+        return importedField.targetField().getSummaryField(name);
     }
 
     @Override
@@ -156,6 +163,31 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     @Override
     public String getName() {
         return importedField.fieldName(); // Name of the imported field, not the target field
+    }
+
+    @Override
+    public int getWeight() {
+        return importedField.targetField().getWeight();
+    }
+
+    @Override
+    public int getLiteralBoost() {
+        return importedField.targetField().getLiteralBoost();
+    }
+
+    @Override
+    public RankType getRankType() {
+        return importedField.targetField().getRankType();
+    }
+
+    @Override
+    public Map<String, Index> getIndices() {
+        return importedField.targetField().getIndices();
+    }
+
+    @Override
+    public boolean existsIndex(String name) {
+        return importedField.targetField().existsIndex(name);
     }
 
     /**

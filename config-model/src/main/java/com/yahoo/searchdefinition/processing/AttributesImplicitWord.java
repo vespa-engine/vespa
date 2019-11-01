@@ -4,9 +4,9 @@ package com.yahoo.searchdefinition.processing;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.document.DataType;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -24,20 +24,20 @@ public class AttributesImplicitWord extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        for (SDField field : search.allConcreteFields()) {
+        for (ImmutableSDField field : search.allConcreteFields()) {
             if (fieldImplicitlyWordMatch(field)) {
                 field.getMatching().setType(Matching.Type.WORD);
             }
         }
     }
 
-    private boolean fieldImplicitlyWordMatch(SDField field) {
+    private boolean fieldImplicitlyWordMatch(ImmutableSDField field) {
         // numeric types should not trigger exact-match query parsing
         DataType dt = field.getDataType().getPrimitiveType();
         if (dt != null && dt instanceof NumericDataType) {
             return false;
         }
-        return (field.getIndexToCount() == 0
+        return (! field.hasIndex()
                 && !field.getAttributes().isEmpty()
                 && field.getIndices().isEmpty()
                 && !field.getMatching().isTypeUserSet());

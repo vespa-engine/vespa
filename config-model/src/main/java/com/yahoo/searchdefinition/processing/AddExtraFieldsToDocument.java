@@ -47,7 +47,7 @@ public class AddExtraFieldsToDocument extends Processor {
     }
 
     private void addSdField(Search search, SDDocumentType document, SDField field, boolean validate) {
-        if (field.getIndexToCount() == 0 && field.getAttributes().isEmpty()) {
+        if (! field.hasIndex() && field.getAttributes().isEmpty()) {
             return;
         }
         for (Attribute atr : field.getAttributes().values()) {

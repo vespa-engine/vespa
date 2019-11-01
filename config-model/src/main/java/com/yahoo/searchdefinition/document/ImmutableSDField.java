@@ -33,16 +33,6 @@ public interface ImmutableSDField {
 
     boolean isImportedField();
 
-    /**
-     * Returns the field backing this - the field itself if this is a regular field,
-     * and the target field if this is imported.
-     */
-    ImmutableSDField getBackingField();
-
-    default boolean isConcreteField() {
-        return !isImportedField();
-    }
-
     boolean isIndexStructureField();
 
     boolean usesStructOrMap();
@@ -83,4 +73,11 @@ public interface ImmutableSDField {
     Field asField();
 
     boolean hasFullIndexingDocprocRights();
+    int getWeight();
+    int getLiteralBoost();
+    RankType getRankType();
+    Map<String, Index> getIndices();
+    boolean existsIndex(String name);
+    SummaryField getSummaryField(String name);
+    boolean hasIndex();
 }
