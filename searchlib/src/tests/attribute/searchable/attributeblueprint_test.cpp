@@ -85,7 +85,7 @@ public:
 
 constexpr uint32_t DOCID_LIMIT = 3;
 
-bool search(const Node &node, IAttributeManager &attribute_manager) {
+bool search(const Node &node, IAttributeManager &attribute_manager, bool expect_attribute_search_context = true) {
     AttributeContext ac(attribute_manager);
     FakeRequestContext requestContext(&ac);
     MatchData::UP md(MatchData::makeTestInstance(1, 1));
@@ -94,6 +94,11 @@ bool search(const Node &node, IAttributeManager &attribute_manager) {
     ASSERT_TRUE(result.get());
     EXPECT_TRUE(!result->getState().estimate().empty);
     EXPECT_EQUAL(3u, result->getState().estimate().estHits);
+    if (expect_attribute_search_context) {
+        EXPECT_TRUE(result->get_attribute_search_context() != nullptr);
+    } else {
+        EXPECT_TRUE(result->get_attribute_search_context() == nullptr);
+    }
     result->fetchPostings(true);
     result->setDocIdLimit(DOCID_LIMIT);
     SearchIterator::UP iterator = result->createSearch(*md, true);
@@ -181,13 +186,13 @@ TEST("requireThatLocationTermsWork") {
     MyAttributeManager attribute_manager = makeAttributeManager(int64_t(0xcc));
 
     SimpleLocationTerm node(Location(Point(10, 10), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager));
+    EXPECT_TRUE(search(node, attribute_manager, false));
     node = SimpleLocationTerm(Location(Point(100, 100), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager));
+    EXPECT_TRUE(!search(node, attribute_manager, false));
     node = SimpleLocationTerm(Location(Point(13, 13), 4, 0), field, 0, Weight(0));
-    EXPECT_TRUE(!search(node, attribute_manager));
+    EXPECT_TRUE(!search(node, attribute_manager, false));
     node = SimpleLocationTerm(Location(Point(10, 13), 3, 0), field, 0, Weight(0));
-    EXPECT_TRUE(search(node, attribute_manager));
+    EXPECT_TRUE(search(node, attribute_manager, false));
 }
 
 TEST("requireThatFastSearchLocationTermsWork") {
