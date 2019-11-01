@@ -371,7 +371,7 @@ TEST_F(FakeSearchableTest, require_that_relevant_data_can_be_obtained_from_fake_
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
     bp->fetchPostings(false);
     SearchIterator::UP search = bp->createSearch(*md, false);
-    EXPECT_EQ(bp->get_attribute_search_context(), search->getAttributeSearchContext());
+    EXPECT_TRUE(bp->get_attribute_search_context() != nullptr);
     const auto *attr_ctx = bp->get_attribute_search_context();
     ASSERT_TRUE(attr_ctx);
     EXPECT_EQ(attr_ctx->attributeName(), "attrfoo");

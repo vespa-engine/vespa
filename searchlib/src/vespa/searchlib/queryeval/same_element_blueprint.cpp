@@ -77,7 +77,7 @@ SameElementBlueprint::create_same_element_search(bool strict) const
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         SearchIterator::UP child = _terms[i]->createSearch(*md, (strict && (i == 0)));
-        const attribute::ISearchContext *context = child->getAttributeSearchContext();
+        const attribute::ISearchContext *context = _terms[i]->get_attribute_search_context();
         if (context == nullptr) {
             children[i] = std::move(child);
             childMatch.add(childState.field(0).resolve(*md));

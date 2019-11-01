@@ -43,7 +43,6 @@ public:
     void doUnpack(uint32_t docid) override;
     const PostingInfo *getPostingInfo() const override { return _result.postingInfo(); }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const attribute::ISearchContext *getAttributeSearchContext() const override { return _ctx; }
 };
 
 } // namespace queryeval

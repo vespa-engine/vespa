@@ -356,8 +356,6 @@ public:
 
     virtual Trinary is_strict() const { return Trinary::Undefined; }
 
-    /** return the underlying attribute search context (or null if none available) */
-    virtual const attribute::ISearchContext *getAttributeSearchContext() const;
 };
 
 }

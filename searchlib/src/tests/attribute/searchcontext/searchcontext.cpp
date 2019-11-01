@@ -266,11 +266,6 @@ private:
     void requireThatOutOfBoundsSearchTermGivesZeroHits(const vespalib::string &name, const Config &cfg, int64_t maxValue);
     void requireThatOutOfBoundsSearchTermGivesZeroHits();
 
-
-    template <typename AttributeType, typename ValueType>
-    void requireThatSearchIteratorExposesSearchContext(const ConfigMap &cfg, ValueType value, const vespalib::string &searchTerm);
-    void requireThatSearchIteratorExposesSearchContext();
-
     // init maps with config objects
     void initIntegerConfig();
     void initFloatConfig();
@@ -1830,47 +1825,6 @@ SearchContextTest::requireThatOutOfBoundsSearchTermGivesZeroHits()
 }
 
 void
-assertSearchIteratorExposesSearchContext(search::attribute::ISearchContext &ctx)
-{
-    ASSERT_TRUE(ctx.valid());
-    ctx.fetchPostings(true);
-    TermFieldMatchData dummy;
-    SearchBasePtr itr = ctx.createIterator(&dummy, true);
-    EXPECT_TRUE(itr->getAttributeSearchContext() != nullptr);
-    EXPECT_EQUAL(&ctx, itr->getAttributeSearchContext());
-}
-
-template <typename AttributeType, typename ValueType>
-void
-SearchContextTest::requireThatSearchIteratorExposesSearchContext(const ConfigMap &cfgMap,
-                                                                 ValueType value,
-                                                                 const vespalib::string &searchTerm)
-{
-    vespalib::string attrSuffix = "-itr-exposes-ctx";
-    std::vector<ValueType> values = {value};
-    for (const auto &cfg : cfgMap) {
-        vespalib::string attrName = cfg.first + attrSuffix;
-        AttributePtr attr = AttributeFactory::createAttribute(attrName, cfg.second);
-        addDocs(*attr, 2);
-        auto &concreteAttr = dynamic_cast<AttributeType &>(*attr);
-        if (attr->hasMultiValue()) {
-            fillAttribute(concreteAttr, values);
-        } else {
-            resetAttribute(concreteAttr, value);
-        }
-        assertSearchIteratorExposesSearchContext(*getSearch(*attr, searchTerm));
-    }
-}
-
-void
-SearchContextTest::requireThatSearchIteratorExposesSearchContext()
-{
-    requireThatSearchIteratorExposesSearchContext<IntegerAttribute, largeint_t>(_integerCfg, 3, "3");
-    requireThatSearchIteratorExposesSearchContext<FloatingPointAttribute, double>(_floatCfg, 5.7, "5.7");
-    requireThatSearchIteratorExposesSearchContext<StringAttribute, vespalib::string>(_stringCfg, "foo", "foo");
-}
-
-void
 SearchContextTest::initIntegerConfig()
 {
     { // CollectionType::SINGLE
@@ -2000,7 +1954,6 @@ SearchContextTest::Main()
     TEST_DO(requireThatInvalidSearchTermGivesZeroHits());
     TEST_DO(requireThatFlagAttributeHandlesTheByteRange());
     TEST_DO(requireThatOutOfBoundsSearchTermGivesZeroHits());
-    TEST_DO(requireThatSearchIteratorExposesSearchContext());
 
     TEST_DONE();
 }

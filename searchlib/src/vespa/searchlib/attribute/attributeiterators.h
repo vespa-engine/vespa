@@ -40,7 +40,6 @@ public:
           _matchPosition(_matchData->populate_fixed())
     { }
     Trinary is_strict() const override { return Trinary::False; }
-    const attribute::ISearchContext *getAttributeSearchContext() const override { return &_baseSearchCtx; }
 };
 
 
