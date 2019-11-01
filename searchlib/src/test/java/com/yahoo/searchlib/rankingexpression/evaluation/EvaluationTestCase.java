@@ -356,6 +356,16 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testLiteralTensors() {
+        EvaluationTester tester = new EvaluationTester();
+        //tester.assertEvaluates("tensor(x{}):{ {x:a}:1.0, {x:b}:2.0, {x:c}:3.0 }",
+        //                       "tensor(x{}):{ {x:a}:1.0, {x:b}:2.0, {x:c}:3.0 }");
+        //tester.assertEvaluates("tensor(x[3]):[1.0, 2.0, 3.0]",
+        //                       "tensor(x[3]):[1.0, 2.0, 3.0]");
+
+    }
+
+    @Test
     public void testProgrammaticBuildingAndPrecedence() {
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
         RankingExpression oppositePrecedence = new RankingExpression(new ArithmeticNode(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, constant(3)), ArithmeticOperator.MULTIPLY, constant(4)));

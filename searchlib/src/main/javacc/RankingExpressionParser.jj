@@ -147,6 +147,18 @@ TOKEN :
     <MAX: "max"> |
     <MIN: "min"> |
 
+    <TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? > |
+    <TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? > |
+    < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" > |
+    < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" > |
+    < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" > |
+    < #BRACE_SL_CONTENT: (~["{","}","\n"])* > |
+    < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" > |
+    < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" > |
+    < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" > |
+    < #BRACE_ML_CONTENT: (~["{","}"])* > |
+    < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ > |
+
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
 
@@ -243,7 +255,10 @@ ExpressionNode value() :
                    LOOKAHEAD(4) ret = function()                            |
                    ret = feature()                                          |
                    ret = legacyQueryFeature()                               |
-        ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) )
+                   ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) |
+                   ret = tensorValue()
+
+      )
     {
         ret = not ? new NotNode(ret) : ret;
         ret = neg ? new NegativeNode(ret) : ret;
@@ -469,7 +484,7 @@ ExpressionNode tensorGenerate() :
     ExpressionNode generator;
 }
 {
-    <TENSOR> type = tensorTypeArgument() <LBRACE> generator = expression() <RBRACE>
+    <TENSOR> type = tensorType() <LBRACE> generator = expression() <RBRACE>
     { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asLongListToDoubleOperator())); }
 }
 
@@ -478,7 +493,7 @@ ExpressionNode tensorRange() :
     TensorType type;
 }
 {
-    <RANGE> type = tensorTypeArgument()
+    <RANGE> type = tensorType()
     { return new TensorFunctionNode(new Range(type)); }
 }
 
@@ -487,7 +502,7 @@ ExpressionNode tensorDiag() :
     TensorType type;
 }
 {
-    <DIAG> type = tensorTypeArgument()
+    <DIAG> type = tensorType()
     { return new TensorFunctionNode(new Diag(type)); }
 }
 
@@ -496,7 +511,7 @@ ExpressionNode tensorRandom() :
     TensorType type;
 }
 {
-    <RANDOM> type = tensorTypeArgument()
+    <RANDOM> type = tensorType()
     { return new TensorFunctionNode(new Random(type)); }
 }
 
@@ -596,7 +611,7 @@ Reduce.Aggregator tensorReduceAggregator() :
     { return Reduce.Aggregator.valueOf(token.image); }
 }
 
-TensorType tensorTypeArgument() :
+TensorType tensorType() :
 {
     TensorType.Builder builder;
     TensorType.Value valueType;
@@ -803,4 +818,20 @@ Value primitiveValue() :
     ( <SUB> { sign = "-";} ) ?
     ( <INTEGER> | <FLOAT> | <STRING> )
     { return Value.parse(sign + token.image); }
+}
+
+ConstantNode tensorValue() :
+{
+    TensorType type;
+    String value;
+}
+{
+    type = tensorType()
+    <COLON>
+    ( <TENSOR_VALUE_SL> { value = token.image.substring(token.image.indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { value = token.image.substring(token.image.indexOf("{") + 1,
+                                                        token.image.lastIndexOf("}")); } )
+    {
+        return new ConstantNode(new TensorValue(Tensor.from(type, value)));
+    }
 }
