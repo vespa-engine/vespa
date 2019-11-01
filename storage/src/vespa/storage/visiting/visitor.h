@@ -15,7 +15,6 @@
 #include "memory_bounded_trace.h"
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageapi/message/visitor.h>
-#include <vespa/document/select/orderingspecification.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/visitorfactory.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
