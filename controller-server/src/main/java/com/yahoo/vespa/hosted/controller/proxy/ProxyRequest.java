@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.yahoo.container.jdisc.HttpRequest;
 
-import javax.net.ssl.HostnameVerifier;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,7 +26,6 @@ public class ProxyRequest {
     private final InputStream requestData;
 
     private final List<URI> targets;
-    private final HostnameVerifier targetHostnameVerifier;
     private final String targetPath;
 
     /**
@@ -35,17 +33,16 @@ public class ProxyRequest {
      *
      * @param request the request from the jdisc framework.
      * @param targets list of targets this request should be proxied to (targets are tried once in order until a response is returned).
-     * @param targetHostnameVerifier hostname verifier to use when proxying the request.
      * @param targetPath the path to proxy to.
      * @throws ProxyException on errors
      */
-    public ProxyRequest(HttpRequest request, List<URI> targets, HostnameVerifier targetHostnameVerifier, String targetPath) throws ProxyException {
+    public ProxyRequest(HttpRequest request, List<URI> targets, String targetPath) throws ProxyException {
         this(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(), request.getData(),
-             targets, targetHostnameVerifier, targetPath);
+             targets, targetPath);
     }
 
     ProxyRequest(Method method, URI requestUri, Map<String, List<String>> headers, InputStream body,
-                 List<URI> targets, HostnameVerifier targetHostnameVerifier, String targetPath) throws ProxyException {
+                 List<URI> targets, String targetPath) throws ProxyException {
         Objects.requireNonNull(requestUri, "Request must be non-null");
         if (!requestUri.getPath().endsWith(targetPath))
             throw new ProxyException(ErrorResponse.badRequest(String.format(
@@ -58,7 +55,6 @@ public class ProxyRequest {
 
         this.targets = List.copyOf(targets);
         this.targetPath = targetPath.startsWith("/") ? targetPath : "/" + targetPath;
-        this.targetHostnameVerifier = targetHostnameVerifier;
     }
 
 
@@ -76,10 +72,6 @@ public class ProxyRequest {
 
     public List<URI> getTargets() {
         return targets;
-    }
-
-    public HostnameVerifier getTargetHostnameVerifier() {
-        return targetHostnameVerifier;
     }
 
     public URI createConfigServerRequestUri(URI baseURI) {

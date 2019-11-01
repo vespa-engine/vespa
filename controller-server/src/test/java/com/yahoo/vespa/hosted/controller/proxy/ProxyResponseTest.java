@@ -20,7 +20,7 @@ public class ProxyResponseTest {
     @Test
     public void testRewriteUrl() throws Exception {
         ProxyRequest request = new ProxyRequest(HttpRequest.Method.GET, URI.create("http://domain.tld/zone/v2/dev/us-north-1/configserver"),
-                Map.of(), null, List.of(), null, "configserver");
+                Map.of(), null, List.of(), "configserver");
         ProxyResponse proxyResponse = new ProxyResponse(
                 request,
                 "response link is http://configserver:1234/bla/bla/",
@@ -38,7 +38,7 @@ public class ProxyResponseTest {
     @Test
     public void testRewriteSecureUrl() throws Exception {
         ProxyRequest request = new ProxyRequest(HttpRequest.Method.GET, URI.create("https://domain.tld/zone/v2/prod/eu-south-3/configserver"),
-                Map.of(), null, List.of(), null, "configserver");
+                Map.of(), null, List.of(), "configserver");
         ProxyResponse proxyResponse = new ProxyResponse(
                 request,
                 "response link is http://configserver:1234/bla/bla/",

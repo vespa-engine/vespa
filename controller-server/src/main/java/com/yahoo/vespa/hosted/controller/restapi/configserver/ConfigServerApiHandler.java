@@ -10,7 +10,6 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
@@ -18,12 +17,9 @@ import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyException;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 
-import javax.net.ssl.HostnameVerifier;
 import java.net.URI;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
@@ -98,8 +94,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
         }
 
         try {
-            return proxy.handle(new ProxyRequest(
-                    request, List.of(getEndpoint(zoneId)), createHostnameVerifier(zoneId), cfgPath));
+            return proxy.handle(new ProxyRequest(request, List.of(getEndpoint(zoneId)), cfgPath));
         } catch (ProxyException e) {
             throw new RuntimeException(e);
         }
@@ -128,10 +123,5 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
 
     private URI getEndpoint(ZoneId zoneId) {
         return CONTROLLER_ZONE.equals(zoneId) ? zoneRegistry.apiUrl() : zoneRegistry.getConfigServerVipUri(zoneId);
-    }
-
-    private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
-        if (CONTROLLER_ZONE.equals(zoneId)) return new DefaultHostnameVerifier();
-        return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
     }
 }

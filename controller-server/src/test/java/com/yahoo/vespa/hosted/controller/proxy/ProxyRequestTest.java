@@ -23,7 +23,7 @@ public class ProxyRequestTest {
     @Test
     public void testEmpty() throws Exception {
         exception.expectMessage("Request must be non-null");
-        new ProxyRequest(HttpRequest.Method.GET, null, Map.of(), null, List.of(), null, "/zone/v2");
+        new ProxyRequest(HttpRequest.Method.GET, null, Map.of(), null, List.of(), "/zone/v2");
     }
 
     @Test
@@ -69,6 +69,6 @@ public class ProxyRequestTest {
 
     private static ProxyRequest testRequest(String url, String pathPrefix) throws ProxyException {
         return new ProxyRequest(
-                HttpRequest.Method.GET, URI.create(url), Map.of(), null, List.of(), null, pathPrefix);
+                HttpRequest.Method.GET, URI.create(url), Map.of(), null, List.of(), pathPrefix);
     }
 }
