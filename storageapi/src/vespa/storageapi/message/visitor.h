@@ -13,7 +13,6 @@
 #include <vespa/vdslib/container/visitorstatistics.h>
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/messageapi/storagereply.h>
-#include <vespa/document/select/orderingspecification.h>
 
 namespace storage::api {
 

@@ -9,7 +9,6 @@
 #include <vespa/vdslib/container/visitorstatistics.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
-#include <vespa/document/select/orderingspecification.h>
 #include <vespa/document/fieldvalue/document.h>
 
 
