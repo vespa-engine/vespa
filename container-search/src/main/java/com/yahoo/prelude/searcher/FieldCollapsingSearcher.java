@@ -17,7 +17,6 @@ import com.yahoo.search.searchchain.PhaseNames;
 import java.util.Iterator;
 import java.util.Map;
 
-
 /**
  * A searcher which does parametrized collapsing.
  *
@@ -29,9 +28,9 @@ import java.util.Map;
 public class FieldCollapsingSearcher extends Searcher {
 
     private static final CompoundName collapse = new CompoundName("collapse");
-    private static final CompoundName collapsefield=new CompoundName("collapsefield");
-    private static final CompoundName collapsesize=new CompoundName("collapsesize");
-    private static final CompoundName collapseSummaryName=new CompoundName("collapse.summary");
+    private static final CompoundName collapsefield = new CompoundName("collapsefield");
+    private static final CompoundName collapsesize = new CompoundName("collapsesize");
+    private static final CompoundName collapseSummaryName = new CompoundName("collapse.summary");
 
     /** Maximum number of queries to send next searcher */
     private int maxQueries = 4;
@@ -64,6 +63,7 @@ public class FieldCollapsingSearcher extends Searcher {
     }
 
     @Inject
+    @SuppressWarnings("unused")
     public FieldCollapsingSearcher(QrSearchersConfig config) {
         QrSearchersConfig.Com.Yahoo.Prelude.Searcher.FieldCollapsingSearcher
                 s = config.com().yahoo().prelude().searcher().FieldCollapsingSearcher();
@@ -99,7 +99,7 @@ public class FieldCollapsingSearcher extends Searcher {
     public Result search(com.yahoo.search.Query query, Execution execution) {
         String collapseField = query.properties().getString(collapsefield);
 
-        if (collapseField==null) return execution.search(query);
+        if (collapseField == null) return execution.search(query);
 
         int collapseSize = query.properties().getInteger(collapsesize,defaultCollapseSize);
         query.properties().set(collapse, "0");
@@ -113,11 +113,12 @@ public class FieldCollapsingSearcher extends Searcher {
         int performedQueries = 0;
         Result resultSource;
         String collapseSummary = query.properties().getString(collapseSummaryName);
+        String summaryClass = (collapseSummary == null)
+                              ? query.getPresentation().getSummary() : collapseSummary;
+        query.trace("Collapsing by '" + collapseField + "' using summary '" + collapseSummary + "'", 2);
 
         do {
             resultSource = search(query.clone(), execution, nextOffset, hitsToRequest);
-            String summaryClass = (collapseSummary == null)
-                                  ? query.getPresentation().getSummary() : collapseSummary;
             fill(resultSource, summaryClass, execution);
             collapse(result, knownCollapses, resultSource, collapseField, collapseSize);
 
@@ -146,7 +147,7 @@ public class FieldCollapsingSearcher extends Searcher {
         return result;
     }
 
-    private Result search(Query query, Execution execution, int offset , int hits) {
+    private Result search(Query query, Execution execution, int offset, int hits) {
         query.setOffset(offset);
         query.setHits(hits);
         return execution.search(query);
