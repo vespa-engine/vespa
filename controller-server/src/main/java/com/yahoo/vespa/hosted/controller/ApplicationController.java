@@ -10,6 +10,7 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -403,9 +404,6 @@ public class ApplicationController {
                     application = storeWithUpdatedConfig(application, applicationPackage);
                 }
 
-                if (zone.environment().isProduction()) // Assign and register endpoints
-                    application = withRotation(applicationPackage.deploymentSpec(), application, instance);
-
                 endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
             } // Release application lock while doing the deployment, which is a lengthy task.
 
@@ -481,6 +479,11 @@ public class ApplicationController {
                 application = application.with(name, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
             }
         }
+
+        for (InstanceName instance : declaredInstances)
+            if (applicationPackage.deploymentSpec().requireInstance(instance).deploysTo(Environment.prod))
+                application = withRotation(applicationPackage.deploymentSpec(), application, instance);
+
         store(application);
         return application;
     }

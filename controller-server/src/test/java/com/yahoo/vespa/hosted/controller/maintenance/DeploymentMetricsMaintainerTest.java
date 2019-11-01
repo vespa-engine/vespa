@@ -11,9 +11,11 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.InternalDeploymentTester;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -33,17 +35,17 @@ import static org.junit.Assert.assertFalse;
  */
 public class DeploymentMetricsMaintainerTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private final InternalDeploymentTester tester = new InternalDeploymentTester();
 
     @Test
     public void updates_metrics() {
-        var application = tester.createApplication("app1", "tenant1", 123L, 1L);
-        deploy(application.id().defaultInstance(), Version.fromString("7.1"));
+        var application = tester.deploymentContext();
+        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
-        Supplier<Application> app = () -> tester.application(application.id());
-        Supplier<Instance> instance = () -> tester.defaultInstance(application.id());
-        Supplier<Deployment> deployment = () -> instance.get().deployments().values().stream().findFirst().get();
+        Supplier<Application> app = application::application;
+        Supplier<Instance> instance = application::instance;
+        Supplier<Deployment> deployment = () -> application.deployment(ZoneId.from("dev", "us-east-1"));
 
         // No metrics gathered yet
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
@@ -53,7 +55,7 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
         // Only get application metrics for old version
-        deploy(application.id().defaultInstance(), Version.fromString("6.3.3"));
+        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("6.3.3"));
         maintainer.maintain();
         assertEquals(0, app.get().metrics().queryServiceQuality(), 0);
         assertEquals(0, deployment.get().metrics().documentCount(), 0);
@@ -62,13 +64,13 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
         // Metrics are gathered and saved to application
-        deploy(application.id().defaultInstance(), Version.fromString("7.5.5"));
+        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.5.5"));
         var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
                               ClusterMetrics.FEED_PER_SECOND, 2D,
                               ClusterMetrics.DOCUMENT_COUNT, 3D,
                               ClusterMetrics.QUERY_LATENCY, 4D,
                               ClusterMetrics.FEED_LATENCY, 5D);
-        setMetrics(application.id().defaultInstance(), metrics0);
+        setMetrics(application.application().id().defaultInstance(), metrics0);
         maintainer.maintain();
         Instant t1 = tester.clock().instant().truncatedTo(MILLIS);
         assertEquals(0.0, app.get().metrics().queryServiceQuality(), Double.MIN_VALUE);
@@ -98,7 +100,7 @@ public class DeploymentMetricsMaintainerTest {
         var metrics1 = new HashMap<>(metrics0);
         metrics1.put(ClusterMetrics.QUERIES_PER_SECOND, 0D);
         metrics1.put(ClusterMetrics.FEED_PER_SECOND, 5D);
-        setMetrics(application.id().defaultInstance(), metrics1);
+        setMetrics(application.application().id().defaultInstance(), metrics1);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t3, deployment.get().activity().lastWritten().get());
@@ -109,7 +111,7 @@ public class DeploymentMetricsMaintainerTest {
         tester.clock().advance(Duration.ofHours(1));
         var metrics2 = new HashMap<>(metrics1);
         metrics2.put(ClusterMetrics.FEED_PER_SECOND, 0D);
-        setMetrics(application.id().defaultInstance(), metrics2);
+        setMetrics(application.application().id().defaultInstance(), metrics2);
         maintainer.maintain();
         assertEquals(t2, deployment.get().activity().lastQueried().get());
         assertEquals(t3, deployment.get().activity().lastWritten().get());
@@ -127,14 +129,6 @@ public class DeploymentMetricsMaintainerTest {
 
     private static DeploymentMetricsMaintainer maintainer(Controller controller) {
         return new DeploymentMetricsMaintainer(controller, Duration.ofDays(1), new JobControl(controller.curator()));
-    }
-
-    private void deploy(ApplicationId id, Version version) {
-        tester.controllerTester().deploy(id,
-                                         ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
-                                         Optional.of(new ApplicationPackage(new byte[0])),
-                                         false,
-                                         Optional.of(version));
     }
 
 }

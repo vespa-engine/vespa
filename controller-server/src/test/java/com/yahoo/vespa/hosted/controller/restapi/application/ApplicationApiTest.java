@@ -62,6 +62,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
@@ -315,7 +316,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST an application deployment to a production zone - operator emergency deployment - fails since package is unknown
         entity = createApplicationDeployData(Optional.empty(),
-                                             Optional.of(ApplicationVersion.from(BuildJob.defaultSourceRevision,
+                                             Optional.of(ApplicationVersion.from(DeploymentContext.defaultSourceRevision,
                                                                                  BuildJob.defaultBuildNumber - 1)),
                                              true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/", POST)
@@ -326,7 +327,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // POST an application deployment to a production zone - operator emergency deployment - works with known package
         entity = createApplicationDeployData(Optional.empty(),
-                                             Optional.of(ApplicationVersion.from(BuildJob.defaultSourceRevision,
+                                             Optional.of(ApplicationVersion.from(DeploymentContext.defaultSourceRevision,
                                                                                  BuildJob.defaultBuildNumber)),
                                              true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/", POST)
@@ -731,7 +732,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                         1234,
                                                                                         123,
                                                                                         Optional.empty(),
-                                                                                        BuildJob.defaultSourceRevision))),
+                                                                                        DeploymentContext.defaultSourceRevision))),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"" + app1 + " is set up to be deployed from internally," +
                               " and no longer accepts submissions from Screwdriver v3 jobs. If you need to revert " +
                               "to the old pipeline, please file a ticket at yo/vespa-support and request this.\"}",
@@ -769,7 +770,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                         1234,
                                                                                         123,
                                                                                         Optional.empty(),
-                                                                                        BuildJob.defaultSourceRevision))),
+                                                                                        DeploymentContext.defaultSourceRevision))),
                               "{\"message\":\"ok\"}");
 
         // PUT (create) the authenticated user

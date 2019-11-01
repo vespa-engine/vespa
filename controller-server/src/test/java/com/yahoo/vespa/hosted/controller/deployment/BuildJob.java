@@ -23,16 +23,15 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
  *
  * @author mpolden
  */
+
 public class BuildJob {
 
-    public static final SourceRevision defaultSourceRevision = new SourceRevision("repository1",
-                                                                                  "master", "commit1");
     public static final long defaultBuildNumber = 42;
 
     private JobType job;
     private ApplicationId applicationId;
     private Optional<DeploymentJobs.JobError> jobError = Optional.empty();
-    private Optional<SourceRevision> sourceRevision = Optional.of(defaultSourceRevision);
+    private Optional<SourceRevision> sourceRevision = Optional.of(DeploymentContext.defaultSourceRevision);
     private long projectId;
     private long buildNumber = defaultBuildNumber;
 
