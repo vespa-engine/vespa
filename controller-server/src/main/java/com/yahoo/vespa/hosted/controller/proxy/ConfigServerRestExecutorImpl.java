@@ -96,10 +96,6 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
         copyHeaders(proxyRequest.getHeaders(), requestBase);
 
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         try (CloseableHttpResponse response = client.execute(requestBase)) {
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
