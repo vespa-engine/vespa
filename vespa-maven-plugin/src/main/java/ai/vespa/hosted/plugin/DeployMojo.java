@@ -37,25 +37,22 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
 
     @Override
     protected void doExecute() throws MojoFailureException, MojoExecutionException {
-        try {
-            controller.compileVersion(id);
-        }
-        catch (IllegalArgumentException e) {
-            throw new MojoFailureException( "The application " + id.tenant() + "." + id.application() + " does not exist, "
-                                          + "or you do not have the required privileges to access it; "
-                                          + "please visit the Vespa cloud web UI and make sure the application exists and you have access!");
-        }
-
         loggable = DeploymentLog.Level.valueOf(vespaLogLevel);
         Deployment deployment = Deployment.ofPackage(Paths.get(firstNonBlank(applicationZip,
                                                                              projectPathOf("target", "application.zip"))));
         if (vespaVersion != null) deployment = deployment.atVersion(vespaVersion);
 
         ZoneId zone = zoneOf(environment, region);
-        DeploymentResult result = controller.deploy(deployment, id, zone);
-        getLog().info(result.message());
-
-        if (follow) tailLogs(id, zone, result.run());
+        try {
+            DeploymentResult result = controller.deploy(deployment, id, zone);
+            getLog().info(result.message());
+            if (follow) tailLogs(id, zone, result.run());
+        }
+        catch (IllegalArgumentException e) {
+            throw new MojoFailureException( "The application " + id.tenant() + "." + id.application() + " does not exist, "
+                                            + "or you do not have the required privileges to access it; "
+                                            + "please visit the Vespa cloud web UI and make sure the application exists and you have access!");
+        }
     }
 
     private void tailLogs(ApplicationId id, ZoneId zone, long run) throws MojoFailureException, MojoExecutionException {
