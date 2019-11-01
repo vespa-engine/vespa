@@ -34,7 +34,7 @@ public interface ServiceRegistry {
 
     ConfigServer configServer();
 
-    Clock clock();
+    default Clock clock() { return Clock.systemUTC(); }
 
     NameService nameService();
 
