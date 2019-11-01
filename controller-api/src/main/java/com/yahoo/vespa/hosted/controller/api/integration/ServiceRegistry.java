@@ -21,6 +21,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
 
+import java.time.Clock;
+
 /**
  * This provides access to all service dependencies of the controller. Implementations of this are responsible for
  * constructing and configuring service implementations suitable for use by the controller.
@@ -31,6 +33,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 public interface ServiceRegistry {
 
     ConfigServer configServer();
+
+    Clock clock();
 
     NameService nameService();
 

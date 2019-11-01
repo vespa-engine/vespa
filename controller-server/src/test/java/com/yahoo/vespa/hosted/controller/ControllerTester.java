@@ -86,42 +86,37 @@ public final class ControllerTester {
 
     private Controller controller;
 
-    public ControllerTester(ManualClock clock, RotationsConfig rotationsConfig, MockCuratorDb curatorDb) {
+    public ControllerTester(RotationsConfig rotationsConfig, MockCuratorDb curatorDb) {
         this(new AthenzDbMock(),
-             clock,
              new ZoneRegistryMock(),
              curatorDb,
              rotationsConfig,
              new ServiceRegistryMock());
     }
 
-    public ControllerTester(ManualClock clock) {
-        this(clock, defaultRotationsConfig(), new MockCuratorDb());
-    }
-
     public ControllerTester(RotationsConfig rotationsConfig) {
-        this(new ManualClock(), rotationsConfig, new MockCuratorDb());
+        this(rotationsConfig, new MockCuratorDb());
     }
 
     public ControllerTester(MockCuratorDb curatorDb) {
-        this(new ManualClock(), defaultRotationsConfig(), curatorDb);
+        this(defaultRotationsConfig(), curatorDb);
     }
 
     public ControllerTester() {
-        this(new ManualClock());
+        this(defaultRotationsConfig(), new MockCuratorDb());
     }
 
-    private ControllerTester(AthenzDbMock athenzDb, ManualClock clock,
+    private ControllerTester(AthenzDbMock athenzDb,
                              ZoneRegistryMock zoneRegistry,
                              CuratorDb curator, RotationsConfig rotationsConfig,
-                             ServiceRegistryMock serviceRegistry) {
+                             ServiceRegistryMock serviceRegistry, Controller controller) {
         this.athenzDb = athenzDb;
-        this.clock = clock;
+        this.clock = serviceRegistry.clock();
         this.zoneRegistry = zoneRegistry;
         this.serviceRegistry = serviceRegistry;
         this.curator = curator;
         this.rotationsConfig = rotationsConfig;
-        this.controller = createController(curator, rotationsConfig, clock, zoneRegistry, athenzDb, serviceRegistry);
+        this.controller = controller;
 
         // Make root logger use time from manual clock
         configureDefaultLogHandler(handler -> handler.setFilter(
@@ -129,6 +124,14 @@ public final class ControllerTester {
                     record.setInstant(clock.instant());
                     return true;
                 }));
+    }
+
+    private ControllerTester(AthenzDbMock athenzDb,
+                             ZoneRegistryMock zoneRegistry,
+                             CuratorDb curator, RotationsConfig rotationsConfig,
+                             ServiceRegistryMock serviceRegistry) {
+        this(athenzDb, zoneRegistry, curator, rotationsConfig, serviceRegistry,
+             createController(curator, rotationsConfig, zoneRegistry, athenzDb, serviceRegistry));
     }
 
     public void configureDefaultLogHandler(Consumer<Handler> configureFunc) {
@@ -176,8 +179,7 @@ public final class ControllerTester {
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
-        controller = createController(curator, rotationsConfig, clock, zoneRegistry, athenzDb,
-                                      serviceRegistry);
+        controller = createController(curator, rotationsConfig, zoneRegistry, athenzDb, serviceRegistry);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -351,14 +353,12 @@ public final class ControllerTester {
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
-                                               ManualClock clock,
                                                ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb,
                                                ServiceRegistryMock serviceRegistry) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
                                                zoneRegistryMock,
-                                               clock,
                                                new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                () -> "test-controller",
                                                new InMemoryFlagSource(),
