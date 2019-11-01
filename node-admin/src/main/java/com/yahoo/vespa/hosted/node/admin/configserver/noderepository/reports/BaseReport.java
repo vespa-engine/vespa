@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.stream.Stream;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -23,10 +24,10 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * <p><strong>Subclass requirements</strong>
  *
  * <ol>
- *     <li>A subclass mush be a Jackson class that can be mapped to {@link JsonNode} with {@link #toJsonNode()},
+ *     <li>A subclass must be a Jackson class that can be mapped to {@link JsonNode} with {@link #toJsonNode()},
  *     and from {@link JsonNode} with {@link #fromJsonNode(JsonNode, Class)}.</li>
- *     <li>A subclass must override {@link #updates(BaseReport)} and make sure to return false if
- *     {@code !super.updates(current)}.</li>
+ *     <li>A subclass must override {@link #updates(BaseReport)} and make sure to return true if
+ *     {@code super.updates(current)}.</li>
  * </ol>
  *
  * @author hakonhall
@@ -51,10 +52,18 @@ public class BaseReport {
     public enum Type {
         /** The default type if none given, or not recognized. */
         UNSPECIFIED,
+        /** A program to be executed once. */
+        ONCE,
         /** The host has a soft failure and should be parked for manual inspection. */
         SOFT_FAIL,
         /** The host has a hard failure and should be given back to siteops. */
-        HARD_FAIL
+        HARD_FAIL;
+
+        public static Optional<Type> deserialize(String typeString) {
+            return Stream.of(Type.values()).filter(type -> type.name().equalsIgnoreCase(typeString)).findAny();
+        }
+
+        public String serialize() { return name(); }
     }
 
     @JsonCreator
