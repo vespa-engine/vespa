@@ -64,10 +64,7 @@ public class DockerOperationsImpl implements DockerOperations {
     public void createContainer(NodeAgentContext context, ContainerData containerData, ContainerResources containerResources) {
         context.log(logger, "Creating container");
 
-        // IPv6 - Assume always valid
-        Inet6Address ipV6Address = ipAddresses.getIPv6Address(context.node().hostname()).orElseThrow(
-                () -> new RuntimeException("Unable to find a valid IPv6 address for " + context.node().hostname() +
-                                           ". Missing an AAAA DNS entry?"));
+        Optional<Inet6Address> ipV6Address = ipAddresses.getIPv6Address(context.node().hostname());
 
         Docker.CreateContainerCommand command = docker.createContainerCommand(
                 context.node().wantedDockerImage().get(), context.containerName())
@@ -97,14 +94,19 @@ public class DockerOperationsImpl implements DockerOperations {
         command.withNetworkMode(networking.getDockerNetworkMode());
 
         if (networking == DockerNetworking.NPT) {
-            InetAddress ipV6Local = IPAddresses.prefixTranslate(ipV6Address, IPV6_NPT_PREFIX, 8);
-            command.withIpAddress(ipV6Local);
+            Optional<InetAddress> ipV6Local = ipV6Address.map(ip -> IPAddresses.prefixTranslate(ip, IPV6_NPT_PREFIX, 8));
+            ipV6Local.ifPresent(command::withIpAddress);
 
             // IPv4 - Only present for some containers
             Optional<InetAddress> ipV4Local = ipAddresses.getIPv4Address(context.node().hostname())
                     .map(ipV4Address -> IPAddresses.prefixTranslate(ipV4Address, IPV4_NPT_PREFIX, 2));
             ipV4Local.ifPresent(command::withIpAddress);
 
+            if (ipV4Local.isEmpty() && ipV6Address.isEmpty()) {
+                throw new IllegalArgumentException("Container " + context.node().hostname() + " with " +
+                                                   networking + " networking must have at least 1 IP address, " +
+                                                   "but found none");
+            }
             addEtcHosts(containerData, context.node().hostname(), ipV4Local, ipV6Local);
         }
 
@@ -117,7 +119,7 @@ public class DockerOperationsImpl implements DockerOperations {
     void addEtcHosts(ContainerData containerData,
                      String hostname,
                      Optional<InetAddress> ipV4Local,
-                     InetAddress ipV6Local) {
+                     Optional<InetAddress> ipV6Local) {
         // The default /etc/hosts in a Docker container contains one entry for the host,
         // mapping the hostname to the Docker-assigned IPv4 address.
         //
@@ -137,8 +139,8 @@ public class DockerOperationsImpl implements DockerOperations {
                 "fe00::0\tip6-localnet\n" +
                 "ff00::0\tip6-mcastprefix\n" +
                 "ff02::1\tip6-allnodes\n" +
-                "ff02::2\tip6-allrouters\n" +
-        ipV6Local.getHostAddress() + '\t' + hostname + '\n');
+                "ff02::2\tip6-allrouters\n");
+        ipV6Local.ifPresent(ipv6 -> etcHosts.append(ipv6.getHostAddress()).append('\t').append(hostname).append('\n'));
         ipV4Local.ifPresent(ipv4 -> etcHosts.append(ipv4.getHostAddress()).append('\t').append(hostname).append('\n'));
 
         containerData.addFile(Paths.get("/etc/hosts"), etcHosts.toString());
