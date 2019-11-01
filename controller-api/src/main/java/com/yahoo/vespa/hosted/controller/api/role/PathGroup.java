@@ -20,7 +20,8 @@ import java.util.Set;
 enum PathGroup {
 
     /** Paths exclusive to operators (including read), used for system management. */
-    classifiedOperator("/configserver/v1/{*}"),
+    classifiedOperator(Optional.of("/api"),
+                       "/configserver/v1/{*}"),
 
     /** Paths used for system management by operators. */
     operator("/controller/v1/{*}",
