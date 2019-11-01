@@ -1,0 +1,144 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.hosted.controller.restapi.configserver;
+
+import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
+import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
+import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.net.URI;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+/**
+ * @author freva
+ */
+public class ConfigServerApiHandlerTest extends ControllerContainerTest {
+
+    private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/configserver/responses/";
+    private static final List<ZoneApi> zones = List.of(
+            ZoneApiMock.fromId("prod.us-north-1"),
+            ZoneApiMock.fromId("dev.aws-us-north-2"),
+            ZoneApiMock.fromId("test.us-north-3"),
+            ZoneApiMock.fromId("staging.us-north-4"));
+
+    private ContainerControllerTester tester;
+    private ConfigServerProxyMock proxy;
+
+    @Before
+    public void before() {
+        ZoneRegistryMock zoneRegistry = (ZoneRegistryMock) container.components()
+                .getComponent(ZoneRegistryMock.class.getName());
+        zoneRegistry.setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
+                .setZones(zones);
+        this.tester = new ContainerControllerTester(container, responseFiles);
+        this.proxy = (ConfigServerProxyMock) container.components().getComponent(ConfigServerProxyMock.class.getName());
+    }
+
+    @Test
+    public void test_requests() {
+        // GET /configserver/v1
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1"),
+                new File("root.json"));
+
+        // GET /configserver/v1/nodes/v2/node/?recursive=true
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node/?recursive=true"),
+                "ok");
+        assertLastRequest("https://cfg.prod.us-north-1.test.vip:4443/", "GET");
+
+        // POST /configserver/v1/dev/us-north-2/nodes/v2/command/restart?hostname=node1
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
+                "", Request.Method.POST),
+                "ok");
+
+        // PUT /configserver/v1/prod/us-north-1/nodes/v2/state/dirty/node1
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/state/dirty/node1",
+                "", Request.Method.PUT), "ok");
+        assertLastRequest("https://cfg.prod.us-north-1.test.vip:4443/", "PUT");
+
+        // DELETE /configserver/v1/prod/us-north-1/nodes/v2/node/node1
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/api/configserver/v1/prod/controller/nodes/v2/node/node1",
+                "", Request.Method.DELETE), "ok");
+        assertLastRequest("https://api.tld:4443/", "DELETE");
+
+        // PATCH /configserver/v1/prod/us-north-1/nodes/v2/node/node1
+        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/node/node1",
+                "{\"currentRestartGeneration\": 1}",
+                Request.Method.PATCH), "ok");
+        assertLastRequest("https://cfg.dev.aws-us-north-2.test.vip:4443/", "PATCH");
+        assertEquals("{\"currentRestartGeneration\": 1}", proxy.lastRequestBody().get());
+
+        assertFalse("Actions are logged to audit log", tester.controller().auditLogger().readLog().entries().isEmpty());
+    }
+
+    @Test
+    public void test_allowed_apis() {
+        // GET /configserver/v1/prod/us-north-1
+        tester.containerTester().assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1"),
+                "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access '/' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/\"}",
+                403);
+
+        tester.containerTester().assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-1/application/v2/tenant/vespa"),
+                "{\"error-code\":\"FORBIDDEN\",\"message\":\"Cannot access '/application/v2/tenant/vespa' through /configserver/v1, following APIs are permitted: /flags/v1/, /nodes/v2/, /orchestrator/v1/\"}",
+                403);
+    }
+
+    @Test
+    public void test_invalid_requests() {
+        // POST /configserver/v1/prod/us-north-34/nodes/v2
+        tester.containerTester().assertResponse(() -> operatorRequest("http://localhost:8080/configserver/v1/prod/us-north-42/nodes/v2",
+                "", Request.Method.POST),
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such zone: prod.us-north-42\"}", 400);
+        assertFalse(proxy.lastReceived().isPresent());
+    }
+
+    @Test
+    public void non_operators_are_forbidden() {
+        // Read request
+        tester.containerTester().assertResponse(() -> authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node"),
+                "{\n" +
+                "  \"code\" : 403,\n" +
+                "  \"message\" : \"Access denied\"\n" +
+                "}", 403);
+
+        // Write request
+        tester.containerTester().assertResponse(() -> authenticatedRequest("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node", "", Request.Method.POST),
+                "{\n" +
+                "  \"code\" : 403,\n" +
+                "  \"message\" : \"Access denied\"\n" +
+                "}", 403);
+    }
+
+    @Test
+    public void unauthenticated_request_are_unauthorized() {
+        {
+            // Read request
+            Request request = new Request("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node", "", Request.Method.GET);
+            tester.containerTester().assertResponse(() -> request, "{\n  \"message\" : \"Not authenticated\"\n}", 401);
+        }
+
+        {
+            // Write request
+            Request request = new Request("http://localhost:8080/configserver/v1/prod/us-north-1/nodes/v2/node", "", Request.Method.POST);
+            tester.containerTester().assertResponse(() -> request, "{\n  \"message\" : \"Not authenticated\"\n}", 401);
+        }
+    }
+
+
+    private void assertLastRequest(String target, String method) {
+        ProxyRequest last = proxy.lastReceived().orElseThrow();
+        assertEquals(List.of(URI.create(target)), last.getTargets());
+        assertEquals(com.yahoo.jdisc.http.HttpRequest.Method.valueOf(method), last.getMethod());
+    }
+}

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 
 import java.io.InputStream;
@@ -26,36 +25,36 @@ public class ProxyRequest {
     private final Map<String, List<String>> headers;
     private final InputStream requestData;
 
-    private final ZoneId zoneId;
-    private final String proxyPath;
+    private final List<URI> targets;
+    private final String targetPath;
 
     /**
      * The constructor calls exception if the request is invalid.
      *
      * @param request the request from the jdisc framework.
-     * @param zoneId the zone to proxy to.
-     * @param proxyPath the path to proxy to.
+     * @param targets list of targets this request should be proxied to (targets are tried once in order until a response is returned).
+     * @param targetPath the path to proxy to.
      * @throws ProxyException on errors
      */
-    public ProxyRequest(HttpRequest request, ZoneId zoneId, String proxyPath) throws ProxyException {
+    public ProxyRequest(HttpRequest request, List<URI> targets, String targetPath) throws ProxyException {
         this(request.getMethod(), request.getUri(), request.getJDiscRequest().headers(), request.getData(),
-             zoneId, proxyPath);
+             targets, targetPath);
     }
 
     ProxyRequest(Method method, URI requestUri, Map<String, List<String>> headers, InputStream body,
-                 ZoneId zoneId, String proxyPath) throws ProxyException {
+                 List<URI> targets, String targetPath) throws ProxyException {
         Objects.requireNonNull(requestUri, "Request must be non-null");
-        if (!requestUri.getPath().endsWith(proxyPath))
+        if (!requestUri.getPath().endsWith(targetPath))
             throw new ProxyException(ErrorResponse.badRequest(String.format(
-                    "Request path '%s' does not end with proxy path '%s'", requestUri.getPath(), proxyPath)));
+                    "Request path '%s' does not end with proxy path '%s'", requestUri.getPath(), targetPath)));
 
         this.method = Objects.requireNonNull(method);
         this.requestUri = Objects.requireNonNull(requestUri);
         this.headers = Objects.requireNonNull(headers);
         this.requestData = body;
 
-        this.zoneId = Objects.requireNonNull(zoneId);
-        this.proxyPath = proxyPath.startsWith("/") ? proxyPath : "/" + proxyPath;
+        this.targets = List.copyOf(targets);
+        this.targetPath = targetPath.startsWith("/") ? targetPath : "/" + targetPath;
     }
 
 
@@ -71,23 +70,23 @@ public class ProxyRequest {
         return requestData;
     }
 
-    public ZoneId getZoneId() {
-        return zoneId;
+    public List<URI> getTargets() {
+        return targets;
     }
 
     public URI createConfigServerRequestUri(URI baseURI) {
         try {
             return new URI(baseURI.getScheme(), baseURI.getUserInfo(), baseURI.getHost(),
-                    baseURI.getPort(), proxyPath, requestUri.getQuery(), requestUri.getFragment());
+                    baseURI.getPort(), targetPath, requestUri.getQuery(), requestUri.getFragment());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
     }
 
     public URI getControllerPrefixUri() {
-        String prefixPath = proxyPath.equals("/") && !requestUri.getPath().endsWith("/") ?
-                requestUri.getPath() + proxyPath :
-                requestUri.getPath().substring(0, requestUri.getPath().length() - proxyPath.length() + 1);
+        String prefixPath = targetPath.equals("/") && !requestUri.getPath().endsWith("/") ?
+                requestUri.getPath() + targetPath :
+                requestUri.getPath().substring(0, requestUri.getPath().length() - targetPath.length() + 1);
         try {
             return new URI(requestUri.getScheme(), requestUri.getUserInfo(), requestUri.getHost(),
                     requestUri.getPort(), prefixPath, null, null);
@@ -98,7 +97,7 @@ public class ProxyRequest {
 
     @Override
     public String toString() {
-        return "[zone: " + zoneId + " request: " + proxyPath + "]";
+        return "[targets: " + targets + " request: " + targetPath + "]";
     }
 
 }

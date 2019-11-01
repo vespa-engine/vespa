@@ -19,6 +19,10 @@ import java.util.Set;
  */
 enum PathGroup {
 
+    /** Paths exclusive to operators (including read), used for system management. */
+    classifiedOperator(Optional.of("/api"),
+                       "/configserver/v1/{*}"),
+
     /** Paths used for system management by operators. */
     operator("/controller/v1/{*}",
              "/flags/v1/{*}",
@@ -226,6 +230,10 @@ enum PathGroup {
     /** All known path groups */
     static Set<PathGroup> all() {
         return EnumSet.allOf(PathGroup.class);
+    }
+
+    static Set<PathGroup> allExcept(PathGroup... pathGroups) {
+        return EnumSet.complementOf(EnumSet.copyOf(List.of(pathGroups)));
     }
 
     /** Returns whether this group matches path in given context */

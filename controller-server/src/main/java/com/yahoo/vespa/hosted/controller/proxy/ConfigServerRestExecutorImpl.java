@@ -2,9 +2,10 @@
 package com.yahoo.vespa.hosted.controller.proxy;
 
 import com.google.inject.Inject;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
@@ -17,14 +18,17 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,7 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -43,33 +49,37 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author bjorncs
  */
 @SuppressWarnings("unused") // Injected
-public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
+public class ConfigServerRestExecutorImpl extends AbstractComponent implements ConfigServerRestExecutor {
 
     private static final Logger log = Logger.getLogger(ConfigServerRestExecutorImpl.class.getName());
 
     private static final Duration PROXY_REQUEST_TIMEOUT = Duration.ofSeconds(10);
     private static final Set<String> HEADERS_TO_COPY = Set.of("X-HTTP-Method-Override", "Content-Type");
 
-    private final ZoneRegistry zoneRegistry;
-    private final ServiceIdentityProvider sslContextProvider;
+    private final CloseableHttpClient client;
 
     @Inject
     public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
-        this.zoneRegistry = zoneRegistry;
-        this.sslContextProvider = sslContextProvider;
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
+                .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
+
+        this.client = createHttpClient(config, sslContextProvider,
+                new ControllerOrConfigserverHostnameVerifier(zoneRegistry));
     }
 
     @Override
     public ProxyResponse handle(ProxyRequest proxyRequest) throws ProxyException {
-        HostnameVerifier hostnameVerifier = createHostnameVerifier(proxyRequest.getZoneId());
-        List<URI> allServers = getConfigserverEndpoints(proxyRequest.getZoneId());
+        // Make a local copy of the list as we want to manipulate it in case of ping problems.
+        List<URI> allServers = new ArrayList<>(proxyRequest.getTargets());
 
         StringBuilder errorBuilder = new StringBuilder();
-        if (queueFirstServerIfDown(allServers, hostnameVerifier)) {
+        if (queueFirstServerIfDown(allServers)) {
             errorBuilder.append("Change ordering due to failed ping.");
         }
         for (URI uri : allServers) {
-            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, hostnameVerifier, errorBuilder);
+            Optional<ProxyResponse> proxyResponse = proxyCall(uri, proxyRequest, errorBuilder);
             if (proxyResponse.isPresent()) {
                 return proxyResponse.get();
             }
@@ -79,32 +89,14 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 + errorBuilder.toString()));
     }
 
-    private List<URI> getConfigserverEndpoints(ZoneId zoneId) {
-        // TODO: Use config server VIP for all zones that have one
-        // Make a local copy of the list as we want to manipulate it in case of ping problems.
-        if (zoneId.region().value().startsWith("aws-") || zoneId.region().value().contains("-aws-")) {
-            return List.of(zoneRegistry.getConfigServerVipUri(zoneId));
-        } else {
-            return new ArrayList<>(zoneRegistry.getConfigServerUris(zoneId));
-        }
-    }
-
-    private Optional<ProxyResponse> proxyCall(
-            URI uri, ProxyRequest proxyRequest, HostnameVerifier hostnameVerifier, StringBuilder errorBuilder)
+    private Optional<ProxyResponse> proxyCall(URI uri, ProxyRequest proxyRequest, StringBuilder errorBuilder)
             throws ProxyException {
         final HttpRequestBase requestBase = createHttpBaseRequest(
                 proxyRequest.getMethod(), proxyRequest.createConfigServerRequestUri(uri), proxyRequest.getData());
         // Empty list of headers to copy for now, add headers when needed, or rewrite logic.
         copyHeaders(proxyRequest.getHeaders(), requestBase);
 
-        RequestConfig config = RequestConfig.custom()
-                .setConnectTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setConnectionRequestTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis())
-                .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
-        try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
-                CloseableHttpResponse response = client.execute(requestBase)
-        ) {
+        try (CloseableHttpResponse response = client.execute(requestBase)) {
             String content = getContent(response);
             int status = response.getStatusLine().getStatusCode();
             if (status / 100 == 5) {
@@ -182,7 +174,7 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
      * if it is not responding, we try the other servers first. False positive/negatives are not critical,
      * but will increase latency to some extent.
      */
-    private boolean queueFirstServerIfDown(List<URI> allServers, HostnameVerifier hostnameVerifier) {
+    private boolean queueFirstServerIfDown(List<URI> allServers) {
         if (allServers.size() < 2) {
             return false;
         }
@@ -194,10 +186,8 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setConnectTimeout(timeout)
                 .setConnectionRequestTimeout(timeout)
                 .setSocketTimeout(timeout).build();
-        try (
-                CloseableHttpClient client = createHttpClient(config, sslContextProvider, hostnameVerifier);
-                CloseableHttpResponse response = client.execute(httpget)
-        ) {
+        httpget.setConfig(config);
+        try (CloseableHttpResponse response = client.execute(httpget)) {
             if (response.getStatusLine().getStatusCode() == 200) {
                 return false;
             }
@@ -210,8 +200,13 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
         return true;
     }
 
-    private HostnameVerifier createHostnameVerifier(ZoneId zoneId) {
-        return new AthenzIdentityVerifier(Set.of(zoneRegistry.getConfigServerHttpsIdentity(zoneId)));
+    @Override
+    public void deconstruct() {
+        try {
+            client.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private static CloseableHttpClient createHttpClient(RequestConfig config,
@@ -222,7 +217,31 @@ public class ConfigServerRestExecutorImpl implements ConfigServerRestExecutor {
                 .setSslcontext(sslContextProvider.getIdentitySslContext())
                 .setSSLHostnameVerifier(hostnameVerifier)
                 .setDefaultRequestConfig(config)
+                .setMaxConnPerRoute(10)
+                .setMaxConnTotal(500)
+                .setConnectionTimeToLive(1, TimeUnit.MINUTES)
                 .build();
     }
 
+    private static class ControllerOrConfigserverHostnameVerifier implements HostnameVerifier {
+
+        private final HostnameVerifier controllerVerifier = new DefaultHostnameVerifier();
+        private final HostnameVerifier configserverVerifier;
+
+        ControllerOrConfigserverHostnameVerifier(ZoneRegistry registry) {
+            this.configserverVerifier = createConfigserverVerifier(registry);
+        }
+
+        private static HostnameVerifier createConfigserverVerifier(ZoneRegistry registry) {
+            Set<AthenzIdentity> configserverIdentities = registry.zones().all().zones().stream()
+                    .map(zone -> registry.getConfigServerHttpsIdentity(zone.getId()))
+                    .collect(Collectors.toSet());
+            return new AthenzIdentityVerifier(configserverIdentities);
+        }
+
+        @Override
+        public boolean verify(String hostname, SSLSession session) {
+            return controllerVerifier.verify(hostname, session) || configserverVerifier.verify(hostname, session);
+        }
+    }
 }

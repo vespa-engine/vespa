@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.controller;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -27,48 +25,46 @@ import static org.junit.Assert.assertFalse;
 public class ControllerApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/controller/responses/";
-    private static final AthenzIdentity HOSTED_VESPA_OPERATOR = AthenzUser.fromUserId("johnoperator");
 
     private ContainerControllerTester tester;
 
     @Before
     public void before() {
-        addUserToHostedOperatorRole(HOSTED_VESPA_OPERATOR);
         tester = new ContainerControllerTester(container, responseFiles);
     }
 
     @Test
     public void testControllerApi() {
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", new byte[0], Request.Method.GET), new File("root.json"));
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/", "", Request.Method.GET), new File("root.json"));
 
         // POST deactivates a maintenance job
-        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
                                             "", Request.Method.POST),
                        "{\"message\":\"Deactivated job 'DeploymentExpirer'\"}", 200);
 
         // GET a list of all maintenance jobs
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", new byte[0], Request.Method.GET),
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", "", Request.Method.GET),
                               new File("maintenance.json"));
 
         // DELETE activates maintenance job
-        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/DeploymentExpirer",
                                             "", Request.Method.DELETE),
                        "{\"message\":\"Re-activated job 'DeploymentExpirer'\"}",
                               200);
 
         // DELETE fails to activate unknown maintenance job
-        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/foo",
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/foo",
                                                     "", Request.Method.DELETE),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'foo'\"}",
                               404);
 
         // DELETE clears inactive flag for maintenance job that has been removed from the code base
         tester.controller().curator().writeInactiveJobs(Set.of("bar"));
-        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
                                                     "", Request.Method.DELETE),
                               "{\"message\":\"Re-activated job 'bar'\"}",
                               200);
-        tester.assertResponse(hostedOperatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/maintenance/inactive/bar",
                                                     "", Request.Method.DELETE),
                               "{\"error-code\":\"NOT_FOUND\",\"message\":\"No job named 'bar'\"}",
                               404);
@@ -79,55 +75,55 @@ public class ControllerApiTest extends ControllerContainerTest {
     @Test
     public void testUpgraderApi() {
         // Get current configuration
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", new byte[0], Request.Method.GET),
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", "", Request.Method.GET),
                               "{\"upgradesPerMinute\":100.0,\"confidenceOverrides\":[]}",
                               200);
 
         // Set invalid configuration
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":-1}", Request.Method.PATCH),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":-1}", Request.Method.PATCH),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Upgrades per minute must be >= 0, got -1.0\"}",
                 400);
 
         // Ignores unrecognized field
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader","{\"foo\":\"bar\"}", Request.Method.PATCH),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"foo\":\"bar\"}", Request.Method.PATCH),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No such modifiable field(s)\"}",
                 400);
 
         // Set upgrades per minute
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"upgradesPerMinute\":42.0}", Request.Method.PATCH),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
                 200);
 
         // Set target major version
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":6}", Request.Method.PATCH),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":6}", Request.Method.PATCH),
                 "{\"upgradesPerMinute\":42.0,\"targetMajorVersion\":6,\"confidenceOverrides\":[]}",
                 200);
 
         // Clear target major version
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":null}", Request.Method.PATCH),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader", "{\"targetMajorVersion\":null}", Request.Method.PATCH),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[]}",
                 200);
 
         // Override confidence
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "broken", Request.Method.POST),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "broken", Request.Method.POST),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42\":\"broken\"}]}",
                 200);
 
         // Override confidence for another version
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.43", "broken", Request.Method.POST),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.43", "broken", Request.Method.POST),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.42\":\"broken\"},{\"6.43\":\"broken\"}]}",
                 200);
 
         // Remove first override
         tester.assertResponse(
-                hostedOperatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "", Request.Method.DELETE),
+                operatorRequest("http://localhost:8080/controller/v1/jobs/upgrader/confidence/6.42", "", Request.Method.DELETE),
                 "{\"upgradesPerMinute\":42.0,\"confidenceOverrides\":[{\"6.43\":\"broken\"}]}",
                 200);
 
@@ -158,10 +154,6 @@ public class ControllerApiTest extends ControllerContainerTest {
 
         // Verify log
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/auditlog/"), new File("auditlog.json"));
-    }
-
-    private static Request hostedOperatorRequest(String uri, String body, Request.Method method) {
-        return addIdentityToRequest(new Request(uri, body, method), HOSTED_VESPA_OPERATOR);
     }
 
 }

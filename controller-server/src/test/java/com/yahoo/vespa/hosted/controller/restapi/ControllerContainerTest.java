@@ -34,12 +34,16 @@ import static org.junit.Assert.assertEquals;
  */
 public class ControllerContainerTest {
 
+    private static final AthenzUser hostedOperator = AthenzUser.fromUserId("alice");
     private static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
 
     protected JDisc container;
 
     @Before
-    public void startContainer() { container = JDisc.fromServicesXml(controllerServicesXml(), Networking.disable); }
+    public void startContainer() {
+        container = JDisc.fromServicesXml(controllerServicesXml(), Networking.disable);
+        addUserToHostedOperatorRole(hostedOperator);
+    }
 
     @After
     public void stopContainer() { container.close(); }
@@ -91,6 +95,12 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v2.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v2</binding>\n" +
                "    <binding>http://*/zone/v2/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.configserver.ConfigServerApiHandler'>\n" +
+               "    <binding>http://*/configserver/v1</binding>\n" +
+               "    <binding>http://*/configserver/v1/*</binding>\n" +
+               "    <binding>http://*/api/configserver/v1</binding>\n" +
+               "    <binding>http://*/api/configserver/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>\n" +
                "    <binding>http://*/flags/v1</binding>\n" +
@@ -147,8 +157,16 @@ public class ControllerContainerTest {
         return addIdentityToRequest(new Request(uri), defaultUser);
     }
 
-    protected static Request authenticatedRequest(String uri, byte[] body, Request.Method method) {
+    protected static Request authenticatedRequest(String uri, String body, Request.Method method) {
         return addIdentityToRequest(new Request(uri, body, method), defaultUser);
+    }
+
+    protected static Request operatorRequest(String uri) {
+        return addIdentityToRequest(new Request(uri), hostedOperator);
+    }
+
+    protected static Request operatorRequest(String uri, String body, Request.Method method) {
+        return addIdentityToRequest(new Request(uri, body, method), hostedOperator);
     }
 
     protected static Request addIdentityToRequest(Request request, AthenzIdentity identity) {
