@@ -6,61 +6,50 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author hakonhall
+ * @author hakon
  */
 public class SnippetGeneratorTest {
     private final SnippetGenerator generator = new SnippetGenerator();
 
-    private void assertSnippet(String text, int maxLength, String expectedSnippet) {
-        assertEquals(expectedSnippet, generator.makeSnippet(text, maxLength));
+    private void assertSnippet(String text, int sizeHint, String expectedSnippet) {
+        assertEquals(expectedSnippet, generator.makeSnippet(text, sizeHint));
     }
 
     @Test
-    public void prefixSnippetForReallySmallMaxLength() {
+    public void prefixSnippetForReallySmallSizeHint() {
         assertSnippet(
                 "This is a long text that should be snippeted", 0,
-                "");
+                "[...44 chars omitted]");
 
         assertSnippet(
                 "This is a long text that should be snippeted", 1,
-                "T");
-
-        assertSnippet(
-                "This is a long text that should be snippeted", 10,
-                "This is a ");
-
-        assertSnippet(
-                "This is a long text that should be snippeted", 20,
-                "This is a long text ");
+                "[...44 chars omitted]");
     }
 
     @Test
     public void snippet() {
         assertSnippet(
-                "This is a long text that should be snippeted", 21,
+                "This is a long text that should be snippeted", 23,
                 "[...44 chars omitted]");
 
         assertSnippet(
-                "This is a long text that should be snippeted", 22,
+                "This is a long text that should be snippeted", 24,
                 "T[...43 chars omitted]");
 
         assertSnippet(
                 "This is a long text that should be snippeted", 30,
-                "This [...35 chars omitted]eted");
+                "This[...37 chars omitted]ted");
 
-        assertSnippet(
-                "This is a long text that should be snippeted", 31,
-                "This [...34 chars omitted]peted");
-
-        assertSnippet(
-                "This is a long text that should be snippeted", 43,
-                "This is a l[...22 chars omitted]e snippeted");
     }
 
     @Test
     public void noShorteningNeeded() {
         assertSnippet(
-                "This is a long text that should be snippeted", 44,
+                "This is a long text that should be snippeted", 39,
+                "This is [...28 chars omitted]nippeted");
+
+        assertSnippet(
+                "This is a long text that should be snippeted", 40,
                 "This is a long text that should be snippeted");
 
         assertSnippet(
