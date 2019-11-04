@@ -112,6 +112,7 @@ public class ApplicationMojo extends AbstractMojo {
             for (File bundle : bundles) {
                 try {
                     copyFile(bundle, new File(componentsDir, bundle.getName()));
+                    getLog().info("Copying bundle to application: " + bundle.getName());
                 } catch (IOException e) {
                     throw new MojoExecutionException("Failed copying bundle " + bundle, e);
                 }
