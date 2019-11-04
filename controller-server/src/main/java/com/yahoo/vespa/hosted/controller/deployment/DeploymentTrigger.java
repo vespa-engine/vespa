@@ -565,13 +565,13 @@ public class DeploymentTrigger {
                 : steps.productionJobs();
 
         Change change = application.change();
-        if (application.instances().values().stream().allMatch(instance ->
-            jobs.stream().allMatch(job -> isComplete(application.change().withoutApplication(), application.change(), instance, job))))
+        for (Instance instance : application.instances().values()) {
+            if (jobs.stream().allMatch(job -> isComplete(application.change().withoutApplication(), application.change(), instance, job)))
                 change = change.withoutPlatform();
 
-        if (application.instances().values().stream().allMatch(instance ->
-            jobs.stream().allMatch(job -> isComplete(application.change().withoutPlatform(), application.change(), instance, job))))
+            if (jobs.stream().allMatch(job -> isComplete(application.change().withoutPlatform(), application.change(), instance, job)))
                 change = change.withoutApplication();
+        }
 
         return change;
     }
