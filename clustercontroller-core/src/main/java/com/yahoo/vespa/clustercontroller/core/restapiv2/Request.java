@@ -61,12 +61,21 @@ public abstract class Request<Result> extends RemoteClusterControllerTask {
         }
     }
 
+    private static String failureStringWithPossibleMessage(String prefix, String message) {
+        if (message != null && !message.isEmpty()) {
+            return String.format("%s: %s", prefix, message);
+        }
+        return prefix;
+    }
+
     @Override
-    public void handleFailure(FailureCondition condition) {
-        if (condition == FailureCondition.LEADERSHIP_LOST) {
-            failure = new UnknownMasterException("Leadership lost before request could complete");
-        } else if (condition == FailureCondition.DEADLINE_EXCEEDED) {
-            failure = new DeadlineExceededException("Task exceeded its version wait deadline");
+    public void handleFailure(Failure failure) {
+        if (failure.getCondition() == FailureCondition.LEADERSHIP_LOST) {
+            this.failure = new UnknownMasterException(failureStringWithPossibleMessage(
+                    "Leadership lost before request could complete", failure.getMessage()));
+        } else if (failure.getCondition() == FailureCondition.DEADLINE_EXCEEDED) {
+            this.failure = new DeadlineExceededException(failureStringWithPossibleMessage(
+                    "Task exceeded its version wait deadline", failure.getMessage()));
         }
     }
 

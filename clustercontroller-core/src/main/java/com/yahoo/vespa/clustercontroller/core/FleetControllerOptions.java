@@ -126,6 +126,8 @@ public class FleetControllerOptions implements Cloneable {
     // TODO: Choose a default value
     public double minMergeCompletionRatio = 1.0;
 
+    public int maxDivergentNodesPrintedInTaskErrorMessages = 10;
+
     // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
     public FleetControllerOptions(String clusterName) {
         this.clusterName = clusterName;
