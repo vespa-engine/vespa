@@ -343,9 +343,7 @@ public class JobController {
                         controller.applications().applicationStore().put(instance.id().tenant(), instance.id().application(), appVersion, content);
                     });
         }
-        // Make sure any ongoing upgrade is cancelled, since future jobs will require the tester artifact.
-        return application.withChange(application.get().change().withoutPlatform().withoutApplication())
-                          .withBuiltInternally(true);
+        return application.withBuiltInternally(true);
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
