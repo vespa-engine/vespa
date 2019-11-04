@@ -5,7 +5,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -14,7 +13,6 @@ import java.util.List;
  * {@link BundleInstaller} since that provides common convenience methods.
  *
  * @author Simon Thoresen Hult
- * @author gjoranv
  */
 public interface OsgiFramework {
 
@@ -60,8 +58,6 @@ public interface OsgiFramework {
     /**
      * Synchronously refresh all bundles currently loaded. Once this method returns, the
      * class loaders of all bundles will reflect on the current set of loaded bundles.
-     *
-     * NOTE: This method is no longer used by the Jdisc container framework, but kept for completeness.
      */
     void refreshPackages();
 
@@ -83,20 +79,6 @@ public interface OsgiFramework {
      * @return an iterable collection of Bundle objects, one object per installed bundle
      */
     List<Bundle> bundles();
-
-    /**
-     * Returns all installed bundles that are visible to the requesting bundle. Bundle visibility
-     * is controlled via implementations of {@link org.osgi.framework.hooks.bundle.FindHook};
-     */
-    List<Bundle> getBundles(Bundle requestingBundle);
-
-    /**
-     * Allows this framework to install duplicates of the given collection of bundles. Duplicate detection
-     * is handled by the {@link com.yahoo.jdisc.core.BundleCollisionHook}.
-     *
-     * @param bundles The bundles to allow duplicates of
-     */
-    void allowDuplicateBundles(Collection<Bundle> bundles);
 
     /**
      * This method starts the framework instance. Before this method is called, any call to {@link

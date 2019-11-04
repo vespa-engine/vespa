@@ -6,7 +6,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleException;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -49,16 +48,6 @@ public final class DisableOsgiFramework implements OsgiFramework {
 
     @Override
     public List<Bundle> bundles() {
-        throw newException();
-    }
-
-    @Override
-    public List<Bundle> getBundles(Bundle requestingBundle) {
-        throw newException();
-    }
-
-    @Override
-    public void allowDuplicateBundles(Collection<Bundle> bundles) {
         throw newException();
     }
 

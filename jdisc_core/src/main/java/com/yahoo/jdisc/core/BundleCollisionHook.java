@@ -15,7 +15,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * A bundle {@link CollisionHook} that contains a set of bundles that are allowed to collide with
@@ -27,7 +26,6 @@ import java.util.logging.Logger;
  * @author gjoranv
  */
 public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
-    private static Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
 
     private ServiceRegistration<?> registration;
     private Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
@@ -107,7 +105,6 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
                 }
             }
         }
-        log.info("Hiding bundles from bundle '" + context.getBundle() + "': " + bundlesToHide);
         bundles.removeAll(bundlesToHide);
     }
 

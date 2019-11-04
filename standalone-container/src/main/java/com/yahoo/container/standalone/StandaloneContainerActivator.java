@@ -24,7 +24,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
@@ -141,14 +140,6 @@ public class StandaloneContainerActivator implements BundleActivator {
         public List<Bundle> bundles() {
             return Collections.emptyList();
         }
-
-        @Override
-        public List<Bundle> getBundles(Bundle requestingBundle) {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public void allowDuplicateBundles(Collection<Bundle> bundles) { }
 
         @Override
         public void start() {

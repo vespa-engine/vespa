@@ -14,8 +14,6 @@ import com.yahoo.container.di.componentgraph.core.Node;
 import com.yahoo.container.di.config.RestApiContext;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleException;
 
 import java.util.Collection;
 import java.util.concurrent.ExecutionException;
@@ -285,16 +283,13 @@ public class ContainerTest extends ContainerTestBase {
     public void providers_are_destructed() {
         writeBootstrapConfigs("id1", DestructableProvider.class);
 
-        ComponentDeconstructor deconstructor = (components, bundles) -> {
-            components.forEach(component -> {
-                if (component instanceof AbstractComponent) {
-                    ((AbstractComponent) component).deconstruct();
-                } else if (component instanceof Provider) {
-                    ((Provider<?>) component).deconstruct();
-                }
-            });
-            if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
-        };
+        ComponentDeconstructor deconstructor = components -> components.forEach(component -> {
+            if (component instanceof AbstractComponent) {
+                ((AbstractComponent) component).deconstruct();
+            } else if (component instanceof Provider) {
+                ((Provider<?>) component).deconstruct();
+            }
+        });
 
         Container container = newContainer(dirConfigSource, deconstructor);
 
@@ -378,14 +373,13 @@ public class ContainerTest extends ContainerTestBase {
 
     public static class TestDeconstructor implements ComponentDeconstructor {
         @Override
-        public void deconstruct(Collection<Object> components, Collection<Bundle> bundles) {
+        public void deconstruct(Collection<Object> components) {
             components.forEach(component -> {
                 if (component instanceof DestructableComponent) {
                     DestructableComponent vespaComponent = (DestructableComponent) component;
                     vespaComponent.deconstruct();
                 }
             });
-            if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
         }
     }
 

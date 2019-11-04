@@ -5,6 +5,7 @@ import com.google.inject.Guice;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.FileReference;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.di.CloudSubscriberFactory;
 import com.yahoo.container.di.ContainerTest.ComponentTakingConfig;
 import com.yahoo.container.di.componentgraph.core.ComponentGraph;
 import com.yahoo.container.di.osgi.BundleClasses;
@@ -14,8 +15,6 @@ import org.osgi.framework.Bundle;
 
 import java.util.Collection;
 import java.util.Set;
-
-import static java.util.Collections.emptySet;
 
 /**
  * @author Tony Vaagenes
@@ -61,8 +60,7 @@ public class ContainerTestBase {
                         }
 
                         @Override
-                        public Set<Bundle> useBundles(Collection<FileReference> bundles) {
-                            return emptySet();
+                        public void useBundles(Collection<FileReference> bundles) {
                         }
 
                         @Override

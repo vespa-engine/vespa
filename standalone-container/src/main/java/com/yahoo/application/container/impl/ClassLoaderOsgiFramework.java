@@ -63,7 +63,7 @@ public final class ClassLoaderOsgiFramework implements OsgiFramework {
 
     @Override
     public List<Bundle> installBundle(String bundleLocation) {
-        if (bundleLocation != null && ! bundleLocation.isEmpty()) {
+        if (bundleLocation != null && bundleLocation.isEmpty() == false) {
             try {
                 URL url = new URL(bundleLocation);
                 bundleLocations.add(url);
@@ -104,14 +104,6 @@ public final class ClassLoaderOsgiFramework implements OsgiFramework {
     public List<Bundle> bundles() {
         return bundleList;
     }
-
-    @Override
-    public List<Bundle> getBundles(Bundle requestingBundle) {
-        return bundleList;
-    }
-
-    @Override
-    public void allowDuplicateBundles(Collection<Bundle> bundles) { }
 
     @Override
     public void start() {
