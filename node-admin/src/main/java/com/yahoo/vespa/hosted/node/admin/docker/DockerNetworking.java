@@ -7,11 +7,15 @@ package com.yahoo.vespa.hosted.node.admin.docker;// Copyright 2018 Yahoo Holding
  * @author hakon
  */
 public enum DockerNetworking {
+
     /** Network Prefix-Translated networking. */
     NPT("vespa-bridge"),
 
     /** A host running a single container in the host network namespace. */
-    HOST_NETWORK("host");
+    HOST_NETWORK("host"),
+
+    /** A host running multiple containers in a shared local network. */
+    LOCAL("vespa-bridge");
 
     private final String dockerNetworkMode;
     DockerNetworking(String dockerNetworkMode) {
@@ -21,4 +25,5 @@ public enum DockerNetworking {
     public String getDockerNetworkMode() {
         return dockerNetworkMode;
     }
+
 }
