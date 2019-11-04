@@ -7,6 +7,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -268,7 +269,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
                                        ATHENZ_TENANT_DOMAIN,
-                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value())); // (Necessary but not provided in this API)
+                                       id.application());
 
         // Pipeline notifies about completed component job
         controllerTester.jobCompletion(JobType.component)
@@ -354,7 +355,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         long screwdriverProjectId2 = 456;
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
                                        ATHENZ_TENANT_DOMAIN_2,
-                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(app2.application().value()));
+                                       app2.application());
 
         // Trigger upgrade and then application change
         controllerTester.controller().applications().deploymentTrigger().triggerChange(TenantAndApplicationId.from(app2), Change.of(Version.fromString("7.0")));
@@ -974,7 +975,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Grant deploy access
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
                                        ATHENZ_TENANT_DOMAIN,
-                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
+                                       ApplicationName.from("application1"));
 
         // POST (deploy) an application to a prod zone - allowed when project ID is not specified
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
@@ -1444,7 +1445,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
         ScrewdriverId screwdriverId = new ScrewdriverId(Long.toString(screwdriverProjectId));
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
+        addScrewdriverUserToDeployRole(screwdriverId, ATHENZ_TENANT_DOMAIN, application.id().application());
 
         controllerTester.jobCompletion(JobType.component)
                         .application(application)
@@ -1475,7 +1476,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
+        tester.authorize(ATHENZ_TENANT_DOMAIN, HostedAthenzIdentities.from(screwdriverId),
+                         ApplicationAction.deploy, application.id().application());
 
         // Allow systemtest to succeed by notifying completion of component
         controllerTester.jobCompletion(JobType.component)
@@ -1572,7 +1574,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), false);
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
+        tester.authorize(ATHENZ_TENANT_DOMAIN, HostedAthenzIdentities.from(screwdriverId),
+                         ApplicationAction.deploy, application.id().application());
 
         // Allow systemtest to succeed by notifying completion of system test
         controllerTester.jobCompletion(JobType.component)
@@ -1609,7 +1612,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         configureAthenzIdentity(new com.yahoo.vespa.athenz.api.AthenzService(ATHENZ_TENANT_DOMAIN, "service"), true);
 
         Application application = controllerTester.createApplication(ATHENZ_TENANT_DOMAIN.getName(), "tenant1", "application1", "default");
-        controllerTester.authorize(ATHENZ_TENANT_DOMAIN, screwdriverId, ApplicationAction.deploy, application.id());
+        tester.authorize(ATHENZ_TENANT_DOMAIN, HostedAthenzIdentities.from(screwdriverId),
+                         ApplicationAction.deploy, application.id().application());
 
         // Allow systemtest to succeed by notifying completion of component
         controllerTester.jobCompletion(JobType.component)
@@ -1841,12 +1845,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
      */
     private void addScrewdriverUserToDeployRole(ScrewdriverId screwdriverId,
                                                 AthenzDomain domain,
-                                                com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId applicationId) {
-        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) container.components()
-                .getComponent(AthenzClientFactoryMock.class.getName());
-        AthenzIdentity screwdriverIdentity = HostedAthenzIdentities.from(screwdriverId);
-        AthenzDbMock.Application athenzApplication = mock.getSetup().domains.get(domain).applications.get(applicationId);
-        athenzApplication.addRoleMember(ApplicationAction.deploy, screwdriverIdentity);
+                                                ApplicationName application) {
+        tester.authorize(domain, HostedAthenzIdentities.from(screwdriverId), ApplicationAction.deploy, application);
     }
 
     private ApplicationId createTenantAndApplication() {
@@ -1860,8 +1860,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               new File("instance-reference.json"));
-        addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN,
-                                       new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId("application1"));
+        addScrewdriverUserToDeployRole(SCREWDRIVER_ID, ATHENZ_TENANT_DOMAIN, ApplicationName.from("application1"));
 
         return ApplicationId.from("tenant1", "application1", "instance1");
     }
