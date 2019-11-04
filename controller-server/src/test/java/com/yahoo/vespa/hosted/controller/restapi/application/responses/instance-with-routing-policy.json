@@ -1,15 +1,15 @@
 {
   "tenant": "tenant1",
   "application": "application1",
-  "instance": "default",
-  "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/job/",
+  "instance": "instance1",
+  "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/",
   "source": {
     "gitRepository": "repository1",
     "gitBranch": "master",
     "gitCommit": "commit1"
   },
-  "projectId": 1,
-  "deployedInternally": false,
+  "projectId": 1000,
+  "deployedInternally": true,
   "deploymentJobs": [
     {
       "type": "system-test",
@@ -19,44 +19,44 @@
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing last changes outside prod",
+        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing last changes outside prod",
+        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing last changes outside prod",
+        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
         "at": "(ignore)"
       }
     },
@@ -68,44 +68,44 @@
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform (ignore), application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform (ignore), application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform (ignore), application 1.0.42-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
         "at": "(ignore)"
       }
     },
@@ -117,7 +117,7 @@
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -128,11 +128,11 @@
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -143,11 +143,11 @@
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
-          "hash": "1.0.42-commit1",
+          "hash": "1.0.1-commit1",
           "source": {
             "gitRepository": "repository1",
             "gitBranch": "master",
@@ -168,8 +168,8 @@
     {
       "environment": "prod",
       "region": "us-west-1",
-      "instance": "default",
-      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/default/environment/prod/region/us-west-1"
+      "instance": "instance1",
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-west-1"
     }
   ],
   "pemDeployKeys": [],

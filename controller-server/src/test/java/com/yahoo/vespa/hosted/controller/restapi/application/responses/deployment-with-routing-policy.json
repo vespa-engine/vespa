@@ -1,29 +1,25 @@
 {
   "tenant": "tenant1",
   "application": "application1",
-  "instance": "default",
+  "instance": "instance1",
   "environment": "prod",
   "region": "us-west-1",
   "endpoints": [
     {
       "cluster": "default",
       "tls": true,
-      "url": "https://application1.tenant1.us-west-1.vespa.oath.cloud/"
+      "url": "https://instance1.application1.tenant1.us-west-1.vespa.oath.cloud/"
     }
   ],
   "serviceUrls": [
-    "http://old-endpoint.vespa.yahooapis.com:4080",
-    "http://qrs-endpoint.vespa.yahooapis.com:4080",
-    "http://feeding-endpoint.vespa.yahooapis.com:4080",
-    "http://global-endpoint.vespa.yahooapis.com:4080",
-    "http://alias-endpoint.vespa.yahooapis.com:4080"
+    "https://instance1--application1--tenant1.us-west-1.prod.vespa:43"
   ],
-  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.default",
-  "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1",
+  "nodes": "http://localhost:8080/zone/v2/prod/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
-  "revision": "1.0.42-commit1",
+  "revision": "1.0.1-commit1",
   "deployTimeEpochMs": "(ignore)",
-  "screwdriverId": "1",
+  "screwdriverId": "1000",
   "gitRepository": "repository1",
   "gitBranch": "master",
   "gitCommit": "commit1",

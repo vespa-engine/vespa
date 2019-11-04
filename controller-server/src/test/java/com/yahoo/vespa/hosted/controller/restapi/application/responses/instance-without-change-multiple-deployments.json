@@ -8,8 +8,8 @@
     "gitBranch": "master",
     "gitCommit": "commit1"
   },
-  "projectId": 1,
-  "deployedInternally": false,
+  "projectId": 1000,
+  "deployedInternally": true,
   "deploymentJobs": [
     {
       "type": "system-test",
@@ -26,11 +26,11 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform 6.1, application 1.0.2-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 2,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -41,11 +41,11 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform 6.1, application 1.0.2-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 2,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -56,7 +56,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-west-1 (platform 6.1, application 1.0.2-commit1)",
         "at": "(ignore)"
       }
     },
@@ -75,11 +75,11 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.1-commit1 -> 1.0.2-commit1)",
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 3,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -90,11 +90,11 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.1-commit1 -> 1.0.2-commit1)",
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 3,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -105,7 +105,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.100-commit1 -> 1.0.101-commit1)",
+        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.1-commit1 -> 1.0.2-commit1)",
         "at": "(ignore)"
       }
     },
@@ -128,7 +128,7 @@
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -143,7 +143,7 @@
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -177,7 +177,7 @@
         "at": "(ignore)"
       },
       "lastCompleted": {
-        "id": 42,
+        "id": 2,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -192,7 +192,7 @@
         "at": "(ignore)"
       },
       "lastSuccess": {
-        "id": 42,
+        "id": 2,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",

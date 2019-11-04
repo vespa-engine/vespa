@@ -3,17 +3,13 @@
   "application": "application1",
   "instance": "instance1",
   "environment": "dev",
-  "region": "us-west-1",
+  "region": "us-east-1",
   "endpoints": [],
   "serviceUrls": [
-    "http://old-endpoint.vespa.yahooapis.com:4080",
-    "http://qrs-endpoint.vespa.yahooapis.com:4080",
-    "http://feeding-endpoint.vespa.yahooapis.com:4080",
-    "http://global-endpoint.vespa.yahooapis.com:4080",
-    "http://alias-endpoint.vespa.yahooapis.com:4080"
+    "https://instance1--application1--tenant1.us-east-1.dev.vespa:43"
   ],
-  "nodes": "http://localhost:8080/zone/v2/dev/us-west-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
-  "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-west-1&application=tenant1.application1.instance1",
+  "nodes": "http://localhost:8080/zone/v2/dev/us-east-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
+  "yamasUrl": "http://monitoring-system.test/?environment=dev&region=us-east-1&application=tenant1.application1.instance1",
   "version": "(ignore)",
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
