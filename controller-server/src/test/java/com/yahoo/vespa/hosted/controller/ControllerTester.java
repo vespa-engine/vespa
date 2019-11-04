@@ -37,6 +37,8 @@ import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -73,6 +75,7 @@ public final class ControllerTester {
 
     public static final int availableRotations = 10;
 
+    private final boolean inContainer;
     private final AthenzDbMock athenzDb;
     private final ManualClock clock;
     private final ZoneRegistryMock zoneRegistry;
@@ -106,11 +109,12 @@ public final class ControllerTester {
         this(defaultRotationsConfig(), new MockCuratorDb());
     }
 
-    private ControllerTester(AthenzDbMock athenzDb,
+    private ControllerTester(AthenzDbMock athenzDb, boolean inContainer,
                              ZoneRegistryMock zoneRegistry,
                              CuratorDb curator, RotationsConfig rotationsConfig,
                              ServiceRegistryMock serviceRegistry, Controller controller) {
         this.athenzDb = athenzDb;
+        this.inContainer = inContainer;
         this.clock = serviceRegistry.clock();
         this.zoneRegistry = zoneRegistry;
         this.serviceRegistry = serviceRegistry;
@@ -130,9 +134,21 @@ public final class ControllerTester {
                              ZoneRegistryMock zoneRegistry,
                              CuratorDb curator, RotationsConfig rotationsConfig,
                              ServiceRegistryMock serviceRegistry) {
-        this(athenzDb, zoneRegistry, curator, rotationsConfig, serviceRegistry,
+        this(athenzDb, false, zoneRegistry, curator, rotationsConfig, serviceRegistry,
              createController(curator, rotationsConfig, zoneRegistry, athenzDb, serviceRegistry));
     }
+
+    /** Creates a ControllerTester built on the ContainerTester's controller. This controller can not be recreated. */
+    public ControllerTester(ContainerTester tester) {
+        this(tester.athenzClientFactory().getSetup(),
+             true,
+             tester.serviceRegistry().zoneRegistryMock(),
+             tester.controller().curator(),
+             null,
+             tester.serviceRegistry(),
+             tester.controller());
+    }
+
 
     public void configureDefaultLogHandler(Consumer<Handler> configureFunc) {
         Arrays.stream(Logger.getLogger("").getHandlers())
@@ -179,6 +195,8 @@ public final class ControllerTester {
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */
     public final void createNewController() {
+        if (inContainer)
+            throw new UnsupportedOperationException("Cannot recreate this controller");
         controller = createController(curator, rotationsConfig, zoneRegistry, athenzDb, serviceRegistry);
     }
 

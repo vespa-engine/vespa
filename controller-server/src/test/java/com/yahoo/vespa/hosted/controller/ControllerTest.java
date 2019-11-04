@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -384,7 +383,6 @@ public class ControllerTest {
         var west = ZoneId.from("prod", "us-west-1");
         var central = ZoneId.from("prod", "us-central-1");
         var east = ZoneId.from("prod", "us-east-3");
-        var buildNumber = BuildJob.defaultBuildNumber;
 
         // Application is deployed with endpoint pointing to 2/3 zones
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

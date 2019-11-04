@@ -11,9 +11,11 @@ import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import org.junit.ComparisonFailure;
@@ -56,6 +58,10 @@ public class ContainerTester {
 
     public ConfigServerMock configServer() {
         return serviceRegistry().configServerMock();
+    }
+
+    public AthenzClientFactoryMock athenzClientFactory() {
+        return (AthenzClientFactoryMock) container.components().getComponent(AthenzClientFactoryMock.class.getName());
     }
 
     public ServiceRegistryMock serviceRegistry() {

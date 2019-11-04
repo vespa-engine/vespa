@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
@@ -53,7 +52,6 @@ public class RoutingPoliciesTest {
 
     @Test
     public void maintains_global_routing_policies() {
-        long buildNumber = BuildJob.defaultBuildNumber;
         int clustersPerZone = 2;
         int numberOfDeployments = 2;
         var applicationPackage = new ApplicationPackageBuilder()
