@@ -204,7 +204,7 @@ public class DeploymentContext {
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
-                              .orElseThrow(() -> new IllegalArgumentException("No project ID set for " + applicationId));
+                              .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         lastSubmission = jobs.submit(applicationId, sourceRevision, "a@b", projectId, applicationPackage, new byte[0]);
         return this;
     }
