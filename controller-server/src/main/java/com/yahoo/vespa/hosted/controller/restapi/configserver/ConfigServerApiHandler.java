@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
 
     private static final ZoneId CONTROLLER_ZONE = ZoneId.from("prod", "controller");
-    private static final URI CONTROLLER_URI = URI.create("https://localhost:4443");
+    private static final URI CONTROLLER_URI = URI.create("https://localhost:4443/");
     private static final String OPTIONAL_PREFIX = "/api";
     private static final List<String> WHITELISTED_APIS = List.of("/flags/v1/", "/nodes/v2/", "/orchestrator/v1/");
 
