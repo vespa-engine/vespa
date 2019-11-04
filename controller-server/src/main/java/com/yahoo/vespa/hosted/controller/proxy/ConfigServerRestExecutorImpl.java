@@ -18,7 +18,6 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -225,7 +224,6 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
     private static class ControllerOrConfigserverHostnameVerifier implements HostnameVerifier {
 
-        private final HostnameVerifier controllerVerifier = new DefaultHostnameVerifier();
         private final HostnameVerifier configserverVerifier;
 
         ControllerOrConfigserverHostnameVerifier(ZoneRegistry registry) {
@@ -241,7 +239,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
 
         @Override
         public boolean verify(String hostname, SSLSession session) {
-            return controllerVerifier.verify(hostname, session) || configserverVerifier.verify(hostname, session);
+            return "localhost".equals(hostname) || configserverVerifier.verify(hostname, session);
         }
     }
 }
