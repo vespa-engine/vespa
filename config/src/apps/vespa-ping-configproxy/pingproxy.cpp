@@ -116,7 +116,12 @@ PingProxy::Main()
     if (debugging) {
         printf("connecting to '%s'\n", spec);
     }
-    initRPC(spec);
+    try {
+        initRPC(spec);
+    } catch (std::exception& ex) {
+        LOG(error, "Got exception while initializing RPC: '%s'", ex.what());
+        return 1;
+    }
 
     FRT_RPCRequest *req = _server->supervisor().AllocRPCRequest();
 
