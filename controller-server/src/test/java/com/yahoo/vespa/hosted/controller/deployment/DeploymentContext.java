@@ -119,9 +119,7 @@ public class DeploymentContext {
         try {
             var tenant = tester.createTenant(instanceId.tenant().value());
             tester.createApplication(tenant, instanceId.application().value(), instanceId.instance().value());
-        } catch (IllegalArgumentException ignored) {
-            // TODO(mpolden): Application already exists. Remove this once InternalDeploymentTester stops implicitly creating applications
-        }
+        } catch (IllegalArgumentException ignored) { } // Tenant and or application may already exist with custom setup.
     }
 
     public Application application() {
