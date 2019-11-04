@@ -88,23 +88,23 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
         int effectiveGroups;
         NodeSpec requestedNodes;
+        Optional<NodeResources> resources = requestedCapacity.nodeResources();
         if ( requestedCapacity.type() == NodeType.tenant) {
             int nodeCount = application.instance().isTester() ? 1 : capacityPolicies.decideSize(requestedCapacity, cluster.type());
             if (zone.environment().isManuallyDeployed() && nodeCount < requestedCapacity.nodeCount())
                 logger.log(Level.INFO, "Requested " + requestedCapacity.nodeCount() + " nodes for " + cluster +
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
-            NodeResources resources = capacityPolicies.decideNodeResources(requestedCapacity.nodeResources(), cluster);
+            resources = Optional.of(capacityPolicies.decideNodeResources(requestedCapacity.nodeResources(), cluster));
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
             effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
-            requestedNodes = NodeSpec.from(nodeCount, resources, exclusive, requestedCapacity.canFail());
+            requestedNodes = NodeSpec.from(nodeCount, resources.get(), exclusive, requestedCapacity.canFail());
         }
         else {
             requestedNodes = NodeSpec.from(requestedCapacity.type());
             effectiveGroups = 1; // type request with multiple groups is not supported
         }
 
-        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups),
-                             requestedCapacity.nodeResources());
+        return asSortedHosts(preparer.prepare(application, cluster, requestedNodes, effectiveGroups), resources);
     }
 
     @Override
