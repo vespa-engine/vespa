@@ -36,7 +36,11 @@ public class ApplicationStoreMock implements ApplicationStore {
 
     @Override
     public byte[] get(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion) {
-        return requireNonNull(store.get(appId(tenant, application)).get(applicationVersion));
+        byte[] bytes = store.get(appId(tenant, application)).get(applicationVersion);
+        if (bytes == null)
+            throw new IllegalArgumentException("No application package found for " + tenant + "." + application +
+                                               " with version " + applicationVersion.id());
+        return bytes;
     }
 
     @Override
