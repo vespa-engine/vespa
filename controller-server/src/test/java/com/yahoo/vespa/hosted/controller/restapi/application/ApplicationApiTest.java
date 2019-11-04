@@ -64,7 +64,6 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.RotationStatusUpdater;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
@@ -98,9 +97,7 @@ import static com.yahoo.application.container.handler.Request.Method.POST;
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -146,24 +143,20 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private static final UserId HOSTED_VESPA_OPERATOR = new UserId("johnoperator");
     private static final OktaIdentityToken OKTA_IT = new OktaIdentityToken("okta-it");
     private static final OktaAccessToken OKTA_AT = new OktaAccessToken("okta-at");
-    private static final ZoneId TEST_ZONE = ZoneId.from(Environment.test, RegionName.from("us-east-1"));
-    private static final ZoneId STAGING_ZONE = ZoneId.from(Environment.staging, RegionName.from("us-east-3"));
 
 
-    private ContainerControllerTester controllerTester;
     private ContainerTester tester;
     private DeploymentTester deploymentTester;
 
     @Before
     public void before() {
-        controllerTester = new ContainerControllerTester(container, responseFiles);
-        tester = controllerTester.containerTester();
+        tester = new ContainerTester(container, responseFiles);
         deploymentTester = new DeploymentTester(new ControllerTester(tester));
+        deploymentTester.controllerTester().computeVersionStatus();
     }
 
     @Test
     public void testApplicationApi() {
-        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID); // (Necessary but not provided in this API)
 
         // GET API root
@@ -754,7 +747,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testRotationOverride() {
         // Setup
-        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
@@ -813,7 +805,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void multiple_endpoints() {
         // Setup
-        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
@@ -860,7 +851,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testDeployDirectly() {
         // Setup
-        tester.computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
 
@@ -895,7 +885,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Deployment of system applications during a system upgrade is not allowed\"}",
                               400);
-        tester.upgradeSystem(tester.controller().versionStatus().controllerVersion().get().versionNumber());
+        deploymentTester.controllerTester().upgradeSystem(deploymentTester.controller().versionStatus().controllerVersion().get().versionNumber());
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
                         .data(noAppEntity)
                         .userIdentity(HOSTED_VESPA_OPERATOR),
@@ -910,8 +900,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testSortsDeploymentsAndJobs() {
-        tester.computeVersionStatus();
-
         // Deploy
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
@@ -1003,7 +991,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testErrorResponses() throws Exception {
-        deploymentTester.controllerTester().computeVersionStatus();
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
 
         // PUT (update) non-existing tenant returns 403 as tenant access cannot be determined when the tenant does not exist
@@ -1408,7 +1395,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testJobStatusReporting() {
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
-        tester.computeVersionStatus();
         var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
 
         Version vespaVersion = tester.configServer().initialVersion(); // system version from mock config server client
@@ -1557,8 +1543,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
      * This sets these values as if the maintainers has been ran.
      */
     private void setDeploymentMaintainedInfo() {
-        for (Application application : controllerTester.controller().applications().asList()) {
-            controllerTester.controller().applications().lockApplicationOrThrow(application.id(), lockedApplication -> {
+        for (Application application : deploymentTester.applications().asList()) {
+            deploymentTester.applications().lockApplicationOrThrow(application.id(), lockedApplication -> {
                 lockedApplication = lockedApplication.with(new ApplicationMetrics(0.5, 0.7));
 
                 for (Instance instance : application.instances().values()) {
@@ -1578,7 +1564,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                                                                                    .with(deployment.zone(), metrics)
                                                                                                    .recordActivityAt(Instant.parse("2018-06-01T10:15:30.00Z"), deployment.zone()));
                     }
-                    controllerTester.controller().applications().store(lockedApplication);
+                    deploymentTester.applications().store(lockedApplication);
                 }
             });
         }

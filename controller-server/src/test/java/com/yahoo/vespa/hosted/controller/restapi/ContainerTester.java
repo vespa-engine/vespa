@@ -73,22 +73,6 @@ public class ContainerTester {
         return (ServiceRegistryMock) container.components().getComponent(ServiceRegistryMock.class.getName());
     }
 
-    public void computeVersionStatus() {
-        controller().updateVersionStatus(VersionStatus.compute(controller()));
-    }
-
-    public void upgradeSystem(Version version) {
-        var controllerVersion = new ControllerVersion(version, "badc0ffee", Instant.EPOCH);
-        controller().curator().writeControllerVersion(controller().hostname(), controllerVersion);
-        for (ZoneApi zone : controller().zoneRegistry().zones().all().zones()) {
-            for (SystemApplication application : SystemApplication.all()) {
-                configServer().setVersion(application.id(), zone.getId(), controllerVersion.version());
-                configServer().convergeServices(application.id(), zone.getId());
-            }
-        }
-        computeVersionStatus();
-    }
-
     public void authorize(AthenzDomain tenantDomain, AthenzIdentity identity, ApplicationAction action, ApplicationName application) {
         athenzClientFactory().getSetup()
                 .domains.get(tenantDomain)
@@ -144,6 +128,10 @@ public class ContainerTester {
 
     public void assertResponse(Request request, String expectedResponse) {
         assertResponse(() -> request, expectedResponse, 200);
+    }
+
+    public void assertResponse(Request request, String expectedResponse, int expectedStatusCode) {
+        assertResponse(() -> request, expectedResponse, expectedStatusCode);
     }
 
     public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {

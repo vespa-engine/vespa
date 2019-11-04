@@ -8,8 +8,7 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,13 +26,13 @@ public class CostApiTest extends ControllerContainerTest {
     private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1).build();
     private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2).build();
 
-    private ContainerControllerTester tester;
+    private ContainerTester tester;
 
     @Before
     public void before() {
-        tester = new ContainerControllerTester(container, responses);
-        zoneRegistryMock().setSystemName(SystemName.cd)
-                .setZones(zone1, zone2, zone3);
+        tester = new ContainerTester(container, responses);
+        tester.serviceRegistry().zoneRegistry().setSystemName(SystemName.cd)
+              .setZones(zone1, zone2, zone3);
     }
 
     @Test
@@ -42,13 +41,9 @@ public class CostApiTest extends ControllerContainerTest {
                 "Date,Property,Reserved Cpu Cores,Reserved Memory GB,Reserved Disk Space GB,Usage Fraction\n", 200);
     }
 
-    private ZoneRegistryMock zoneRegistryMock() {
-        return (ZoneRegistryMock) tester.containerTester().container().components()
-                .getComponent(ZoneRegistryMock.class.getName());
-    }
-
     private void assertResponse(Request request, String body, int statusCode) {
         addIdentityToRequest(request, operator);
         tester.assertResponse(request, body, statusCode);
     }
+
 }

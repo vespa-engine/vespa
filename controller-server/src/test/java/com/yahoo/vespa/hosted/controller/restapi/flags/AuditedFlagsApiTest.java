@@ -5,7 +5,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,12 +20,12 @@ public class AuditedFlagsApiTest extends ControllerContainerTest {
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/flags/responses/";
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
 
-    private ContainerControllerTester tester;
+    private ContainerTester tester;
 
     @Before
     public void before() {
         addUserToHostedOperatorRole(operator);
-        tester = new ContainerControllerTester(container, responses);
+        tester = new ContainerTester(container, responses);
     }
 
     @Test

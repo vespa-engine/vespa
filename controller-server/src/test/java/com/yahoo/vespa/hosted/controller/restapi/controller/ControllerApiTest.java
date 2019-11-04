@@ -5,7 +5,7 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,11 +26,11 @@ public class ControllerApiTest extends ControllerContainerTest {
 
     private static final String responseFiles = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/controller/responses/";
 
-    private ContainerControllerTester tester;
+    private ContainerTester tester;
 
     @Before
     public void before() {
-        tester = new ContainerControllerTester(container, responseFiles);
+        tester = new ContainerTester(container, responseFiles);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class ControllerApiTest extends ControllerContainerTest {
     public void testUpgraderApi() {
         // Get current configuration
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/jobs/upgrader", "", Request.Method.GET),
-                              "{\"upgradesPerMinute\":100.0,\"confidenceOverrides\":[]}",
+                              "{\"upgradesPerMinute\":0.125,\"confidenceOverrides\":[]}",
                               200);
 
         // Set invalid configuration

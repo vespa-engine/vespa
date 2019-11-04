@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.athenz;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Test;
@@ -19,7 +18,7 @@ public class AthenzApiTest extends ControllerContainerTest {
 
     @Test
     public void testAthenzApi() {
-        ContainerTester tester = new ContainerControllerTester(container, responseFiles).containerTester();
+        ContainerTester tester = new ContainerTester(container, responseFiles);
         ((AthenzClientFactoryMock) tester.container().components().getComponent(AthenzClientFactoryMock.class.getName()))
                 .getSetup().addDomain(new AthenzDbMock.Domain(new AthenzDomain("domain1")));
 
