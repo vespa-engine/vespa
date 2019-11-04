@@ -12,6 +12,7 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
@@ -36,10 +37,10 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
     private final ZoneRegistry zoneRegistry;
     private final ConfigServerRestExecutor proxy;
 
-    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ZoneRegistry zoneRegistry,
+    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry,
                           ConfigServerRestExecutor proxy, Controller controller) {
         super(parentCtx, controller.auditLogger());
-        this.zoneRegistry = zoneRegistry;
+        this.zoneRegistry = serviceRegistry.zoneRegistry();
         this.proxy = proxy;
     }
 
@@ -121,4 +122,5 @@ public class ZoneApiHandler extends AuditLoggingRequestHandler {
             return zoneRegistry.getConfigServerUris(zoneId);
         }
     }
+
 }

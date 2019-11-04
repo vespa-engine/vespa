@@ -37,7 +37,6 @@ import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
@@ -78,7 +77,6 @@ public final class ControllerTester {
     private final boolean inContainer;
     private final AthenzDbMock athenzDb;
     private final ManualClock clock;
-    private final ZoneRegistryMock zoneRegistry;
     private final ServiceRegistryMock serviceRegistry;
     private final CuratorDb curator;
     private final RotationsConfig rotationsConfig;
@@ -91,7 +89,6 @@ public final class ControllerTester {
 
     public ControllerTester(RotationsConfig rotationsConfig, MockCuratorDb curatorDb) {
         this(new AthenzDbMock(),
-             new ZoneRegistryMock(),
              curatorDb,
              rotationsConfig,
              new ServiceRegistryMock());
@@ -110,13 +107,11 @@ public final class ControllerTester {
     }
 
     private ControllerTester(AthenzDbMock athenzDb, boolean inContainer,
-                             ZoneRegistryMock zoneRegistry,
                              CuratorDb curator, RotationsConfig rotationsConfig,
                              ServiceRegistryMock serviceRegistry, Controller controller) {
         this.athenzDb = athenzDb;
         this.inContainer = inContainer;
         this.clock = serviceRegistry.clock();
-        this.zoneRegistry = zoneRegistry;
         this.serviceRegistry = serviceRegistry;
         this.curator = curator;
         this.rotationsConfig = rotationsConfig;
@@ -131,18 +126,16 @@ public final class ControllerTester {
     }
 
     private ControllerTester(AthenzDbMock athenzDb,
-                             ZoneRegistryMock zoneRegistry,
                              CuratorDb curator, RotationsConfig rotationsConfig,
                              ServiceRegistryMock serviceRegistry) {
-        this(athenzDb, false, zoneRegistry, curator, rotationsConfig, serviceRegistry,
-             createController(curator, rotationsConfig, zoneRegistry, athenzDb, serviceRegistry));
+        this(athenzDb, false, curator, rotationsConfig, serviceRegistry,
+             createController(curator, rotationsConfig, athenzDb, serviceRegistry));
     }
 
     /** Creates a ControllerTester built on the ContainerTester's controller. This controller can not be recreated. */
     public ControllerTester(ContainerTester tester) {
         this(tester.athenzClientFactory().getSetup(),
              true,
-             tester.serviceRegistry().zoneRegistryMock(),
              tester.controller().curator(),
              null,
              tester.serviceRegistry(),
@@ -174,7 +167,7 @@ public final class ControllerTester {
 
     public MemoryNameService nameService() { return serviceRegistry.nameServiceMock(); }
 
-    public ZoneRegistryMock zoneRegistry() { return zoneRegistry; }
+    public ZoneRegistryMock zoneRegistry() { return serviceRegistry.zoneRegistry(); }
 
     public ConfigServerMock configServer() { return serviceRegistry.configServerMock(); }
 
@@ -197,7 +190,7 @@ public final class ControllerTester {
     public final void createNewController() {
         if (inContainer)
             throw new UnsupportedOperationException("Cannot recreate this controller");
-        controller = createController(curator, rotationsConfig, zoneRegistry, athenzDb, serviceRegistry);
+        controller = createController(curator, rotationsConfig, athenzDb, serviceRegistry);
     }
 
     /** Creates the given tenant and application and deploys it */
@@ -371,12 +364,10 @@ public final class ControllerTester {
     }
 
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
-                                               ZoneRegistryMock zoneRegistryMock,
                                                AthenzDbMock athensDb,
                                                ServiceRegistryMock serviceRegistry) {
         Controller controller = new Controller(curator,
                                                rotationsConfig,
-                                               zoneRegistryMock,
                                                new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                () -> "test-controller",
                                                new InMemoryFlagSource(),
