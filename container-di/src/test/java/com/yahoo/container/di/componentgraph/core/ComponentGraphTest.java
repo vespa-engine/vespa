@@ -116,6 +116,16 @@ public class ComponentGraphTest {
     }
 
     @Test
+    public void private_class_with_public_ctor_can_be_instantiated() {
+        ComponentGraph componentGraph = new ComponentGraph();
+        componentGraph.add(mockComponentNode(PrivateClassComponent.class));
+        componentGraph.complete();
+
+        PrivateClassComponent instance = componentGraph.getInstance(PrivateClassComponent.class);
+        assertNotNull(instance);
+    }
+
+    @Test
     public void all_components_of_a_type_can_be_injected() {
         ComponentGraph componentGraph = new ComponentGraph();
         componentGraph.add(mockComponentNode(SimpleComponent.class));
@@ -475,6 +485,10 @@ public class ComponentGraphTest {
     //Note that all Components must be defined in a static context,
     //otherwise their constructor will take the outer class as the first parameter.
     private static int counter = 0;
+
+    private class PrivateClassComponent {
+        public PrivateClassComponent() { }
+    }
 
     public static class SimpleComponent extends AbstractComponent {
     }
