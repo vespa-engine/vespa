@@ -401,7 +401,7 @@ public class VersionStatusTest {
         assertEquals(commitDate0, tester.controller().versionStatus().systemVersion().get().committedAt());
 
         // Deploy app on version0 to keep computing statistics for that version
-        tester.deploymentContext().submit().deploy();
+        tester.newDeploymentContext().submit().deploy();
 
         // Commit details are updated for new version
         var version1 = tester.controllerTester().nextVersion();

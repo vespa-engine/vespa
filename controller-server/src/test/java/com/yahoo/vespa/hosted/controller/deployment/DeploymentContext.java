@@ -57,12 +57,13 @@ import static org.junit.Assert.assertTrue;
  * A deployment context for an application. This allows fine-grained control of the deployment of an application's
  * instances.
  *
- * References to this should be acquired through {@link DeploymentTester#deploymentContext}.
+ * References to this should be acquired through {@link DeploymentTester#newDeploymentContext}.
  *
  * Tester code that is not specific to deployments should be added to either {@link ControllerTester} or
  * {@link DeploymentTester} instead of this class.
  *
  * @author mpolden
+ * @author jonmv
  */
 public class DeploymentContext {
 

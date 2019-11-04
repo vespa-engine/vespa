@@ -140,8 +140,8 @@ public class DeploymentTester {
     }
 
     /** Returns the default deployment context owned by this */
-    public DeploymentContext deploymentContext() {
-        return defaultContext;
+    public DeploymentContext newDeploymentContext() {
+        return newDeploymentContext(instanceId);
     }
 
     /** Create a new deployment context for given application */

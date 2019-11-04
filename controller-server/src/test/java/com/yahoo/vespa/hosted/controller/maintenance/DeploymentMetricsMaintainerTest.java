@@ -35,7 +35,7 @@ public class DeploymentMetricsMaintainerTest {
 
     @Test
     public void updates_metrics() {
-        var application = tester.deploymentContext();
+        var application = tester.newDeploymentContext();
         application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());

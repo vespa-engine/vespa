@@ -74,6 +74,7 @@ public class InternalStepRunnerTest {
     @Before
     public void setup() {
         tester = new DeploymentTester();
+        app = tester.newDeploymentContext();
     }
 
     private SystemName system() {

@@ -461,7 +461,7 @@ public class UpgraderTest {
                 .region("us-west-1")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // New version is released
         version = Version.fromString("6.3");
@@ -504,7 +504,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // New version is released
         version = Version.fromString("6.3");
@@ -541,7 +541,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // New version is released
         version = Version.fromString("6.3");
@@ -662,7 +662,7 @@ public class UpgraderTest {
 
         // Setup applications
         var canary0 = createAndDeploy("canary0", "canary");
-        var default0 = tester.deploymentContext().submit(version6ApplicationPackage).deploy();
+        var default0 = tester.newDeploymentContext().submit(version6ApplicationPackage).deploy();
 
         // New major version is released
         version = Version.fromString("7.0");
@@ -690,7 +690,7 @@ public class UpgraderTest {
 
         // Setup applications
         var canary0 = createAndDeploy("canary", "canary");
-        var default0 = tester.deploymentContext().submit().deploy();
+        var default0 = tester.newDeploymentContext().submit().deploy();
         tester.applications().lockApplicationOrThrow(default0.application().id(),
                                                      a -> tester.applications().store(a.withMajorVersion(6)));
         assertEquals(OptionalInt.of(6), default0.application().majorVersion());
@@ -819,7 +819,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // Application upgrade starts.
         app.submit(applicationPackage);
@@ -861,7 +861,7 @@ public class UpgraderTest {
                 .region("us-east-3")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
 
         // Application revision starts rolling out.
@@ -895,7 +895,7 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(version0);
 
         // Create an application with pinned platform version.
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         tester.deploymentTrigger().forceChange(context.application().id(), Change.empty().withPin());
 
         context.submit().deploy();
@@ -993,7 +993,7 @@ public class UpgraderTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        var application = tester.deploymentContext().submit(applicationPackage).deploy();
+        var application = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // Next version is released and 2/3 deployments upgrade
         Version v2 = Version.fromString("6.2");
