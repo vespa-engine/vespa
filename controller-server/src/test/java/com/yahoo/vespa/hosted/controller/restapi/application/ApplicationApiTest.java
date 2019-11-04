@@ -1067,7 +1067,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     @Test
     public void testMeteringResponses() {
-        MockMeteringClient mockMeteringClient = (MockMeteringClient) controllerTester.containerTester().serviceRegistry().meteringService();
+        MockMeteringClient mockMeteringClient = controllerTester.containerTester().serviceRegistry().meteringService();
 
         // Mock response for MeteringClient
         ResourceAllocation currentSnapshot = new ResourceAllocation(1, 2, 3);
@@ -1090,7 +1090,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testTenantCostResponse() {
         ApplicationId applicationId = createTenantAndApplication();
-        MockTenantCost mockTenantCost = (MockTenantCost) controllerTester.containerTester().serviceRegistry().tenantCost();
+        MockTenantCost mockTenantCost = controllerTester.containerTester().serviceRegistry().tenantCost();
 
         mockTenantCost.setMonthsWithMetering(
                 new TreeSet<>(Set.of(
