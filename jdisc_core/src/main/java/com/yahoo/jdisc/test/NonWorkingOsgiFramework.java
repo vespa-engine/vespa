@@ -5,7 +5,6 @@ import com.yahoo.jdisc.application.OsgiFramework;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -38,14 +37,6 @@ public class NonWorkingOsgiFramework implements OsgiFramework {
     public List<Bundle> bundles() {
         return Collections.emptyList();
     }
-
-    @Override
-    public List<Bundle> getBundles(Bundle requestingBundle) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public void allowDuplicateBundles(Collection<Bundle> bundles) { }
 
     @Override
     public void start() {

@@ -10,6 +10,7 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.wiring.BundleRevision;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,18 +26,11 @@ import static com.yahoo.container.core.BundleLoaderProperties.DISK_BUNDLE_PREFIX
  * Manages the set of installed 3rd-party component bundles.
  *
  * @author Tony Vaagenes
- * @author gjoranv
  */
 public class BundleLoader {
 
-    /* Map of file refs of active bundles (not scheduled for uninstall) to a list of all bundles that were installed
-     * (pre-install directive) by the bundle pointed to by the file ref (including itself).
-     *
-     * Used to:
-     * 1. Avoid installing already installed bundles. Just an optimization, installing the same bundle location is a NOP
-     * 2. Start bundles (all are started every time)
-     * 3. Calculate the set of bundles to uninstall
-     */
+    private final List<Bundle> initialBundles;
+
     private final Map<FileReference, List<Bundle>> reference2Bundles = new LinkedHashMap<>();
 
     private final Logger log = Logger.getLogger(BundleLoader.class.getName());
@@ -44,6 +38,7 @@ public class BundleLoader {
 
     public BundleLoader(Osgi osgi) {
         this.osgi = osgi;
+        initialBundles = Arrays.asList(osgi.getBundles());
     }
 
     private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer) throws InterruptedException {
@@ -51,19 +46,17 @@ public class BundleLoader {
         return osgi.install(file.getAbsolutePath());
     }
 
-    private void install(List<FileReference> references) {
+    /** Returns the number of bundles installed by this call. */
+    private int install(List<FileReference> references) {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
-
-        // This is just an optimization, as installing a bundle with the same location id returns the already installed bundle.
-        // It's ok that fileRefs pending uninstall are removed from the map, because they are never in the new set of bundles..
         bundlesToInstall.removeAll(reference2Bundles.keySet());
 
         PredicateSplit<FileReference> bundlesToInstall_isDisk = partition(bundlesToInstall, BundleLoader::isDiskBundle);
         installBundlesFromDisk(bundlesToInstall_isDisk.trueValues);
         installBundlesFromFileDistribution(bundlesToInstall_isDisk.falseValues);
 
-        // TODO: Remove. Bundles are also started in use()
         startBundles();
+        return bundlesToInstall.size();
     }
 
     private static boolean isDiskBundle(FileReference fileReference) {
@@ -104,7 +97,6 @@ public class BundleLoader {
         }
 
         List<Bundle> bundles = osgi.install(file.getAbsolutePath());
-
         reference2Bundles.put(reference, bundles);
     }
 
@@ -121,16 +113,13 @@ public class BundleLoader {
         }
     }
 
-    /**
-     * Resolves and starts (calls the Bundles BundleActivator) all bundles. Bundle resolution must take place
-     * after all bundles are installed to ensure that the framework can resolve dependencies between bundles.
-     */
+    // All bundles must have been started first to ensure correct package resolution.
     private void startBundles() {
         for (List<Bundle> bundles : reference2Bundles.values()) {
             for (Bundle bundle : bundles) {
                 try {
                     if ( ! isFragment(bundle))
-                        bundle.start();  // NOP for already ACTIVE bundles
+                        bundle.start();
                 } catch(Exception e) {
                     throw new RuntimeException("Could not start bundle '" + bundle.getSymbolicName() + "'", e);
                 }
@@ -146,44 +135,38 @@ public class BundleLoader {
         return (bundleRevision.getTypes() & BundleRevision.TYPE_FRAGMENT) != 0;
     }
 
-    /**
-     * Returns the bundles to schedule for uninstall after their components have been deconstructed
-     * and removes the same bundles from the map of active bundles.
-     */
-    private Set<Bundle> getBundlesToUninstall(List<FileReference> newReferences) {
-        Set<Bundle> bundlesToRemove = new HashSet<>(osgi.getCurrentBundles());
+    /** Returns the number of uninstalled bundles */
+    private int retainOnly(List<FileReference> newReferences) {
+        Set<Bundle> bundlesToRemove = new HashSet<>(Arrays.asList(osgi.getBundles()));
 
         for (FileReference fileReferenceToKeep: newReferences) {
             if (reference2Bundles.containsKey(fileReferenceToKeep))
                 bundlesToRemove.removeAll(reference2Bundles.get(fileReferenceToKeep));
         }
 
-        bundlesToRemove.removeAll(osgi.getInitialBundles());
-        removeInactiveFileReferences(newReferences);
+        bundlesToRemove.removeAll(initialBundles);
+        for (Bundle bundle : bundlesToRemove) {
+            log.info("Removing bundle '" + bundle.toString() + "'");
+            osgi.uninstall(bundle);
+        }
 
-        return bundlesToRemove;
-    }
-
-    private void removeInactiveFileReferences(List<FileReference> newReferences) {
-        // Clean up the map of active bundles
         Set<FileReference> fileReferencesToRemove = new HashSet<>(reference2Bundles.keySet());
         fileReferencesToRemove.removeAll(newReferences);
-        fileReferencesToRemove.forEach(reference2Bundles::remove);
+
+        for (FileReference fileReferenceToRemove : fileReferencesToRemove) {
+            reference2Bundles.remove(fileReferenceToRemove);
+        }
+        return bundlesToRemove.size();
     }
 
-    /**
-     * Installs the given set of bundles and returns the set of bundles that is no longer used
-     * by the application, and should therefore be scheduled for uninstall.
-     */
-    public synchronized Set<Bundle> use(List<FileReference> newBundles) {
-        Set<Bundle> bundlesToUninstall = getBundlesToUninstall(newBundles);
-        osgi.allowDuplicateBundles(bundlesToUninstall);
-        log.info(() -> bundlesToUninstall.isEmpty() ? "Adding bundles to allowed duplicates: " + bundlesToUninstall : "");
-        install(newBundles);
+    public synchronized int use(List<FileReference> bundles) {
+        int removedBundles = retainOnly(bundles);
+        int installedBundles = install(bundles);
         startBundles();
 
+        log.info(removedBundles + " bundles were removed, and " + installedBundles + " bundles were installed.");
         log.info(installedBundlesMessage());
-        return bundlesToUninstall;
+        return removedBundles + installedBundles;
     }
 
     private String installedBundlesMessage() {
