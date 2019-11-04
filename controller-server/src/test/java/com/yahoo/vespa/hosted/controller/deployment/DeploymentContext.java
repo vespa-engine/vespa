@@ -57,12 +57,13 @@ import static org.junit.Assert.assertTrue;
  * A deployment context for an application. This allows fine-grained control of the deployment of an application's
  * instances.
  *
- * References to this should be acquired through {@link DeploymentTester#deploymentContext}.
+ * References to this should be acquired through {@link DeploymentTester#newDeploymentContext}.
  *
  * Tester code that is not specific to deployments should be added to either {@link ControllerTester} or
  * {@link DeploymentTester} instead of this class.
  *
  * @author mpolden
+ * @author jonmv
  */
 public class DeploymentContext {
 
@@ -118,9 +119,7 @@ public class DeploymentContext {
         try {
             var tenant = tester.createTenant(instanceId.tenant().value());
             tester.createApplication(tenant, instanceId.application().value(), instanceId.instance().value());
-        } catch (IllegalArgumentException ignored) {
-            // TODO(mpolden): Application already exists. Remove this once InternalDeploymentTester stops implicitly creating applications
-        }
+        } catch (IllegalArgumentException ignored) { } // Tenant and or application may already exist with custom setup.
     }
 
     public Application application() {
@@ -138,6 +137,8 @@ public class DeploymentContext {
     public ApplicationId instanceId() {
         return instanceId;
     }
+
+    public TesterId testerId() { return testerId; }
 
     public DeploymentId deploymentIdIn(ZoneId zone) {
         return new DeploymentId(instanceId, zone);
@@ -205,7 +206,7 @@ public class DeploymentContext {
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
-                              .orElseThrow(() -> new IllegalArgumentException("No project ID set for " + applicationId));
+                              .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         lastSubmission = jobs.submit(applicationId, sourceRevision, "a@b", projectId, applicationPackage, new byte[0]);
         return this;
     }

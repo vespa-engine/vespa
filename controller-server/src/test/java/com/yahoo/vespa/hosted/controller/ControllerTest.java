@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.BuildJob;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
@@ -81,7 +80,7 @@ public class ControllerTest {
 
         // staging job - succeeding
         Version version1 = tester.configServer().initialVersion();
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         context.submit(applicationPackage);
         assertEquals("Application version is known from completion of initial job",
                      ApplicationVersion.from(DeploymentContext.defaultSourceRevision, 1, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
@@ -384,7 +383,6 @@ public class ControllerTest {
         var west = ZoneId.from("prod", "us-west-1");
         var central = ZoneId.from("prod", "us-central-1");
         var east = ZoneId.from("prod", "us-east-3");
-        var buildNumber = BuildJob.defaultBuildNumber;
 
         // Application is deployed with endpoint pointing to 2/3 zones
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -503,7 +501,7 @@ public class ControllerTest {
 
     @Test
     public void testUnassignRotations() {
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .endpoint("default", "qrs", "us-west-1", "us-central-1")
@@ -635,7 +633,7 @@ public class ControllerTest {
                 .build();
 
         // Create application
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
 
         // Direct deploy is allowed when deployDirectly is true
         ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
@@ -666,7 +664,7 @@ public class ControllerTest {
                 .build();
 
         // Create application
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         ZoneId zone = ZoneId.from("dev", "us-east-1");
 
         // Deploy
@@ -680,7 +678,7 @@ public class ControllerTest {
 
     @Test
     public void testSuspension() {
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                                                         .environment(Environment.prod)
                                                         .region("us-west-1")
@@ -704,7 +702,7 @@ public class ControllerTest {
     // second time will not fail
     @Test
     public void testDeletingApplicationThatHasAlreadyBeenDeleted() {
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-east-3")
@@ -723,12 +721,12 @@ public class ControllerTest {
                 .environment(Environment.prod)
                 .region("us-west-1")
                 .build(true);
-        tester.deploymentContext().submit(applicationPackage);
+        tester.newDeploymentContext().submit(applicationPackage);
     }
 
     @Test
     public void testDeployApplicationWithWarnings() {
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .environment(Environment.prod)
                 .region("us-west-1")
@@ -790,7 +788,7 @@ public class ControllerTest {
                 ZoneApiMock.fromId("prod.us-west-1"),
                 ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
         );
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         var applicationPackage = new ApplicationPackageBuilder()
                 .region("aws-us-east-1")
                 .region("us-west-1")

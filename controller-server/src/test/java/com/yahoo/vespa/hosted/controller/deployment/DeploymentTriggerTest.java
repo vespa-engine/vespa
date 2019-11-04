@@ -59,7 +59,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Deploy completely once
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // New version is released
         Version version = Version.fromString("6.3");
@@ -141,7 +141,7 @@ public class DeploymentTriggerTest {
 
     @Test
     public void abortsJobsOnNewApplicationChange() {
-        var app = tester.deploymentContext();
+        var app = tester.newDeploymentContext();
         app.submit()
            .runJob(systemTest)
            .runJob(stagingTest);
@@ -188,7 +188,7 @@ public class DeploymentTriggerTest {
                 .region("us-central-1")
                 .delay(Duration.ofMinutes(10)) // Delays after last region are valid, but have no effect
                 .build();
-        var app = tester.deploymentContext().submit(applicationPackage);
+        var app = tester.newDeploymentContext().submit(applicationPackage);
 
         // Test jobs pass
         app.runJob(systemTest).runJob(stagingTest);
@@ -242,7 +242,7 @@ public class DeploymentTriggerTest {
                 .region("eu-west-1")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage);
+        var app = tester.newDeploymentContext().submit(applicationPackage);
 
         // Test jobs pass
         app.runJob(systemTest).runJob(stagingTest);
@@ -279,7 +279,7 @@ public class DeploymentTriggerTest {
                                                         .region("us-central-1")
                                                         .parallel("us-west-1", "us-east-3")
                                                         .build();
-        var application = tester.deploymentContext().submit().deploy();
+        var application = tester.newDeploymentContext().submit().deploy();
 
         // The first production zone is suspended:
         tester.configServer().setSuspended(application.deploymentIdIn(ZoneId.from("prod", "us-central-1")), true);
@@ -317,7 +317,7 @@ public class DeploymentTriggerTest {
                 .region("us-east-3")
                 .build();
 
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         tester.clock().advance(Duration.ofHours(1)); // --------------- Enter block window: 18:30
 
@@ -352,7 +352,7 @@ public class DeploymentTriggerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // Application on (6.1, 1.0.1)
         Version v1 = Version.fromString("6.1");
@@ -399,7 +399,7 @@ public class DeploymentTriggerTest {
                 .region("us-west-1")
                 .region("us-east-3")
                 .build();
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
         tester.controllerTester().upgradeSystem(new Version("9.8.7"));
         tester.upgrader().maintain();
 
@@ -441,7 +441,7 @@ public class DeploymentTriggerTest {
                 .region("us-central-1")
                 .region("eu-west-1")
                 .build();
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // productionUsCentral1 fails after deployment, causing a mismatch between deployed and successful state.
         app.submit(applicationPackage)
@@ -561,7 +561,7 @@ public class DeploymentTriggerTest {
                 .parallel("eu-west-1", "us-east-3")
                 .build();
         // Application version 1 and platform version 6.1.
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // Success in first prod zone, change cancelled between triggering and completion of eu west job.
         // One of the parallel zones get a deployment, but both fail their jobs.
@@ -613,7 +613,7 @@ public class DeploymentTriggerTest {
                 .build();
 
         // Deploy completely on default application and platform versions
-        var app = tester.deploymentContext().submit(applicationPackage).deploy();
+        var app = tester.newDeploymentContext().submit(applicationPackage).deploy();
 
         // New application change is deployed and fails in system-test for a while
         app.submit(applicationPackage).runJob(stagingTest).failDeployment(systemTest);
@@ -666,7 +666,7 @@ public class DeploymentTriggerTest {
 
         // Initial failure
         Instant initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-        var app = tester.deploymentContext().submit(applicationPackage);
+        var app = tester.newDeploymentContext().submit(applicationPackage);
         app.failDeployment(systemTest);
         assertEquals("Failure age is right at initial failure",
                      initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
@@ -710,7 +710,7 @@ public class DeploymentTriggerTest {
                 .region("us-west-1")
                 .build();
         Version version1 = tester.controller().versionStatus().systemVersion().get().versionNumber();
-        var app1 = tester.deploymentContext();
+        var app1 = tester.newDeploymentContext();
 
         // First deployment: An application change
         app1.submit(applicationPackage).deploy();
@@ -855,7 +855,7 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testUserInstancesNotInDeploymentSpec() {
-        var app = tester.deploymentContext();
+        var app = tester.newDeploymentContext();
         tester.controller().applications().createInstance(app.application().id().instance("user"));
         app.submit().deploy();
     }
@@ -868,7 +868,7 @@ public class DeploymentTriggerTest {
                 .environment(Environment.prod)
                 .region("us-east-3")
                 .build();
-        var app = tester.deploymentContext().submit(applicationPackage); // TODO jonmv: support instances in deployment context>
+        var app = tester.newDeploymentContext().submit(applicationPackage); // TODO jonmv: support instances in deployment context>
         app.deploy();
         assertEquals(2, app.application().instances().size());
         assertEquals(2, app.application().productionDeployments().values().stream()

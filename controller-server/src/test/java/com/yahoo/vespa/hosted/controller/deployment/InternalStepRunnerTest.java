@@ -53,7 +53,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.wa
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.publicCdApplicationPackage;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.testerId;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
@@ -70,10 +69,12 @@ import static org.junit.Assert.fail;
 public class InternalStepRunnerTest {
 
     private DeploymentTester tester;
+    private DeploymentContext app;
 
     @Before
     public void setup() {
         tester = new DeploymentTester();
+        app = tester.newDeploymentContext();
     }
 
     private SystemName system() {
@@ -82,15 +83,16 @@ public class InternalStepRunnerTest {
 
     @Test
     public void canRegisterAndRunDirectly() {
-        tester.deploymentContext().submit().deploy();
+        app.submit().deploy();
     }
 
     @Test
     public void testerHasAthenzIdentity() {
-        tester.newRun(JobType.stagingTest);
+        app.submit();
+        tester.triggerJobs();
         tester.runner().run();
         DeploymentSpec spec = tester.configServer()
-                                    .application(DeploymentTester.testerId.id(), JobType.stagingTest.zone(system())).get()
+                                    .application(app.testerId().id(), JobType.stagingTest.zone(system())).get()
                                     .applicationPackage().deploymentSpec();
         assertEquals("domain", spec.athenzDomain().get().value());
         ZoneId zone = JobType.stagingTest.zone(system());
@@ -99,21 +101,21 @@ public class InternalStepRunnerTest {
 
     @Test
     public void refeedRequirementBlocksDeployment() {
-        RunId id = tester.newRun(JobType.stagingTest);
+        RunId id = app.newRun(JobType.stagingTest);
 
-        tester.setEndpoints(testerId.id(), JobType.stagingTest.zone(system()));
+        tester.setEndpoints(app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installInitialReal));
 
-        tester.setEndpoints(instanceId, JobType.stagingTest.zone(system()));
-        tester.configServer().convergeServices(instanceId, JobType.stagingTest.zone(system()));
+        tester.setEndpoints(app.instanceId(), JobType.stagingTest.zone(system()));
+        tester.configServer().convergeServices(app.instanceId(), JobType.stagingTest.zone(system()));
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(Collections.emptyList(),
-                                                                                      singletonList(new RefeedAction("Refeed",
-                                                                                                                        false,
-                                                                                                                        "doctype",
-                                                                                                                        "cluster",
-                                                                                                                        Collections.emptyList(),
-                                                                                                                        singletonList("Refeed it!")))));
+                                                                             singletonList(new RefeedAction("Refeed",
+                                                                                                            false,
+                                                                                                            "doctype",
+                                                                                                            "cluster",
+                                                                                                            Collections.emptyList(),
+                                                                                                            singletonList("Refeed it!")))));
         tester.runner().run();
 
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.deployReal));
@@ -121,11 +123,11 @@ public class InternalStepRunnerTest {
 
     @Test
     public void restartsServicesAndWaitsForRestartAndReboot() {
-        RunId id = tester.newRun(JobType.productionUsCentral1);
+        RunId id = app.newRun(JobType.productionUsCentral1);
         ZoneId zone = id.type().zone(system());
         HostName host = tester.configServer().hostFor(instanceId, zone);
 
-        tester.setEndpoints(testerId.id(), JobType.productionUsCentral1.zone(system()));
+        tester.setEndpoints(app.testerId().id(), JobType.productionUsCentral1.zone(system()));
         tester.runner().run();
 
         tester.configServer().setConfigChangeActions(new ConfigChangeActions(singletonList(new RestartAction("cluster",
@@ -140,11 +142,11 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().run(id).get().steps().get(Step.deployReal));
 
-        tester.configServer().convergeServices(instanceId, zone);
+        tester.configServer().convergeServices(app.instanceId(), zone);
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
 
-        tester.configServer().nodeRepository().doRestart(new DeploymentId(instanceId, zone), Optional.of(host));
-        tester.configServer().nodeRepository().requestReboot(new DeploymentId(instanceId, zone), Optional.of(host));
+        tester.configServer().nodeRepository().doRestart(app.deploymentIdIn(zone), Optional.of(host));
+        tester.configServer().nodeRepository().requestReboot(app.deploymentIdIn(zone), Optional.of(host));
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
 
@@ -155,85 +157,85 @@ public class InternalStepRunnerTest {
 
     @Test
     public void waitsForEndpointsAndTimesOut() {
-        tester.newRun(JobType.systemTest);
+        app.newRun(JobType.systemTest);
 
         // Tester fails to show up for staging tests, and the real deployment for system tests.
-        tester.setEndpoints(testerId.id(), JobType.systemTest.zone(system()));
-        tester.setEndpoints(instanceId, JobType.stagingTest.zone(system()));
+        tester.setEndpoints(app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.setEndpoints(app.instanceId(), JobType.stagingTest.zone(system()));
 
         tester.runner().run();
-        tester.configServer().convergeServices(instanceId, JobType.stagingTest.zone(system()));
+        tester.configServer().convergeServices(app.instanceId(), JobType.stagingTest.zone(system()));
         tester.runner().run();
-        tester.configServer().convergeServices(instanceId, JobType.systemTest.zone(system()));
-        tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(system()));
-        tester.configServer().convergeServices(instanceId, JobType.stagingTest.zone(system()));
-        tester.configServer().convergeServices(testerId.id(), JobType.stagingTest.zone(system()));
+        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.instanceId(), JobType.stagingTest.zone(system()));
+        tester.configServer().convergeServices(app.testerId().id(), JobType.stagingTest.zone(system()));
         tester.runner().run();
 
         tester.clock().advance(InternalStepRunner.endpointTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(failed, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installReal));
-        assertEquals(failed, tester.jobs().last(instanceId, JobType.stagingTest).get().steps().get(Step.installTester));
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.stagingTest).get().steps().get(Step.installTester));
     }
 
     @Test
     public void installationFailsIfDeploymentExpires() {
-        tester.newRun(JobType.systemTest);
+        app.newRun(JobType.systemTest);
         tester.runner().run();
-        tester.configServer().convergeServices(instanceId, JobType.systemTest.zone(system()));
-        tester.setEndpoints(instanceId, JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.setEndpoints(app.instanceId(), JobType.systemTest.zone(system()));
         tester.runner().run();
-        assertEquals(succeeded, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installReal));
 
-        tester.applications().deactivate(instanceId, JobType.systemTest.zone(system()));
+        tester.applications().deactivate(app.instanceId(), JobType.systemTest.zone(system()));
         tester.runner().run();
-        assertEquals(failed, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installTester));
-        assertTrue(tester.jobs().last(instanceId, JobType.systemTest).get().hasEnded());
-        assertTrue(tester.jobs().last(instanceId, JobType.systemTest).get().hasFailed());
+        assertEquals(failed, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installTester));
+        assertTrue(tester.jobs().last(app.instanceId(), JobType.systemTest).get().hasEnded());
+        assertTrue(tester.jobs().last(app.instanceId(), JobType.systemTest).get().hasFailed());
     }
 
     @Test
     public void startTestsFailsIfDeploymentExpires() {
-        tester.newRun(JobType.systemTest);
+        app.newRun(JobType.systemTest);
         tester.runner().run();
-        tester.configServer().convergeServices(instanceId, JobType.systemTest.zone(system()));
-        tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
         tester.runner().run();
 
-        tester.applications().deactivate(instanceId, JobType.systemTest.zone(system()));
+        tester.applications().deactivate(app.instanceId(), JobType.systemTest.zone(system()));
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.startTests));
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.startTests));
     }
 
     @Test
     public void alternativeEndpointsAreDetected() {
-        tester.newRun(JobType.systemTest);
+        app.newRun(JobType.systemTest);
         tester.runner().run();;
-        tester.configServer().convergeServices(instanceId, JobType.systemTest.zone(system()));
-        tester.configServer().convergeServices(testerId.id(), JobType.systemTest.zone(system()));
-        assertEquals(unfinished, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installReal));
-        assertEquals(unfinished, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installTester));
+        tester.configServer().convergeServices(app.instanceId(), JobType.systemTest.zone(system()));
+        tester.configServer().convergeServices(app.testerId().id(), JobType.systemTest.zone(system()));
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installTester));
 
-        tester.controller().curator().writeRoutingPolicies(instanceId, Set.of(new RoutingPolicy(instanceId,
+        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Set.of(new RoutingPolicy(app.instanceId(),
+                                                                                                      ClusterSpec.Id.from("default"),
+                                                                                                      JobType.systemTest.zone(system()),
+                                                                                                      HostName.from("host"),
+                                                                                                      Optional.empty(),
+                                                                                                      emptySet())));
+        tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Set.of(new RoutingPolicy(app.testerId().id(),
                                                                                                          ClusterSpec.Id.from("default"),
                                                                                                          JobType.systemTest.zone(system()),
                                                                                                          HostName.from("host"),
                                                                                                          Optional.empty(),
                                                                                                          emptySet())));
-        tester.controller().curator().writeRoutingPolicies(testerId.id(), Set.of(new RoutingPolicy(testerId.id(),
-                                                                                                            ClusterSpec.Id.from("default"),
-                                                                                                            JobType.systemTest.zone(system()),
-                                                                                                            HostName.from("host"),
-                                                                                                            Optional.empty(),
-                                                                                                            emptySet())));
         tester.runner().run();;
-        assertEquals(succeeded, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installReal));
-        assertEquals(succeeded, tester.jobs().last(instanceId, JobType.systemTest).get().steps().get(Step.installTester));
+        assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installReal));
+        assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installTester));
     }
 
     @Test
     public void testsFailIfTesterRestarts() {
-        RunId id = tester.startSystemTestTests();
+        RunId id = app.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
         assertEquals(failed, tester.jobs().run(id).get().steps().get(Step.endTests));
@@ -241,7 +243,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void testsFailIfTestsFailRemotely() {
-        RunId id = tester.startSystemTestTests();
+        RunId id = app.startSystemTestTests();
         tester.cloud().add(new LogEntry(123, Instant.ofEpochMilli(321), error, "Failure!"));
         tester.cloud().set(TesterCloud.Status.FAILURE);
 
@@ -255,7 +257,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void testsFailIfTestsErr() {
-        RunId id = tester.startSystemTestTests();
+        RunId id = app.startSystemTestTests();
         tester.cloud().add(new LogEntry(0, Instant.ofEpochMilli(123), error, "Error!"));
         tester.cloud().set(TesterCloud.Status.ERROR);
 
@@ -269,13 +271,13 @@ public class InternalStepRunnerTest {
 
     @Test
     public void testsSucceedWhenTheyDoRemotely() {
-        RunId id = tester.startSystemTestTests();
+        RunId id = app.startSystemTestTests();
         tester.runner().run();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.endTests));
-        assertEquals(URI.create(tester.routing().endpoints(new DeploymentId(testerId.id(), JobType.systemTest.zone(system()))).get(0).endpoint()),
+        assertEquals(URI.create(tester.routing().endpoints(new DeploymentId(app.testerId().id(), JobType.systemTest.zone(system()))).get(0).endpoint()),
                      tester.cloud().testerUrl());
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
-        assertEquals(instanceId.serializedForm(), configObject.field("application").asString());
+        assertEquals(app.instanceId().serializedForm(), configObject.field("application").asString());
         assertEquals(JobType.systemTest.zone(system()).value(), configObject.field("zone").asString());
         assertEquals(system().value(), configObject.field("system").asString());
         assertEquals(1, configObject.field("endpoints").children());
@@ -308,36 +310,36 @@ public class InternalStepRunnerTest {
     @Test
     public void deployToDev() {
         ZoneId zone = JobType.devUsEast1.zone(system());
-        tester.jobs().deploy(instanceId, JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
         tester.runner().run();
-        RunId id = tester.jobs().last(instanceId, JobType.devUsEast1).get().id();
+        RunId id = tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().id();
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
 
         Version version = new Version("7.8.9");
         Future<?> concurrentDeployment = Executors.newSingleThreadExecutor().submit(() -> {
-            tester.jobs().deploy(instanceId, JobType.devUsEast1, Optional.of(version), applicationPackage);
+            tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.of(version), applicationPackage);
         });
         while ( ! concurrentDeployment.isDone())
             tester.runner().run();
-        assertEquals(id.number() + 1, tester.jobs().last(instanceId, JobType.devUsEast1).get().id().number());
+        assertEquals(id.number() + 1, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().id().number());
 
         ApplicationPackage otherPackage = new ApplicationPackageBuilder().region("us-central-1").build();
-        tester.jobs().deploy(instanceId, JobType.perfUsEast3, Optional.empty(), otherPackage);
+        tester.jobs().deploy(app.instanceId(), JobType.perfUsEast3, Optional.empty(), otherPackage);
 
         tester.runner().run(); // Job run order determined by JobType enum order per application.
-        tester.configServer().convergeServices(instanceId, zone);
-        tester.setEndpoints(instanceId, zone);
+        tester.configServer().convergeServices(app.instanceId(), zone);
+        tester.setEndpoints(app.instanceId(), zone);
         assertEquals(unfinished, tester.jobs().run(id).get().steps().get(Step.installReal));
-        assertEquals(applicationPackage.hash(), tester.configServer().application(instanceId, zone).get().applicationPackage().hash());
-        assertEquals(otherPackage.hash(), tester.configServer().application(instanceId, JobType.perfUsEast3.zone(system())).get().applicationPackage().hash());
+        assertEquals(applicationPackage.hash(), tester.configServer().application(app.instanceId(), zone).get().applicationPackage().hash());
+        assertEquals(otherPackage.hash(), tester.configServer().application(app.instanceId(), JobType.perfUsEast3.zone(system())).get().applicationPackage().hash());
 
-        tester.configServer().setVersion(instanceId, zone, version);
+        tester.configServer().setVersion(app.instanceId(), zone, version);
         tester.runner().run();
         assertEquals(1, tester.jobs().active().size());
-        assertEquals(version, tester.instance(instanceId).deployments().get(zone).version());
+        assertEquals(version, tester.instance(app.instanceId()).deployments().get(zone).version());
 
         try {
-            tester.jobs().deploy(instanceId, JobType.productionApNortheast1, Optional.empty(), applicationPackage);
+            tester.jobs().deploy(app.instanceId(), JobType.productionApNortheast1, Optional.empty(), applicationPackage);
             fail("Deployments outside dev should not be allowed.");
         }
         catch (IllegalArgumentException expected) { }
@@ -345,10 +347,10 @@ public class InternalStepRunnerTest {
 
     @Test
     public void notificationIsSent() {
-        tester.startSystemTestTests();
+        app.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
-        MockMailer mailer = ((MockMailer) tester.controller().serviceRegistry().mailer());
+        MockMailer mailer = tester.controllerTester().serviceRegistry().mailer();
         assertEquals(1, mailer.inbox("a@b").size());
         assertEquals("Vespa application tenant.application: System test failing due to system error",
                      mailer.inbox("a@b").get(0).subject());
@@ -359,7 +361,7 @@ public class InternalStepRunnerTest {
 
     @Test
     public void vespaLogIsCopied() {
-        RunId id = tester.startSystemTestTests();
+        RunId id = app.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.ERROR);
         tester.configServer().setLogStream(vespaLog);
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
@@ -384,11 +386,11 @@ public class InternalStepRunnerTest {
     public void certificateTimeoutAbortsJob() {
         tester.controllerTester().zoneRegistry().setSystemName(SystemName.PublicCd);
         tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.aws-us-east-1c"));
-        RunId id = tester.startSystemTestTests();
+        RunId id = app.startSystemTestTests();
 
         List<X509Certificate> trusted = new ArrayList<>(publicCdApplicationPackage.trustedCertificates());
         trusted.add(tester.jobs().run(id).get().testerCertificate().get());
-        assertEquals(trusted, tester.configServer().application(instanceId, id.type().zone(system())).get().applicationPackage().trustedCertificates());
+        assertEquals(trusted, tester.configServer().application(app.instanceId(), id.type().zone(system())).get().applicationPackage().trustedCertificates());
 
         tester.clock().advance(InternalStepRunner.certificateTimeout.plus(Duration.ofSeconds(1)));
         tester.runner().run();

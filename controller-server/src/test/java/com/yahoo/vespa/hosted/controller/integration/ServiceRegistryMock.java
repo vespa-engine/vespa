@@ -97,62 +97,62 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public Mailer mailer() {
+    public MockMailer mailer() {
         return mockMailer;
     }
 
     @Override
-    public ApplicationCertificateProvider applicationCertificateProvider() {
+    public ApplicationCertificateMock applicationCertificateProvider() {
         return applicationCertificateMock;
     }
 
     @Override
-    public MeteringClient meteringService() {
+    public MockMeteringClient meteringService() {
         return mockMeteringClient;
     }
 
     @Override
-    public ContactRetriever contactRetriever() {
+    public MockContactRetriever contactRetriever() {
         return mockContactRetriever;
     }
 
     @Override
-    public IssueHandler issueHandler() {
+    public MockIssueHandler issueHandler() {
         return mockIssueHandler;
     }
 
     @Override
-    public OwnershipIssues ownershipIssues() {
+    public DummyOwnershipIssues ownershipIssues() {
         return dummyOwnershipIssues;
     }
 
     @Override
-    public DeploymentIssues deploymentIssues() {
+    public LoggingDeploymentIssues deploymentIssues() {
         return loggingDeploymentIssues;
     }
 
     @Override
-    public EntityService entityService() {
+    public MemoryEntityService entityService() {
         return memoryEntityService;
     }
 
     @Override
-    public CostReportConsumer costReportConsumer() {
+    public CostReportConsumerMock costReportConsumer() {
         return costReportConsumerMock;
     }
 
     @Override
-    public Billing billingService() {
+    public MockBilling billingService() {
         return mockBilling;
     }
 
     @Override
-    public AwsEventFetcher eventFetcherService() {
+    public MockAwsEventFetcher eventFetcherService() {
         return mockAwsEventFetcher;
     }
 
     @Override
-    public ArtifactRepository artifactRepository() {
+    public ArtifactRepositoryMock artifactRepository() {
         return artifactRepositoryMock;
     }
 
@@ -162,27 +162,27 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public ApplicationStore applicationStore() {
+    public ApplicationStoreMock applicationStore() {
         return applicationStoreMock;
     }
 
     @Override
-    public RunDataStore runDataStore() {
+    public MockRunDataStore runDataStore() {
         return mockRunDataStore;
     }
 
     @Override
-    public BuildService buildService() {
+    public MockBuildService buildService() {
         return mockBuildService;
     }
 
     @Override
-    public NameService nameService() {
+    public MemoryNameService nameService() {
         return memoryNameService;
     }
 
     @Override
-    public TenantCost tenantCost() { return mockTenantCost;}
+    public MockTenantCost tenantCost() { return mockTenantCost;}
 
     public ZoneRegistryMock zoneRegistryMock() {
         return zoneRegistryMock;

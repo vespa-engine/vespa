@@ -6,12 +6,19 @@ import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
+import com.yahoo.vespa.athenz.api.AthenzDomain;
+import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ScrewdriverId;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
@@ -58,6 +65,10 @@ public class ContainerTester {
         return serviceRegistry().configServerMock();
     }
 
+    public AthenzClientFactoryMock athenzClientFactory() {
+        return (AthenzClientFactoryMock) container.components().getComponent(AthenzClientFactoryMock.class.getName());
+    }
+
     public ServiceRegistryMock serviceRegistry() {
         return (ServiceRegistryMock) container.components().getComponent(ServiceRegistryMock.class.getName());
     }
@@ -76,6 +87,13 @@ public class ContainerTester {
             }
         }
         computeVersionStatus();
+    }
+
+    public void authorize(AthenzDomain tenantDomain, AthenzIdentity identity, ApplicationAction action, ApplicationName application) {
+        athenzClientFactory().getSetup()
+                .domains.get(tenantDomain)
+                .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(application.value()))
+                             .addRoleMember(action, identity);
     }
 
     public void assertResponse(Supplier<Request> request, File responseFile) {
@@ -139,8 +157,8 @@ public class ContainerTester {
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
         responseAssertion.accept(response);
+        assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 
     // Hack to run request filters as part of the request processing chain.

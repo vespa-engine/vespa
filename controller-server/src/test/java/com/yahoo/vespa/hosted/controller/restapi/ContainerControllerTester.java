@@ -130,19 +130,6 @@ public class ContainerControllerTester {
         containerTester.assertResponse(() -> request, expectedResponse, expectedStatusCode);
     }
 
-    /*
-     * Authorize action on tenantDomain/application for a given screwdriverId
-     */
-    public void authorize(AthenzDomain tenantDomain, ScrewdriverId screwdriverId, ApplicationAction action, TenantAndApplicationId id) {
-        AthenzClientFactoryMock mock = (AthenzClientFactoryMock) containerTester.container().components()
-                .getComponent(AthenzClientFactoryMock.class.getName());
-
-        mock.getSetup()
-                .domains.get(tenantDomain)
-                .applications.get(new com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId(id.application().value()))
-                .addRoleMember(action, HostedAthenzIdentities.from(screwdriverId));
-    }
-
     private void notifyJobCompletion(DeploymentJobs.JobReport report) {
         MockBuildService buildService = containerTester.serviceRegistry().buildServiceMock();
         if (report.jobType() != component && ! buildService.remove(report.buildJob()))

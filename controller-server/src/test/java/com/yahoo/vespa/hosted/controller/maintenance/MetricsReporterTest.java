@@ -78,7 +78,7 @@ public class MetricsReporterTest {
 
         MetricsReporter reporter = createReporter(tester.controller());
 
-        var context = tester.deploymentContext()
+        var context = tester.newDeploymentContext()
                             .submit(applicationPackage)
                             .deploy();
         reporter.maintain();
@@ -122,7 +122,7 @@ public class MetricsReporterTest {
                 .build();
 
         MetricsReporter reporter = createReporter(tester.controller());
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
 
         // Initial deployment without failures
         context.submit(applicationPackage).deploy();
@@ -174,7 +174,7 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        var context = tester.deploymentContext();
+        var context = tester.newDeploymentContext();
         tester.configServer().generateWarnings(context.deploymentIdIn(ZoneId.from("prod", "us-west-1")), 3);
         tester.configServer().generateWarnings(context.deploymentIdIn(ZoneId.from("prod", "us-west-1")), 4);
         context.submit(applicationPackage).deploy();
@@ -186,7 +186,7 @@ public class MetricsReporterTest {
     public void build_time_reporting() {
         var tester = new DeploymentTester();
         var applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
-        var context = tester.deploymentContext()
+        var context = tester.newDeploymentContext()
                             .submit(applicationPackage)
                             .deploy();
         assertEquals(1000, context.lastSubmission().get().buildTime().get().toEpochMilli());
@@ -207,7 +207,7 @@ public class MetricsReporterTest {
                 .region("us-east-3")
                 .build();
         MetricsReporter reporter = createReporter(tester.controller());
-        var context = tester.deploymentContext()
+        var context = tester.newDeploymentContext()
                             .deferDnsUpdates();
         reporter.maintain();
         assertEquals("Queue is empty initially", 0, metrics.getMetric(MetricsReporter.NAME_SERVICE_REQUESTS_QUEUED).intValue());
