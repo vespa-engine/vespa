@@ -892,6 +892,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.restapi.JacksonJsonResponse": {
+    "superClass": "com.yahoo.container.jdisc.HttpResponse",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(int, java.lang.Object)",
+      "public void <init>(int, java.lang.Object, com.fasterxml.jackson.databind.ObjectMapper)",
+      "public void render(java.io.OutputStream)",
+      "public java.lang.String getContentType()",
+      "public java.lang.Object getEntity()"
+    ],
+    "fields": []
+  },
   "com.yahoo.restapi.MessageResponse": {
     "superClass": "com.yahoo.container.jdisc.HttpResponse",
     "interfaces": [],
