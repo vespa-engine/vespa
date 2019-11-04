@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -65,33 +66,28 @@ public class DeploymentIssueReporterTest {
         tester.controllerTester().upgradeSystem(Version.fromString("6.2"));
 
         // Create and deploy one application for each of three tenants.
-        Application app1 = tester.createApplication("application1", "tenant1", "default");
-        Application app2 = tester.createApplication("application2", "tenant2", "default");
-        Application app3 = tester.createApplication("application3", "tenant3", "default");
+        var app1 = tester.newDeploymentContext("application1", "tenant1", "default");
+        var app2 = tester.newDeploymentContext("application2", "tenant2", "default");
+        var app3 = tester.newDeploymentContext("application3", "tenant3", "default");
 
         Contact contact = tester.controllerTester().serviceRegistry().contactRetrieverMock().contact();
-        tester.controller().tenants().lockOrThrow(app1.id().tenant(), LockedTenant.Athenz.class, tenant ->
+        tester.controller().tenants().lockOrThrow(app1.instanceId().tenant(), LockedTenant.Athenz.class, tenant ->
                 tester.controller().tenants().store(tenant.with(contact)));
-        tester.controller().tenants().lockOrThrow(app2.id().tenant(), LockedTenant.Athenz.class, tenant ->
+        tester.controller().tenants().lockOrThrow(app2.instanceId().tenant(), LockedTenant.Athenz.class, tenant ->
                 tester.controller().tenants().store(tenant.with(contact)));
-        tester.controller().tenants().lockOrThrow(app3.id().tenant(), LockedTenant.Athenz.class, tenant ->
+        tester.controller().tenants().lockOrThrow(app3.instanceId().tenant(), LockedTenant.Athenz.class, tenant ->
                 tester.controller().tenants().store(tenant.with(contact)));
 
         // NOTE: All maintenance should be idempotent within a small enough time interval, so maintain is called twice in succession throughout.
 
         // app 1 fails staging tests.
-        tester.newSubmission(app1.id(), applicationPackage);
-        tester.runJob(app1.id().defaultInstance(), systemTest);
-        tester.timeOutConvergence(app1.id().defaultInstance(), stagingTest);
+        app1.submit(applicationPackage).runJob(systemTest).timeOutConvergence(stagingTest);
 
         // app2 is successful, but will fail later.
-        tester.deployNewSubmission(app2.id(), tester.newSubmission(app2.id(), applicationPackage));
+        app2.submit(applicationPackage).deploy();
 
         // app 3 fails a production job.
-        tester.newSubmission(app3.id(), applicationPackage);
-        tester.runJob(app3.id().defaultInstance(), systemTest);
-        tester.runJob(app3.id().defaultInstance(), stagingTest);
-        tester.failDeployment(app3.id().defaultInstance(), productionUsWest1);
+        app3.submit(applicationPackage).runJob(systemTest).runJob(stagingTest).failDeployment(productionUsWest1);
 
         reporter.maintain();
         reporter.maintain();
@@ -103,53 +99,52 @@ public class DeploymentIssueReporterTest {
 
         reporter.maintain();
         reporter.maintain();
-        assertTrue("One issue is produced for app1.", issues.isOpenFor(app1.id()));
-        assertFalse("No issues are produced for app2.", issues.isOpenFor(app2.id()));
-        assertTrue("One issue is produced for app3.", issues.isOpenFor(app3.id()));
+        assertTrue("One issue is produced for app1.", issues.isOpenFor(app1.application().id()));
+        assertFalse("No issues are produced for app2.", issues.isOpenFor(app2.application().id()));
+        assertTrue("One issue is produced for app3.", issues.isOpenFor(app3.application().id()));
 
 
         // app3 closes their issue prematurely; see that it is refiled.
-        issues.closeFor(app3.id());
-        assertFalse("No issue is open for app3.", issues.isOpenFor(app3.id()));
+        issues.closeFor(app3.application().id());
+        assertFalse("No issue is open for app3.", issues.isOpenFor(app3.application().id()));
 
         reporter.maintain();
         reporter.maintain();
-        assertTrue("Issue is re-filed for app3.", issues.isOpenFor(app3.id()));
+        assertTrue("Issue is re-filed for app3.", issues.isOpenFor(app3.application().id()));
 
         // Some time passes; tenant1 leaves her issue unattended, while tenant3 starts work and updates the issue.
         tester.clock().advance(maxInactivity.plus(maxFailureAge));
-        issues.touchFor(app3.id());
+        issues.touchFor(app3.application().id());
 
         reporter.maintain();
         reporter.maintain();
-        assertEquals("The issue for app1 is escalated once.", 1, issues.escalationLevelFor(app1.id()));
+        assertEquals("The issue for app1 is escalated once.", 1, issues.escalationLevelFor(app1.application().id()));
 
 
         // app3 fixes their problems, but the ticket for app3 is left open; see the resolved ticket is not escalated when another escalation period has passed.
-        tester.runJob(app3.id().defaultInstance(), productionUsWest1);
+        app3.runJob(productionUsWest1);
         tester.clock().advance(maxInactivity.plus(Duration.ofDays(1)));
 
         reporter.maintain();
         reporter.maintain();
         assertFalse("We no longer have a platform issue.", issues.platformIssue());
-        assertEquals("The issue for app1 is escalated once more.", 2, issues.escalationLevelFor(app1.id()));
-        assertEquals("The issue for app3 is not escalated.", 0, issues.escalationLevelFor(app3.id()));
+        assertEquals("The issue for app1 is escalated once more.", 2, issues.escalationLevelFor(app1.application().id()));
+        assertEquals("The issue for app3 is not escalated.", 0, issues.escalationLevelFor(app3.application().id()));
 
 
         // app3 now has a new failure past max failure age; see that a new issue is filed.
-        tester.newSubmission(app3.id(), applicationPackage);
-        tester.failDeployment(app3.id().defaultInstance(), systemTest);
+        app3.submit(applicationPackage).failDeployment(systemTest);
         tester.clock().advance(maxInactivity.plus(maxFailureAge));
 
         reporter.maintain();
         reporter.maintain();
-        assertTrue("A new issue is filed for app3.", issues.isOpenFor(app3.id()));
+        assertTrue("A new issue is filed for app3.", issues.isOpenFor(app3.application().id()));
 
 
-        // App2 is changed to be a canary
-        tester.deployNewSubmission(app2.id(), tester.newSubmission(app2.id(), canaryPackage));
-        assertEquals(canary, tester.applications().requireApplication(app2.id()).deploymentSpec().requireInstance("default").upgradePolicy());
-        assertEquals(Change.empty(), tester.applications().requireApplication(app2.id()).change());
+        // app2 is changed to be a canary
+        app2.submit(canaryPackage).deploy();
+        assertEquals(canary, app2.application().deploymentSpec().requireInstance("default").upgradePolicy());
+        assertEquals(Change.empty(), app2.application().change());
 
         // Bump system version to upgrade canary app2.
         Version version = Version.fromString("6.3");
@@ -157,7 +152,7 @@ public class DeploymentIssueReporterTest {
         tester.upgrader().maintain();
         assertEquals(version, tester.controller().versionStatus().systemVersion().get().versionNumber());
 
-        tester.timeOutUpgrade(app2.id().defaultInstance(), systemTest);
+        app2.timeOutUpgrade(systemTest);
         tester.controllerTester().upgradeSystem(version);
         assertEquals(VespaVersion.Confidence.broken, tester.controller().versionStatus().systemVersion().get().confidence());
 
@@ -169,7 +164,7 @@ public class DeploymentIssueReporterTest {
         reporter.maintain();
         reporter.maintain();
         assertTrue("We get a platform issue when confidence is broken", issues.platformIssue());
-        assertFalse("No deployment issue is filed for app2, which has a version upgrade failure.", issues.isOpenFor(app2.id()));
+        assertFalse("No deployment issue is filed for app2, which has a version upgrade failure.", issues.isOpenFor(app2.application().id()));
     }
 
 

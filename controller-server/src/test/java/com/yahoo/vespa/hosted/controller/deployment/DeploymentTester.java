@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
@@ -14,13 +13,9 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
@@ -36,12 +31,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -59,7 +50,6 @@ public class DeploymentTester {
     public static final ApplicationId instanceId = appId.defaultInstance();
     public static final TesterId testerId = TesterId.of(instanceId);
 
-    private final DeploymentContext defaultContext;
     private final ControllerTester tester;
     private final JobController jobs;
     private final RoutingGeneratorMock routing;
@@ -104,7 +94,6 @@ public class DeploymentTester {
         outstandingChangeDeployer = new OutstandingChangeDeployer(tester.controller(), maintenanceInterval, jobControl);
         nameServiceDispatcher = new NameServiceDispatcher(tester.controller(), maintenanceInterval, jobControl,
                                                           Integer.MAX_VALUE);
-        defaultContext = newDeploymentContext(instanceId);
         routing.putEndpoints(new DeploymentId(null, null), Collections.emptyList()); // Turn off default behaviour for the mock.
 
         // Get deployment job logs to stderr.
@@ -159,62 +148,11 @@ public class DeploymentTester {
         return newDeploymentContext(tenantName, applicationName, instanceName).application();
     }
 
-    /** Submits a new application, and returns the version of the new submission. */
-    public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage, SourceRevision sourceRevision) {
-        return newDeploymentContext(id.defaultInstance()).submit(applicationPackage, sourceRevision).lastSubmission().get();
-    }
-
-    public ApplicationVersion newSubmission(TenantAndApplicationId id, ApplicationPackage applicationPackage) {
-        return newSubmission(id, applicationPackage, DeploymentContext.defaultSourceRevision);
-    }
-
-    /**
-     * Submits a new application package, and returns the version of the new submission.
-     */
-    public ApplicationVersion newSubmission(ApplicationPackage applicationPackage) {
-        return newSubmission(appId, applicationPackage);
-    }
-
-    /**
-     * Submits a new application, and returns the version of the new submission.
-     */
-    public ApplicationVersion newSubmission() {
-        return defaultContext.submit().lastSubmission().get();
-    }
-
     /**
      * Sets a single endpoint in the routing mock; this matches that required for the tester.
      */
     public void setEndpoints(ApplicationId id, ZoneId zone) {
         newDeploymentContext(id).setEndpoints(zone);
-    }
-
-    /** Completely deploys the given application version, assuming it is the last to be submitted. */
-    public void deployNewSubmission(ApplicationVersion version) {
-        deployNewSubmission(appId, version);
-    }
-
-    /** Completely deploys the given application version, assuming it is the last to be submitted. */
-    public void deployNewSubmission(TenantAndApplicationId id, ApplicationVersion version) {
-        var context = newDeploymentContext(id.defaultInstance());
-        var application = context.application();
-        assertFalse(application.instances().values().stream()
-                               .anyMatch(instance -> instance.deployments().values().stream()
-                                                             .anyMatch(deployment -> deployment.applicationVersion().equals(version))));
-        assertEquals(version, application.change().application().get());
-        assertFalse(application.change().platform().isPresent());
-        context.completeRollout();
-        assertFalse(context.application().change().hasTargets());
-    }
-
-    /** Completely deploys the given, new platform. */
-    public void deployNewPlatform(Version version) {
-        deployNewPlatform(appId, version);
-    }
-
-    /** Completely deploys the given, new platform. */
-    public void deployNewPlatform(TenantAndApplicationId id, Version version) {
-        newDeploymentContext(id.defaultInstance()).deployPlatform(version);
     }
 
     /** Aborts and finishes all running jobs. */
@@ -232,65 +170,6 @@ public class DeploymentTester {
         int triggered = 0;
         while (triggered != (triggered += deploymentTrigger().triggerReadyJobs()));
         return triggered;
-    }
-
-    /** Starts a manual deployment of the given package, and then runs the whole of the given job, successfully. */
-    public void runJob(ApplicationId instanceId, JobType type, ApplicationPackage applicationPackage) {
-        jobs.deploy(instanceId, type, Optional.empty(), applicationPackage);
-        newDeploymentContext(instanceId).runJob(type);
-    }
-
-    /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
-    public void runJob(JobType type) {
-        defaultContext.runJob(type);
-    }
-
-    /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */
-    public void runJob(ApplicationId instanceId, JobType type) {
-        if (type.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Use overload with application package for dev/perf jobs");
-        newDeploymentContext(instanceId).runJob(type);
-    }
-
-    public void failDeployment(JobType type) {
-        defaultContext.failDeployment(type);
-    }
-
-    public void failDeployment(ApplicationId instanceId, JobType type) {
-        newDeploymentContext(instanceId).failDeployment(type);
-    }
-
-    public void timeOutUpgrade(JobType type) {
-        defaultContext.timeOutUpgrade(type);
-    }
-
-    public void timeOutUpgrade(ApplicationId instanceId, JobType type) {
-        newDeploymentContext(instanceId).timeOutConvergence(type);
-    }
-
-    public void timeOutConvergence(JobType type) {
-        defaultContext.timeOutConvergence(type);
-    }
-
-    public void timeOutConvergence(ApplicationId instanceId, JobType type) {
-        newDeploymentContext(instanceId).timeOutConvergence(type);
-    }
-
-    public RunId startSystemTestTests() {
-        return defaultContext.startSystemTestTests();
-    }
-
-    /** Creates and submits a new application, and then starts the job of the given type. Use only once per test. */
-    public RunId newRun(JobType type) {
-        return defaultContext.newRun(type);
-    }
-
-    public void assertRunning(JobType type) {
-        assertRunning(instanceId, type);
-    }
-
-    public void assertRunning(ApplicationId id, JobType type) {
-        assertTrue(jobs.active().stream().anyMatch(run -> run.id().application().equals(id) && run.id().type() == type));
     }
 
 }

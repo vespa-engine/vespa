@@ -35,35 +35,32 @@ public class DeploymentExpirerTest {
         );
         DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10),
                                                           new JobControl(new MockCuratorDb()));
-        Application devApp = tester.createApplication("tenant1", "app1", "default");
-        Application prodApp = tester.createApplication("tenant2", "app2", "default");
+        var devApp = tester.newDeploymentContext("tenant1", "app1", "default");
+        var prodApp = tester.newDeploymentContext("tenant2", "app2", "default");
 
         ApplicationPackage appPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();
 
-        Instance devInstance = tester.instance(devApp.id().defaultInstance());
-        Instance prodInstance = tester.instance(prodApp.id().defaultInstance());
-
         // Deploy dev
-        tester.runJob(devInstance.id(), JobType.devUsEast1, appPackage);
+        devApp.runJob(JobType.devUsEast1, appPackage);
 
         // Deploy prod
-        tester.deployNewSubmission(prodApp.id(), tester.newSubmission(prodApp.id(), appPackage));
+        prodApp.submit(appPackage).deploy();
 
-        assertEquals(1, permanentDeployments(devInstance).size());
-        assertEquals(1, permanentDeployments(prodInstance).size());
+        assertEquals(1, permanentDeployments(devApp.instance()).size());
+        assertEquals(1, permanentDeployments(prodApp.instance()).size());
 
         // Not expired at first
         expirer.maintain();
-        assertEquals(1, permanentDeployments(devInstance).size());
-        assertEquals(1, permanentDeployments(prodInstance).size());
+        assertEquals(1, permanentDeployments(devApp.instance()).size());
+        assertEquals(1, permanentDeployments(prodApp.instance()).size());
 
         // The dev application is removed
         tester.clock().advance(Duration.ofDays(15));
         expirer.maintain();
-        assertEquals(0, permanentDeployments(devInstance).size());
-        assertEquals(1, permanentDeployments(prodInstance).size());
+        assertEquals(0, permanentDeployments(devApp.instance()).size());
+        assertEquals(1, permanentDeployments(prodApp.instance()).size());
     }
 
     private List<Deployment> permanentDeployments(Instance instance) {

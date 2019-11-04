@@ -138,6 +138,8 @@ public class DeploymentContext {
         return instanceId;
     }
 
+    public TesterId testerId() { return testerId; }
+
     public DeploymentId deploymentIdIn(ZoneId zone) {
         return new DeploymentId(instanceId, zone);
     }
