@@ -70,7 +70,7 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
         // DELETE /configserver/v1/prod/us-north-1/nodes/v2/node/node1
         tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/api/configserver/v1/prod/controller/nodes/v2/node/node1",
                 "", Request.Method.DELETE), "ok");
-        assertLastRequest("https://api.tld:4443/", "DELETE");
+        assertLastRequest("https://localhost:4443/", "DELETE");
 
         // PATCH /configserver/v1/prod/us-north-1/nodes/v2/node/node1
         tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/configserver/v1/dev/aws-us-north-2/nodes/v2/node/node1",
