@@ -101,6 +101,7 @@ public class Dispatcher extends AbstractComponent {
              metric);
     }
 
+    /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
     protected Dispatcher(SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          RpcInvokerFactory rcpInvokerFactory,
@@ -108,6 +109,7 @@ public class Dispatcher extends AbstractComponent {
         this(searchCluster, dispatchConfig, rcpInvokerFactory, rcpInvokerFactory, metric);
     }
 
+    /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
     protected Dispatcher(SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory,
@@ -132,6 +134,7 @@ public class Dispatcher extends AbstractComponent {
     @Override
     public void deconstruct() {
         invokerFactory.release();
+        searchCluster.shutDown();
     }
 
     public Optional<FillInvoker> getFillInvoker(Result result, VespaBackEndSearcher searcher) {
@@ -212,10 +215,6 @@ public class Dispatcher extends AbstractComponent {
         }
 
         return Optional.empty();
-    }
-
-    public void shutDown() {
-        searchCluster.shutDown();
     }
 
     private void emitDispatchMetric(Optional<SearchInvoker> invoker) {
