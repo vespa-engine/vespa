@@ -2,6 +2,8 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
+import com.yahoo.vespa.hosted.node.admin.task.util.text.SnippetGenerator;
+
 /**
  * Base class for child process related exceptions, with a util to build an error message
  * that includes a large part of the output.
@@ -10,10 +12,7 @@ package com.yahoo.vespa.hosted.node.admin.task.util.process;
  */
 @SuppressWarnings("serial")
 public abstract class ChildProcessException extends RuntimeException {
-    private static final int MAX_OUTPUT_PREFIX = 200;
-    private static final int MAX_OUTPUT_SUFFIX = 200;
-    // Omitting a number of chars less than 10 or less than 10% would be ridiculous.
-    private static final int MAX_OUTPUT_SLACK = Math.max(10, (10 * (MAX_OUTPUT_PREFIX + MAX_OUTPUT_SUFFIX)) / 100);
+    private static final SnippetGenerator snippetGenerator = new SnippetGenerator();
 
     /**
      * An exception with a message of the following format:
@@ -36,44 +35,13 @@ public abstract class ChildProcessException extends RuntimeException {
         super(makeSnippet(problem, commandLine, possiblyHugeOutput), cause);
     }
 
-    private static String makeSnippet(String problem,
-                               String commandLine,
-                               String possiblyHugeOutput) {
-        return makeSnippet(
-                problem,
-                commandLine,
-                possiblyHugeOutput,
-                MAX_OUTPUT_PREFIX,
-                MAX_OUTPUT_SUFFIX,
-                MAX_OUTPUT_SLACK);
-    }
-
-    // Package-private instead of private for testing.
-    static String makeSnippet(String problem,
-                              String commandLine,
-                              String possiblyHugeOutput,
-                              int maxOutputPrefix,
-                              int maxOutputSuffix,
-                              int maxOutputSlack) {
-        StringBuilder stringBuilder = new StringBuilder()
-                .append("Command '")
-                .append(commandLine)
-                .append("' ")
-                .append(problem)
-                .append(": stdout/stderr: '");
-
-        if (possiblyHugeOutput.length() <= maxOutputPrefix + maxOutputSuffix + maxOutputSlack) {
-            stringBuilder.append(possiblyHugeOutput);
-        } else {
-            stringBuilder.append(possiblyHugeOutput, 0, maxOutputPrefix)
-                    .append("... [")
-                    .append(possiblyHugeOutput.length() - maxOutputPrefix - maxOutputSuffix)
-                    .append(" chars omitted] ...")
-                    .append(possiblyHugeOutput.substring(possiblyHugeOutput.length() - maxOutputSuffix));
-        }
-
-        stringBuilder.append("'");
-
-        return stringBuilder.toString();
+    private static String makeSnippet(String problem, String commandLine, String possiblyHugeOutput) {
+        return "Command '" +
+                commandLine +
+                "' " +
+                problem +
+                ": stdout/stderr: '" +
+                snippetGenerator.makeSnippet(possiblyHugeOutput, 500) +
+                "'";
     }
 }

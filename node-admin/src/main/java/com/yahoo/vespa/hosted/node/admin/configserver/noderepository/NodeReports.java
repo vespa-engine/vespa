@@ -3,11 +3,14 @@ package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.reports.BaseReport;
 
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 
@@ -41,6 +44,25 @@ public class NodeReports {
 
     public <T> Optional<T> getReport(String reportId, Class<T> jacksonClass) {
         return Optional.ofNullable(reports.get(reportId)).map(r -> uncheck(() -> mapper.treeToValue(r, jacksonClass)));
+    }
+
+    /** Gets all reports of the given types and deserialize with the given jacksonClass. */
+    public <T> TreeMap<String, T> getReports(Class<T> jacksonClass, BaseReport.Type... types) {
+        Set<BaseReport.Type> typeSet = Set.of(types);
+
+        return reports.entrySet().stream()
+                .filter(entry -> {
+                    JsonNode reportType = entry.getValue().findValue(BaseReport.TYPE_FIELD);
+                    if (reportType == null || !reportType.isTextual()) return false;
+                    Optional<BaseReport.Type> type = BaseReport.Type.deserialize(reportType.asText());
+                    return type.map(typeSet::contains).orElse(false);
+                })
+                .collect(Collectors.toMap(
+                        entry -> entry.getKey(),
+                        entry -> uncheck(() -> mapper.treeToValue(entry.getValue(), jacksonClass)),
+                        (x,y) -> x, // resolves key collisions - cannot happen.
+                        TreeMap::new
+                ));
     }
 
     public void removeReport(String reportId) {
