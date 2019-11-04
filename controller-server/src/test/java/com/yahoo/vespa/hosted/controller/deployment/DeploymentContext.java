@@ -456,7 +456,7 @@ public class DeploymentContext {
                                                                                          zone.region().value(),
                                                                                          zone.environment().value()),
                                                                            "host1",
-                                                                           false,
+                                                                           true,
                                                                            String.format("cluster1.%s.%s.%s.%s",
                                                                                          id.application().value(),
                                                                                          id.tenant().value(),
