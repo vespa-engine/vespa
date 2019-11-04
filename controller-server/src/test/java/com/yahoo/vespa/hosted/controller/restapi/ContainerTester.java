@@ -157,8 +157,8 @@ public class ContainerTester {
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        assertEquals("Status code", expectedStatusCode, response.getStatus());
         responseAssertion.accept(response);
+        assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 
     // Hack to run request filters as part of the request processing chain.
