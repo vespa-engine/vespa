@@ -147,18 +147,6 @@ TOKEN :
     <MAX: "max"> |
     <MIN: "min"> |
 
-    <TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? > |
-    <TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? > |
-    < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" > |
-    < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" > |
-    < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" > |
-    < #BRACE_SL_CONTENT: (~["{","}","\n"])* > |
-    < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" > |
-    < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" > |
-    < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" > |
-    < #BRACE_ML_CONTENT: (~["{","}"])* > |
-    < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ > |
-
     <IDENTIFIER: (["A"-"Z","a"-"z","0"-"9","_","@"](["A"-"Z","a"-"z","0"-"9","_","@","$"])*)>
 }
 
@@ -255,8 +243,7 @@ ExpressionNode value() :
                    LOOKAHEAD(4) ret = function()                            |
                    ret = feature()                                          |
                    ret = legacyQueryFeature()                               |
-                   ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) |
-                   ret = tensorValue()
+                   ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) )
 
       )
     {
@@ -481,10 +468,23 @@ ExpressionNode tensorConcat() :
 ExpressionNode tensorGenerate() :
 {
     TensorType type;
+    ExpressionNode expression;
+}
+{
+    <TENSOR> type = tensorType()
+    (
+        expression = tensorGenerateBody(type) |
+        expression = tensorValueBody(type)
+    )
+    { return expression; }
+}
+
+ExpressionNode tensorGenerateBody(TensorType type) :
+{
     ExpressionNode generator;
 }
 {
-    <TENSOR> type = tensorType() <LBRACE> generator = expression() <RBRACE>
+    <LBRACE> generator = expression() <RBRACE>
     { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asLongListToDoubleOperator())); }
 }
 
@@ -635,15 +635,18 @@ TensorType.Value optionalTensorValueTypeParameter() :
     { return TensorType.Value.fromId(valueType); }
 }
 
-// NOTE: Only indexed bound dimensions are parsed currently, as that is what we need
 void tensorTypeDimension(TensorType.Builder builder) :
 {
     String name;
     int size;
 }
 {
-    name = identifier() <LSQUARE> size = integerNumber() <RSQUARE>
-    { builder.indexed(name, size); }
+    name = identifier()
+    (
+      ( <LCURLY> <RCURLY> { builder.mapped(name); } ) |
+      LOOKAHEAD(2) ( <LSQUARE> <RSQUARE> { builder.indexed(name); } ) |
+      ( <LSQUARE> size = integerNumber() <RSQUARE> { builder.indexed(name, size); } )
+    )
 }
 
 // This is needed not to parse tensor functions but for the "reserved names as literals" workaround cludge
@@ -717,8 +720,8 @@ List<ExpressionNode> expressionList() :
 }
 {
     <LSQUARE>
-    expression=expression() { list.add(expression); }
-    ( LOOKAHEAD(2) <COMMA> expression=expression() { list.add(expression); } ) *
+    expression = expression() { list.add(expression); }
+    ( LOOKAHEAD(2) <COMMA> expression = expression() { list.add(expression); } ) *
     <RSQUARE>
     { return list; }
 }
@@ -820,18 +823,63 @@ Value primitiveValue() :
     { return Value.parse(sign + token.image); }
 }
 
-ConstantNode tensorValue() :
+ConstantNode tensorValueBody(TensorType type) :
 {
-    TensorType type;
-    String value;
+    Tensor.Builder builder = Tensor.Builder.of(type);
 }
 {
-    type = tensorType()
     <COLON>
-    ( <TENSOR_VALUE_SL> { value = token.image.substring(token.image.indexOf(":") + 1); } |
-      <TENSOR_VALUE_ML> { value = token.image.substring(token.image.indexOf("{") + 1,
-                                                        token.image.lastIndexOf("}")); } )
+    (
+        mappedTensorValueBody(builder) |
+        indexedTensorValueBody(builder)
+    )
+    { return new ConstantNode(new TensorValue(builder.build())); }
+}
+
+void mappedTensorValueBody(Tensor.Builder builder) : {}
+{
+    <LCURLY>
+        (         tensorCell(builder.cell()))*
+        ( <COMMA> tensorCell(builder.cell()))*
+    <RCURLY>
+}
+
+void indexedTensorValueBody(Tensor.Builder builder) :
+{
+    IndexedTensor.BoundBuilder indexedBuilder;
+    long index = 0;
+    double value;
+}
+{
     {
-        return new ConstantNode(new TensorValue(Tensor.from(type, value)));
+        if ( ! (builder instanceof IndexedTensor.BoundBuilder))
+            throw new IllegalArgumentException("The tensor short form [n, n, ...] can only be used for indexed " +
+                                               "bound tensors, not " + builder.type());
+        indexedBuilder = (IndexedTensor.BoundBuilder)builder;
     }
+    <LSQUARE>
+        (         value = doubleNumber() { indexedBuilder.cellByDirectIndex(index++, value); } )*
+        ( <COMMA> value = doubleNumber() { indexedBuilder.cellByDirectIndex(index++, value); } )*
+    <RSQUARE>
+}
+
+void tensorCell(Tensor.Builder.CellBuilder cellBuilder) :
+{
+    double value;
+}
+{
+    <LCURLY>
+    (         labelAndDimension(cellBuilder))*
+    ( <COMMA> labelAndDimension(cellBuilder))*
+    <RCURLY>
+    <COLON> value = doubleNumber() { cellBuilder.value(value); }
+}
+
+void labelAndDimension(Tensor.Builder.CellBuilder cellBuilder) :
+{
+    String dimension, label;
+}
+{
+    dimension = identifier() <COLON> label = tag()
+    { cellBuilder.label(dimension, label); }
 }
