@@ -338,7 +338,6 @@
       "public java.util.Optional athenzService()",
       "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public java.lang.String xmlForm()",
-      "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(com.yahoo.config.provision.InstanceName)",
@@ -349,8 +348,7 @@
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String, boolean)",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public static void main(java.lang.String[])"
+      "public int hashCode()"
     ],
     "fields": [
       "public static final com.yahoo.config.application.api.DeploymentSpec empty"

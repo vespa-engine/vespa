@@ -222,11 +222,6 @@ public class DeploymentSpec {
     public String xmlForm() { return xmlForm; }
 
     // TODO: Remove after November 2019
-    public boolean includes(Environment environment, Optional<RegionName> region) {
-        return singleInstance().deploysTo(environment, region);
-    }
-
-    // TODO: Remove after November 2019
     private static boolean hasSingleInstance(List<DeploymentSpec.Step> steps) {
         return instances(steps).size() == 1;
     }
@@ -326,29 +321,6 @@ public class DeploymentSpec {
     @Override
     public int hashCode() {
         return Objects.hash(majorVersion, steps, xmlForm);
-    }
-
-    /** This may be invoked by a continuous build */
-    public static void main(String[] args) {
-        if (args.length != 2 && args.length != 3) {
-            System.err.println("Usage: DeploymentSpec [file] [environment] [region]?" +
-                               "Returns 0 if the specified zone matches the deployment spec, 1 otherwise");
-            System.exit(1);
-        }
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(args[0]))) {
-            DeploymentSpec spec = DeploymentSpec.fromXml(reader);
-            Environment environment = Environment.from(args[1]);
-            Optional<RegionName> region = args.length == 3 ? Optional.of(RegionName.from(args[2])) : Optional.empty();
-            if (spec.includes(environment, region))
-                System.exit(0);
-            else
-                System.exit(1);
-        }
-        catch (Exception e) {
-            System.err.println("Exception checking deployment spec: " + toMessageString(e));
-            System.exit(1);
-        }
     }
 
     /** A deployment step */

@@ -41,10 +41,6 @@ public class DeploymentSpecDeprecatedAPITest {
         assertEquals(1, spec.steps().size());
         assertFalse(spec.majorVersion().isPresent());
         assertTrue(spec.steps().get(0).deploysTo(Environment.test));
-        assertTrue(spec.includes(Environment.test, Optional.empty()));
-        assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertFalse(spec.includes(Environment.staging, Optional.empty()));
-        assertFalse(spec.includes(Environment.prod, Optional.empty()));
     }
 
     @Test
@@ -73,10 +69,6 @@ public class DeploymentSpecDeprecatedAPITest {
         assertEquals(2, spec.steps().size());
         assertTrue(spec.steps().get(0).deploysTo(Environment.test));
         assertTrue(spec.steps().get(1).deploysTo(Environment.staging));
-        assertTrue(spec.includes(Environment.test, Optional.empty()));
-        assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertTrue(spec.includes(Environment.staging, Optional.empty()));
-        assertFalse(spec.includes(Environment.prod, Optional.empty()));
     }
 
     @Test
@@ -103,12 +95,6 @@ public class DeploymentSpecDeprecatedAPITest {
         assertTrue(spec.steps().get(3).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.steps().get(3)).active());
 
-        assertTrue(spec.includes(Environment.test, Optional.empty()));
-        assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertTrue(spec.includes(Environment.staging, Optional.empty()));
-        assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
     }
 
     @Test
@@ -197,12 +183,6 @@ public class DeploymentSpecDeprecatedAPITest {
         assertTrue(spec.steps().get(4).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.steps().get(4)).active());
 
-        assertTrue(spec.includes(Environment.test, Optional.empty()));
-        assertFalse(spec.includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertTrue(spec.includes(Environment.staging, Optional.empty()));
-        assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
     }
 
     @Test
