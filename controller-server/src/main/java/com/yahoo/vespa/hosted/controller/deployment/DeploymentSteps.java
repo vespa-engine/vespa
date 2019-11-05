@@ -14,10 +14,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.collectingAndThen;
 
@@ -40,7 +40,7 @@ public class DeploymentSteps {
     public List<JobType> jobs() {
         return spec.steps().stream()
                    .flatMap(step -> toJobs(step).stream())
-                   .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                   .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns job status sorted according to deployment spec */
@@ -48,7 +48,7 @@ public class DeploymentSteps {
         List<JobType> sortedJobs = jobs();
         return jobStatus.stream()
                         .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
-                        .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                        .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns deployments sorted according to declared zones */
@@ -56,7 +56,7 @@ public class DeploymentSteps {
         List<ZoneId> productionZones = spec.zones().stream()
                                            .filter(z -> z.region().isPresent())
                                            .map(z -> ZoneId.from(z.environment(), z.region().get()))
-                                           .collect(Collectors.toList());
+                                           .collect(Collectors.toUnmodifiableList());
         return deployments.stream()
                           .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))
                           .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
@@ -67,34 +67,35 @@ public class DeploymentSteps {
         return step.zones().stream()
                    .map(this::toJob)
                    .flatMap(Optional::stream)
-                   .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                   .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Returns test jobs in this */
+    /** Returns declared test jobs in this */
     public List<JobType> testJobs() {
         return toJobs(test());
     }
 
-    /** Returns production jobs in this */
+    /** Returns declared production jobs in this */
     public List<JobType> productionJobs() {
         return toJobs(production());
     }
 
-    /** Returns test steps in this */
+    /** Returns declared test steps in this */
     public List<DeploymentSpec.Step> test() {
-        if (spec.steps().isEmpty()) {
-            return singletonList(new DeploymentSpec.DeclaredZone(Environment.test));
-        }
         return spec.steps().stream()
-                   .filter(step -> step.deploysTo(Environment.test) || step.deploysTo(Environment.staging))
-                   .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                   .filter(step -> isTest(step))
+                   .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Returns production steps in this */
+    /** Returns declared production steps in this */
     public List<DeploymentSpec.Step> production() {
         return spec.steps().stream()
-                   .filter(step -> step.deploysTo(Environment.prod) || step.zones().isEmpty())
-                   .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                   .filter(step -> ! isTest(step))
+                   .collect(Collectors.toUnmodifiableList());
+    }
+
+    private boolean isTest(DeploymentSpec.Step step) {
+        return step.deploysTo(Environment.test) || step.deploysTo(Environment.staging);
     }
 
     /** Resolve job from deployment zone */
@@ -106,7 +107,7 @@ public class DeploymentSteps {
     private List<JobType> toJobs(List<DeploymentSpec.Step> steps) {
         return steps.stream()
                     .flatMap(step -> toJobs(step).stream())
-                    .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+                    .collect(Collectors.toUnmodifiableList());
     }
 
 }
