@@ -243,7 +243,9 @@ ExpressionNode value() :
                    LOOKAHEAD(4) ret = function()                            |
                    ret = feature()                                          |
                    ret = legacyQueryFeature()                               |
-        ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) ) )
+                   ( <LBRACE> ret = expression() <RBRACE> { ret = new EmbracedNode(ret); } ) )
+
+      )
     {
         ret = not ? new NotNode(ret) : ret;
         ret = neg ? new NegativeNode(ret) : ret;
@@ -466,10 +468,23 @@ ExpressionNode tensorConcat() :
 ExpressionNode tensorGenerate() :
 {
     TensorType type;
+    ExpressionNode expression;
+}
+{
+    <TENSOR> type = tensorType()
+    (
+        expression = tensorGenerateBody(type) |
+        expression = tensorValueBody(type)
+    )
+    { return expression; }
+}
+
+ExpressionNode tensorGenerateBody(TensorType type) :
+{
     ExpressionNode generator;
 }
 {
-    <TENSOR> type = tensorTypeArgument() <LBRACE> generator = expression() <RBRACE>
+    <LBRACE> generator = expression() <RBRACE>
     { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asLongListToDoubleOperator())); }
 }
 
@@ -478,7 +493,7 @@ ExpressionNode tensorRange() :
     TensorType type;
 }
 {
-    <RANGE> type = tensorTypeArgument()
+    <RANGE> type = tensorType()
     { return new TensorFunctionNode(new Range(type)); }
 }
 
@@ -487,7 +502,7 @@ ExpressionNode tensorDiag() :
     TensorType type;
 }
 {
-    <DIAG> type = tensorTypeArgument()
+    <DIAG> type = tensorType()
     { return new TensorFunctionNode(new Diag(type)); }
 }
 
@@ -496,7 +511,7 @@ ExpressionNode tensorRandom() :
     TensorType type;
 }
 {
-    <RANDOM> type = tensorTypeArgument()
+    <RANDOM> type = tensorType()
     { return new TensorFunctionNode(new Random(type)); }
 }
 
@@ -596,7 +611,7 @@ Reduce.Aggregator tensorReduceAggregator() :
     { return Reduce.Aggregator.valueOf(token.image); }
 }
 
-TensorType tensorTypeArgument() :
+TensorType tensorType() :
 {
     TensorType.Builder builder;
     TensorType.Value valueType;
@@ -620,15 +635,18 @@ TensorType.Value optionalTensorValueTypeParameter() :
     { return TensorType.Value.fromId(valueType); }
 }
 
-// NOTE: Only indexed bound dimensions are parsed currently, as that is what we need
 void tensorTypeDimension(TensorType.Builder builder) :
 {
     String name;
     int size;
 }
 {
-    name = identifier() <LSQUARE> size = integerNumber() <RSQUARE>
-    { builder.indexed(name, size); }
+    name = identifier()
+    (
+      ( <LCURLY> <RCURLY> { builder.mapped(name); } ) |
+      LOOKAHEAD(2) ( <LSQUARE> <RSQUARE> { builder.indexed(name); } ) |
+      ( <LSQUARE> size = integerNumber() <RSQUARE> { builder.indexed(name, size); } )
+    )
 }
 
 // This is needed not to parse tensor functions but for the "reserved names as literals" workaround cludge
@@ -702,8 +720,8 @@ List<ExpressionNode> expressionList() :
 }
 {
     <LSQUARE>
-    expression=expression() { list.add(expression); }
-    ( LOOKAHEAD(2) <COMMA> expression=expression() { list.add(expression); } ) *
+    expression = expression() { list.add(expression); }
+    ( LOOKAHEAD(2) <COMMA> expression = expression() { list.add(expression); } ) *
     <RSQUARE>
     { return list; }
 }
@@ -803,4 +821,65 @@ Value primitiveValue() :
     ( <SUB> { sign = "-";} ) ?
     ( <INTEGER> | <FLOAT> | <STRING> )
     { return Value.parse(sign + token.image); }
+}
+
+ConstantNode tensorValueBody(TensorType type) :
+{
+    Tensor.Builder builder = Tensor.Builder.of(type);
+}
+{
+    <COLON>
+    (
+        mappedTensorValueBody(builder) |
+        indexedTensorValueBody(builder)
+    )
+    { return new ConstantNode(new TensorValue(builder.build())); }
+}
+
+void mappedTensorValueBody(Tensor.Builder builder) : {}
+{
+    <LCURLY>
+        (         tensorCell(builder.cell()))*
+        ( <COMMA> tensorCell(builder.cell()))*
+    <RCURLY>
+}
+
+void indexedTensorValueBody(Tensor.Builder builder) :
+{
+    IndexedTensor.BoundBuilder indexedBuilder;
+    long index = 0;
+    double value;
+}
+{
+    {
+        if ( ! (builder instanceof IndexedTensor.BoundBuilder))
+            throw new IllegalArgumentException("The tensor short form [n, n, ...] can only be used for indexed " +
+                                               "bound tensors, not " + builder.type());
+        indexedBuilder = (IndexedTensor.BoundBuilder)builder;
+    }
+    <LSQUARE>
+        (         value = doubleNumber() { indexedBuilder.cellByDirectIndex(index++, value); } )*
+        ( <COMMA> value = doubleNumber() { indexedBuilder.cellByDirectIndex(index++, value); } )*
+    <RSQUARE>
+}
+
+void tensorCell(Tensor.Builder.CellBuilder cellBuilder) :
+{
+    double value;
+}
+{
+    <LCURLY>
+    (         labelAndDimension(cellBuilder))*
+    ( <COMMA> labelAndDimension(cellBuilder))*
+    <RCURLY>
+    <COLON> value = doubleNumber() { cellBuilder.value(value); }
+}
+
+void labelAndDimension(Tensor.Builder.CellBuilder cellBuilder) :
+{
+    String dimension, label;
+}
+{
+    dimension = identifier() <COLON> label = tag()
+    { cellBuilder.label(dimension, label); }
 }
