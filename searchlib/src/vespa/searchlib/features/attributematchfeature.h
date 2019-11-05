@@ -45,6 +45,7 @@ private:
         uint32_t  _matchedTermWeight;       // term weight of matched terms
         feature_t _matchedTermSignificance; // significance of matched terms
         int32_t   _totalWeight;
+        int32_t   _maxWeight;
         feature_t _normalizedWeightedWeight;
         int32_t   _weightSum; // sum of the weights for a weighted set attribute
         uint32_t  _valueCount; // the number of values for a non-weighted set attribute
@@ -57,6 +58,7 @@ private:
         uint32_t getNumTerms() const { return _queryTerms.size(); }
         uint32_t getMatches() const { return _matches; }
         int32_t getTotalWeight() const { return _totalWeight; }
+        int32_t getMaxWeight() const { return _maxWeight; }
         feature_t getAverageWeight() const;
         feature_t getQueryCompleteness() const;
         feature_t getNormalizedWeight() const;

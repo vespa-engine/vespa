@@ -54,6 +54,7 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
     _matchedTermWeight(0),
     _matchedTermSignificance(0),
     _totalWeight(0),
+    _maxWeight(0),
     _normalizedWeightedWeight(0),
     _weightSum(0),
     _valueCount(0),
@@ -89,6 +90,7 @@ AttributeMatchExecutor<T>::Computer::reset()
     _matchedTermWeight = 0,
     _matchedTermSignificance = 0,
     _totalWeight = 0;
+    _maxWeight = 0;
     _normalizedWeightedWeight = 0;
     _weightSum = 0;
     _valueCount = 0;
@@ -109,6 +111,7 @@ AttributeMatchExecutor<T>::Computer::run(uint32_t docId)
             if (_params.weightedSet) {
                 int32_t weight = tfmd->getWeight();
                 _totalWeight += weight;
+                _maxWeight = (_matches == 1) ? weight : std::max(_maxWeight, weight);
                 // attribute weight * query term weight
                 _normalizedWeightedWeight += weight * static_cast<int32_t>(td->getWeight().percent());
             }
@@ -123,9 +126,9 @@ AttributeMatchExecutor<T>::Computer::run(uint32_t docId)
         _valueCount = _params.attribute->getValueCount(docId);
     }
 
-    LOG(debug, "attributeMatch(%s)::Computer::run(): matches(%u), totalWeight(%d), normalizedWeightedWeight(%f), "
+    LOG(debug, "attributeMatch(%s)::Computer::run(): matches(%u), totalWeight(%d), maxWeight(%d), normalizedWeightedWeight(%f), "
         "weightSum(%d), valueCount(%u), matchedTermWeight(%u), matchedTermSignificance(%f)",
-        _params.attrInfo->name().c_str(), _matches, _totalWeight, _normalizedWeightedWeight,
+        _params.attrInfo->name().c_str(), _matches, _totalWeight, _maxWeight, _normalizedWeightedWeight,
         _weightSum, _valueCount, _matchedTermWeight, _matchedTermSignificance);
 }
 
@@ -250,6 +253,7 @@ AttributeMatchExecutor<T>::execute(uint32_t docId)
     outputs().set_number(8, static_cast<feature_t>(_cmp.getMatches()));
     outputs().set_number(9, static_cast<feature_t>(_cmp.getTotalWeight()));
     outputs().set_number(10, _cmp.getAverageWeight());
+    outputs().set_number(11, static_cast<feature_t>(_cmp.getMaxWeight()));
 }
 
 template <typename T>
@@ -288,6 +292,7 @@ AttributeMatchBlueprint::visitDumpFeatures(const IIndexEnvironment &env,
             visitor.visitDumpFeature(fnb.output("matches").buildName());
             visitor.visitDumpFeature(fnb.output("totalWeight").buildName());
             visitor.visitDumpFeature(fnb.output("averageWeight").buildName());
+            visitor.visitDumpFeature(fnb.output("maxWeight").buildName());
         }
     }
 }
@@ -323,6 +328,7 @@ AttributeMatchBlueprint::setup(const IIndexEnvironment & env,
     describeOutput("matches",       "The number of query terms which was matched in this attribute");
     describeOutput("totalWeight",   "The sum of the weights of the attribute keys matched in a weighted set attribute");
     describeOutput("averageWeight", "totalWeight/matches");
+    describeOutput("maxWeight",     "The max weight of the attribute keys matched in a weighted set attribute");
 
     env.hintAttributeAccess(_params.attrInfo->name());
     return true;
