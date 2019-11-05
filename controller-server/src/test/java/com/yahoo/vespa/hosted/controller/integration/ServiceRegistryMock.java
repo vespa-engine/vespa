@@ -2,36 +2,21 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
-import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateMock;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.ApplicationCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
-import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
-import com.yahoo.vespa.hosted.controller.api.integration.entity.EntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Billing;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.ContactRetriever;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockBilling;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MockTenantCost;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.MemoryGlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
@@ -43,9 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-
-import java.time.Clock;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -78,14 +60,18 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockBuildService mockBuildService = new MockBuildService();
     private final MockTenantCost mockTenantCost = new MockTenantCost();
 
+    public ServiceRegistryMock(SystemName system) {
+        this.zoneRegistryMock = new ZoneRegistryMock(system);
+        this.configServerMock = new ConfigServerMock(zoneRegistryMock);
+    }
+
     @Inject
-    public ServiceRegistryMock(ZoneRegistryMock zoneRegistry) {
-        this.zoneRegistryMock = zoneRegistry;
-        this.configServerMock = new ConfigServerMock(zoneRegistry);
+    public ServiceRegistryMock(ConfigserverConfig config) {
+        this(SystemName.from(config.system()));
     }
 
     public ServiceRegistryMock() {
-        this(new ZoneRegistryMock());
+        this(SystemName.main);
     }
 
     @Override

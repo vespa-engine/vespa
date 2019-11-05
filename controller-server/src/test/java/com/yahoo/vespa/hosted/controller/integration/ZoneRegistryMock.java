@@ -40,15 +40,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private UpgradePolicy upgradePolicy = null;
     private Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
 
-    @Inject
-    public ZoneRegistryMock(ConfigserverConfig config) {
-        this(SystemName.from(config.system()));
-    }
-
-    public ZoneRegistryMock() {
-        this(SystemName.main);
-    }
-
     /**
      * This sets the default list of zones contained in this. If your test need a particular set of zones, use
      * {@link #setZones(List)}  instead of changing the default set.}

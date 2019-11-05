@@ -1,6 +1,7 @@
 package com.yahoo.vespa.hosted.controller.metric;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -31,7 +32,7 @@ public class ConfigServerMetricsTest {
 
     @Before
     public void before() {
-        configServer = new ConfigServerMock(new ZoneRegistryMock());
+        configServer = new ConfigServerMock(new ZoneRegistryMock(SystemName.main));
         service = new ConfigServerMetrics(configServer);
     }
 
