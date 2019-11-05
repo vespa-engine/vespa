@@ -46,11 +46,6 @@ public class BundleLoader {
         this.osgi = osgi;
     }
 
-    private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer) throws InterruptedException {
-        File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
-        return osgi.install(file.getAbsolutePath());
-    }
-
     private void install(List<FileReference> references) {
         Set<FileReference> bundlesToInstall = new HashSet<>(references);
 
@@ -119,6 +114,11 @@ public class BundleLoader {
                 throw new RuntimeException("Could not install bundle '" + reference + "'", e);
             }
         }
+    }
+
+    private List<Bundle> obtainBundles(FileReference reference, FileAcquirer fileAcquirer) throws InterruptedException {
+        File file = fileAcquirer.waitFor(reference, 7, TimeUnit.DAYS);
+        return osgi.install(file.getAbsolutePath());
     }
 
     /**
