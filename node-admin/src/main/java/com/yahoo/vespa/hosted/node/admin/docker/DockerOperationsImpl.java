@@ -108,6 +108,10 @@ public class DockerOperationsImpl implements DockerOperations {
                                                    "but found none");
             }
             addEtcHosts(containerData, context.node().hostname(), ipV4Local, ipV6Local);
+        } else if (networking == DockerNetworking.LOCAL) {
+            var ipv4Address = ipAddresses.getIPv4Address(context.node().hostname())
+                                         .orElseThrow(() -> new IllegalArgumentException("No IPv4 address could be resolved from '" + context.node().hostname()+ "'"));
+            command.withIpAddress(ipv4Address);
         }
 
         addMounts(context, command);
