@@ -13,8 +13,6 @@ import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.file.Path;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -22,10 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.dockerapi.DockerImpl.LABEL_NAME_MANAGEDBY;
@@ -192,10 +188,6 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 .withLabels(labels)
                 .withEnv(environmentAssignments);
 
-        networkMode
-                .filter(mode -> ! mode.toLowerCase().equals("host"))
-                .ifPresent(mode -> containerCmd.withMacAddress(generateMACAddress(hostName, ipv4Address, ipv6Address)));
-
         hostName.ifPresent(containerCmd::withHostName);
         networkMode.ifPresent(hostConfig::withNetworkMode);
         ipv4Address.ifPresent(containerCmd::withIpv4Address);
@@ -258,31 +250,5 @@ class CreateContainerCommandImpl implements Docker.CreateContainerCommand {
                 entrypointArgs)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining(" "));
-    }
-
-    /**
-     * Generates a pseudo-random MAC address based on the hostname, IPv4- and IPv6-address.
-     */
-    static String generateMACAddress(Optional<String> hostname, Optional<String> ipv4Address, Optional<String> ipv6Address) {
-        final String seed = hostname.orElse("") + ipv4Address.orElse("") + ipv6Address.orElse("");
-        Random rand = getPRNG(seed);
-        byte[] macAddr = new byte[6];
-        rand.nextBytes(macAddr);
-
-        // Set second-last bit (locally administered MAC address), unset last bit (unicast)
-        macAddr[0] = (byte) ((macAddr[0] | 2) & 254);
-        return IntStream.range(0, macAddr.length)
-                .mapToObj(i -> String.format("%02x", macAddr[i]))
-                .collect(Collectors.joining(":"));
-    }
-
-    private static Random getPRNG(String seed) {
-        try {
-            SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
-            rand.setSeed(seed.getBytes());
-            return rand;
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("Failed to get pseudo-random number generator", e);
-        }
     }
 }
