@@ -90,6 +90,7 @@ public class DeploymentTriggerTest {
         tester.applications().lockApplicationOrThrow(app.application().id(), locked ->
                 tester.applications().store(locked.withProjectId(OptionalLong.empty())));
         app.timeOutConvergence(productionUsWest1);
+        tester.triggerJobs();
         assertEquals("Job is not triggered when no projectId is present", 0, tester.jobs().active().size());
     }
 

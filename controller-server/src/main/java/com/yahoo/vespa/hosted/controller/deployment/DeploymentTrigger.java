@@ -307,12 +307,13 @@ public class DeploymentTrigger {
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
         return ApplicationList.from(applications().asList())
-                           .withProjectId()
-                           .withChanges()
-                           .idList().stream()
-                           .map(this::computeReadyJobs)
-                           .flatMap(Collection::stream)
-                           .collect(toList());
+                              .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
+                              .withChanges()
+                              .withDeploymentSpec()
+                              .idList().stream()
+                              .map(this::computeReadyJobs)
+                              .flatMap(Collection::stream)
+                              .collect(toList());
     }
 
     /**
@@ -321,11 +322,9 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(TenantAndApplicationId id) {
         List<Job> jobs = new ArrayList<>();
         applications().getApplication(id).ifPresent(application -> {
-            Collection<Instance> instances = application.deploymentSpec().equals(DeploymentSpec.empty)
-                                             ? application.instances().values()
-                                             : application.deploymentSpec().instances().stream()
-                                                          .flatMap(instance -> application.get(instance.name()).stream())
-                                                          .collect(Collectors.toUnmodifiableList());
+            Collection<Instance> instances = application.deploymentSpec().instances().stream()
+                                                        .flatMap(instance -> application.get(instance.name()).stream())
+                                                        .collect(Collectors.toUnmodifiableList());
             for (Instance instance : instances) {
                 Change change = application.change();
                 Optional<Instant> completedAt = max(instance.deploymentJobs().statusOf(systemTest)
