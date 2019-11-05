@@ -47,7 +47,6 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*",
-            "http://*/application/v2/tenant/*/application/*/logs", // TODO: Remove once all clients switched to handler with instance name
             "http://*/application/v2/tenant/*/application/*")
             .map(UriPattern::new)
             .collect(Collectors.toList());
@@ -181,8 +180,8 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static boolean isLogRequest(HttpRequest request) {
-        return request.getUri().getPath().endsWith("/logs") &&
-                (getBindingMatch(request).groupCount() == 4 || getBindingMatch(request).groupCount() == 7);
+        return getBindingMatch(request).groupCount() == 7 &&
+                request.getUri().getPath().endsWith("/logs");
     }
 
     private static boolean isServiceConvergeListRequest(HttpRequest request) {
