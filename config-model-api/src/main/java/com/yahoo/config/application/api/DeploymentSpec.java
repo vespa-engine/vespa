@@ -356,15 +356,7 @@ public class DeploymentSpec {
         private final Optional<String> testerFlavor;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), false);
-        }
-
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active) {
-            this(environment, region, active, Optional.empty(), Optional.empty());
-        }
-
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<AthenzService> athenzService) {
-            this(environment, region, active, athenzService, Optional.empty());
+            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,

@@ -239,8 +239,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.config.provision.Environment)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional)",
       "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional, java.util.Optional)",
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
