@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -72,6 +73,7 @@ public class DeploymentSpec {
         this.athenzService = athenzService;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
+        validateUpgradePoliciesOfIncreasingConservativeness(steps);
     }
 
     // TODO: Remove after October 2019
@@ -147,6 +149,23 @@ public class DeploymentSpec {
                                                " but max 24 hours is allowed");
     }
 
+    /** Throws an IllegalArgumentException if any instance has a looser upgrade policy than the previous */
+    private void validateUpgradePoliciesOfIncreasingConservativeness(List<Step> steps) {
+        UpgradePolicy previous = Collections.min(List.of(UpgradePolicy.values()));
+        for (Step step : steps) {
+            UpgradePolicy strictest = previous;
+            List<DeploymentInstanceSpec> specs = instances(List.of(step));
+            for (DeploymentInstanceSpec spec : specs) {
+                if (spec.upgradePolicy().compareTo(previous) < 0)
+                    throw new IllegalArgumentException("Instance '" + spec.name() + "' cannot have a looser upgrade " +
+                                                       "policy than the previous of '" + previous + "'");
+
+                strictest = Comparables.max(strictest, spec.upgradePolicy());
+            }
+            previous = strictest;
+        }
+    }
+
     // TODO: Remove after October 2019
     private DeploymentInstanceSpec singleInstance() {
         return singleInstance(steps);
@@ -160,12 +179,6 @@ public class DeploymentSpec {
                                            "as it has multiple instances: " +
                                            instances.stream().map(Step::toString).collect(Collectors.joining(",")));
     }
-
-    // TODO: Remove after October 2019
-    public Optional<String> globalServiceId() { return singleInstance().globalServiceId(); }
-
-    // TODO: Remove after October 2019
-    public UpgradePolicy upgradePolicy() { return singleInstance().upgradePolicy(); }
 
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
@@ -250,7 +263,7 @@ public class DeploymentSpec {
 
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
-                    .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones)step).steps.stream() : List.of(step).stream())
+                    .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones) step).steps.stream() : List.of(step).stream())
                     .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
                     .collect(Collectors.toList());
     }

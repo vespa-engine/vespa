@@ -331,8 +331,6 @@
     "methods": [
       "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.lang.String)",
       "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
-      "public java.util.Optional globalServiceId()",
-      "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
       "public java.util.List zones()",
