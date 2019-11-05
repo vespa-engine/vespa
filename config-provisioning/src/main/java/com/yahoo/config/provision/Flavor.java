@@ -26,19 +26,21 @@ public class Flavor {
 
     private final Optional<FlavorOverrides> flavorOverrides;
 
+    private static final double coreSpeedupRolloutFactor = 1.0/3.0; // TODO: Increase to 2/3 (then 1) on later releases
+
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
-        this(
-                flavorConfig.name(),
-                new NodeResources(flavorConfig.minCpuCores(),
-                        flavorConfig.minMainMemoryAvailableGb(),
-                        flavorConfig.minDiskAvailableGb(),
-                        flavorConfig.bandwidth() / 1000,
-                        flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow),
-                Optional.empty(),
-                Type.valueOf(flavorConfig.environment()),
-                true,
-                flavorConfig.cost());
+        this(flavorConfig.name(),
+             new NodeResources(flavorConfig.minCpuCores() *
+                                      (1 + (flavorConfig.cpuCoreSpeedup() - 1) * coreSpeedupRolloutFactor),
+                               flavorConfig.minMainMemoryAvailableGb(),
+                               flavorConfig.minDiskAvailableGb(),
+                               flavorConfig.bandwidth() / 1000,
+                               flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow),
+             Optional.empty(),
+             Type.valueOf(flavorConfig.environment()),
+             true,
+             flavorConfig.cost());
     }
 
     /** Creates a *node* flavor from a node resources spec */

@@ -88,7 +88,7 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
     public void getConfig(StorFilestorConfig.Builder builder) {
         if (getHostResource() != null && getHostResource().getFlavor().isPresent()) {
             Flavor nodeFlavor = getHostResource().getFlavor().get();
-            builder.num_threads(Math.max(4, (int)nodeFlavor.getMinCpuCores()));
+            builder.num_threads(Math.max(4, (int)nodeFlavor.resources().vcpu()));
         }
         cluster.getConfig(builder);
     }

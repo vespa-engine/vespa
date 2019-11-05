@@ -10,12 +10,16 @@ import com.yahoo.search.config.QrStartConfig;
  * @author balder
  */
 public class NodeFlavorTuning implements QrStartConfig.Producer {
+
     private final Flavor flavor;
+
     NodeFlavorTuning(Flavor flavor) {
         this.flavor = flavor;
     }
+
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.getMinCpuCores())));
+        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.resources().vcpu())));
     }
+
 }
