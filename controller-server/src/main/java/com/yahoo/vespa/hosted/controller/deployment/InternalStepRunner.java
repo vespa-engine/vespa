@@ -31,6 +31,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -657,7 +658,8 @@ public class InternalStepRunner implements StepRunner {
                                                  .orElse(zone.region().value().contains("aws-") ?
                                                          DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES));
         byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
-        byte[] deploymentXml = deploymentXml(spec.requireInstance(id.application().instance()).athenzDomain(),
+        byte[] deploymentXml = deploymentXml(id.tester(),
+                                             spec.requireInstance(id.application().instance()).athenzDomain(),
                                              spec.requireInstance(id.application().instance()).athenzService(zone.environment(), zone.region()));
 
         try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + 1000)) {
@@ -780,13 +782,14 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
-    private static byte[] deploymentXml(Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
+    private static byte[] deploymentXml(TesterId id, Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
         String deploymentSpec =
                 "<?xml version='1.0' encoding='UTF-8'?>\n" +
                 "<deployment version=\"1.0\" " +
                 athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
-                athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("")
-                + "/>";
+                athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("") + ">" +
+                "  <instance id=\"" + id.id().instance().value() + "\" />" +
+                "</deployment>";
         return deploymentSpec.getBytes(UTF_8);
     }
 
