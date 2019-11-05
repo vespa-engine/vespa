@@ -4,6 +4,7 @@ package com.yahoo.osgi;
 import com.yahoo.component.ComponentSpecification;
 import org.osgi.framework.Bundle;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -11,14 +12,17 @@ import java.util.List;
  */
 public interface Osgi {
 
+    List<Bundle> getInitialBundles();
+
     Bundle[] getBundles();
+
+    /** Returns all bundles that have not been scheduled for uninstall. */
+    List<Bundle> getCurrentBundles();
 
     Bundle getBundle(ComponentSpecification bundleId);
 
     List<Bundle> install(String absolutePath);
 
-    void uninstall(Bundle bundle);
-
-    void refreshPackages();
+    void allowDuplicateBundles(Collection<Bundle> bundles);
 
 }
