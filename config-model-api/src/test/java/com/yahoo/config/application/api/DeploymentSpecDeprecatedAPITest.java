@@ -168,7 +168,6 @@ public class DeploymentSpecDeprecatedAPITest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(5, spec.steps().size());
-        assertEquals(4, spec.zones().size());
 
         assertTrue(spec.steps().get(0).deploysTo(Environment.test));
 

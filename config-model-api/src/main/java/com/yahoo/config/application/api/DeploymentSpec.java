@@ -168,13 +168,6 @@ public class DeploymentSpec {
         return steps;
     }
 
-    // TODO: Remove after November 2019
-    public List<DeclaredZone> zones() {
-        return singleInstance().steps().stream()
-                               .flatMap(step -> step.zones().stream())
-                               .collect(Collectors.toList());
-    }
-
     /** Returns the Athenz domain set on the root tag, if any */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
