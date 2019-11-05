@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.conservative;
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.defaultPolicy;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;

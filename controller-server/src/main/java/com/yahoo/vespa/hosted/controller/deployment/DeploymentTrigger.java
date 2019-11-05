@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -48,11 +46,9 @@ import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.Bui
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.idle;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.queued;
 import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.JobState.running;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.component;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -143,12 +139,6 @@ public class DeploymentTrigger {
         }
 
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(report.applicationId()), application -> {
-            if (report.jobType() == component) {
-                if (report.success())
-                    notifyOfSubmission(application.get().id(), report.version().get(), report.projectId());
-
-                return;
-            }
             JobRun triggering;
             Optional<JobStatus> status = application.get().require(report.applicationId().instance())
                                                     .deploymentJobs().statusOf(report.jobType());
@@ -238,13 +228,6 @@ public class DeploymentTrigger {
     public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
-        if (jobType == component) {
-            if (application.internal())
-                throw new IllegalArgumentException(applicationId + " has no component job we can trigger.");
-
-            buildService.trigger(BuildJob.of(applicationId, application.projectId().getAsLong(), jobType.jobName()));
-            return singletonList(component);
-        }
         Versions versions = Versions.from(application.change(), application, deploymentFor(instance, jobType),
                                           controller.systemVersion());
         String reason = "Job triggered manually by " + user;

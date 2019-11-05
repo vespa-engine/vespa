@@ -57,7 +57,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -1568,12 +1567,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {
         try {
             DeploymentJobs.JobReport report = toJobReport(tenant, application, toSlime(request.getData()).get());
-            if (   report.jobType() == JobType.component
-                && controller.applications().requireApplication(TenantAndApplicationId.from(report.applicationId())).internal())
-                throw new IllegalArgumentException(report.applicationId() + " is set up to be deployed from internally, and no " +
-                                                   "longer accepts submissions from Screwdriver v3 jobs. If you need to revert " +
-                                                   "to the old pipeline, please file a ticket at yo/vespa-support and request this.");
-
             controller.applications().deploymentTrigger().notifyOfCompletion(report);
             return new MessageResponse("ok");
         } catch (IllegalStateException e) {
@@ -1612,14 +1605,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, report.field("instance").asString());
         JobType type = JobType.fromJobName(report.field("jobName").asString());
         long buildNumber = report.field("buildNumber").asLong();
-        if (type == JobType.component)
-            return DeploymentJobs.JobReport.ofComponent(id,
-                                                        report.field("projectId").asLong(),
-                                                        buildNumber,
-                                                        jobError,
-                                                        toSourceRevision(report.field("sourceRevision")));
-        else
-            return DeploymentJobs.JobReport.ofJob(id, type, buildNumber, jobError);
+        return DeploymentJobs.JobReport.ofJob(id, type, buildNumber, jobError);
     }
 
     private static SourceRevision toSourceRevision(Inspector object) {

@@ -20,9 +20,6 @@ import static com.yahoo.config.provision.SystemName.main;
 /** Job types that exist in the build system */
 public enum JobType {
 //     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
-    component              ("component", // TODO jonmv: remove when no longer present in serialized data
-                            Map.of()),
-
     systemTest             ("system-test",
                             Map.of(main    , ZoneId.from("test", "us-east-1"),
                                    cd      , ZoneId.from("test", "cd-us-central-1"),
@@ -134,7 +131,6 @@ public enum JobType {
 
     /** Returns the environment of this job type, or null if it does not have an environment */
     public Environment environment() {
-        if (this == component) return null;
         return zones.values().iterator().next().environment();
     }
 

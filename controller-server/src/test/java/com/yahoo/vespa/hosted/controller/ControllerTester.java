@@ -150,13 +150,6 @@ public final class ControllerTester {
               .forEach(configureFunc);
     }
 
-    public static BuildService.BuildJob buildJob(ApplicationId id, JobType jobType) {
-        if (jobType == JobType.component)
-            throw new AssertionError("Not supposed to happen");
-
-        return BuildService.BuildJob.of(id, 0, jobType.jobName());
-    }
-
     public Controller controller() { return controller; }
 
     public CuratorDb curator() { return curator; }
