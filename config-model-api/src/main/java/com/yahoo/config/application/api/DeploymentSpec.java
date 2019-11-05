@@ -211,6 +211,13 @@ public class DeploymentSpec {
     //    to have environment, instance or region variants on those.
     public Optional<AthenzService> athenzService() { return this.athenzService; }
 
+    // TODO remove when 7.135 is the oldest version
+    public Optional<AthenzService> athenzService(InstanceName instanceName, Environment environment, RegionName region) {
+        Optional<DeploymentInstanceSpec> instance = instance(instanceName);
+        if (instance.isEmpty()) return this.athenzService;
+        return instance.get().athenzService(environment, region).or(() -> this.athenzService);
+    }
+
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
