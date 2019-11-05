@@ -945,48 +945,59 @@ public class ApplicationController {
     public void verifyApplicationIdentityConfiguration(TenantName tenantName, ApplicationPackage applicationPackage, Optional<Principal> deployer) {
         verifyAllowedLaunchAthenzService(applicationPackage.deploymentSpec());
 
-        applicationPackage.deploymentSpec().athenzDomain().ifPresent(identityDomain -> {
-            Tenant tenant = controller.tenants().require(tenantName);
-            deployer.filter(AthenzPrincipal.class::isInstance)
-                    .map(AthenzPrincipal.class::cast)
-                    .map(AthenzPrincipal::getIdentity)
-                    .filter(AthenzUser.class::isInstance)
-                    .ifPresentOrElse(user -> {
-                                         if ( ! ((AthenzFacade) accessControl).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
-                                             throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +
-                                                                                "services in Athenz domain " + identityDomain.value() + ". " +
-                                                                                "Please reach out to the domain admin.");
-                                     },
-                                     () -> {
-                                         if (tenant.type() != Tenant.Type.athenz)
-                                             throw new IllegalArgumentException("Athenz domain defined in deployment.xml, but no " +
-                                                                                "Athenz domain for tenant " + tenantName.value());
+        Tenant tenant = controller.tenants().require(tenantName);
+        Stream.concat(applicationPackage.deploymentSpec().athenzDomain().stream(),
+                      applicationPackage.deploymentSpec().instances().stream()
+                                        .flatMap(spec -> spec.athenzDomain().stream()))
+              .distinct()
+              .forEach(identityDomain -> {
+                  deployer.filter(AthenzPrincipal.class::isInstance)
+                          .map(AthenzPrincipal.class::cast)
+                          .map(AthenzPrincipal::getIdentity)
+                          .filter(AthenzUser.class::isInstance)
+                          .ifPresentOrElse(user -> {
+                                               if ( ! ((AthenzFacade) accessControl).hasTenantAdminAccess(user, new AthenzDomain(identityDomain.value())))
+                                                   throw new IllegalArgumentException("User " + user.getFullName() + " is not allowed to launch " +
+                                                                                      "services in Athenz domain " + identityDomain.value() + ". " +
+                                                                                      "Please reach out to the domain admin.");
+                                           },
+                                           () -> {
+                                               if (tenant.type() != Tenant.Type.athenz)
+                                                   throw new IllegalArgumentException("Athenz domain defined in deployment.xml, but no " +
+                                                                                      "Athenz domain for tenant " + tenantName.value());
 
-                                         AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
-                                         if ( ! Objects.equals(tenantDomain.getName(), identityDomain.value()))
-                                             throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.value() + "] " +
-                                                                                "must match tenant domain: [" + tenantDomain.getName() + "]");
-                                     });
-        });
+                                               AthenzDomain tenantDomain = ((AthenzTenant) tenant).domain();
+                                               if ( ! Objects.equals(tenantDomain.getName(), identityDomain.value()))
+                                                   throw new IllegalArgumentException("Athenz domain in deployment.xml: [" + identityDomain.value() + "] " +
+                                                                                      "must match tenant domain: [" + tenantDomain.getName() + "]");
+                                           });
+              });
     }
 
     /*
      * Verifies that the configured athenz service (if any) can be launched.
      */
     private void verifyAllowedLaunchAthenzService(DeploymentSpec deploymentSpec) {
-        deploymentSpec.athenzDomain().ifPresent(athenzDomain -> {
-            controller.zoneRegistry().zones().reachable().ids()
-                      .forEach(zone -> {
-                          AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerHttpsIdentity(zone);
-                          deploymentSpec.athenzService(zone.environment(), zone.region())
-                                        .map(service -> new AthenzService(athenzDomain.value(), service.value()))
-                                        .ifPresent(service -> {
-                                            boolean allowedToLaunch = ((AthenzFacade) accessControl).canLaunch(configServerAthenzIdentity, service);
-                                            if (!allowedToLaunch)
-                                                throw new IllegalArgumentException("Not allowed to launch Athenz service " + service.getFullName());
-                                        });
-                      });
+        controller.zoneRegistry().zones().reachable().ids().forEach(zone -> {
+            AthenzIdentity configServerAthenzIdentity = controller.zoneRegistry().getConfigServerHttpsIdentity(zone);
+            deploymentSpec.athenzDomain().ifPresent(domain -> {
+                deploymentSpec.athenzService().ifPresent(service -> {
+                    verifyAthenzServiceCanBeLaunchedBy(configServerAthenzIdentity, new AthenzService(domain.value(), service.value()));
+                });
+            });
+            deploymentSpec.instances().forEach(spec -> {
+                spec.athenzDomain().ifPresent(domain -> {
+                    spec.athenzService(zone.environment(), zone.region()).ifPresent(service -> {
+                        verifyAthenzServiceCanBeLaunchedBy(configServerAthenzIdentity, new AthenzService(domain.value(), service.value()));
+                    });
+                });
+            });
         });
+    }
+
+    private void verifyAthenzServiceCanBeLaunchedBy(AthenzIdentity configServerAthenzIdentity, AthenzService athenzService) {
+        if ( ! ((AthenzFacade) accessControl).canLaunch(configServerAthenzIdentity, athenzService))
+            throw new IllegalArgumentException("Not allowed to launch Athenz service " + athenzService.getFullName());
     }
 
     /** Returns the latest known version within the given major. */

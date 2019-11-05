@@ -170,15 +170,6 @@ public class DeploymentSpec {
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
-    // TODO: Remove after November 2019
-    public boolean canUpgradeAt(Instant instant) { return singleInstance().canUpgradeAt(instant); }
-
-    // TODO: Remove after November 2019
-    public boolean canChangeRevisionAt(Instant instant) { return singleInstance().canChangeRevisionAt(instant); }
-
-    // TODO: Remove after November 2019
-    public List<ChangeBlocker> changeBlocker() { return singleInstance().changeBlocker(); }
-
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
         if (hasSingleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019
@@ -195,28 +186,17 @@ public class DeploymentSpec {
     /** Returns the Athenz domain set on the root tag, if any */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
-    /** Returns the Athenz service to use for the given environment and region, if any */
-    // TODO: Remove after November 2019
-    public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
-        Optional<AthenzService> service = Optional.empty();
-        if (hasSingleInstance(steps))
-            service = singleInstance().athenzService(environment, region);
-        if (service.isPresent())
-            return service;
-        return this.athenzService;
-    }
-
-    /**
-     * Returns the Athenz service to use for the given instance, environment and region, if any.
-     * This returns the default set on  the deploy tag (if any) if nothing is set for this particular
-     * combination of instance, environment and region, and also if that combination is not specified
-     * at all in services.
-     */
-    public Optional<AthenzService> athenzService(InstanceName instanceName, Environment environment, RegionName region) {
-        Optional<DeploymentInstanceSpec> instance = instance(instanceName);
-        if (instance.isEmpty()) return this.athenzService;
-        return instance.get().athenzService(environment, region).or(() -> this.athenzService);
-    }
+    /** Returns the Athenz service set on the root tag, if any */
+    // athenz-service can be overridden on almost all tags, and with legacy mode + standard + environment and region variants
+    // + tester application services it gets complicated, but:
+    // 1. any deployment outside dev/perf should happen only with declared instances, implicit or not, which means the spec for
+    //    that instance should provide the correct service, based on environment and region, and we should not fall back to this; and
+    // 2. any deployment to dev/perf can only have the root or instance tags' value for service, which means we can ignore variants; and
+    //    a. for single-instance specs the service is always set on the root tag, and deploying under an unknown instance leads here, and
+    //    b. for multi-instance specs the root tag may or may not have a service, and unknown instances also lead here; and
+    // 3. any tester application deployment is always an unknown instance, and always gets here, but there should not be any reason
+    //    to have environment, instance or region variants on those.
+    public Optional<AthenzService> athenzService() { return this.athenzService; }
 
     // TODO: Remove after November 2019
     public Notifications notifications() { return singleInstance().notifications(); }

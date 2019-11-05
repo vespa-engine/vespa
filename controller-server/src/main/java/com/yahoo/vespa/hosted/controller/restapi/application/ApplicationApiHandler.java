@@ -737,7 +737,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Change blockers
         Cursor changeBlockers = object.setArray("changeBlockers");
-        deploymentSpec.changeBlocker().forEach(changeBlocker -> {
+        deploymentSpec.requireInstance(instance.name()).changeBlocker().forEach(changeBlocker -> {
             Cursor changeBlockerObject = changeBlockers.addObject();
             changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
             changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
@@ -843,7 +843,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Change blockers
         Cursor changeBlockers = object.setArray("changeBlockers");
-        application.deploymentSpec().changeBlocker().forEach(changeBlocker -> {
+        application.deploymentSpec().requireInstance(instance.name()).changeBlocker().forEach(changeBlocker -> {
             Cursor changeBlockerObject = changeBlockers.addObject();
             changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
             changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());

@@ -21,8 +21,9 @@ public class OutstandingChangeDeployer extends Maintainer {
     @Override
     protected void maintain() {
         for (Application application : controller().applications().asList()) {
-            if (application.outstandingChange().hasTargets()
-                && application.deploymentSpec().canChangeRevisionAt(controller().clock().instant())) {
+            if (   application.outstandingChange().hasTargets()
+                && application.deploymentSpec().instances().stream()
+                              .allMatch(instance -> instance.canChangeRevisionAt(controller().clock().instant()))) {
                 controller().applications().deploymentTrigger().triggerChange(application.id(),
                                                                               application.outstandingChange());
             }

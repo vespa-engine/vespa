@@ -177,8 +177,10 @@ class JobControllerApiHandlerHelper {
             lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
             lastPlatformObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
-        else if ( ! application.deploymentSpec().canUpgradeAt(controller.clock().instant())) {
-            lastPlatformObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
+        else if ( ! application.deploymentSpec().instances().stream()
+                               .allMatch(spec -> spec.canUpgradeAt(controller.clock().instant()))) {
+            lastPlatformObject.setString("blocked", application.deploymentSpec().instances().stream()
+                                                               .flatMap(spec -> spec.changeBlocker().stream())
                                                                .filter(blocker -> blocker.blocksVersions())
                                                                .filter(blocker -> blocker.window().includes(controller.clock().instant()))
                                                                .findAny().map(blocker -> blocker.window().toString()).get());
@@ -200,8 +202,10 @@ class JobControllerApiHandlerHelper {
             lastApplicationObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
             lastApplicationObject.setString("completed", completed + " of " + steps.productionJobs().size() + " complete");
-        else if ( ! application.deploymentSpec().canChangeRevisionAt(controller.clock().instant())) {
-            lastApplicationObject.setString("blocked", application.deploymentSpec().changeBlocker().stream()
+        else if ( ! application.deploymentSpec().instances().stream()
+                               .allMatch(spec -> spec.canChangeRevisionAt(controller.clock().instant()))) {
+            lastApplicationObject.setString("blocked", application.deploymentSpec().instances().stream()
+                                                                  .flatMap(spec -> spec.changeBlocker().stream())
                                                                   .filter(blocker -> blocker.blocksRevisions())
                                                                   .filter(blocker -> blocker.window().includes(controller.clock().instant()))
                                                                   .findAny().map(blocker -> blocker.window().toString()).get());
