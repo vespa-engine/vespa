@@ -736,7 +736,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Change blockers
         Cursor changeBlockers = object.setArray("changeBlockers");
-        deploymentSpec.requireInstance(instance.name()).changeBlocker().forEach(changeBlocker -> {
+        deploymentSpec.instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
             Cursor changeBlockerObject = changeBlockers.addObject();
             changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
             changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
@@ -745,7 +745,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
             Cursor hours = changeBlockerObject.setArray("hours");
             changeBlocker.window().hours().forEach(hours::addLong);
-        });
+        }));
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
@@ -842,7 +842,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         // Change blockers
         Cursor changeBlockers = object.setArray("changeBlockers");
-        application.deploymentSpec().requireInstance(instance.name()).changeBlocker().forEach(changeBlocker -> {
+        application.deploymentSpec().instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
             Cursor changeBlockerObject = changeBlockers.addObject();
             changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
             changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
@@ -851,7 +851,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
             Cursor hours = changeBlockerObject.setArray("hours");
             changeBlocker.window().hours().forEach(hours::addLong);
-        });
+        }));
 
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", compileVersion(application.id()).toFullString());
