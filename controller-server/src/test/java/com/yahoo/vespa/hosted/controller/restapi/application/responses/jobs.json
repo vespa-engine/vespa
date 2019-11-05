@@ -3,51 +3,52 @@
     "platform": {
       "platform": "6.1",
       "at": "(ignore)",
-      "pending": "Waiting for application change to 1.0.45-d00d to complete"
+      "pending": "Waiting for application change to 1.0.3-commit1 to complete"
     },
     "application": {
       "application": {
-        "hash": "1.0.45-d00d",
-        "build": 45,
+        "hash": "1.0.3-commit1",
+        "build": 3,
         "source": {
-          "gitRepository": "repo",
+          "gitRepository": "repository1",
           "gitBranch": "master",
-          "gitCommit": "d00d"
+          "gitCommit": "commit1"
         }
       },
-      "at": (ignore),
-      "deploying": "0 of 1 complete"
+      "at": "(ignore)",
+      "deploying": "0 of 3 complete"
     }
   },
   "deploying": {
     "application": {
-      "hash": "1.0.45-d00d",
-      "build": 45,
+      "hash": "1.0.3-commit1",
+      "build": 3,
       "source": {
-        "gitRepository": "repo",
+        "gitRepository": "repository1",
         "gitBranch": "master",
-        "gitCommit": "d00d"
+        "gitCommit": "commit1"
       }
     }
   },
   "deployments": [
+    {},
     {}
   ],
   "jobs": {
     "system-test": {
       "runs": [
         {
-          "id": 1,
+          "id": 2,
           "status": "running",
-          "start": (ignore),
+          "start": "(ignore)",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.45-d00d",
-            "build": 45,
+            "hash": "1.0.3-commit1",
+            "build": 3,
             "source": {
-              "gitRepository": "repo",
+              "gitRepository": "repository1",
               "gitBranch": "master",
-              "gitCommit": "d00d"
+              "gitCommit": "commit1"
             }
           },
           "steps": {
@@ -63,6 +64,40 @@
             "report": "unfinished"
           },
           "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "succeeded",
+            "deployReal": "succeeded",
+            "installTester": "succeeded",
+            "installReal": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
           "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1"
         }
       ],
@@ -71,17 +106,17 @@
     "staging-test": {
       "runs": [
         {
-          "id": 1,
+          "id": 2,
           "status": "running",
-          "start": (ignore),
+          "start": "(ignore)",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.45-d00d",
-            "build": 45,
+            "hash": "1.0.3-commit1",
+            "build": 3,
             "source": {
-              "gitRepository": "repo",
+              "gitRepository": "repository1",
               "gitBranch": "master",
-              "gitCommit": "d00d"
+              "gitCommit": "commit1"
             }
           },
           "steps": {
@@ -99,32 +134,164 @@
             "report": "unfinished"
           },
           "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "succeeded",
+            "deployInitialReal": "succeeded",
+            "installInitialReal": "succeeded",
+            "deployReal": "succeeded",
+            "installTester": "succeeded",
+            "installReal": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "copyVespaLogs": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
           "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test/run/1"
         }
       ],
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test"
     },
-    "us-west-1": {
+    "us-central-1": {
       "runs": [
         {
           "status": "pending",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.45-d00d",
-            "build": 45,
+            "hash": "1.0.3-commit1",
+            "build": 3,
             "source": {
-              "gitRepository": "repo",
+              "gitRepository": "repository1",
               "gitBranch": "master",
-              "gitCommit": "d00d"
+              "gitCommit": "commit1"
             }
           },
           "tasks": {
             "system-test": "running",
             "staging-test": "running"
           }
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": "(ignore)",
+          "end": "(ignore)",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "succeeded",
+            "deployReal": "succeeded",
+            "installTester": "succeeded",
+            "installReal": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
+          "tasks": {
+            "deploy": "succeeded",
+            "install": "succeeded",
+            "test": "succeeded"
+          },
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1/run/1"
+        }
+      ],
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-central-1"
+    },
+    "us-west-1": {
+      "runs": [
+        {
+          "id": 1,
+          "status": "aborted",
+          "start": "(ignore)",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "unfinished",
+            "deployReal": "unfinished",
+            "installTester": "unfinished",
+            "installReal": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateTester": "unfinished",
+            "report": "unfinished"
+          },
+          "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/run/1"
         }
       ],
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1"
+    },
+    "us-east-3": {
+      "runs": [
+        {
+          "id": 1,
+          "status": "aborted",
+          "start": "(ignore)",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "unfinished",
+            "deployReal": "unfinished",
+            "installTester": "unfinished",
+            "installReal": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "deactivateTester": "unfinished",
+            "report": "unfinished"
+          },
+          "tasks": {},
+          "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3/run/1"
+        }
+      ],
+      "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-east-3"
     }
   },
   "devJobs": {
@@ -132,19 +299,21 @@
       "runs": [
         {
           "id": 1,
-          "status": "running",
-          "start": (ignore),
+          "status": "success",
+          "start": "(ignore)",
+          "end": "(ignore)",
           "wantedPlatform": "6.1",
           "wantedApplication": {
             "hash": "unknown"
           },
           "steps": {
-            "deployReal": "unfinished",
-            "installReal": "unfinished",
-            "copyVespaLogs": "unfinished"
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "copyVespaLogs": "succeeded"
           },
           "tasks": {
-            "deploy": "running"
+            "deploy": "succeeded",
+            "install": "succeeded"
           },
           "log": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/run/1"
         }

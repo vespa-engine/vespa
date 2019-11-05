@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient
 import com.yahoo.vespa.hosted.controller.api.integration.resource.TenantCost;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerator;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.time.Clock;
 
@@ -76,5 +77,7 @@ public interface ServiceRegistry {
     BuildService buildService();
 
     TenantCost tenantCost();
+
+    ZoneRegistry zoneRegistry();
 
 }

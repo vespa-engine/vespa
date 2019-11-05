@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerProxyMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ public class ZoneApiTest extends ControllerContainerTest {
             ZoneApiMock.fromId("test.us-north-3"),
             ZoneApiMock.fromId("staging.us-north-4"));
 
-    private ContainerControllerTester tester;
+    private ContainerTester tester;
     private ConfigServerProxyMock proxy;
 
     @Before
@@ -43,44 +43,44 @@ public class ZoneApiTest extends ControllerContainerTest {
                                                                     .getComponent(ZoneRegistryMock.class.getName());
         zoneRegistry.setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
                     .setZones(zones);
-        this.tester = new ContainerControllerTester(container, responseFiles);
+        this.tester = new ContainerTester(container, responseFiles);
         this.proxy = (ConfigServerProxyMock) container.components().getComponent(ConfigServerProxyMock.class.getName());
     }
 
     @Test
     public void test_requests() {
         // GET /zone/v2
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v2"),
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2"),
                                                 new File("root.json"));
 
         // GET /zone/v2/prod/us-north-1
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1"),
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1"),
                                                 "ok");
 
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "GET");
 
         // GET /zone/v2/nodes/v2/node/?recursive=true
-        tester.containerTester().assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/?recursive=true"),
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/?recursive=true"),
                                                 "ok");
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "GET");
 
         // POST /zone/v2/dev/us-north-2/nodes/v2/command/restart?hostname=node1
-        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
+        tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/command/restart?hostname=node1",
                                                             "", Method.POST),
                                                 "ok");
 
         // PUT /zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1
-        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1",
+        tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/state/dirty/node1",
                                                             "", Method.PUT), "ok");
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "PUT");
 
         // DELETE /zone/v2/prod/us-north-1/nodes/v2/node/node1
-        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1",
+        tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-1/nodes/v2/node/node1",
                                                             "", Method.DELETE), "ok");
         assertLastRequest(ZoneId.from("prod", "us-north-1"), 2, "DELETE");
 
         // PATCH /zone/v2/prod/us-north-1/nodes/v2/node/node1
-        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/node/node1",
+        tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/dev/aws-us-north-2/nodes/v2/node/node1",
                                                             "{\"currentRestartGeneration\": 1}",
                                                             Method.PATCH), "ok");
         assertLastRequest(ZoneId.from("dev", "aws-us-north-2"), 1, "PATCH");
@@ -92,7 +92,7 @@ public class ZoneApiTest extends ControllerContainerTest {
     @Test
     public void test_invalid_requests() {
         // POST /zone/v2/prod/us-north-34/nodes/v2
-        tester.containerTester().assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-42/nodes/v2",
+        tester.assertResponse(operatorRequest("http://localhost:8080/zone/v2/prod/us-north-42/nodes/v2",
                                                             "", Method.POST),
                                                 new File("unknown-zone.json"), 400);
         assertFalse(proxy.lastReceived().isPresent());

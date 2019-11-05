@@ -18,11 +18,7 @@
   "region": "us-central-1",
   "endpoints": [],
   "serviceUrls": [
-    "http://old-endpoint.vespa.yahooapis.com:4080",
-    "http://qrs-endpoint.vespa.yahooapis.com:4080",
-    "http://feeding-endpoint.vespa.yahooapis.com:4080",
-    "http://global-endpoint.vespa.yahooapis.com:4080",
-    "http://alias-endpoint.vespa.yahooapis.com:4080"
+    "https://instance1--application1--tenant1.us-central-1.prod.vespa:43"
   ],
   "nodes": "http://localhost:8080/zone/v2/prod/us-central-1/nodes/v2/node/%3F&recursive=true&application=tenant1.application1.instance1",
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-central-1&application=tenant1.application1.instance1",

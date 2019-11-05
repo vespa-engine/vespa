@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobControl;
 import com.yahoo.vespa.hosted.controller.maintenance.Maintainer;
 import com.yahoo.vespa.hosted.controller.maintenance.OsUpgrader;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.intellij.lang.annotations.Language;
@@ -43,12 +43,12 @@ public class OsApiTest extends ControllerContainerTest {
     private static final ZoneApi zone2 = ZoneApiMock.newBuilder().withId("prod.us-west-1").with(cloud1).build();
     private static final ZoneApi zone3 = ZoneApiMock.newBuilder().withId("prod.eu-west-1").with(cloud2).build();
 
-    private ContainerControllerTester tester;
+    private ContainerTester tester;
     private List<OsUpgrader> osUpgraders;
 
     @Before
     public void before() {
-        tester = new ContainerControllerTester(container, responses);
+        tester = new ContainerTester(container, responses);
         addUserToHostedOperatorRole(operator);
         zoneRegistryMock().setSystemName(SystemName.cd)
                           .setZones(zone1, zone2, zone3)
@@ -70,8 +70,6 @@ public class OsApiTest extends ControllerContainerTest {
 
         // All nodes are initially on empty version
         upgradeAndUpdateStatus();
-        assertFile(new Request("http://localhost:8080/os/v1/"), "versions-initial.json");
-
         // Upgrade OS to a different version in each cloud
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
                        "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
@@ -160,12 +158,11 @@ public class OsApiTest extends ControllerContainerTest {
     }
 
     private ZoneRegistryMock zoneRegistryMock() {
-        return (ZoneRegistryMock) tester.containerTester().container().components()
-                                        .getComponent(ZoneRegistryMock.class.getName());
+        return tester.serviceRegistry().zoneRegistry();
     }
 
     private NodeRepositoryMock nodeRepository() {
-        return tester.containerTester().serviceRegistry().configServerMock().nodeRepository();
+        return tester.serviceRegistry().configServerMock().nodeRepository();
     }
 
     private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {

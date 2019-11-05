@@ -128,7 +128,7 @@ public class DeploymentTester {
         return this;
     }
 
-    /** Returns the default deployment context owned by this */
+    /** Create the deployment context for the default instance id  */
     public DeploymentContext newDeploymentContext() {
         return newDeploymentContext(instanceId);
     }

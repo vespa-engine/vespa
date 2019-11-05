@@ -3,22 +3,22 @@
   "application": "application2",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant2/application/application2/job/",
   "latestVersion": {
-    "buildNumber": 42,
-    "hash": "1.0.42-commit1",
+    "buildNumber": 1,
+    "hash": "1.0.1-commit1",
     "source": {
       "gitRepository": "repository1",
       "gitBranch": "master",
       "gitCommit": "commit1"
     }
   },
-  "projectId": 456,
+  "projectId": 1000,
   "deploying": {
-    "version": "(ignore)"
+    "version": "7"
   },
   "outstandingChange": {
     "revision": {
-      "buildNumber": 42,
-      "hash": "(ignore)",
+      "buildNumber": 1,
+      "hash": "1.0.1-commit1",
       "source": {
         "gitRepository": "repository1",
         "gitBranch": "master",
@@ -31,6 +31,13 @@
   "instances": [
     {
       "instance": "default",
+      "deploymentJobs": [],
+      "changeBlockers": [],
+      "globalRotations": [],
+      "deployments": []
+    },
+    {
+      "instance": "instance1",
       "deploymentJobs": [
         {
           "type": "system-test",
@@ -39,21 +46,43 @@
             "id": -1,
             "version": "7.0.0",
             "revision": {
-              "buildNumber": 42,
-              "hash": "1.0.42-commit1",
+              "buildNumber": 1,
+              "hash": "1.0.1-commit1",
               "source": {
                 "gitRepository": "repository1",
                 "gitBranch": "master",
                 "gitCommit": "commit1"
               }
             },
-            "reason": "Testing last changes outside prod",
+            "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
+            "at": "(ignore)"
+          }
+        },
+        {
+          "type": "staging-test",
+          "success": false,
+          "lastTriggered": {
+            "id": -1,
+            "version": "7.0.0",
+            "revision": {
+              "buildNumber": 1,
+              "hash": "1.0.1-commit1",
+              "source": {
+                "gitRepository": "repository1",
+                "gitBranch": "master",
+                "gitCommit": "commit1"
+              }
+            },
+            "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
             "at": "(ignore)"
           }
         }
       ],
       "changeBlockers": [],
-      "globalRotations": [],
+      "globalRotations": [
+        "https://application2--tenant2.global.vespa.oath.cloud:4443/"
+      ],
+      "rotationId": "rotation-id-2",
       "deployments": []
     }
   ],
@@ -66,3 +95,4 @@
   },
   "activity": {}
 }
+

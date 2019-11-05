@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
@@ -42,6 +43,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.time.Clock;
 
@@ -53,8 +55,8 @@ import java.time.Clock;
 public class ServiceRegistryMock extends AbstractComponent implements ServiceRegistry {
 
     private final ManualClock clock = new ManualClock();
-    private final ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock();
-    private final ConfigServerMock configServerMock = new ConfigServerMock(zoneRegistryMock);
+    private final ZoneRegistryMock zoneRegistryMock;
+    private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MemoryGlobalRoutingService memoryGlobalRoutingService = new MemoryGlobalRoutingService();
     private final RoutingGeneratorMock routingGeneratorMock = new RoutingGeneratorMock(RoutingGeneratorMock.TEST_ENDPOINTS);
@@ -75,6 +77,16 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockBuildService mockBuildService = new MockBuildService();
     private final MockTenantCost mockTenantCost = new MockTenantCost();
+
+    @Inject
+    public ServiceRegistryMock(ZoneRegistryMock zoneRegistry) {
+        this.zoneRegistryMock = zoneRegistry;
+        this.configServerMock = new ConfigServerMock(zoneRegistry);
+    }
+
+    public ServiceRegistryMock() {
+        this(new ZoneRegistryMock());
+    }
 
     @Override
     public ConfigServer configServer() {
@@ -184,7 +196,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public MockTenantCost tenantCost() { return mockTenantCost;}
 
-    public ZoneRegistryMock zoneRegistryMock() {
+    @Override
+    public ZoneRegistryMock zoneRegistry() {
         return zoneRegistryMock;
     }
 

@@ -1,12 +1,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
-import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.restapi.ContainerControllerTester;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Test;
 
@@ -19,19 +15,9 @@ public class BadgeApiTest extends ControllerContainerTest {
 
     @Test
     public void testBadgeApi() {
-        ContainerControllerTester tester = new ContainerControllerTester(container, responseFiles);
-        Application application = tester.createApplication("domain", "tenant", "application", "default");
-        ApplicationPackage packageWithService = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .athenzIdentity(com.yahoo.config.provision.AthenzDomain.from("domain"), AthenzService.from("service"))
-                .region("us-west-1")
-                .build();
-        tester.controller().jobController().submit(application.id(),
-                                                   new SourceRevision("repository", "branch", "commit"),
-                                                   "foo@bar",
-                                                   123,
-                                                   packageWithService,
-                                                   new byte[0]);
+        ContainerTester tester = new ContainerTester(container, responseFiles);
+        var application = new DeploymentTester(new ControllerTester(tester)).newDeploymentContext("tenant", "application", "default");
+        application.submit();
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default"),
                               "", 302);

@@ -1,14 +1,14 @@
 {
-  "versions":[
+  "versions": [
     {
       "version": "5",
       "confidence": "high",
-      "commit": "(ignore)",
-      "date": "(ignore)",
+      "commit": "badc0ffee",
+      "date": 0,
       "controllerVersion": false,
       "systemVersion": false,
-      "configServers": [ ],
-      "failingApplications": [ ],
+      "configServers": [],
+      "failingApplications": [],
       "productionApplications": [
         {
           "tenant": "tenant1",
@@ -20,16 +20,16 @@
           "productionSuccesses": 1
         }
       ],
-      "deployingApplications": [ ]
+      "deployingApplications": []
     },
     {
-      "version":"5.1",
-      "confidence":"normal",
-      "commit":"(ignore)",
-      "date": "(ignore)",
-      "controllerVersion":false,
-      "systemVersion":true,
-      "configServers":[
+      "version": "5.1",
+      "confidence": "normal",
+      "commit": "badc0ffee",
+      "date": 0,
+      "controllerVersion": true,
+      "systemVersion": true,
+      "configServers": [
         {
           "hostname":"config1.test"
         },
@@ -37,7 +37,7 @@
           "hostname":"config2.test"
         }
       ],
-      "failingApplications":[
+      "failingApplications": [
         {
           "tenant": "tenant1",
           "application": "application1",
@@ -47,7 +47,7 @@
           "failing": "staging-test"
         }
       ],
-      "productionApplications":[
+      "productionApplications": [
         {
           "tenant": "tenant2",
           "application": "application2",
@@ -68,18 +68,7 @@
           "running": "staging-test"
         }
       ]
-    },
-    {
-      "version": "(ignore)",
-      "confidence": "normal",
-      "commit": "(ignore)",
-      "date": "(ignore)",
-      "controllerVersion": true,
-      "systemVersion": false,
-      "configServers": [ ],
-      "failingApplications": [ ],
-      "productionApplications": [ ],
-      "deployingApplications": [ ]
     }
   ]
 }
+

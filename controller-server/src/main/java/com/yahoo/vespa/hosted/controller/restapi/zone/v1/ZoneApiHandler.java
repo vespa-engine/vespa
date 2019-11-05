@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
@@ -32,9 +33,9 @@ public class ZoneApiHandler extends LoggingRequestHandler {
 
     private final ZoneRegistry zoneRegistry;
 
-    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ZoneRegistry zoneRegistry) {
+    public ZoneApiHandler(LoggingRequestHandler.Context parentCtx, ServiceRegistry serviceRegistry) {
         super(parentCtx);
-        this.zoneRegistry = zoneRegistry;
+        this.zoneRegistry = serviceRegistry.zoneRegistry();
     }
 
     @Override

@@ -1116,16 +1116,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor array = slime.setObject().setArray("globalrotationoverride");
-        Map<RoutingEndpoint, EndpointStatus> status = controller.applications().globalRotationStatus(deploymentId);
-        for (RoutingEndpoint endpoint : status.keySet()) {
-            EndpointStatus currentStatus = status.get(endpoint);
-            array.addString(endpoint.upstreamName());
-            Cursor statusObject = array.addObject();
-            statusObject.setString("status", currentStatus.getStatus().name());
-            statusObject.setString("reason", currentStatus.getReason() == null ? "" : currentStatus.getReason());
-            statusObject.setString("agent", currentStatus.getAgent() == null ? "" : currentStatus.getAgent());
-            statusObject.setLong("timestamp", currentStatus.getEpoch());
-        }
+        controller.applications().globalRotationStatus(deploymentId)
+                  .forEach((endpoint, status) -> {
+                      array.addString(endpoint.upstreamName());
+                      Cursor statusObject = array.addObject();
+                      statusObject.setString("status", status.getStatus().name());
+                      statusObject.setString("reason", status.getReason() == null ? "" : status.getReason());
+                      statusObject.setString("agent", status.getAgent() == null ? "" : status.getAgent());
+                      statusObject.setLong("timestamp", status.getEpoch());
+                  });
 
         return new SlimeJsonResponse(slime);
     }
