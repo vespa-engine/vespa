@@ -162,6 +162,16 @@ public class MetricsReporterTest {
         assertEquals(6.0, metric.values.get("hostedVespa.docker.freeCapacityDisk"));
         assertEquals(3.0, metric.values.get("hostedVespa.docker.freeCapacityMem"));
         assertEquals(4.0, metric.values.get("hostedVespa.docker.freeCapacityCpu"));
+
+        Metric.Context app1context = metric.createContext(Map.of("app", "test.default", "tenantName", "app1", "applicationId", "app1.test.default"));
+        assertEquals(2.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityDisk", app1context), 0.01d);
+        assertEquals(3.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityMem", app1context), 0.01d);
+        assertEquals(1.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityCpu", app1context), 0.01d);
+
+        Metric.Context app2context = metric.createContext(Map.of("app", "test.default", "tenantName", "app2", "applicationId", "app2.test.default"));
+        assertEquals(4.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityDisk", app2context), 0.01d);
+        assertEquals(4.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityMem", app2context), 0.01d);
+        assertEquals(2.0, metric.sumDoubleValues("hostedVespa.docker.allocatedCapacityCpu", app2context), 0.01d);
     }
 
     private ApplicationId app(String tenant) {
@@ -219,6 +229,17 @@ public class MetricsReporterTest {
         @Override
         public Context createContext(Map<String, ?> properties) {
             return new TestContext(properties);
+        }
+
+        double sumDoubleValues(String key, Context sumContext) {
+            double sum = 0.0;
+            for(Context c : context.get(key)) {
+                TestContext tc = (TestContext) c;
+                if (tc.value instanceof Double && tc.properties.equals(((TestContext) sumContext).properties)) {
+                    sum += (double) tc.value;
+                }
+            }
+            return sum;
         }
 
         /**
