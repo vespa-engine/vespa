@@ -48,6 +48,30 @@ public abstract class RemoteClusterControllerTask {
         DEADLINE_EXCEEDED
     }
 
+    public static class Failure {
+        private final FailureCondition condition;
+        private final String message;
+
+        private Failure(FailureCondition condition, String message) {
+            this.condition = condition;
+            this.message = message;
+        }
+        public static Failure of(FailureCondition condition, String message) {
+            return new Failure(condition, message);
+        }
+        public static Failure of(FailureCondition condition) {
+            return new Failure(condition, "");
+        }
+
+        public FailureCondition getCondition() {
+            return condition;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+    }
+
     /**
      *  If the task completion has been deferred due to hasVersionAckDependency(),
      *  this method will be invoked if a failure occurs before the version has
@@ -64,9 +88,10 @@ public abstract class RemoteClusterControllerTask {
      *  before the dependent cluster version has been published.
      *
      *  The task implementation is responsible for communicating the appropriate
-     *  error semantics to the caller who initially scheduled the task.
+     *  error semantics to the caller who initially scheduled the task. If additional
+     *  details are available, Failure.getMessage() will return a non-empty string.
      */
-    public void handleFailure(FailureCondition condition) {}
+    public void handleFailure(Failure failure) {}
 
     public Optional<Instant> getDeadline() {
         return Optional.empty();

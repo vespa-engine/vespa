@@ -428,24 +428,25 @@ public class SetNodeStateTest extends StateRestApiTest {
         expectedException.expect(UnknownMasterException.class);
 
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
+        request.handleFailure(RemoteClusterControllerTask.Failure.of(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST));
         request.getResult();
     }
 
     @Test
     public void leadership_loss_marks_request_as_failed_for_early_out_response() {
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
+        request.handleFailure(RemoteClusterControllerTask.Failure.of(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST));
         assertTrue(request.isFailed());
     }
 
     @Test
     public void deadline_exceeded_fails_set_node_state_request() throws Exception {
-        expectedException.expectMessage("Task exceeded its version wait deadline");
+        expectedException.expectMessage("Task exceeded its version wait deadline: gremlins in the computer");
         expectedException.expect(DeadlineExceededException.class);
 
         SetNodeStateRequest request = createDummySetNodeStateRequest();
-        request.handleFailure(RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED);
+        request.handleFailure(RemoteClusterControllerTask.Failure.of(
+                RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, "gremlins in the computer"));
         request.getResult();
     }
 

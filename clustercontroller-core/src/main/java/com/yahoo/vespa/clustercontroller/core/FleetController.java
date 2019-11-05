@@ -426,12 +426,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private void failAllVersionDependentTasks() {
         tasksPendingStateRecompute.forEach(task -> {
-            task.handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
+            task.handleFailure(RemoteClusterControllerTask.Failure.of(
+                    RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST));
             task.notifyCompleted();
         });
         tasksPendingStateRecompute.clear();
         taskCompletionQueue.forEach(task -> {
-            task.getTask().handleFailure(RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST);
+            task.getTask().handleFailure(RemoteClusterControllerTask.Failure.of(
+                    RemoteClusterControllerTask.FailureCondition.LEADERSHIP_LOST));
             task.getTask().notifyCompleted();
         });
         taskCompletionQueue.clear();
@@ -747,6 +749,43 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         return context;
     }
 
+    private static long effectiveActivatedStateVersion(NodeInfo nodeInfo, ClusterStateBundle bundle) {
+        return bundle.deferredActivation()
+                ? nodeInfo.getClusterStateVersionActivationAcked()
+                : nodeInfo.getClusterStateVersionBundleAcknowledged();
+    }
+
+    private List<Node> enumerateNodesNotYetAckedAtLeastVersion(long version) {
+        var bundle = systemStateBroadcaster.getClusterStateBundle();
+        if (bundle == null) {
+            return List.of();
+        }
+        return cluster.getNodeInfo().stream().
+                filter(n -> effectiveActivatedStateVersion(n, bundle) < version).
+                map(NodeInfo::getNode).
+                collect(Collectors.toList());
+    }
+
+    private static <E> String stringifyListWithLimits(List<E> list, int limit) {
+        if (list.size() > limit) {
+            var sub = list.subList(0, limit);
+            return String.format("%s (... and %d more)",
+                    sub.stream().map(E::toString).collect(Collectors.joining(", ")),
+                    list.size() - limit);
+        } else {
+            return list.stream().map(E::toString).collect(Collectors.joining(", "));
+        }
+    }
+
+    private String buildNodesNotYetConvergedMessage(long taskConvergeVersion) {
+        var nodes = enumerateNodesNotYetAckedAtLeastVersion(taskConvergeVersion);
+        if (nodes.isEmpty()) {
+            return "";
+        }
+        return String.format("the following nodes have not converged to at least version %d: %s",
+                taskConvergeVersion, stringifyListWithLimits(nodes, options.maxDivergentNodesPrintedInTaskErrorMessages));
+    }
+
     private boolean completeSatisfiedVersionDependentTasks() {
         int publishedVersion = systemStateBroadcaster.lastClusterStateVersionInSync();
         long queueSizeBefore = taskCompletionQueue.size();
@@ -766,9 +805,11 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
             } else if (taskCompletion.getDeadlineTimePointMs() <= now) {
-                log.log(LogLevel.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure",
-                        taskCompletion.getTask().getClass().getName()));
-                taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED);
+                var details = buildNodesNotYetConvergedMessage(taskCompletion.getMinimumVersion());
+                log.log(LogLevel.WARNING, () -> String.format("Deferred task of type '%s' has exceeded wait deadline; completing with failure (details: %s)",
+                        taskCompletion.getTask().getClass().getName(), details));
+                taskCompletion.getTask().handleFailure(RemoteClusterControllerTask.Failure.of(
+                        RemoteClusterControllerTask.FailureCondition.DEADLINE_EXCEEDED, details));
                 taskCompletion.getTask().notifyCompleted();
                 taskCompletionQueue.remove();
             } else {

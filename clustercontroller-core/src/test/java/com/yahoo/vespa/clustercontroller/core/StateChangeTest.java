@@ -1263,25 +1263,24 @@ public class StateChangeTest extends FleetControllerTest {
 
     private static abstract class MockTask extends RemoteClusterControllerTask {
         boolean invoked = false;
-        boolean leadershipLost = false;
-        boolean deadlineExceeded = false;
+        Failure failure;
 
         boolean isInvoked() { return invoked; }
 
-        boolean isLeadershipLost() { return leadershipLost; }
+        boolean isLeadershipLost() {
+            return (failure != null) && (failure.getCondition() == FailureCondition.LEADERSHIP_LOST);
+        }
 
-        boolean isDeadlineExceeded() { return deadlineExceeded; }
+        boolean isDeadlineExceeded() {
+            return (failure != null) && (failure.getCondition() == FailureCondition.DEADLINE_EXCEEDED);
+        }
 
         @Override
         public boolean hasVersionAckDependency() { return true; }
 
         @Override
-        public void handleFailure(FailureCondition condition) {
-            if (condition == FailureCondition.LEADERSHIP_LOST) {
-                this.leadershipLost = true;
-            } else if (condition == FailureCondition.DEADLINE_EXCEEDED) {
-                this.deadlineExceeded = true;
-            }
+        public void handleFailure(Failure failure) {
+            this.failure = failure;
         }
     }
 
@@ -1598,6 +1597,45 @@ public class StateChangeTest extends FleetControllerTest {
         ctrl.tick();
         assertTrue(task.isCompleted());
         assertTrue(task.isDeadlineExceeded());
+    }
+
+    private void doTestTaskDeadlineExceeded(boolean deferredActivation, String expectedMessage) throws Exception {
+        FleetControllerOptions options = defaultOptions();
+        options.setMaxDeferredTaskVersionWaitTime(Duration.ofSeconds(60));
+        options.enableTwoPhaseClusterStateActivation = deferredActivation;
+        options.maxDivergentNodesPrintedInTaskErrorMessages = 10;
+        RemoteTaskFixture fixture = createFixtureWith(options);
+
+        MockTask task = fixture.scheduleVersionDependentTaskWithSideEffects();
+        communicator.setShouldDeferDistributorClusterStateAcks(true);
+        fixture.processScheduledTask();
+
+        assertTrue(task.isInvoked());
+        assertFalse(task.isCompleted());
+        assertFalse(task.isDeadlineExceeded());
+        timer.advanceTime(60_001);
+        ctrl.tick();
+        assertTrue(task.isCompleted());
+        assertTrue(task.isDeadlineExceeded());
+        // If we're not using two-phase activation for this test, all storage nodes have ACKed
+        // the bundle, but the distributors are explicitly deferred. If we used two-phase activation,
+        // all distributors and storage nodes will be listed here.
+        assertEquals(expectedMessage, task.failure.getMessage());
+    }
+
+    @Test
+    public void task_not_completed_within_deadline_lists_nodes_not_converged_in_error_message() throws Exception {
+        doTestTaskDeadlineExceeded(false, "the following nodes have not converged to " +
+                "at least version 4: distributor.0, distributor.1, distributor.2, distributor.3, " +
+                "distributor.4, distributor.5, distributor.6, distributor.7, distributor.8, distributor.9");
+    }
+
+    @Test
+    public void task_not_completed_within_deadline_with_deferred_activation_checks_activation_version() throws Exception {
+        doTestTaskDeadlineExceeded(true, "the following nodes have not converged to " +
+                "at least version 4: distributor.0, distributor.1, distributor.2, distributor.3, " +
+                "distributor.4, distributor.5, distributor.6, distributor.7, distributor.8, distributor.9 " +
+                "(... and 10 more)");
     }
 
 }
