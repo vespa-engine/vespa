@@ -354,9 +354,6 @@ public class DeploymentSpec {
             this.duration = duration;
         }
 
-        // TODO: Remove after October 2019
-        public Duration duration() { return duration; }
-
         @Override
         public Duration delay() { return duration; }
 

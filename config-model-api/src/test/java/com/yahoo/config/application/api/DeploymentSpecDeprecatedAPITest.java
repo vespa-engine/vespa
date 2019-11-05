@@ -178,7 +178,6 @@ public class DeploymentSpecDeprecatedAPITest {
         assertFalse(((DeploymentSpec.DeclaredZone)spec.steps().get(2)).active());
 
         assertTrue(spec.steps().get(3) instanceof DeploymentSpec.Delay);
-        assertEquals(3 * 60 * 60 + 30 * 60, ((DeploymentSpec.Delay)spec.steps().get(3)).duration().getSeconds());
 
         assertTrue(spec.steps().get(4).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.steps().get(4)).active());

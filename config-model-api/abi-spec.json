@@ -263,7 +263,6 @@
     ],
     "methods": [
       "public void <init>(java.time.Duration)",
-      "public java.time.Duration duration()",
       "public java.time.Duration delay()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.lang.String toString()"
