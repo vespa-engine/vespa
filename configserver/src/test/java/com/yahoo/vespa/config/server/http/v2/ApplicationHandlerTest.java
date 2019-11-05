@@ -211,7 +211,7 @@ public class ApplicationHandlerTest {
         stubFor(get(urlEqualTo(path))
                 .willReturn(aResponse()
                             .withStatus(200)));
-        String url = toUrlPath(applicationId, Zone.defaultZone(), false) + path;
+        String url = toUrlPath(applicationId, Zone.defaultZone(), true) + path;
         ApplicationHandler mockHandler = createApplicationHandler();
         HttpResponse response = mockHandler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
         assertEquals(200, response.getStatus());
