@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
@@ -386,7 +387,7 @@ public class ApplicationSerializer {
             InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
             List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField));
             DeploymentJobs deploymentJobs = deploymentJobsFromSlime(object.field(deploymentJobsField));
-            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, object);
+            List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, instanceName, object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             instances.add(new Instance(id.instance(instanceName),
                                        deployments,
@@ -570,17 +571,19 @@ public class ApplicationSerializer {
                                                 Instant.ofEpochMilli(object.field(atField).asLong())));
     }
 
-    private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, Inspector root) {
+    private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, InstanceName instance, Inspector root) {
         var assignedRotations = new LinkedHashMap<EndpointId, AssignedRotation>();
 
         root.field(assignedRotationsField).traverse((ArrayTraverser) (idx, inspector) -> {
             var clusterId = new ClusterSpec.Id(inspector.field(assignedRotationClusterField).asString());
             var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
-            var regions = deploymentSpec.endpoints().stream()
-                                        .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
-                                        .flatMap(endpoint -> endpoint.regions().stream())
-                                        .collect(Collectors.toSet());
+            var regions = deploymentSpec.instance(instance)
+                                        .map(spec -> spec.endpoints().stream()
+                                                         .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
+                                                         .flatMap(endpoint -> endpoint.regions().stream())
+                                                         .collect(Collectors.toSet()))
+                                        .orElse(Set.of());
             assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
         });
 
