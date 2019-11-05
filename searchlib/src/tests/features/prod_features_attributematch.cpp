@@ -49,7 +49,8 @@ Test::testAttributeMatch()
                     .add("importance")
                     .add("matches")
                     .add("totalWeight")
-                    .add("averageWeight"));
+                    .add("averageWeight")
+                    .add("maxWeight"));
 
         FT_DUMP_EMPTY(_factory, "attributeMatch");
 
@@ -65,7 +66,8 @@ Test::testAttributeMatch()
                 .add("attributeMatch(sint).importance")
                 .add("attributeMatch(sint).matches")
                 .add("attributeMatch(sint).totalWeight")
-                .add("attributeMatch(sint).averageWeight"));
+                .add("attributeMatch(sint).averageWeight")
+                .add("attributeMatch(sint).maxWeight"));
     }
 
     { // single attributes
@@ -108,6 +110,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(sint).matches", 2).
             addScore("attributeMatch(sint).totalWeight", 0).
             addScore("attributeMatch(sint).averageWeight", 0).
+            addScore("attributeMatch(sint).maxWeight", 0).
             addScore("attributeMatch(sint).completeness", 0.5f).
             addScore("attributeMatch(sint).queryCompleteness", 0.5f).
             addScore("attributeMatch(sint).fieldCompleteness", 1).
@@ -120,6 +123,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(sfloat).matches", 1).
             addScore("attributeMatch(sfloat).totalWeight", 0).
             addScore("attributeMatch(sfloat).averageWeight", 0).
+            addScore("attributeMatch(sfloat).maxWeight", 0).
             addScore("attributeMatch(sfloat).completeness", 1).
             addScore("attributeMatch(sfloat).queryCompleteness", 1).
             addScore("attributeMatch(sfloat).fieldCompleteness", 1).
@@ -132,6 +136,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(sstr).matches", 0).
             addScore("attributeMatch(sstr).totalWeight", 0).
             addScore("attributeMatch(sstr).averageWeight", 0).
+            addScore("attributeMatch(sstr).maxWeight", 0).
             addScore("attributeMatch(sstr).completeness", 0).
             addScore("attributeMatch(sstr).queryCompleteness", 0).
             addScore("attributeMatch(sstr).fieldCompleteness", 0).
@@ -162,6 +167,7 @@ Test::testAttributeMatch()
             .addScore("attributeMatch(aint).matches", 1)
             .addScore("attributeMatch(aint).totalWeight", 0)
             .addScore("attributeMatch(aint).averageWeight", 0)
+            .addScore("attributeMatch(aint).maxWeight", 0)
             .addScore("attributeMatch(aint).completeness", 0.75f)
             .addScore("attributeMatch(aint).queryCompleteness", 1)
             .addScore("attributeMatch(aint).fieldCompleteness", 0.5f)
@@ -202,6 +208,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(wsint).matches", 2).
             addScore("attributeMatch(wsint).totalWeight", 30).
             addScore("attributeMatch(wsint).averageWeight", 15).
+            addScore("attributeMatch(wsint).maxWeight", 20).
             addScore("attributeMatch(wsint).completeness", 1).
             addScore("attributeMatch(wsint).queryCompleteness", 1).
             addScore("attributeMatch(wsint).fieldCompleteness", 1).
@@ -211,6 +218,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(wsfloat).matches", 1).
             addScore("attributeMatch(wsfloat).totalWeight", -30).
             addScore("attributeMatch(wsfloat).averageWeight", -30).
+            addScore("attributeMatch(wsfloat).maxWeight", -30).
             addScore("attributeMatch(wsfloat).completeness", 0.95).
             addScore("attributeMatch(wsfloat).queryCompleteness", 1).
             addScore("attributeMatch(wsfloat).fieldCompleteness", 0).
@@ -220,6 +228,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(wsstr).matches", 0).
             addScore("attributeMatch(wsstr).totalWeight", 0).
             addScore("attributeMatch(wsstr).averageWeight", 0).
+            addScore("attributeMatch(wsstr).maxWeight", 0).
             addScore("attributeMatch(wsstr).completeness", 0).
             addScore("attributeMatch(wsstr).queryCompleteness", 0).
             addScore("attributeMatch(wsstr).fieldCompleteness", 0).
@@ -267,6 +276,7 @@ Test::testAttributeMatch()
             addScore("attributeMatch(unique).matches", 0).
             addScore("attributeMatch(unique).totalWeight", 0).
             addScore("attributeMatch(unique).averageWeight", 0).
+            addScore("attributeMatch(unique).maxWeight", 0).
             addScore("attributeMatch(unique).completeness", 0).
             addScore("attributeMatch(unique).queryCompleteness", 0).
             addScore("attributeMatch(unique).fieldCompleteness", 0).
