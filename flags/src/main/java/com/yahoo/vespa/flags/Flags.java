@@ -161,6 +161,12 @@ public class Flags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag START_AND_STOP_VESPA_WITH_YINST = defineFeatureFlag(
+            "start-and-stop-vespa-with-yinst", true,
+            "Whether to start and stop Vespa with yinst commands or with start and stop scripts ",
+            "Takes effect on restart of Docker container",
+            NODE_TYPE, APPLICATION_ID, HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
