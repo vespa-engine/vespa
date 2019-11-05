@@ -94,6 +94,7 @@ public class InternalStepRunnerTest {
         DeploymentSpec spec = tester.configServer()
                                     .application(app.testerId().id(), JobType.stagingTest.zone(system())).get()
                                     .applicationPackage().deploymentSpec();
+        assertTrue(spec.instance(app.testerId().id().instance()).isPresent());
         assertEquals("domain", spec.athenzDomain().get().value());
         assertEquals("service", spec.athenzService().get().value());
     }
