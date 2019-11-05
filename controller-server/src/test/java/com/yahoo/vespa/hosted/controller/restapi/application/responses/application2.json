@@ -30,8 +30,6 @@
   "instances": [
     {
       "instance": "default",
-      "deploymentJobs": [],
-      "changeBlockers": [],
       "globalRotations": [],
       "deployments": []
     },

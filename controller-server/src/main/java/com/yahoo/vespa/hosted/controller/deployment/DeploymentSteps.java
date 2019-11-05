@@ -1,12 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.util.Collection;
@@ -14,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -28,10 +29,10 @@ import static java.util.stream.Collectors.collectingAndThen;
  */
 public class DeploymentSteps {
 
-    private final DeploymentSpec spec;
+    private final DeploymentInstanceSpec spec;
     private final Supplier<SystemName> system;
 
-    public DeploymentSteps(DeploymentSpec spec, Supplier<SystemName> system) {
+    public DeploymentSteps(DeploymentInstanceSpec spec, Supplier<SystemName> system) {
         this.spec = Objects.requireNonNull(spec, "spec cannot be null");
         this.system = Objects.requireNonNull(system, "system cannot be null");
     }

@@ -469,7 +469,9 @@ public class JobController {
 
     /** Returns a URI which points at a badge showing current status for all jobs for the given application. */
     public URI overviewBadge(ApplicationId id) {
-        DeploymentSteps steps = new DeploymentSteps(controller.applications().requireApplication(TenantAndApplicationId.from(id)).deploymentSpec(), controller::system);
+        DeploymentSteps steps = new DeploymentSteps(controller.applications().requireApplication(TenantAndApplicationId.from(id))
+                                                              .deploymentSpec().requireInstance(id.instance()),
+                                                    controller::system);
         return badges.overview(id,
                                steps.jobs().stream()
                                     .map(type -> last(id, type))

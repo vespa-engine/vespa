@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
@@ -92,7 +93,7 @@ public class DeploymentTrigger {
         this.jobs = controller.jobController();
     }
 
-    public DeploymentSteps steps(DeploymentSpec spec) {
+    public DeploymentSteps steps(DeploymentInstanceSpec spec) {
         return new DeploymentSteps(spec, controller::system);
     }
 
@@ -333,7 +334,7 @@ public class DeploymentTrigger {
                                                             .<Instant>flatMap(job -> job.lastSuccess().map(JobRun::at)));
                 String reason = "New change available";
                 List<Job> testJobs = null; // null means "uninitialised", while empty means "don't run any jobs".
-                DeploymentSteps steps = steps(application.deploymentSpec());
+                DeploymentSteps steps = steps(application.deploymentSpec().requireInstance(instance.name()));
 
                 if (change.hasTargets()) {
                     for (Step step : steps.production()) {
@@ -541,19 +542,23 @@ public class DeploymentTrigger {
     }
 
     private Change remainingChange(Application application) {
-        DeploymentSteps steps = steps(application.deploymentSpec());
-        List<JobType> jobs = steps.production().isEmpty()
-                ? steps.testJobs()
-                : steps.productionJobs();
-
         Change change = application.change();
-        for (Instance instance : application.instances().values()) {
-            if (jobs.stream().allMatch(job -> isComplete(application.change().withoutApplication(), application.change(), instance, job)))
-                change = change.withoutPlatform();
 
-            if (jobs.stream().allMatch(job -> isComplete(application.change().withoutPlatform(), application.change(), instance, job)))
-                change = change.withoutApplication();
-        }
+        if (application.deploymentSpec().instances().stream()
+                       .allMatch(spec -> {
+                           DeploymentSteps steps = new DeploymentSteps(spec, controller::system);
+                           return (steps.productionJobs().isEmpty() ? steps.testJobs() : steps.productionJobs())
+                                   .stream().allMatch(job -> isComplete(application.change().withoutApplication(), application.change(), application.require(spec.name()), job));
+                       }))
+            change = change.withoutPlatform();
+
+        if (application.deploymentSpec().instances().stream()
+                       .allMatch(spec -> {
+                           DeploymentSteps steps = new DeploymentSteps(spec, controller::system);
+                           return (steps.productionJobs().isEmpty() ? steps.testJobs() : steps.productionJobs())
+                                   .stream().allMatch(job -> isComplete(application.change().withoutPlatform(), application.change(), application.require(spec.name()), job));
+                       }))
+            change = change.withoutApplication();
 
         return change;
     }
@@ -575,7 +580,7 @@ public class DeploymentTrigger {
     private List<Job> testJobs(DeploymentSpec deploymentSpec, Change change, Instance instance, Versions versions,
                                String reason, Instant availableSince, Predicate<JobType> condition) {
         List<Job> jobs = new ArrayList<>();
-        for (JobType jobType : steps(deploymentSpec).testJobs()) {
+        for (JobType jobType : List.of(systemTest, stagingTest)) { // TODO jonmv: Allow cross-instance validation
             Optional<JobRun> completion = successOn(instance, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
             if (completion.isEmpty() && condition.test(jobType))
