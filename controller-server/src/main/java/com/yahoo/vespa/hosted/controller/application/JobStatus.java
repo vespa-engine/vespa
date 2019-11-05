@@ -43,7 +43,7 @@ public class JobStatus {
         this.jobError = requireNonNull(jobError, "jobError cannot be null");
 
         // Never say we triggered component because we don't:
-        this.lastTriggered = type == JobType.component ? Optional.empty() : requireNonNull(lastTriggered, "lastTriggered cannot be null");
+        this.lastTriggered = requireNonNull(lastTriggered, "lastTriggered cannot be null");
         this.lastCompleted = requireNonNull(lastCompleted, "lastCompleted cannot be null");
         this.firstFailing = requireNonNull(firstFailing, "firstFailing cannot be null");
         this.lastSuccess = requireNonNull(lastSuccess, "lastSuccess cannot be null");

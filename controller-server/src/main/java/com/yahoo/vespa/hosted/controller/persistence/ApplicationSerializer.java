@@ -283,8 +283,7 @@ public class ApplicationSerializer {
 
     private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
         for (JobStatus jobStatus : jobStatuses)
-            if (jobStatus.type() != JobType.component)
-                toSlime(jobStatus, jobStatusArray.addObject());
+            toSlime(jobStatus, jobStatusArray.addObject());
     }
 
     private void toSlime(JobStatus jobStatus, Cursor object) {

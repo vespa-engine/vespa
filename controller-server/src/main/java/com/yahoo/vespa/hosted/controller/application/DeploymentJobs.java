@@ -105,17 +105,6 @@ public class DeploymentJobs {
             this.version = version;
         }
 
-        public static JobReport ofComponent(ApplicationId applicationId, long projectId, long buildNumber,
-                                            Optional<JobError> jobError, SourceRevision sourceRevision) {
-            return new JobReport(applicationId, JobType.component, projectId, buildNumber,
-                                 jobError, Optional.of(ApplicationVersion.from(sourceRevision, buildNumber)));
-        }
-
-        public static JobReport ofSubmission(ApplicationId applicationId, long projectId, ApplicationVersion version) {
-            return new JobReport(applicationId, JobType.component, projectId, version.buildNumber().getAsLong(),
-                                 Optional.empty(), Optional.of(version));
-        }
-
         public static JobReport ofJob(ApplicationId applicationId, JobType jobType, long buildNumber, Optional<JobError> jobError) {
             return new JobReport(applicationId, jobType, -1, buildNumber, jobError, Optional.empty());
         }

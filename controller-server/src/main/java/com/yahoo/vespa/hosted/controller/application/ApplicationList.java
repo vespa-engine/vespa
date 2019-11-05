@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -201,6 +202,11 @@ public class ApplicationList {
         return filteredOn(application -> targetMajorVersion <= application.deploymentSpec().majorVersion()
                                                                           .orElse(application.majorVersion()
                                                                                              .orElse(defaultMajorVersion)));
+    }
+
+    /** Returns the subset of application which have submitted a non-empty deployment spec. */
+    public ApplicationList withDeploymentSpec() {
+        return filteredOn(application -> ! DeploymentSpec.empty.equals(application.deploymentSpec()));
     }
 
     /** Returns the first n application in this (or all, if there are less than n). */
