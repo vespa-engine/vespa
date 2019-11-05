@@ -745,8 +745,6 @@ public abstract class IndexedTensor implements Tensor {
 
     }
 
-    // TODO: Make dimensionSizes a class
-
     /**
      * An array of indexes into this tensor which are able to find the next index in the value order.
      * next() can be called once per element in the dimensions we iterate over. It must be called once

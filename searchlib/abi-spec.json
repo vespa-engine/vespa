@@ -909,11 +909,11 @@
       "public final java.util.List tagCommaLeadingList()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ConstantNode constantPrimitive()",
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value primitiveValue()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ConstantNode tensorValueBody(com.yahoo.tensor.TensorType)",
-      "public final void mappedTensorValueBody(com.yahoo.tensor.Tensor$Builder)",
-      "public final void indexedTensorValueBody(com.yahoo.tensor.Tensor$Builder)",
-      "public final void tensorCell(com.yahoo.tensor.Tensor$Builder$CellBuilder)",
-      "public final void labelAndDimension(com.yahoo.tensor.Tensor$Builder$CellBuilder)",
+      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorValueBody(com.yahoo.tensor.TensorType)",
+      "public final com.yahoo.tensor.functions.DynamicTensor mappedTensorValueBody(com.yahoo.tensor.TensorType)",
+      "public final com.yahoo.tensor.functions.DynamicTensor indexedTensorValueBody(com.yahoo.tensor.TensorType)",
+      "public final void tensorCell(com.yahoo.tensor.TensorType, java.util.Map)",
+      "public final void labelAndDimension(com.yahoo.tensor.TensorAddress$Builder)",
       "public void <init>(java.io.InputStream)",
       "public void <init>(java.io.InputStream, java.lang.String)",
       "public void ReInit(java.io.InputStream)",
@@ -1612,7 +1612,9 @@
       "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
-      "public static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode$TensorFunctionExpressionNode wrapArgument(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)"
+      "public static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode$TensorFunctionExpressionNode wrap(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
+      "public static java.util.Map wrap(java.util.Map)",
+      "public static java.util.List wrap(java.util.List)"
     ],
     "fields": []
   },

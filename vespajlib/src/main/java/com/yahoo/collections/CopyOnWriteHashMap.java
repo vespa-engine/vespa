@@ -19,7 +19,6 @@ import java.util.Set;
  *
  * @author bratseth
  */
-@Beta
 public class CopyOnWriteHashMap<K,V> extends AbstractMap<K,V> implements Cloneable {
 
     private Map<K,V> map;

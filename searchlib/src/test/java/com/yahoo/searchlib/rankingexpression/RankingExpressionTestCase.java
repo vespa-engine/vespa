@@ -154,7 +154,12 @@ public class RankingExpressionTestCase {
                             "map(constant(tensor0), f(a)(cos(a))) + l2_normalize(attribute(tensor1), x)");
         assertSerialization("join(reduce(join(reduce(join(constant(tensor0), attribute(tensor1), f(a,b)(a * b)), sum, x), attribute(tensor1), f(a,b)(a * b)), sum, y), query(tensor2), f(a,b)(a + b))", 
                             "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
-        
+        assertSerialization("tensor(x{}):{{x:a}:1 + 2 + 3,{x:b}:if (1 > 2, 3, 4),{x:c}:reduce(tensor0 * tensor1, sum)}",
+                            "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }");
+        assertSerialization("tensor(x[3]):[1.0,2.0,3]",
+                            "tensor(x[3]):[1.0, 2.0, 3]");
+        assertSerialization("tensor(x[3]):[1.0,reduce(tensor0 * tensor1, sum),3]",
+                            "tensor(x[3]):[1.0, sum(tensor0*tensor1), 3]");
     }
 
     @Test

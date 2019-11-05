@@ -24,8 +24,8 @@ public class WandItem extends WeightedSetItem {
     /**
      * Creates an empty WandItem.
      *
-     * @param fieldName The name of the weighted set field to search with this WandItem.
-     * @param targetNumHits The target for minimum number of hits to produce by the backend search operator handling this WandItem.
+     * @param fieldName the name of the weighted set field to search with this WandItem.
+     * @param targetNumHits the target for minimum number of hits to produce by the backend search operator handling this WandItem.
      */
     public WandItem(String fieldName, int targetNumHits) {
         super(fieldName);

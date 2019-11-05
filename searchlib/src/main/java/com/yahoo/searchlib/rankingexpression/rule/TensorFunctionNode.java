@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -14,9 +15,13 @@ import com.yahoo.tensor.functions.PrimitiveTensorFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -72,8 +77,42 @@ public class TensorFunctionNode extends CompositeNode {
         return new TensorValue(function.evaluate(context));
     }
 
-    public static TensorFunctionExpressionNode wrapArgument(ExpressionNode node) {
+    public static TensorFunctionExpressionNode wrap(ExpressionNode node) {
         return new TensorFunctionExpressionNode(node);
+    }
+
+    public static Map<TensorAddress, Function<EvaluationContext<?>, Double>> wrap(Map<TensorAddress, ExpressionNode> nodes) {
+        Map<TensorAddress, Function<EvaluationContext<?>, Double>> closures = new LinkedHashMap<>();
+        for (var entry : nodes.entrySet())
+            closures.put(entry.getKey(), new ExpressionClosure(entry.getValue()));
+        return closures;
+    }
+
+    public static List<Function<EvaluationContext<?>, Double>> wrap(List<ExpressionNode> nodes) {
+        List<Function<EvaluationContext<?>, Double>> closures = new ArrayList<>();
+        for (var entry : nodes)
+            closures.add(new ExpressionClosure(entry));
+        return closures;
+    }
+
+    private static class ExpressionClosure implements java.util.function.Function<EvaluationContext<?> , Double> {
+
+        private final ExpressionNode expression;
+
+        public ExpressionClosure(ExpressionNode expression) {
+            this.expression = expression;
+        }
+
+        @Override
+        public Double apply(EvaluationContext<?> context) {
+            return expression.evaluate((Context)context).asDouble();
+        }
+
+        @Override
+        public String toString() {
+            return expression.toString();
+        }
+
     }
 
     /**
