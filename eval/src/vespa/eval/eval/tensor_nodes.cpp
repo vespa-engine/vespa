@@ -13,6 +13,7 @@ void TensorReduce::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorRename::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorLambda::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorConcat::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorCreate::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 
 } // namespace vespalib::eval::nodes
 } // namespace vespalib::eval

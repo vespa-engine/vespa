@@ -114,6 +114,14 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     void visit(const TensorConcat &node) override {
         bind_type(ValueType::concat(state.peek(1), state.peek(0), node.dimension()), node);
     }
+    void visit(const TensorCreate &node) override {
+        for (size_t i = 0; i < node.num_children(); ++i) {
+            if (!state.peek(i).is_double()) {
+                return bind_type(ValueType::error_type(), node);
+            }
+        }
+        bind_type(node.type(), node);
+    }
 
     void visit(const Add &node) override { resolve_op2(node); }
     void visit(const Sub &node) override { resolve_op2(node); }

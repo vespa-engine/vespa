@@ -479,6 +479,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorConcat &node) override {
         make_error(node.num_children());
     }
+    void visit(const TensorCreate &node) override {
+        make_error(node.num_children());
+    }
 
     // operator nodes
 

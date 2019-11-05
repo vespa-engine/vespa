@@ -40,11 +40,21 @@ struct EvalCtx {
     const TensorFunction &compile(const tensor_function::Node &expr) {
         return engine.optimize(expr, stash);
     }
+    Value::UP make_double(double value) {
+        return engine.from_spec(TensorSpec("double").add({}, value));
+    }
     Value::UP make_true() {
         return engine.from_spec(TensorSpec("double").add({}, 1.0));
     }
     Value::UP make_false() {
         return engine.from_spec(TensorSpec("double").add({}, 0.0));
+    }
+    Value::UP make_simple_vector() {
+        return engine.from_spec(
+                TensorSpec("tensor(x[3])")
+                .add({{"x",0}}, 1)
+                .add({{"x",1}}, 2)
+                .add({{"x",2}}, 3));
     }
     Value::UP make_tensor_matrix_first_half() {
         return engine.from_spec(
@@ -225,6 +235,28 @@ TEST("require that tensor concat works") {
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
 }
 
+TEST("require that tensor create works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
+    size_t b_id = ctx.add_tensor(ctx.make_double(2.0));
+    Value::UP my_const = ctx.make_double(3.0);
+    Value::UP expect = ctx.make_simple_vector();
+    const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
+    const auto &c = const_value(*my_const, ctx.stash);
+    const auto &fun = create(ValueType::from_spec("tensor(x[3])"),
+                             {
+                                 {{{"x", 0}}, a},
+                                 {{{"x", 1}}, b},
+                                 {{{"x", 2}}, c}
+                             },
+                             ctx.stash);
+    EXPECT_TRUE(fun.result_is_mutable());
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
 TEST("require that tensor rename works") {
     EvalCtx ctx(SimpleTensorEngine::ref());
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
@@ -341,7 +373,13 @@ TEST("require that tensor function can be dumped for debugging") {
     const auto &const_1 = const_value(my_value_1, stash);
     const auto &joined_x5 = join(mapped_x5, const_1, operation::Mul::f, stash);
     //-------------------------------------------------------------------------
-    const auto &x2 = inject(ValueType::from_spec("tensor(x[2])"), 1, stash);
+    const auto &x2_0 = const_value(my_value_1, stash);
+    const auto &x2_1 = const_value(my_value_2, stash);
+    const auto &x2 = create(ValueType::from_spec("tensor(x[2])"),
+                            {
+                                {{{"x", 0}}, x2_0},
+                                {{{"x", 1}}, x2_1}
+                            }, stash);
     const auto &a3y10 = inject(ValueType::from_spec("tensor(a[3],y[10])"), 2, stash);
     const auto &a3 = reduce(a3y10, Aggr::SUM, {"y"}, stash);
     const auto &x3 = rename(a3, {"a"}, {"x"}, stash);

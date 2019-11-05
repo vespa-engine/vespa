@@ -7,7 +7,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
-#include "make_tensor_function.h"
+#include "tensor_spec.h"
 #include "lazy_params.h"
 #include "value_type.h"
 #include "value.h"
@@ -239,7 +239,7 @@ class Join : public Op2
 {
     using Super = Op2;
 private:
-    join_fun_t _function;    
+    join_fun_t _function;
 public:
     Join(const ValueType &result_type_in,
          const TensorFunction &lhs_in,
@@ -269,6 +269,28 @@ public:
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
+};
+
+//-----------------------------------------------------------------------------
+
+class Create : public Node
+{
+    using Super = Node;
+private:
+    std::map<TensorSpec::Address, Child> _spec;
+public:
+    Create(const ValueType &result_type_in, const std::map<TensorSpec::Address, Node::CREF> &spec_in)
+        : Node(result_type_in), _spec()
+    {
+        for (const auto &cell: spec_in) {
+            _spec.emplace(cell.first, Child(cell.second));
+        }
+    }
+    const std::map<TensorSpec::Address, Child> &spec() const { return _spec; }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    void push_children(std::vector<Child::CREF> &children) const final override;
+    void visit_children(vespalib::ObjectVisitor &visitor) const final override;
 };
 
 //-----------------------------------------------------------------------------
@@ -326,6 +348,7 @@ const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::str
 const Node &map(const Node &child, map_fun_t function, Stash &stash);
 const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
+const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
 const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash);
 

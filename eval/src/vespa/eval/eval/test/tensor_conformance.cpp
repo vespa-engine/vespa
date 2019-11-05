@@ -797,6 +797,19 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_tensor_create(const vespalib::string &expr, double a, double b, const TensorSpec &expect) {
+        TEST_DO(verify_result(Expr_TT(expr).eval(engine, spec(a), spec(b)), expect));
+    }
+
+    void test_tensor_create() {
+        TEST_DO(test_tensor_create("tensor(x[3]):{{x:0}:a,{x:1}:b,{x:2}:3}", 1, 2, spec(x(3), N())));
+        TEST_DO(test_tensor_create("tensor<float>(x[3]):{{x:0}:a,{x:1}:b,{x:2}:3}", 1, 2, spec(float_cells({x(3)}), N())));
+        TEST_DO(test_tensor_create("tensor(x{}):{{x:a}:a,{x:b}:b,{x:c}:3}", 1, 2, spec(x({"a", "b", "c"}), N())));
+        TEST_DO(test_tensor_create("tensor(x{},y[2]):{{x:a,y:0}:a,{x:a,y:1}:b}", 1, 2, spec({x({"a"}),y(2)}, N())));
+    }
+
+    //-------------------------------------------------------------------------
+
     void verify_encode_decode(const TensorSpec &spec,
                               const TensorEngine &encode_engine,
                               const TensorEngine &decode_engine)
@@ -879,6 +892,7 @@ struct TestContext {
         TEST_DO(test_concat());
         TEST_DO(test_rename());
         TEST_DO(test_tensor_lambda());
+        TEST_DO(test_tensor_create());
         TEST_DO(test_binary_format());
     }
 };

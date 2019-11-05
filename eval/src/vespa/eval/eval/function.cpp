@@ -269,6 +269,29 @@ public:
     size_t operator_mark() const { return _operator_mark; }
     void operator_mark(size_t mark) { _operator_mark = mark; }
 
+    bool find_list_end() {
+        skip_spaces();
+        char c = get();
+        return (c == /* eof */ '\0' || c == ')' || c == ']' || c == '}');
+    }
+
+    bool find_expression_end() {
+        return (find_list_end() || (get() == ','));
+    }
+
+    size_t init_expression() {
+        size_t old_mark = operator_mark();
+        operator_mark(num_operators());
+        return old_mark;
+    }
+
+    void fini_expression(size_t old_mark) {
+        while (num_operators() > operator_mark()) {
+            apply_operator();
+        }
+        operator_mark(old_mark);
+    }
+
     void apply_until(const nodes::Operator &op) {
         while ((_operator_stack.size() > _operator_mark) &&
                (_operator_stack.back()->do_before(op)))
@@ -292,6 +315,11 @@ public:
 
 void parse_value(ParseContext &ctx);
 void parse_expression(ParseContext &ctx);
+
+Node_UP get_expression(ParseContext &ctx) {
+    parse_expression(ctx);
+    return ctx.pop_expression();
+}
 
 int unhex(char c) {
     if (c >= '0' && c <= '9') {
@@ -403,15 +431,24 @@ vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
     return ident;
 }
 
+size_t get_size_t(ParseContext &ctx) {
+    ctx.skip_spaces();
+    vespalib::string num;
+    for (; isdigit(ctx.get()); ctx.next()) {
+        num.push_back(ctx.get());
+    }
+    if (num.empty()) {
+        ctx.fail("expected number");
+    }
+    return atoi(num.c_str());
+}
+
 void parse_if(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP cond = ctx.pop_expression();
+    Node_UP cond = get_expression(ctx);
     ctx.eat(',');
-    parse_expression(ctx);
-    Node_UP true_expr = ctx.pop_expression();
+    Node_UP true_expr = get_expression(ctx);
     ctx.eat(',');
-    parse_expression(ctx);
-    Node_UP false_expr = ctx.pop_expression();
+    Node_UP false_expr = get_expression(ctx);
     double p_true = 0.5;
     if (ctx.get() == ',') {
         ctx.eat(',');
@@ -430,8 +467,7 @@ void parse_call(ParseContext &ctx, Call_UP call) {
         if (i > 0) {
             ctx.eat(',');
         }
-        parse_expression(ctx);
-        call->bind_next(ctx.pop_expression());
+        call->bind_next(get_expression(ctx));
     }
     ctx.push_expression(std::move(call));
 }
@@ -444,7 +480,7 @@ std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
         ctx.skip_spaces();
         ctx.eat('(');
     }
-    for (ctx.skip_spaces(); !ctx.eos() && (ctx.get() != ')'); ctx.skip_spaces()) {
+    while (!ctx.find_list_end()) {
         if (!list.empty() || !wrapped) {
             ctx.eat(',');
         }
@@ -484,11 +520,10 @@ Function parse_lambda(ParseContext &ctx, size_t num_params) {
     ctx.push_resolve_context(params, nullptr);
     ctx.skip_spaces();
     ctx.eat('(');
-    parse_expression(ctx);
+    Node_UP lambda_root = get_expression(ctx);
     ctx.eat(')');
     ctx.skip_spaces();
     ctx.pop_resolve_context();
-    Node_UP lambda_root = ctx.pop_expression();
     if (param_names.size() != num_params) {
         ctx.fail(make_string("expected lambda with %zu parameter(s), was %zu",
                              num_params, param_names.size()));
@@ -497,27 +532,23 @@ Function parse_lambda(ParseContext &ctx, size_t num_params) {
 }
 
 void parse_tensor_map(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP child = ctx.pop_expression();
+    Node_UP child = get_expression(ctx);
     ctx.eat(',');
     Function lambda = parse_lambda(ctx, 1);
     ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
 }
 
 void parse_tensor_join(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP lhs = ctx.pop_expression();
+    Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
-    parse_expression(ctx);
-    Node_UP rhs = ctx.pop_expression();
+    Node_UP rhs = get_expression(ctx);
     ctx.eat(',');
     Function lambda = parse_lambda(ctx, 2);
     ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
 }
 
 void parse_tensor_reduce(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP child = ctx.pop_expression();
+    Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto aggr_name = get_ident(ctx, false);
     auto maybe_aggr = AggrNames::from_name(aggr_name);
@@ -530,8 +561,7 @@ void parse_tensor_reduce(ParseContext &ctx) {
 }
 
 void parse_tensor_rename(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP child = ctx.pop_expression();
+    Node_UP child = get_expression(ctx);
     ctx.eat(',');
     auto from = get_idents(ctx);
     ctx.skip_spaces();
@@ -545,15 +575,66 @@ void parse_tensor_rename(ParseContext &ctx) {
     ctx.skip_spaces();
 }
 
-void parse_tensor_lambda(ParseContext &ctx) {
-    vespalib::string type_spec("tensor");
-    while(!ctx.eos() && (ctx.get() != ')')) {
-        type_spec.push_back(ctx.get());
-        ctx.next();
+// '{a:w,x:0}'
+TensorSpec::Address get_tensor_address(ParseContext &ctx, const ValueType &type) {
+    TensorSpec::Address addr;
+    ctx.skip_spaces();
+    ctx.eat('{');
+    while (!ctx.find_list_end()) {
+        if (!addr.empty()) {
+            ctx.eat(',');
+        }
+        auto dim_name = get_ident(ctx, false);
+        size_t dim_idx = type.dimension_index(dim_name);
+        if (dim_idx != ValueType::Dimension::npos) {
+            const auto &dim = type.dimensions()[dim_idx];
+            ctx.skip_spaces();
+            ctx.eat(':');
+            if (dim.is_mapped()) {
+                addr.emplace(dim_name, get_ident(ctx, false));
+            } else {
+                size_t idx = get_size_t(ctx);
+                if (idx < dim.size) {
+                    addr.emplace(dim_name, idx);
+                } else {
+                    ctx.fail(make_string("dimension index too large: %zu", idx));
+                }
+            }
+        } else {
+            ctx.fail(make_string("invalid dimension name: '%s'", dim_name.c_str()));
+        }
     }
-    ctx.eat(')');
-    type_spec.push_back(')');
-    ValueType type = ValueType::from_spec(type_spec);
+    ctx.eat('}');
+    if (addr.size() != type.dimensions().size()) {
+        ctx.fail(make_string("incomplete address: '%s'", as_string(addr).c_str()));
+    }
+    return addr;
+}
+
+// pre: 'tensor<float>(a{},x[3]):' -> type
+// expect: '{{a:w,x:0}:1,{a:w,x:1}:2,{a:w,x:2}:3}'
+void parse_tensor_create(ParseContext &ctx, const ValueType &type) {
+    if (type.is_error()) {
+        ctx.fail("invalid tensor type");
+        return;
+    }
+    ctx.skip_spaces();
+    ctx.eat('{');
+    nodes::TensorCreate::Spec create_spec;
+    while (!ctx.find_list_end()) {
+        if (!create_spec.empty()) {
+            ctx.eat(',');
+        }
+        auto address = get_tensor_address(ctx, type);
+        ctx.skip_spaces();
+        ctx.eat(':');
+        create_spec.emplace(address, get_expression(ctx));
+    }
+    ctx.eat('}');
+    ctx.push_expression(std::make_unique<nodes::TensorCreate>(type, std::move(create_spec)));
+}
+
+void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
     if (!type.is_dense()) {
         ctx.fail("invalid tensor type");
         return;
@@ -563,19 +644,34 @@ void parse_tensor_lambda(ParseContext &ctx) {
     ctx.push_resolve_context(params, nullptr);
     ctx.skip_spaces();
     ctx.eat('(');
-    parse_expression(ctx);
+    Function lambda(get_expression(ctx), std::move(param_names));
     ctx.eat(')');
     ctx.pop_resolve_context();
-    Function lambda(ctx.pop_expression(), std::move(param_names));
     ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
 }
 
+void parse_tensor_generator(ParseContext &ctx) {
+    vespalib::string type_spec("tensor");
+    while(!ctx.eos() && (ctx.get() != ')')) {
+        type_spec.push_back(ctx.get());
+        ctx.next();
+    }
+    ctx.eat(')');
+    type_spec.push_back(')');
+    ValueType type = ValueType::from_spec(type_spec);
+    ctx.skip_spaces();
+    if (ctx.get() == ':') {
+        ctx.eat(':');
+        parse_tensor_create(ctx, type);
+    } else {
+        parse_tensor_lambda(ctx, type);
+    }
+}
+
 void parse_tensor_concat(ParseContext &ctx) {
-    parse_expression(ctx);
-    Node_UP lhs = ctx.pop_expression();
+    Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
-    parse_expression(ctx);
-    Node_UP rhs = ctx.pop_expression();
+    Node_UP rhs = get_expression(ctx);
     ctx.eat(',');
     auto dimension = get_ident(ctx, false);
     ctx.skip_spaces();
@@ -622,7 +718,7 @@ void parse_symbol_or_call(ParseContext &ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
     vespalib::string name = get_ident(ctx, true);
     if (name == "tensor") {
-        parse_tensor_lambda(ctx);
+        parse_tensor_generator(ctx);
     } else if (!try_parse_call(ctx, name)) {
         size_t id = parse_symbol(ctx, name, before_name);
         if (name.empty()) {
@@ -716,20 +812,14 @@ bool parse_operator(ParseContext &ctx) {
 }
 
 void parse_expression(ParseContext &ctx) {
-    size_t old_mark = ctx.operator_mark();
-    ctx.operator_mark(ctx.num_operators());
+    size_t old_mark = ctx.init_expression();
     bool expect_value = true;
     for (;;) {
         if (expect_value) {
             parse_value(ctx);
         }
-        ctx.skip_spaces();
-        if (ctx.eos() || ctx.get() == ')' || ctx.get() == ',') {
-            while (ctx.num_operators() > ctx.operator_mark()) {
-                ctx.apply_operator();
-            }
-            ctx.operator_mark(old_mark);
-            return;
+        if (ctx.find_expression_end()) {
+            return ctx.fini_expression(old_mark);
         }
         expect_value = parse_operator(ctx);
     }

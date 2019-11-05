@@ -97,6 +97,16 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::concat(a, b, dimension, stash);
     }
 
+    void make_create(const TensorCreate &node) {
+        assert(stack.size() >= node.num_children());
+        std::map<TensorSpec::Address, tensor_function::Node::CREF> spec;
+        for (size_t idx = node.num_children(); idx-- > 0; ) {
+            spec.emplace(node.get_child_address(idx), stack.back());
+            stack.pop_back();
+        }
+        stack.push_back(tensor_function::create(node.type(), spec, stash));
+    }
+
     void make_rename(const Node &, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
         assert(stack.size() >= 1);
         const auto &a = stack.back();
@@ -183,6 +193,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorConcat &node) override {
         make_concat(node, node.dimension());
+    }
+    void visit(const TensorCreate &node) override {
+        make_create(node);
     }
     void visit(const Add &node) override {
         make_join(node, operation::Add::f);

@@ -802,9 +802,9 @@ TEST("require that tensor rename dimension lists must have equal size") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor lambda can be parsed") {
-    EXPECT_EQUAL("tensor(x[10])(x)", Function::parse({""}, "tensor(x[10])(x)").dump());
-    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({""}, "tensor(x[10],y[10])(x==y)").dump());
-    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({""}, " tensor ( x [ 10 ] , y [ 10 ] ) ( x == y ) ").dump());
+    EXPECT_EQUAL("tensor(x[10])(x)", Function::parse({}, "tensor(x[10])(x)").dump());
+    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({}, "tensor(x[10],y[10])(x==y)").dump());
+    EXPECT_EQUAL("tensor(x[10],y[10])(x==y)", Function::parse({}, " tensor ( x [ 10 ] , y [ 10 ] ) ( x == y ) ").dump());
 }
 
 TEST("require that tensor lambda requires appropriate tensor type") {
@@ -815,6 +815,55 @@ TEST("require that tensor lambda requires appropriate tensor type") {
 
 TEST("require that tensor lambda can only use dimension names") {
     verify_error("tensor(x[10],y[10])(x==z)", "[tensor(x[10],y[10])(x==z]...[unknown symbol: 'z']...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that verbose tensor create can be parsed") {
+    auto dense = Function::parse("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}");
+    auto sparse = Function::parse("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}");
+    auto mixed = Function::parse("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}");
+    EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense.dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}", sparse.dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}", mixed.dump());
+}
+
+TEST("require that verbose tensor create can contain expressions") {
+    auto fun = Function::parse("tensor(x[2]):{{x:0}:1,{x:1}:2+a}");
+    EXPECT_EQUAL("tensor(x[2]):{{x:0}:1,{x:1}:(2+a)}", fun.dump());
+    ASSERT_EQUAL(fun.num_params(), 1u);
+    EXPECT_EQUAL(fun.param_name(0), "a");
+}
+
+TEST("require that verbose tensor create handles spaces and reordering of various elements") {
+    auto fun = Function::parse(" tensor ( y [ 2 ] , x [ 2 ] ) : { { x : 0 , y : 1 } : 2 , "
+                               "{ y : 0 , x : 0 } : 1 , { y : 0 , x : 1 } : 3 , { x : 1 , y : 1 } : 4 } ");
+    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:0,y:0}:1,{x:0,y:1}:2,{x:1,y:0}:3,{x:1,y:1}:4}", fun.dump());
+}
+
+TEST("require that verbose tensor create detects invalid tensor type") {
+    TEST_DO(verify_error("tensor(x[,y}):ignored",
+                         "[tensor(x[,y}):]...[invalid tensor type]...[ignored]"));
+}
+
+TEST("require that verbose tensor create detects incomplete addresses") {
+    TEST_DO(verify_error("tensor(x[1],y[1]):{{x:0}:1}",
+                         "[tensor(x[1],y[1]):{{x:0}]...[incomplete address: '{x:0}']...[:1}]"));
+}
+
+TEST("require that verbose tensor create detects invalid dimension names") {
+    TEST_DO(verify_error("tensor(x[1]):{{y:0}:1}",
+                         "[tensor(x[1]):{{y]...[invalid dimension name: 'y']...[:0}:1}]"));
+}
+
+TEST("require that verbose tensor create detects out-of-bounds indexes for indexed dimensions") {
+    TEST_DO(verify_error("tensor(x[1]):{{x:1}:1}",
+                         "[tensor(x[1]):{{x:1]...[dimension index too large: 1]...[}:1}]"));
+}
+
+TEST("require that verbose tensor create detects non-numeric indexes for indexed dimensions") {
+    TEST_DO(verify_error("tensor(x[1]):{{x:foo}:1}",
+                         "[tensor(x[1]):{{x:]...[expected number]...[foo}:1}]"));
 }
 
 //-----------------------------------------------------------------------------

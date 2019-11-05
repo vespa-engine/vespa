@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "string_stuff.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -84,22 +85,6 @@ struct Leaf : public Node {
         HDR_ABORT("should not be reached");
     }
     void detach_children(NodeHandler &) override {}
-};
-
-/**
- * Helper class used to insert commas on the appropriate places in
- * comma-separated textual lists.
- **/
-struct CommaTracker {
-    bool first;
-    CommaTracker() : first(true) {}
-    void maybe_comma(vespalib::string &dst) {
-        if (first) {
-            first = false;
-        } else {
-            dst.push_back(',');
-        }
-    }
 };
 
 class Number : public Leaf {

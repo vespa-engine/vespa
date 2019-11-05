@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include "eval_fixture.h"
+#include <vespa/eval/eval/make_tensor_function.h>
 
 namespace vespalib::eval::test {
 
