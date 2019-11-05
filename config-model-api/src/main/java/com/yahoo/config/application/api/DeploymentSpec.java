@@ -9,11 +9,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.Reader;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,16 +33,19 @@ import java.util.stream.Collectors;
 public class DeploymentSpec {
 
     /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
-    public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(),
-                                                                  UpgradePolicy.defaultPolicy,
+    public static final DeploymentSpec empty = new DeploymentSpec(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
+                                                                                                     Collections.emptyList(),
+                                                                                                     UpgradePolicy.defaultPolicy,
+                                                                                                     Collections.emptyList(),
+                                                                                                     Optional.empty(),
+                                                                                                     Optional.empty(),
+                                                                                                     Optional.empty(),
+                                                                                                     Notifications.none(),
+                                                                                                     List.of())),
                                                                   Optional.empty(),
-                                                                  Collections.emptyList(),
-                                                                  Collections.emptyList(),
-                                                                  "<deployment version='1.0'/>",
                                                                   Optional.empty(),
                                                                   Optional.empty(),
-                                                                  Notifications.none(),
-                                                                  List.of());
+                                                                  "<deployment version='1.0'/>");
 
     private final List<Step> steps;
 
@@ -74,27 +74,6 @@ public class DeploymentSpec {
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
-    }
-
-    // TODO: Remove after October 2019
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService,
-                          Notifications notifications,
-                          List<Endpoint> endpoints) {
-        this(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
-                                                steps,
-                                                upgradePolicy,
-                                                changeBlockers,
-                                                globalServiceId,
-                                                athenzDomain,
-                                                athenzService,
-                                                notifications,
-                                                endpoints)),
-             majorVersion,
-             athenzDomain,
-             athenzService,
-             xmlForm);
     }
 
     /** Adds missing required steps and reorders steps to a permissible order */
