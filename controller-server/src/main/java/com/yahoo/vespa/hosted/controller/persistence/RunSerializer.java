@@ -22,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -90,8 +91,8 @@ class RunSerializer {
         return runFromSlime(slime.get());
     }
 
-    SortedMap<RunId, Run> runsFromSlime(Slime slime) {
-        SortedMap<RunId, Run> runs = new TreeMap<>(comparing(RunId::number));
+    NavigableMap<RunId, Run> runsFromSlime(Slime slime) {
+        NavigableMap<RunId, Run> runs = new TreeMap<>(comparing(RunId::number));
         Inspector runArray = slime.get();
         runArray.traverse((ArrayTraverser) (__, runObject) -> {
             Run run = runFromSlime(runObject);

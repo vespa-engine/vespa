@@ -38,9 +38,11 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -215,10 +217,15 @@ public class JobController {
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
-    public Map<RunId, Run> runs(ApplicationId id, JobType type) {
-        SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
+    public NavigableMap<RunId, Run> runs(JobId id) {
+        return runs(id.application(), id.type());
+    }
+
+    /** Returns an immutable map of all known runs for the given application and job type. */
+    public NavigableMap<RunId, Run> runs(ApplicationId id, JobType type) {
+        NavigableMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
         last(id, type).ifPresent(run -> runs.put(run.id(), run));
-        return ImmutableMap.copyOf(runs);
+        return Collections.unmodifiableNavigableMap(runs);
     }
 
     /** Returns the run with the given id, if it exists. */
@@ -236,6 +243,31 @@ public class JobController {
     /** Returns the last run of the given type, for the given application, if one has been run. */
     public Optional<Run> last(ApplicationId id, JobType type) {
         return curator.readLastRun(id, type);
+    }
+
+    /** Returns the last completed of the given job. */
+    public Optional<Run> lastCompleted(JobId id) {
+        return Optional.ofNullable(curator.readHistoricRuns(id.application(), id.type())
+                                          .lastEntry().getValue());
+    }
+
+    /** Returns the first failing of the given job. */
+    public Optional<Run> firstFailing(JobId id) {
+        Run failed = null;
+        loop: for (Run run : runs(id).descendingMap().values())
+            switch (run.status()) {
+                case running: continue loop;
+                case success: break loop;
+                default: failed = run;
+            }
+        return Optional.ofNullable(failed);
+    }
+
+    /** Returns the last success of the given job. */
+    public Optional<Run> lastSuccess(JobId id) {
+        return runs(id).descendingMap().values().stream()
+                .filter(run -> run.status() == RunStatus.success)
+                .findFirst();
     }
 
     /** Returns the run with the given id, provided it is still active. */
@@ -274,11 +306,19 @@ public class JobController {
             locked(id.application(), id.type(), runs -> {
                 runs.put(run.id(), finishedRun);
                 long last = id.number();
+                long successes = runs.values().stream().filter(old -> old.status() == RunStatus.success).count();
                 var oldEntries = runs.entrySet().iterator();
                 for (var old = oldEntries.next();
                         old.getKey().number() <= last - historyLength
                      || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
                      old = oldEntries.next()) {
+
+                    // Make sure we keep the last success and the first failing
+                    if (successes == 1 && old.getValue().status() == RunStatus.success) {
+                        oldEntries.next();
+                        continue;
+                    }
+
                     logs.delete(old.getKey());
                     oldEntries.remove();
                 }
