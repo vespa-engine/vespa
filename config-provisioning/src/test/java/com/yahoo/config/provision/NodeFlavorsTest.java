@@ -25,7 +25,7 @@ public class NodeFlavorsTest {
         {
             FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
             flavorBuilder.minCpuCores(10);
-            flavorBuilder.cpuCoreSpeedup(1.3);
+            flavorBuilder.cpuSpeedup(1.3);
             flavorBuilder.name("banana").cost(3);
             flavorBuilderList.add(flavorBuilder);
         }
