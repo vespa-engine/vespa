@@ -107,6 +107,7 @@ public class ApplicationMojo extends AbstractMojo {
         File moduleTargetDir = new File(moduleDir, "target");
         if (moduleTargetDir.exists()) {
             File[] bundles = moduleTargetDir.listFiles((dir, name) -> name.endsWith("-deploy.jar") ||
+                                                                      name.endsWith("-bundle.jar") ||
                                                                       name.endsWith("-jar-with-dependencies.jar"));
             if (bundles == null) return;
             for (File bundle : bundles) {
