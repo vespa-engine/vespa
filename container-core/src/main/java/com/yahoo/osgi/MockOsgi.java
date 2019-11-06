@@ -16,8 +16,18 @@ import java.util.List;
 public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
 
     @Override
+    public List<Bundle> getInitialBundles() {
+        return Collections.emptyList();
+    }
+
+    @Override
     public Bundle[] getBundles() {
         return new Bundle[0];
+    }
+
+    @Override
+    public List<Bundle> getCurrentBundles() {
+        return Collections.emptyList();
     }
 
     @Override
@@ -28,14 +38,6 @@ public class MockOsgi extends NonWorkingOsgiFramework implements Osgi {
     @Override
     public List<Bundle> install(String absolutePath) {
         return Collections.emptyList();
-    }
-
-    @Override
-    public void uninstall(Bundle bundle) {
-    }
-
-    @Override
-    public void refreshPackages() {
     }
 
 }

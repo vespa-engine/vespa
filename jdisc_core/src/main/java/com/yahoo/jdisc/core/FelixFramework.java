@@ -117,6 +117,9 @@ public class FelixFramework implements OsgiFramework {
         return sb.toString();
     }
 
+    /**
+     * NOTE: This method is no longer used by the Jdisc container framework, but kept for completeness.
+     */
     @Override
     public void refreshPackages() {
         FrameworkWiring wiring = felix.adapt(FrameworkWiring.class);
@@ -153,8 +156,13 @@ public class FelixFramework implements OsgiFramework {
         return Arrays.asList(felix.getBundleContext().getBundles());
     }
 
+    @Override
     public List<Bundle> getBundles(Bundle requestingBundle) {
-        return Arrays.asList(requestingBundle.getBundleContext().getBundles());
+        log.fine(() -> "All bundles: " + bundles());
+        log.fine(() -> "Getting visible bundles for bundle " + requestingBundle);
+        List<Bundle> visibleBundles = Arrays.asList(requestingBundle.getBundleContext().getBundles());
+        log.fine(() -> "Visible bundles: " + visibleBundles);
+        return visibleBundles;
     }
 
     public void allowDuplicateBundles(Collection<Bundle> bundles) {

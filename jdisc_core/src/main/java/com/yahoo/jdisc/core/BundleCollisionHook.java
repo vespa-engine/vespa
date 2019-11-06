@@ -8,6 +8,7 @@ import org.osgi.framework.Version;
 import org.osgi.framework.hooks.bundle.CollisionHook;
 import org.osgi.framework.hooks.bundle.EventHook;
 import org.osgi.framework.hooks.bundle.FindHook;
+import org.osgi.framework.launch.Framework;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,17 +16,20 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
- * A bundle {@link CollisionHook} that contains a set of bundles that are allowed to collide with
- * bundles that are about to be installed. In order to clean up when bundles are uninstalled, this
- * is also a bundle {@link EventHook}.
+ * A bundle {@link CollisionHook} that contains a set of bundles that are allowed to collide with bundles
+ * that are about to be installed. This class also implements a {@link FindHook} to provide a consistent
+ * view of bundles such that the two sets of duplicate bundles are invisible to each other.
+ * In order to clean up when bundles are uninstalled, this is also a bundle {@link EventHook}.
  *
  * Thread safe
  *
  * @author gjoranv
  */
 public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
+    private static Logger log = Logger.getLogger(BundleCollisionHook.class.getName());
 
     private ServiceRegistration<?> registration;
     private Map<Bundle, BsnVersion> allowedDuplicates = new HashMap<>(5);
@@ -84,9 +88,6 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
      * If the given context represents one of the allowed duplicates, this method filters out all bundles
      * that are duplicates of the allowed duplicates. Otherwise this method filters out the allowed duplicates,
      * so they are not visible to other bundles.
-     *
-     * NOTE:  This hook method is added for a consistent view of the installed bundles, but is not actively
-     *        used by jdisc. The OSGi framework does not use FindHooks when calculating bundle wiring.
      */
     @Override
     public synchronized void find(BundleContext context, Collection<Bundle> bundles) {
@@ -105,11 +106,24 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
                 }
             }
         }
+        logHiddenBundles(context, bundlesToHide);
         bundles.removeAll(bundlesToHide);
     }
 
     private boolean isDuplicateOfAllowedDuplicates(Bundle bundle) {
         return ! allowedDuplicates.containsKey(bundle) && allowedDuplicates.containsValue(new BsnVersion(bundle));
+    }
+
+    private void logHiddenBundles(BundleContext requestingContext, Set<Bundle> hiddenBundles) {
+        if (hiddenBundles.isEmpty()) {
+            log.fine(() -> "No bundles to hide from bundle " + requestingContext.getBundle());
+        } else {
+            if (requestingContext.getBundle() instanceof Framework) {
+                log.fine(() -> "Requesting bundle is the Framework, so hidden bundles will be visible: " + hiddenBundles);
+            } else {
+                log.fine(() -> "Hiding bundles from bundle '" + requestingContext.getBundle() + "': " + hiddenBundles);
+            }
+        }
     }
 
 

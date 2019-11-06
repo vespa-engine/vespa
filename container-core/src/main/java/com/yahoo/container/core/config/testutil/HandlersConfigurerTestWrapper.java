@@ -19,7 +19,6 @@ import com.yahoo.osgi.MockOsgi;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
@@ -90,7 +89,7 @@ public class HandlersConfigurerTestWrapper {
 
     public HandlersConfigurerTestWrapper(Container container, String configId) {
         createFiles(configId);
-        MockOsgi mockOsgi = new MockOsgi();
+        MockOsgiWrapper mockOsgiWrapper = new MockOsgiWrapper();
         ComponentDeconstructor testDeconstructor = getTestDeconstructor();
         configurer = new HandlersConfigurerDi(
                 new CloudSubscriberFactory(configSources),
@@ -98,16 +97,17 @@ public class HandlersConfigurerTestWrapper {
                 configId,
                 testDeconstructor,
                 guiceInjector(),
-                mockOsgi);
+                mockOsgiWrapper);
         this.container = container;
     }
 
     private ComponentDeconstructor getTestDeconstructor() {
-        return components -> components.forEach(component -> {
+        return (components, bundles) -> components.forEach(component -> {
             if (component instanceof AbstractComponent) {
                 AbstractComponent abstractComponent = (AbstractComponent) component;
                 if (abstractComponent.isDeconstructable()) abstractComponent.deconstruct();
             }
+            if (! bundles.isEmpty()) throw new IllegalArgumentException("This test should not use bundles");
         });
     }
 

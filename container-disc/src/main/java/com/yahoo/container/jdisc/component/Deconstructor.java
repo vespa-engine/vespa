@@ -7,6 +7,8 @@ import com.yahoo.container.di.ComponentDeconstructor;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.SharedResource;
 import com.yahoo.log.LogLevel;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleException;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.SEVERE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -37,7 +40,7 @@ public class Deconstructor implements ComponentDeconstructor {
     }
 
     @Override
-    public void deconstruct(Collection<Object> components) {
+    public void deconstruct(Collection<Object> components, Collection<Bundle> bundles) {
         Collection<AbstractComponent> destructibleComponents = new ArrayList<>();
         for (var component : components) {
             if (component instanceof AbstractComponent) {
@@ -57,20 +60,24 @@ public class Deconstructor implements ComponentDeconstructor {
             }
         }
         if (! destructibleComponents.isEmpty())
-            executor.schedule(new DestructComponentTask(destructibleComponents), delay.getSeconds(), TimeUnit.SECONDS);
+            executor.schedule(new DestructComponentTask(destructibleComponents, bundles),
+                              delay.getSeconds(), TimeUnit.SECONDS);
     }
 
     private static class DestructComponentTask implements Runnable {
 
         private final Random random = new Random(System.nanoTime());
         private final Collection<AbstractComponent> components;
+        private final Collection<Bundle> bundles;
 
-        DestructComponentTask(Collection<AbstractComponent> components) {
+        DestructComponentTask(Collection<AbstractComponent> components,
+                              Collection<Bundle> bundles) {
             this.components = components;
+            this.bundles = bundles;
         }
 
         /**
-        * Returns a random delay betweeen 0 and 10 minutes which will be different across identical containers invoking this at the same time.
+        * Returns a random delay between 0 and 10 minutes which will be different across identical containers invoking this at the same time.
         * Used to randomize restart to avoid simultaneous cluster restarts.
         */
         private Duration getRandomizedShutdownDelay() {
@@ -80,7 +87,6 @@ public class Deconstructor implements ComponentDeconstructor {
 
         @Override
         public void run() {
-            log.info("Starting deconstruction of " + components.size() + " components");
             for (var component : components) {
                 log.info("Starting deconstruction of component " + component);
                 try {
@@ -102,7 +108,19 @@ public class Deconstructor implements ComponentDeconstructor {
                     log.log(WARNING, "Non-error not exception throwable thrown when deconstructing component  " + component, e);
                 }
             }
-            log.info("Finished deconstructing " + components.size() + " components");
+            // It should now be safe to uninstall the old bundles.
+            for (var bundle : bundles) {
+                try {
+                    log.info("Uninstalling bundle " + bundle);
+                    bundle.uninstall();
+                } catch (BundleException e) {
+                    log.log(SEVERE, "Could not uninstall bundle " + bundle);
+                }
+            }
+            // NOTE: It could be tempting to refresh packages here, but if active bundles were using any of
+            //       the removed ones, they would switch wiring in the middle of a generation's lifespan.
+            //       This would happen if the dependent active bundle has not been rebuilt with a new version
+            //       of its dependency(ies).
         }
     }
 
