@@ -63,6 +63,7 @@ public class MetricsReporter extends Maintainer {
         updateStateMetrics(nodes);
         updateMaintenanceMetrics();
         updateDockerMetrics(nodes);
+        updateTenantUsageMetrics(nodes);
     }
 
     private void updateMaintenanceMetrics() {
@@ -210,6 +211,28 @@ public class MetricsReporter extends Maintainer {
         metric.set("hostedVespa.docker.freeCapacityCpu", totalFreeCapacity.vcpu(), null);
         metric.set("hostedVespa.docker.freeCapacityMem", totalFreeCapacity.memoryGb(), null);
         metric.set("hostedVespa.docker.freeCapacityDisk", totalFreeCapacity.diskGb(), null);
+    }
+
+    private void updateTenantUsageMetrics(NodeList nodes) {
+        nodes.nodeType(NodeType.tenant).stream()
+                .filter(node -> node.allocation().isPresent())
+                .collect(Collectors.groupingBy(node -> node.allocation().get().owner()))
+                .forEach(
+                        (applicationId, applicationNodes) -> {
+                            var allocatedCapacity = applicationNodes.stream()
+                                    .map(node -> node.allocation().get().requestedResources().withDiskSpeed(any))
+                                    .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
+
+                            var context = getContextAt(
+                                    "tenantName", applicationId.tenant().value(),
+                                    "applicationId", applicationId.serializedForm().replace(':', '.'),
+                                    "app", toApp(applicationId));
+
+                            metric.set("hostedVespa.docker.allocatedCapacityCpu", allocatedCapacity.vcpu(), context);
+                            metric.set("hostedVespa.docker.allocatedCapacityMem", allocatedCapacity.memoryGb(), context);
+                            metric.set("hostedVespa.docker.allocatedCapacityDisk", allocatedCapacity.diskGb(), context);
+                        }
+                );
     }
 
     private static NodeResources getCapacityTotal(NodeList nodes) {
