@@ -145,7 +145,6 @@ public class Endpoint {
     }
 
     private static String instancePart(ApplicationId application, ZoneId zone, String separator) {
-        if (zone == null) return ""; // Always omit instance for global endpoints
         if (application.instance().isDefault()) return ""; // Skip "default"
         return application.instance().value() + separator;
     }

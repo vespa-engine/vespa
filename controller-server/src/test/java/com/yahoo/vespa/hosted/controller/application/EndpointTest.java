@@ -41,6 +41,10 @@ public class EndpointTest {
                 "https://cd--a1--t1.global.vespa.oath.cloud:4443/",
                 Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
 
+                // Main endpoint in CD
+                "https://cd--i2--a2--t2.global.vespa.oath.cloud:4443/",
+                Endpoint.of(app2).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
+
                 // Main endpoint with direct routing and default TLS port
                 "https://a1.t1.global.vespa.oath.cloud/",
                 Endpoint.of(app1).named(endpointId).on(Port.tls()).directRouting().in(SystemName.main),
@@ -50,11 +54,11 @@ public class EndpointTest {
                 Endpoint.of(app1).named(EndpointId.of("r1")).on(Port.tls()).directRouting().in(SystemName.main),
 
                 // Main endpoint for custom instance in default rotation
-                "https://a2.t2.global.vespa.oath.cloud/",
+                "https://i2.a2.t2.global.vespa.oath.cloud/",
                 Endpoint.of(app2).named(endpointId).on(Port.tls()).directRouting().in(SystemName.main),
 
                 // Main endpoint for custom instance with custom rotation name
-                "https://r2.a2.t2.global.vespa.oath.cloud/",
+                "https://r2.i2.a2.t2.global.vespa.oath.cloud/",
                 Endpoint.of(app2).named(EndpointId.of("r2")).on(Port.tls()).directRouting().in(SystemName.main),
 
                 // Main endpoint in public system
@@ -82,6 +86,10 @@ public class EndpointTest {
                 Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.main),
 
                 // Main endpoint in CD
+                "https://cd--i2--a2--t2.global.vespa.oath.cloud:4443/",
+                Endpoint.of(app2).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
+
+                // Main endpoint in CD
                 "https://cd--a1--t1.global.vespa.oath.cloud:4443/",
                 Endpoint.of(app1).named(endpointId).on(Port.tls(4443)).in(SystemName.cd),
 
@@ -94,11 +102,11 @@ public class EndpointTest {
                 Endpoint.of(app1).named(EndpointId.of("r1")).on(Port.tls()).directRouting().in(SystemName.main),
 
                 // Main endpoint for custom instance in default rotation
-                "https://a2.t2.global.vespa.oath.cloud/",
+                "https://i2.a2.t2.global.vespa.oath.cloud/",
                 Endpoint.of(app2).named(endpointId).on(Port.tls()).directRouting().in(SystemName.main),
 
                 // Main endpoint for custom instance with custom rotation name
-                "https://r2.a2.t2.global.vespa.oath.cloud/",
+                "https://r2.i2.a2.t2.global.vespa.oath.cloud/",
                 Endpoint.of(app2).named(EndpointId.of("r2")).on(Port.tls()).directRouting().in(SystemName.main),
 
                 // Main endpoint in public system

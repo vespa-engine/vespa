@@ -216,7 +216,7 @@
   ],
   "compileVersion": "(ignore)",
   "globalRotations": [
-    "https://application1--tenant1.global.vespa.oath.cloud:4443/"
+    "https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"
   ],
   "rotationId": "rotation-id-1",
   "instances": [
