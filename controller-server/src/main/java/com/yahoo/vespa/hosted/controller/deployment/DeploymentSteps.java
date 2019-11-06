@@ -38,7 +38,7 @@ public class DeploymentSteps {
         this.system = Objects.requireNonNull(system, "system cannot be null");
     }
 
-    /** Returns jobs for this, in the order they are declared */
+    /** Returns jobs for this, in the order they should run */
     public List<JobType> jobs() {
         return Stream.concat(production().isEmpty() ? Stream.of() : Stream.of(JobType.systemTest, JobType.stagingTest),
                              spec.steps().stream().flatMap(step -> toJobs(step).stream()))
@@ -73,7 +73,7 @@ public class DeploymentSteps {
                    .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Returns declared test jobs in this */
+    /** Returns test jobs to run for this spec */
     public List<JobType> testJobs() {
         return jobs().stream().filter(JobType::isTest).collect(Collectors.toUnmodifiableList());
     }
