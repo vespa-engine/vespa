@@ -19,7 +19,7 @@ public class NodeFlavorTuning implements QrStartConfig.Producer {
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
-        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.resources().vcpu())));
+        builder.jvm.availableProcessors(Math.max(2, (int)Math.ceil(flavor.getMinCpuCores())));
     }
 
 }
