@@ -178,8 +178,17 @@ public class UnixPath {
         return this;
     }
 
+    /**
+     * Returns whether this path is a directory. Symlinks are followed, so this returns true for symlinks pointing to a
+     * directory.
+     */
     public boolean isDirectory() {
         return uncheck(() -> Files.isDirectory(path));
+    }
+
+    /** Returns whether this is a symlink */
+    public boolean isSymbolicSymlink() {
+        return Files.isSymbolicLink(path);
     }
 
     /**
@@ -189,12 +198,11 @@ public class UnixPath {
      * - For symlinks: Only the symlink is removed, not what the symlink points to
      */
     public boolean deleteRecursively() {
-        if (isDirectory()) {
+        if (!isSymbolicSymlink() && isDirectory()) {
             for (UnixPath path : listContentsOfDirectory()) {
                 path.deleteRecursively();
             }
         }
-
         return uncheck(() -> Files.deleteIfExists(path));
     }
 
