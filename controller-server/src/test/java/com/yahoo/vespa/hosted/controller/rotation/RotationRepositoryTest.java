@@ -146,6 +146,44 @@ public class RotationRepositoryTest {
                      application2.instance().endpointsIn(SystemName.cd).main().get().url().toString());
     }
 
+    @Test
+    public void multiple_instances_with_similar_global_service_id() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1,instance2")
+                .region("us-central-1")
+                .parallel("us-west-1", "us-east-3")
+                .globalServiceId("global")
+                .build();
+        var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage);
+        var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
+        assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
+        assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
+        assertEquals(URI.create("https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"),
+                     instance1.instance().endpointsIn(SystemName.main).main().get().url());
+        assertEquals(URI.create("https://instance2--application1--tenant1.global.vespa.oath.cloud:4443/"),
+                     instance2.instance().endpointsIn(SystemName.main).main().get().url());
+    }
+
+    @Test
+    public void multiple_instances_with_similar_endpoints() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .instances("instance1,instance2")
+                .region("us-central-1")
+                .parallel("us-west-1", "us-east-3")
+                .endpoint("default", "foo", "us-central-1", "us-west-1")
+                .build();
+        var instance1 = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage);
+        var instance2 = tester.newDeploymentContext("tenant1", "application1", "instance2");
+
+        assertEquals(List.of(new RotationId("foo-1")), rotationIds(instance1.instance().rotations()));
+        assertEquals(List.of(new RotationId("foo-2")), rotationIds(instance2.instance().rotations()));
+
+        assertEquals(URI.create("https://instance1--application1--tenant1.global.vespa.oath.cloud:4443/"),
+                     instance1.instance().endpointsIn(SystemName.main).main().get().url());
+        assertEquals(URI.create("https://instance2--application1--tenant1.global.vespa.oath.cloud:4443/"),
+                     instance2.instance().endpointsIn(SystemName.main).main().get().url());
+    }
+
     private void assertSingleRotation(Rotation expected, List<AssignedRotation> assignedRotations, RotationRepository repository) {
         assertEquals(1, assignedRotations.size());
         var rotationId = assignedRotations.get(0).rotationId();

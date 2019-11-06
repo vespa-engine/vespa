@@ -172,10 +172,11 @@ public class DeploymentContext {
                          .allMatch(deployments -> deployments.stream()
                                                              .allMatch(deployment -> deployment.version().equals(version))));
 
-        for (JobType type : new DeploymentSteps(application().deploymentSpec(), tester.controller()::system).productionJobs())
-            assertTrue(tester.configServer().nodeRepository()
-                             .list(type.zone(tester.controller().system()), applicationId.defaultInstance()).stream() // TODO jonmv: support more
-                             .allMatch(node -> node.currentVersion().equals(version)));
+        for (var spec : application().deploymentSpec().instances())
+            for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
+                assertTrue(tester.configServer().nodeRepository()
+                                 .list(type.zone(tester.controller().system()), applicationId.defaultInstance()).stream() // TODO jonmv: support more
+                                 .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(application().change().hasTargets());
         return this;
@@ -267,7 +268,7 @@ public class DeploymentContext {
                     triggerJobs();
                 }
                 else
-                    throw new AssertionError("Job '" + run.id().type() + "' was run twice for '" + instanceId + "'");
+                    throw new AssertionError("Job '" + run.id() + "' was run twice");
 
         assertFalse("Change should have no targets, but was " + application().change(), application().change().hasTargets());
         if (!deferDnsUpdates) {

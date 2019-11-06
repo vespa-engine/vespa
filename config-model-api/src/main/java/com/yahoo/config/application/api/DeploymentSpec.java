@@ -9,11 +9,8 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.Reader;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,16 +33,19 @@ import java.util.stream.Collectors;
 public class DeploymentSpec {
 
     /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
-    public static final DeploymentSpec empty = new DeploymentSpec(Optional.empty(),
-                                                                  UpgradePolicy.defaultPolicy,
+    public static final DeploymentSpec empty = new DeploymentSpec(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
+                                                                                                     Collections.emptyList(),
+                                                                                                     UpgradePolicy.defaultPolicy,
+                                                                                                     Collections.emptyList(),
+                                                                                                     Optional.empty(),
+                                                                                                     Optional.empty(),
+                                                                                                     Optional.empty(),
+                                                                                                     Notifications.none(),
+                                                                                                     List.of())),
                                                                   Optional.empty(),
-                                                                  Collections.emptyList(),
-                                                                  Collections.emptyList(),
-                                                                  "<deployment version='1.0'/>",
                                                                   Optional.empty(),
                                                                   Optional.empty(),
-                                                                  Notifications.none(),
-                                                                  List.of());
+                                                                  "<deployment version='1.0'/>");
 
     private final List<Step> steps;
 
@@ -61,40 +61,13 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
                           String xmlForm) {
-        if (hasSingleInstance(steps)) { // TODO: Remove this clause after November 2019
-            var singleInstance = singleInstance(steps);
-            this.steps = List.of(singleInstance.withSteps(completeSteps(singleInstance.steps())));
-        }
-        else {
-            this.steps = List.copyOf(completeSteps(steps));
-        }
+        this.steps = List.copyOf(completeSteps(steps));
         this.majorVersion = majorVersion;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
-    }
-
-    // TODO: Remove after October 2019
-    public DeploymentSpec(Optional<String> globalServiceId, UpgradePolicy upgradePolicy, Optional<Integer> majorVersion,
-                          List<ChangeBlocker> changeBlockers, List<Step> steps, String xmlForm,
-                          Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService,
-                          Notifications notifications,
-                          List<Endpoint> endpoints) {
-        this(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
-                                                steps,
-                                                upgradePolicy,
-                                                changeBlockers,
-                                                globalServiceId,
-                                                athenzDomain,
-                                                athenzService,
-                                                notifications,
-                                                endpoints)),
-             majorVersion,
-             athenzDomain,
-             athenzService,
-             xmlForm);
     }
 
     /** Adds missing required steps and reorders steps to a permissible order */
@@ -166,34 +139,12 @@ public class DeploymentSpec {
         }
     }
 
-    // TODO: Remove after October 2019
-    private DeploymentInstanceSpec singleInstance() {
-        return singleInstance(steps);
-    }
-
-    // TODO: Remove after October 2019
-    private static DeploymentInstanceSpec singleInstance(List<DeploymentSpec.Step> steps) {
-        List<DeploymentInstanceSpec> instances = instances(steps);
-        if (instances.size() == 1) return instances.get(0);
-        throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
-                                           "as it has multiple instances: " +
-                                           instances.stream().map(Step::toString).collect(Collectors.joining(",")));
-    }
-
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
-        if (hasSingleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019
         return steps;
-    }
-
-    // TODO: Remove after November 2019
-    public List<DeclaredZone> zones() {
-        return singleInstance().steps().stream()
-                               .flatMap(step -> step.zones().stream())
-                               .collect(Collectors.toList());
     }
 
     /** Returns the Athenz domain set on the root tag, if any */
@@ -220,16 +171,6 @@ public class DeploymentSpec {
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
-
-    // TODO: Remove after November 2019
-    public boolean includes(Environment environment, Optional<RegionName> region) {
-        return singleInstance().deploysTo(environment, region);
-    }
-
-    // TODO: Remove after November 2019
-    private static boolean hasSingleInstance(List<DeploymentSpec.Step> steps) {
-        return instances(steps).size() == 1;
-    }
 
     /** Returns the instance step containing the given instance name */
     public Optional<DeploymentInstanceSpec> instance(InstanceName name) {
@@ -328,29 +269,6 @@ public class DeploymentSpec {
         return Objects.hash(majorVersion, steps, xmlForm);
     }
 
-    /** This may be invoked by a continuous build */
-    public static void main(String[] args) {
-        if (args.length != 2 && args.length != 3) {
-            System.err.println("Usage: DeploymentSpec [file] [environment] [region]?" +
-                               "Returns 0 if the specified zone matches the deployment spec, 1 otherwise");
-            System.exit(1);
-        }
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(args[0]))) {
-            DeploymentSpec spec = DeploymentSpec.fromXml(reader);
-            Environment environment = Environment.from(args[1]);
-            Optional<RegionName> region = args.length == 3 ? Optional.of(RegionName.from(args[2])) : Optional.empty();
-            if (spec.includes(environment, region))
-                System.exit(0);
-            else
-                System.exit(1);
-        }
-        catch (Exception e) {
-            System.err.println("Exception checking deployment spec: " + toMessageString(e));
-            System.exit(1);
-        }
-    }
-
     /** A deployment step */
     public abstract static class Step {
 
@@ -382,9 +300,6 @@ public class DeploymentSpec {
             this.duration = duration;
         }
 
-        // TODO: Remove after October 2019
-        public Duration duration() { return duration; }
-
         @Override
         public Duration delay() { return duration; }
 
@@ -408,15 +323,7 @@ public class DeploymentSpec {
         private final Optional<String> testerFlavor;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), false);
-        }
-
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active) {
-            this(environment, region, active, Optional.empty(), Optional.empty());
-        }
-
-        public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active, Optional<AthenzService> athenzService) {
-            this(environment, region, active, athenzService, Optional.empty());
+            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,

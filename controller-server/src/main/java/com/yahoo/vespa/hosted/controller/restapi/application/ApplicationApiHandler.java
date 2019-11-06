@@ -71,6 +71,7 @@ import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
@@ -717,35 +718,38 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void toSlime(Cursor object, Instance instance, DeploymentSpec deploymentSpec, HttpRequest request) {
         object.setString("instance", instance.name().value());
-        // Jobs sorted according to deployment spec
-        List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                                              .steps(deploymentSpec)
-                                              .sortedJobs(instance.deploymentJobs().jobStatus().values());
+
+        if (deploymentSpec.instance(instance.name()).isPresent()) {
+            // Jobs sorted according to deployment spec
+            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
+                                                  .steps(deploymentSpec.requireInstance(instance.name()))
+                                                  .sortedJobs(instance.deploymentJobs().jobStatus().values());
 
 
-        Cursor deploymentJobsArray = object.setArray("deploymentJobs");
-        for (JobStatus job : jobStatus) {
-            Cursor jobObject = deploymentJobsArray.addObject();
-            jobObject.setString("type", job.type().jobName());
-            jobObject.setBool("success", job.isSuccess());
-            job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
-            job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
-            job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
-            job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
+            Cursor deploymentJobsArray = object.setArray("deploymentJobs");
+            for (JobStatus job : jobStatus) {
+                Cursor jobObject = deploymentJobsArray.addObject();
+                jobObject.setString("type", job.type().jobName());
+                jobObject.setBool("success", job.isSuccess());
+                job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
+                job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
+                job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
+                job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
+            }
+
+            // Change blockers
+            Cursor changeBlockers = object.setArray("changeBlockers");
+            deploymentSpec.instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
+                Cursor changeBlockerObject = changeBlockers.addObject();
+                changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
+                changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
+                changeBlockerObject.setString("timeZone", changeBlocker.window().zone().getId());
+                Cursor days = changeBlockerObject.setArray("days");
+                changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
+                Cursor hours = changeBlockerObject.setArray("hours");
+                changeBlocker.window().hours().forEach(hours::addLong);
+            }));
         }
-
-        // Change blockers
-        Cursor changeBlockers = object.setArray("changeBlockers");
-        deploymentSpec.instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
-            Cursor changeBlockerObject = changeBlockers.addObject();
-            changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
-            changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
-            changeBlockerObject.setString("timeZone", changeBlocker.window().zone().getId());
-            Cursor days = changeBlockerObject.setArray("days");
-            changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
-            Cursor hours = changeBlockerObject.setArray("hours");
-            changeBlocker.window().hours().forEach(hours::addLong);
-        }));
 
         // Rotation
         Cursor globalRotationsArray = object.setArray("globalRotations");
@@ -772,9 +776,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Deployments sorted according to deployment spec
-        List<Deployment> deployments = controller.applications().deploymentTrigger()
-                                                 .steps(deploymentSpec)
-                                                 .sortedDeployments(instance.deployments().values());
+        List<Deployment> deployments = deploymentSpec.instance(instance.name())
+        .map(spec -> new DeploymentSteps(spec, controller::system))
+        .map(steps -> steps.sortedDeployments(instance.deployments().values()))
+        .orElse(List.copyOf(instance.deployments().values()));
 
         Cursor deploymentsArray = object.setArray("deployments");
         for (Deployment deployment : deployments) {
@@ -822,36 +827,38 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(object.setObject("outstandingChange"), application.outstandingChange());
         }
 
-        // Jobs sorted according to deployment spec
-        List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                .steps(application.deploymentSpec())
-                .sortedJobs(instance.deploymentJobs().jobStatus().values());
+        if (application.deploymentSpec().instance(instance.name()).isPresent()) {
+            // Jobs sorted according to deployment spec
+            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
+                                                  .steps(application.deploymentSpec().requireInstance(instance.name()))
+                                                  .sortedJobs(instance.deploymentJobs().jobStatus().values());
 
-        object.setBool("deployedInternally", application.internal());
-        Cursor deploymentsArray = object.setArray("deploymentJobs");
-        for (JobStatus job : jobStatus) {
-            Cursor jobObject = deploymentsArray.addObject();
-            jobObject.setString("type", job.type().jobName());
-            jobObject.setBool("success", job.isSuccess());
+            object.setBool("deployedInternally", application.internal());
+            Cursor deploymentsArray = object.setArray("deploymentJobs");
+            for (JobStatus job : jobStatus) {
+                Cursor jobObject = deploymentsArray.addObject();
+                jobObject.setString("type", job.type().jobName());
+                jobObject.setBool("success", job.isSuccess());
 
-            job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
-            job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
-            job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
-            job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
+                job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
+                job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
+                job.firstFailing().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("firstFailing")));
+                job.lastSuccess().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastSuccess")));
+            }
+
+            // Change blockers
+            Cursor changeBlockers = object.setArray("changeBlockers");
+            application.deploymentSpec().instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
+                Cursor changeBlockerObject = changeBlockers.addObject();
+                changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
+                changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
+                changeBlockerObject.setString("timeZone", changeBlocker.window().zone().getId());
+                Cursor days = changeBlockerObject.setArray("days");
+                changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
+                Cursor hours = changeBlockerObject.setArray("hours");
+                changeBlocker.window().hours().forEach(hours::addLong);
+            }));
         }
-
-        // Change blockers
-        Cursor changeBlockers = object.setArray("changeBlockers");
-        application.deploymentSpec().instance(instance.name()).ifPresent(spec -> spec.changeBlocker().forEach(changeBlocker -> {
-            Cursor changeBlockerObject = changeBlockers.addObject();
-            changeBlockerObject.setBool("versions", changeBlocker.blocksVersions());
-            changeBlockerObject.setBool("revisions", changeBlocker.blocksRevisions());
-            changeBlockerObject.setString("timeZone", changeBlocker.window().zone().getId());
-            Cursor days = changeBlockerObject.setArray("days");
-            changeBlocker.window().days().stream().map(DayOfWeek::getValue).forEach(days::addLong);
-            Cursor hours = changeBlockerObject.setArray("hours");
-            changeBlocker.window().hours().forEach(hours::addLong);
-        }));
 
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", compileVersion(application.id()).toFullString());
@@ -883,9 +890,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Deployments sorted according to deployment spec
-        List<Deployment> deployments = controller.applications().deploymentTrigger()
-                .steps(application.deploymentSpec())
-                .sortedDeployments(instance.deployments().values());
+        List<Deployment> deployments =
+                application.deploymentSpec().instance(instance.name())
+                           .map(spec -> new DeploymentSteps(spec, controller::system))
+                           .map(steps -> steps.sortedDeployments(instance.deployments().values()))
+                           .orElse(List.copyOf(instance.deployments().values()));
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
@@ -1925,8 +1934,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         if (DeploymentSpec.empty.equals(applicationPackage.deploymentSpec()))
             throw new IllegalArgumentException("Missing required file 'deployment.xml'");
-        if (applicationPackage.deploymentSpec().instances().size() != 1)
-            throw new IllegalArgumentException("Only single-instance deployment specs are currently supported");
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          applicationPackage,

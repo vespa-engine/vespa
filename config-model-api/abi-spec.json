@@ -239,8 +239,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.config.provision.Environment)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional)",
       "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional, java.util.Optional)",
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
@@ -263,7 +261,6 @@
     ],
     "methods": [
       "public void <init>(java.time.Duration)",
-      "public java.time.Duration duration()",
       "public java.time.Duration delay()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.lang.String toString()"
@@ -330,15 +327,12 @@
     ],
     "methods": [
       "public void <init>(java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, java.lang.String)",
-      "public void <init>(java.util.Optional, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.Optional, java.util.List, java.util.List, java.lang.String, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
-      "public java.util.List zones()",
       "public java.util.Optional athenzDomain()",
       "public java.util.Optional athenzService()",
       "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public java.lang.String xmlForm()",
-      "public boolean includes(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(com.yahoo.config.provision.InstanceName)",
@@ -349,8 +343,7 @@
       "public static com.yahoo.config.application.api.DeploymentSpec fromXml(java.lang.String, boolean)",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public static void main(java.lang.String[])"
+      "public int hashCode()"
     ],
     "fields": [
       "public static final com.yahoo.config.application.api.DeploymentSpec empty"

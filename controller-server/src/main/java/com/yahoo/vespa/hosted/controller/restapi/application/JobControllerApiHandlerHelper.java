@@ -76,7 +76,7 @@ class JobControllerApiHandlerHelper {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
         Instance instance = application.require(id.instance());
         Change change = application.change();
-        DeploymentSteps steps = new DeploymentSteps(application.deploymentSpec(), controller::system);
+        DeploymentSteps steps = new DeploymentSteps(application.deploymentSpec().requireInstance(id.instance()), controller::system);
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
         Map<JobType, Versions> pendingProduction =

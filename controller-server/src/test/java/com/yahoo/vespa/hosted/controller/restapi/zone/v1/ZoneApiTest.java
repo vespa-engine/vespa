@@ -34,11 +34,10 @@ public class ZoneApiTest extends ControllerContainerCloudTest {
 
     @Before
     public void before() {
-        ZoneRegistryMock zoneRegistry = (ZoneRegistryMock) container.components()
-                                                                    .getComponent(ZoneRegistryMock.class.getName());
-        zoneRegistry.setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
-                    .setZones(zones);
-        this.tester = new ContainerTester(container, responseFiles);
+        tester = new ContainerTester(container, responseFiles);
+        tester.serviceRegistry().zoneRegistry()
+              .setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
+              .setZones(zones);
     }
 
     @Test

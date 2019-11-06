@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -74,8 +75,13 @@ public class ApplicationSerializerTest {
 
     @Test
     public void testSerialization() {
-        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>" +
-                                                               "   <staging/>" +
+        DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>\n" +
+                                                               "   <staging/>\n" +
+                                                               "   <instance id=\"i1\">\n" +
+                                                               "      <prod global-service-id=\"default\">\n" +
+                                                               "         <region active=\"true\">us-west-1</region>\n" +
+                                                               "      </prod>\n" +
+                                                               "   </instance>\n" +
                                                                "</deployment>");
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml("<validation-overrides version='1.0'>" +
                                                                               "  <allow until='2017-06-15'>deployment-removal</allow>" +
@@ -100,9 +106,6 @@ public class ApplicationSerializerTest {
 
         List<JobStatus> statusList = new ArrayList<>();
 
-        JobStatus.JobRun componentJob = JobStatus.JobRun.triggering(Version.emptyVersion, applicationVersion1, empty(),
-                                                                    empty(), "New commit", Instant.ofEpochMilli(400))
-                                                        .completion(100, Instant.ofEpochMilli(500));
         statusList.add(JobStatus.initial(JobType.systemTest)
                                 .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, empty(), "Test", Instant.ofEpochMilli(7))
                                 .withCompletion(30, empty(), Instant.ofEpochMilli(8))
@@ -127,7 +130,7 @@ public class ApplicationSerializerTest {
         List<Instance> instances = List.of(new Instance(id1,
                                                         deployments,
                                                         deploymentJobs,
-                                                        List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of())),
+                                                        List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
                                                         rotationStatus),
                                            new Instance(id3,
                                                         List.of(),

@@ -50,15 +50,17 @@ public class ApplicationPackageValidator {
 
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
     private void validateSteps(DeploymentSpec deploymentSpec) {
-        new DeploymentSteps(deploymentSpec, controller::system).jobs();
-        deploymentSpec.instances().stream().flatMap(instance -> instance.zones().stream())
-                      .filter(zone -> zone.environment() == Environment.prod)
-                      .forEach(zone -> {
-                          if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
-                                                                               zone.region().orElse(null)))) {
-                              throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
-                          }
-                      });
+        for (var spec : deploymentSpec.instances()) {
+            new DeploymentSteps(spec, controller::system).jobs();
+            spec.zones().stream()
+                .filter(zone -> zone.environment() == Environment.prod)
+                .forEach(zone -> {
+                    if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
+                                                                         zone.region().orElseThrow()))) {
+                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
+                    }
+                });
+        }
     }
 
     /** Verify that no single endpoint contains regions in different clouds */

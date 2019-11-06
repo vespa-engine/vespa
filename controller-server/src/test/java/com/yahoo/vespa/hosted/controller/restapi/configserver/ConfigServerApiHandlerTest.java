@@ -38,12 +38,11 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
 
     @Before
     public void before() {
-        ZoneRegistryMock zoneRegistry = (ZoneRegistryMock) container.components()
-                .getComponent(ZoneRegistryMock.class.getName());
-        zoneRegistry.setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
-                .setZones(zones);
-        this.tester = new ContainerTester(container, responseFiles);
-        this.proxy = (ConfigServerProxyMock) container.components().getComponent(ConfigServerProxyMock.class.getName());
+        tester = new ContainerTester(container, responseFiles);
+        tester.serviceRegistry().zoneRegistry()
+              .setDefaultRegionForEnvironment(Environment.dev, RegionName.from("us-north-2"))
+              .setZones(zones);
+        proxy = (ConfigServerProxyMock) container.components().getComponent(ConfigServerProxyMock.class.getName());
     }
 
     @Test
