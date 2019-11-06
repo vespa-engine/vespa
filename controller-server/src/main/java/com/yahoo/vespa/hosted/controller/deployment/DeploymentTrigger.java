@@ -78,7 +78,6 @@ public class DeploymentTrigger {
      */
 
     public static final Duration maxPause = Duration.ofDays(3);
-
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
 
     private final Controller controller;

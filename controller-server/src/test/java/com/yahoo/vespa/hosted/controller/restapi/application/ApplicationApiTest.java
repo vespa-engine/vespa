@@ -661,17 +661,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(streamer),
                               "{\"message\":\"Application package version: 1.0.3-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
-        // Sixth attempt has a multi-instance deployment spec, and fails.
+        // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
+                .systemTest()
+                .stagingTest()
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")
+                .endpoint("default", "foo", "us-central-1", "us-west-1", "us-east-3")
                 .build();
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(multiInstanceSpec, 123)),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Only single-instance deployment specs are currently supported\"}", 400);
+                              "{\"message\":\"Application package version: 1.0.4-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+
 
         // GET deployment job overview, after triggering system and staging test jobs.
         assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
@@ -730,6 +734,10 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               "{\"message\":\"Deleted instance tenant1.application1.instance1\"}");
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance2", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                              "{\"message\":\"Deleted instance tenant1.application1.instance2\"}");
 
         // DELETE a tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)

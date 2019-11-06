@@ -1934,8 +1934,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         if (DeploymentSpec.empty.equals(applicationPackage.deploymentSpec()))
             throw new IllegalArgumentException("Missing required file 'deployment.xml'");
-        if (applicationPackage.deploymentSpec().instances().size() != 1)
-            throw new IllegalArgumentException("Only single-instance deployment specs are currently supported");
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          applicationPackage,

@@ -39,8 +39,8 @@
     "start": "(ignore)",
     "wantedPlatform": "6.1",
     "wantedApplication": {
-      "hash": "1.0.3-commit1",
-      "build": 3,
+      "hash": "1.0.4-commit1",
+      "build": 4,
       "source": {
         "gitRepository": "repository1",
         "gitBranch": "master",

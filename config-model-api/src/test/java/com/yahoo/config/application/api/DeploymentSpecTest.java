@@ -995,9 +995,9 @@ public class DeploymentSpecTest {
                                           "      </prod>" +
                                           "      <endpoints>" +
                                           "         <endpoint id=\"foo\" container-id=\"bar\">" +
-                                          "         <region>us-east</region>" +
-                                          "      </endpoint>" +
-                                          "      <endpoint id=\"nalle\" container-id=\"frosk\" />" +
+                                          "            <region>us-east</region>" +
+                                          "         </endpoint>" +
+                                          "         <endpoint id=\"nalle\" container-id=\"frosk\" />" +
                                           "         <endpoint container-id=\"quux\" />" +
                                           "      </endpoints>" +
                                           "   </instance>" +

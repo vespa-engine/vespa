@@ -3,12 +3,12 @@
     "platform": {
       "platform": "6.1",
       "at": "(ignore)",
-      "pending": "Waiting for application change to 1.0.3-commit1 to complete"
+      "pending": "Waiting for application change to 1.0.4-commit1 to complete"
     },
     "application": {
       "application": {
-        "hash": "1.0.3-commit1",
-        "build": 3,
+        "hash": "1.0.4-commit1",
+        "build": 4,
         "source": {
           "gitRepository": "repository1",
           "gitBranch": "master",
@@ -21,8 +21,8 @@
   },
   "deploying": {
     "application": {
-      "hash": "1.0.3-commit1",
-      "build": 3,
+      "hash": "1.0.4-commit1",
+      "build": 4,
       "source": {
         "gitRepository": "repository1",
         "gitBranch": "master",
@@ -43,8 +43,8 @@
           "start": "(ignore)",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.3-commit1",
-            "build": 3,
+            "hash": "1.0.4-commit1",
+            "build": 4,
             "source": {
               "gitRepository": "repository1",
               "gitBranch": "master",
@@ -111,8 +111,8 @@
           "start": "(ignore)",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.3-commit1",
-            "build": 3,
+            "hash": "1.0.4-commit1",
+            "build": 4,
             "source": {
               "gitRepository": "repository1",
               "gitBranch": "master",
@@ -181,8 +181,8 @@
           "status": "pending",
           "wantedPlatform": "6.1",
           "wantedApplication": {
-            "hash": "1.0.3-commit1",
-            "build": 3,
+            "hash": "1.0.4-commit1",
+            "build": 4,
             "source": {
               "gitRepository": "repository1",
               "gitBranch": "master",

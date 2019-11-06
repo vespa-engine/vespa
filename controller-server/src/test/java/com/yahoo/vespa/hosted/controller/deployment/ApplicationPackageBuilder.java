@@ -46,6 +46,8 @@ public class ApplicationPackageBuilder {
     private OptionalInt majorVersion = OptionalInt.empty();
     private String instances = "default";
     private String upgradePolicy = null;
+    private boolean explicitSystemTest = false;
+    private boolean explicitStagingTest = false;
     private Environment environment = Environment.prod;
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
@@ -58,6 +60,16 @@ public class ApplicationPackageBuilder {
 
     public ApplicationPackageBuilder instances(String instances) {
         this.instances = instances;
+        return this;
+    }
+
+    public ApplicationPackageBuilder systemTest() {
+        this.explicitSystemTest = true;
+        return this;
+    }
+
+    public ApplicationPackageBuilder stagingTest() {
+        this.explicitStagingTest = true;
         return this;
     }
 
@@ -177,6 +189,10 @@ public class ApplicationPackageBuilder {
         }
         xml.append(notifications);
         xml.append(blockChange);
+        if (explicitSystemTest)
+            xml.append("    <test />\n");
+        if (explicitStagingTest)
+            xml.append("    <staging />\n");
         xml.append("    <");
         xml.append(environment.value());
         if (globalServiceId != null) {
