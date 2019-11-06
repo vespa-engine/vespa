@@ -61,13 +61,7 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
                           String xmlForm) {
-        if (hasSingleInstance(steps)) { // TODO: Remove this clause after November 2019
-            var singleInstance = singleInstance(steps);
-            this.steps = List.of(singleInstance.withSteps(completeSteps(singleInstance.steps())));
-        }
-        else {
-            this.steps = List.copyOf(completeSteps(steps));
-        }
+        this.steps = List.copyOf(completeSteps(steps));
         this.majorVersion = majorVersion;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
@@ -145,26 +139,11 @@ public class DeploymentSpec {
         }
     }
 
-    // TODO: Remove after October 2019
-    private DeploymentInstanceSpec singleInstance() {
-        return singleInstance(steps);
-    }
-
-    // TODO: Remove after October 2019
-    private static DeploymentInstanceSpec singleInstance(List<DeploymentSpec.Step> steps) {
-        List<DeploymentInstanceSpec> instances = instances(steps);
-        if (instances.size() == 1) return instances.get(0);
-        throw new IllegalArgumentException("This deployment spec does not support the legacy API " +
-                                           "as it has multiple instances: " +
-                                           instances.stream().map(Step::toString).collect(Collectors.joining(",")));
-    }
-
     /** Returns the major version this application is pinned to, or empty (default) to allow all major versions */
     public Optional<Integer> majorVersion() { return majorVersion; }
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() {
-        if (hasSingleInstance(steps)) return singleInstance().steps(); // TODO: Remove line after November 2019
         return steps;
     }
 
@@ -192,11 +171,6 @@ public class DeploymentSpec {
 
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
-
-    // TODO: Remove after November 2019
-    private static boolean hasSingleInstance(List<DeploymentSpec.Step> steps) {
-        return instances(steps).size() == 1;
-    }
 
     /** Returns the instance step containing the given instance name */
     public Optional<DeploymentInstanceSpec> instance(InstanceName name) {
