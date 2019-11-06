@@ -1591,6 +1591,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.DynamicTensor": {
+    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public static com.yahoo.tensor.functions.DynamicTensor from(com.yahoo.tensor.TensorType, java.util.Map)",
+      "public static com.yahoo.tensor.functions.DynamicTensor from(com.yahoo.tensor.TensorType, java.util.List)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.Generate": {
     "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
     "interfaces": [],

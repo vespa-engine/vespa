@@ -432,7 +432,7 @@ public class ConvertedModel {
         if (node instanceof ReferenceNode) {
             ReferenceNode referenceNode = (ReferenceNode) node;
             if (model.inputTypeSpec(referenceNode.getName()).isPresent()) {
-                return reduceBatchDimensionExpression(TensorFunctionNode.wrapArgument(node), typeContext);
+                return reduceBatchDimensionExpression(TensorFunctionNode.wrap(node), typeContext);
             }
         }
         if (node instanceof CompositeNode) {
@@ -485,7 +485,7 @@ public class ConvertedModel {
                                                       new GeneratorLambdaFunctionNode(expandDimensionsType,
                                                                                       generatedExpression)
                                                               .asLongListToDoubleOperator());
-            Join expand = new Join(TensorFunctionNode.wrapArgument(node), generatedFunction, ScalarFunctions.multiply());
+            Join expand = new Join(TensorFunctionNode.wrap(node), generatedFunction, ScalarFunctions.multiply());
             return new TensorFunctionNode(expand);
         }
         return node;
