@@ -6,7 +6,9 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -43,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -578,15 +581,24 @@ public class ApplicationSerializer {
             var endpointId = EndpointId.of(inspector.field(assignedRotationEndpointField).asString());
             var rotationId = new RotationId(inspector.field(assignedRotationRotationField).asString());
             var regions = deploymentSpec.instance(instance)
-                                        .map(spec -> spec.endpoints().stream()
-                                                         .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
-                                                         .flatMap(endpoint -> endpoint.regions().stream())
-                                                         .collect(Collectors.toSet()))
+                                        .map(spec -> globalEndpointRegions(spec, endpointId))
                                         .orElse(Set.of());
             assignedRotations.putIfAbsent(endpointId, new AssignedRotation(clusterId, endpointId, rotationId, regions));
         });
 
         return List.copyOf(assignedRotations.values());
+    }
+
+    private Set<RegionName> globalEndpointRegions(DeploymentInstanceSpec spec, EndpointId endpointId) {
+        if (spec.globalServiceId().isPresent())
+            return spec.zones().stream()
+                       .flatMap(zone -> zone.region().stream())
+                       .collect(Collectors.toSet());
+
+        return spec.endpoints().stream()
+                   .filter(endpoint -> endpoint.endpointId().equals(endpointId.id()))
+                   .flatMap(endpoint -> endpoint.regions().stream())
+                   .collect(Collectors.toSet());
     }
 
 }
