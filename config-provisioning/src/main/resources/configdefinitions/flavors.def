@@ -19,7 +19,7 @@ flavor[].minCpuCores double default=0.0
 
 # The speedup factor per cpu core compared to an historical baseline for a particular cpu generation
 # The vcpu resources available on the node will be minCpuCores * cpuCoreSpeedup
-flavor[].cpuCoreSpeedup double default=1.0
+flavor[].cpuSpeedup double default=1.0
 
 # The minimum amount of main memory available.
 flavor[].minMainMemoryAvailableGb double default=0.0
