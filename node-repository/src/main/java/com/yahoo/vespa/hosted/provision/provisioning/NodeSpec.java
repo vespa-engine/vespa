@@ -64,8 +64,8 @@ public interface NodeSpec {
     /** Returns the resources requested by this or empty if none are explicitly requested */
     Optional<NodeResources> resources();
 
-    static NodeSpec from(int nodeCount, NodeResources flavor, boolean exclusive, boolean canFail) {
-        return new CountNodeSpec(nodeCount, flavor, exclusive, canFail);
+    static NodeSpec from(int nodeCount, NodeResources resources, boolean exclusive, boolean canFail) {
+        return new CountNodeSpec(nodeCount, resources, exclusive, canFail);
     }
 
     static NodeSpec from(NodeType type) {

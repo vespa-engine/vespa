@@ -15,6 +15,7 @@ import java.util.logging.Level;
 
 /**
  * Allocator for network ports on a host
+ *
  * @author arnej
  */
 public class HostPorts {
@@ -44,13 +45,13 @@ public class HostPorts {
     /**
      * Get the allocated network ports.
      * Should be called after allocation is complete and flushPortReservations has been called
-     **/
+     */
     public Optional<NetworkPorts> networkPorts() { return networkPortsList; }
 
     /**
      * Add port allocation from previous deployments.
      * Call this before starting port allocations, to re-use existing ports where possible
-     **/
+     */
     public void addNetworkPorts(NetworkPorts ports) {
         this.networkPortsList = Optional.of(ports);
         this.portFinder = new PortFinder(ports.allocations());
@@ -58,7 +59,7 @@ public class HostPorts {
 
     /**
      * Setup logging in order to send warnings back to the user.
-     **/
+     */
     public void useLogger(DeployLogger logger) {
         this.deployLogger = logger;
     }
@@ -68,8 +69,8 @@ public class HostPorts {
      * or 0 if there is no range of that length available.
      * TODO: remove this API
      *
-     * @param numPorts  The length of the desired port range.
-     * @return  The baseport of the first available range, or 0 if no range is available.
+     * @param numPorts the length of the desired port range.
+     * @return the baseport of the first available range, or 0 if no range is available.
      */
     int nextAvailableBaseport(int numPorts) {
         int range = 0;
