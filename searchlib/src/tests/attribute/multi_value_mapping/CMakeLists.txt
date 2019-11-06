@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_multi_value_mapping_test_app TEST
     multi_value_mapping_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_multi_value_mapping_test_app COMMAND searchlib_multi_value_mapping_test_app)
