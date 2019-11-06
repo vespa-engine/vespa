@@ -24,48 +24,59 @@ public class Flavor {
     /** The hardware resources of this flavor */
     private final NodeResources resources;
 
+    private final double minCpuCores;
+
     private final Optional<FlavorOverrides> flavorOverrides;
+
+    private static final double coreSpeedupRolloutFactor = 1.0/3.0; // TODO: Increase to 2/3 (then 1) on later releases
 
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
-        this(
-                flavorConfig.name(),
-                new NodeResources(flavorConfig.minCpuCores(),
-                        flavorConfig.minMainMemoryAvailableGb(),
-                        flavorConfig.minDiskAvailableGb(),
-                        flavorConfig.bandwidth() / 1000,
-                        flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow),
-                Optional.empty(),
-                Type.valueOf(flavorConfig.environment()),
-                true,
-                flavorConfig.cost());
+        this(flavorConfig.name(),
+             new NodeResources(flavorConfig.minCpuCores() *
+                                      (1 + (flavorConfig.cpuCoreSpeedup() - 1) * coreSpeedupRolloutFactor),
+                               flavorConfig.minMainMemoryAvailableGb(),
+                               flavorConfig.minDiskAvailableGb(),
+                               flavorConfig.bandwidth() / 1000,
+                               flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow),
+             Optional.empty(),
+             Type.valueOf(flavorConfig.environment()),
+             true,
+             flavorConfig.cost(),
+             flavorConfig.minCpuCores());
     }
 
     /** Creates a *node* flavor from a node resources spec */
     public Flavor(NodeResources resources) {
-        this(resources.toString(), resources, Optional.empty(), Type.DOCKER_CONTAINER, false, 0);
+        this(resources.toString(), resources, Optional.empty(), Type.DOCKER_CONTAINER, false, 0, resources.vcpu());
     }
 
-    private Flavor(String name, NodeResources resources, Optional<FlavorOverrides> flavorOverrides, Type type, boolean configured, int cost) {
+    private Flavor(String name,
+                   NodeResources resources,
+                   Optional<FlavorOverrides> flavorOverrides,
+                   Type type,
+                   boolean configured,
+                   int cost,
+                   double minCpuCores) {
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.resources = Objects.requireNonNull(resources, "Resources cannot be null");
         this.flavorOverrides = Objects.requireNonNull(flavorOverrides, "Flavor overrides cannot be null");
         this.type = Objects.requireNonNull(type, "Type cannot be null");
         this.configured = configured;
         this.cost = cost;
+        this.minCpuCores = minCpuCores;
     }
 
     public Flavor with(FlavorOverrides flavorOverrides) {
         if (!configured)
             throw new IllegalArgumentException("Cannot override non-configured flavor");
 
-        NodeResources newResources = new NodeResources(
-                resources.vcpu(),
-                resources.memoryGb(),
-                flavorOverrides.diskGb().orElseGet(resources::diskGb),
-                resources.bandwidthGbps(),
-                resources.diskSpeed());
-        return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost);
+        NodeResources newResources = new NodeResources(resources.vcpu(),
+                                                       resources.memoryGb(),
+                                                       flavorOverrides.diskGb().orElseGet(resources::diskGb),
+                                                       resources.bandwidthGbps(),
+                                                       resources.diskSpeed());
+        return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost, minCpuCores);
     }
 
     public Flavor with(NodeResources resources) {
@@ -109,7 +120,8 @@ public class Flavor {
 
     public double getBandwidthGbps() { return resources.bandwidthGbps(); }
 
-    public double getMinCpuCores() { return resources.vcpu(); }
+    /** Returns the number of cores available in this flavor, not scaled for speed. */
+    public double getMinCpuCores() { return minCpuCores; }
 
     public Type getType() { return type; }
     
