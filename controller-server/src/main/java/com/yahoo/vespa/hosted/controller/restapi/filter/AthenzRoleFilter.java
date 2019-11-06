@@ -11,6 +11,7 @@ import com.yahoo.restapi.Path;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
@@ -96,6 +97,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
                     roleMemberships.add(Role.tenantPipeline(tenant.get().name(), application.get()));
 
         if (   tenant.isPresent() && application.isPresent() && instance.isPresent()
+            && principal.getIdentity() instanceof AthenzUser
             && instance.get().value().equals(principal.getIdentity().getName()))
             roleMemberships.add(Role.athenzUser(tenant.get().name(), application.get(), instance.get()));
 
