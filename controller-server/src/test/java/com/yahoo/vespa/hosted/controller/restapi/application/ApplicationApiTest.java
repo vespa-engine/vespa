@@ -664,8 +664,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
                 .instances("instance1,instance2")
-                .systemTest()
-                .stagingTest()
                 .environment(Environment.prod)
                 .region("us-central-1")
                 .parallel("us-west-1", "us-east-3")

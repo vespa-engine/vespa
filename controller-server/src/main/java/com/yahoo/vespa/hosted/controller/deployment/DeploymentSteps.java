@@ -18,6 +18,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -39,9 +40,10 @@ public class DeploymentSteps {
 
     /** Returns jobs for this, in the order they are declared */
     public List<JobType> jobs() {
-        return spec.steps().stream()
-                   .flatMap(step -> toJobs(step).stream())
-                   .collect(Collectors.toUnmodifiableList());
+        return Stream.concat(production().isEmpty() ? Stream.of() : Stream.of(JobType.systemTest, JobType.stagingTest),
+                             spec.steps().stream().flatMap(step -> toJobs(step).stream()))
+                     .distinct()
+                     .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns job status sorted according to deployment spec */
@@ -73,19 +75,12 @@ public class DeploymentSteps {
 
     /** Returns declared test jobs in this */
     public List<JobType> testJobs() {
-        return toJobs(test());
+        return jobs().stream().filter(JobType::isTest).collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns declared production jobs in this */
     public List<JobType> productionJobs() {
         return toJobs(production());
-    }
-
-    /** Returns declared test steps in this */
-    public List<DeploymentSpec.Step> test() {
-        return spec.steps().stream()
-                   .filter(step -> isTest(step))
-                   .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns declared production steps in this */

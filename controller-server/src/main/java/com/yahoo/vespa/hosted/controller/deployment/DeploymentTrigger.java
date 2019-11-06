@@ -579,7 +579,7 @@ public class DeploymentTrigger {
     private List<Job> testJobs(DeploymentSpec deploymentSpec, Change change, Instance instance, Versions versions,
                                String reason, Instant availableSince, Predicate<JobType> condition) {
         List<Job> jobs = new ArrayList<>();
-        for (JobType jobType : List.of(systemTest, stagingTest)) { // TODO jonmv: Allow cross-instance validation
+        for (JobType jobType : new DeploymentSteps(deploymentSpec.requireInstance(instance.name()), controller::system).testJobs()) { // TODO jonmv: Allow cross-instance validation
             Optional<JobRun> completion = successOn(instance, jobType, versions)
                     .filter(run -> versions.sourcesMatchIfPresent(run) || jobType == systemTest);
             if (completion.isEmpty() && condition.test(jobType))
