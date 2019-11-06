@@ -11,6 +11,8 @@ import static org.junit.Assert.assertEquals;
 
 public class NodeFlavorsTest {
 
+    private static final double delta = 0.00001;
+
     @Test
     public void testConfigParsing() {
         FlavorsConfig.Builder builder = new FlavorsConfig.Builder();
@@ -22,13 +24,18 @@ public class NodeFlavorsTest {
         }
         {
             FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            flavorBuilder.minCpuCores(10);
+            flavorBuilder.cpuCoreSpeedup(1.3);
             flavorBuilder.name("banana").cost(3);
             flavorBuilderList.add(flavorBuilder);
         }
         builder.flavor(flavorBuilderList);
         FlavorsConfig config = new FlavorsConfig(builder);
         NodeFlavors nodeFlavors = new NodeFlavors(config);
-        assertEquals(3, nodeFlavors.getFlavor("banana").get().cost());
+        Flavor banana = nodeFlavors.getFlavor("banana").get();
+        assertEquals(3, banana.cost());
+        assertEquals(10, banana.getMinCpuCores(), delta);
+        assertEquals("10 * (1 + (1.3 - 1)/3", 11, banana.resources().vcpu(), delta);
     }
 
 }
