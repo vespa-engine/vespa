@@ -121,7 +121,7 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
             if (requestingContext.getBundle() instanceof Framework) {
                 log.fine(() -> "Requesting bundle is the Framework, so hidden bundles will be visible: " + hiddenBundles);
             } else {
-                log.info("Hiding bundles from bundle '" + requestingContext.getBundle() + "': " + hiddenBundles);
+                log.fine(() -> "Hiding bundles from bundle '" + requestingContext.getBundle() + "': " + hiddenBundles);
             }
         }
     }
