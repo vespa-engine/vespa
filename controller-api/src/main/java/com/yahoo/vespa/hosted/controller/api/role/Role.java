@@ -5,7 +5,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 
-import java.net.URI;
 import java.util.Objects;
 
 /**
@@ -108,6 +107,9 @@ public abstract class Role {
     public static ApplicationRole buildService(TenantName tenant, ApplicationName application) {
         return new ApplicationRole(RoleDefinition.buildService, tenant, application);
     }
+
+    /** Returns the role for system flag deployer */
+    public static UnboundRole systemFlagsDeployer() { return new UnboundRole(RoleDefinition.systemFlagsDeployer); }
 
     /** Returns the role definition of this bound role. */
     public RoleDefinition definition() { return roleDefinition; }

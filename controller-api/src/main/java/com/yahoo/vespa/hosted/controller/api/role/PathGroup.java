@@ -178,7 +178,10 @@ enum PathGroup {
     /** Paths providing public information. */
     publicInfo(Optional.of("/api"),
                "/badge/v1/{*}",
-               "/zone/v1/{*}");
+               "/zone/v1/{*}"),
+
+    /** Paths used for deploying system-wide feature flags. */
+    systemFlags("/system-flags/v1/{*}");
 
     final List<String> pathSpecs;
     final String prefix;

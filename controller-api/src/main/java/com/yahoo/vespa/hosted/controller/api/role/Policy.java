@@ -121,7 +121,12 @@ enum Policy {
     /** Read access to public info. */
     publicRead(Privilege.grant(Action.read)
                         .on(PathGroup.publicInfo)
-                        .in(SystemName.all()));
+                        .in(SystemName.all())),
+
+    /** Access to /system-flags/v1. */
+    systemFlagsDeployment(Privilege.grant(Action.all())
+                                  .on(PathGroup.systemFlags)
+                                  .in(SystemName.all()));
 
     private final Set<Privilege> privileges;
 

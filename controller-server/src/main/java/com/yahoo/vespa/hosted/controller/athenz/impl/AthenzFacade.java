@@ -208,6 +208,10 @@ public class AthenzFacade implements AccessControl {
         return hasAccess("launch", service.getDomain().getName() + ":service."+service.getName(), principal);
     }
 
+    public boolean hasSystemFlagsDeployAccess(AthenzIdentity identity) {
+        return hasAccess("deploy", new AthenzResourceName(service.getDomain(), "system-flags").toResourceNameString(), identity);
+    }
+
     /**
      * Used when creating tenancies. As there are no tenancy policies at this point,
      * we cannot use {@link #hasTenantAdminAccess(AthenzIdentity, AthenzDomain)}
