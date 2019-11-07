@@ -1,0 +1,8 @@
+{
+  "id" : "my-flag",
+  "rules" : [
+    {
+      "value" : "default"
+    }
+  ]
+}
