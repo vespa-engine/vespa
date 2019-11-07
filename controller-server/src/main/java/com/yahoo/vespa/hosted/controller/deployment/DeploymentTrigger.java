@@ -78,13 +78,11 @@ public class DeploymentTrigger {
 
     private final Controller controller;
     private final Clock clock;
-    private final BuildService buildService;
     private final JobController jobs;
 
     public DeploymentTrigger(Controller controller, BuildService buildService, Clock clock) {
         this.controller = Objects.requireNonNull(controller, "controller cannot be null");
         this.clock = Objects.requireNonNull(clock, "clock cannot be null");
-        this.buildService = Objects.requireNonNull(buildService, "buildService cannot be null");
         this.jobs = controller.jobController();
     }
 
@@ -103,10 +101,9 @@ public class DeploymentTrigger {
             if (acceptNewApplicationVersion(application.get())) {
                 application = application.withChange(application.get().change().with(version))
                                          .withOutstandingChange(Change.empty());
-                if (application.get().internal())
-                    for (Run run : jobs.active(id))
-                        if ( ! run.id().type().environment().isManuallyDeployed())
-                            jobs.abort(run.id());
+                for (Run run : jobs.active(id))
+                    if ( ! run.id().type().environment().isManuallyDeployed())
+                        jobs.abort(run.id());
             }
             else
                 application = application.withOutstandingChange(Change.of(version));
@@ -197,13 +194,10 @@ public class DeploymentTrigger {
         log.log(LogLevel.DEBUG, String.format("Triggering %s: %s", job, job.triggering));
         try {
             applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
-                if (application.get().internal())
-                    jobs.start(job.applicationId(), job.jobType, new Versions(job.triggering.platform(),
-                                                                              job.triggering.application(),
-                                                                              job.triggering.sourcePlatform(),
-                                                                              job.triggering.sourceApplication()));
-                else
-                    buildService.trigger(job);
+                jobs.start(job.applicationId(), job.jobType, new Versions(job.triggering.platform(),
+                                                                          job.triggering.application(),
+                                                                          job.triggering.sourcePlatform(),
+                                                                          job.triggering.sourceApplication()));
 
                 applications().store(application.with(job.applicationId().instance(),
                                                       instance -> instance.withJobTriggering(job.jobType, job.triggering)));

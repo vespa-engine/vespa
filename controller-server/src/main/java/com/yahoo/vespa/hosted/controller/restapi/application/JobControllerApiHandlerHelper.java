@@ -41,10 +41,12 @@ import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.conservative;
@@ -128,7 +130,7 @@ class JobControllerApiHandlerHelper {
                                       pendingProduction,
                                       running,
                                       type,
-                                      Optional.ofNullable(status.get(type)),
+                                      status.get(type),
                                       deployment);
             });
         });
@@ -220,15 +222,15 @@ class JobControllerApiHandlerHelper {
 
     private static void deploymentToSlime(Cursor deploymentObject, Instance instance, Change change,
                                           Map<JobType, Versions> pendingProduction, Map<JobType, Run> running,
-                                          JobType type, Optional<JobStatus> jobStatus, Deployment deployment) {
+                                          JobType type, JobStatus jobStatus, Deployment deployment) {
         deploymentObject.setLong("at", deployment.at().toEpochMilli());
         deploymentObject.setString("platform", deployment.version().toString());
         applicationVersionToSlime(deploymentObject.setObject("application"), deployment.applicationVersion());
-        deploymentObject.setBool("verified", jobStatus.flatMap(job -> job.lastSuccess())
+        deploymentObject.setBool("verified", jobStatus.lastSuccess()
                                                       .map(Run::versions)
-                                                     .filter(run ->    run.targetPlatform().equals(deployment.version())
-                                                                    && run.targetApplication().equals(deployment.applicationVersion()))
-                                                     .isPresent());
+                                                      .filter(run ->    run.targetPlatform().equals(deployment.version())
+                                                                     && run.targetApplication().equals(deployment.applicationVersion()))
+                                                      .isPresent());
         if (running.containsKey(type))
             deploymentObject.setString("status", running.get(type).steps().get(deployReal) == unfinished ? "deploying" : "verifying");
         else if (change.hasTargets())
@@ -464,15 +466,6 @@ class JobControllerApiHandlerHelper {
         }
         else
             responseObject.setString("message", "Nothing to abort.");
-        return new SlimeJsonResponse(slime);
-    }
-
-    /** Unregisters the application from the internal deployment pipeline. */
-    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName) {
-        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
-        jobs.unregister(id);
-        Slime slime = new Slime();
-        slime.setObject().setString("message", "Unregistered '" + id + "' from internal deployment pipeline.");
         return new SlimeJsonResponse(slime);
     }
 

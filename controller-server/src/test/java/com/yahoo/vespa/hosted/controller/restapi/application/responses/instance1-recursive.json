@@ -20,7 +20,6 @@
       }
     }
   },
-  "deployedInternally": true,
   "deploymentJobs": [
     {
       "type": "system-test",

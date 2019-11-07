@@ -56,6 +56,7 @@ import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Curator backed database for storing the persistence state of controllers. This maps controller specific operations
@@ -352,16 +353,18 @@ public class CuratorDb {
     }
 
     private List<Application> readApplications(Predicate<TenantAndApplicationId> applicationFilter) {
-        return readApplicationIds().filter(applicationFilter)
+        return readApplicationIds().stream()
+                                   .filter(applicationFilter)
                                    .sorted()
                                    .map(this::readApplication)
                                    .flatMap(Optional::stream)
                                    .collect(Collectors.toUnmodifiableList());
     }
 
-    private Stream<TenantAndApplicationId> readApplicationIds() {
+    public List<TenantAndApplicationId> readApplicationIds() {
         return curator.getChildren(applicationRoot).stream()
-                      .map(TenantAndApplicationId::fromSerialized);
+                      .map(TenantAndApplicationId::fromSerialized)
+                      .collect(toUnmodifiableList());
     }
 
     public void removeApplication(TenantAndApplicationId id) {

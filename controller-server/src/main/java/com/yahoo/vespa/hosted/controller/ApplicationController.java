@@ -207,6 +207,11 @@ public class ApplicationController {
         return curator.readApplications();
     }
 
+    /** Returns the ID of all known applications. */
+    public List<TenantAndApplicationId> idList() {
+        return curator.readApplicationIds();
+    }
+
     /** Returns a snapshot of all applications of a tenant */
     public List<Application> asList(TenantName tenant) {
         return curator.readApplications(tenant);
@@ -385,7 +390,7 @@ public class ApplicationController {
                     applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
                                                              : triggered.application();
 
-                    applicationPackage = getApplicationPackage(instanceId, application.get().internal(), applicationVersion);
+                    applicationPackage = getApplicationPackage(instanceId, applicationVersion);
                     applicationPackage = withTesterCertificate(applicationPackage, instanceId, jobType);
                     validateRun(application.get(), instance, zone, platformVersion, applicationVersion);
                 }
@@ -395,13 +400,6 @@ public class ApplicationController {
                     applicationCertificate = getApplicationCertificate(application.get().require(instance));
                 } else {
                     applicationCertificate = Optional.empty();
-                }
-
-                // TODO jonmv: REMOVE! This is now irrelevant for non-CD-test deployments and non-unit tests.
-                if (   ! preferOldestVersion
-                    && ! application.get().internal()
-                    && ! zone.environment().isManuallyDeployed()) {
-                    application = storeWithUpdatedConfig(application, applicationPackage);
                 }
 
                 endpoints = registerEndpointsInDns(applicationPackage.deploymentSpec(), application.get().require(instanceId.instance()), zone);
@@ -434,25 +432,8 @@ public class ApplicationController {
     }
 
     /** Fetches the requested application package from the artifact store(s). */
-    public ApplicationPackage getApplicationPackage(ApplicationId id, boolean internal, ApplicationVersion version) {
-        try {
-            return internal
-                    ? new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version))
-                    : new ApplicationPackage(artifactRepository.getApplicationPackage(id, version.id()));
-        }
-        catch (RuntimeException e) { // If application has switched deployment pipeline, artifacts stored prior to the switch are in the other artifact store.
-            try {
-                log.info("Fetching application package for " + id + " from alternate repository; it is now deployed "
-                         + (internal ? "internally" : "externally") + "\nException was: " + Exceptions.toMessageString(e));
-                return internal
-                        ? new ApplicationPackage(artifactRepository.getApplicationPackage(id, version.id()))
-                        : new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version));
-            }
-            catch (RuntimeException s) { // If this fails, too, the first failure is most likely the relevant one.
-                e.addSuppressed(s);
-                throw e;
-            }
-        }
+    public ApplicationPackage getApplicationPackage(ApplicationId id, ApplicationVersion version) {
+        return new ApplicationPackage(applicationStore.get(id.tenant(), id.application(), version));
     }
 
     /** Stores the deployment spec and validation overrides from the application package, and runs cleanup. */

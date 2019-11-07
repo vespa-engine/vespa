@@ -59,6 +59,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -198,7 +199,6 @@ public class JobController {
     /** Returns a list of all applications which have registered. */
     public List<TenantAndApplicationId> applications() {
         return copyOf(controller.applications().asList().stream()
-                                .filter(Application::internal)
                                 .map(Application::id)
                                 .iterator());
     }
@@ -206,7 +206,6 @@ public class JobController {
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
         return copyOf(controller.applications().asList().stream()
-                                .filter(Application::internal)
                                 .flatMap(application -> application.instances().values().stream())
                                 .map(Instance::id)
                                 .iterator());
@@ -272,9 +271,9 @@ public class JobController {
 
     /** Returns a list of all active runs. */
     public List<Run> active() {
-        return copyOf(applications().stream()
-                                    .flatMap(id -> active(id).stream())
-                                    .iterator());
+        return controller.applications().idList().stream()
+                         .flatMap(id -> active(id).stream())
+                         .collect(toUnmodifiableList());
     }
 
     /** Returns a list of all active runs for the given instance. */
@@ -347,9 +346,6 @@ public class JobController {
                                      ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockApplicationOrThrow(id, application -> {
-            if ( ! application.get().internal())
-                application = registered(application);
-
             long run = 1 + application.get().latestVersion()
                                       .map(latestVersion -> latestVersion.buildNumber().getAsLong())
                                       .orElse(0L);
@@ -377,31 +373,12 @@ public class JobController {
         return version.get();
     }
 
-    /** Registers the given application, copying necessary application packages, and returns the modified version. */
-    private LockedApplication registered(LockedApplication application) {
-        for (Instance instance : application.get().instances().values()) {
-            // TODO jvenstad: Remove when everyone has migrated off SDv3 pipelines. Real soon now!
-            // Copy all current packages to the new application store
-            instance.productionDeployments().values().stream()
-                    .map(Deployment::applicationVersion)
-                    .distinct()
-                    .forEach(appVersion -> {
-                        byte[] content = controller.applications().artifacts().getApplicationPackage(instance.id(), appVersion.id());
-                        controller.applications().applicationStore().put(instance.id().tenant(), instance.id().application(), appVersion, content);
-                    });
-        }
-        return application.withBuiltInternally(true);
-    }
-
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
         if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
             throw new IllegalArgumentException("Target application must be a valid reference.");
 
         controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
-            if ( ! application.get().internal())
-                throw new IllegalArgumentException(id + " is not built here!");
-
             locked(id, type, __ -> {
                 Optional<Run> last = last(id, type);
                 if (last.flatMap(run -> active(run.id())).isPresent())
@@ -423,9 +400,6 @@ public class JobController {
             controller.applications().createApplication(TenantAndApplicationId.from(id), Optional.empty());
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            if ( ! application.get().internal())
-                application = registered(application);
-
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = application.withNewInstance(id.instance());
 
@@ -458,15 +432,6 @@ public class JobController {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    /** Unregisters the given application and makes all associated data eligible for garbage collection. */
-    public void unregister(TenantAndApplicationId id) {
-        controller.applications().lockApplicationIfPresent(id, application -> {
-            controller.applications().store(application.withBuiltInternally(false));
-            for (InstanceName instance : application.get().instances().keySet())
-                jobs(id.instance(instance)).forEach(type -> last(id.instance(instance), type).ifPresent(last -> abort(last.id())));
-        });
     }
 
     /** Deletes run data and tester deployments for applications which are unknown, or no longer built internally. */

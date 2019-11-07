@@ -190,7 +190,7 @@ public class JobRunnerTest {
 
         // Start a third run, then unregister and wait for data to be deleted.
         jobs.start(id, systemTest, versions);
-        jobs.unregister(appId);
+        tester.applications().deleteInstance(id);
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).isPresent());
         assertTrue(jobs.runs(id, systemTest).isEmpty());

@@ -290,11 +290,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("choice"));
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return JobControllerApiHandlerHelper.unregisterResponse(controller.jobController(), path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
@@ -833,7 +831,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                   .steps(application.deploymentSpec().requireInstance(instance.name()))
                                                   .sortedJobs(instance.deploymentJobs().jobStatus().values());
 
-            object.setBool("deployedInternally", application.internal());
             Cursor deploymentsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {
                 Cursor jobObject = deploymentsArray.addObject();
@@ -1479,7 +1476,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision),
                                                                      buildNumber.asLong()));
             applicationPackage = Optional.of(controller.applications().getApplicationPackage(applicationId,
-                                                                                             application.get().internal(),
                                                                                              applicationVersion.get()));
         }
 
@@ -1503,7 +1499,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             applicationVersion = Optional.of(version);
             vespaVersion = Optional.of(deployment.get().version());
             applicationPackage = Optional.of(controller.applications().getApplicationPackage(applicationId,
-                                                                                             application.get().internal(),
                                                                                              applicationVersion.get()));
         }
 
