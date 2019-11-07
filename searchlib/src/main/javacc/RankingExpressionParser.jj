@@ -855,10 +855,10 @@ DynamicTensor indexedTensorValueBody(TensorType type) :
     ExpressionNode value;
 }
 {
-    <LSQUARE>
-        (         value = expression() { cells.add(value); } )*
-        ( <COMMA> value = expression() { cells.add(value); } )*
-    <RSQUARE>
+    <LSQUARE> // TODO: Parse inner square brackets properly
+        ( (<LSQUARE>)* value = expression() (<RSQUARE>)* { cells.add(value); }  )*
+        ( <COMMA> (<LSQUARE>)* value = expression() (<RSQUARE>)* { cells.add(value); } )*
+//    <RSQUARE>
     { return DynamicTensor.from(type, TensorFunctionNode.wrap(cells)); }
 }
 

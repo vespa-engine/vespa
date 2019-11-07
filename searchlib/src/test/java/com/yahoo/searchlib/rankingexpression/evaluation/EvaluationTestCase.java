@@ -371,6 +371,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{}):{ {x:a}:6.0, {x:b}:4.0, {x:c}:14.0 }",
                                "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }",
                                "{ {x:0}:7 }", "tensor(x{}):{ {x:0}:2 }");
+        tester.assertEvaluates("tensor<float>(d0[1],x[3]):[[1.0, 0.5, 0.25]]",
+                               "tensor<float>(d0[1],x[3]):[[one,one_half,a_quarter]]");
     }
 
     @Test
