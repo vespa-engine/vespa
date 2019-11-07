@@ -450,7 +450,7 @@ public class SelectTestCase {
     @Test
     public void testRangeIllegalArguments() {
         assertParseFail("{ \"range\": [\"baz\", { \">=\": \"cox\", \"<=\": -1 }] }",
-                new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD."));
+                new IllegalArgumentException("Expected a numeric argument to range, but got the string 'cox'"));
     }
 
     @Test
@@ -490,7 +490,7 @@ public class SelectTestCase {
         assertParse("{ \"weightedSet\" : [\"description\", {\"a\":1, \"b\":2} ]}",
                 "WEIGHTEDSET description{[1]:\"a\",[2]:\"b\"}");
         assertParseFail("{ \"weightedSet\" : [\"description\", {\"a\":\"g\", \"b\":2} ]}",
-                new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD."));
+                new IllegalArgumentException("Expected an integer argument, but got the string 'g'"));
         assertParseFail("{ \"weightedSet\" : [\"description\" ]}",
                 new IllegalArgumentException("Expected 2 arguments, got 1."));
     }

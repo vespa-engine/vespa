@@ -391,10 +391,10 @@ public class VespaSerializerTestCase {
     @Test
     public void testOpenIntervals() {
         parseAndConfirm("range(title, 0.0, 500.0)");
-        parseAndConfirm("[{\"bounds\": \"open\"}]range(title, 0.0, 500.0)");
-        parseAndConfirm("[{\"bounds\": \"leftOpen\"}]range(title, 0.0, 500.0)");
-        parseAndConfirm("[{\"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0)");
-        parseAndConfirm("[{\"id\": 500, \"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0)");
+        parseAndConfirm("([{\"bounds\": \"open\"}]range(title, 0.0, 500.0))");
+        parseAndConfirm("([{\"bounds\": \"leftOpen\"}]range(title, 0.0, 500.0))");
+        parseAndConfirm("([{\"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0))");
+        parseAndConfirm("([{\"id\": 500, \"bounds\": \"rightOpen\"}]range(title, 0.0, 500.0))");
     }
 
     @Test

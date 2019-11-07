@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.function.Supplier;
 
 import com.google.common.annotations.Beta;
 import com.google.common.base.Preconditions;
@@ -1087,8 +1088,8 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 3,
                 "Expected 3 arguments, got %s.", args.size());
 
-        Number lowerArg = getBound(args.get(1));
-        Number upperArg = getBound(args.get(2));
+        Number lowerArg = getRangeBound(args.get(1));
+        Number upperArg = getRangeBound(args.get(2));
         String bounds = getAnnotation(spec, BOUNDS, String.class, null,
                                       "whether bounds should be open or closed");
         // TODO: add support for implicit transforms
@@ -1113,20 +1114,26 @@ public class YqlParser implements Parser {
         }
     }
 
-    private Number getBound(OperatorNode<ExpressionOperator> bound) {
-        Number boundValue;
-        OperatorNode<ExpressionOperator> currentBound = bound;
-        boolean negate = false;
-        if (currentBound.getOperator() == ExpressionOperator.NEGATE) {
-            currentBound = currentBound.getArgument(0);
-            negate = true;
+    private Number getRangeBound(OperatorNode<ExpressionOperator> bound) {
+        if (bound.getOperator() == ExpressionOperator.NEGATE)
+            return negate(getPositiveRangeBound(bound.getArgument(0)));
+        else
+            return getPositiveRangeBound(bound);
+    }
+
+    private Number getPositiveRangeBound(OperatorNode<ExpressionOperator> bound) {
+        if (bound.getOperator() == ExpressionOperator.READ_FIELD) {
+            // Why getArgument(1)? Because all of this is [mildly non-perfect] and we need to port it to JavaCC
+            if (bound.getArgument(1).toString().equals("Infinity"))
+                return Double.POSITIVE_INFINITY;
+            else
+                throw new IllegalArgumentException("Expected a numerical argument (or 'Infinity') to range but got '" +
+                                                   bound.getArgument(1) + "'");
         }
-        assertHasOperator(currentBound, ExpressionOperator.LITERAL);
-        boundValue = currentBound.getArgument(0, Number.class);
-        if (negate) {
-            boundValue = negate(boundValue);
-        }
-        return boundValue;
+
+        assertHasOperator(bound, ExpressionOperator.LITERAL,
+                          () -> "Expected a numerical argument to range but got '" + bound.getArgument(0) + "'");
+        return bound.getArgument(0, Number.class);
     }
 
     private Item instantiateLeafItem(String field, OperatorNode<ExpressionOperator> ast) {
@@ -1504,6 +1511,16 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(ast.getOperator() == expectedOperator,
                                     "Expected operator %s, got %s.",
                                     expectedOperator, ast.getOperator());
+    }
+
+    private static void assertHasOperator(OperatorNode<?> ast, Operator expectedOperator, Supplier<String> errorMessage) {
+        try {
+            Preconditions.checkArgument(ast.getOperator() == expectedOperator);
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage.get());
+        }
+
     }
 
     private static void assertHasFunctionName(OperatorNode<?> ast, String expectedFunctionName) {

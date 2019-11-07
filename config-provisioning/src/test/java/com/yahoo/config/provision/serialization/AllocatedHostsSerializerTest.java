@@ -31,7 +31,6 @@ public class AllocatedHostsSerializerTest {
     @Test
     public void testAllocatedHostsSerialization() throws IOException {
         NodeFlavors configuredFlavors = configuredFlavorsFrom("C/12/45/100", 12, 45, 100, 50, Flavor.Type.BARE_METAL);
-
         Set<HostSpec> hosts = new LinkedHashSet<>();
         hosts.add(new HostSpec("empty",
                                Optional.empty()));

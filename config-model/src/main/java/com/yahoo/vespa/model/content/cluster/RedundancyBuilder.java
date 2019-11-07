@@ -9,9 +9,10 @@ import com.yahoo.vespa.model.content.Redundancy;
  * Builds redundancy config for a content cluster.
  */
 public class RedundancyBuilder {
-    Integer initialRedundancy = 2;
-    Integer finalRedundancy = 3;
-    Integer readyCopies = 2;
+
+    private Integer initialRedundancy = 2;
+    private Integer finalRedundancy = 3;
+    private Integer readyCopies = 2;
 
     RedundancyBuilder(ModelElement clusterXml) {
         ModelElement redundancyElement = clusterXml.child("redundancy");

@@ -546,7 +546,7 @@ public class SelectParser implements Parser {
         String[] operators = {null, null};
         boundInspector.traverse((ObjectTraverser) (operator, bound) -> {
             if (bound.type() == STRING) {
-                throw new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD.");
+                throw new IllegalArgumentException("Expected a numeric argument to range, but got the string '" + bound.asString() + "'");
             }
             if (operator.equals("=")) {
                 bounds[0] = (bound.type() == DOUBLE) ? Number.class.cast(bound.asDouble()) : Number.class.cast(bound.asLong());
@@ -676,7 +676,8 @@ public class SelectParser implements Parser {
         //{"a":1, "b":2}
         children.get(1).traverse((ObjectTraverser) (key, value) -> {
             if (value.type() == STRING){
-                throw new IllegalArgumentException("Expected operator LITERAL, got READ_FIELD.");
+                throw new IllegalArgumentException("Expected an integer argument, but got the string '" +
+                                                   value.asString() + "'");
             }
             out.addToken(key, (int)value.asLong());
         });
