@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
+import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -29,7 +29,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -42,7 +41,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.BuildService.BuildJob;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Collections.emptyList;
@@ -80,7 +78,7 @@ public class DeploymentTrigger {
     private final Clock clock;
     private final JobController jobs;
 
-    public DeploymentTrigger(Controller controller, BuildService buildService, Clock clock) {
+    public DeploymentTrigger(Controller controller, Clock clock) {
         this.controller = Objects.requireNonNull(controller, "controller cannot be null");
         this.clock = Objects.requireNonNull(clock, "clock cannot be null");
         this.jobs = controller.jobController();
@@ -150,11 +148,6 @@ public class DeploymentTrigger {
                                                                                   report.jobError()));
             applications().store(application.withChange(remainingChange(application.get())));
         });
-    }
-
-    /** Returns a map of jobs that are scheduled to be run, grouped by the job type */
-    public Map<JobType, ? extends List<? extends BuildJob>> jobsToRun() {
-        return computeReadyJobs().stream().collect(groupingBy(Job::jobType));
     }
 
     /**
@@ -437,7 +430,7 @@ public class DeploymentTrigger {
     private List<JobType> runningProductionJobs(Map<JobType, JobStatus> status) {
         return status.values().parallelStream()
                      .filter(job -> job.isRunning())
-                     .map(job -> job.job().type())
+                     .map(job -> job.id().type())
                      .filter(JobType::isProduction)
                      .collect(toList());
     }
@@ -497,7 +490,7 @@ public class DeploymentTrigger {
 
     public boolean alreadyTriggered(Map<JobType, JobStatus> status, Versions versions) {
         return status.values().stream()
-                       .filter(job -> job.job().type().isProduction())
+                       .filter(job -> job.id().type().isProduction())
                        .anyMatch(job -> job.lastTriggered()
                                            .map(Run::versions)
                                            .filter(versions::targetsMatch)
@@ -575,9 +568,9 @@ public class DeploymentTrigger {
     // ---------- Data containers ----------
 
 
-    // TODO jonmv: Replace with a JobSpec class not based on BuildJob.
-    private static class Job extends BuildJob {
+    private static class Job {
 
+        private final ApplicationId instanceId;
         private final JobType jobType;
         private final JobRun triggering;
         private final Instant availableSince;
@@ -586,7 +579,7 @@ public class DeploymentTrigger {
 
         private Job(Instance instance, JobRun triggering, JobType jobType, Instant availableSince,
                     boolean isRetry, boolean isApplicationUpgrade) {
-            super(instance.id(), 0L, jobType.jobName());
+            this.instanceId = instance.id();
             this.jobType = jobType;
             this.triggering = triggering;
             this.availableSince = availableSince;
@@ -594,6 +587,7 @@ public class DeploymentTrigger {
             this.isApplicationUpgrade = isApplicationUpgrade;
         }
 
+        ApplicationId applicationId() { return instanceId; }
         JobType jobType() { return jobType; }
         Instant availableSince() { return availableSince; } // TODO jvenstad: This is 95% broken now. Change.at() can restore it.
         boolean isRetry() { return isRetry; }

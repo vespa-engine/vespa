@@ -30,7 +30,7 @@ public class JobStatus {
         this.firstFailing = firstFailing(runs);
     }
 
-    public JobId job() {
+    public JobId id() {
         return id;
     }
 

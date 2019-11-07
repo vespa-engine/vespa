@@ -147,7 +147,7 @@ public class ApplicationController {
 
         routingPolicies = new RoutingPolicies(controller);
         rotationRepository = new RotationRepository(rotationsConfig, this, curator);
-        deploymentTrigger = new DeploymentTrigger(controller, controller.serviceRegistry().buildService(), clock);
+        deploymentTrigger = new DeploymentTrigger(controller, clock);
         provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
         applicationPackageValidator = new ApplicationPackageValidator(controller);
 

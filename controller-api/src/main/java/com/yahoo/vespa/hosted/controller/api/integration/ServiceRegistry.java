@@ -73,9 +73,6 @@ public interface ServiceRegistry {
 
     RunDataStore runDataStore();
 
-    // TODO: No longer used. Remove this once untangled from test code
-    BuildService buildService();
-
     TenantCost tenantCost();
 
     ZoneRegistry zoneRegistry();

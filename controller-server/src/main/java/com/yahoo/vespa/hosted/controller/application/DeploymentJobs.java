@@ -3,10 +3,8 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.BuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -116,7 +114,6 @@ public class DeploymentJobs {
         public boolean success() { return ! jobError.isPresent(); }
         public Optional<ApplicationVersion> version() { return version; }
         public Optional<JobError> jobError() { return jobError; }
-        public BuildService.BuildJob buildJob() { return BuildService.BuildJob.of(applicationId, projectId, jobType.jobName()); }
 
     }
 

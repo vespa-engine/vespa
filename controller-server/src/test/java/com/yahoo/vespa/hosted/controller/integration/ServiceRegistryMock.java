@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockBuildService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
@@ -57,7 +56,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockTesterCloud mockTesterCloud = new MockTesterCloud();
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
-    private final MockBuildService mockBuildService = new MockBuildService();
     private final MockTenantCost mockTenantCost = new MockTenantCost();
 
     public ServiceRegistryMock(SystemName system) {
@@ -170,11 +168,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public MockBuildService buildService() {
-        return mockBuildService;
-    }
-
-    @Override
     public MemoryNameService nameService() {
         return memoryNameService;
     }
@@ -209,10 +202,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
 
     public ArtifactRepositoryMock artifactRepositoryMock() {
         return artifactRepositoryMock;
-    }
-
-    public MockBuildService buildServiceMock() {
-        return mockBuildService;
     }
 
     public ApplicationCertificateMock applicationCertificateMock() {
