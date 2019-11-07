@@ -21,6 +21,9 @@ public interface UserManagement {
     /** Ensures the given users exist, and are part of the given role, or throws if the role does not exist. */
     void addUsers(Role role, Collection<UserId> users);
 
+    /** Ensures the given user exist, and are part of the given roles, or throws if the roles does not exist. */
+    void addRoles(UserId  user, Collection<Role> roles);
+
     /** Ensures none of the given users are part of the given role, or throws if the role does not exist. */
     void removeUsers(Role role, Collection<UserId> users);
 

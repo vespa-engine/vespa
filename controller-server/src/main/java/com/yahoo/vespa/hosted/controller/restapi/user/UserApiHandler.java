@@ -191,8 +191,9 @@ public class UserApiHandler extends LoggingRequestHandler {
         var user = new UserId(require("user", Inspector::asString, requestObject));
         var roles = SlimeStream.fromArray(requestObject.field("roles"), Inspector::asString)
                 .map(roleName -> Roles.toRole(tenant, roleName))
-                .peek(role -> users.addUsers(role, List.of(user)))
                 .collect(Collectors.toUnmodifiableList());
+
+        users.addRoles(user, roles);
         return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
