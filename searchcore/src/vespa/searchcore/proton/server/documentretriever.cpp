@@ -85,6 +85,8 @@ void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetrieve
         if (!(*attr)->isUndefined(lid)) {
             int64_t zcurve = (*attr)->getInt(lid);
             doc.setValue(*it.first, *positionFromZcurve(zcurve));
+        } else {
+            doc.remove(*it.first); // Don't resurrect old values from the docstore.
         }
     }
 }
