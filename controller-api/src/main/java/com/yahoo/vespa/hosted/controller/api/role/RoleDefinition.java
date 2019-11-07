@@ -113,7 +113,9 @@ public enum RoleDefinition {
                       Policy.applicationDelete,
                       Policy.applicationOperations,
                       Policy.keyManagement,
-                      Policy.developmentDeployment);
+                      Policy.developmentDeployment),
+
+    systemFlagsDeployer(hostedOperator, Policy.systemFlagsDeployment);
 
     private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;

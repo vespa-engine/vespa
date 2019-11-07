@@ -126,4 +126,13 @@ public class RoleTest {
         assertFalse(tenantAdmin1.implies(applicationHeadless11));
         assertFalse(applicationHeadless11.implies(applicationHeadless12));
     }
+
+    @Test
+    public void system_flags() {
+        URI uri = URI.create("/system-flags/v1/deploy");
+        Action action = Action.update;
+        assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, uri));
+        assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, uri));
+        assertFalse(mainEnforcer.allows(Role.everyone(), action, uri));
+    }
 }
