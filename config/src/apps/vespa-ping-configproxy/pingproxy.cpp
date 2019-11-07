@@ -115,6 +115,7 @@ PingProxy::Main()
     const char *spec = sspec.c_str();
     if (debugging) {
         printf("connecting to '%s'\n", spec);
+        LOG(info, "connecting to '%s'\n", spec);
     }
     try {
         initRPC(spec);
