@@ -11,7 +11,7 @@ public enum RunStatus {
     /** Run is still proceeding normally, i.e., without failures. */
     running,
 
-    /** Deployment was rejected due to missing capacity. */
+    /** Deployment was rejected due to lack of capacity. */
     outOfCapacity,
 
     /** Deployment of the real application was rejected. */
@@ -29,7 +29,7 @@ public enum RunStatus {
     /** Everything completed with great success! */
     success,
 
-    /** Run has been abandoned, due to user intervention or timeout. */
+    /** Run was abandoned, due to user intervention or job timeout. */
     aborted
 
 }

@@ -179,7 +179,6 @@ public class Run {
                ", start=" + start +
                ", end=" + end +
                ", status=" + status +
-               ", steps=" + steps +
                '}';
     }
 

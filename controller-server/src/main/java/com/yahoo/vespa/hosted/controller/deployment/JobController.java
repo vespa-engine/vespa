@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -33,8 +34,10 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -247,27 +250,17 @@ public class JobController {
 
     /** Returns the last completed of the given job. */
     public Optional<Run> lastCompleted(JobId id) {
-        return Optional.ofNullable(curator.readHistoricRuns(id.application(), id.type())
-                                          .lastEntry().getValue());
+        return JobStatus.lastCompleted(runs(id));
     }
 
     /** Returns the first failing of the given job. */
     public Optional<Run> firstFailing(JobId id) {
-        Run failed = null;
-        loop: for (Run run : runs(id).descendingMap().values())
-            switch (run.status()) {
-                case running: continue loop;
-                case success: break loop;
-                default: failed = run;
-            }
-        return Optional.ofNullable(failed);
+        return JobStatus.firstFailing(runs(id));
     }
 
     /** Returns the last success of the given job. */
     public Optional<Run> lastSuccess(JobId id) {
-        return runs(id).descendingMap().values().stream()
-                .filter(run -> run.status() == RunStatus.success)
-                .findFirst();
+        return JobStatus.lastSuccess(runs(id));
     }
 
     /** Returns the run with the given id, provided it is still active. */
@@ -292,6 +285,20 @@ public class JobController {
                                                        .flatMap(Optional::stream)
                                                        .filter(run -> ! run.hasEnded()))
                                 .iterator());
+    }
+
+    /** Returns the job status of the given job, possibly empty. */
+    public JobStatus jobStatus(JobId id) {
+        return new JobStatus(id, runs(id));
+    }
+
+    /** Returns the job status of all declared jobs for the given instance id, indexed by job type. */
+    public Map<JobType, JobStatus> jobStatus(ApplicationId id, DeploymentSpec spec) {
+        return new DeploymentSteps(spec.requireInstance(id.instance()), controller::system)
+                .jobs().stream()
+                .map(type -> jobStatus(new JobId(id, type)))
+                .collect(Collectors.toUnmodifiableMap(status -> status.job().type(),
+                                                      status -> status));
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
