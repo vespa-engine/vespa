@@ -266,7 +266,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                 String name = g.getName();
                 if (siblings.contains(name)) {
                     throw new IllegalArgumentException("Cluster '" + cluster + "' has multiple groups " +
-                            "with name '" + name + "' in the same subgroup. Group sibling names must be unique.");
+                                                       "with name '" + name +
+                                                       "' in the same subgroup. Group sibling names must be unique.");
                 }
                 siblings.add(name);
             }

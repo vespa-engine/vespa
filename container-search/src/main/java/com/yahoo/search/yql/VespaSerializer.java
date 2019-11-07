@@ -101,6 +101,7 @@ import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.query.QueryTree;
 
 /**
  * Serialize Vespa query trees to YQL+ strings.
@@ -404,7 +405,7 @@ public class VespaSerializer {
                 boundsAnnotation = "\"" + BOUNDS + "\": " + "\"" + BOUNDS_RIGHT_OPEN + "\"";
             }
             if (annotations.length() > 0 || boundsAnnotation.length() > 0) {
-                destination.append("[{");
+                destination.append("([{");
             }
             initLen = destination.length();
             if (annotations.length() > 0) {
@@ -422,6 +423,9 @@ public class VespaSerializer {
                     .append(", ").append(intItem.getFromLimit().number())
                     .append(", ").append(intItem.getToLimit().number())
                     .append(")");
+            if (annotations.length() > 0 || boundsAnnotation.length() > 0) {
+                destination.append(")");
+            }
         }
 
         private void annotatedNumberImage(IntItem item, String rawNumber, StringBuilder image) {
@@ -1251,6 +1255,12 @@ public class VespaSerializer {
         ToolBox.visit(visitor, item);
     }
 
+    static String serialize(QueryTree item) {
+        StringBuilder out = new StringBuilder();
+        serialize(item.getRoot(), out);
+        return out.toString();
+    }
+
     static String serialize(Item item) {
         StringBuilder out = new StringBuilder();
         serialize(item, out);
@@ -1264,10 +1274,10 @@ public class VespaSerializer {
 
     private static void serializeWeightedSetContents(StringBuilder destination, String opName,
                                                      WeightedSetItem weightedSet, String optionalAnnotations) {
-        addAnnotations(destination, weightedSet, optionalAnnotations);
+        boolean addedAnnotations = addAnnotations(destination, weightedSet, optionalAnnotations);
         destination.append(opName).append('(')
-                .append(normalizeIndexName(weightedSet.getIndexName()))
-                .append(", {");
+                   .append(normalizeIndexName(weightedSet.getIndexName()))
+                   .append(", {");
         int initLen = destination.length();
         List<Entry<Object, Integer>> tokens = new ArrayList<>(weightedSet.getNumTokens());
         for (Iterator<Entry<Object, Integer>> i = weightedSet.getTokens(); i.hasNext();) {
@@ -1281,16 +1291,19 @@ public class VespaSerializer {
             destination.append("\": ").append(entry.getValue().toString());
         }
         destination.append("})");
+        if (addedAnnotations)
+            destination.append(")");
     }
 
-    private static void addAnnotations(StringBuilder destination, WeightedSetItem weightedSet,
-                                       String optionalAnnotations) {
+    /** Adds annotations and returns whether any were added */
+    private static boolean addAnnotations(StringBuilder destination, WeightedSetItem weightedSet,
+                                          String optionalAnnotations) {
         int preAnnotationValueLen;
         int incomingLen = destination.length();
         String annotations = leafAnnotations(weightedSet);
 
         if (optionalAnnotations.length() > 0 || annotations.length() > 0) {
-            destination.append("[{");
+            destination.append("([{");
         }
         preAnnotationValueLen = destination.length();
         if (annotations.length() > 0) {
@@ -1302,6 +1315,10 @@ public class VespaSerializer {
         }
         if (destination.length() > incomingLen) {
             destination.append("}]");
+            return true;
+        }
+        else {
+            return false;
         }
     }
 

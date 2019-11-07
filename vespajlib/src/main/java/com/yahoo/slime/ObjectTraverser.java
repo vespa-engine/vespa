@@ -5,13 +5,14 @@ package com.yahoo.slime;
  * Callback interface for traversing objects.
  * Implement this and call Inspector.traverse()
  * and you will get one callback for each field in an object.
- **/
-public interface ObjectTraverser
-{
+ */
+public interface ObjectTraverser {
     /**
      * Callback function to implement.
+     *
      * @param name symbol name for the current field.
      * @param inspector accessor for the current field's value.
-     **/
-    public void field(String name, Inspector inspector);
+     */
+    void field(String name, Inspector inspector);
+
 }
