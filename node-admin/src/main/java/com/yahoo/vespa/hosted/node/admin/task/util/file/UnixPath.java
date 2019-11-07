@@ -187,7 +187,7 @@ public class UnixPath {
     }
 
     /** Returns whether this is a symlink */
-    public boolean isSymbolicSymlink() {
+    public boolean isSymbolicLink() {
         return Files.isSymbolicLink(path);
     }
 
@@ -198,7 +198,7 @@ public class UnixPath {
      * - For symlinks: Only the symlink is removed, not what the symlink points to
      */
     public boolean deleteRecursively() {
-        if (!isSymbolicSymlink() && isDirectory()) {
+        if (!isSymbolicLink() && isDirectory()) {
             for (UnixPath path : listContentsOfDirectory()) {
                 path.deleteRecursively();
             }
