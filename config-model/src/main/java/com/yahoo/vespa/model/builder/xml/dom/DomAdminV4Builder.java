@@ -160,7 +160,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
                                                                      .filter(container -> retired == container.isRetired())
                                                                      .map(Container::getHostResource)
                                                                      .collect(Collectors.toList());
-        return HostResource.pickHosts(hosts, count, 1);
+        return hosts.subList(0, Math.min(count, hosts.size()));
     }
 
     private Logserver createLogserver(DeployLogger deployLogger, Admin admin, Collection<HostResource> hosts) {
