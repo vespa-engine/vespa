@@ -800,6 +800,7 @@ public class ApplicationController {
                          });
             });
             curator.writeApplication(application.without(instanceId.instance()).get());
+            controller.jobController().collectGarbage();
 
             log.info("Deleted " + instanceId);
         });
