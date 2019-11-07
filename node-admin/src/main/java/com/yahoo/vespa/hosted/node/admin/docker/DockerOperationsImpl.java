@@ -272,10 +272,7 @@ public class DockerOperationsImpl implements DockerOperations {
                 Paths.get("/opt/splunkforwarder/var/log"),  // VESPA-14917, thin pool leakage
                 Paths.get("/var/log"),                      // VESPA-14917, thin pool leakage
                 Paths.get("/var/spool/postfix/maildrop"),   // VESPA-14917, thin pool leakage
-                context.pathInNodeUnderVespaHome("logs/daemontools_y"), // TODO: related to ykeykey?
                 context.pathInNodeUnderVespaHome("logs/vespa"),
-                context.pathInNodeUnderVespaHome("logs/yca"),
-                context.pathInNodeUnderVespaHome("logs/ykeykeyd"), // TODO: should only be needed for proxy?
                 context.pathInNodeUnderVespaHome("logs/ysar"),
                 context.pathInNodeUnderVespaHome("tmp"),
                 context.pathInNodeUnderVespaHome("var/crash"), // core dumps
