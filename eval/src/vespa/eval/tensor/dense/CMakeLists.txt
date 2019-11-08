@@ -9,9 +9,10 @@ vespa_add_library(eval_tensor_dense OBJECT
     dense_inplace_map_function.cpp
     dense_remove_dimension_optimizer.cpp
     dense_replace_type_function.cpp
+    dense_tensor.cpp
     dense_tensor_address_mapper.cpp
     dense_tensor_cells_iterator.cpp
-    dense_tensor.cpp
+    dense_tensor_create_function.cpp
     dense_tensor_modify.cpp
     dense_tensor_reduce.cpp
     dense_tensor_view.cpp
