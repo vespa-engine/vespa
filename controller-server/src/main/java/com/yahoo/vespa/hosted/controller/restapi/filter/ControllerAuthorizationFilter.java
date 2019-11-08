@@ -39,7 +39,7 @@ public class ControllerAuthorizationFilter extends JsonSecurityRequestFilterBase
             Optional<SecurityContext> securityContext = Optional.ofNullable((SecurityContext)request.getAttribute(SecurityContext.ATTRIBUTE_NAME));
 
             if (securityContext.isEmpty())
-                return Optional.of(new ErrorResponse(Response.Status.FORBIDDEN, "Access denied"));
+                return Optional.of(new ErrorResponse(Response.Status.UNAUTHORIZED, "Access denied - not authenticated"));
 
             Action action = Action.from(HttpRequest.Method.valueOf(request.getMethod()));
 
