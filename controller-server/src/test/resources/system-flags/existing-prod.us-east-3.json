@@ -1,0 +1,8 @@
+{
+  "id" : "my-flag",
+  "rules" : [
+    {
+      "value" : "prod.us-east-3.original"
+    }
+  ]
+}
