@@ -299,7 +299,9 @@ public class CapacityChecker {
             reason.violatesParentHostPolicy = violatesParentHostPolicy(node, host, containedAllocations);
 
             NodeResources l = availableHostResources.nodeResources;
-            NodeResources r = node.flavor().resources();
+            NodeResources r = node.allocation()
+                    .map(Allocation::requestedResources)
+                    .orElse(node.flavor().resources());
             if (l.vcpu()      < r.vcpu())                   { reason.insufficientVcpu = true;         }
             if (l.memoryGb()  < r.memoryGb())               { reason.insufficientMemoryGb = true;     }
             if (l.diskGb()    < r.diskGb())                 { reason.insufficientDiskGb = true;       }
