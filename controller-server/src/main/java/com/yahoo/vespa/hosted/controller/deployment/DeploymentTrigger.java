@@ -478,8 +478,7 @@ public class DeploymentTrigger {
         if ( ! application.deploymentSpec().instances().stream()
                           .allMatch(instance -> instance.canChangeRevisionAt(clock.instant()))) return false;
         if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
-        for (Instance instance : application.instances().values())
-            if (instance.deploymentJobs().hasFailures()) return true; // Allow changes to fix upgrade problems.
+        if (jobs.deploymentStatus(application).hasFailures()) return true; // Allow changes to fix upgrade problems.
         return application.change().platform().isEmpty();
     }
 

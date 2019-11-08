@@ -92,7 +92,7 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
     /** Returns the subset of applications which currently have failing jobs */
     public ApplicationList failing() {
         return matching(application -> application.instances().values().stream()
-                                                    .anyMatch(instance -> instance.deploymentJobs().hasFailures()));
+                                                  .anyMatch(instance -> instance.deploymentJobs().hasFailures()));
     }
 
     /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */

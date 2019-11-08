@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -57,13 +56,13 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.JobStatus;
-import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue.Priority;
 import com.yahoo.vespa.hosted.controller.maintenance.RoutingPolicies;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -75,7 +74,6 @@ import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
 import java.security.Principal;
@@ -379,16 +377,14 @@ public class ApplicationController {
                 else {
                     JobType jobType = JobType.from(controller.system(), zone)
                                              .orElseThrow(() -> new IllegalArgumentException("No job is known for " + zone + "."));
-                    Optional<JobStatus> job = Optional.ofNullable(application.get().require(instance).deploymentJobs().jobStatus().get(jobType));
-                    if (   job.isEmpty()
-                        || job.get().lastTriggered().isEmpty()
-                        || job.get().lastCompleted().isPresent() && job.get().lastCompleted().get().at().isAfter(job.get().lastTriggered().get().at()))
+                    var run = controller.jobController().last(instanceId, jobType);
+                    if (run.map(Run::hasEnded).orElse(true))
                         return unexpectedDeployment(instanceId, zone);
-                    JobRun triggered = job.get().lastTriggered().get();
-                    platformVersion = preferOldestVersion ? triggered.sourcePlatform().orElse(triggered.platform())
-                                                          : triggered.platform();
-                    applicationVersion = preferOldestVersion ? triggered.sourceApplication().orElse(triggered.application())
-                                                             : triggered.application();
+                    Versions versions = run.get().versions();
+                    platformVersion = preferOldestVersion ? versions.sourcePlatform().orElse(versions.targetPlatform())
+                                                          : versions.targetPlatform();
+                    applicationVersion = preferOldestVersion ? versions.sourceApplication().orElse(versions.targetApplication())
+                                                             : versions.targetApplication();
 
                     applicationPackage = getApplicationPackage(instanceId, applicationVersion);
                     applicationPackage = withTesterCertificate(applicationPackage, instanceId, jobType);

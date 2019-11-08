@@ -9,9 +9,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * A list of deployment jobs that can be filtered in various ways.
@@ -41,7 +43,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
 
     /** Returns the subset of jobs which are currently failing */
     public JobList failing() {
-        return matching(job -> ! job.isSuccess());
+        return matching(job -> job.lastCompleted().isPresent() && ! job.isSuccess());
     }
 
     public JobList running() {
@@ -105,7 +107,6 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return new RunFilter(JobStatus::firstFailing);
     }
 
-
     /** Allows sub-filters for runs of the given kind */
     public class RunFilter {
 
@@ -118,6 +119,21 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         /** Returns the subset of jobs where the run of the given type exists */
         public JobList present() {
             return matching(run -> true);
+        }
+
+        /** Returns the runs of the given kind, mapped by the given function, as a list. */
+        public <OtherType> List<OtherType> mapToList(Function<? super Run, OtherType> mapper) {
+            return present().mapToList(which.andThen(Optional::get).andThen(mapper));
+        }
+
+        /** Returns the subset of jobs where the run of the given type occurred before the given instant */
+        public JobList endedBefore(Instant threshold) {
+            return matching(run -> run.end().orElse(Instant.MAX).isBefore(threshold));
+        }
+
+        /** Returns the subset of jobs where the run of the given type occurred after the given instant */
+        public JobList endedAfter(Instant threshold) {
+            return matching(run -> run.end().orElse(Instant.MIN).isAfter(threshold));
         }
 
         /** Returns the subset of jobs where the run of the given type occurred before the given instant */
