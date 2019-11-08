@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -205,7 +204,7 @@ public class DeploymentTrigger {
         Versions versions = Versions.from(application.change(), application, deploymentFor(instance, jobType),
                                           controller.systemVersion());
         String reason = "Job triggered manually by " + user;
-        var jobStatus = jobs.jobStatus(applicationId, application.deploymentSpec());
+        var jobStatus = jobs.deploymentStatus(application).instanceJobs(instance.name());
         return (jobType.isProduction() && ! isTested(jobStatus, versions)
                 ? testJobs(application.deploymentSpec(), application.change(), instance, jobStatus, versions, reason, clock.instant(), __ -> true).stream()
                 : Stream.of(deploymentJob(instance, versions, application.change(), jobType, jobStatus.get(jobType), reason, clock.instant())))
@@ -299,8 +298,9 @@ public class DeploymentTrigger {
             Collection<Instance> instances = application.deploymentSpec().instances().stream()
                                                         .flatMap(instance -> application.get(instance.name()).stream())
                                                         .collect(Collectors.toUnmodifiableList());
+            DeploymentStatus deploymentStatus = this.jobs.deploymentStatus(application);
             for (Instance instance : instances) {
-                var jobStatus = this.jobs.jobStatus(instance.id(), application.deploymentSpec());
+                var jobStatus = deploymentStatus.instanceJobs(instance.name());
                 Change change = application.change();
                 Optional<Instant> completedAt = max(Optional.ofNullable(jobStatus.get(systemTest))
                                                             .<Instant>flatMap(job -> job.lastSuccess().map(run -> run.end().get())),

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -54,6 +55,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -286,12 +288,14 @@ public class JobController {
     }
 
     /** Returns the job status of all declared jobs for the given instance id, indexed by job type. */
-    public Map<JobType, JobStatus> jobStatus(ApplicationId id, DeploymentSpec spec) {
-        return new DeploymentSteps(spec.requireInstance(id.instance()), controller::system)
-                .jobs().stream()
-                .map(type -> jobStatus(new JobId(id, type)))
-                .collect(Collectors.toUnmodifiableMap(status -> status.id().type(),
-                                                      status -> status));
+    public DeploymentStatus deploymentStatus(Application application) {
+        return new DeploymentStatus(application,
+                                    application.deploymentSpec().instances().stream()
+                                               .flatMap(spec -> new DeploymentSteps(spec, controller::system)
+                                                       .jobs().stream()
+                                                       .map(type -> jobStatus(new JobId(application.id().instance(spec.name()), type))))
+                                               .collect(toUnmodifiableMap(status -> status.id(),
+                                                                          status -> status)));
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */

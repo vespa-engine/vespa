@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -33,7 +34,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
 
     /** Returns the subset of jobs which are currently upgrading */
     public JobList upgrading() {
-        return matching(job -> job.isRunning()
+        return matching(job ->    job.isRunning()
                                && job.lastSuccess().isPresent()
                                && job.lastSuccess().get().versions().targetPlatform().isBefore(job.lastTriggered().get().versions().targetPlatform()));
     }
@@ -54,8 +55,8 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     }
 
     /** Returns the subset of jobs of the given type -- most useful when negated */
-    public JobList type(JobType type) {
-        return matching(job -> job.id().type() == type);
+    public JobList type(JobType... types) {
+        return matching(job -> List.of(types).contains(job.id().type()));
     }
 
     /** Returns the subset of jobs of which are production jobs */

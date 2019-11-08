@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -40,13 +39,10 @@ import java.net.URI;
 import java.util.ArrayDeque;
 import java.util.Comparator;
 import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.conservative;
@@ -81,7 +77,7 @@ class JobControllerApiHandlerHelper {
         Instance instance = application.require(id.instance());
         Change change = application.change();
         DeploymentSteps steps = new DeploymentSteps(application.deploymentSpec().requireInstance(id.instance()), controller::system);
-        Map<JobType, JobStatus> status = controller.jobController().jobStatus(id, application.deploymentSpec());
+        Map<JobType, JobStatus> status = controller.jobController().deploymentStatus(application).instanceJobs(id.instance());
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
         Map<JobType, Versions> pendingProduction =
