@@ -1124,4 +1124,29 @@ TEST_F(FieldPathUpdateTestCase, array_element_update_for_invalid_index_is_ignore
     EXPECT_EQ(str_array, *new_arr);
 }
 
+TEST_F(FieldPathUpdateTestCase, update_can_have_removes_for_both_existent_and_nonexistent_keys) {
+    DocumentId doc_id("id:ns:foobar::george:costanza");
+    auto doc = std::make_unique<Document>(_foobar_type, doc_id);
+    auto& map_type = dynamic_cast<const MapDataType&>(doc->getType().getField("structmap").getDataType());
+    auto& struct_type = map_type.getValueType();
+    MapFieldValue mfv(map_type);
+
+    StructFieldValue mystruct(struct_type);
+    mystruct.setValue("title", StringFieldValue("sharknado in space, part deux"));
+    mystruct.setValue("rating", IntFieldValue(90));
+    mfv.put(StringFieldValue("coolmovie"), mystruct);
+    doc->setValue("structmap", mfv);
+
+    DocumentUpdate update(*_repo, _foobar_type, doc_id);
+    auto update1 = std::make_unique<RemoveFieldPathUpdate>("structmap{coolmovie}", "");
+    auto update2 = std::make_unique<RemoveFieldPathUpdate>("structmap{no such key}", "");
+    update.addFieldPathUpdate(FieldPathUpdate::CP(std::move(update1)));
+    update.addFieldPathUpdate(FieldPathUpdate::CP(std::move(update2)));
+    update.applyTo(*doc);
+
+    auto new_value = doc->getValue("structmap");
+    auto& map_value = dynamic_cast<MapFieldValue&>(*new_value);
+    EXPECT_EQ(map_value.size(), 0);
+}
+
 }
