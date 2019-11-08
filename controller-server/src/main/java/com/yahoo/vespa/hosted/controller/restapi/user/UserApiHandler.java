@@ -8,8 +8,10 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
-import com.yahoo.slime.ArrayTraverser;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -23,9 +25,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.yolean.Exceptions;
@@ -218,11 +217,13 @@ public class UserApiHandler extends LoggingRequestHandler {
         TenantName tenant = TenantName.from(tenantName);
         String roleName = require("roleName", Inspector::asString, requestObject);
         UserId user = new UserId(require("user", Inspector::asString, requestObject));
-        Role role = Roles.toRole(tenant, roleName);
+        List<Role> roles = Collections.singletonList(Roles.toRole(tenant, roleName));
 
-        removeTenantRoleMember(tenant, user, role);
+        enforceLastAdminOfTenant(tenant, user, roles);
+        removeDeveloperKey(tenant, user, roles);
+        users.removeRoles(user, roles);
 
-        return new MessageResponse(user+" is no longer a member of "+role);
+        return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
     private HttpResponse removeMultipleTenantRoleMembers(String tenantName, Inspector requestObject) {
@@ -232,24 +233,34 @@ public class UserApiHandler extends LoggingRequestHandler {
                 .map(roleName -> Roles.toRole(tenant, roleName))
                 .collect(Collectors.toUnmodifiableList());
 
-        roles.forEach(role -> removeTenantRoleMember(tenant, user, role));
+        enforceLastAdminOfTenant(tenant, user, roles);
+        removeDeveloperKey(tenant, user, roles);
+        users.removeRoles(user, roles);
 
         return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
-    private void removeTenantRoleMember(TenantName tenantName, UserId user, Role role) {
-        if (   role.definition() == RoleDefinition.administrator
-                && Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet())))
-            throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
+    private void enforceLastAdminOfTenant(TenantName tenantName, UserId user, List<Role> roles) {
+        for (Role role : roles) {
+            if (role.definition().equals(RoleDefinition.administrator)) {
+                if (Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet()))) {
+                    throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
+                }
+            }
+        }
+    }
 
-        if (role.definition().equals(RoleDefinition.developer))
-            controller.tenants().lockIfPresent(tenantName, LockedTenant.Cloud.class, tenant -> {
-                PublicKey key = tenant.get().developerKeys().inverse().get(new SimplePrincipal(user.value()));
-                if (key != null)
-                    controller.tenants().store(tenant.withoutDeveloperKey(key));
-            });
-
-        users.removeUsers(role, List.of(user));
+    private void removeDeveloperKey(TenantName tenantName, UserId user, List<Role> roles) {
+        for (Role role : roles) {
+            if (role.definition().equals(RoleDefinition.developer)) {
+                controller.tenants().lockIfPresent(tenantName, LockedTenant.Cloud.class, tenant -> {
+                    PublicKey key = tenant.get().developerKeys().inverse().get(new SimplePrincipal(user.value()));
+                    if (key != null)
+                        controller.tenants().store(tenant.withoutDeveloperKey(key));
+                });
+                break;
+            }
+        }
     }
 
     private HttpResponse removeApplicationRoleMember(String tenantName, String applicationName, HttpRequest request) {

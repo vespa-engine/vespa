@@ -55,6 +55,13 @@ public class MockUserManagement implements UserManagement {
     }
 
     @Override
+    public void removeRoles(UserId user, Collection<Role> roles) {
+        for (Role role : roles) {
+            removeUsers(role, Collections.singletonList(user));
+        }
+    }
+
+    @Override
     public List<User> listUsers(Role role) {
         return List.copyOf(memberships.get(role));
     }
