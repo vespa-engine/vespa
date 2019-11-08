@@ -115,19 +115,20 @@ class FlagsClient {
 
     private static void verifySuccess(HttpResponse response, FlagsTarget target, FlagId flagId) throws IOException {
         if (!success(response)) {
-            String message = getErrorMessage(response);
-            throw new FlagsException(response.getStatusLine().getStatusCode(), target, flagId, message);
+            throw createFlagsException(response, target, flagId);
         }
     }
 
-    private static String getErrorMessage(HttpResponse response) throws IOException {
+    private static FlagsException createFlagsException(HttpResponse response, FlagsTarget target, FlagId flagId) throws IOException {
         HttpEntity entity = response.getEntity();
         String content = EntityUtils.toString(entity);
+        int statusCode = response.getStatusLine().getStatusCode();
         if (ContentType.get(entity).getMimeType().equals(ContentType.APPLICATION_JSON.getMimeType())) {
-            WireErrorResponse errorResponse = mapper.readValue(content, WireErrorResponse.class);
-            return errorResponse.message;
+            WireErrorResponse error = mapper.readValue(content, WireErrorResponse.class);
+            return new FlagsException(statusCode, target, flagId, error.errorCode, error.message);
+        } else {
+            return new FlagsException(statusCode, target, flagId, null, content);
         }
-        return content;
     }
 
     private static boolean success(HttpResponse response) {
@@ -161,21 +162,20 @@ class FlagsClient {
 
     static class FlagsException extends RuntimeException {
 
-        private FlagsException(int statusCode, FlagsTarget target, String responseMessage) {
-            this(statusCode, target, null, responseMessage);
+        private FlagsException(int statusCode, FlagsTarget target, FlagId flagId, String errorCode, String errorMessage) {
+            super(createErrorMessage(statusCode, target, flagId, errorCode, errorMessage));
         }
 
-        private FlagsException(int statusCode, FlagsTarget target, FlagId flagId, String responseMessage) {
-            super(createErrorMessage(statusCode, target, flagId, responseMessage));
-        }
-
-        private static String createErrorMessage(int statusCode, FlagsTarget target, FlagId flagId, String responseMessage) {
-            StringBuilder builder = new StringBuilder()
-                    .append("Received '").append(statusCode).append("' from '").append(target.endpoint().getHost()).append("'");
+        private static String createErrorMessage(int statusCode, FlagsTarget target, FlagId flagId, String errorCode, String errorMessage) {
+            StringBuilder builder = new StringBuilder().append("Received ").append(statusCode);
+            if (errorCode != null) {
+                builder.append('/').append(errorCode);
+            }
+            builder.append(" from '").append(target.endpoint().getHost()).append("'");
             if (flagId != null) {
                 builder.append("' for flag '").append(flagId).append("'");
             }
-            return builder.append(": ").append(responseMessage).toString();
+            return builder.append(": ").append(errorMessage).toString();
         }
     }
 }
