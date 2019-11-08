@@ -28,7 +28,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * Represents a hierarchy of flag data files. See {@link FlagsTarget} for file naming convention.
  *
  * The flag files must reside in a 'flags/' root directory containing a directory for each flag name:
- * {@code ./flags/<feature-flag-name>/*.json}
+ * {@code ./flags/<flag-id>/*.json}
  *
  * @author bjorncs
  */
