@@ -49,18 +49,19 @@ class SystemFlagsHandler extends LoggingRequestHandler {
 
     private HttpResponse put(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches(API_PREFIX + "/deploy")) return deploy(request);
+        if (path.matches(API_PREFIX + "/deploy")) return deploy(request, /*dryRun*/false);
+        if (path.matches(API_PREFIX + "/dryrun")) return deploy(request, /*dryRun*/true);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
-    private HttpResponse deploy(HttpRequest request) {
+    private HttpResponse deploy(HttpRequest request, boolean dryRun) {
         // TODO Error handling
         String contentType = request.getHeader("Content-Type");
         if (!contentType.equalsIgnoreCase("application/zip")) {
             return ErrorResponse.badRequest("Invalid content type: " + contentType);
         }
         SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(request.getData());
-        SystemFlagsDeployResult result = deployer.deployFlags(archive, request.getBooleanProperty("dry-run"));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, dryRun);
         return new JacksonJsonResponse<>(200, result.toWire());
     }
 

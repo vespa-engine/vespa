@@ -2,11 +2,9 @@
 package com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire;
 
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
 
@@ -20,6 +18,12 @@ public interface SystemFlagsV1Api {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes("application/zip")
     @Path("/deploy")
-    WireSystemFlagsDeployResult deploy(@QueryParam("dryRun") @DefaultValue("false") boolean dryRun, InputStream inputStream);
+    WireSystemFlagsDeployResult deploy(InputStream inputStream);
+
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes("application/zip")
+    @Path("/dryrun")
+    WireSystemFlagsDeployResult dryrun(InputStream inputStream);
 
 }
