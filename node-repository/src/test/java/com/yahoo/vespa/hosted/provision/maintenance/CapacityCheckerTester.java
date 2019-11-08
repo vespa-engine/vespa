@@ -83,6 +83,8 @@ public class CapacityCheckerTester {
                         child.minMainMemoryAvailableGb = cnr.memoryGb();
                         child.minDiskAvailableGb = cnr.diskGb();
                         child.fastDisk = true;
+                        child.requestedResources = new NodeModel.NodeResources();
+                        child.requestedResources.diskSpeed = cnr.diskSpeed();
                         child.ipAddresses = Set.of();
                         child.additionalIpAddresses = Set.of();
                         child.owner = new NodeModel.OwnerModel();
@@ -185,7 +187,7 @@ public class CapacityCheckerTester {
 
     NodeResources containingNodeResources(List<NodeResources> resources, NodeResources excessCapacity) {
         NodeResources usedByChildren = resources.stream()
-                .reduce(new NodeResources(0, 0, 0, 0), NodeResources::add);
+                .reduce(new NodeResources(0, 0, 0, 0).withDiskSpeed(NodeResources.DiskSpeed.any), NodeResources::add);
         return usedByChildren.add(excessCapacity);
     }
 
@@ -217,6 +219,12 @@ public class CapacityCheckerTester {
             @JsonProperty String instance;
         }
 
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        static class NodeResources {
+            @JsonProperty
+            com.yahoo.config.provision.NodeResources.DiskSpeed diskSpeed;
+        }
+
         @JsonProperty String id;
         @JsonProperty String hostname;
         @JsonProperty NodeType type;
@@ -230,6 +238,7 @@ public class CapacityCheckerTester {
         @JsonProperty double minCpuCores;
         @JsonProperty double bandwidth;
         @JsonProperty boolean fastDisk;
+        @JsonProperty NodeResources requestedResources;
         @JsonProperty Set<String> ipAddresses;
         @JsonProperty Set<String> additionalIpAddresses;
 
@@ -255,10 +264,9 @@ public class CapacityCheckerTester {
             owner = ApplicationId.from(nodeModel.owner.tenant, nodeModel.owner.application, nodeModel.owner.instance);
         }
 
-        NodeResources.DiskSpeed diskSpeed;
+        NodeResources.DiskSpeed diskSpeed = nodeModel.requestedResources == null ? NodeResources.DiskSpeed.fast : nodeModel.requestedResources.diskSpeed;
         NodeResources nr = new NodeResources(nodeModel.minCpuCores, nodeModel.minMainMemoryAvailableGb,
-                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000,
-                nodeModel.fastDisk ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow);
+                nodeModel.minDiskAvailableGb, nodeModel.bandwidth * 1000, diskSpeed);
         Flavor f = new Flavor(nr);
 
         Node node = nodeRepository.createNode(nodeModel.id, nodeModel.hostname,
@@ -281,6 +289,7 @@ public class CapacityCheckerTester {
 
         List<Node> nodes = new ArrayList<>();
         for (var nmod : nmods) {
+//            nmod.diskSpeed = NodeResources.DiskSpeed.fast; // Because data for "real data" test lacks disk speed
             if (nmod.type != NodeType.host && nmod.type != NodeType.tenant) continue;
 
             nodes.add(createNodeFromModel(nmod));

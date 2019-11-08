@@ -38,6 +38,36 @@ public class CapacityCheckerTest {
     }
 
     @Test
+    public void findsMoveFromSlowToFastDisk() {
+        tester.createNodes(1, 1, List.of(new NodeResources(1, 10, 100, 1).withDiskSpeed(NodeResources.DiskSpeed.any)),
+                1, new NodeResources(1, 10, 100, 1).withDiskSpeed(NodeResources.DiskSpeed.slow), 10,
+                1, new NodeResources(1, 10, 100, 1).withDiskSpeed(NodeResources.DiskSpeed.fast), 10);
+
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
+        assertTrue(failurePath.isPresent());
+
+        int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
+        int spareHostCapacity = worstCaseHostLoss - 1;
+
+        assertEquals("did not find move from slow to fast disk", 1, spareHostCapacity);
+    }
+
+    @Test
+    public void findsMoveFromFastToSlowDisk() {
+        tester.createNodes(1, 1, List.of(new NodeResources(1, 10, 100, 1).withDiskSpeed(NodeResources.DiskSpeed.any)),
+                1, new NodeResources(1, 10, 100, 1).withDiskSpeed(NodeResources.DiskSpeed.fast), 10,
+                1, new NodeResources(1, 10, 100, 1).withDiskSpeed(NodeResources.DiskSpeed.slow), 10);
+
+        var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
+        assertTrue(failurePath.isPresent());
+
+        int worstCaseHostLoss = failurePath.get().hostsCausingFailure.size();
+        int spareHostCapacity = worstCaseHostLoss - 1;
+
+        assertEquals("did not find move from fast to slow disk", 1, spareHostCapacity);
+    }
+
+    @Test
     public void testOvercommittedHosts() {
         tester.createNodes(7, 4,
                10, new NodeResources(-1, 10, 100, 1), 10,
