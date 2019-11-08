@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  */
 class Activator {
 
-    private static final Logger logger = Logger.getLogger(InfraDeployerImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(Activator.class.getName());
 
     private final NodeRepository nodeRepository;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
