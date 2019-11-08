@@ -22,13 +22,13 @@ public interface UserManagement {
     void addUsers(Role role, Collection<UserId> users);
 
     /** Ensures the given user exist, and are part of the given roles, or throws if the roles does not exist. */
-    void addRoles(UserId  user, Collection<Role> roles);
+    void addToRoles(UserId  user, Collection<Role> roles);
 
     /** Ensures none of the given users are part of the given role, or throws if the role does not exist. */
     void removeUsers(Role role, Collection<UserId> users);
 
     /** Ensures the given users are not part of the given role, or throws if the roles does not exist. */
-    void removeRoles(UserId  user, Collection<Role> roles);
+    void removeFromRoles(UserId  user, Collection<Role> roles);
 
     /** Returns all users in the given role, or throws if the role does not exist. */
     List<User> listUsers(Role role);

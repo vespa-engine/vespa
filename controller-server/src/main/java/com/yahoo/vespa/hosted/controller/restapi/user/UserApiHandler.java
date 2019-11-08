@@ -192,7 +192,7 @@ public class UserApiHandler extends LoggingRequestHandler {
                 .map(roleName -> Roles.toRole(tenant, roleName))
                 .collect(Collectors.toUnmodifiableList());
 
-        users.addRoles(user, roles);
+        users.addToRoles(user, roles);
         return new MessageResponse(user + " is now a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
 
@@ -221,7 +221,7 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         enforceLastAdminOfTenant(tenant, user, roles);
         removeDeveloperKey(tenant, user, roles);
-        users.removeRoles(user, roles);
+        users.removeFromRoles(user, roles);
 
         return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }
@@ -235,7 +235,7 @@ public class UserApiHandler extends LoggingRequestHandler {
 
         enforceLastAdminOfTenant(tenant, user, roles);
         removeDeveloperKey(tenant, user, roles);
-        users.removeRoles(user, roles);
+        users.removeFromRoles(user, roles);
 
         return new MessageResponse(user + " is no longer a member of " + roles.stream().map(Role::toString).collect(Collectors.joining(", ")));
     }

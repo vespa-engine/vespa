@@ -43,7 +43,7 @@ public class MockUserManagement implements UserManagement {
     }
 
     @Override
-    public void addRoles(UserId user, Collection<Role> roles) {
+    public void addToRoles(UserId user, Collection<Role> roles) {
         for (Role role : roles) {
             addUsers(role, Collections.singletonList(user));
         }
@@ -55,7 +55,7 @@ public class MockUserManagement implements UserManagement {
     }
 
     @Override
-    public void removeRoles(UserId user, Collection<Role> roles) {
+    public void removeFromRoles(UserId user, Collection<Role> roles) {
         for (Role role : roles) {
             removeUsers(role, Collections.singletonList(user));
         }
