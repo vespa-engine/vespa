@@ -129,10 +129,17 @@ public class RoleTest {
 
     @Test
     public void system_flags() {
-        URI uri = URI.create("/system-flags/v1/deploy");
+        URI deployUri = URI.create("/system-flags/v1/deploy");
         Action action = Action.update;
-        assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, uri));
-        assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, uri));
-        assertFalse(mainEnforcer.allows(Role.everyone(), action, uri));
+        assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, deployUri));
+        assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, deployUri));
+        assertFalse(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, deployUri));
+        assertFalse(mainEnforcer.allows(Role.everyone(), action, deployUri));
+
+        URI dryrunUri = URI.create("/system-flags/v1/dryrun");
+        assertTrue(mainEnforcer.allows(Role.systemFlagsDeployer(), action, dryrunUri));
+        assertTrue(mainEnforcer.allows(Role.hostedOperator(), action, dryrunUri));
+        assertTrue(mainEnforcer.allows(Role.systemFlagsDryrunner(), action, dryrunUri));
+        assertFalse(mainEnforcer.allows(Role.everyone(), action, dryrunUri));
     }
 }

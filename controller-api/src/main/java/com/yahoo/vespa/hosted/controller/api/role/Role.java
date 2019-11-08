@@ -111,6 +111,9 @@ public abstract class Role {
     /** Returns the role for system flag deployer */
     public static UnboundRole systemFlagsDeployer() { return new UnboundRole(RoleDefinition.systemFlagsDeployer); }
 
+    /** Returns the role for system flag dryrun */
+    public static UnboundRole systemFlagsDryrunner() { return new UnboundRole(RoleDefinition.systemFlagsDryrunner); }
+
     /** Returns the role definition of this bound role. */
     public RoleDefinition definition() { return roleDefinition; }
 

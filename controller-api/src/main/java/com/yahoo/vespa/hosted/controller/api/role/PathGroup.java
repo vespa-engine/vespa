@@ -181,7 +181,11 @@ enum PathGroup {
                "/zone/v1/{*}"),
 
     /** Paths used for deploying system-wide feature flags. */
-    systemFlags("/system-flags/v1/{*}");
+    systemFlagsDeploy("/system-flags/v1/deploy"),
+
+
+    /** Paths used for "dry-running" system-wide feature flags. */
+    systemFlagsDryrun("/system-flags/v1/dryrun");
 
     final List<String> pathSpecs;
     final String prefix;
