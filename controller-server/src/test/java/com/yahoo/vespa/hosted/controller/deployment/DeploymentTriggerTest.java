@@ -577,20 +577,17 @@ public class DeploymentTriggerTest {
         assertEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
 
         app.runJob(systemTest).runJob(stagingTest);
-        tester.readyJobsTrigger().maintain(); // Run only once, to trigger only the production jobs.
 
-        // Tests are not re-triggered, because the deployments that were tested have not yet been triggered on the tested versions.
-        assertEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
-        assertEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-
-         // Finish old run of the aborted production job.
-        app.jobAborted(productionUsEast3);
+        // Test jobs for next production zone can start and run immediately.
         tester.triggerJobs();
-
-        // New upgrade is already tested for one of the jobs, which has now been triggered, and tests may run for the other job.
         assertNotEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
         assertNotEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
         app.runJob(systemTest).runJob(stagingTest);
+
+         // Finish old run of the aborted production job.
+        app.jobAborted(productionUsEast3);
+
+        // New upgrade is already tested for both jobs.
 
         app.failDeployment(productionEuWest1).failDeployment(productionUsEast3)
            .runJob(productionEuWest1).runJob(productionUsEast3);
