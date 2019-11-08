@@ -25,8 +25,10 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
+import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunList;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -239,11 +241,12 @@ class JobControllerApiHandlerHelper {
                 jobObject.setLong("pausedUntil", until)));
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
+        JobList jobList = JobList.from(status.values());
         if (type.isTest()) {
             Deque<List<JobType>> pending = new ArrayDeque<>();
             pendingProduction.entrySet().stream()
-                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().testedIn(type, status.get(type), typeVersions.getValue()))
-                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().alreadyTriggered(status, typeVersions.getValue()))
+                             .filter(typeVersions -> jobList.type(type).successOn(typeVersions.getValue()).isEmpty())
+                             .filter(typeVersions -> jobList.production().triggeredOn(typeVersions.getValue()).isEmpty())
                              .collect(groupingBy(Map.Entry::getValue,
                                                  LinkedHashMap::new,
                                                  Collectors.mapping(Map.Entry::getKey, toList())))
@@ -279,12 +282,13 @@ class JobControllerApiHandlerHelper {
                 pendingObject.setString("cooldown", "failed");
             else {
                 int pending = 0;
-                if ( ! controller.applications().deploymentTrigger().alreadyTriggered(status, versions)) {
-                    if ( ! controller.applications().deploymentTrigger().testedIn(systemTest, status.get(systemTest), versions)) {
+                controller.applications().deploymentTrigger();
+                if (jobList.production().triggeredOn(versions).isEmpty()) {
+                    if (jobList.type(systemTest).successOn(versions).isEmpty()) {
                         pending++;
                         pendingObject.setString(shortNameOf(systemTest, controller.system()), statusOf(controller, instance.id(), systemTest, versions));
                     }
-                    if ( ! controller.applications().deploymentTrigger().testedIn(stagingTest, status.get(stagingTest), versions)) {
+                    if (jobList.type(stagingTest).successOn(versions).isEmpty()) {
                         pending++;
                         pendingObject.setString(shortNameOf(stagingTest, controller.system()), statusOf(controller, instance.id(), stagingTest, versions));
                     }

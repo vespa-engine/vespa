@@ -504,7 +504,7 @@ public class DeploymentTriggerTest {
         Version version2 = Version.fromString("7.2");
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().maintain();
-        app1.runJob(systemTest).runJob(stagingTest) // tests for previous version.
+        app1.runJob(systemTest).runJob(stagingTest) // tests for previous version — these are "reused" later.
             .runJob(systemTest).runJob(stagingTest).timeOutConvergence(productionUsCentral1);
         assertEquals(version2, app1.deployment(productionUsCentral1.zone(main)).version());
         Instant triggered = app1.instance().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
@@ -517,18 +517,12 @@ public class DeploymentTriggerTest {
         assertEquals("Change becomes latest non-broken version", Change.of(version1), app1.application().change());
 
         // version1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
-        app1.runJob(systemTest)
-            .runJob(stagingTest)
-            .failDeployment(productionEuWest1);
+        app1.failDeployment(productionEuWest1);
         assertEquals(triggered, app1.instance().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
-
-        // Eagerly triggered system and staging tests complete.
-        app1.runJob(systemTest).runJob(stagingTest);
 
         // Roll out a new application version, which gives a dual change -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
         ApplicationVersion revision1 = app1.lastSubmission().get();
         app1.submit(applicationPackage);
-        app1.jobAborted(productionEuWest1);
         ApplicationVersion revision2 = app1.lastSubmission().get();
         app1.runJob(systemTest).runJob(stagingTest);
         assertEquals(Change.of(version1).with(revision2), app1.application().change());

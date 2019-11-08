@@ -44,6 +44,10 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(job -> ! job.isSuccess());
     }
 
+    public JobList running() {
+        return matching(job -> job.isRunning());
+    }
+
     /** Returns the subset of jobs which must be failing due to an application change */
     public JobList failingApplicationChange() {
         return matching(JobList::failingApplicationChange);
@@ -55,13 +59,28 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     }
 
     /** Returns the subset of jobs of the given type -- most useful when negated */
+    public JobList type(Collection<? extends JobType> types) {
+        return matching(job -> types.contains(job.id().type()));
+    }
+
+    /** Returns the subset of jobs of the given type -- most useful when negated */
     public JobList type(JobType... types) {
-        return matching(job -> List.of(types).contains(job.id().type()));
+        return type(List.of(types));
     }
 
     /** Returns the subset of jobs of which are production jobs */
     public JobList production() {
         return matching(job -> job.id().type().isProduction());
+    }
+
+    /** Returns the jobs with any runs matching the given versions — targets only for system test, everything present otherwise. */
+    public JobList triggeredOn(Versions versions) {
+        return matching(job -> ! RunList.from(job).on(versions).isEmpty());
+    }
+
+    /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
+    public JobList successOn(Versions versions) {
+        return matching(job -> ! RunList.from(job).status(RunStatus.success).on(versions).isEmpty());
     }
 
     // ----------------------------------- JobRun filtering
