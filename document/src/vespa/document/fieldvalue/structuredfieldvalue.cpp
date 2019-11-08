@@ -19,7 +19,7 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(StructuredFieldValue, FieldValue);
 
 StructuredFieldValue::Iterator::Iterator()
     : _iterator(),
-      _field(0)
+      _field(nullptr)
 {
 }
 
@@ -79,7 +79,7 @@ FieldValue::UP
 StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const
 {
     FieldValue::UP fv = getValue(nested.cur().getFieldRef());
-    if (fv.get() != NULL) {
+    if (fv.get() != nullptr) {
         PathRange next = nested.next();
         if ( ! next.atEnd() ) {
             return fv->getNestedFieldValue(next);
@@ -89,7 +89,18 @@ StructuredFieldValue::onGetNestedFieldValue(PathRange nested) const
 }
 
 namespace {
-    using ValuePair = std::pair<fieldvalue::ModificationStatus, FieldValue::UP>;
+    struct ValuePair {
+        fieldvalue::ModificationStatus status;
+        FieldValue::UP value;
+
+        ValuePair() : status(fieldvalue::ModificationStatus::NOT_MODIFIED), value() {}
+        ValuePair(fieldvalue::ModificationStatus status_,
+                  FieldValue::UP value_)
+            : status(status_),
+              value(std::move(value_))
+        {}
+    };
+
     using Cache = vespalib::hash_map<Field, ValuePair>;
 }
 
@@ -97,16 +108,21 @@ class StructuredCache {
 public:
     void remove(const Field & field) {
         ValuePair & entry = _cache[field];
-        entry.first = ModificationStatus::REMOVED;
-        entry.second.reset();
+        entry.status = ModificationStatus::REMOVED;
+        entry.value.reset();
     }
     Cache::iterator find(const Field & field) {
         return _cache.find(field);
     }
     void set(const Field & field, FieldValue::UP value, ModificationStatus status) {
         ValuePair & entry = _cache[field];
-        entry.first = status;
-        entry.second = std::move(value);
+        // If the entry has previously been tagged modified, the value we're now reinserting
+        // is likely based on those changes. We cannot lose that modification status.
+        entry.status = ((status == ModificationStatus::NOT_MODIFIED) &&
+                        (entry.status == ModificationStatus::MODIFIED))
+                ? ModificationStatus::MODIFIED
+                : status;
+        entry.value = std::move(value);
     }
     Cache::iterator begin() { return _cache.begin(); }
     Cache::iterator end() { return _cache.end(); }
@@ -148,7 +164,7 @@ StructuredFieldValue::getValue(const Field& field, FieldValue::UP container) con
             container = getFieldValue(field);
             _cache->set(field, FieldValue::UP(), ModificationStatus::NOT_MODIFIED);
         } else {
-            container = std::move(found->second.second);
+            container = std::move(found->second.value);
         }
     } else {
         if (container) {
@@ -232,10 +248,10 @@ StructuredFieldValue::beginTransaction() {
 void
 StructuredFieldValue::commitTransaction() {
     for (auto & e : *_cache) {
-        if (e.second.first == ModificationStatus::REMOVED) {
+        if (e.second.status == ModificationStatus::REMOVED) {
             removeFieldValue(e.first);
-        } else if (e.second.first == ModificationStatus ::MODIFIED) {
-            setFieldValue(e.first, std::move(e.second.second));
+        } else if (e.second.status == ModificationStatus::MODIFIED) {
+            setFieldValue(e.first, std::move(e.second.value));
         }
     }
     _cache.reset();
