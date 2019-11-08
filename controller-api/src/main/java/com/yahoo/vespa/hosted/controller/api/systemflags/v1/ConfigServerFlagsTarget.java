@@ -18,13 +18,13 @@ import static com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget.z
 /**
  * @author bjorncs
  */
-class ConfigserverFlagsTarget implements FlagsTarget {
+class ConfigServerFlagsTarget implements FlagsTarget {
     private final SystemName system;
     private final ZoneId zone;
     private final URI endpoint;
     private final AthenzIdentity identity;
 
-    ConfigserverFlagsTarget(SystemName system, ZoneId zone, URI endpoint, AthenzIdentity identity) {
+    ConfigServerFlagsTarget(SystemName system, ZoneId zone, URI endpoint, AthenzIdentity identity) {
         this.system = Objects.requireNonNull(system);
         this.zone = Objects.requireNonNull(zone);
         this.endpoint = Objects.requireNonNull(endpoint);
@@ -39,7 +39,7 @@ class ConfigserverFlagsTarget implements FlagsTarget {
     @Override public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ConfigserverFlagsTarget that = (ConfigserverFlagsTarget) o;
+        ConfigServerFlagsTarget that = (ConfigServerFlagsTarget) o;
         return system == that.system &&
                 Objects.equals(zone, that.zone) &&
                 Objects.equals(endpoint, that.endpoint) &&

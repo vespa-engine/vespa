@@ -41,7 +41,7 @@ public interface FlagsTarget {
         SystemName system = registry.system();
         Set<FlagsTarget> targets = new HashSet<>();
         for (ZoneApi zone : registry.zones().reachable().zones()) {
-            targets.add(forConfigserver(registry, zone.getId()));
+            targets.add(forConfigServer(registry, zone.getId()));
         }
         targets.add(forController(system));
         return targets;
@@ -51,8 +51,8 @@ public interface FlagsTarget {
         return new ControllerFlagsTarget(systemName);
     }
 
-    static FlagsTarget forConfigserver(ZoneRegistry registry, ZoneId zoneId) {
-        return new ConfigserverFlagsTarget(
+    static FlagsTarget forConfigServer(ZoneRegistry registry, ZoneId zoneId) {
+        return new ConfigServerFlagsTarget(
                 registry.system(), zoneId, registry.getConfigServerVipUri(zoneId), registry.getConfigServerHttpsIdentity(zoneId));
     }
 

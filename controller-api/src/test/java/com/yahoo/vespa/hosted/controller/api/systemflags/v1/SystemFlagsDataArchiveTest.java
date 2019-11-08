@@ -45,7 +45,7 @@ public class SystemFlagsDataArchiveTest {
     private static FlagsTarget devUsEast1CfgTarget = createConfigserverTarget(Environment.dev, "us-east-1");
 
     private static FlagsTarget createConfigserverTarget(Environment environment, String region) {
-        return new ConfigserverFlagsTarget(
+        return new ConfigServerFlagsTarget(
                 SYSTEM,
                 ZoneId.from(environment, RegionName.from(region)),
                 URI.create("https://cfg-" + region),

@@ -35,8 +35,8 @@ public class SystemFlagsDeployerTest {
         ZoneRegistryMock registry = new ZoneRegistryMock(SYSTEM).setZones(prodUsWest1Zone, prodUsEast3Zone);
 
         FlagsTarget controllerTarget = FlagsTarget.forController(SYSTEM);
-        FlagsTarget prodUsWest1Target = FlagsTarget.forConfigserver(registry, prodUsWest1Zone.getId());
-        FlagsTarget prodUsEast3Target = FlagsTarget.forConfigserver(registry, prodUsEast3Zone.getId());
+        FlagsTarget prodUsWest1Target = FlagsTarget.forConfigServer(registry, prodUsWest1Zone.getId());
+        FlagsTarget prodUsEast3Target = FlagsTarget.forConfigServer(registry, prodUsEast3Zone.getId());
 
         FlagsClient flagsClient = mock(FlagsClient.class);
         when(flagsClient.listFlagData(controllerTarget)).thenReturn(List.of());
