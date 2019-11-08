@@ -17,6 +17,9 @@ search tensor {
     field f5 type tensor<float>(x[10]) {
       indexing: attribute | summary
     }
+    field f6 type float {
+      indexing: attribute
+    }
   }
   
   rank-profile profile1 {
@@ -53,6 +56,26 @@ search tensor {
       expression: sum(attribute(f5))
     }
   
+  }
+
+  rank-profile profile5 {
+
+    first-phase {
+      expression: sum(tensor<float>(d0[1],x[2]):[[attribute(f6), sum(attribute(f5))]])
+    }
+
+  }
+
+  rank-profile profile6 {
+
+    first-phase {
+      expression: sum(tensor<float>(d0[1],x[2]):[[attribute(f6), sum(joinedtensors())]])
+    }
+
+    function joinedtensors() {
+        expression: tensor(i[10])(i) * attribute(f4)
+    }
+
   }
 
 }

@@ -1,20 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
-import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
-import com.yahoo.searchlib.rankingexpression.rule.Function;
 import com.yahoo.searchlib.rankingexpression.rule.IfNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.FunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
 import com.yahoo.tensor.functions.Reduce;
-import com.yahoo.tensor.functions.TensorFunction;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -65,7 +61,7 @@ public class RankingExpressionTestCase {
         ReferenceNode input = new ReferenceNode("input");
         ReferenceNode constant = new ReferenceNode("constant");
         ArithmeticNode product = new ArithmeticNode(input, ArithmeticOperator.MULTIPLY, constant);
-        Reduce sum = new Reduce(new TensorFunctionNode.TensorFunctionExpressionNode(product), Reduce.Aggregator.sum);
+        Reduce sum = new Reduce(new TensorFunctionNode.ExpressionTensorFunction(product), Reduce.Aggregator.sum);
         RankingExpression expression = new RankingExpression(new TensorFunctionNode(sum));
 
         RankingExpression expected = new RankingExpression("sum(input * constant)");
@@ -156,9 +152,9 @@ public class RankingExpressionTestCase {
                             "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
         assertSerialization("tensor(x{}):{{x:a}:1 + 2 + 3,{x:b}:if (1 > 2, 3, 4),{x:c}:reduce(tensor0 * tensor1, sum)}",
                             "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }");
-        assertSerialization("tensor(x[3]):[1.0,2.0,3]",
+        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:2.0,{x:2}:3}",
                             "tensor(x[3]):[1.0, 2.0, 3]");
-        assertSerialization("tensor(x[3]):[1.0,reduce(tensor0 * tensor1, sum),3]",
+        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:reduce(tensor0 * tensor1, sum),{x:2}:3}",
                             "tensor(x[3]):[1.0, sum(tensor0*tensor1), 3]");
     }
 

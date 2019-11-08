@@ -758,6 +758,15 @@ public abstract class IndexedTensor implements Tensor {
 
         protected final long[] indexes;
 
+        /**
+         * Create indexes from a type containing bound indexed dimensions only.
+         *
+         * @throws IllegalStateException if the type contains dimensions which are not bound and indexed
+         */
+        public static Indexes of(TensorType type) {
+            return of(DimensionSizes.of(type));
+        }
+
         public static Indexes of(DimensionSizes sizes) {
             return of(sizes, sizes);
         }
@@ -824,7 +833,7 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         /** Returns the address of the current position of these indexes */
-        private TensorAddress toAddress() {
+        public TensorAddress toAddress() {
             return TensorAddress.of(indexes);
         }
 

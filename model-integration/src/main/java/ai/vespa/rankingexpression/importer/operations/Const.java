@@ -9,9 +9,6 @@ import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode;
-import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.VariableTensor;
-import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
@@ -53,7 +50,7 @@ public class Const extends IntermediateOperation {
         } else {
             expressionNode = new ReferenceNode(Reference.simple("constant", vespaName()));
         }
-        return new TensorFunctionNode.TensorFunctionExpressionNode(expressionNode);
+        return new TensorFunctionNode.ExpressionTensorFunction(expressionNode);
     }
 
     /** Constant names are prefixed by "modelName_" to avoid name conflicts between models */
