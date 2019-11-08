@@ -68,12 +68,7 @@ public class FileDistributor {
     }
 
     private Set<Host> getHosts(FileReference reference) {
-        Set<Host> hosts = filesToHosts.get(reference);
-        if (hosts == null) {
-            hosts = new HashSet<>();
-            filesToHosts.put(reference, hosts);
-        }
-        return hosts;
+        return filesToHosts.computeIfAbsent(reference, k -> new HashSet<>());
     }
 
     public FileDistributor(FileRegistry fileRegistry, List<ConfigServerSpec> configServerSpecs) {
@@ -106,7 +101,7 @@ public class FileDistributor {
     }
 
     public Set<FileReference> allFilesToSend() {
-        return filesToHosts.keySet();
+        return Set.copyOf(filesToHosts.keySet());
     }
 
     // should only be called during deploy
