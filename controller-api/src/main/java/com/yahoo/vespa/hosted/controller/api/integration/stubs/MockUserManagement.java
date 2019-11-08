@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -42,8 +43,22 @@ public class MockUserManagement implements UserManagement {
     }
 
     @Override
+    public void addToRoles(UserId user, Collection<Role> roles) {
+        for (Role role : roles) {
+            addUsers(role, Collections.singletonList(user));
+        }
+    }
+
+    @Override
     public void removeUsers(Role role, Collection<UserId> users) {
         memberships.get(role).removeIf(user -> users.contains(new UserId(user.email())));
+    }
+
+    @Override
+    public void removeFromRoles(UserId user, Collection<Role> roles) {
+        for (Role role : roles) {
+            removeUsers(role, Collections.singletonList(user));
+        }
     }
 
     @Override
