@@ -63,14 +63,6 @@ import static java.util.stream.Collectors.toList;
  */
 public class DeploymentTrigger {
 
-    /*
-     * Instance orchestration TODO jonmv.
-     * Store new production application packages under non-instance path
-     * Read production packages from non-instance path, with fallback
-     * Deprecate and redirect some instance qualified paths in application/v4
-     * Orchestrate deployment across instances.
-     */
-
     public static final Duration maxPause = Duration.ofDays(3);
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
 
