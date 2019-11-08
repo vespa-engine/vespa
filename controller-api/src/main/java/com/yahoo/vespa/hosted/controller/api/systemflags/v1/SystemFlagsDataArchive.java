@@ -62,6 +62,10 @@ public class SystemFlagsDataArchive {
 
     public static SystemFlagsDataArchive fromDirectory(Path directory) {
         Path root = directory.toAbsolutePath();
+        Path flagsDirectory = directory.resolve("flags");
+        if (!Files.isDirectory(flagsDirectory)) {
+            throw new IllegalArgumentException("Sub-directory 'flags' does not exist: " + flagsDirectory);
+        }
         try (Stream<Path> directoryStream = Files.walk(root)) {
             Builder builder = new Builder();
             directoryStream.forEach(absolutePath -> {
