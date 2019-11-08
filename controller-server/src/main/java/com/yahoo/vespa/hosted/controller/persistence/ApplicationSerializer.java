@@ -179,6 +179,7 @@ public class ApplicationSerializer {
         application.projectId().ifPresent(projectId -> root.setLong(projectIdField, projectId));
         application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
+        root.setBool(builtInternallyField, true); // TODO jonmv: remove when the change with this comment has deployed.
         toSlime(application.change(), root, deployingField);
         toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
