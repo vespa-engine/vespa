@@ -81,10 +81,12 @@ FieldValue::UP positionFromZcurve(int64_t zcurve) {
 void fillInPositionFields(Document &doc, DocumentIdT lid, const DocumentRetriever::PositionFields & possiblePositionFields, const IAttributeManager & attr_manager)
 {
     for (const auto & it : possiblePositionFields) {
-        if (doc.hasValue(*it.first)) {
-            AttributeGuard::UP attr = attr_manager.getAttribute(it.second);
+        AttributeGuard::UP attr = attr_manager.getAttribute(it.second);
+        if (!(*attr)->isUndefined(lid)) {
             int64_t zcurve = (*attr)->getInt(lid);
             doc.setValue(*it.first, *positionFromZcurve(zcurve));
+        } else {
+            doc.remove(*it.first); // Don't resurrect old values from the docstore.
         }
     }
 }

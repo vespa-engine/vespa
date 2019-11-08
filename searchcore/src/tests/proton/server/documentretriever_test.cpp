@@ -134,10 +134,12 @@ const TensorDataType tensorDataType(ValueType::from_spec(tensor_spec));
 
 struct MyDocumentStore : proton::test::DummyDocumentStore {
     mutable std::unique_ptr<Document> _testDoc;
+    bool _set_position_struct_field;
 
     MyDocumentStore()
         : proton::test::DummyDocumentStore(),
-          _testDoc()
+          _testDoc(),
+          _set_position_struct_field(true)
     {
     }
 
@@ -163,11 +165,13 @@ struct MyDocumentStore : proton::test::DummyDocumentStore {
         TensorFieldValue tensorFieldValue(tensorDataType);
         tensorFieldValue = static_tensor->clone();
         doc->setValue(dyn_field_tensor, tensorFieldValue);
-        FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
-        StructFieldValue &pos = static_cast<StructFieldValue &>(*fv);
-        pos.set(PositionDataType::FIELD_X, 42);
-        pos.set(PositionDataType::FIELD_Y, 21);
-        doc->setValue(doc->getField(position_field), *fv);
+        if (_set_position_struct_field) {
+            FieldValue::UP fv = PositionDataType::getInstance().createFieldValue();
+            StructFieldValue &pos = static_cast<StructFieldValue &>(*fv);
+            pos.set(PositionDataType::FIELD_X, 42);
+            pos.set(PositionDataType::FIELD_Y, 21);
+            doc->setValue(doc->getField(position_field), *fv);
+        }
 
         return doc;
     }
@@ -473,7 +477,7 @@ TEST_F("require that attributes are patched into stored document unless also ind
     checkFieldValue<StringFieldValue>(doc->getValue(dyn_field_s), static_value_s);
 }
 
-TEST_F("require that position fields are regenerated from zcurves", Fixture) {
+void verify_position_field_has_expected_values(Fixture& f) {
     DocumentMetaData meta_data = f._retriever->getDocumentMetaData(doc_id);
     Document::UP doc = f._retriever->getDocument(meta_data.lid);
     ASSERT_TRUE(doc.get());
@@ -488,6 +492,15 @@ TEST_F("require that position fields are regenerated from zcurves", Fixture) {
     EXPECT_EQUAL(49401000, static_cast<IntFieldValue&>(*y).getValue());
 
     checkFieldValue<LongFieldValue>(doc->getValue(zcurve_field), dynamic_zcurve_value);
+}
+
+TEST_F("require that position fields are regenerated from zcurves", Fixture) {
+    verify_position_field_has_expected_values(f);
+}
+
+TEST_F("zcurve attribute is authoritative for position field existence", Fixture) {
+    f.doc_store._set_position_struct_field = false;
+    verify_position_field_has_expected_values(f);
 }
 
 TEST_F("require that non-existing lid returns null pointer", Fixture) {
