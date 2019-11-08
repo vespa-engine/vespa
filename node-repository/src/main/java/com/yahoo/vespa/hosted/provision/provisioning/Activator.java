@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -19,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +29,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 class Activator {
+
+    private static final Logger logger = Logger.getLogger(Activator.class.getName());
 
     private final NodeRepository nodeRepository;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
@@ -108,12 +112,15 @@ class Activator {
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        long numNonActive = nodes.asList().stream()
+        Set<String> nonActiveHosts = nodes.asList().stream()
                 .filter(node -> parentHostnames.contains(node.hostname()))
                 .filter(node -> node.state() != Node.State.active)
-                .count();
-
+                .map(Node::hostname)
+                .collect(Collectors.toSet());
+        long numNonActive = nonActiveHosts.size();
         if (numNonActive > 0) {
+            // Note: log parent hosts not ready, but do not add to exception (to avoid leaking hostnames)
+            logger.log(LogLevel.INFO, application + ": Parent hosts not ready: " + nonActiveHosts);
             throw new ParentHostUnavailableException("Waiting for hosts to finish booting: " +
                     numNonActive + "/" + parentHostnames.size() + " left.");
         }
