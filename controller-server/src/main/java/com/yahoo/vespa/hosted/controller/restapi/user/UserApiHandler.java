@@ -246,6 +246,7 @@ public class UserApiHandler extends LoggingRequestHandler {
                 if (Set.of(user.value()).equals(users.listUsers(role).stream().map(User::email).collect(Collectors.toSet()))) {
                     throw new IllegalArgumentException("Can't remove the last administrator of a tenant.");
                 }
+                break;
             }
         }
     }
