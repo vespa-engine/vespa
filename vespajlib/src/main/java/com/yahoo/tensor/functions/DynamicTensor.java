@@ -129,14 +129,16 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
                 return "{" + cells.get(0) + "}";
             }
 
-            StringBuilder b = new StringBuilder("[");
+            IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(type());
+            StringBuilder b = new StringBuilder("{");
             for (var cell : cells) {
-                b.append(cell);
+                indexes.next();
+                b.append(indexes.toAddress().toString(type())).append(":").append(cell);
                 b.append(",");
             }
             if (b.length() > 1)
                 b.setLength(b.length() - 1);
-            b.append("]");
+            b.append("}");
 
             return b.toString();
         }

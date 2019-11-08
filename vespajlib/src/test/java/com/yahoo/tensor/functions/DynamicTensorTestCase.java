@@ -24,12 +24,14 @@ public class DynamicTensorTestCase {
         DynamicTensor t1 = DynamicTensor.from(dense,
                                               List.of(new Constant(1), new Constant(2), new Constant(3)));
         assertEquals(Tensor.from(dense, "[1, 2, 3]"), t1.evaluate());
+        assertEquals("tensor(x[3]):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", t1.toString());
 
         TensorType sparse = TensorType.fromSpec("tensor(x{})");
         DynamicTensor t2 = DynamicTensor.from(sparse,
                                               Collections.singletonMap(new TensorAddress.Builder(sparse).add("x", "a").build(),
                                                                        new Constant(5)));
         assertEquals(Tensor.from(sparse, "{{x:a}:5}"), t2.evaluate());
+        assertEquals("tensor(x{}):{{x:a}:5.0}", t2.toString());
     }
 
     private static class Constant implements Function<EvaluationContext<?>, Double> {
@@ -40,6 +42,9 @@ public class DynamicTensorTestCase {
 
         @Override
         public Double apply(EvaluationContext<?> evaluationContext) { return value; }
+
+        @Override
+        public String toString() { return String.valueOf(value); }
 
     }
 

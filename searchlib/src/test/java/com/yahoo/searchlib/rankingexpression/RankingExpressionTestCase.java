@@ -156,9 +156,9 @@ public class RankingExpressionTestCase {
                             "xw_plus_b(matmul(constant(tensor0), attribute(tensor1), x), attribute(tensor1), query(tensor2), y)");
         assertSerialization("tensor(x{}):{{x:a}:1 + 2 + 3,{x:b}:if (1 > 2, 3, 4),{x:c}:reduce(tensor0 * tensor1, sum)}",
                             "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }");
-        assertSerialization("tensor(x[3]):[1.0,2.0,3]",
+        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:2.0,{x:2}:3}",
                             "tensor(x[3]):[1.0, 2.0, 3]");
-        assertSerialization("tensor(x[3]):[1.0,reduce(tensor0 * tensor1, sum),3]",
+        assertSerialization("tensor(x[3]):{{x:0}:1.0,{x:1}:reduce(tensor0 * tensor1, sum),{x:2}:3}",
                             "tensor(x[3]):[1.0, sum(tensor0*tensor1), 3]");
     }
 

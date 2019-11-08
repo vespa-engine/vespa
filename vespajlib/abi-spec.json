@@ -707,6 +707,7 @@
       "final"
     ],
     "methods": [
+      "public static com.yahoo.tensor.DimensionSizes of(com.yahoo.tensor.TensorType)",
       "public long size(int)",
       "public int dimensions()",
       "public long totalSize()",
@@ -820,7 +821,9 @@
       "abstract"
     ],
     "methods": [
+      "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.TensorType)",
       "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.DimensionSizes)",
+      "public com.yahoo.tensor.TensorAddress toAddress()",
       "public long[] indexesCopy()",
       "public long[] indexesForReading()",
       "public java.util.List toList()",

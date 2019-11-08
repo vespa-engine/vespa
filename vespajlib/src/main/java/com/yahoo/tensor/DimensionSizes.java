@@ -18,6 +18,21 @@ public final class DimensionSizes {
     }
 
     /**
+     * Create sizes from a type containing bound indexed dimensions only.
+     *
+     * @throws IllegalStateException if the type contains dimensions which are not bound and indexed
+     */
+    public static DimensionSizes of(TensorType type) {
+        Builder b = new Builder(type.rank());
+        for (int i = 0; i < type.rank(); i++) {
+            if ( type.dimensions().get(i).type() != TensorType.Dimension.Type.indexedBound)
+                throw new IllegalArgumentException(type + " contains dimensions without a size");
+            b.set(i, type.dimensions().get(i).size().get());
+        }
+        return b.build();
+    }
+
+    /**
      * Returns the length of this in the nth dimension
      *
      * @throws IllegalArgumentException if the index is larger than the number of dimensions in this tensor minus one
