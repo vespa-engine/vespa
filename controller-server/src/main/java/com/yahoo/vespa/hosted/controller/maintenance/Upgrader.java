@@ -49,29 +49,29 @@ public class Upgrader extends Maintainer {
     @Override
     public void maintain() {
         // Determine target versions for each upgrade policy
-        Optional<Version> canaryTarget = controller().versionStatus().systemVersion().map(VespaVersion::versionNumber);
+        Version canaryTarget = controller().systemVersion();
         Collection<Version> defaultTargets = targetVersions(Confidence.normal);
         Collection<Version> conservativeTargets = targetVersions(Confidence.high);
 
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
         for (VespaVersion version : controller().versionStatus().versions()) {
             if (version.confidence() == Confidence.broken)
-                cancelUpgradesOf(applications().without(UpgradePolicy.canary).upgradingTo(version.versionNumber()),
+                cancelUpgradesOf(applications().not().with(UpgradePolicy.canary).upgradingTo(version.versionNumber()),
                                  version.versionNumber() + " is broken");
         }
 
         // Canaries should always try the canary target
-        cancelUpgradesOf(applications().with(UpgradePolicy.canary).upgrading().notUpgradingTo(canaryTarget),
+        cancelUpgradesOf(applications().with(UpgradePolicy.canary).upgrading().not().upgradingTo(canaryTarget),
                          "Outdated target version for Canaries");
 
         // Cancel *failed* upgrades to earlier versions, as the new version may fix it
         String reason = "Failing on outdated version";
-        cancelUpgradesOf(applications().with(UpgradePolicy.defaultPolicy).upgrading().failing().notUpgradingTo(defaultTargets), reason);
-        cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().notUpgradingTo(conservativeTargets), reason);
+        cancelUpgradesOf(applications().with(UpgradePolicy.defaultPolicy).upgrading().failing().not().upgradingTo(defaultTargets), reason);
+        cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().not().upgradingTo(conservativeTargets), reason);
 
         // Schedule the right upgrades
         ApplicationList applications = applications();
-        canaryTarget.ifPresent(target -> upgrade(applications.with(UpgradePolicy.canary), target));
+        upgrade(applications.with(UpgradePolicy.canary), canaryTarget);
         defaultTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target));
         conservativeTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.conservative), target));
     }
@@ -98,13 +98,13 @@ public class Upgrader extends Maintainer {
         applications = applications.withProductionDeployment();
         applications = applications.onLowerVersionThan(version);
         applications = applications.allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()));
-        applications = applications.notDeploying(); // wait with applications deploying an application change or already upgrading
-        applications = applications.notFailingOn(version); // try to upgrade only if it hasn't failed on this version
+        applications = applications.not().deploying(); // wait with applications deploying an application change or already upgrading
+        applications = applications.not().failingOn(version); // try to upgrade only if it hasn't failed on this version
         applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
         applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
         for (Application application : applications.with(UpgradePolicy.canary).asList())
             controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
-        for (Application application : applications.without(UpgradePolicy.canary).first(numberOfApplicationsToUpgrade()).asList())
+        for (Application application : applications.not().with(UpgradePolicy.canary).first(numberOfApplicationsToUpgrade()).asList())
             controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
     }
 

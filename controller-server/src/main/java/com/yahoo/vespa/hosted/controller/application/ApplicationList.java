@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.Instance;
 
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -59,7 +58,12 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
 
     /** Returns the subset of applications which are currently upgrading to the given version */
     public ApplicationList upgradingTo(Version version) {
-        return matching(application -> isUpgradingTo(version, application));
+        return upgradingTo(List.of(version));
+    }
+
+    /** Returns the subset of applications which are currently upgrading to the given version */
+    public ApplicationList upgradingTo(Collection<Version> versions) {
+        return matching(application -> versions.stream().anyMatch(version -> isUpgradingTo(version, application)));
     }
 
     /** Returns the subset of applications which are not pinned to a certain Vespa version. */
@@ -67,31 +71,12 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
         return matching(application -> ! application.change().isPinned());
     }
 
-    /** Returns the subset of applications which are currently not upgrading to the given version */
-    public ApplicationList notUpgradingTo(Version version) {
-        return notUpgradingTo(Collections.singletonList(version));
-    }
-
-    public ApplicationList notFailingUpgrade() {
-        return matching(application -> application.instances().values().stream()
+    public ApplicationList failingUpgrade() {
+        return matching(application -> ! application.instances().values().stream()
                                                     .allMatch(instance -> JobList.from(instance)
                                                                                  .failing()
                                                                                  .not().failingApplicationChange()
                                                                                  .isEmpty()));
-    }
-
-    /** Returns the subset of applications which are currently not upgrading to any of the given versions */
-    public ApplicationList notUpgradingTo(Collection<Version> versions) {
-        return matching(application -> versions.stream().noneMatch(version -> isUpgradingTo(version, application)));
-    }
-
-    /**
-     * Returns the subset of applications which are currently not upgrading to the given version,
-     * or returns all if no version is specified
-     */
-    public ApplicationList notUpgradingTo(Optional<Version> version) {
-        if (version.isEmpty()) return this;
-        return notUpgradingTo(version.get());
     }
 
     /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
@@ -99,15 +84,9 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
         return matching(application -> application.change().hasTargets() || application.outstandingChange().hasTargets());
     }
 
-    /** Returns the subset of applications which are currently not deploying a change */
-    public ApplicationList notDeploying() {
-        return matching(application -> ! application.change().hasTargets());
-    }
-
-    /** Returns the subset of applications which currently does not have any failing jobs */
-    public ApplicationList notFailing() {
-        return matching(application -> application.instances().values().stream()
-                                                    .noneMatch(instance -> instance.deploymentJobs().hasFailures()));
+    /** Returns the subset of applications which are currently deploying a change */
+    public ApplicationList deploying() {
+        return matching(application -> application.change().hasTargets());
     }
 
     /** Returns the subset of applications which currently have failing jobs */
@@ -119,19 +98,19 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
     /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */
     public ApplicationList failingUpgradeToVersionSince(Version version, Instant threshold) {
         return matching(application -> application.instances().values().stream()
-                                                    .anyMatch(instance -> failingUpgradeToVersionSince(instance, version, threshold)));
+                                                  .anyMatch(instance -> failingUpgradeToVersionSince(instance, version, threshold)));
     }
 
     /** Returns the subset of applications which have been failing an application change since the given instant */
     public ApplicationList failingApplicationChangeSince(Instant threshold) {
         return matching(application -> application.instances().values().stream()
-                          .anyMatch(instance -> failingApplicationChangeSince(instance, threshold)));
+                                                  .anyMatch(instance -> failingApplicationChangeSince(instance, threshold)));
     }
 
-    /** Returns the subset of applications which currently does not have any failing jobs on the given version */
-    public ApplicationList notFailingOn(Version version) {
+    /** Returns the subset of applications which currently have failing jobs on the given version */
+    public ApplicationList failingOn(Version version) {
         return matching(application -> application.instances().values().stream()
-                          .noneMatch(instance -> failingOn(version, instance)));
+                                                  .anyMatch(instance -> failingOn(version, instance)));
     }
 
     /** Returns the subset of applications which have at least one production deployment */
@@ -151,13 +130,6 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
     public ApplicationList with(UpgradePolicy policy) {
         return matching(application ->  application.deploymentSpec().instances().stream()
                                                      .anyMatch(instance -> instance.upgradePolicy() == policy));
-    }
-
-    /** Returns the subset of applications which does not have the given upgrade policy */
-    // TODO jonmv: Make this instance based when instances are orchestrated, and deployments reported per instance.
-    public ApplicationList without(UpgradePolicy policy) {
-        return matching(application ->  application.deploymentSpec().instances().stream()
-                                                     .allMatch(instance -> instance.upgradePolicy() != policy));
     }
 
     /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
