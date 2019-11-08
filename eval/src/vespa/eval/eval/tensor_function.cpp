@@ -7,6 +7,7 @@
 #include "tensor_engine.h"
 #include "simple_tensor_engine.h"
 #include "visit_stuff.h"
+#include "string_stuff.h"
 #include <vespa/vespalib/objects/objectdumper.h>
 
 #include <vespa/log/log.h>
@@ -115,6 +116,17 @@ void op_tensor_rename(State &state, uint64_t param) {
 void op_tensor_concat(State &state, uint64_t param) {
     const vespalib::string &dimension = unwrap_param<vespalib::string>(param);
     state.pop_pop_push(state.engine.concat(state.peek(1), state.peek(0), dimension, state.stash));
+}
+
+void op_tensor_create(State &state, uint64_t param) {
+    const Create &self = unwrap_param<Create>(param);
+    TensorSpec spec(self.result_type().to_spec());
+    size_t i = 0;
+    for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
+        spec.add(pos->first, state.peek(i++).as_double());
+    }
+    const Value &result = *state.stash.create<Value::UP>(state.engine.from_spec(spec));
+    state.pop_n_push(i, result);
 }
 
 } // namespace vespalib::eval::tensor_function
@@ -266,6 +278,30 @@ Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
+void
+Create::push_children(std::vector<Child::CREF> &children) const
+{
+    for (const auto &cell: _spec) {
+        children.emplace_back(cell.second);
+    }
+}
+
+Instruction
+Create::compile_self(Stash &) const
+{
+    return Instruction(op_tensor_create, wrap_param<Create>(*this));
+}
+
+void
+Create::visit_children(vespalib::ObjectVisitor &visitor) const
+{
+    for (const auto &cell: _spec) {
+        ::visit(visitor, ::vespalib::eval::as_string(cell.first), cell.second.get());
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 Instruction
 Rename::compile_self(Stash &stash) const
 {
@@ -334,6 +370,10 @@ const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &s
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash) {
     ValueType result_type = ValueType::concat(lhs.result_type(), rhs.result_type(), dimension);
     return stash.create<Concat>(result_type, lhs, rhs, dimension);
+}
+
+const Node &create(const ValueType &type, const std::map<TensorSpec::Address,Node::CREF> &spec, Stash &stash) {
+    return stash.create<Create>(type, spec);
 }
 
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {

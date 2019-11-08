@@ -4,9 +4,12 @@
 
 #include "basic_nodes.h"
 #include "function.h"
-#include <vespa/vespalib/stllike/string.h>
-#include <map>
+#include "tensor_spec.h"
 #include "aggr.h"
+#include "string_stuff.h"
+#include <vespa/vespalib/stllike/string.h>
+#include <vector>
+#include <map>
 
 namespace vespalib {
 namespace eval {
@@ -206,6 +209,53 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_lhs));
         handler.handle(std::move(_rhs));
+    }
+};
+
+class TensorCreate : public Node {
+public:
+    using Spec = std::map<TensorSpec::Address, Node_UP>;
+private:
+    using Child = std::pair<TensorSpec::Address, Node_UP>;
+    using ChildList = std::vector<Child>;
+    ValueType _type;
+    ChildList _cells;
+public:
+    TensorCreate(ValueType type_in, Spec spec)
+        : _type(std::move(type_in)), _cells()
+    {
+        for (auto &cell: spec) {
+            _cells.emplace_back(cell.first, std::move(cell.second));
+        }
+    }
+    const ValueType &type() const { return _type; }
+    vespalib::string dump(DumpContext &ctx) const override {
+        vespalib::string str = _type.to_spec();
+        str += ":{";
+        CommaTracker child_list;
+        for (const Child &child: _cells) {
+            child_list.maybe_comma(str);
+            str += as_string(child.first);
+            str += ":";
+            str += child.second->dump(ctx);
+        }
+        str += "}";
+        return str;
+    }
+    void accept(NodeVisitor &visitor) const override ;
+    size_t num_children() const override { return _cells.size(); }
+    const Node &get_child(size_t idx) const override {
+        assert(idx < _cells.size());
+        return *_cells[idx].second;
+    }
+    const TensorSpec::Address &get_child_address(size_t idx) const {
+        assert(idx < _cells.size());
+        return _cells[idx].first;
+    }
+    void detach_children(NodeHandler &handler) override {
+        for (Child &child: _cells) {
+            handler.handle(std::move(child.second));
+        }
     }
 };
 

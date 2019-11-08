@@ -177,6 +177,7 @@ EvalSpec::add_tensor_operation_cases() {
     add_expression({}, "tensor(x[10],y[10])(x==y)");
     add_expression({"a","b"}, "concat(a,b,x)");
     add_expression({"a","b"}, "concat(a,b,y)");
+    add_expression({}, "tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}");
 }
 
 void
