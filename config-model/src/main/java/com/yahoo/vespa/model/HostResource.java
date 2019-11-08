@@ -185,32 +185,4 @@ public class HostResource implements Comparable<HostResource> {
             return this.getHostname().compareTo(other.getHostname());
     }
 
-    public static List<HostResource> pickHosts(List<HostResource> hostsSelectedByIndex, int count) {
-        return hostsSelectedByIndex.subList(0, Math.min(count, hostsSelectedByIndex.size()));
-    }
-
-    /**
-     * Picks hosts by some mixture of host name and index 
-     * (where the mix of one or the other is decided by the last parameter).
-     */
-    // TODO: Use pickHosts with 2 arguments (above) instead of this
-    public static List<HostResource> pickHosts(Collection<HostResource> hosts, int count, int targetHostsSelectedByIndex) {
-        targetHostsSelectedByIndex = Math.min(Math.min(targetHostsSelectedByIndex, count), hosts.size());
-
-        List<HostResource> hostsSortedByName = new ArrayList<>(hosts);
-        Collections.sort(hostsSortedByName);
-
-        List<HostResource> hostsSortedByIndex = new ArrayList<>(hosts);
-        hostsSortedByIndex.sort((a, b) -> a.comparePrimarilyByIndexTo(b));
-
-        hostsSortedByName = hostsSortedByName.subList(0, Math.min(count - targetHostsSelectedByIndex, hostsSortedByName.size()));
-        hostsSortedByIndex.removeAll(hostsSortedByName);
-        hostsSortedByIndex = hostsSortedByIndex.subList(0, Math.min(targetHostsSelectedByIndex, hostsSortedByIndex.size()));
-
-        List<HostResource> finalHosts = new ArrayList<>();
-        finalHosts.addAll(hostsSortedByName);
-        finalHosts.addAll(hostsSortedByIndex);
-        return finalHosts;
-    }
-
 }

@@ -691,9 +691,9 @@ public class ModelProvisioningTest {
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 1+3, model.getAdmin().getSlobroks().size());
-        assertEquals("node-1-3-9-01", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-9-02", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-9-10", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("node-1-3-9-10", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-9-08", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-9-07", model.getAdmin().getSlobroks().get(2).getHostName());
         assertEquals("Included in addition because it is retired", "node-1-3-9-09", model.getAdmin().getSlobroks().get(3).getHostName());
     }
 
@@ -711,16 +711,16 @@ public class ModelProvisioningTest {
         int numberOfHosts = 10;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true, "node-1-3-9-09", "node-1-3-9-08");
+        VespaModel model = tester.createModel(services, true, "node-1-3-9-01", "node-1-3-9-02");
         assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());
-        assertEquals("node-1-3-9-01", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-9-02", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-9-10", model.getAdmin().getSlobroks().get(2).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-9-08", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-9-09", model.getAdmin().getSlobroks().get(4).getHostName());
+        assertEquals("node-1-3-9-10", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-9-09", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-9-08", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-9-02", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-9-01", model.getAdmin().getSlobroks().get(4).getHostName());
     }
 
     @Test
@@ -746,13 +746,13 @@ public class ModelProvisioningTest {
         // Check slobroks clusters
         // ... from cluster default
         assertEquals("Includes retired node", 3+3, model.getAdmin().getSlobroks().size());
-        assertEquals("node-1-3-9-04", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-9-13", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-9-13", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-9-11", model.getAdmin().getSlobroks().get(1).getHostName());
         assertEquals("Included in addition because it is retired", "node-1-3-9-12", model.getAdmin().getSlobroks().get(2).getHostName());
         // ... from cluster bar
         assertEquals("node-1-3-9-01", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-9-02", model.getAdmin().getSlobroks().get(4).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-9-03", model.getAdmin().getSlobroks().get(5).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-9-03", model.getAdmin().getSlobroks().get(4).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-9-02", model.getAdmin().getSlobroks().get(5).getHostName());
     }
 
     @Test
