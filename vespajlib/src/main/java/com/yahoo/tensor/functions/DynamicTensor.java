@@ -46,21 +46,28 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
 
     TensorType type() { return type; }
 
+    @Override
+    public String toString(ToStringContext context) {
+        return type().toString() + ":" + contentToString(context);
+    }
+
+    abstract String contentToString(ToStringContext context);
+
     /** Creates a dynamic tensor function. The cell addresses must match the type. */
-    public static DynamicTensor from(TensorType type, Map<TensorAddress, Function<EvaluationContext<?> , Double>> cells) {
+    public static DynamicTensor from(TensorType type, Map<TensorAddress, ScalarFunction> cells) {
         return new MappedDynamicTensor(type, cells);
     }
 
     /** Creates a dynamic tensor function for a bound, indexed tensor */
-    public static DynamicTensor from(TensorType type, List<Function<EvaluationContext<?> , Double>> cells) {
+    public static DynamicTensor from(TensorType type, List<ScalarFunction> cells) {
         return new IndexedDynamicTensor(type, cells);
     }
 
     private static class MappedDynamicTensor extends DynamicTensor {
 
-        private final ImmutableMap<TensorAddress, Function<EvaluationContext<?> , Double>> cells;
+        private final ImmutableMap<TensorAddress, ScalarFunction> cells;
 
-        MappedDynamicTensor(TensorType type, Map<TensorAddress, Function<EvaluationContext<?> , Double>> cells) {
+        MappedDynamicTensor(TensorType type, Map<TensorAddress, ScalarFunction> cells) {
             super(type);
             this.cells = ImmutableMap.copyOf(cells);
         }
@@ -74,11 +81,7 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
         }
 
         @Override
-        public String toString(ToStringContext context) {
-            return type().toString() + ":" + contentToString();
-        }
-
-        private String contentToString() {
+        String contentToString(ToStringContext context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
                 return "{" + cells.values().iterator().next() + "}";
@@ -86,7 +89,7 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
 
             StringBuilder b = new StringBuilder("{");
             for (var cell : cells.entrySet()) {
-                b.append(cell.getKey().toString(type())).append(":").append(cell.getValue());
+                b.append(cell.getKey().toString(type())).append(":").append(cell.getValue().toString(context));
                 b.append(",");
             }
             if (b.length() > 1)
@@ -100,9 +103,9 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
 
     private static class IndexedDynamicTensor extends DynamicTensor {
 
-        private final List<Function<EvaluationContext<?>, Double>> cells;
+        private final List<ScalarFunction> cells;
 
-        IndexedDynamicTensor(TensorType type, List<Function<EvaluationContext<?> , Double>> cells) {
+        IndexedDynamicTensor(TensorType type, List<ScalarFunction> cells) {
             super(type);
             if ( ! type.dimensions().stream().allMatch(d -> d.type() == TensorType.Dimension.Type.indexedBound))
                 throw new IllegalArgumentException("A dynamic tensor can only be created from a list if the type has " +
@@ -119,11 +122,7 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
         }
 
         @Override
-        public String toString(ToStringContext context) {
-            return type().toString() + ":" + contentToString();
-        }
-
-        private String contentToString() {
+        String contentToString(ToStringContext context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
                 return "{" + cells.get(0) + "}";
@@ -133,7 +132,7 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
             StringBuilder b = new StringBuilder("{");
             for (var cell : cells) {
                 indexes.next();
-                b.append(indexes.toAddress().toString(type())).append(":").append(cell);
+                b.append(indexes.toAddress().toString(type())).append(":").append(cell.toString(context));
                 b.append(",");
             }
             if (b.length() > 1)

@@ -66,4 +66,16 @@ search tensor {
 
   }
 
+  rank-profile profile6 {
+
+    first-phase {
+      expression: sum(tensor<float>(d0[1],x[2]):[[attribute(f6), sum(joinedtensors())]])
+    }
+
+    function joinedtensors() {
+        expression: tensor(i[10])(i) * attribute(f4)
+    }
+
+  }
+
 }

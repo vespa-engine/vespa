@@ -3,7 +3,6 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
-import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
@@ -74,7 +73,7 @@ public abstract class IntermediateOperation {
         if (function == null) {
             if (isConstant()) {
                 ExpressionNode constant = new ReferenceNode(Reference.simple("constant", vespaName()));
-                function = new TensorFunctionNode.TensorFunctionExpressionNode(constant);
+                function = new TensorFunctionNode.ExpressionTensorFunction(constant);
             } else if (outputs.size() > 1) {
                 rankingExpressionFunction = lazyGetFunction();
                 function = new VariableTensor(rankingExpressionFunctionName(), type.type());

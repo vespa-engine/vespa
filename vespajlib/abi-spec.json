@@ -1606,6 +1606,7 @@
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
       "public static com.yahoo.tensor.functions.DynamicTensor from(com.yahoo.tensor.TensorType, java.util.Map)",
       "public static com.yahoo.tensor.functions.DynamicTensor from(com.yahoo.tensor.TensorType, java.util.List)"
     ],
@@ -1832,6 +1833,23 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.ScalarFunction": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.Function"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract java.lang.Double apply(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public bridge synthetic java.lang.Object apply(java.lang.Object)"
     ],
     "fields": []
   },

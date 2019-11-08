@@ -34,7 +34,7 @@ public class DynamicTensorTestCase {
         assertEquals("tensor(x{}):{{x:a}:5.0}", t2.toString());
     }
 
-    private static class Constant implements Function<EvaluationContext<?>, Double> {
+    private static class Constant implements ScalarFunction {
 
         private final double value;
 
