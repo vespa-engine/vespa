@@ -174,6 +174,18 @@ ValueType::is_dense() const
 }
 
 size_t
+ValueType::dense_subspace_size() const
+{
+    size_t size = 1;
+    for (const auto &dim : dimensions()) {
+        if (dim.is_indexed()) {
+            size *= dim.size;
+        }
+    }
+    return size;
+}
+
+size_t
 ValueType::dimension_index(const vespalib::string &name) const {
     return my_dimension_index(_dimensions, name);
 }
