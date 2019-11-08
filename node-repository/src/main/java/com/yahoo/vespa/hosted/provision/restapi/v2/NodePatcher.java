@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.io.IOUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
@@ -159,6 +160,8 @@ public class NodePatcher {
                     return node.withoutModelName();
                 }
                 return node.withModelName(asString(value));
+            case "requiredDiskSpeed":
+                return patchRequiredDiskSpeed(asString(value));
             default :
                 throw new IllegalArgumentException("Could not apply field '" + name + "' on a node: No such modifiable field");
         }
@@ -196,6 +199,15 @@ public class NodePatcher {
         }
 
         return strings;
+    }
+
+    private Node patchRequiredDiskSpeed(String value) {
+        Optional<Allocation> allocation = node.allocation();
+        if (allocation.isPresent())
+            return node.with(allocation.get().withRequestedResources(
+                    allocation.get().requestedResources().withDiskSpeed(NodeResources.DiskSpeed.valueOf(value))));
+        else
+            throw new IllegalArgumentException("Node is not allocated");
     }
     
     private Node patchCurrentRestartGeneration(Long value) {
