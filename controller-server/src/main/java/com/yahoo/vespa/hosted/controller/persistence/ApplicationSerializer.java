@@ -179,7 +179,7 @@ public class ApplicationSerializer {
         application.projectId().ifPresent(projectId -> root.setLong(projectIdField, projectId));
         application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
-        root.setBool(builtInternallyField, application.internal());
+        root.setBool(builtInternallyField, true); // TODO jonmv: remove when the change with this comment has deployed.
         toSlime(application.change(), root, deployingField);
         toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
@@ -369,11 +369,10 @@ public class ApplicationSerializer {
         List<Instance> instances = instancesFromSlime(id, deploymentSpec, root.field(instancesField));
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
-        boolean builtInternally = root.field(builtInternallyField).asBool();
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
-                               deployKeys, projectId, builtInternally, latestVersion, instances);
+                               deployKeys, projectId, latestVersion, instances);
     }
 
     private Optional<ApplicationVersion> latestVersionFromSlime(Inspector latestVersionObject) {

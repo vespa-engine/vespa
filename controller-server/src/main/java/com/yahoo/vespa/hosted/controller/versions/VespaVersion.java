@@ -45,9 +45,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
 
     public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
         // 'production on this': All deployment jobs upgrading to this version have completed without failure
-        ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications())
-                                                          .notUpgradingTo(statistics.version())
-                                                          .notFailingUpgrade();
+        ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications()).not().upgradingTo(statistics.version()).not().failingUpgrade();
         ApplicationList failingOnThis = ApplicationList.from(statistics.failing(), controller.applications());
         ApplicationList all = ApplicationList.from(controller.applications().asList())
                                              .withProductionDeployment();
@@ -162,8 +160,8 @@ public class VespaVersion implements Comparable<VespaVersion> {
     private static boolean nonCanaryApplicationsBroken(Version version,
                                                        ApplicationList failingOnThis,
                                                        ApplicationList productionOnThis) {
-        ApplicationList failingNonCanaries = failingOnThis.without(UpgradePolicy.canary).startedFailingOn(version);
-        ApplicationList productionNonCanaries = productionOnThis.without(UpgradePolicy.canary);
+        ApplicationList failingNonCanaries = failingOnThis.not().with(UpgradePolicy.canary).startedFailingOn(version);
+        ApplicationList productionNonCanaries = productionOnThis.not().with(UpgradePolicy.canary);
 
         if (productionNonCanaries.size() + failingNonCanaries.size() == 0) return false;
 

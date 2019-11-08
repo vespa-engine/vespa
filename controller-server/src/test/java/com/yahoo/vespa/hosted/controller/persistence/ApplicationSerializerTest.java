@@ -151,7 +151,6 @@ public class ApplicationSerializerTest {
                                                new ApplicationMetrics(0.5, 0.9),
                                                Set.of(publicKey, otherPublicKey),
                                                projectId,
-                                               true,
                                                Optional.of(applicationVersion1),
                                                instances);
 
@@ -165,7 +164,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());
 
         assertEquals(original.projectId(), serialized.projectId());
-        assertEquals(original.internal(), serialized.internal());
         assertEquals(original.deploymentIssueId(), serialized.deploymentIssueId());
 
         assertEquals(0, serialized.require(id3.instance()).deployments().size());

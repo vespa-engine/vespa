@@ -12,6 +12,7 @@ import com.yahoo.config.provision.zone.ZoneId;
  */
 public interface ArtifactRepository {
 
+    // TODO unused, remove
     /** Returns the tenant application package of the given version. */
     byte[] getApplicationPackage(ApplicationId application, String applicationVersion);
 

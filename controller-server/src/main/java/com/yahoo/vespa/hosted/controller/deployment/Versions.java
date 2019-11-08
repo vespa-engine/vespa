@@ -80,11 +80,6 @@ public class Versions {
                targetApplication.equals(versions.targetApplication());
     }
 
-    public boolean targetsMatch(JobStatus.JobRun jobRun) {
-        return targetPlatform.equals(jobRun.platform()) &&
-               targetApplication.equals(jobRun.application());
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

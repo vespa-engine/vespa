@@ -22,10 +22,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevisi
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
+import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -77,11 +77,12 @@ class JobControllerApiHandlerHelper {
         Instance instance = application.require(id.instance());
         Change change = application.change();
         DeploymentSteps steps = new DeploymentSteps(application.deploymentSpec().requireInstance(id.instance()), controller::system);
+        Map<JobType, JobStatus> status = controller.jobController().deploymentStatus(application).instanceJobs(id.instance());
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
         Map<JobType, Versions> pendingProduction =
                 steps.productionJobs().stream()
-                     .filter(type -> ! controller.applications().deploymentTrigger().isComplete(change, change, instance, type))
+                     .filter(type -> ! controller.applications().deploymentTrigger().isComplete(change, change, instance, type, status.get(type)))
                      .collect(Collectors.toMap(type -> type,
                                                type -> Versions.from(change,
                                                                      application,
@@ -102,8 +103,8 @@ class JobControllerApiHandlerHelper {
 
         Cursor lastVersionsObject = responseObject.setObject("lastVersions");
         if (application.latestVersion().isPresent()) {
-            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, instance, change, steps);
-            lastApplicationToSlime(lastVersionsObject.setObject("application"), application, instance, change, steps, controller);
+            lastPlatformToSlime(lastVersionsObject.setObject("platform"), controller, application, instance, status, change, steps);
+            lastApplicationToSlime(lastVersionsObject.setObject("application"), application, instance, status, change, steps, controller);
         }
 
         Cursor deployingObject = responseObject.setObject("deploying");
@@ -125,6 +126,7 @@ class JobControllerApiHandlerHelper {
                                       pendingProduction,
                                       running,
                                       type,
+                                      status.get(type),
                                       deployment);
             });
         });
@@ -135,6 +137,7 @@ class JobControllerApiHandlerHelper {
                            controller,
                            application,
                            instance,
+                           status,
                            type,
                            steps,
                            pendingProduction,
@@ -158,7 +161,7 @@ class JobControllerApiHandlerHelper {
         return new SlimeJsonResponse(slime);
     }
 
-    private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Application application, Instance instance, Change change, DeploymentSteps steps) {
+    private static void lastPlatformToSlime(Cursor lastPlatformObject, Controller controller, Application application, Instance instance, Map<JobType, JobStatus> status, Change change, DeploymentSteps steps) {
         VespaVersion lastVespa = controller.versionStatus().version(controller.systemVersion());
         VespaVersion.Confidence targetConfidence = Map.of(defaultPolicy, normal,
                                                           conservative, high)
@@ -171,7 +174,7 @@ class JobControllerApiHandlerHelper {
         Version lastPlatform = lastVespa.versionNumber();
         lastPlatformObject.setString("platform", lastPlatform.toString());
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
-        long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type)).count();
+        long completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type, status.get(type))).count();
         if (Optional.of(lastPlatform).equals(change.platform()))
             lastPlatformObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
@@ -191,12 +194,12 @@ class JobControllerApiHandlerHelper {
                                                  : "Waiting for " + application.change() + " to complete");
     }
 
-    private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Instance instance, Change change, DeploymentSteps steps, Controller controller) {
+    private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Instance instance, Map<JobType, JobStatus> status, Change change, DeploymentSteps steps, Controller controller) {
         long completed;
         ApplicationVersion lastApplication = application.latestVersion().get();
         applicationVersionToSlime(lastApplicationObject.setObject("application"), lastApplication);
         lastApplicationObject.setLong("at", lastApplication.buildTime().get().toEpochMilli());
-        completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type)).count();
+        completed = steps.productionJobs().stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type, status.get(type))).count();
         if (Optional.of(lastApplication).equals(change.application()))
             lastApplicationObject.setString("deploying", completed + " of " + steps.productionJobs().size() + " complete");
         else if (completed == steps.productionJobs().size())
@@ -215,32 +218,32 @@ class JobControllerApiHandlerHelper {
 
     private static void deploymentToSlime(Cursor deploymentObject, Instance instance, Change change,
                                           Map<JobType, Versions> pendingProduction, Map<JobType, Run> running,
-                                          JobType type, Deployment deployment) {
+                                          JobType type, JobStatus jobStatus, Deployment deployment) {
         deploymentObject.setLong("at", deployment.at().toEpochMilli());
         deploymentObject.setString("platform", deployment.version().toString());
         applicationVersionToSlime(deploymentObject.setObject("application"), deployment.applicationVersion());
-        deploymentObject.setBool("verified", instance.deploymentJobs().statusOf(type)
-                                                     .flatMap(JobStatus::lastSuccess)
-                                                     .filter(run ->    run.platform().equals(deployment.version())
-                                                                       && run.application().equals(deployment.applicationVersion()))
-                                                     .isPresent());
+        deploymentObject.setBool("verified", jobStatus.lastSuccess()
+                                                      .map(Run::versions)
+                                                      .filter(run ->    run.targetPlatform().equals(deployment.version())
+                                                                     && run.targetApplication().equals(deployment.applicationVersion()))
+                                                      .isPresent());
         if (running.containsKey(type))
             deploymentObject.setString("status", running.get(type).steps().get(deployReal) == unfinished ? "deploying" : "verifying");
         else if (change.hasTargets())
             deploymentObject.setString("status", pendingProduction.containsKey(type) ? "pending" : "completed");
     }
 
-    private static void jobTypeToSlime(Cursor jobObject, Controller controller, Application application, Instance instance, JobType type, DeploymentSteps steps,
+    private static void jobTypeToSlime(Cursor jobObject, Controller controller, Application application, Instance instance, Map<JobType, JobStatus> status, JobType type, DeploymentSteps steps,
                                        Map<JobType, Versions> pendingProduction, Map<JobType, Run> running, URI baseUriForJob) {
-        instance.deploymentJobs().statusOf(type).ifPresent(status -> status.pausedUntil().ifPresent(until ->
+        instance.deploymentJobs().statusOf(type).ifPresent(jobStatus -> jobStatus.pausedUntil().ifPresent(until ->
                 jobObject.setLong("pausedUntil", until)));
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
         if (type.isTest()) {
             Deque<List<JobType>> pending = new ArrayDeque<>();
             pendingProduction.entrySet().stream()
-                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().testedIn(instance, type, typeVersions.getValue()))
-                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().alreadyTriggered(instance, typeVersions.getValue()))
+                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().testedIn(type, status.get(type), typeVersions.getValue()))
+                             .filter(typeVersions -> ! controller.applications().deploymentTrigger().alreadyTriggered(status, typeVersions.getValue()))
                              .collect(groupingBy(Map.Entry::getValue,
                                                  LinkedHashMap::new,
                                                  Collectors.mapping(Map.Entry::getKey, toList())))
@@ -254,7 +257,7 @@ class JobControllerApiHandlerHelper {
                 Cursor runObject = runArray.addObject();
                 runObject.setString("status", "pending");
                 versionsToSlime(runObject, versions);
-                if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, instance, application.deploymentSpec()))
+                if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, status.get(type), versions, instance, application.deploymentSpec()))
                     runObject.setObject("tasks").setString("cooldown", "failed");
                 else
                     runObject.setObject("tasks").setString("capacity", "running");
@@ -270,18 +273,18 @@ class JobControllerApiHandlerHelper {
             runObject.setString("status", "pending");
             versionsToSlime(runObject, pendingProduction.get(type));
             Cursor pendingObject = runObject.setObject("tasks");
-            if (instance.deploymentJobs().statusOf(type).map(status -> status.pausedUntil().isPresent()).orElse(false))
+            if (instance.deploymentJobs().statusOf(type).map(jobStatus -> jobStatus.pausedUntil().isPresent()).orElse(false))
                 pendingObject.setString("paused", "pending");
-            else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, versions, instance, application.deploymentSpec()))
+            else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, status.get(type), versions, instance, application.deploymentSpec()))
                 pendingObject.setString("cooldown", "failed");
             else {
                 int pending = 0;
-                if ( ! controller.applications().deploymentTrigger().alreadyTriggered(instance, versions)) {
-                    if ( ! controller.applications().deploymentTrigger().testedIn(instance, systemTest, versions)) {
+                if ( ! controller.applications().deploymentTrigger().alreadyTriggered(status, versions)) {
+                    if ( ! controller.applications().deploymentTrigger().testedIn(systemTest, status.get(systemTest), versions)) {
                         pending++;
                         pendingObject.setString(shortNameOf(systemTest, controller.system()), statusOf(controller, instance.id(), systemTest, versions));
                     }
-                    if ( ! controller.applications().deploymentTrigger().testedIn(instance, stagingTest, versions)) {
+                    if ( ! controller.applications().deploymentTrigger().testedIn(stagingTest, status.get(stagingTest), versions)) {
                         pending++;
                         pendingObject.setString(shortNameOf(stagingTest, controller.system()), statusOf(controller, instance.id(), stagingTest, versions));
                     }
@@ -459,15 +462,6 @@ class JobControllerApiHandlerHelper {
         }
         else
             responseObject.setString("message", "Nothing to abort.");
-        return new SlimeJsonResponse(slime);
-    }
-
-    /** Unregisters the application from the internal deployment pipeline. */
-    static HttpResponse unregisterResponse(JobController jobs, String tenantName, String applicationName) {
-        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
-        jobs.unregister(id);
-        Slime slime = new Slime();
-        slime.setObject().setString("message", "Unregistered '" + id + "' from internal deployment pipeline.");
         return new SlimeJsonResponse(slime);
     }
 

@@ -45,7 +45,6 @@ public class Application {
     private final ValidationOverrides validationOverrides;
     private final Optional<ApplicationVersion> latestVersion;
     private final OptionalLong projectId;
-    private final boolean internal;
     private final Change change;
     private final Change outstandingChange;
     private final Optional<IssueId> deploymentIssueId;
@@ -60,14 +59,14 @@ public class Application {
     public Application(TenantAndApplicationId id, Instant now) {
         this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(), Change.empty(),
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), false, Optional.empty(), List.of());
+             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), Optional.empty(), List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
-                       boolean internal, Optional<ApplicationVersion> latestVersion, Collection<Instance> instances) {
+                       Optional<ApplicationVersion> latestVersion, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -81,7 +80,6 @@ public class Application {
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
-        this.internal = internal;
         this.latestVersion = requireNotUnknown(latestVersion);
         this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
     }
@@ -101,10 +99,6 @@ public class Application {
 
     /** Returns the last submitted version of this application. */
     public Optional<ApplicationVersion> latestVersion() { return latestVersion; }
-
-    /** Returns whether this application is run on the internal deployment pipeline. */
-    // TODO jonmv: Remove, as will be always true.
-    public boolean internal() { return internal; }
 
     /**
      * Returns the last deployed validation overrides of this application,

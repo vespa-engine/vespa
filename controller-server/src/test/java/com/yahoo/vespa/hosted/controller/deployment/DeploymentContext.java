@@ -357,7 +357,6 @@ public class DeploymentContext {
 
     /** Deploy default application package, start a run for that change and return its ID */
     public RunId newRun(JobType type) {
-        assertFalse(application().internal()); // Use this only once per test.
         submit();
         readyJobsTrigger.maintain();
 

@@ -9,7 +9,6 @@
     "gitCommit": "commit1"
   },
   "projectId": 1000,
-  "deployedInternally": true,
   "deploymentJobs": [
     {
       "type": "system-test",

@@ -1,8 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -10,7 +10,6 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
@@ -38,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedMap;
@@ -54,6 +54,8 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * A singleton owned by the controller, which contains the state and methods for controlling deployment jobs.
@@ -193,7 +195,6 @@ public class JobController {
     /** Returns a list of all applications which have registered. */
     public List<TenantAndApplicationId> applications() {
         return copyOf(controller.applications().asList().stream()
-                                .filter(Application::internal)
                                 .map(Application::id)
                                 .iterator());
     }
@@ -201,7 +202,6 @@ public class JobController {
     /** Returns a list of all instances of applications which have registered. */
     public List<ApplicationId> instances() {
         return copyOf(controller.applications().asList().stream()
-                                .filter(Application::internal)
                                 .flatMap(application -> application.instances().values().stream())
                                 .map(Instance::id)
                                 .iterator());
@@ -215,10 +215,15 @@ public class JobController {
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
-    public Map<RunId, Run> runs(ApplicationId id, JobType type) {
-        SortedMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
+    public NavigableMap<RunId, Run> runs(JobId id) {
+        return runs(id.application(), id.type());
+    }
+
+    /** Returns an immutable map of all known runs for the given application and job type. */
+    public NavigableMap<RunId, Run> runs(ApplicationId id, JobType type) {
+        NavigableMap<RunId, Run> runs = curator.readHistoricRuns(id, type);
         last(id, type).ifPresent(run -> runs.put(run.id(), run));
-        return ImmutableMap.copyOf(runs);
+        return Collections.unmodifiableNavigableMap(runs);
     }
 
     /** Returns the run with the given id, if it exists. */
@@ -238,6 +243,21 @@ public class JobController {
         return curator.readLastRun(id, type);
     }
 
+    /** Returns the last completed of the given job. */
+    public Optional<Run> lastCompleted(JobId id) {
+        return JobStatus.lastCompleted(runs(id));
+    }
+
+    /** Returns the first failing of the given job. */
+    public Optional<Run> firstFailing(JobId id) {
+        return JobStatus.firstFailing(runs(id));
+    }
+
+    /** Returns the last success of the given job. */
+    public Optional<Run> lastSuccess(JobId id) {
+        return JobStatus.lastSuccess(runs(id));
+    }
+
     /** Returns the run with the given id, provided it is still active. */
     public Optional<Run> active(RunId id) {
         return last(id.application(), id.type())
@@ -247,9 +267,9 @@ public class JobController {
 
     /** Returns a list of all active runs. */
     public List<Run> active() {
-        return copyOf(applications().stream()
-                                    .flatMap(id -> active(id).stream())
-                                    .iterator());
+        return controller.applications().idList().stream()
+                         .flatMap(id -> active(id).stream())
+                         .collect(toUnmodifiableList());
     }
 
     /** Returns a list of all active runs for the given instance. */
@@ -260,6 +280,22 @@ public class JobController {
                                                        .flatMap(Optional::stream)
                                                        .filter(run -> ! run.hasEnded()))
                                 .iterator());
+    }
+
+    /** Returns the job status of the given job, possibly empty. */
+    public JobStatus jobStatus(JobId id) {
+        return new JobStatus(id, runs(id));
+    }
+
+    /** Returns the job status of all declared jobs for the given instance id, indexed by job type. */
+    public DeploymentStatus deploymentStatus(Application application) {
+        return new DeploymentStatus(application,
+                                    application.deploymentSpec().instances().stream()
+                                               .flatMap(spec -> new DeploymentSteps(spec, controller::system)
+                                                       .jobs().stream()
+                                                       .map(type -> jobStatus(new JobId(application.id().instance(spec.name()), type))))
+                                               .collect(toUnmodifiableMap(status -> status.id(),
+                                                                          status -> status)));
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
@@ -274,11 +310,19 @@ public class JobController {
             locked(id.application(), id.type(), runs -> {
                 runs.put(run.id(), finishedRun);
                 long last = id.number();
+                long successes = runs.values().stream().filter(old -> old.status() == RunStatus.success).count();
                 var oldEntries = runs.entrySet().iterator();
                 for (var old = oldEntries.next();
                         old.getKey().number() <= last - historyLength
                      || old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge));
                      old = oldEntries.next()) {
+
+                    // Make sure we keep the last success and the first failing
+                    if (successes == 1 && old.getValue().status() == RunStatus.success) {
+                        oldEntries.next();
+                        continue;
+                    }
+
                     logs.delete(old.getKey());
                     oldEntries.remove();
                 }
@@ -300,9 +344,6 @@ public class JobController {
                                      ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockApplicationOrThrow(id, application -> {
-            if ( ! application.get().internal())
-                application = registered(application);
-
             long run = 1 + application.get().latestVersion()
                                       .map(latestVersion -> latestVersion.buildNumber().getAsLong())
                                       .orElse(0L);
@@ -330,31 +371,12 @@ public class JobController {
         return version.get();
     }
 
-    /** Registers the given application, copying necessary application packages, and returns the modified version. */
-    private LockedApplication registered(LockedApplication application) {
-        for (Instance instance : application.get().instances().values()) {
-            // TODO jvenstad: Remove when everyone has migrated off SDv3 pipelines. Real soon now!
-            // Copy all current packages to the new application store
-            instance.productionDeployments().values().stream()
-                    .map(Deployment::applicationVersion)
-                    .distinct()
-                    .forEach(appVersion -> {
-                        byte[] content = controller.applications().artifacts().getApplicationPackage(instance.id(), appVersion.id());
-                        controller.applications().applicationStore().put(instance.id().tenant(), instance.id().application(), appVersion, content);
-                    });
-        }
-        return application.withBuiltInternally(true);
-    }
-
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
     public void start(ApplicationId id, JobType type, Versions versions) {
         if ( ! type.environment().isManuallyDeployed() && versions.targetApplication().isUnknown())
             throw new IllegalArgumentException("Target application must be a valid reference.");
 
         controller.applications().lockApplicationIfPresent(TenantAndApplicationId.from(id), application -> {
-            if ( ! application.get().internal())
-                throw new IllegalArgumentException(id + " is not built here!");
-
             locked(id, type, __ -> {
                 Optional<Run> last = last(id, type);
                 if (last.flatMap(run -> active(run.id())).isPresent())
@@ -376,9 +398,6 @@ public class JobController {
             controller.applications().createApplication(TenantAndApplicationId.from(id), Optional.empty());
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            if ( ! application.get().internal())
-                application = registered(application);
-
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = application.withNewInstance(id.instance());
 
@@ -411,15 +430,6 @@ public class JobController {
                 throw new RuntimeException(e);
             }
         }
-    }
-
-    /** Unregisters the given application and makes all associated data eligible for garbage collection. */
-    public void unregister(TenantAndApplicationId id) {
-        controller.applications().lockApplicationIfPresent(id, application -> {
-            controller.applications().store(application.withBuiltInternally(false));
-            for (InstanceName instance : application.get().instances().keySet())
-                jobs(id.instance(instance)).forEach(type -> last(id.instance(instance), type).ifPresent(last -> abort(last.id())));
-        });
     }
 
     /** Deletes run data and tester deployments for applications which are unknown, or no longer built internally. */

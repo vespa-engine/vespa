@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4;
 
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.JobStatusList;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ApplicationReference;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.InstancesReply;
@@ -42,8 +41,4 @@ public interface ApplicationResource {
     @GET
     InstancesReply listInstances(@PathParam("applicationId") ApplicationId applicationId);
     
-    @Path("{applicationId}/deployment")
-    @GET
-    JobStatusList deployment(@PathParam("applicationId") ApplicationId applicationId);
-
 }

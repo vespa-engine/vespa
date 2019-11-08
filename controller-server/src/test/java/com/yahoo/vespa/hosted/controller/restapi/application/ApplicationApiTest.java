@@ -696,12 +696,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Aborting run 2 of staging-test for tenant1.application1.instance1\"}");
 
-        // TODO jonmv: Remove, as this is the only option now.
-        // DELETE submission to unsubscribe from continuous deployment.
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", DELETE)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"message\":\"Unregistered 'tenant1.application1' from internal deployment pipeline.\"}");
-
         // PUT (create) the authenticated user
         byte[] data = new byte[0];
         tester.assertResponse(request("/application/v4/user?user=new_user&domain=by", PUT)

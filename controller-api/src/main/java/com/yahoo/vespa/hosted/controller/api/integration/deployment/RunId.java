@@ -6,7 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import java.util.Objects;
 
 /**
- * Immutable ID of a job run by a {@link com.yahoo.vespa.hosted.controller.api.integration.BuildService}.
+ * Immutable ID of a deployment job.
  *
  * @author jonmv
  */
