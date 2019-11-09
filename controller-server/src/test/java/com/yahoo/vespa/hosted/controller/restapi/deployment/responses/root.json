@@ -18,15 +18,6 @@
           "upgradePolicy": "default",
           "productionJobs": 1,
           "productionSuccesses": 1
-        },
-        {
-          "tenant": "tenant2",
-          "application": "application2",
-          "instance": "i2",
-          "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
-          "upgradePolicy": "default",
-          "productionJobs": 1,
-          "productionSuccesses": 1
         }
       ],
       "deployingApplications": []
@@ -40,10 +31,10 @@
       "systemVersion": true,
       "configServers": [
         {
-          "hostname": "config1.test"
+          "hostname":"config1.test"
         },
         {
-          "hostname": "config2.test"
+          "hostname":"config2.test"
         }
       ],
       "failingApplications": [
@@ -60,7 +51,7 @@
         {
           "tenant": "tenant2",
           "application": "application2",
-          "instance": "i1",
+          "instance": "default",
           "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
           "upgradePolicy": "default",
           "productionJobs": 1,
@@ -75,14 +66,6 @@
           "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
           "upgradePolicy": "default",
           "running": "staging-test"
-        },
-        {
-          "tenant": "tenant2",
-          "application": "application2",
-          "instance": "i2",
-          "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
-          "upgradePolicy": "default",
-          "running": "system-test"
         }
       ]
     }
