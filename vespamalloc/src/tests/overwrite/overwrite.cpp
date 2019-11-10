@@ -3,6 +3,13 @@
 
 using namespace vespalib;
 
+void check_ptr_real(void *ptr)
+{
+    (void) ptr;
+}
+
+void (*check_ptr)(void *ptr) = check_ptr_real;
+
 class Test : public TestApp
 {
 public:
@@ -30,6 +37,7 @@ void Test::testFillValue(char *a)
     for (size_t i(0); i < 100; i++) {
         char *d = new char[256];
         memset(d, 0x77, 256);
+        check_ptr(d);
         delete [] d;
         EXPECT_EQUAL((int)d[0], 0x66);
         EXPECT_EQUAL((int)d[1], 0x66);
@@ -44,6 +52,7 @@ void Test::testFillValue(char *a)
 
     // Verify overwrite detection in place after cleaning up.
     for (size_t i(0); i < sizeof(aa)/sizeof(aa[0]); i++) {
+        check_ptr(aa[i]);
         delete [] aa[i];
         EXPECT_EQUAL((int)a[0], 0x66);
         EXPECT_EQUAL((int)a[1], 0x66);
@@ -55,6 +64,7 @@ void Test::verifyPreWriteDetection()
 {
     char * a = new char[8];
     *(a-1) = 0;
+    check_ptr(a);
     delete [] a;
 }
 
@@ -62,6 +72,7 @@ void Test::verifyPostWriteDetection()
 {
     char * a = new char[8];
     a[8] = 0;
+    check_ptr(a);
     delete [] a;
 }
 
@@ -69,9 +80,11 @@ void Test::verifyWriteAfterFreeDetection()
 {
     // Make sure that enough blocks of memory is allocated and freed.
     char * a = new char[256];
+    check_ptr(a);
     delete [] a;
     for (size_t i(0); i < 100; i++) {
         char *d = new char[256];
+        check_ptr(d);
         delete [] d;
     }
     // Write freed memory.
@@ -85,6 +98,7 @@ void Test::verifyWriteAfterFreeDetection()
 
     // Clean up.
     for (size_t i(0); i < sizeof(aa)/sizeof(aa[0]); i++) {
+        check_ptr(aa[i]);
         delete [] aa[i];
     }
 }
@@ -101,6 +115,7 @@ int Test::Main()
     EXPECT_EQUAL((int)a[255], 0x77);
     char * b = a;
     EXPECT_EQUAL(a, b);
+    check_ptr(a);
     delete [] a;
     EXPECT_EQUAL(a, b);
 
