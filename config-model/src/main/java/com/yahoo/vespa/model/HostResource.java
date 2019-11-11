@@ -40,10 +40,6 @@ public class HostResource implements Comparable<HostResource> {
 
     private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
 
-    // Empty for self-hosted
-    private Optional<Flavor> flavor = Optional.empty();
-    private Optional<NodeResources> requestedResources = Optional.empty();
-
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
@@ -111,17 +107,11 @@ public class HostResource implements Comparable<HostResource> {
                 .collect(Collectors.toSet()));
     }
 
-    public void setFlavor(Optional<Flavor> flavor) { this.flavor = flavor; }
-
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
-    public Optional<Flavor> getFlavor() { return flavor; }
-
-    public void setRequestedResources(NodeResources resources) {
-        this.requestedResources = Optional.of(resources);
-    }
+    public Optional<Flavor> getFlavor() { return spec.flavor(); }
 
     /** Returns the ressource requested which led to these host resources being allocated, if known */
-    public Optional<NodeResources> getRequestedResources() { return requestedResources; }
+    public Optional<NodeResources> getRequestedResources() { return spec.requestedResources(); }
 
     public void addClusterMembership(ClusterMembership clusterMembership) {
         if (clusterMembership != null)

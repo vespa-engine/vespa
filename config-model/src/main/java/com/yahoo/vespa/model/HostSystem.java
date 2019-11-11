@@ -128,12 +128,9 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = Host.createHost(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host, hostSpec);
-        hostResource.setFlavor(hostSpec.flavor());
-        hostSpec.requestedResources().ifPresent(resources -> hostResource.setRequestedResources(resources));
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostSpec.networkPorts().ifPresent(np -> hostResource.ports().addNetworkPorts(np));
         hostname2host.put(host.getHostname(), hostResource);
-        log.log(DEBUG, () -> "Added new host resource for " + host.getHostname() + " with flavor " + hostResource.getFlavor());
         return hostResource;
     }
 
