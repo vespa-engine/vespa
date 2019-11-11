@@ -36,17 +36,22 @@ public class DeploymentApiTest extends ControllerContainerTest {
         DeploymentTester deploymentTester = new DeploymentTester(new ControllerTester(tester));
         Version version = Version.fromString("5.0");
         deploymentTester.controllerTester().upgradeSystem(version);
+        ApplicationPackage multiInstancePackage = new ApplicationPackageBuilder()
+                .instances("i1,i2")
+                .region("us-west-1")
+                .build();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
                 .region("us-west-1")
                 .build();
 
         // 3 applications deploy on current system version
         var failingApp = deploymentTester.newDeploymentContext("tenant1", "application1", "default");
-        var productionApp = deploymentTester.newDeploymentContext("tenant2", "application2", "default");
+        var productionApp = deploymentTester.newDeploymentContext("tenant2", "application2", "i1");
+        var otherProductionApp = deploymentTester.newDeploymentContext("tenant2", "application2", "i2");
         var appWithoutDeployments = deploymentTester.newDeploymentContext("tenant3", "application3", "default");
         failingApp.submit(applicationPackage).deploy();
-        productionApp.submit(applicationPackage).deploy();
+        productionApp.submit(multiInstancePackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
+        otherProductionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
 
         // Deploy once so that job information is stored, then remove the deployment
         appWithoutDeployments.submit(applicationPackage).deploy();
@@ -59,7 +64,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         // Applications upgrade, 1/2 succeed
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
-        productionApp.deployPlatform(version);
+        productionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
         failingApp.runJob(JobType.systemTest).failDeployment(JobType.stagingTest);
         deploymentTester.triggerJobs();
 
