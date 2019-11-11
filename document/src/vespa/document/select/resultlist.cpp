@@ -67,27 +67,27 @@ ResultList::combineVariables(
         const fieldvalue::VariableMap& input) const
 {
     // First, verify that all variables are overlapping
-    for (fieldvalue::VariableMap::const_iterator iter = output.begin(); iter != output.end(); iter++) {
-        fieldvalue::VariableMap::const_iterator found(input.find(iter->first));
+    for (const auto & ovar : output) {
+        auto found(input.find(ovar.first));
 
         if (found != input.end()) {
-            if (!(found->second == iter->second)) {
+            if (!(found->second == ovar.second)) {
                 return false;
             }
         }
     }
 
-    for (fieldvalue::VariableMap::const_iterator iter = input.begin(); iter != input.end(); iter++) {
-        fieldvalue::VariableMap::const_iterator found(output.find(iter->first));
+    for (const auto & ivar : input) {
+        auto found(output.find(ivar.first));
         if (found != output.end()) {
-            if (!(found->second == iter->second)) {
+            if (!(found->second == ivar.second)) {
                 return false;
             }
         }
     }
     // Ok, variables are overlapping. Add all variables from input to output.
-    for (fieldvalue::VariableMap::const_iterator iter = input.begin(); iter != input.end(); iter++) {
-        output[iter->first] = iter->second;
+    for (const auto & ivar : input) {
+        output[ivar.first] = ivar.second;
     }
 
     return true;
