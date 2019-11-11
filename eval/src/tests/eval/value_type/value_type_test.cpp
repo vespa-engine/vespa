@@ -301,6 +301,20 @@ TEST("require that type-related predicate functions work as expected") {
     TEST_DO(verify_predicates(type("tensor<float>(x[5],y{})"), false, false, true, false, false));
 }
 
+TEST("require that dense subspace size calculation works as expected") {
+    EXPECT_EQUAL(type("error").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("double").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor()").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor(x{})").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor(x{},y{})").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor(x[5])").dense_subspace_size(), 5u);
+    EXPECT_EQUAL(type("tensor(x[5],y[10])").dense_subspace_size(), 50u);
+    EXPECT_EQUAL(type("tensor(x[5],y{})").dense_subspace_size(), 5u);
+    EXPECT_EQUAL(type("tensor<float>(x{})").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor<float>(x[5])").dense_subspace_size(), 5u);
+    EXPECT_EQUAL(type("tensor<float>(x[5],y{})").dense_subspace_size(), 5u);
+}
+
 TEST("require that dimension predicates work as expected") {
     ValueType::Dimension x("x");
     ValueType::Dimension y("y", 10);
