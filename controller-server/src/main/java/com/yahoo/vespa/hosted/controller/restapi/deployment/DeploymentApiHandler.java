@@ -23,6 +23,8 @@ import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
+import java.time.Instant;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -162,7 +164,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                       .not().failingBecause(outOfCapacity)
                       .lastCompleted().on(version)
                       .asList().stream()
-                      .min(comparing(job -> job.lastCompleted().get().at()));
+                      .min(Comparator.<JobStatus, Instant>comparing(job -> job.lastCompleted().get().at())
+                                   .thenComparing(job -> job.type()));
     }
 
     /** The number of production jobs for this application */
@@ -186,7 +189,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                       .upgrading()
                       .lastTriggered().on(version)
                       .asList().stream()
-                      .max(comparing(job -> job.lastTriggered().get().at()));
+                      .max(Comparator.<JobStatus, Instant>comparing(job -> job.lastCompleted().get().at())
+                                   .thenComparing(job -> job.type()));
     }
 
 }
