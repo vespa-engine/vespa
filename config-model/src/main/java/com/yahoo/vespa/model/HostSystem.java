@@ -182,9 +182,9 @@ public class HostSystem extends AbstractConfigProducer<Host> {
                                           Collections.emptyList(),
                                           host.getFlavor(),
                                           host.primaryClusterMembership(),
-                                          host.version(),
+                                          host.spec().version(),
                                           host.ports().networkPorts(),
-                                          host.getRequestedResources()))
+                                          host.spec().requestedResources()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 

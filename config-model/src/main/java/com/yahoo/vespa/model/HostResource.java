@@ -62,10 +62,9 @@ public class HostResource implements Comparable<HostResource> {
      */
     public Host getHost() { return host; }
 
-    /** Returns the current Vespa version running on this node, or null if not known */
-    public Optional<Version> version() { return spec.version(); }
-
     public HostPorts ports() { return hostPorts; }
+
+    public HostSpec spec() { return spec; }
 
     /**
      * Adds service and allocates resources for it.
@@ -109,9 +108,6 @@ public class HostResource implements Comparable<HostResource> {
 
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
     public Optional<Flavor> getFlavor() { return spec.flavor(); }
-
-    /** Returns the ressource requested which led to these host resources being allocated, if known */
-    public Optional<NodeResources> getRequestedResources() { return spec.requestedResources(); }
 
     public void addClusterMembership(ClusterMembership clusterMembership) {
         if (clusterMembership != null)

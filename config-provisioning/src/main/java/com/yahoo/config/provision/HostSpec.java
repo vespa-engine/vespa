@@ -70,8 +70,6 @@ public class HostSpec implements Comparable<HostSpec> {
                     Optional<ClusterMembership> membership, Optional<com.yahoo.component.Version> version,
                     Optional<NetworkPorts> networkPorts, Optional<NodeResources> requestedResources) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
-
-
         this.hostname = hostname;
         this.aliases = List.copyOf(aliases);
         this.flavor = flavor;
