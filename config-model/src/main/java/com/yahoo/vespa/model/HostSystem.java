@@ -127,7 +127,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = Host.createHost(this, hostSpec.hostname());
-        HostResource hostResource = new HostResource(host, hostSpec.version());
+        HostResource hostResource = new HostResource(host, hostSpec);
         hostResource.setFlavor(hostSpec.flavor());
         hostSpec.requestedResources().ifPresent(resources -> hostResource.setRequestedResources(resources));
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
@@ -147,13 +147,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     public void dumpPortAllocations() {
         for (HostResource hr : getHosts()) {
             hr.ports().flushPortReservations();
-/*
-            System.out.println("port allocations for: "+hr.getHostname());
-            NetworkPorts ports = hr.networkPorts().get();
-            for (NetworkPorts.Allocation allocation: ports.allocations()) {
-                System.out.println("port="+allocation.port+" [type="+allocation.serviceType+", cfgId="+allocation.configId+", suffix="+allocation.portSuffix+"]");
-            }
-*/
         }
     }
 

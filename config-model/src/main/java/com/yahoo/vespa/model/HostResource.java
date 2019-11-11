@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 
 import java.util.ArrayList;
@@ -28,9 +29,9 @@ import java.util.stream.Collectors;
  */
 public class HostResource implements Comparable<HostResource> {
 
-    private final HostPorts hostPorts;
+    private final HostSpec spec;
 
-    public HostPorts ports() { return hostPorts; }
+    private final HostPorts hostPorts;
 
     private final Host host;
 
@@ -43,22 +44,19 @@ public class HostResource implements Comparable<HostResource> {
     private Optional<Flavor> flavor = Optional.empty();
     private Optional<NodeResources> requestedResources = Optional.empty();
 
-    /** The current Vespa version running on this node, or empty if not known */
-    private final Optional<Version> version;
-
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
-        this(host, Optional.empty());
+        this(host, new HostSpec(host.getHostname(), Optional.empty()));
     }
 
-    public HostResource(Host host, Optional<Version> version) {
-        this.hostPorts = new HostPorts(host.getHostname());
+    public HostResource(Host host, HostSpec spec) {
         this.host = host;
-        this.version = version;
+        this.spec = spec;
+        this.hostPorts = new HostPorts(host.getHostname());
     }
 
     /**
@@ -69,7 +67,9 @@ public class HostResource implements Comparable<HostResource> {
     public Host getHost() { return host; }
 
     /** Returns the current Vespa version running on this node, or null if not known */
-    public Optional<Version> version() { return version; }
+    public Optional<Version> version() { return spec.version(); }
+
+    public HostPorts ports() { return hostPorts; }
 
     /**
      * Adds service and allocates resources for it.
