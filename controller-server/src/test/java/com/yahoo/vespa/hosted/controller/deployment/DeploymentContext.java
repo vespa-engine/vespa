@@ -337,7 +337,7 @@ public class DeploymentContext {
     }
 
     /** Simulate convergence time out in given job */
-    public void timeOutConvergence(JobType type) {
+    public DeploymentContext timeOutConvergence(JobType type) {
         var job = jobId(type);
         triggerJobs();
         RunId id = currentRun(job).id();
@@ -348,6 +348,7 @@ public class DeploymentContext {
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
         doTeardown(job);
+        return this;
     }
 
     /** Sets a single endpoint in the routing layer for the instance in this */

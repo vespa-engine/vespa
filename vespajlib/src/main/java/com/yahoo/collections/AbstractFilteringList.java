@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -48,6 +49,11 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     public ListType first(int n) {
         n = Math.min(n, items.size());
         return constructor.apply(items.subList(negate ? n : 0, negate ? items.size() : n), false);
+    }
+
+    /** Returns the first item in this list, or empty if there is none. */
+    public Optional<Type> first() {
+        return items.stream().findFirst();
     }
 
     /** Returns the subset of items in this which are (not) present in the other list. */

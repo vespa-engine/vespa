@@ -578,7 +578,6 @@ public class UpgraderTest {
         // us-central-1 succeeds upgrade to 6.3, with the revision, but us-east-3 wants to proceed with only the revision change.
         app.runJob(productionUsCentral1);
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
-        app.runJob(systemTest).runJob(stagingTest); // Test last changes outside prod.
         assertEquals(List.of(), tester.jobs().active());
 
         assertEquals(new Version("6.3"), app.deployment(ZoneId.from("prod", "us-central-1")).version());
@@ -936,7 +935,7 @@ public class UpgraderTest {
 
         // Application downgrades to pinned version.
         tester.abortAll();
-        context.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+        context.runJob(stagingTest).runJob(productionUsCentral1);
         assertTrue(context.application().change().hasTargets());
         context.runJob(productionUsWest1); // us-east-3 never upgraded, so no downgrade is needed.
         assertFalse(context.application().change().hasTargets());
@@ -1034,20 +1033,8 @@ public class UpgraderTest {
         assertEquals(v2, application.deployment(ZoneId.from("prod", "us-west-1")).version());
         assertEquals(v1, application.deployment(ZoneId.from("prod", "us-east-3")).version());
 
-        // Need to test v2->v3 combination again before upgrading second deployment (not really, but this is a limitation of lastSuccess)
-        tester.triggerJobs();
-        assertEquals(v2, application.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
-        assertEquals(v3, application.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-        application.runJob(stagingTest);
-
         // Second deployment upgrades
         application.runJob(productionUsWest1);
-
-        // ... now we have to test v1->v3 again :(
-        tester.triggerJobs();
-        assertEquals(v1, application.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().sourcePlatform().get());
-        assertEquals(v3, application.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
-        application.runJob(stagingTest);
 
         // Upgrade completes
         application.runJob(productionUsEast3);

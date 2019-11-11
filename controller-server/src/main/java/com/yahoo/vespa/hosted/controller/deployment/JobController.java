@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -32,6 +33,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -296,6 +298,13 @@ public class JobController {
                                                        .map(type -> jobStatus(new JobId(application.id().instance(spec.name()), type))))
                                                .collect(toUnmodifiableMap(status -> status.id(),
                                                                           status -> status)));
+    }
+
+    /** Adds deployment status to each of the given applications. */
+    public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
+        return DeploymentStatusList.from(applications.asList().stream()
+                                                     .map(this::deploymentStatus)
+                                                     .collect(toUnmodifiableList()));
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */

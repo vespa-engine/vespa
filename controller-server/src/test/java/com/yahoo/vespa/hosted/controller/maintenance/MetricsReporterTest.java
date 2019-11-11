@@ -86,6 +86,7 @@ public class MetricsReporterTest {
 
         // App spends 3 hours deploying
         context.submit(applicationPackage);
+        tester.triggerJobs();
         tester.clock().advance(Duration.ofHours(1));
         context.runJob(systemTest);
 
@@ -144,8 +145,7 @@ public class MetricsReporterTest {
         Version version = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version);
         tester.upgrader().maintain();
-        context.triggerJobs()
-               .failDeployment(systemTest)
+        context.failDeployment(systemTest)
                .failDeployment(stagingTest);
         reporter.maintain();
         assertEquals(2, getDeploymentsFailingUpgrade(context.instanceId()));
@@ -153,7 +153,6 @@ public class MetricsReporterTest {
         // Test and staging pass and upgrade fails in production
         context.runJob(systemTest)
                .runJob(stagingTest)
-               .triggerJobs()
                .failDeployment(productionUsWest1);
         reporter.maintain();
         assertEquals(1, getDeploymentsFailingUpgrade(context.instanceId()));

@@ -305,7 +305,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               new File("deploy-result.json"));
 
-        // POST (create) another application
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
                 .globalServiceId("foo")
@@ -315,6 +314,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .allow(ValidationId.globalEndpointChange)
                 .build();
 
+        // POST (create) another application
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/default", POST)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
