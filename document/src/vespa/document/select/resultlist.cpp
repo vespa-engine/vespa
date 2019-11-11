@@ -3,12 +3,11 @@
 #include "resultlist.h"
 #include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
-ResultList::ResultList() : _results() { }
+ResultList::ResultList() = default;
 
-ResultList::~ResultList() { }
+ResultList::~ResultList() = default;
 
 ResultList::ResultList(const Result& result) {
     add(VariableMap(), result);
@@ -147,5 +146,4 @@ bool ResultList::operator==(const ResultList& other) const {
     return (combineResultsLocal(_results) == combineResultsLocal(other._results));
 }
 
-} // select
-} // document
+}

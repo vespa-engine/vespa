@@ -9,8 +9,7 @@
 #include <vespa/document/util/stringutil.h>
 #include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 Compare::Compare(std::unique_ptr<ValueNode> left,
                  const Operator& op,
@@ -24,11 +23,10 @@ Compare::Compare(std::unique_ptr<ValueNode> left,
 {
 }
 
-Compare::~Compare()
-{
-}
+Compare::~Compare() = default;
 
-Node::UP Compare::clone() const
+Node::UP
+Compare::clone() const
 {
     return wrapParens(new Compare(_left->clone(),
                                   _operator,
@@ -53,10 +51,8 @@ namespace {
                 && (op == FunctionOperator::EQ || op == FunctionOperator::NE
                     || op == GlobOperator::GLOB))
             {
-                document::BucketId b(
-                        static_cast<IntegerValue&>(bVal).getValue());
-                document::BucketId s(
-                        static_cast<IntegerValue&>(nVal).getValue());
+                document::BucketId b( static_cast<IntegerValue&>(bVal).getValue());
+                document::BucketId s( static_cast<IntegerValue&>(nVal).getValue());
 
                 ResultList resultList(Result::get(s.contains(b)));
 
@@ -120,12 +116,14 @@ namespace {
     }
 }
 
-ResultList Compare::contains(const Context& context) const
+ResultList
+Compare::contains(const Context& context) const
 {
     return containsValue<Context>(context, *_left, *_right, _operator);
 }
 
-ResultList Compare::trace(const Context& context, std::ostream& out) const
+ResultList
+Compare::trace(const Context& context, std::ostream& out) const
 {
     return traceValue(context, *_left, *_right, _operator, out);
 }
@@ -150,5 +148,4 @@ Compare::print(std::ostream& out, bool verbose, const std::string& indent) const
     if (_parentheses) out << ')';
 }
 
-} // select
-} // document
+}
