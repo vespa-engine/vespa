@@ -158,10 +158,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
             HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
-            if (! host.getFlavor().isPresent()) {
-                host.setFlavor(spec.flavor());
-                log.log(DEBUG, () -> "Host resource " + host.getHostname() + " had no flavor, setting to " + spec.flavor());
-            }
         }
         retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
         return retAllocatedHosts;
