@@ -162,6 +162,37 @@ TEST("require that value type spec can be parsed with extra whitespace") {
     EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}, CellType::FLOAT), ValueType::from_spec(" tensor < float > ( y [ 10 ] ) "));
 }
 
+TEST("require that the unsorted dimension list can be obtained when parsing type spec") {
+    std::vector<ValueType::Dimension> unsorted;
+    auto type = ValueType::from_spec("tensor(y[10],z[5],x{})", unsorted);
+    EXPECT_EQUAL(ValueType::tensor_type({{"x"}, {"y", 10}, {"z", 5}}), type);
+    ASSERT_EQUAL(unsorted.size(), 3u);
+    EXPECT_EQUAL(unsorted[0].name, "y");
+    EXPECT_EQUAL(unsorted[0].size, 10u);
+    EXPECT_EQUAL(unsorted[1].name, "z");
+    EXPECT_EQUAL(unsorted[1].size, 5u);
+    EXPECT_EQUAL(unsorted[2].name, "x");
+    EXPECT_EQUAL(unsorted[2].size, npos);
+}
+
+TEST("require that the unsorted dimension list can be obtained also when the type spec is invalid") {
+    std::vector<ValueType::Dimension> unsorted;
+    auto type = ValueType::from_spec("tensor(x[10],x[5])...", unsorted);
+    EXPECT_TRUE(type.is_error());
+    ASSERT_EQUAL(unsorted.size(), 2u);
+    EXPECT_EQUAL(unsorted[0].name, "x");
+    EXPECT_EQUAL(unsorted[0].size, 10u);
+    EXPECT_EQUAL(unsorted[1].name, "x");
+    EXPECT_EQUAL(unsorted[1].size, 5u);
+}
+
+TEST("require that the unsorted dimension list can not be obtained if the parse itself fails") {
+    std::vector<ValueType::Dimension> unsorted;
+    auto type = ValueType::from_spec("tensor(x[10],x[5]", unsorted);
+    EXPECT_TRUE(type.is_error());
+    EXPECT_EQUAL(unsorted.size(), 0u);
+}
+
 TEST("require that malformed value type spec is parsed as error") {
     EXPECT_TRUE(ValueType::from_spec("").is_error());
     EXPECT_TRUE(ValueType::from_spec("  ").is_error());

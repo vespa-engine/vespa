@@ -176,7 +176,8 @@ CellType parse_cell_type(ParseContext &ctx) {
 } // namespace vespalib::eval::value_type::<anonymous>
 
 ValueType
-parse_spec(const char *pos_in, const char *end_in, const char *&pos_out)
+parse_spec(const char *pos_in, const char *end_in, const char *&pos_out,
+           std::vector<ValueType::Dimension> *unsorted)
 {
     ParseContext ctx(pos_in, end_in, pos_out);
     vespalib::string type_name = parse_ident(ctx);
@@ -188,6 +189,9 @@ parse_spec(const char *pos_in, const char *end_in, const char *&pos_out)
         ValueType::CellType cell_type = parse_cell_type(ctx);
         std::vector<ValueType::Dimension> list = parse_dimension_list(ctx);
         if (!ctx.failed()) {
+            if (unsorted != nullptr) {
+                *unsorted = list;
+            }
             return ValueType::tensor_type(std::move(list), cell_type);
         }
     } else {
@@ -202,6 +206,18 @@ from_spec(const vespalib::string &spec)
     const char *after = nullptr;
     const char *end = spec.data() + spec.size();
     ValueType type = parse_spec(spec.data(), end, after);
+    if (after != end) {
+        return ValueType::error_type();
+    }
+    return type;
+}
+
+ValueType
+from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted)
+{
+    const char *after = nullptr;
+    const char *end = spec.data() + spec.size();
+    ValueType type = parse_spec(spec.data(), end, after, &unsorted);
     if (after != end) {
         return ValueType::error_type();
     }

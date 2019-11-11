@@ -6,9 +6,11 @@
 
 namespace vespalib::eval::value_type {
 
-ValueType parse_spec(const char *pos_in, const char *end_in, const char *&pos_out);
+ValueType parse_spec(const char *pos_in, const char *end_in, const char *&pos_out,
+                     std::vector<ValueType::Dimension> *unsorted = nullptr);
 
-ValueType from_spec(const vespalib::string &str);
+ValueType from_spec(const vespalib::string &spec);
+ValueType from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted);
 vespalib::string to_spec(const ValueType &type);
 
 }
