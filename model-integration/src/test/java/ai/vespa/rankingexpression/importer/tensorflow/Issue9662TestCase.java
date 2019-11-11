@@ -22,7 +22,7 @@ public class Issue9662TestCase {
 
         ImportedMlFunction output = signature.outputFunction("output", "output");
         assertNotNull(output);
-        model.assertEqualResultSum("input_embedding_user_guid", "dense_out/MatMul", 0.00001);
+        model.assertEqualResultSum("input_embedding_user_guid", "dense_out/MatMul", 0.0001);
     }
 
 }

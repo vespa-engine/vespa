@@ -24,7 +24,7 @@ public class MnistImportTestCase {
 
         ImportedMlFunction output = signature.outputFunction("y", "y");
         assertNotNull(output);
-        model.assertEqualResultSum("input", "dnn/outputs/add", 0.00001);
+        model.assertEqualResultSum("input", "dnn/outputs/add", 0.0001);
     }
 
 }
