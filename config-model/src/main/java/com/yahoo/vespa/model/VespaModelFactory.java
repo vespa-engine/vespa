@@ -66,14 +66,20 @@ public class VespaModelFactory implements ModelFactory {
 
         this.clock = Clock.systemUTC();
     }
-    
+
+    // For testing only
     public VespaModelFactory(ConfigModelRegistry configModelRegistry) {
         this(configModelRegistry, Clock.systemUTC());
     }
+
+    // For testing only
     public VespaModelFactory(ConfigModelRegistry configModelRegistry, Clock clock) {
-        this(new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry, clock);
+        this(new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry,
+             clock, Zone.defaultZone());
     }
-    public VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock) {
+
+    // For testing only
+    public VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
         this.version = version;
         if (configModelRegistry == null) {
             this.configModelRegistry = new NullConfigModelRegistry();
@@ -82,7 +88,7 @@ public class VespaModelFactory implements ModelFactory {
             this.configModelRegistry = configModelRegistry;
         }
         this.modelImporters = Collections.emptyList();
-        this.zone = Zone.defaultZone();
+        this.zone = zone;
         this.clock = clock;
     }
 
