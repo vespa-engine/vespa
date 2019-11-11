@@ -135,7 +135,6 @@ public class HostedDeployTest {
         assertTrue("Newest is always included", factory720.creationCount() > 0);
     }
 
-
     /**
      * Test that only the minimal set of models are created (the wanted version and the latest version for
      * the latest major, since nodes are without version)
@@ -158,6 +157,63 @@ public class HostedDeployTest {
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory700.creationCount() > 0);
+        assertTrue("Newest model for latest major version is always included", factory720.creationCount() > 0);
+    }
+
+    /**
+     * Test that deploying an application in a manually deployed zone creates all needed model versions
+     * (not just the latest one, manually deployed apps always have skipOldConfigModels set to true)
+     */
+    @Test
+    public void testCreateNeededModelVersionsForManuallyDeployedApps() {
+        List<Host> hosts = List.of(createHost("host1", "7.0.0"), createHost("host2", "7.0.0"),
+                                   createHost("host3", "7.0.0"), createHost("host4", "7.0.0"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+
+        ManualClock clock = new ManualClock("2019-11-08T00:00:00");
+        Zone zone = new Zone(Environment.dev, RegionName.defaultName());
+        CountingModelFactory factory700 = DeployTester.createModelFactory(Version.fromString("7.0.0"), clock, zone);
+        CountingModelFactory factory710 = DeployTester.createModelFactory(Version.fromString("7.1.0"), clock, zone);
+        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock, zone);
+        List<ModelFactory> modelFactories = List.of(factory700, factory710, factory720);
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(zone),
+                                               clock, zone, provisioner);
+        // Deploy with version that does not exist on hosts, the model for this version should also be created
+        tester.deployApp("src/test/apps/hosted/", "7.2.0", Instant.now());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+
+        // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
+        // Nodes are on 7.0.0 (should be created), no nodes on 7.1.0 (should not be created), 7.2.0 should always be creates
+        assertTrue(factory700.creationCount() > 0);
+        assertFalse(factory710.creationCount() > 0);
+        assertTrue("Newest model for latest major version is always included", factory720.creationCount() > 0);
+    }
+
+    /**
+     * Test that deploying an application in a manually deployed zone creates latest model version successfully,
+     * even if creating one of the older model fails
+     */
+    @Test
+    public void testCreateModelVersionsForManuallyDeployedAppsWhenCreatingFailsForOneVersion() {
+        List<Host> hosts = List.of(createHost("host1", "7.0.0"), createHost("host2", "7.0.0"),
+                                   createHost("host3", "7.0.0"), createHost("host4", "7.0.0"));
+        InMemoryProvisioner provisioner = new InMemoryProvisioner(new Hosts(hosts), true);
+
+        Zone zone = new Zone(Environment.dev, RegionName.defaultName());
+        ManualClock clock = new ManualClock("2019-11-08T00:00:00");
+        ModelFactory factory700 = DeployTester.createFailingModelFactory(Version.fromString("7.0.0"));
+        CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock, zone);
+        List<ModelFactory> modelFactories = List.of(factory700, factory720);
+
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(zone),
+                                               clock, zone, provisioner);
+        // Deploy with version that does not exist on hosts, the model for this version should be created even
+        // if creating 7.0.0 fails
+        tester.deployApp("src/test/apps/hosted/", "7.2.0", Instant.now());
+        assertEquals(4, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+
+        // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue("Newest model for latest major version is always included", factory720.creationCount() > 0);
     }
 
@@ -244,8 +300,7 @@ public class HostedDeployTest {
         CountingModelFactory factory720 = DeployTester.createModelFactory(Version.fromString("7.2.0"), clock);
         List<ModelFactory> modelFactories = Arrays.asList(factory700, factory720);
 
-        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
-                                               clock, new Zone(Environment.dev, RegionName.defaultName()), provisioner);
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(), clock, provisioner);
         tester.deployApp("src/test/apps/hosted-routing-app/", "7.2.0", Instant.now());
         assertFalse(factory700.creationCount() > 0);
         assertTrue("Newest is always included", factory720.creationCount() > 0);
@@ -262,8 +317,9 @@ public class HostedDeployTest {
         CountingModelFactory factory620 = DeployTester.createModelFactory(Version.fromString("6.2.0"));
         List<ModelFactory> modelFactories = Arrays.asList(factory600, factory610, factory620);
 
-        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(),
-                                               Clock.systemUTC(), new Zone(Environment.prod, RegionName.defaultName()), provisioner);
+        Zone zone = new Zone(Environment.prod, RegionName.defaultName());
+        DeployTester tester = new DeployTester(modelFactories, createConfigserverConfig(zone),
+                                               Clock.systemUTC(), zone, provisioner);
         ApplicationId applicationId = tester.applicationId();
         // Deploy with oldest version
         tester.deployApp("src/test/apps/hosted/", "6.0.0", Instant.now());
@@ -339,11 +395,18 @@ public class HostedDeployTest {
     }
 
     private static ConfigserverConfig createConfigserverConfig() {
+        return createConfigserverConfig(Zone.defaultZone());
+    }
+
+    private static ConfigserverConfig createConfigserverConfig(Zone zone) {
         return new ConfigserverConfig(new ConfigserverConfig.Builder()
                                               .configServerDBDir(Files.createTempDir().getAbsolutePath())
                                               .configDefinitionsDir(Files.createTempDir().getAbsolutePath())
                                               .hostedVespa(true)
-                                              .multitenant(true));
+                                              .multitenant(true)
+                                              .region(zone.region().value())
+                                              .environment(zone.environment().value())
+                                              .system(zone.system().value()));
     }
 
     private Host createHost(String hostname, String version) {

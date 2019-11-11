@@ -106,10 +106,6 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
                                                                applicationId, wantedNodeVespaVersion, applicationPackage,
                                                                allocatedHosts, now, buildLatestModelForThisMajor, majorVersion));
-
-                // skip old config models if requested after we have found a major version which works
-                if (allApplicationModels.size() > 0 && allApplicationModels.get(0).getModel().skipOldConfigModels(now))
-                    break;
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
             }
             catch (OutOfCapacityException | ApplicationLockException | TransientException e) {
@@ -169,9 +165,6 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                now);
             allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
             allApplicationVersions.add(latestModelVersion);
-
-            if (latestModelVersion.getModel().skipOldConfigModels(now))
-                return allApplicationVersions;
         }
 
         // load old model versions
@@ -184,14 +177,24 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         for (Version version : versions) {
             if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
 
-            MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
-                                                         applicationPackage,
-                                                         applicationId,
-                                                         wantedNodeVespaVersion,
-                                                         allocatedHosts.asOptional(),
-                                                         now);
-            allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
-            allApplicationVersions.add(modelVersion);
+            MODELRESULT modelVersion;
+            try {
+                modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
+                                                 applicationPackage,
+                                                 applicationId,
+                                                 wantedNodeVespaVersion,
+                                                 allocatedHosts.asOptional(),
+                                                 now);
+                allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+                allApplicationVersions.add(modelVersion);
+            } catch (RuntimeException e) {
+                // allow failure to create old config models if there is a validation override that allow skipping old
+                // config models (which is always true for manually deployed zones)
+                if (allApplicationVersions.size() > 0 && allApplicationVersions.get(0).getModel().skipOldConfigModels(now))
+                    log.log(LogLevel.INFO, applicationId + ": Skipping old version (due to validation override)");
+                else
+                    throw e;
+            }
         }
         return allApplicationVersions;
     }

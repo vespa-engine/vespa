@@ -143,12 +143,17 @@ public class DeployTester {
 
     /** Create a model factory for a particular version */
     public static CountingModelFactory createModelFactory(Version version) {
-        return new CountingModelFactory(version, Clock.systemUTC());
+        return createModelFactory(version, Clock.systemUTC());
     }
 
     /** Create a model factory for a particular version */
     public static CountingModelFactory createModelFactory(Version version, Clock clock) {
-        return new CountingModelFactory(version, clock);
+        return createModelFactory(version, clock, Zone.defaultZone());
+    }
+
+    /** Create a model factory for a particular version */
+    public static CountingModelFactory createModelFactory(Version version, Clock clock, Zone zone) {
+        return new CountingModelFactory(version, clock, zone);
     }
 
     /** Create a model factory which always fails validation */
@@ -299,8 +304,8 @@ public class DeployTester {
             this.wrapped = new VespaModelFactory(new NullConfigModelRegistry(), clock);
         }
 
-        public CountingModelFactory(Version version, Clock clock) {
-            this.wrapped = new VespaModelFactory(version, new NullConfigModelRegistry(), clock);
+        public CountingModelFactory(Version version, Clock clock, Zone zone) {
+            this.wrapped = new VespaModelFactory(version, new NullConfigModelRegistry(), clock, zone);
         }
 
         /** Returns the number of models created successfully by this instance */
