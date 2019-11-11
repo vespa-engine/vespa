@@ -10,8 +10,12 @@ import javax.ws.rs.client.ClientRequestContext;
 import javax.ws.rs.client.ClientRequestFilter;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.Optional;
+import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.util.logging.Level.CONFIG;
 
 /**
  * Factory for JAX-RS http client builder for internal Vespa communications over http/https.
@@ -25,6 +29,26 @@ import java.util.logging.Logger;
 public class VespaClientBuilderFactory implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(VespaClientBuilderFactory.class.getName());
+
+    static {
+        // CONFIG log message are logged repeatedly from these classes.
+        disableConfigLogging("org.glassfish.jersey.client.internal.HttpUrlConnector");
+        disableConfigLogging("org.glassfish.jersey.process.internal.ExecutorProviders");
+    }
+
+    // This method will hook a filter into the Jersey logger removing unwanted messages.
+    private static void disableConfigLogging(String className) {
+        @SuppressWarnings("LoggerInitializedWithForeignClass")
+        Logger logger = Logger.getLogger(className);
+        Optional<Filter> currentFilter = Optional.ofNullable(logger.getFilter());
+        Filter filter = logRecord ->
+                !logRecord.getMessage().startsWith("Restricted headers are not enabled")
+                        && !logRecord.getMessage().startsWith("Selected ExecutorServiceProvider implementation")
+                        && !logRecord.getLevel().equals(CONFIG)
+                        && currentFilter.map(f -> f.isLoggable(logRecord)).orElse(true); // Honour existing filter if exists
+        logger.setFilter(filter);
+    }
+
 
     private final TlsContext tlsContext = TransportSecurityUtils.createTlsContext().orElse(null);
     private final MixedMode mixedMode = TransportSecurityUtils.getInsecureMixedMode();
