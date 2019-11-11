@@ -36,6 +36,10 @@
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
 #include <sstream>
+#ifdef __APPLE__
+#include <libproc.h>
+#include <sys/proc_info.h>
+#endif
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton");
@@ -688,6 +692,7 @@ namespace {
 
 int countOpenFiles()
 {
+#ifdef __linux__
     static const char * const fd_dir_name = "/proc/self/fd";
     int count = 0;
     DIR *dp = opendir(fd_dir_name);
@@ -703,6 +708,13 @@ int countOpenFiles()
         LOG(warning, "could not scan directory %s: %s", fd_dir_name, strerror(errno));
     }
     return count;
+#elif defined(__APPLE__)
+    int buffer_size = proc_pidinfo(getpid(), PROC_PIDLISTFDS, 0, nullptr, 0);
+    return buffer_size / sizeof(proc_fdinfo);
+#else
+#warning "Could not determine number of open files for current process"
+    return 0;
+#endif
 }
 
 void
