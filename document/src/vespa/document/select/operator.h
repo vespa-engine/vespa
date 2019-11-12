@@ -15,8 +15,7 @@
 #include "value.h"
 #include <vespa/vespalib/stllike/hash_map.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class Operator : public Printable {
 private:
@@ -101,6 +100,4 @@ private:
     ResultList traceImpl(const Value&, const Value&, std::ostream& trace) const;
 };
 
-} // select
-} // document
-
+}

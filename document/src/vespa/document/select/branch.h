@@ -6,8 +6,6 @@
  * @brief Base class for branch nodes in the document selection tree.
  *
  * @author H�kon Humberset
- * @date 2005-06-07
- * @version $Id$
  */
 
 #pragma once
@@ -16,8 +14,7 @@
 #include <list>
 #include "node.h"
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class Branch : public Node
 {
@@ -91,6 +88,4 @@ public:
     }
 };
 
-} // select
-} // document
-
+}

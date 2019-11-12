@@ -17,8 +17,7 @@
 #include "operator.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class ValueNode;
 
@@ -52,6 +51,4 @@ public:
     const BucketIdFactory &getBucketIdFactory(void) const { return _bucketIdFactory; }
 };
 
-} // select
-} // document
-
+}

@@ -13,13 +13,11 @@
  * thus used as it has 3 outcomes.. True, false & invalid.
  *
  * @author H�kon Humberset
- * @date 2007-20-05
- * @version $Id$
  */
 
 #pragma once
 
-#include <assert.h>
+#include <cassert>
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/document/util/printable.h>
 

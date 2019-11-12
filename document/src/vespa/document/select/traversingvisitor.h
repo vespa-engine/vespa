@@ -3,8 +3,7 @@
 
 #include "visitor.h"
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class
 TraversingVisitor : public Visitor
@@ -30,7 +29,5 @@ public:
     void visitNullValueNode(const NullValueNode &) override;
     void visitInvalidValueNode(const InvalidValueNode &) override;
 };
-
-}
 
 }

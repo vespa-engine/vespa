@@ -5,12 +5,12 @@
 #include <memory>
 
 namespace document {
+    class Document;
+    class DocumentId;
+    class DocumentUpdate;
+}
 
-class Document;
-class DocumentId;
-class DocumentUpdate;
-
-namespace select {
+namespace document::select {
 
 class Value;
 class VariableMap;
@@ -33,5 +33,4 @@ private:
     std::unique_ptr<VariableMap> _variables;
 };
 
-}
 }
