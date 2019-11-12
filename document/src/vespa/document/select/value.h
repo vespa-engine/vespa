@@ -23,8 +23,7 @@
 #include <iosfwd>
 #include "resultlist.h"
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class Value : public document::Printable
 {
@@ -241,6 +240,4 @@ private:
     ValueMap _values;
 };
 
-} // select
-} // document
-
+}

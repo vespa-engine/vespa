@@ -222,8 +222,8 @@ private:
     std::unique_ptr<Value> getInternalValue(const FieldValue &fval) const;
 };
 
-IteratorHandler::IteratorHandler() { }
-IteratorHandler::~IteratorHandler() { }
+IteratorHandler::IteratorHandler() = default;
+IteratorHandler::~IteratorHandler() = default;
 
 bool
 IteratorHandler::hasSingleValue() const {
