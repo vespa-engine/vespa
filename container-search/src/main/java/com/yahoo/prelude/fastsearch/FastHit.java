@@ -194,7 +194,8 @@ public class FastHit extends Hit {
      * in the rank profile specified in the query producing this.
      */
     public FeatureData features() {
-        return (FeatureData)getField("summaryfeatures");
+        FeatureData data = (FeatureData)getField("summaryfeatures");
+        return data == null ? super.features() : data;
     }
 
     /**

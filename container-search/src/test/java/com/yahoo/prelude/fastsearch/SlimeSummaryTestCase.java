@@ -67,6 +67,7 @@ public class SlimeSummaryTestCase {
         assertNull(hit.getField("tensor_field1"));
         assertNull(hit.getField("tensor_field2"));
         assertNull(hit.getField("summaryfeatures"));
+        assertTrue(hit.features().featureNames().isEmpty());
     }
 
     @Test
@@ -116,7 +117,7 @@ public class SlimeSummaryTestCase {
         }
         assertEquals(tensor1, hit.getField("tensor_field1"));
         assertEquals(tensor2, hit.getField("tensor_field2"));
-        FeatureData featureData = (FeatureData)hit.getField("summaryfeatures");
+        FeatureData featureData = hit.features();
         assertEquals("double_feature,tensor1_feature,tensor2_feature",
                      featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
         assertEquals(0.5, featureData.getDouble("double_feature"), 0.00000001);
