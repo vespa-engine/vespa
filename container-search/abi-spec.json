@@ -7278,6 +7278,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.data.access.Inspector)",
+      "public static com.yahoo.search.result.FeatureData empty()",
       "public com.yahoo.data.access.Inspector inspect()",
       "public java.lang.String toJson()",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
@@ -7383,6 +7384,7 @@
       "public com.yahoo.search.Query getQuery()",
       "public com.yahoo.processing.Request request()",
       "public final void setQuery(com.yahoo.search.Query)",
+      "public com.yahoo.search.result.FeatureData features()",
       "public void setSearcherSpecificMetaData(com.yahoo.search.Searcher, java.lang.Object)",
       "public java.lang.Object getSearcherSpecificMetaData(com.yahoo.search.Searcher)",
       "protected void close()",

@@ -5,6 +5,7 @@ import com.yahoo.data.access.ObjectTraverser;
 import com.yahoo.document.GlobalId;
 import com.yahoo.net.URI;
 import com.yahoo.search.query.Sorting;
+import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
 import com.yahoo.data.access.Inspector;
@@ -29,6 +30,7 @@ import java.util.function.BiConsumer;
  * @author Steinar Knutsen
  */
 public class FastHit extends Hit {
+
     private static final byte [] emptyGID = new byte[GlobalId.LENGTH];
     /** The index of the content node this hit originated at */
     private int distributionKey = 0;
@@ -184,6 +186,16 @@ public class FastHit extends Hit {
             removedFields.removeAll(docsumDef.fieldNames());
         if ( ! (summaries instanceof ArrayList) ) summaries = new ArrayList<>(8);
         summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
+    }
+
+    /**
+     * Returns values for the features listed in
+     * <a href="https://docs.vespa.ai/documentation/reference/search-definitions-reference.html#summary-features">summary-features</a>
+     * in the rank profile specified in the query producing this.
+     */
+    public FeatureData features() {
+        FeatureData data = (FeatureData)getField("summaryfeatures");
+        return data == null ? super.features() : data;
     }
 
     /**

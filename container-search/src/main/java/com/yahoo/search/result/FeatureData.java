@@ -6,12 +6,14 @@ import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Type;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.simple.JsonRender;
+import com.yahoo.data.access.simple.Value;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -21,6 +23,9 @@ import java.util.Set;
  * This class is immutable but not thread safe.
  */
 public class FeatureData implements Inspectable, JsonProducer {
+
+    // WARNING: Not thread safe but using a shared empty. Take care if adding mutating methods.
+    private static final FeatureData empty = new FeatureData(Value.empty());
 
     private final Inspector value;
 
@@ -32,6 +37,8 @@ public class FeatureData implements Inspectable, JsonProducer {
         this.value = value;
     }
 
+    public static FeatureData empty() { return empty; }
+
     /**
      * Returns the fields of this as an inspector, where tensors are represented as binary data
      * which can be decoded using
@@ -42,6 +49,7 @@ public class FeatureData implements Inspectable, JsonProducer {
 
     @Override
     public String toJson() {
+        if (this == empty) return "{}";
         if (jsonForm != null) return jsonForm;
 
         jsonForm = writeJson(new StringBuilder()).toString();
@@ -60,7 +68,7 @@ public class FeatureData implements Inspectable, JsonProducer {
      *                                  (that is, if it is a tensor with nonzero rank)
      */
     public Double getDouble(String featureName) {
-        Inspector featureValue = value.field(featureName);
+        Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
         switch (featureValue.type()) {
@@ -75,7 +83,7 @@ public class FeatureData implements Inspectable, JsonProducer {
      * This will return any feature value: Scalars are returned as a rank 0 tensor.
      */
     public Tensor getTensor(String featureName) {
-        Inspector featureValue = value.field(featureName);
+        Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
         switch (featureValue.type()) {
@@ -85,8 +93,17 @@ public class FeatureData implements Inspectable, JsonProducer {
         }
     }
 
+    private Inspector getInspector(String featureName) {
+        Inspector featureValue = value.field(featureName);
+        if (featureValue.valid()) return featureValue;
+
+        // Try to wrap by rankingExpression(name)
+        return value.field("rankingExpression(" + featureName + ")");
+    }
+
     /** Returns the names of the features available in this */
     public Set<String> featureNames() {
+        if (this == empty) return Collections.emptySet();
         if (featureNames != null) return featureNames;
 
         featureNames = new HashSet<>();

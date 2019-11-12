@@ -21,15 +21,11 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 /**
- * <p>A search hit. The identifier of the hit is the uri
- * (the uri is immutable once set).
- * If two hits have the same uri they are equal per definition.
- * Hits are naturally ordered by decreasing relevance.
- * Note that this definition of equals and natural ordering is inconsistent.</p>
+ * <p>An item in the result of executing a query.</p>
  *
  * <p>Hits may be of the <i>meta</i> type, meaning that they contain some information
- * about the query or result which does not represent a particular piece of matched
- * content. Meta hits are not counted in the hit count of the result, and should
+ * about the query or result which does not represent a particular matched item.
+ * Meta hits are not counted in the hit count of the result, and should
  * usually never be filtered out.</p>
  *
  * <p>Some hit sources may produce hits which are not <i>filled</i>. A non-filled
@@ -112,7 +108,7 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
     }
 
     /**
-     * Creates a minimal valid hit having relevance 1000
+     * Creates a minimal valid hit having relevance 1
      *
      * @param id the URI of a hit. This should be unique for this hit (but not for this
      *        <i>object instance</i> of course). For hit types refering to resources,
@@ -203,7 +199,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *        it is simply any unique string identification
      * @param relevance a relevance measure, preferably normalized between 0 and 1
      * @param source the name of the source of this hit, or null if no source is being specified
-     * @throws IllegalArgumentException if the given relevance is not between 0 and 1000
      */
     public Hit(String id, double relevance, String source) {
         this(id, new Relevance(relevance), source, null);
@@ -219,7 +214,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @param relevance a relevance measure, preferably normalized between 0 and 1
      * @param source the name of the source of this hit, or null if no source is being specified
      * @param query the query having this as a hit
-     * @throws IllegalArgumentException if the given relevance is not between 0 and 1000
      */
     public Hit(String id, double relevance, String source, Query query) {
         this(id, new Relevance(relevance), source);
@@ -234,7 +228,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      *        it is simply any unique string identification
      * @param relevance the relevance of this hit
      * @param source the name of the source of this hit
-     * @throws IllegalArgumentException if the given relevance is not between 0 and 1000
      */
     public Hit(String id, Relevance relevance, String source) {
         this(id, relevance, source, null);
@@ -250,7 +243,6 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
      * @param relevance the relevance of this hit
      * @param source the name of the source of this hit
      * @param query the query having this as a hit
-     * @throws IllegalArgumentException if the given relevance is not between 0 and 1000
      */
     public Hit(String id, Relevance relevance, String source, Query query) {
         this.id = new URI(id);
@@ -567,6 +559,14 @@ public class Hit extends ListenableFreezableClass implements Data, Comparable<Hi
         if (this.query == null || this instanceof HitGroup) {
             this.query = query;
         }
+    }
+
+    /**
+     * Returns the features computed for this hit. This is never null but may be empty.
+     * This default implementation always returns empty.
+     */
+    public FeatureData features() {
+        return FeatureData.empty();
     }
 
     /** Attach some data to this hit for this searcher */

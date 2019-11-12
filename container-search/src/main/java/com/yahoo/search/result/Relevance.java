@@ -2,8 +2,8 @@
 package com.yahoo.search.result;
 
 /**
- * A relevance double value. These values should always be normalized between 0 and 1 (where 1 means perfect),
- * however, this is not enforced.
+ * A relevance double value. These values should ideally be normalized between 0 and 1 (where 1 means "perfect"),
+ * however this is not enforced.
  * <p>
  * Sources may create subclasses of this to include additional information or functionality.
  *
@@ -19,10 +19,10 @@ public class Relevance implements Comparable<Relevance> {
      * This initial value should ideally be a normalized value
      * between 0 and 1, but that is not enforced.
      *
-     * @param score the inital value (rank score)
+     * @param score the initial value (rank score)
      */
     public Relevance(double score) {
-        this.score=score;
+        this.score = score;
     }
 
     /**
