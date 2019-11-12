@@ -1,14 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -22,6 +20,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class ClusterApiImpl implements ClusterApi {
+
     private final ApplicationApi applicationApi;
     private final ServiceCluster serviceCluster;
     private final NodeGroup nodeGroup;
@@ -144,8 +143,7 @@ class ClusterApiImpl implements ClusterApi {
                 .toString();
     }
 
-    private Optional<StorageNode> storageNodeInGroup(
-            Predicate<ServiceInstance> storageServicePredicate) {
+    private Optional<StorageNode> storageNodeInGroup(Predicate<ServiceInstance> storageServicePredicate) {
         if (!VespaModelUtil.isStorage(serviceCluster)) {
             return Optional.empty();
         }
