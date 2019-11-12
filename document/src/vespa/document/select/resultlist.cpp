@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "resultlist.h"
-#include <vespa/vespalib/stllike/hash_set.h>
+#include <bitset>
 #include <ostream>
 
 namespace document::select {
@@ -99,8 +99,7 @@ ResultList::operator&&(const ResultList& other) const
 {
     ResultList results;
 
-    // TODO: optimize
-    vespalib::hash_set<uint32_t> resultForNoVariables;
+    std::bitset<3> resultForNoVariables;
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
             fieldvalue::VariableMap vars = it.first;
@@ -108,15 +107,17 @@ ResultList::operator&&(const ResultList& other) const
             if (combineVariables(vars, it2.first)) {
                 const Result & result = *it.second && *it2.second;
                 if (vars.empty()) {
-                    resultForNoVariables.insert(result.toEnum());
+                    resultForNoVariables.set(result.toEnum());
                 } else {
                     results.add(vars, result);
                 }
             }
         }
     }
-    for (uint32_t result : resultForNoVariables) {
-        results.add(fieldvalue::VariableMap(), Result::fromEnum(result));
+    for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
+        if (resultForNoVariables[i]) {
+            results.add(fieldvalue::VariableMap(), Result::fromEnum(i));
+        }
     }
 
     return results;
@@ -127,23 +128,24 @@ ResultList::operator||(const ResultList& other) const
 {
     ResultList results;
 
-    // TODO: optimize
-    vespalib::hash_set<uint32_t> resultForNoVariables;
+    std::bitset<3> resultForNoVariables;
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
             fieldvalue::VariableMap vars = it.first;
             if (combineVariables(vars, it2.first)) {
                 const Result & result = *it.second || *it2.second;
                 if (vars.empty()) {
-                    resultForNoVariables.insert(result.toEnum());
+                    resultForNoVariables.set(result.toEnum());
                 } else {
                     results.add(vars, result);
                 }
             }
         }
     }
-    for (uint32_t result : resultForNoVariables) {
-        results.add(fieldvalue::VariableMap(), Result::fromEnum(result));
+    for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
+        if (resultForNoVariables[i]) {
+            results.add(fieldvalue::VariableMap(), Result::fromEnum(i));
+        }
     }
 
     return results;
