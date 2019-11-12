@@ -197,9 +197,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
          * @param hostSystem a {@link HostSystem}
          * @param producerSpec xml element for the service
          */
-        private void allocateHost(final AbstractService service, HostSystem hostSystem,
-                                  Element producerSpec)
-        {
+        private void allocateHost(AbstractService service, HostSystem hostSystem, Element producerSpec) {
             // TODO store service on something else than HostSystem, to not make that overloaded
             service.setHostResource(hostSystem.getHost(producerSpec.getAttribute("hostalias")));
         }

@@ -6,6 +6,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 
 import java.util.ArrayList;
@@ -28,9 +29,9 @@ import java.util.stream.Collectors;
  */
 public class HostResource implements Comparable<HostResource> {
 
-    private final HostPorts hostPorts;
+    private final HostSpec spec;
 
-    public HostPorts ports() { return hostPorts; }
+    private final HostPorts hostPorts;
 
     private final Host host;
 
@@ -39,26 +40,19 @@ public class HostResource implements Comparable<HostResource> {
 
     private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
 
-    // Empty for self-hosted
-    private Optional<Flavor> flavor = Optional.empty();
-    private Optional<NodeResources> requestedResources = Optional.empty();
-
-    /** The current Vespa version running on this node, or empty if not known */
-    private final Optional<Version> version;
-
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
      * @param host {@link com.yahoo.vespa.model.Host} object to bind to.
      */
     public HostResource(Host host) {
-        this(host, Optional.empty());
+        this(host, new HostSpec(host.getHostname(), Optional.empty()));
     }
 
-    public HostResource(Host host, Optional<Version> version) {
-        this.hostPorts = new HostPorts(host.getHostname());
+    public HostResource(Host host, HostSpec spec) {
         this.host = host;
-        this.version = version;
+        this.spec = spec;
+        this.hostPorts = new HostPorts(host.getHostname());
     }
 
     /**
@@ -68,8 +62,9 @@ public class HostResource implements Comparable<HostResource> {
      */
     public Host getHost() { return host; }
 
-    /** Returns the current Vespa version running on this node, or null if not known */
-    public Optional<Version> version() { return version; }
+    public HostPorts ports() { return hostPorts; }
+
+    public HostSpec spec() { return spec; }
 
     /**
      * Adds service and allocates resources for it.
@@ -111,17 +106,8 @@ public class HostResource implements Comparable<HostResource> {
                 .collect(Collectors.toSet()));
     }
 
-    public void setFlavor(Optional<Flavor> flavor) { this.flavor = flavor; }
-
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
-    public Optional<Flavor> getFlavor() { return flavor; }
-
-    public void setRequestedResources(NodeResources resources) {
-        this.requestedResources = Optional.of(resources);
-    }
-
-    /** Returns the ressource requested which led to these host resources being allocated, if known */
-    public Optional<NodeResources> getRequestedResources() { return requestedResources; }
+    public Optional<Flavor> getFlavor() { return spec.flavor(); }
 
     public void addClusterMembership(ClusterMembership clusterMembership) {
         if (clusterMembership != null)

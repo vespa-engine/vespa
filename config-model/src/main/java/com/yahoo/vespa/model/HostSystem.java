@@ -127,13 +127,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = Host.createHost(this, hostSpec.hostname());
-        HostResource hostResource = new HostResource(host, hostSpec.version());
-        hostResource.setFlavor(hostSpec.flavor());
-        hostSpec.requestedResources().ifPresent(resources -> hostResource.setRequestedResources(resources));
+        HostResource hostResource = new HostResource(host, hostSpec);
         hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostSpec.networkPorts().ifPresent(np -> hostResource.ports().addNetworkPorts(np));
         hostname2host.put(host.getHostname(), hostResource);
-        log.log(DEBUG, () -> "Added new host resource for " + host.getHostname() + " with flavor " + hostResource.getFlavor());
         return hostResource;
     }
 
@@ -147,13 +144,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     public void dumpPortAllocations() {
         for (HostResource hr : getHosts()) {
             hr.ports().flushPortReservations();
-/*
-            System.out.println("port allocations for: "+hr.getHostname());
-            NetworkPorts ports = hr.networkPorts().get();
-            for (NetworkPorts.Allocation allocation: ports.allocations()) {
-                System.out.println("port="+allocation.port+" [type="+allocation.serviceType+", cfgId="+allocation.configId+", suffix="+allocation.portSuffix+"]");
-            }
-*/
         }
     }
 
@@ -165,10 +155,6 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             // This is needed for single node host provisioner to work in unit tests for hosted vespa applications.
             HostResource host = getExistingHost(spec).orElseGet(() -> addNewHost(spec));
             retAllocatedHosts.put(host, spec.membership().orElse(null));
-            if (! host.getFlavor().isPresent()) {
-                host.setFlavor(spec.flavor());
-                log.log(DEBUG, () -> "Host resource " + host.getHostname() + " had no flavor, setting to " + spec.flavor());
-            }
         }
         retAllocatedHosts.keySet().forEach(host -> log.log(DEBUG, () -> "Allocated host " + host.getHostname() + " with flavor " + host.getFlavor()));
         return retAllocatedHosts;
@@ -196,9 +182,9 @@ public class HostSystem extends AbstractConfigProducer<Host> {
                                           Collections.emptyList(),
                                           host.getFlavor(),
                                           host.primaryClusterMembership(),
-                                          host.version(),
+                                          host.spec().version(),
                                           host.ports().networkPorts(),
-                                          host.getRequestedResources()))
+                                          host.spec().requestedResources()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
