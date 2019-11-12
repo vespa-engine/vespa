@@ -20,10 +20,6 @@ import java.util.logging.Level;
  */
 public class HostPorts {
 
-    public HostPorts(String hostname) {
-        this.hostname = hostname;
-    }
-
     final String hostname;
     public final static int BASE_PORT = 19100;
     final static int MAX_PORTS = 799;
@@ -41,6 +37,10 @@ public class HostPorts {
     private PortFinder portFinder = new PortFinder(Collections.emptyList());
 
     private Optional<NetworkPorts> networkPortsList = Optional.empty();
+
+    public HostPorts(String hostname) {
+        this.hostname = hostname;
+    }
 
     /**
      * Get the allocated network ports.

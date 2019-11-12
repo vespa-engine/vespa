@@ -29,7 +29,7 @@ public class HostSpec implements Comparable<HostSpec> {
 
     private final Optional<NetworkPorts> networkPorts;
 
-    private Optional<NodeResources> requestedResources;
+    private final Optional<NodeResources> requestedResources;
 
     public HostSpec(String hostname, Optional<ClusterMembership> membership) {
         this(hostname, new ArrayList<>(), Optional.empty(), membership);
@@ -98,6 +98,10 @@ public class HostSpec implements Comparable<HostSpec> {
 
     /** Returns the requested resources leading to this host being provisioned, or empty if not known */
     public Optional<NodeResources> requestedResources() { return requestedResources; }
+
+    public HostSpec withPorts(Optional<NetworkPorts> ports) {
+        return new HostSpec(hostname, aliases, flavor, membership, version, ports, requestedResources);
+    }
 
     @Override
     public String toString() {

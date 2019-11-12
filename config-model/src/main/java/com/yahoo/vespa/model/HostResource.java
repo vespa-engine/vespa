@@ -64,7 +64,7 @@ public class HostResource implements Comparable<HostResource> {
 
     public HostPorts ports() { return hostPorts; }
 
-    public HostSpec spec() { return spec; }
+    public HostSpec spec() { return spec.withPorts(hostPorts.networkPorts()); }
 
     /**
      * Adds service and allocates resources for it.
