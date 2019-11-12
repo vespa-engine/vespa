@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.ca.restapi;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -16,9 +18,8 @@ import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRegistration;
 
-import java.math.BigDecimal;
+import java.io.IOException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,6 +47,11 @@ public class InstanceSerializer {
     private static final String IDD_CREATED_AT_FIELD = "created-at";
     private static final String IDD_IPADDRESSES_FIELD = "ip-addresses";
     private static final String IDD_IDENTITY_TYPE_FIELD = "identity-type";
+
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    static {
+        objectMapper.registerModule(new JavaTimeModule());
+    }
 
     private InstanceSerializer() {}
 
@@ -96,10 +102,11 @@ public class InstanceSerializer {
     }
 
     private static Instant getJsr310Instant(double v) {
-        var val = new BigDecimal(v);
-        var seconds = val.longValue();
-        var nanos = val.subtract(new BigDecimal(seconds)).scaleByPowerOfTen(9).longValue();
-        return Instant.ofEpochSecond(seconds, nanos).truncatedTo(ChronoUnit.MILLIS);
+        try {
+            return objectMapper.readValue(Double.toString(v), Instant.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static Cursor requireField(String fieldName, Cursor root) {

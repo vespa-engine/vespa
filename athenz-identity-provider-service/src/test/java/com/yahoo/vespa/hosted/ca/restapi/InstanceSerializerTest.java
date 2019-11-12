@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Optional;
 
@@ -44,8 +43,7 @@ public class InstanceSerializerTest {
                 0,
                 "configserverhostname",
                 "instancehostname",
-                Instant.now().truncatedTo(ChronoUnit.MILLIS),
-                // Instant.ofEpochSecond(1572000079),
+                Instant.now(),
                 Collections.emptySet(),
                 IdentityType.NODE);
 
@@ -95,5 +93,4 @@ public class InstanceSerializerTest {
             throw new UncheckedIOException(e);
         }
     }
-
 }
