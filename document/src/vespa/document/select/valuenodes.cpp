@@ -60,7 +60,7 @@ InvalidValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-NullValueNode::NullValueNode() {}
+NullValueNode::NullValueNode() = default;
 
 void
 NullValueNode::visit(Visitor &visitor) const
