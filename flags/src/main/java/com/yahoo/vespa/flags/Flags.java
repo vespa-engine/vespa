@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.NodeMaintainerDurations;
 import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 
 import java.util.List;
@@ -110,6 +111,11 @@ public class Flags {
             "Should adaptive dispatch be used over round robin",
             "Takes effect at redeployment",
             APPLICATION_ID);
+
+    public static final UnboundJacksonFlag<NodeMaintainerDurations> NODE_MAINTAINER_DURATIONS = defineJacksonFlag(
+            "node-maintainer-durations", new NodeMaintainerDurations(), NodeMaintainerDurations.class,
+            "Provides overrides for durations in NodeRepositoryMaintenance",
+            "Takes effect on start of config server / controller");
 
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
