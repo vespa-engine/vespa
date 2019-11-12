@@ -9,10 +9,11 @@ import com.yahoo.component.Version;
 import org.junit.Test;
 
 import java.time.Clock;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingModelFactory;
+import static com.yahoo.vespa.config.server.deploy.DeployTester.createModelFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -33,7 +34,6 @@ public class RedeployTest {
         assertTrue(deployment.isPresent());
         long activeSessionIdBefore = tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
         assertEquals(tester.applicationId(), tester.tenant().getLocalSessionRepo().getSession(activeSessionIdBefore).getApplicationId());
-        deployment.get().prepare();
         deployment.get().activate();
         long activeSessionIdAfter =  tester.applicationRepository().getActiveSession(tester.applicationId()).getSessionId();
         assertEquals(activeSessionIdAfter, activeSessionIdBefore + 1);
@@ -43,9 +43,8 @@ public class RedeployTest {
     /** No deployment is done because there is no local active session. */
     @Test
     public void testNoRedeploy() {
-        List<ModelFactory> modelFactories = new ArrayList<>();
-        modelFactories.add(DeployTester.createModelFactory(Clock.systemUTC()));
-        modelFactories.add(DeployTester.createFailingModelFactory(new Version(1, 0, 0)));
+        List<ModelFactory> modelFactories = List.of(createModelFactory(Clock.systemUTC()),
+                                                    createFailingModelFactory(Version.fromString("1.0.0")));
         DeployTester tester = new DeployTester(modelFactories);
         ApplicationId id = ApplicationId.from(tester.tenant().getName(),
                                               ApplicationName.from("default"),

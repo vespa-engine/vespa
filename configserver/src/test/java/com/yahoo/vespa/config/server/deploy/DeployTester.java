@@ -146,12 +146,17 @@ public class DeployTester {
         return createModelFactory(version, Clock.systemUTC());
     }
 
-    /** Create a model factory for a particular version */
+    /** Create a model factory for a particular version and clock */
     public static CountingModelFactory createModelFactory(Version version, Clock clock) {
         return createModelFactory(version, clock, Zone.defaultZone());
     }
 
-    /** Create a model factory for a particular version */
+    /** Create a model factory for a particular version and zone */
+    public static CountingModelFactory createModelFactory(Version version, Zone zone) {
+        return new CountingModelFactory(version, Clock.systemUTC(), zone);
+    }
+
+    /** Create a model factory for a particular version, clock and zone */
     public static CountingModelFactory createModelFactory(Version version, Clock clock, Zone zone) {
         return new CountingModelFactory(version, clock, zone);
     }
@@ -172,6 +177,13 @@ public class DeployTester {
      */
     public PrepareResult deployApp(String applicationPath, Instant now) {
         return deployApp(applicationPath, null, now);
+    }
+
+    /**
+     * Do the initial "deploy" with the existing API-less code as the deploy API doesn't support first deploys yet.
+     */
+    public PrepareResult deployApp(String applicationPath, String vespaVersion) {
+        return deployApp(applicationPath, vespaVersion, Instant.now());
     }
 
     /**
