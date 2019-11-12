@@ -68,7 +68,7 @@ public class FeatureData implements Inspectable, JsonProducer {
      *                                  (that is, if it is a tensor with nonzero rank)
      */
     public Double getDouble(String featureName) {
-        Inspector featureValue = value.field(featureName);
+        Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
         switch (featureValue.type()) {
@@ -83,7 +83,7 @@ public class FeatureData implements Inspectable, JsonProducer {
      * This will return any feature value: Scalars are returned as a rank 0 tensor.
      */
     public Tensor getTensor(String featureName) {
-        Inspector featureValue = value.field(featureName);
+        Inspector featureValue = getInspector(featureName);
         if ( ! featureValue.valid()) return null;
 
         switch (featureValue.type()) {
@@ -91,6 +91,14 @@ public class FeatureData implements Inspectable, JsonProducer {
             case DATA: return TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(featureValue.asData()));
             default: throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
         }
+    }
+
+    private Inspector getInspector(String featureName) {
+        Inspector featureValue = value.field(featureName);
+        if (featureValue.valid()) return featureValue;
+
+        // Try to wrap by rankingExpression(name)
+        return value.field("rankingExpression(" + featureName + ")");
     }
 
     /** Returns the names of the features available in this */

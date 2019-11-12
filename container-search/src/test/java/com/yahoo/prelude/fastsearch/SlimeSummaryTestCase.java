@@ -118,10 +118,11 @@ public class SlimeSummaryTestCase {
         assertEquals(tensor1, hit.getField("tensor_field1"));
         assertEquals(tensor2, hit.getField("tensor_field2"));
         FeatureData featureData = hit.features();
-        assertEquals("double_feature,tensor1_feature,tensor2_feature",
+        assertEquals("double_feature,rankingExpression(tensor1_feature),tensor2_feature",
                      featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
         assertEquals(0.5, featureData.getDouble("double_feature"), 0.00000001);
         assertEquals(tensor1, featureData.getTensor("tensor1_feature"));
+        assertEquals(tensor1, featureData.getTensor("rankingExpression(tensor1_feature)"));
         assertEquals(tensor2, featureData.getTensor("tensor2_feature"));
     }
 
@@ -267,7 +268,7 @@ public class SlimeSummaryTestCase {
         Slime slime = new Slime();
         Cursor summaryFeatures = slime.setObject();
         summaryFeatures.setDouble("double_feature", 0.5);
-        summaryFeatures.setData("tensor1_feature", TypedBinaryFormat.encode(tensor1));
+        summaryFeatures.setData("rankingExpression(tensor1_feature)", TypedBinaryFormat.encode(tensor1));
         summaryFeatures.setData("tensor2_feature", TypedBinaryFormat.encode(tensor2));
         expected.put("summaryfeatures", new FeatureData(new SlimeAdapter(slime.get())));
 
@@ -420,7 +421,9 @@ public class SlimeSummaryTestCase {
         if (tensor1 !=null && tensor2 != null) {
             Cursor summaryFeatures = docsum.setObject("summaryfeatures");
             summaryFeatures.setDouble("double_feature", 0.5);
-            summaryFeatures.setData("tensor1_feature", TypedBinaryFormat.encode(tensor1));
+
+            // Values produced by functions are wrapped in rankingExpression(function-name)
+            summaryFeatures.setData("rankingExpression(tensor1_feature)", TypedBinaryFormat.encode(tensor1));
             summaryFeatures.setData("tensor2_feature", TypedBinaryFormat.encode(tensor2));
         }
     }
