@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.ca.instance;
 
 import com.yahoo.security.Pkcs10Csr;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 
 import java.util.Objects;
 
@@ -16,10 +17,10 @@ public class InstanceRegistration {
     private final String provider;
     private final String domain;
     private final String service;
-    private final String attestationData;
+    private final SignedIdentityDocument attestationData;
     private final Pkcs10Csr csr;
 
-    public InstanceRegistration(String provider, String domain, String service, String attestationData, Pkcs10Csr csr) {
+    public InstanceRegistration(String provider, String domain, String service, SignedIdentityDocument attestationData, Pkcs10Csr csr) {
         this.provider = Objects.requireNonNull(provider, "provider must be non-null");
         this.domain = Objects.requireNonNull(domain, "domain must be non-null");
         this.service = Objects.requireNonNull(service, "service must be non-null");
@@ -43,7 +44,7 @@ public class InstanceRegistration {
     }
 
     /** Host document describing this instance (received from config server) */
-    public String attestationData() {
+    public SignedIdentityDocument attestationData() {
         return attestationData;
     }
 
@@ -75,8 +76,8 @@ public class InstanceRegistration {
                "provider='" + provider + '\'' +
                ", domain='" + domain + '\'' +
                ", service='" + service + '\'' +
-               ", attestationData='" + attestationData + '\'' +
-               ", csr=" + csr +
+               ", attestationData='" + attestationData.toString() + '\'' +
+               ", csr=" + csr.toString() +
                '}';
     }
 }

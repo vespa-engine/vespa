@@ -4,6 +4,12 @@ package com.yahoo.vespa.hosted.ca.restapi;
 import com.yahoo.security.Pkcs10CsrUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
+import com.yahoo.text.StringUtilities;
+import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
+import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
+import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
+import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.ca.CertificateTester;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
@@ -14,6 +20,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -27,15 +35,27 @@ public class InstanceSerializerTest {
     public void deserialize_instance_registration() {
         var csr = CertificateTester.createCsr();
         var csrPem = Pkcs10CsrUtils.toPem(csr);
-        var json = "{\n" +
+        SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
+                "signature",
+                0,
+                new VespaUniqueInstanceId(0, "cluster", "instance", "application", "tenant", "region", "prod", IdentityType.NODE),
+                new AthenzService("domain", "service"),
+                0,
+                "configserverhostname",
+                "instancehostname",
+                Instant.now(),
+                Collections.emptySet(),
+                IdentityType.NODE);
+
+        var json = String.format("{\n" +
                    "  \"provider\": \"provider_prod_us-north-1\",\n" +
                    "  \"domain\": \"vespa.external\",\n" +
                    "  \"service\": \"tenant\",\n" +
-                   "  \"attestationData\": \"identity document from configserevr\",\n" +
+                   "  \"attestationData\":\"%s\",\n" +
                    "  \"csr\": \"" + csrPem + "\"\n" +
-                   "}";
+                   "}", StringUtilities.escape(EntityBindingsMapper.toAttestationData(signedIdentityDocument)));
         var instanceRegistration = new InstanceRegistration("provider_prod_us-north-1", "vespa.external",
-                                                            "tenant", "identity document from configserevr",
+                                                            "tenant", signedIdentityDocument,
                                                             csr);
         var deserialized = InstanceSerializer.registrationFromSlime(SlimeUtils.jsonToSlime(json));
         assertEquals(instanceRegistration, deserialized);
@@ -73,5 +93,4 @@ public class InstanceSerializerTest {
             throw new UncheckedIOException(e);
         }
     }
-
 }
