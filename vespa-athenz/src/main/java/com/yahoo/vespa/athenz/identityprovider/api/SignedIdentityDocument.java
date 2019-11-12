@@ -4,7 +4,6 @@ package com.yahoo.vespa.athenz.identityprovider.api;
 import com.yahoo.vespa.athenz.api.AthenzService;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -87,43 +86,5 @@ public class SignedIdentityDocument {
 
     public IdentityType identityType() {
         return identityType;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SignedIdentityDocument that = (SignedIdentityDocument) o;
-        return signingKeyVersion == that.signingKeyVersion &&
-               documentVersion == that.documentVersion &&
-               Objects.equals(signature, that.signature) &&
-               Objects.equals(providerUniqueId, that.providerUniqueId) &&
-               Objects.equals(providerService, that.providerService) &&
-               Objects.equals(configServerHostname, that.configServerHostname) &&
-               Objects.equals(instanceHostname, that.instanceHostname) &&
-               Objects.equals(createdAt, that.createdAt) &&
-               Objects.equals(ipAddresses, that.ipAddresses) &&
-               identityType == that.identityType;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(signature, signingKeyVersion, providerUniqueId, providerService, documentVersion, configServerHostname, instanceHostname, createdAt, ipAddresses, identityType);
-    }
-
-    @Override
-    public String toString() {
-        return "SignedIdentityDocument{" +
-               "signature='" + signature + '\'' +
-               ", signingKeyVersion=" + signingKeyVersion +
-               ", providerUniqueId=" + providerUniqueId +
-               ", providerService=" + providerService +
-               ", documentVersion=" + documentVersion +
-               ", configServerHostname='" + configServerHostname + '\'' +
-               ", instanceHostname='" + instanceHostname + '\'' +
-               ", createdAt=" + createdAt +
-               ", ipAddresses=" + ipAddresses +
-               ", identityType=" + identityType +
-               '}';
     }
 }
