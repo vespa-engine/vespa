@@ -192,7 +192,8 @@ FieldValueNode::FieldValueNode(const vespalib::string& doctype,
 {
 }
 
-FieldValueNode::~FieldValueNode() {}
+FieldValueNode::~FieldValueNode() = default;
+
 vespalib::string
 FieldValueNode::extractFieldName(const std::string & fieldExpression) {
     std::smatch match;
@@ -1075,4 +1076,3 @@ const vespalib::string& FieldExprNode::resolve_doctype() const {
 }
 
 }
-

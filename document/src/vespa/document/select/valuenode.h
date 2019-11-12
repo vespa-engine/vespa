@@ -6,8 +6,6 @@
  * @brief Node representing a value in the tree
  *
  * @author H�kon Humberset
- * @date 2007-04-20
- * @version $Id$
  */
 
 #pragma once
@@ -51,4 +49,3 @@ protected:
 };
 
 }
-

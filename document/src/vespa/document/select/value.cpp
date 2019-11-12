@@ -3,6 +3,7 @@
 #include "value.h"
 #include "operator.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
+#include <bitset>
 #include <ostream>
 
 namespace document::select {
@@ -408,10 +409,20 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
     } else {
         ResultList results;
 
+        std::bitset<3> resultForNoVariables;
         // If comparing with other value, must match one.
-        for (uint32_t i=0; i<_values.size(); ++i) {
-            results.add(_values[i].first,
-                        cmp(*_values[i].second, value).combineResults());
+        for (const auto & item : _values) {
+            const Result & result = cmp(*item.second, value).combineResults();
+            if (item.first.empty()) {
+                resultForNoVariables.set(result.toEnum());
+            } else {
+                results.add(item.first, result);
+            }
+        }
+        for (uint32_t i(0); i < resultForNoVariables.size(); i++) {
+            if (resultForNoVariables[i]) {
+                results.add(fieldvalue::VariableMap(), Result::fromEnum(i));
+            }
         }
         return results;
     }
