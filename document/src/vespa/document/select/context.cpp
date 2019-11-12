@@ -34,7 +34,7 @@ Context::Context(const DocumentUpdate& docUpdate)
       _variables()
 { }
 
-Context::~Context() { }
+Context::~Context() = default;
 
 std::unique_ptr<Value>
 Context::getValue(const vespalib::string & value) const {

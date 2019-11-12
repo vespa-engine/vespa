@@ -3,8 +3,7 @@
 
 #include <vespa/document/base/globalid.h>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class Node;
 
@@ -87,5 +86,4 @@ public:
     }
 };
 
-} // select
-} // document
+}

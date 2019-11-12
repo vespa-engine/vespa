@@ -41,11 +41,8 @@ public:
     bool operator==(const ResultList& other) const;
 
     const Results& getResults() const { return _results; }
-    Results& getResults() { return _results; }
     const_iterator begin() const { return _results.begin(); }
     const_iterator end() const { return _results.end(); }
-    iterator begin() { return _results.begin(); }
-    iterator end() { return _results.end(); }
     const_reverse_iterator rbegin() const { return _results.rbegin(); }
     const_reverse_iterator rend() const { return _results.rend(); }
 

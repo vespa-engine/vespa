@@ -5,8 +5,7 @@
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 ResultList
 Value::globCompare(const Value& value) const
@@ -418,5 +417,4 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
     }
 }
 
-} // select
-} // document
+}

@@ -6,16 +6,13 @@
  * @brief Class matching whether a document is of given type or not.
  *
  * @author H�kon Humberset
- * @date 2005-06-07
- * @version $Id$
  */
 
 #pragma once
 
 #include "node.h"
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class DocType : public Node
 {
@@ -34,6 +31,4 @@ public:
 
 };
 
-} // select
-} // document
-
+}

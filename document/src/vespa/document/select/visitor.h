@@ -12,8 +12,7 @@
 
 #pragma once
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class And;
 class Compare;
@@ -38,61 +37,24 @@ class Visitor {
 public:
     virtual ~Visitor() {}
 
-    virtual void
-    visitAndBranch(const And &) = 0;
-
-    virtual void
-    visitComparison(const Compare &) = 0;
-
-    virtual void
-    visitConstant(const Constant &) = 0;
-
-    virtual void
-    visitInvalidConstant(const InvalidConstant &) = 0;
-
-    virtual void
-    visitDocumentType(const DocType &) = 0;
-
-    virtual void
-    visitNotBranch(const Not &) = 0;
-
-    virtual void
-    visitOrBranch(const Or &) = 0;
-
-    virtual void
-    visitArithmeticValueNode(const ArithmeticValueNode &) = 0;
-
-    virtual void
-    visitFunctionValueNode(const FunctionValueNode &) = 0;
-
-    virtual void
-    visitIdValueNode(const IdValueNode &) = 0;
-
-    virtual void
-    visitFieldValueNode(const FieldValueNode &) = 0;
-
-    virtual void
-    visitFloatValueNode(const FloatValueNode &) = 0;
-
-    virtual void
-    visitVariableValueNode(const VariableValueNode &) = 0;
-
-    virtual void
-    visitIntegerValueNode(const IntegerValueNode &) = 0;
-
-    virtual void
-    visitCurrentTimeValueNode(const CurrentTimeValueNode &) = 0;
-
-    virtual void
-    visitStringValueNode(const StringValueNode &) = 0;
-
-    virtual void
-    visitNullValueNode(const NullValueNode &) = 0;
-
-    virtual void
-    visitInvalidValueNode(const InvalidValueNode &) = 0;
+    virtual void visitAndBranch(const And &) = 0;
+    virtual void visitComparison(const Compare &) = 0;
+    virtual void visitConstant(const Constant &) = 0;
+    virtual void visitInvalidConstant(const InvalidConstant &) = 0;
+    virtual void visitDocumentType(const DocType &) = 0;
+    virtual void visitNotBranch(const Not &) = 0;
+    virtual void visitOrBranch(const Or &) = 0;
+    virtual void visitArithmeticValueNode(const ArithmeticValueNode &) = 0;
+    virtual void visitFunctionValueNode(const FunctionValueNode &) = 0;
+    virtual void visitIdValueNode(const IdValueNode &) = 0;
+    virtual void visitFieldValueNode(const FieldValueNode &) = 0;
+    virtual void visitFloatValueNode(const FloatValueNode &) = 0;
+    virtual void visitVariableValueNode(const VariableValueNode &) = 0;
+    virtual void visitIntegerValueNode(const IntegerValueNode &) = 0;
+    virtual void visitCurrentTimeValueNode(const CurrentTimeValueNode &) = 0;
+    virtual void visitStringValueNode(const StringValueNode &) = 0;
+    virtual void visitNullValueNode(const NullValueNode &) = 0;
+    virtual void visitInvalidValueNode(const InvalidValueNode &) = 0;
 };
 
-} // select
-} // document
-
+}

@@ -8,9 +8,7 @@
 #include "invalidconstant.h"
 #include "doctype.h" 
 
-namespace document {
-
-namespace select {
+namespace document::select {
 
 const int CloningVisitor::OrPriority;
 const int CloningVisitor::AndPriority;
@@ -46,7 +44,7 @@ CloningVisitor::CloningVisitor()
 { }
 
 
-CloningVisitor::~CloningVisitor() { }
+CloningVisitor::~CloningVisitor() = default;
 
 
 void
@@ -350,14 +348,11 @@ CloningVisitor::swap(CloningVisitor &rhs)
 
 
 void
-CloningVisitor::revisit(void)
+CloningVisitor::revisit()
 {
     _constVal = false;
     _priority = -1;
     _resultSet.clear();
-}
-
-
 }
 
 }

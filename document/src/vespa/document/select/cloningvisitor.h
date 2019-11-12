@@ -5,9 +5,7 @@
 #include "resultset.h"
 #include <memory>
 
-namespace document {
-
-namespace select {
+namespace document::select {
 
 class Node;
 class ValueNode;
@@ -83,6 +81,3 @@ public:
 };
 
 }
-
-}
-

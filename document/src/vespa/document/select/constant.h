@@ -13,8 +13,7 @@
 
 #include "node.h"
 
-namespace document {
-namespace select {
+namespace document::select {
 
 class Constant : public Node
 {
@@ -36,6 +35,4 @@ public:
 
 };
 
-} // select
-} // document
-
+}

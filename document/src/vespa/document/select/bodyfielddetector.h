@@ -4,10 +4,11 @@
 #include "traversingvisitor.h"
 
 namespace document {
-class DocumentTypeRepo;
-class DocumentType;
+    class DocumentTypeRepo;
+    class DocumentType;
+}
 
-namespace select {
+namespace document::select {
 
 class BodyFieldDetector : public TraversingVisitor
 {
@@ -47,6 +48,4 @@ public:
     bool needDocument() const { return _needDocument; }
 };
 
-}  // namespace select
-}  // namespace document
-
+}

@@ -60,7 +60,7 @@ InvalidValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
-NullValueNode::NullValueNode() {}
+NullValueNode::NullValueNode() = default;
 
 void
 NullValueNode::visit(Visitor &visitor) const
@@ -222,8 +222,8 @@ private:
     std::unique_ptr<Value> getInternalValue(const FieldValue &fval) const;
 };
 
-IteratorHandler::IteratorHandler() { }
-IteratorHandler::~IteratorHandler() { }
+IteratorHandler::IteratorHandler() = default;
+IteratorHandler::~IteratorHandler() = default;
 
 bool
 IteratorHandler::hasSingleValue() const {
@@ -343,13 +343,13 @@ std::unique_ptr<Value>
 FieldValueNode::getValue(const Context& context) const
 {
     if (context._doc == NULL) {
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     }
 
     const Document& doc = *context._doc;
 
     if (!documentTypeEqualsName(doc.getType(), _doctype)) {
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     }
     try{
         initFieldPath(doc.getType());
@@ -363,17 +363,17 @@ FieldValueNode::getValue(const Context& context) const
             const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
 
             if (values.size() == 0) {
-                return std::unique_ptr<Value>(new NullValue());
+                return std::make_unique<NullValue>();
             } else {
-                return std::unique_ptr<Value>(new ArrayValue(handler.getValues()));
+                return std::make_unique<ArrayValue>(handler.getValues());
             }
         }
     } catch (vespalib::IllegalArgumentException& e) {
         LOG(warning, "Caught exception while fetching field from document: %s", e.what());
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     } catch (FieldNotFoundException& e) {
         LOG(warning, "Tried to compare to field %s, not found in document type", _fieldExpression.c_str());
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     }
 }
 
@@ -405,7 +405,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
     if (!documentTypeEqualsName(doc.getType(), _doctype)) {
         out << "Document is of type " << doc.getType() << " which isn't a "
             << _doctype << " document, thus resolving invalid.\n";
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     }
     try{
         initFieldPath(doc.getType());
@@ -419,9 +419,9 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
             const std::vector<ArrayValue::VariableValue>& values = handler.getValues();
 
             if (values.size() == 0) {
-                return std::unique_ptr<Value>(new NullValue());
+                return std::make_unique<NullValue>();
             } else {
-                return std::unique_ptr<Value>(new ArrayValue(handler.getValues()));
+                return std::make_unique<ArrayValue>(handler.getValues());
             }
         }
     } catch (FieldNotFoundException& e) {
@@ -429,7 +429,7 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
                      _fieldExpression.c_str());
         out << "Field not found in document type " << doc.getType()
             << ". Returning invalid.\n";
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     }
 }
 
@@ -489,9 +489,7 @@ IdValueNode::getValue(const DocumentId& id) const
     vespalib::string value;
     switch (_type) {
     case BUCKET:
-        return std::unique_ptr<Value>(
-            new IntegerValue(
-                _bucketIdFactory.getBucketId(id).getId(), true));
+        return std::make_unique<IntegerValue>(_bucketIdFactory.getBucketId(id).getId(), true);
     case NS:
         value = id.getScheme().getNamespace(); break;
     case SCHEME:
@@ -501,7 +499,7 @@ IdValueNode::getValue(const DocumentId& id) const
         if (id.getScheme().hasDocType()) {
             value = id.getScheme().getDocType();
         } else {
-            return std::unique_ptr<Value>(new InvalidValue);
+            return std::make_unique<InvalidValue>();
         }
         break;
     case SPEC:
@@ -516,7 +514,7 @@ IdValueNode::getValue(const DocumentId& id) const
         } else {
             fprintf(stderr, "***** Returning invalid value for %s\n",
                     id.toString().c_str());
-            return std::unique_ptr<Value>(new InvalidValue);
+            return std::make_unique<InvalidValue>();
         }
         break;
     case GID:
@@ -524,14 +522,13 @@ IdValueNode::getValue(const DocumentId& id) const
         break;
     case USER:
         if (id.getScheme().hasNumber()) {
-            return std::unique_ptr<Value>(
-                    new IntegerValue(id.getScheme().getNumber(), false));
+            return std::make_unique<IntegerValue>(id.getScheme().getNumber(), false);
         } else {
-            return std::unique_ptr<Value>(new InvalidValue);
+            return std::make_unique<InvalidValue>();
         }
     }
 
-    return std::unique_ptr<Value>(new StringValue(value));
+    return std::make_unique<StringValue>(value);
 }
 
 
@@ -557,11 +554,8 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
     case BUCKET:
         {
             document::BucketId bucket(_bucketIdFactory.getBucketId(id));
-            std::unique_ptr<Value> result(
-                new IntegerValue(bucket.getId(), true));
-            out << "Found id.bucket specification. Resolved to "
-                << bucket.toString() << ".\n";
-            return result;
+            out << "Found id.bucket specification. Resolved to " << bucket.toString() << ".\n";
+            return std::make_unique<IntegerValue>(bucket.getId(), true);
         }
     case NS:
         value = id.getScheme().getNamespace();
@@ -577,7 +571,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
             out << "Resolved id.type to value\"" << value << "\".\n";
         } else {
             out << "Could not resolve type of doc " << id << ".\n";
-            return std::unique_ptr<Value>(new InvalidValue);
+            return std::make_unique<InvalidValue>();
         }
         break;
     case SPEC:
@@ -595,7 +589,7 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
                 << ") to \"" << value << "\".\n";
         } else {
             out << "Can't resolve group of doc \"" << id << "\".\n";
-            return std::unique_ptr<Value>(new InvalidValue);
+            return std::make_unique<InvalidValue>();
         }
         break;
     case GID:
@@ -604,18 +598,17 @@ IdValueNode::traceValue(const DocumentId& id, std::ostream& out) const
         break;
     case USER:
         if (id.getScheme().hasNumber()) {
-            std::unique_ptr<Value> result(
-                    new IntegerValue(id.getScheme().getNumber(), false));
+            auto result = std::make_unique<IntegerValue>(id.getScheme().getNumber(), false);
             out << "Resolved user of doc type " << id.getScheme().getType()
                 << " to " << *result << ".\n";
             return result;
         } else {
             out << "Could not resolve user of doc " << id << ".\n";
-            return std::unique_ptr<Value>(new InvalidValue);
+            return std::make_unique<InvalidValue>();
         }
     }
 
-    return std::unique_ptr<Value>(new StringValue(value));
+    return std::make_unique<StringValue>(value);
 }
 
 
@@ -677,12 +670,9 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
         {
             StringValue& sval(static_cast<StringValue&>(*val));
             if (_function == LOWERCASE) {
-                return std::unique_ptr<Value>(new StringValue(
-                    vespalib::LowerCase::convert(sval.getValue())));
+                return std::make_unique<StringValue>(vespalib::LowerCase::convert(sval.getValue()));
             } else if (_function == HASH) {
-                return std::unique_ptr<Value>(new IntegerValue(
-                    hash(sval.getValue().c_str(), sval.getValue().size()),
-                    false));
+                return std::make_unique<IntegerValue>(hash(sval.getValue().c_str(), sval.getValue().size()), false);
             }
             break;
         }
@@ -691,12 +681,11 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
             FloatValue& fval(static_cast<FloatValue&>(*val));
             if (_function == HASH) {
                 FloatValue::ValueType ffval = fval.getValue();
-                return std::unique_ptr<Value>(new IntegerValue(
-                    hash(&ffval, sizeof(ffval)), false));
+                return std::make_unique<IntegerValue>(hash(&ffval, sizeof(ffval)), false);
             } else if (_function == ABS) {
                 FloatValue::ValueType ffval = fval.getValue();
                 if (ffval < 0) ffval *= -1;
-                return std::unique_ptr<Value>(new FloatValue(ffval));
+                return std::make_unique<FloatValue>(ffval);
             }
             break;
         }
@@ -705,12 +694,11 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
             IntegerValue& ival(static_cast<IntegerValue&>(*val));
             if (_function == HASH) {
                 IntegerValue::ValueType iival = ival.getValue();
-                return std::unique_ptr<Value>(new IntegerValue(
-                    hash(&iival, sizeof(iival)), false));
+                return std::make_unique<IntegerValue>(hash(&iival, sizeof(iival)), false);
             } else if (_function == ABS) {
                 IntegerValue::ValueType iival = ival.getValue();
                 if (iival < 0) iival *= -1;
-                return std::unique_ptr<Value>(new IntegerValue(iival, false));
+                return std::make_unique<IntegerValue>(iival, false);
             }
             break;
         }
@@ -727,27 +715,23 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
         case Value::Invalid: break;
         case Value::Null: break;
     }
-    return std::unique_ptr<Value>(new InvalidValue);
+    return std::make_unique<InvalidValue>();
 }
 
 std::unique_ptr<Value>
-FunctionValueNode::traceValue(std::unique_ptr<Value> val,
-                              std::ostream& out) const
+FunctionValueNode::traceValue(std::unique_ptr<Value> val, std::ostream& out) const
 {
     switch (val->getType()) {
         case Value::String:
         {
             StringValue& sval(static_cast<StringValue&>(*val));
             if (_function == LOWERCASE) {
-                std::unique_ptr<Value> result(new StringValue(
-                    vespalib::LowerCase::convert(sval.getValue())));
+                auto result = std::make_unique<StringValue>(vespalib::LowerCase::convert(sval.getValue()));
                 out << "Performed lowercase function on '" << sval
                     << "' => '" << *result << "'.\n";
                 return result;
             } else if (_function == HASH) {
-                std::unique_ptr<Value> result(new IntegerValue(
-                    hash(sval.getValue().c_str(), sval.getValue().size()),
-                    false));
+                auto result = std::make_unique<IntegerValue>(hash(sval.getValue().c_str(), sval.getValue().size()), false);
                 out << "Performed hash on string '" << sval << "' -> "
                     << *result << "\n";
                 return result;
@@ -759,8 +743,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val,
             FloatValue& fval(static_cast<FloatValue&>(*val));
             if (_function == HASH) {
                 FloatValue::ValueType ffval = fval.getValue();
-                std::unique_ptr<Value> result(new IntegerValue(
-                    hash(&ffval, sizeof(ffval)), false));
+                auto result = std::make_unique<IntegerValue>(hash(&ffval, sizeof(ffval)), false);
                 out << "Performed hash on float " << ffval << " -> " << *result
                     << "\n";
                 return result;
@@ -769,7 +752,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val,
                 if (ffval < 0) ffval *= -1;
                 out << "Performed abs on float " << fval.getValue() << " -> "
                     << ffval << "\n";
-                return std::unique_ptr<Value>(new FloatValue(ffval));
+                return std::make_unique<FloatValue>(ffval);
             }
             break;
         }
@@ -778,8 +761,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val,
             IntegerValue& ival(static_cast<IntegerValue&>(*val));
             if (_function == HASH) {
                 IntegerValue::ValueType iival = ival.getValue();
-                std::unique_ptr<Value> result(new IntegerValue(
-                    hash(&iival, sizeof(iival)), false));
+                auto result = std::make_unique<IntegerValue>(hash(&iival, sizeof(iival)), false);
                 out << "Performed hash on float " << iival << " -> " << *result
                     << "\n";
                 return result;
@@ -788,7 +770,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val,
                 if (iival < 0) iival *= -1;
                 out << "Performed abs on integer " << ival.getValue() << " -> "
                     << iival << "\n";
-                return std::unique_ptr<Value>(new IntegerValue(iival, false));
+                return std::make_unique<IntegerValue>(iival, false);
             }
             break;
         }
@@ -800,7 +782,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val,
     }
     out << "Cannot use function " << _function << " on a value of type "
         << val->getType() << ". Resolving invalid.\n";
-    return std::unique_ptr<Value>(new InvalidValue);
+    return std::make_unique<InvalidValue>();
 }
 
 
@@ -866,8 +848,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
             {
                 StringValue& slval(static_cast<StringValue&>(*lval));
                 StringValue& srval(static_cast<StringValue&>(*rval));
-                return std::unique_ptr<Value>(new StringValue(
-                            slval.getValue() + srval.getValue()));
+                return std::make_unique<StringValue>(slval.getValue() + srval.getValue());
             }
         }
         [[fallthrough]];
@@ -894,7 +875,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                         break;
                     case MOD: assert(0);
                 }
-                return std::unique_ptr<Value>(new IntegerValue(res, false));
+                return std::make_unique<IntegerValue>(res, false);
             }
             NumberValue* nlval(dynamic_cast<NumberValue*>(lval.get()));
             NumberValue* nrval(dynamic_cast<NumberValue*>(rval.get()));
@@ -917,7 +898,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                         break;
                     case MOD: assert(0);
                 }
-                return std::unique_ptr<Value>(new FloatValue(res));
+                return std::make_unique<FloatValue>(res);
             }
         }
         break;
@@ -929,7 +910,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
                 IntegerValue& ilval(static_cast<IntegerValue&>(*lval));
                 IntegerValue& irval(static_cast<IntegerValue&>(*rval));
                 if (irval.getValue() != 0) {
-                    return std::unique_ptr<Value>(new IntegerValue(ilval.getValue() % irval.getValue(), false));
+                    return std::make_unique<IntegerValue>(ilval.getValue() % irval.getValue(), false);
                 } else {
                     throw vespalib::IllegalArgumentException("Division by zero");
                 }
@@ -937,7 +918,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
         }
         break;
     }
-    return std::unique_ptr<Value>(new InvalidValue);
+    return std::make_unique<InvalidValue>();
 }
 
 std::unique_ptr<Value>
@@ -953,8 +934,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
             {
                 StringValue& slval(static_cast<StringValue&>(*lval));
                 StringValue& srval(static_cast<StringValue&>(*rval));
-                std::unique_ptr<Value> result(new StringValue(
-                            slval.getValue() + srval.getValue()));
+                auto result = std::make_unique<StringValue>(slval.getValue() + srval.getValue());
                 out << "Appended strings '" << slval << "' + '" << srval
                     << "' -> '" << *result << "'.\n";
                 return result;
@@ -978,7 +958,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                     case DIV: res = ilval.getValue() / irval.getValue(); break;
                     case MOD: assert(0);
                 }
-                std::unique_ptr<Value> result(new IntegerValue(res, false));
+                auto result = std::make_unique<IntegerValue>(res, false);
                 out << "Performed integer operation " << ilval << " "
                     << getOperatorName() << " " << irval << " = " << *result
                     << "\n";
@@ -999,7 +979,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
                                   / nrval->getCommonValue(); break;
                     case MOD: assert(0);
                 }
-                std::unique_ptr<Value> result(new FloatValue(res));
+                auto result = std::make_unique<FloatValue>(res);
                 out << "Performed float operation " << nlval << " "
                     << getOperatorName() << " " << nrval << " = " << *result
                     << "\n";
@@ -1014,8 +994,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
             {
                 IntegerValue& ilval(static_cast<IntegerValue&>(*lval));
                 IntegerValue& irval(static_cast<IntegerValue&>(*rval));
-                std::unique_ptr<Value> result(new IntegerValue(
-                            ilval.getValue() % irval.getValue(), false));
+                auto result = std::make_unique<IntegerValue>(ilval.getValue() % irval.getValue(), false);
                 out << "Performed integer operation " << ilval << " "
                     << getOperatorName() << " " << irval << " = " << *result
                     << "\n";
@@ -1027,7 +1006,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
     out << "Failed to do operation " << getOperatorName()
         << " on values of type " << lval->getType() << " and "
         << rval->getType() << ". Resolving invalid.\n";
-    return std::unique_ptr<Value>(new InvalidValue);
+    return std::make_unique<InvalidValue>();
 }
 
 

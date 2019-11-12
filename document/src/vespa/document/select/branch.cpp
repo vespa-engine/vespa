@@ -5,8 +5,7 @@
 #include <cassert>
 #include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 And::And(std::unique_ptr<Node> left, std::unique_ptr<Node> right, const char* name)
     : Branch(name ? name : "and"),
@@ -141,6 +140,4 @@ Not::trace(const Context& context, std::ostream& out) const
     return traceNotValue(context, out, *_child);
 }
 
-
-} // select
-} // document
+}

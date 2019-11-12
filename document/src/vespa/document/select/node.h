@@ -6,7 +6,6 @@
  * @brief Base class for all nodes in the document selection tree.
  *
  * @author Håkon Humberset
- * @date 2005-06-07
  */
 
 #pragma once
@@ -14,9 +13,7 @@
 #include "resultlist.h"
 #include "context.h"
 
-namespace document {
-
-namespace select {
+namespace document::select {
 
 class Visitor;
 
@@ -55,6 +52,4 @@ protected:
     }
 };
 
-} // select
-} // document
-
+}
