@@ -3,16 +3,13 @@
 #include "result.h"
 #include <ostream>
 
-namespace document {
-namespace select {
+namespace document::select {
 
 Result Result::Invalid;
 Result Result::False;
 Result Result::True;
 
-Result::Result()
-{
-}
+Result::Result() = default;
 
 const Result&
 Result::operator!() const {
@@ -50,5 +47,4 @@ Result::print(std::ostream& out, bool,
     else out << "False";
 }
 
-} // select
-} // document
+}

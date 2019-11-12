@@ -4,11 +4,7 @@
 #include "compare.h"
 #include <cerrno>
 
-namespace document {
-
-namespace select {
-
-namespace simple {
+namespace document::select::simple {
 
 size_t eatWhite(const char * s, size_t len)
 {
@@ -197,8 +193,4 @@ bool SelectionParser::parse(vespalib::stringref s)
     return retval;
 }
 
-
-
-} // simple
-} // select
-} // parser
+}
