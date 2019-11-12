@@ -7,25 +7,10 @@
 
 using namespace vespalib::eval;
 
-/**
- * Hack to avoid parse-conflict between tensor type expressions and
- * lambda-generated tensors. This will patch leading identifier 'T' to
- * 't' directly in the input stream after we have concluded that this
- * is not a lambda-generated tensor in order to parse it out as a
- * valid tensor type. This may be reverted later if we add support for
- * parser rollback when we fail to parse a lambda-generated tensor.
- **/
-void tensor_type_hack(const char *pos_in, const char *end_in) {
-    if ((pos_in < end_in) && (*pos_in == 'T')) {
-        const_cast<char *>(pos_in)[0] = 't';
-    }
-}
-
 struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     void extract_symbol(const char *pos_in, const char *end_in,
                         const char *&pos_out, vespalib::string &symbol_out) const override
     {
-        tensor_type_hack(pos_in, end_in);
         ValueType type = value_type::parse_spec(pos_in, end_in, pos_out);
         if (pos_out != nullptr) {
             symbol_out = type.to_spec();
@@ -33,21 +18,7 @@ struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
     }
 };
 
-void verify(const vespalib::string &type_expr_in, const vespalib::string &type_spec, bool replace_first = true) {
-    vespalib::string type_expr = type_expr_in;
-    // replace 'tensor' with 'Tensor' in type expression, see hack above
-    size_t tensor_cnt = 0;
-    for (size_t idx = type_expr.find("tensor");
-         idx != type_expr.npos;
-         idx = type_expr.find("tensor", idx + 1))
-    {
-        // setting 'replace_first' to false will avoid replacing the
-        // first 'tensor' instance to let the parser handle it as an
-        // actual tensor generator.
-        if ((tensor_cnt++ > 0) || replace_first) {
-            type_expr[idx] = 'T';
-        }
-    }
+void verify(const vespalib::string &type_expr, const vespalib::string &type_spec) {
     Function function = Function::parse(type_expr, TypeSpecExtractor());
     if (!EXPECT_TRUE(!function.has_error())) {
         fprintf(stderr, "parse error: %s\n", function.get_error().c_str());
@@ -225,22 +196,22 @@ TEST("require that join resolves correct type") {
 }
 
 TEST("require that lambda tensor resolves correct type") {
-    TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])", false));
-    TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])", false));
-    TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])", false));
-    TEST_DO(verify("tensor<double>(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])", false));
-    TEST_DO(verify("tensor<float>(x[5],y[10],z[15])(1.0)", "tensor<float>(x[5],y[10],z[15])", false));
+    TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])"));
+    TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])"));
+    TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
+    TEST_DO(verify("tensor<double>(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
+    TEST_DO(verify("tensor<float>(x[5],y[10],z[15])(1.0)", "tensor<float>(x[5],y[10],z[15])"));
 }
 
 TEST("require that tensor create resolves correct type") {
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor(x[3])", false));
-    TEST_DO(verify("tensor(x{}):{{x:a}:double,{x:b}:double,{x:c}:double}", "tensor(x{})", false));
-    TEST_DO(verify("tensor(x{},y[2]):{{x:a,y:0}:double,{x:a,y:1}:double}", "tensor(x{},y[2])", false));
-    TEST_DO(verify("tensor<float>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<float>(x[3])", false));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double+double,{x:1}:double-double,{x:2}:double/double}", "tensor(x[3])", false));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:reduce(tensor(x[2]),sum),{x:2}:double}", "tensor(x[3])", false));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:tensor(x[2]),{x:2}:double}", "error", false));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error", false));
+    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor(x[3])"));
+    TEST_DO(verify("tensor(x{}):{{x:a}:double,{x:b}:double,{x:c}:double}", "tensor(x{})"));
+    TEST_DO(verify("tensor(x{},y[2]):{{x:a,y:0}:double,{x:a,y:1}:double}", "tensor(x{},y[2])"));
+    TEST_DO(verify("tensor<float>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<float>(x[3])"));
+    TEST_DO(verify("tensor(x[3]):{{x:0}:double+double,{x:1}:double-double,{x:2}:double/double}", "tensor(x[3])"));
+    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:reduce(tensor(x[2]),sum),{x:2}:double}", "tensor(x[3])"));
+    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:tensor(x[2]),{x:2}:double}", "error"));
+    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error"));
 }
 
 TEST("require that tensor concat resolves correct type") {

@@ -842,8 +842,8 @@ TEST("require that verbose tensor create handles spaces and reordering of variou
 }
 
 TEST("require that verbose tensor create detects invalid tensor type") {
-    TEST_DO(verify_error("tensor(x[,y}):ignored",
-                         "[tensor(x[,y}):]...[invalid tensor type]...[ignored]"));
+    TEST_DO(verify_error("tensor(x[,y}):{{ignored}}",
+                         "[tensor(x[,y})]...[invalid tensor type]...[:{{ignored}}]"));
 }
 
 TEST("require that verbose tensor create detects incomplete addresses") {
@@ -864,6 +864,71 @@ TEST("require that verbose tensor create detects out-of-bounds indexes for index
 TEST("require that verbose tensor create detects non-numeric indexes for indexed dimensions") {
     TEST_DO(verify_error("tensor(x[1]):{{x:foo}:1}",
                          "[tensor(x[1]):{{x:]...[expected number]...[foo}:1}]"));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that convenient tensor create can be parsed") {
+    auto dense = Function::parse("tensor(x[3]):[1,2,3]");
+    auto sparse = Function::parse("tensor(x{}):{a:1,b:2,c:3}");
+    auto mixed = Function::parse("tensor(x{},y[2]):{a:[1,2]}");
+    EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense.dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}", sparse.dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}", mixed.dump());
+}
+
+TEST("require that convenient tensor create can contain expressions") {
+    auto fun = Function::parse("tensor(x[2]):[1,2+a]");
+    EXPECT_EQUAL("tensor(x[2]):{{x:0}:1,{x:1}:(2+a)}", fun.dump());
+    ASSERT_EQUAL(fun.num_params(), 1u);
+    EXPECT_EQUAL(fun.param_name(0), "a");
+}
+
+TEST("require that convenient tensor create handles dimension order") {
+    auto mixed = Function::parse("tensor(y{},x[2]):{a:[1,2]}");
+    EXPECT_EQUAL("tensor(x[2],y{}):{{x:0,y:a}:1,{x:1,y:a}:2}", mixed.dump());
+}
+
+TEST("require that convenient tensor create can be highly nested") {
+    vespalib::string expect("tensor(a{},b{},c[1],d[1]):{{a:x,b:y,c:0,d:0}:5}");
+    auto nested1 = Function::parse("tensor(a{},b{},c[1],d[1]):{x:{y:[[5]]}}");
+    auto nested2 = Function::parse("tensor(c[1],d[1],a{},b{}):[[{x:{y:5}}]]");
+    auto nested3 = Function::parse("tensor(a{},c[1],b{},d[1]): { x : [ { y : [ 5 ] } ] } ");
+    EXPECT_EQUAL(expect, nested1.dump());
+    EXPECT_EQUAL(expect, nested2.dump());
+    EXPECT_EQUAL(expect, nested3.dump());
+}
+
+TEST("require that convenient tensor create can have multiple values on multiple levels") {
+    vespalib::string expect("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2,{x:b,y:0}:3,{x:b,y:1}:4}");
+    auto fun1 = Function::parse("tensor(x{},y[2]):{a:[1,2],b:[3,4]}");
+    auto fun2 = Function::parse("tensor(y[2],x{}):[{a:1,b:3},{a:2,b:4}]");
+    auto fun3 = Function::parse("tensor(x{},y[2]): { a : [ 1 , 2 ] , b : [ 3 , 4 ] } ");
+    auto fun4 = Function::parse("tensor(y[2],x{}): [ { a : 1 , b : 3 } , { a : 2 , b : 4 } ] ");
+    EXPECT_EQUAL(expect, fun1.dump());
+    EXPECT_EQUAL(expect, fun2.dump());
+    EXPECT_EQUAL(expect, fun3.dump());
+    EXPECT_EQUAL(expect, fun4.dump());
+}
+
+TEST("require that convenient tensor create allows under-specified tensors") {
+    auto fun = Function::parse("tensor(x[2],y[2]):[[],[5]]");
+    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:1,y:0}:5}", fun.dump());
+}
+
+TEST("require that convenient tensor create detects invalid tensor type") {
+    TEST_DO(verify_error("tensor(x[,y}):ignored",
+                         "[tensor(x[,y})]...[invalid tensor type]...[:ignored]"));
+}
+
+TEST("require that convenient tensor create detects too large indexed dimensions") {
+    TEST_DO(verify_error("tensor(x[1]):[1,2]",
+                         "[tensor(x[1]):[1,]...[dimension too large: 'x']...[2]]"));
+}
+
+TEST("require that convenient tensor create detects under-specified cells") {
+    TEST_DO(verify_error("tensor(x[1],y[1]):[1]",
+                         "[tensor(x[1],y[1]):[]...[expected '[', but got '1']...[1]]"));
 }
 
 //-----------------------------------------------------------------------------
