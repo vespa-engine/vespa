@@ -6,14 +6,14 @@
 #include <vespa/document/base/fieldpath.h>
 
 namespace document {
+    class BucketDistribution;
+    class BucketIdFactory;
+    class DocumentId;
+    class BucketId;
+    class DocumentType;
+}
 
-class BucketDistribution;
-class BucketIdFactory;
-class DocumentId;
-class BucketId;
-class DocumentType;
-
-namespace select {
+namespace document::select {
 
 class InvalidValueNode : public ValueNode
 {
@@ -358,5 +358,4 @@ private:
                                             std::ostream&) const;
 };
 
-} // select
-} // document
+}
