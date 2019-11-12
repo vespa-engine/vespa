@@ -41,7 +41,6 @@ public:
     bool operator==(const ResultList& other) const;
 
     const Results& getResults() const { return _results; }
-    Results& getResults() { return _results; }
     const_iterator begin() const { return _results.begin(); }
     const_iterator end() const { return _results.end(); }
     iterator begin() { return _results.begin(); }
