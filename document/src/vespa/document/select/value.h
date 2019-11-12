@@ -68,7 +68,7 @@ public:
     ResultList operator<(const Value&) const override;
     ResultList operator==(const Value&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    Value::UP clone() const override { return Value::UP(new InvalidValue()); }
+    Value::UP clone() const override { return std::make_unique<InvalidValue>(); }
 };
 
 class NullValue : public Value
@@ -82,7 +82,7 @@ public:
     ResultList operator>=(const Value &) const override;
     ResultList operator<=(const Value &) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    Value::UP clone() const override { return Value::UP(new NullValue()); }
+    Value::UP clone() const override { return std::make_unique<NullValue>(); }
 };
 
 class StringValue : public Value
@@ -96,7 +96,7 @@ public:
     ResultList operator<(const Value& value) const override;
     ResultList operator==(const Value& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
-    Value::UP clone() const override { return Value::UP(new StringValue(_value)); }
+    Value::UP clone() const override { return std::make_unique<StringValue>(_value); }
 };
 
 class IntegerValue;
@@ -139,7 +139,7 @@ public:
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
     Value::UP clone() const override {
-        return Value::UP(new IntegerValue(_value, getType() == Value::Bucket));
+        return std::make_unique<IntegerValue>(_value, getType() == Value::Bucket);
     }
 private:
     ValueType _value;
@@ -164,7 +164,7 @@ public:
     ResultList operator==(const FloatValue& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    Value::UP clone() const override { return Value::UP(new FloatValue(_value)); }
+    Value::UP clone() const override { return std::make_unique<FloatValue>(_value); }
 private:
     ValueType _value;
 };
@@ -210,7 +210,7 @@ public:
     template <typename Predicate>
     ResultList doCompare(const Value& value, const Predicate& cmp) const;
 
-    Value::UP clone() const override { return Value::UP(new ArrayValue(_values)); }
+    Value::UP clone() const override { return std::make_unique<ArrayValue>(_values); }
 
 private:
     struct EqualsComparator;
@@ -235,7 +235,7 @@ public:
     ResultList operator==(const Value& value) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    Value::UP clone() const override { return Value::UP(new StructValue(_values)); }
+    Value::UP clone() const override { return std::make_unique<StructValue>(_values); }
 private:
     ValueMap _values;
 };

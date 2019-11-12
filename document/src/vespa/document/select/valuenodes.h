@@ -22,7 +22,7 @@ public:
     InvalidValueNode(vespalib::stringref name);
 
     std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::unique_ptr<Value>(new InvalidValue());
+        return std::make_unique<InvalidValue>();
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -39,7 +39,7 @@ public:
     NullValueNode();
 
     std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::unique_ptr<Value>(new NullValue());
+        return std::make_unique<NullValue>();
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -60,7 +60,7 @@ public:
     const vespalib::string& getValue() const { return _value; }
 
     std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::unique_ptr<Value>(new StringValue(_value));
+        return std::make_unique<StringValue>(_value);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -81,8 +81,8 @@ public:
 
     int64_t getValue() const { return _value; }
 
-    virtual std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::unique_ptr<Value>(new IntegerValue(_value, _isBucketValue));
+    std::unique_ptr<Value> getValue(const Context&) const override {
+        return std::make_unique<IntegerValue>(_value, _isBucketValue);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -99,7 +99,7 @@ public:
     int64_t getValue() const;
 
     std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::unique_ptr<Value>(new IntegerValue(getValue(), false));
+        return std::make_unique<IntegerValue>(getValue(), false);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
@@ -137,7 +137,7 @@ public:
     double getValue() const { return _value; }
 
     std::unique_ptr<Value> getValue(const Context&) const override {
-        return std::unique_ptr<Value>(new FloatValue(_value));
+        return std::make_unique<FloatValue>(_value);
     }
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
