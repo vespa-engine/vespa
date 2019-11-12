@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "resultlist.h"
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <ostream>
 
 namespace document::select {
@@ -96,39 +97,56 @@ ResultList::combineVariables(
 ResultList
 ResultList::operator&&(const ResultList& other) const
 {
-    ResultList result;
+    ResultList results;
 
     // TODO: optimize
+    vespalib::hash_set<uint32_t> resultForNoVariables;
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
             fieldvalue::VariableMap vars = it.first;
 
             if (combineVariables(vars, it2.first)) {
-                result.add(vars, *it.second && *it2.second);
+                const Result & result = *it.second && *it2.second;
+                if (vars.empty()) {
+                    resultForNoVariables.insert(result.toEnum());
+                } else {
+                    results.add(vars, result);
+                }
             }
         }
     }
+    for (uint32_t result : resultForNoVariables) {
+        results.add(fieldvalue::VariableMap(), Result::fromEnum(result));
+    }
 
-    return result;
+    return results;
 }
 
 ResultList
 ResultList::operator||(const ResultList& other) const
 {
-    ResultList result;
+    ResultList results;
 
     // TODO: optimize
+    vespalib::hash_set<uint32_t> resultForNoVariables;
     for (const auto & it : _results) {
         for (const auto & it2 : other._results) {
             fieldvalue::VariableMap vars = it.first;
-
             if (combineVariables(vars, it2.first)) {
-                result.add(vars, *it.second || *it2.second);
+                const Result & result = *it.second || *it2.second;
+                if (vars.empty()) {
+                    resultForNoVariables.insert(result.toEnum());
+                } else {
+                    results.add(vars, result);
+                }
             }
         }
     }
+    for (uint32_t result : resultForNoVariables) {
+        results.add(fieldvalue::VariableMap(), Result::fromEnum(result));
+    }
 
-    return result;
+    return results;
 }
 
 ResultList
