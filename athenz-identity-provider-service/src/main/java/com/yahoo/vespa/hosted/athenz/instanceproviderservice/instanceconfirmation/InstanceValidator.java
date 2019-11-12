@@ -14,7 +14,6 @@ import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
@@ -35,15 +34,12 @@ import java.util.stream.Stream;
  */
 public class InstanceValidator {
 
+    private static final AthenzService TENANT_DOCKER_CONTAINER_IDENTITY = new AthenzService("vespa.vespa.tenant");
     private static final Logger log = Logger.getLogger(InstanceValidator.class.getName());
     static final String SERVICE_PROPERTIES_DOMAIN_KEY = "identity.domain";
     static final String SERVICE_PROPERTIES_SERVICE_KEY = "identity.service";
     static final String INSTANCE_ID_DELIMITER = ".instanceid.athenz.";
 
-    public static final String SAN_IPS_ATTRNAME = "sanIP";
-    public static final String SAN_DNS_ATTRNAME = "sanDNS";
-
-    private final AthenzService tenantDockerContainerIdentity;
     private final IdentityDocumentSigner signer;
     private final KeyProvider keyProvider;
     private final SuperModelProvider superModelProvider;
@@ -52,21 +48,18 @@ public class InstanceValidator {
     @Inject
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
-                             NodeRepository nodeRepository,
-                             AthenzProviderServiceConfig config) {
-        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner(), new AthenzService(config.tenantService()));
+                             NodeRepository nodeRepository) {
+        this(keyProvider, superModelProvider, nodeRepository, new IdentityDocumentSigner());
     }
 
     public InstanceValidator(KeyProvider keyProvider,
                              SuperModelProvider superModelProvider,
                              NodeRepository nodeRepository,
-                             IdentityDocumentSigner identityDocumentSigner,
-                             AthenzService tenantIdentity){
+                             IdentityDocumentSigner identityDocumentSigner){
         this.keyProvider = keyProvider;
         this.superModelProvider = superModelProvider;
         this.nodeRepository = nodeRepository;
         this.signer = identityDocumentSigner;
-        this.tenantDockerContainerIdentity = tenantIdentity;
     }
 
     public boolean isValidInstance(InstanceConfirmation instanceConfirmation) {
@@ -103,7 +96,7 @@ public class InstanceValidator {
         log.log(LogLevel.INFO, () -> String.format("Accepting refresh for instance with identity '%s', provider '%s', instanceId '%s'.",
                                                    new AthenzService(confirmation.domain, confirmation.service).getFullName(),
                                                    confirmation.provider,
-                                                   confirmation.attributes.get(SAN_DNS_ATTRNAME)));
+                                                   confirmation.attributes.get("sanDNS")));
         try {
             return validateAttributes(confirmation, getVespaUniqueInstanceId(confirmation));
         } catch (Exception e) {
@@ -114,7 +107,7 @@ public class InstanceValidator {
 
     private VespaUniqueInstanceId getVespaUniqueInstanceId(InstanceConfirmation instanceConfirmation) {
         // Find a list of SAN DNS
-        List<String> sanDNS = Optional.ofNullable(instanceConfirmation.attributes.get(SAN_DNS_ATTRNAME))
+        List<String> sanDNS = Optional.ofNullable(instanceConfirmation.attributes.get("sanDNS"))
                 .map(s -> s.split(","))
                 .map(Arrays::asList)
                 .map(List::stream)
@@ -131,7 +124,7 @@ public class InstanceValidator {
 
     private boolean validateAttributes(InstanceConfirmation confirmation, VespaUniqueInstanceId vespaUniqueInstanceId) {
         if(vespaUniqueInstanceId == null) {
-            log.log(LogLevel.WARNING, "Unable to find unique instance ID in refresh request: " + confirmation.toString());
+            log.log(LogLevel.WARNING, "Unabe to find unique instance ID in refresh request: " + confirmation.toString());
             return false;
         }
 
@@ -147,7 +140,7 @@ public class InstanceValidator {
         }
 
         // Find list of ipaddresses
-        List<InetAddress> ips = Optional.ofNullable(confirmation.attributes.get(SAN_IPS_ATTRNAME))
+        List<InetAddress> ips = Optional.ofNullable(confirmation.attributes.get("sanIP"))
                 .map(s -> s.split(","))
                 .map(Arrays::asList)
                 .map(List::stream)
@@ -191,7 +184,7 @@ public class InstanceValidator {
             return false;
         }
 
-        if (tenantDockerContainerIdentity.equals(new AthenzService(domain, service))) {
+        if (TENANT_DOCKER_CONTAINER_IDENTITY.equals(new AthenzService(domain, service))) {
             return true;
         }
 
