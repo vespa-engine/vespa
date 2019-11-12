@@ -7,9 +7,9 @@ import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import static com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy.ENOUGH_SERVICES_UP_CONSTRAINT;
 
 public class HostedVespaClusterPolicy implements ClusterPolicy {
+
     @Override
-    public void verifyGroupGoingDownIsFine(ClusterApi clusterApi)
-            throws HostStateChangeDeniedException {
+    public void verifyGroupGoingDownIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
         if (clusterApi.noServicesOutsideGroupIsDown()) {
             return;
         }
@@ -36,8 +36,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
     }
 
     @Override
-    public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi)
-            throws HostStateChangeDeniedException {
+    public void verifyGroupGoingDownPermanentlyIsFine(ClusterApi clusterApi) throws HostStateChangeDeniedException {
         // This policy is similar to verifyGroupGoingDownIsFine, except that services being down in the group
         // is no excuse to allow suspension (like it is for verifyGroupGoingDownIsFine), since if we grant
         // suspension in this case they will permanently be down/removed.
@@ -66,6 +65,11 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
     ConcurrentSuspensionLimitForCluster getConcurrentSuspensionLimit(ClusterApi clusterApi) {
         if (clusterApi.isStorageCluster()) {
             return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+        }
+
+        if (VespaModelUtil.CLUSTER_CONTROLLER_SERVICE_TYPE.equals(clusterApi.serviceType())) {
+            // All nodes have all state and we need to be able to remove the half that are retired on cluster migration
+            return ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT;
         }
 
         if (VespaModelUtil.METRICS_PROXY_SERVICE_TYPE.equals(clusterApi.serviceType())) {

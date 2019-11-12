@@ -5,9 +5,11 @@ package com.yahoo.vespa.orchestrator.policy;
  * How many nodes can suspend concurrently, at most.
  */
 public enum ConcurrentSuspensionLimitForCluster {
+
     ONE_NODE(0),
     TEN_PERCENT(10),
     TWENTY_PERCENT(20),
+    FIFTY_PERCENT(50),
     ALL_NODES(100);
 
     int percentage;
