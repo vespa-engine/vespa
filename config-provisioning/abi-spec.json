@@ -485,6 +485,7 @@
       "public java.util.Optional membership()",
       "public java.util.Optional networkPorts()",
       "public java.util.Optional requestedResources()",
+      "public com.yahoo.config.provision.HostSpec withPorts(java.util.Optional)",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
