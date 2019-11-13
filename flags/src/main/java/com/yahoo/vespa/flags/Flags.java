@@ -3,7 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.custom.NodeMaintainerDurations;
 import com.yahoo.vespa.flags.custom.PreprovisionCapacity;
 
 import java.util.List;
@@ -112,9 +111,9 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundJacksonFlag<NodeMaintainerDurations> NODE_MAINTAINER_DURATIONS = defineJacksonFlag(
-            "node-maintainer-durations", new NodeMaintainerDurations(), NodeMaintainerDurations.class,
-            "Provides overrides for durations in NodeRepositoryMaintenance",
+    public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
+            "reboot-interval-in-days", 30,
+            "The reboot interval in days.",
             "Takes effect on start of config server / controller");
 
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
