@@ -10,7 +10,6 @@ import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -76,7 +75,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         failedExpirer = new FailedExpirer(nodeRepository, zone, clock, defaults.failedExpirerInterval);
         dirtyExpirer = new DirtyExpirer(nodeRepository, clock, defaults.dirtyExpiry);
         provisionedExpirer = new ProvisionedExpirer(nodeRepository, clock, defaults.provisionedExpiry);
-        nodeRebooter = new NodeRebooter(nodeRepository, clock, Duration.ofDays(Flags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource).value()));
+        nodeRebooter = new NodeRebooter(nodeRepository, clock, flagSource);
         metricsReporter = new MetricsReporter(nodeRepository, metric, orchestrator, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval);
         infrastructureProvisioner = new InfrastructureProvisioner(nodeRepository, infraDeployer, defaults.infrastructureProvisionInterval);
         loadBalancerExpirer = provisionServiceProvider.getLoadBalancerService().map(lbService ->

@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import org.junit.Test;
 
@@ -19,51 +21,82 @@ public class NodeRebooterTest {
 
     @Test
     public void testRebootScheduling() {
-        Duration rebootInterval = Duration.ofMinutes(250);
-        MaintenanceTester tester = new MaintenanceTester();
-        tester.createReadyTenantNodes(15);
+        var rebootInterval = Duration.ofDays(30);
+        var flagSource = new InMemoryFlagSource().withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
+        var tester = new MaintenanceTester();
         tester.createReadyHostNodes(15);
-        // New non-host nodes are rebooted when transitioning from dirty to ready. Advance the time so that additional
-        // reboots will be performed.
+        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, flagSource);
+
+        assertReadyHosts(15, tester, 0L);
+
+        // No reboots within 0x-1x reboot interval
         tester.clock.advance(rebootInterval);
-        
-        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, rebootInterval);
+        rebooter.maintain();
+        simulateReboot(tester);
+        assertReadyHosts(15, tester, 0L);
 
-        maintenanceIntervals(rebooter, tester, 1);
-        assertEquals("All tenant nodes have reboot scheduled",
-                     15,
-                     withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
-        assertEquals("No nodes have 2 reboots scheduled",
-                     0,
-                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(Node.State.ready)).size());
+        // All nodes/hosts reboots within 1x-2x reboot interval
+        tester.clock.advance(rebootInterval);
+        rebooter.maintain();
+        simulateReboot(tester);
+        assertReadyHosts(15, tester, 1L);
 
-        maintenanceIntervals(rebooter, tester, 11);
-        assertEquals("Reboot interval is 10x iteration interval, so tenant nodes are now rebooted 3 times",
-                     15,
-                     withCurrentRebootGeneration(3L, tester.nodeRepository.getNodes(NodeType.tenant, Node.State.ready)).size());
-        assertEquals("Reboot interval is 10x iteration interval, so host nodes are now rebooted twice",
-                     15,
-                     withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready)).size());
-
+        // OS upgrade just before reboots would have been scheduled again
+        tester.clock.advance(rebootInterval);
         scheduleOsUpgrade(tester);
-        maintenanceIntervals(rebooter, tester, 8);
-        assertEquals(15, withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready)).size());
         simulateOsUpgrade(tester);
-        maintenanceIntervals(rebooter, tester, 1);
-        assertEquals("Host nodes are not rebooted as they recently rebooted due to OS upgrade",
-                     15, withCurrentRebootGeneration(2L, tester.nodeRepository.getNodes(NodeType.host, Node.State.ready)).size());
+        rebooter.maintain();
+        simulateReboot(tester);
+        assertReadyHosts(15, tester, 1L);
+
+        // OS upgrade counts as reboot, so within 0x-1x there is no reboots
+        tester.clock.advance(rebootInterval);
+        rebooter.maintain();
+        simulateReboot(tester);
+        assertReadyHosts(15, tester, 1L);
+
+        // OS upgrade counts as reboot, but within 1x-2x reboots are scheduled again
+        tester.clock.advance(rebootInterval);
+        rebooter.maintain();
+        simulateReboot(tester);
+        assertReadyHosts(15, tester, 2L);
     }
-    
-    private void maintenanceIntervals(NodeRebooter rebooter, MaintenanceTester tester, int iterations) {
-        for (int i = 0; i < iterations; i++) {
-            tester.clock.advance(Duration.ofMinutes(25));
-            for (int j = 0; j < 60; j++) { // multiple runs to remove effects from the probabilistic smoothing in the reboot maintainer
-                rebooter.maintain();
-                simulateReboot(tester);
+
+    @Test
+    public void testRebootScheduledEvenWithSmallProbability() {
+        Duration rebootInterval = Duration.ofDays(30);
+        var flagSource = new InMemoryFlagSource().withIntFlag(Flags.REBOOT_INTERVAL_IN_DAYS.id(), (int) rebootInterval.toDays());
+        var tester = new MaintenanceTester();
+        tester.createReadyHostNodes(2);
+        NodeRebooter rebooter = new NodeRebooter(tester.nodeRepository, tester.clock, flagSource);
+
+        assertReadyHosts(2, tester, 0L);
+
+        // No reboots within 0x-1x reboot interval
+        tester.clock.advance(rebootInterval);
+        rebooter.maintain();
+        simulateReboot(tester);
+        assertReadyHosts(2, tester, 0L);
+
+        // Advancing just a little bit into the 1x-2x interval, there is a >0 probability of
+        // rebooting a host. Run until all have been scheduled.
+        tester.clock.advance(Duration.ofMinutes(25));
+        for (int i = 0;; ++i) {
+            rebooter.maintain();
+            simulateReboot(tester);
+            List<Node> nodes = tester.nodeRepository.getNodes(NodeType.host, Node.State.ready);
+            int count = withCurrentRebootGeneration(1L, nodes).size();
+            if (count == 2) {
+                break;
             }
         }
     }
-    
+
+    private void assertReadyHosts(int expectedCount, MaintenanceTester tester, long generation) {
+        List<Node> nodes = tester.nodeRepository.getNodes(NodeType.host, Node.State.ready);
+        assertEquals(expectedCount, withCurrentRebootGeneration(generation, nodes).size());
+    }
+
     /** Set current reboot generation to the wanted reboot generation whenever it is larger (i.e record a reboot) */
     private void simulateReboot(MaintenanceTester tester) {
         for (Node node : tester.nodeRepository.getNodes(Node.State.ready, Node.State.active)) {

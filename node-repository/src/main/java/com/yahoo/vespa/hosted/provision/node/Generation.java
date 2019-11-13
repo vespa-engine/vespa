@@ -29,6 +29,10 @@ public class Generation {
         return current;
     }
 
+    public boolean pending() {
+        return current < wanted;
+    }
+
     public Generation withIncreasedWanted() {
         return new Generation(wanted + 1, current);
     }
