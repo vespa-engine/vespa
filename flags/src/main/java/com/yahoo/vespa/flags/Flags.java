@@ -167,6 +167,12 @@ public class Flags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
+    public static final UnboundBooleanFlag USE_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION = defineFeatureFlag(
+            "zookeeper-use-tls-for-quorum-communication", false,
+            "Whether to use TLS for ZooKeeper quorum communication",
+            "Takes effect on restart of config server",
+            NODE_TYPE, HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
