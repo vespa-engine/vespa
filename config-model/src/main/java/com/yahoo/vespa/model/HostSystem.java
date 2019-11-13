@@ -177,15 +177,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     }
 
     Set<HostSpec> getHostSpecs() {
-        return getHosts().stream()
-                .map(host -> new HostSpec(host.getHostname(),
-                                          Collections.emptyList(),
-                                          host.getFlavor(),
-                                          host.primaryClusterMembership(),
-                                          host.spec().version(),
-                                          host.ports().networkPorts(),
-                                          host.spec().requestedResources()))
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return getHosts().stream().map(host -> host.spec()).collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /** A provision logger which forwards to a deploy logger */
