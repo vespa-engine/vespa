@@ -117,7 +117,7 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
     private double skewWith(NodeResources resources) {
         if (parent.isEmpty()) return 0;
 
-        NodeResources free = freeParentCapacity.numbersOnly().subtract(resources.numbersOnly());
+        NodeResources free = freeParentCapacity.justNumbers().subtract(resources.justNumbers());
         return Node.skew(parent.get().flavor().resources(), free);
     }
 

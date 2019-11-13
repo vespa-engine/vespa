@@ -110,14 +110,14 @@ public class Rebalancer extends Maintainer {
     private double skewReductionByRemoving(Node node, Node fromHost, DockerHostCapacity capacity) {
         NodeResources freeHostCapacity = capacity.freeCapacityOf(fromHost);
         double skewBefore = Node.skew(fromHost.flavor().resources(), freeHostCapacity);
-        double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().numbersOnly()));
+        double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().justNumbers()));
         return skewBefore - skewAfter;
     }
 
     private double skewReductionByAdding(Node node, Node toHost, DockerHostCapacity capacity) {
         NodeResources freeHostCapacity = capacity.freeCapacityOf(toHost);
         double skewBefore = Node.skew(toHost.flavor().resources(), freeHostCapacity);
-        double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.flavor().resources().numbersOnly()));
+        double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.flavor().resources().justNumbers()));
         return skewBefore - skewAfter;
     }
 

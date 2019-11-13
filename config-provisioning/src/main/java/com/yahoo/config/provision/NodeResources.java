@@ -128,7 +128,7 @@ public class NodeResources {
     }
 
     /** Returns this with disk speed and storage type set to any */
-    public NodeResources numbersOnly() {
+    public NodeResources justNumbers() {
         return with(NodeResources.DiskSpeed.any).with(StorageType.any);
     }
 
