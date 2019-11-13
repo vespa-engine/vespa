@@ -46,7 +46,7 @@ public class NodeResources {
 
         /**
          * Compares storage type by cost: Remote is cheaper, and therefore before.
-         * Any can be remote and therefore costs the same as slow.
+         * Any can be remote and therefore costs the same as remote.
          */
         public static int compare(StorageType a, StorageType b) {
             if (a == any) a = remote;
