@@ -613,11 +613,7 @@ TensorSpec::Address get_tensor_address(ParseContext &ctx, const ValueType &type)
 
 // pre: 'tensor<float>(a{},x[3]):' -> type
 // expect: '{{a:w,x:0}:1,{a:w,x:1}:2,{a:w,x:2}:3}'
-void parse_tensor_create(ParseContext &ctx, const ValueType &type) {
-    if (type.is_error()) {
-        ctx.fail("invalid tensor type");
-        return;
-    }
+void parse_tensor_create_verbose(ParseContext &ctx, const ValueType &type) {
     ctx.skip_spaces();
     ctx.eat('{');
     nodes::TensorCreate::Spec create_spec;
@@ -634,11 +630,78 @@ void parse_tensor_create(ParseContext &ctx, const ValueType &type) {
     ctx.push_expression(std::make_unique<nodes::TensorCreate>(type, std::move(create_spec)));
 }
 
-void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
-    if (!type.is_dense()) {
-        ctx.fail("invalid tensor type");
-        return;
+// pre: 'tensor<float>(a{},x[3]):' -> type
+// expect: '{w:[0,1,2]}'
+void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
+                                    const std::vector<ValueType::Dimension> &dim_list)
+{
+    nodes::TensorCreate::Spec create_spec;
+    using Label = TensorSpec::Label;
+    std::vector<Label> addr;
+    for (;;) {
+        if (addr.size() == dim_list.size()) {
+            TensorSpec::Address address;
+            for (size_t i = 0; i < addr.size(); ++i) {
+                if (addr[i].is_mapped()) {
+                    address.emplace(dim_list[i].name, addr[i]);
+                } else {
+                    address.emplace(dim_list[i].name, Label(addr[i].index-1));
+                }
+            }
+            create_spec.emplace(std::move(address), get_expression(ctx));
+        } else {
+            bool mapped = dim_list[addr.size()].is_mapped();
+            addr.push_back(mapped ? Label("") : Label(size_t(0)));
+            ctx.skip_spaces();
+            ctx.eat(mapped ? '{' : '[');
+        }
+        while (ctx.find_list_end()) {
+            bool mapped = addr.back().is_mapped();
+            ctx.eat(mapped ? '}' : ']');
+            addr.pop_back();
+            if (addr.empty()) {
+                return ctx.push_expression(std::make_unique<nodes::TensorCreate>(type, std::move(create_spec)));
+            }
+        }
+        if (addr.back().is_mapped()) {
+            if (addr.back().name != "") {
+                ctx.eat(',');
+            }
+            addr.back().name = get_ident(ctx, false);
+            ctx.skip_spaces();
+            ctx.eat(':');
+        } else {
+            if (addr.back().index != 0) {
+                ctx.eat(',');
+            }
+            if (++addr.back().index > dim_list[addr.size()-1].size) {
+                return ctx.fail(make_string("dimension too large: '%s'",
+                                            dim_list[addr.size()-1].name.c_str()));
+            }
+        }
     }
+}
+
+void parse_tensor_create(ParseContext &ctx, const ValueType &type,
+                         const std::vector<ValueType::Dimension> &dim_list)
+{
+    ctx.skip_spaces();
+    ctx.eat(':');
+    ParseContext::InputMark before_cells = ctx.get_input_mark();
+    ctx.skip_spaces();
+    ctx.eat('{');
+    ctx.skip_spaces();
+    ctx.eat('{');
+    bool is_verbose = !ctx.failed();
+    ctx.restore_input_mark(before_cells);
+    if (is_verbose) {
+        parse_tensor_create_verbose(ctx, type);
+    } else {
+        parse_tensor_create_convenient(ctx, type, dim_list);
+    }
+}
+
+void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
     auto param_names = type.dimension_names();
     ExplicitParams params(param_names);
     ctx.push_resolve_context(params, nullptr);
@@ -650,7 +713,8 @@ void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
     ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
 }
 
-void parse_tensor_generator(ParseContext &ctx) {
+bool maybe_parse_tensor_generator(ParseContext &ctx) {
+    ParseContext::InputMark my_mark = ctx.get_input_mark();
     vespalib::string type_spec("tensor");
     while(!ctx.eos() && (ctx.get() != ')')) {
         type_spec.push_back(ctx.get());
@@ -658,14 +722,24 @@ void parse_tensor_generator(ParseContext &ctx) {
     }
     ctx.eat(')');
     type_spec.push_back(')');
-    ValueType type = ValueType::from_spec(type_spec);
+    std::vector<ValueType::Dimension> dim_list;
+    ValueType type = ValueType::from_spec(type_spec, dim_list);
     ctx.skip_spaces();
-    if (ctx.get() == ':') {
-        ctx.eat(':');
-        parse_tensor_create(ctx, type);
-    } else {
-        parse_tensor_lambda(ctx, type);
+    bool is_tensor_generate = ((ctx.get() == ':') || (ctx.get() == '('));
+    if (!is_tensor_generate) {
+        ctx.restore_input_mark(my_mark);
+        return false;
     }
+    bool is_create = (type.is_tensor() && (ctx.get() == ':'));
+    bool is_lambda = (type.is_dense() && (ctx.get() == '('));
+    if (is_create) {
+        parse_tensor_create(ctx, type, dim_list);
+    } else if (is_lambda) {
+        parse_tensor_lambda(ctx, type);
+    } else {
+        ctx.fail("invalid tensor type");
+    }
+    return true;
 }
 
 void parse_tensor_concat(ParseContext &ctx) {
@@ -678,7 +752,7 @@ void parse_tensor_concat(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorConcat>(std::move(lhs), std::move(rhs), dimension));
 }
 
-bool try_parse_call(ParseContext &ctx, const vespalib::string &name) {
+bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
     ctx.skip_spaces();
     if (ctx.get() == '(') {
         ctx.eat('(');
@@ -717,9 +791,8 @@ size_t parse_symbol(ParseContext &ctx, vespalib::string &name, ParseContext::Inp
 void parse_symbol_or_call(ParseContext &ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
     vespalib::string name = get_ident(ctx, true);
-    if (name == "tensor") {
-        parse_tensor_generator(ctx);
-    } else if (!try_parse_call(ctx, name)) {
+    bool was_tensor_generate = ((name == "tensor") && maybe_parse_tensor_generator(ctx));
+    if (!was_tensor_generate && !maybe_parse_call(ctx, name)) {
         size_t id = parse_symbol(ctx, name, before_name);
         if (name.empty()) {
             ctx.fail("missing value");

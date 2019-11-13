@@ -77,6 +77,7 @@ public:
     static ValueType double_type() { return ValueType(Type::DOUBLE); }
     static ValueType tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type = CellType::DOUBLE);
     static ValueType from_spec(const vespalib::string &spec);
+    static ValueType from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);
     static CellType unify_cell_types(const ValueType &a, const ValueType &b);

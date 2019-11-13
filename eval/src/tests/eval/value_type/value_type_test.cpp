@@ -162,6 +162,37 @@ TEST("require that value type spec can be parsed with extra whitespace") {
     EXPECT_EQUAL(ValueType::tensor_type({{"y", 10}}, CellType::FLOAT), ValueType::from_spec(" tensor < float > ( y [ 10 ] ) "));
 }
 
+TEST("require that the unsorted dimension list can be obtained when parsing type spec") {
+    std::vector<ValueType::Dimension> unsorted;
+    auto type = ValueType::from_spec("tensor(y[10],z[5],x{})", unsorted);
+    EXPECT_EQUAL(ValueType::tensor_type({{"x"}, {"y", 10}, {"z", 5}}), type);
+    ASSERT_EQUAL(unsorted.size(), 3u);
+    EXPECT_EQUAL(unsorted[0].name, "y");
+    EXPECT_EQUAL(unsorted[0].size, 10u);
+    EXPECT_EQUAL(unsorted[1].name, "z");
+    EXPECT_EQUAL(unsorted[1].size, 5u);
+    EXPECT_EQUAL(unsorted[2].name, "x");
+    EXPECT_EQUAL(unsorted[2].size, npos);
+}
+
+TEST("require that the unsorted dimension list can be obtained also when the type spec is invalid") {
+    std::vector<ValueType::Dimension> unsorted;
+    auto type = ValueType::from_spec("tensor(x[10],x[5])...", unsorted);
+    EXPECT_TRUE(type.is_error());
+    ASSERT_EQUAL(unsorted.size(), 2u);
+    EXPECT_EQUAL(unsorted[0].name, "x");
+    EXPECT_EQUAL(unsorted[0].size, 10u);
+    EXPECT_EQUAL(unsorted[1].name, "x");
+    EXPECT_EQUAL(unsorted[1].size, 5u);
+}
+
+TEST("require that the unsorted dimension list can not be obtained if the parse itself fails") {
+    std::vector<ValueType::Dimension> unsorted;
+    auto type = ValueType::from_spec("tensor(x[10],x[5]", unsorted);
+    EXPECT_TRUE(type.is_error());
+    EXPECT_EQUAL(unsorted.size(), 0u);
+}
+
 TEST("require that malformed value type spec is parsed as error") {
     EXPECT_TRUE(ValueType::from_spec("").is_error());
     EXPECT_TRUE(ValueType::from_spec("  ").is_error());
@@ -268,6 +299,20 @@ TEST("require that type-related predicate functions work as expected") {
     TEST_DO(verify_predicates(type("tensor<float>(x{})"), false, false, true, true, false));
     TEST_DO(verify_predicates(type("tensor<float>(x[5])"), false, false, true, false, true));
     TEST_DO(verify_predicates(type("tensor<float>(x[5],y{})"), false, false, true, false, false));
+}
+
+TEST("require that dense subspace size calculation works as expected") {
+    EXPECT_EQUAL(type("error").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("double").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor()").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor(x{})").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor(x{},y{})").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor(x[5])").dense_subspace_size(), 5u);
+    EXPECT_EQUAL(type("tensor(x[5],y[10])").dense_subspace_size(), 50u);
+    EXPECT_EQUAL(type("tensor(x[5],y{})").dense_subspace_size(), 5u);
+    EXPECT_EQUAL(type("tensor<float>(x{})").dense_subspace_size(), 1u);
+    EXPECT_EQUAL(type("tensor<float>(x[5])").dense_subspace_size(), 5u);
+    EXPECT_EQUAL(type("tensor<float>(x[5],y{})").dense_subspace_size(), 5u);
 }
 
 TEST("require that dimension predicates work as expected") {

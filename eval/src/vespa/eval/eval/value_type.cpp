@@ -260,6 +260,12 @@ ValueType::from_spec(const vespalib::string &spec)
     return value_type::from_spec(spec);
 }
 
+ValueType
+ValueType::from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted)
+{
+    return value_type::from_spec(spec, unsorted);
+}
+
 vespalib::string
 ValueType::to_spec() const
 {
