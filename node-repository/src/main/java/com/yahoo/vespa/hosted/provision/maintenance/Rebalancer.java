@@ -16,9 +16,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public class Rebalancer extends Maintainer {
 
@@ -112,14 +110,14 @@ public class Rebalancer extends Maintainer {
     private double skewReductionByRemoving(Node node, Node fromHost, DockerHostCapacity capacity) {
         NodeResources freeHostCapacity = capacity.freeCapacityOf(fromHost);
         double skewBefore = Node.skew(fromHost.flavor().resources(), freeHostCapacity);
-        double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().anySpeed()));
+        double skewAfter = Node.skew(fromHost.flavor().resources(), freeHostCapacity.add(node.flavor().resources().numbersOnly()));
         return skewBefore - skewAfter;
     }
 
     private double skewReductionByAdding(Node node, Node toHost, DockerHostCapacity capacity) {
         NodeResources freeHostCapacity = capacity.freeCapacityOf(toHost);
         double skewBefore = Node.skew(toHost.flavor().resources(), freeHostCapacity);
-        double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.flavor().resources().anySpeed()));
+        double skewAfter = Node.skew(toHost.flavor().resources(), freeHostCapacity.subtract(node.flavor().resources().numbersOnly()));
         return skewBefore - skewAfter;
     }
 

@@ -338,8 +338,8 @@ public final class Node {
 
     /** Computes the allocation skew of a host node */
     public static double skew(NodeResources totalHostCapacity, NodeResources freeHostCapacity) {
-        NodeResources all = totalHostCapacity.anySpeed();
-        NodeResources allocated = all.subtract(freeHostCapacity.anySpeed());
+        NodeResources all = totalHostCapacity.numbersOnly();
+        NodeResources allocated = all.subtract(freeHostCapacity.numbersOnly());
 
         return new Mean(allocated.vcpu() / all.vcpu(),
                         allocated.memoryGb() / all.memoryGb(),

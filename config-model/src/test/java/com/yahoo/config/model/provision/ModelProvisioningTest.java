@@ -813,45 +813,51 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                 "<services>" +
                 "  <container version='1.0' id='container'>" +
-                "     <nodes count='3' flavor='container-node'/>" +
+                "     <nodes count='3'>" +
+                "       <resources vcpu='1' memory='1Gb' disk='1Gb'/>" +
+                "     </nodes>" +
                 "  </container>" +
                 "  <content version='1.0' id='content1'>" +
                 "     <redundancy>2</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='2' flavor='content1-node'/>" +
+                "     <nodes count='2'>" +
+                "       <resources vcpu='2' memory='2Gb' disk='2Gb'/>" +
+                "     </nodes>" +
                 "  </content>" +
                 "  <content version='1.0' id='content2'>" +
                 "     <redundancy>2</redundancy>" +
                 "     <documents>" +
                 "       <document type='type1' mode='index'/>" +
                 "     </documents>" +
-                "     <nodes count='2' flavor='content2-node'/>" +
+                "     <nodes count='2'>" +
+                "       <resources vcpu='4' memory='4Gb' disk='4Gb'/>" +
+                "     </nodes>" +
                 "  </content>" +
                 "</services>";
 
         VespaModelTester tester = new VespaModelTester();
         // use different flavors to make the test clearer
-        tester.addHosts("container-node", 3);
-        tester.addHosts("content1-node",  2);
-        tester.addHosts("content2-node",  2);
+        tester.addHosts(new NodeResources(1, 1, 1, 0.3), 3);
+        tester.addHosts(new NodeResources(2, 2, 2, 0.3),  2);
+        tester.addHosts(new NodeResources(4, 4, 4, 0.3),  2);
         VespaModel model = tester.createModel(services, true);
 
         ContentCluster cluster1 = model.getContentClusters().get("content1");
         ClusterControllerContainerCluster clusterControllers1 = cluster1.getClusterControllers();
         assertEquals(1, clusterControllers1.getContainers().size());
-        assertEquals("content1-node0",  clusterControllers1.getContainers().get(0).getHostName());
-        assertEquals("content1-node1",  clusterControllers1.getContainers().get(1).getHostName());
-        assertEquals("container-node0", clusterControllers1.getContainers().get(2).getHostName());
+        assertEquals("node-2-2-2-02",  clusterControllers1.getContainers().get(0).getHostName());
+        assertEquals("node-2-2-2-01",  clusterControllers1.getContainers().get(1).getHostName());
+        assertEquals("node-1-1-1-02", clusterControllers1.getContainers().get(2).getHostName());
 
         ContentCluster cluster2 = model.getContentClusters().get("content2");
         ClusterControllerContainerCluster clusterControllers2 = cluster2.getClusterControllers();
         assertEquals(3, clusterControllers2.getContainers().size());
-        assertEquals("content2-node0",  clusterControllers2.getContainers().get(0).getHostName());
-        assertEquals("content2-node1",  clusterControllers2.getContainers().get(1).getHostName());
+        assertEquals("node-4-4-4-02",  clusterControllers2.getContainers().get(0).getHostName());
+        assertEquals("node-4-4-4-01",  clusterControllers2.getContainers().get(1).getHostName());
         assertEquals("We do not pick the container used to supplement another cluster",
-                     "container-node1", clusterControllers2.getContainers().get(2).getHostName());
+                     "node-1-1-1-01", clusterControllers2.getContainers().get(2).getHostName());
     }
 
     @Test

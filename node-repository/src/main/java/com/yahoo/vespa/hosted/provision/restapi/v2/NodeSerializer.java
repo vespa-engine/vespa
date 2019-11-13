@@ -79,4 +79,13 @@ public class NodeSerializer {
         }
     }
 
+    public String toString(NodeResources.StorageType storageType) {
+        switch (storageType) {
+            case remote : return "remote";
+            case local  : return "local";
+            case any    : return "any";
+            default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
+        }
+    }
+
 }

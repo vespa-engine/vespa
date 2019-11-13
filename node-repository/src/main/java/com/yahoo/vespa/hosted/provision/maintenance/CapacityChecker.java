@@ -132,7 +132,7 @@ public class CapacityChecker {
             int occupiedIps = 0;
             Set<String> ipPool = host.ipAddressPool().asSet();
             for (var child : nodeChildren.get(host)) {
-                hostResources = hostResources.subtract(child.flavor().resources().withDiskSpeed(NodeResources.DiskSpeed.any));
+                hostResources = hostResources.subtract(child.flavor().resources().numbersOnly());
                 occupiedIps += child.ipAddresses().stream().filter(ipPool::contains).count();
             }
             availableResources.put(host, new AllocationResources(hostResources, host.ipAddressPool().asSet().size() - occupiedIps));
@@ -299,15 +299,20 @@ public class CapacityChecker {
             reason.violatesParentHostPolicy = violatesParentHostPolicy(node, host, containedAllocations);
 
             NodeResources l = availableHostResources.nodeResources;
-            NodeResources r = node.allocation()
-                    .map(Allocation::requestedResources)
-                    .orElse(node.flavor().resources());
-            if (l.vcpu()      < r.vcpu())                   { reason.insufficientVcpu = true;         }
-            if (l.memoryGb()  < r.memoryGb())               { reason.insufficientMemoryGb = true;     }
-            if (l.diskGb()    < r.diskGb())                 { reason.insufficientDiskGb = true;       }
+            NodeResources r = node.allocation().map(Allocation::requestedResources).orElse(node.flavor().resources());
+
+            if (l.vcpu() < r.vcpu())
+                reason.insufficientVcpu = true;
+            if (l.memoryGb() < r.memoryGb())
+                reason.insufficientMemoryGb = true;
+            if (l.diskGb() < r.diskGb())
+                reason.insufficientDiskGb = true;
             if (r.diskSpeed() != NodeResources.DiskSpeed.any && r.diskSpeed() != l.diskSpeed())
-            { reason.incompatibleDiskSpeed = true;    }
-            if (availableHostResources.availableIPs < 1)    { reason.insufficientAvailableIPs = true; }
+                reason.incompatibleDiskSpeed = true;
+            if (r.storageType() != NodeResources.StorageType.any && r.storageType() != l.storageType())
+                reason.incompatibleStorageType = true;
+            if (availableHostResources.availableIPs < 1)
+                reason.insufficientAvailableIPs = true;
 
             allocationFailureReasons.add(reason);
         }
@@ -406,6 +411,7 @@ public class CapacityChecker {
      * Keeps track of the reason why a host rejected an allocation.
      */
     private static class AllocationFailureReason {
+
         Node host;
         public AllocationFailureReason (Node host) {
             this.host = host;
@@ -414,6 +420,7 @@ public class CapacityChecker {
         public boolean insufficientMemoryGb = false;
         public boolean insufficientDiskGb = false;
         public boolean incompatibleDiskSpeed = false;
+        public boolean incompatibleStorageType = false;
         public boolean insufficientAvailableIPs = false;
         public boolean violatesParentHostPolicy = false;
 
@@ -435,6 +442,7 @@ public class CapacityChecker {
             if (insufficientMemoryGb) reasons.add("insufficientMemoryGb");
             if (insufficientDiskGb) reasons.add("insufficientDiskGb");
             if (incompatibleDiskSpeed) reasons.add("incompatibleDiskSpeed");
+            if (incompatibleStorageType) reasons.add("incompatibleStorageType");
             if (insufficientAvailableIPs) reasons.add("insufficientAvailableIPs");
             if (violatesParentHostPolicy) reasons.add("violatesParentHostPolicy");
 
@@ -446,7 +454,9 @@ public class CapacityChecker {
      * Provides convenient methods for tallying failures.
      */
     public static class AllocationFailureReasonList {
+
         private List<AllocationFailureReason> allocationFailureReasons;
+
         public AllocationFailureReasonList(List<AllocationFailureReason> allocationFailureReasons) {
             this.allocationFailureReasons = allocationFailureReasons;
         }
@@ -455,6 +465,7 @@ public class CapacityChecker {
         public long insufficientMemoryGb()     { return allocationFailureReasons.stream().filter(r -> r.insufficientMemoryGb).count(); }
         public long insufficientDiskGb()       { return allocationFailureReasons.stream().filter(r -> r.insufficientDiskGb).count(); }
         public long incompatibleDiskSpeed()    { return allocationFailureReasons.stream().filter(r -> r.incompatibleDiskSpeed).count(); }
+        public long incompatibleStorageType()  { return allocationFailureReasons.stream().filter(r -> r.incompatibleStorageType).count(); }
         public long insufficientAvailableIps() { return allocationFailureReasons.stream().filter(r -> r.insufficientAvailableIPs).count(); }
         public long violatesParentHostPolicy() { return allocationFailureReasons.stream().filter(r -> r.violatesParentHostPolicy).count(); }
 
@@ -471,13 +482,14 @@ public class CapacityChecker {
         }
         @Override
         public String toString() {
-            return String.format("CPU (%3d), Memory (%3d), Disk size (%3d), Disk speed (%3d), IP (%3d), Parent-Host Policy (%3d)",
-                    insufficientVcpu(), insufficientMemoryGb(), insufficientDiskGb(),
-                    incompatibleDiskSpeed(), insufficientAvailableIps(), violatesParentHostPolicy());
+            return String.format("CPU (%3d), Memory (%3d), Disk size (%3d), Disk speed (%3d), Storage type (%3d), IP (%3d), Parent-Host Policy (%3d)",
+                    insufficientVcpu(), insufficientMemoryGb(), insufficientDiskGb(), incompatibleDiskSpeed(),
+                                 incompatibleStorageType(), insufficientAvailableIps(), violatesParentHostPolicy());
         }
     }
 
     public static class AllocationHistory {
+
         public static class Entry {
             public Node tenant;
             public Node newParent;
@@ -533,6 +545,7 @@ public class CapacityChecker {
 
             return out.toString();
         }
+
     }
 
 }

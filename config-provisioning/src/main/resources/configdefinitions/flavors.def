@@ -30,5 +30,8 @@ flavor[].minDiskAvailableGb double default=0.0
 # Whether the disk is fast (typically SSD) or slow (typically spinning HDD).
 flavor[].fastDisk bool default=true
 
+# Whether the storage is remote (network) or local.
+flavor[].remoteStorage bool default=true
+
 # Expected network interface bandwidth available for this flavor, in Mbit/s.
 flavor[].bandwidth double default=0.0

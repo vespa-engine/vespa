@@ -12,9 +12,9 @@ public class NodeResources {
 
     public enum DiskSpeed {
 
-        fast, // SSD disk or similar speed is needed
-        slow, // This is tuned to work with the speed of spinning disks
-        any; // The performance of the cluster using this does not depend on disk speed
+        fast, // Has/requires SSD disk or similar speed
+        slow, // Has spinning disk/Is tuned to work with the speed of spinning disks
+        any; // In requests only: The performance of the cluster using this does not depend on disk speed
 
         /**
          * Compares disk speeds by cost: Slower is cheaper, and therefore before.
@@ -29,6 +29,41 @@ public class NodeResources {
             return 0;
         }
 
+        private DiskSpeed combineWith(DiskSpeed other) {
+            if (this == any) return other;
+            if (other == any) return this;
+            if (this == other) return this;
+            throw new IllegalArgumentException(this + " cannot be combined with " + other);
+        }
+
+    }
+
+    public enum StorageType {
+
+        remote, // Has remote (network) storage/Is tuned to work with network storage
+        local, // Storage is/must be attached to the local host
+        any; // In requests only: Can use both local and remote storage
+
+        /**
+         * Compares storage type by cost: Remote is cheaper, and therefore before.
+         * Any can be remote and therefore costs the same as slow.
+         */
+        public static int compare(StorageType a, StorageType b) {
+            if (a == any) a = remote;
+            if (b == any) b = remote;
+
+            if (a == remote && b == local) return -1;
+            if (a == local && b == remote) return 1;
+            return 0;
+        }
+
+        private StorageType combineWith(StorageType other) {
+            if (this == any) return other;
+            if (other == any) return this;
+            if (this == other) return this;
+            throw new IllegalArgumentException(this + " cannot be combined with " + other);
+        }
+
     }
 
     private final double vcpu;
@@ -36,18 +71,7 @@ public class NodeResources {
     private final double diskGb;
     private final double bandwidthGbps;
     private final DiskSpeed diskSpeed;
-
-    /** Create node resources requiring fast disk and no bandwidth */
-    @Deprecated // Remove Oct. 2019
-    public NodeResources(double vcpu, double memoryGb, double diskGb) {
-        this(vcpu, memoryGb, diskGb, DiskSpeed.fast);
-    }
-
-    /** Create node resources requiring no bandwidth */
-    @Deprecated // Remove Oct. 2019
-    public NodeResources(double vcpu, double memoryGb, double diskGb, DiskSpeed diskSpeed) {
-        this(vcpu, memoryGb, diskGb, 0.3, diskSpeed);
-    }
+    private final StorageType storageType;
 
     /** Create node resources requiring fast disk */
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps) {
@@ -55,11 +79,16 @@ public class NodeResources {
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
+        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, StorageType.any);
+    }
+
+    public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
         this.vcpu = vcpu;
         this.memoryGb = memoryGb;
         this.diskGb = diskGb;
         this.bandwidthGbps = bandwidthGbps;
         this.diskSpeed = diskSpeed;
+        this.storageType = storageType;
     }
 
     public double vcpu() { return vcpu; }
@@ -67,30 +96,40 @@ public class NodeResources {
     public double diskGb() { return diskGb; }
     public double bandwidthGbps() { return bandwidthGbps; }
     public DiskSpeed diskSpeed() { return diskSpeed; }
+    public StorageType storageType() { return storageType; }
 
     public NodeResources withVcpu(double vcpu) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withMemoryGb(double memoryGb) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withDiskGb(double diskGb) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     public NodeResources withBandwidthGbps(double bandwidthGbps) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
+    // TODO: Remove after November 2019
     public NodeResources withDiskSpeed(DiskSpeed speed) {
-        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed);
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
     }
 
-    /** A shorthand for withDiskSpeed(NodeResources.DiskSpeed.any) */
-    public NodeResources anySpeed() {
-        return withDiskSpeed(NodeResources.DiskSpeed.any);
+    public NodeResources with(DiskSpeed speed) {
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, speed, storageType);
+    }
+
+    public NodeResources with(StorageType storageType) {
+        return new NodeResources(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
+    }
+
+    /** Returns this with disk speed and storage type set to any */
+    public NodeResources numbersOnly() {
+        return with(NodeResources.DiskSpeed.any).with(StorageType.any);
     }
 
     public NodeResources subtract(NodeResources other) {
@@ -100,7 +139,8 @@ public class NodeResources {
                                  memoryGb - other.memoryGb,
                                  diskGb - other.diskGb,
                                  bandwidthGbps - other.bandwidthGbps,
-                                 combine(this.diskSpeed, other.diskSpeed));
+                                 this.diskSpeed.combineWith(other.diskSpeed),
+                                 this.storageType.combineWith(other.storageType));
     }
 
     public NodeResources add(NodeResources other) {
@@ -110,20 +150,16 @@ public class NodeResources {
                                  memoryGb + other.memoryGb,
                                  diskGb + other.diskGb,
                                  bandwidthGbps + other.bandwidthGbps,
-                                 combine(this.diskSpeed, other.diskSpeed));
+                                 this.diskSpeed.combineWith(other.diskSpeed),
+                                 this.storageType.combineWith(other.storageType));
     }
 
     private boolean isInterchangeableWith(NodeResources other) {
         if (this.diskSpeed != DiskSpeed.any && other.diskSpeed != DiskSpeed.any && this.diskSpeed != other.diskSpeed)
             return false;
+        if (this.storageType != StorageType.any && other.storageType != StorageType.any && this.storageType != other.storageType)
+            return false;
         return true;
-    }
-
-    private DiskSpeed combine(DiskSpeed a, DiskSpeed b) {
-        if (a == DiskSpeed.any) return b;
-        if (b == DiskSpeed.any) return a;
-        if (a == b) return a;
-        throw new IllegalArgumentException(a + " cannot be combined with " + b);
     }
 
     @Override
@@ -136,19 +172,21 @@ public class NodeResources {
         if (this.diskGb != other.diskGb) return false;
         if (this.bandwidthGbps != other.bandwidthGbps) return false;
         if (this.diskSpeed != other.diskSpeed) return false;
+        if (this.storageType != other.storageType) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed);
+        return Objects.hash(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, storageType);
     }
 
     @Override
     public String toString() {
         return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
                (bandwidthGbps > 0 ? ", bandwidth: " + bandwidthGbps + " Gbps" : "") +
-               (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") + "]";
+               (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") +
+               (storageType != StorageType.any ? ", storage type: " + storageType : "") + "]";
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
@@ -163,6 +201,9 @@ public class NodeResources {
         // draw conclusions about performance on the basis of better resources than you think you have
         if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
 
+        // Same reasoning as the above
+        if (other.storageType != StorageType.any && other.storageType != this.storageType) return false;
+
         return true;
     }
 
@@ -173,6 +214,7 @@ public class NodeResources {
         if (this.diskGb != other.diskGb) return false;
         if (this.bandwidthGbps != other.bandwidthGbps) return false;
         if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
+        if (other.storageType != StorageType.any && other.storageType != this.storageType) return false;
 
         return true;
     }
@@ -195,7 +237,7 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.fast);
+        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.fast, StorageType.any);
     }
 
 }

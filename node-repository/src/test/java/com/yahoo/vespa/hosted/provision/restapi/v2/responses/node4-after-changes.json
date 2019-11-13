@@ -12,6 +12,7 @@
   "minMainMemoryAvailableGb": 8.0,
   "minCpuCores": 2.0,
   "fastDisk": true,
+  "remoteStorage": true,
   "bandwidthGbps": 1.0,
   "environment": "DOCKER_CONTAINER",
   "owner": {

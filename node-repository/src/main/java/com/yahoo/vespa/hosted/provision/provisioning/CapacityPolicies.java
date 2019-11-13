@@ -45,9 +45,9 @@ public class CapacityPolicies {
 
         NodeResources resources = requestedResources.orElse(defaultNodeResources(cluster.type()));
 
-        // Allow slow disks in zones which are not performance sensitive
+        // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
-            resources = resources.withDiskSpeed(NodeResources.DiskSpeed.any);
+            resources = resources.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
 
         // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
         // Do not cap in AWS as hosts are allocated on demand and 1-to-1, so the node can use the entire host

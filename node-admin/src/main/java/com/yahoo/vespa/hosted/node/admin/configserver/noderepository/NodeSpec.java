@@ -20,6 +20,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
  * @author stiankri
  */
 public class NodeSpec {
+
     private final String hostname;
     private final NodeState state;
     private final NodeType type;
@@ -514,7 +515,7 @@ public class NodeSpec {
         }
 
         public Builder fastDisk(boolean fastDisk) {
-            return resources(resources.withDiskSpeed(fastDisk ? fast : slow));
+            return resources(resources.with(fastDisk ? fast : slow));
         }
 
         public Builder bandwidthGbps(double bandwidthGbps) {

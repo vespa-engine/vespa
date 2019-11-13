@@ -171,7 +171,8 @@ public class NodesSpecification {
                                                  Optional.ofNullable(resources.stringAttribute("bandwidth"))
                                                          .map(b -> parseGbAmount(b, "BPS"))
                                                          .orElse(0.3),
-                                                 parseOptionalDiskSpeed(resources.stringAttribute("disk-speed"))));
+                                                 parseOptionalDiskSpeed(resources.stringAttribute("disk-speed")),
+                                                 parseOptionalStorageType(resources.stringAttribute("storage-type"))));
         }
         else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
             return Optional.of(NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor")));
@@ -221,9 +222,20 @@ public class NodesSpecification {
         switch (diskSpeedString) {
             case "fast" : return NodeResources.DiskSpeed.fast;
             case "slow" : return NodeResources.DiskSpeed.slow;
-            case "any" : return NodeResources.DiskSpeed.any;
+            case "any"  : return NodeResources.DiskSpeed.any;
             default: throw new IllegalArgumentException("Illegal disk-speed value '" + diskSpeedString +
                                                         "': Legal values are 'fast', 'slow' and 'any')");
+        }
+    }
+
+    private static NodeResources.StorageType parseOptionalStorageType(String storageTypeString) {
+        if (storageTypeString == null) return NodeResources.StorageType.any;
+        switch (storageTypeString) {
+            case "remote" : return NodeResources.StorageType.remote;
+            case "local"  : return NodeResources.StorageType.local;
+            case "any"    : return NodeResources.StorageType.any;
+            default: throw new IllegalArgumentException("Illegal storage-type value '" + storageTypeString +
+                                                        "': Legal values are 'remote', 'local' and 'any')");
         }
     }
 

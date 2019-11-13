@@ -30,6 +30,10 @@ public class NodeResourceComparator {
             if (a.diskGb() < b.diskGb()) return -1;
             if (a.vcpu() > b.vcpu()) return 1;
             if (a.vcpu() < b.vcpu()) return -1;
+
+            int storageTypeComparison = NodeResources.StorageType.compare(a.storageType(), b.storageType());
+            if (storageTypeComparison != 0) return storageTypeComparison;
+
             return compare(a.diskSpeed(), b.diskSpeed());
         }
 

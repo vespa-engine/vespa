@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 
@@ -80,9 +79,9 @@ public class DockerHostCapacity {
         // can be removed when all node allocations accurately reflect the true host disk speed
         return allNodes.childrenOf(host).asList().stream()
                 .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
-                .map(node -> node.flavor().resources().anySpeed())
-                .reduce(hostResources.anySpeed(), NodeResources::subtract)
-                .withDiskSpeed(host.flavor().resources().diskSpeed());
+                .map(node -> node.flavor().resources().with(NodeResources.DiskSpeed.any))
+                .reduce(hostResources.with(NodeResources.DiskSpeed.any), NodeResources::subtract)
+                .with(host.flavor().resources().diskSpeed());
     }
 
     private static boolean isInactiveOrRetired(Node node) {

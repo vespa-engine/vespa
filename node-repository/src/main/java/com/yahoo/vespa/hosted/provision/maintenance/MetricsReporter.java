@@ -220,7 +220,7 @@ public class MetricsReporter extends Maintainer {
                 .forEach(
                         (applicationId, applicationNodes) -> {
                             var allocatedCapacity = applicationNodes.stream()
-                                    .map(node -> node.allocation().get().requestedResources().withDiskSpeed(any))
+                                    .map(node -> node.allocation().get().requestedResources().numbersOnly())
                                     .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
 
                             var context = getContextAt(
@@ -238,20 +238,20 @@ public class MetricsReporter extends Maintainer {
     private static NodeResources getCapacityTotal(NodeList nodes) {
         return nodes.nodeType(NodeType.host).asList().stream()
                 .map(host -> host.flavor().resources())
-                .map(resources -> resources.withDiskSpeed(any))
+                .map(resources -> resources.numbersOnly())
                 .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources getFreeCapacityTotal(NodeList nodes) {
         return nodes.nodeType(NodeType.host).asList().stream()
                 .map(n -> freeCapacityOf(nodes, n))
-                .map(resources -> resources.withDiskSpeed(any))
+                .map(resources -> resources.numbersOnly())
                 .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
     private static NodeResources freeCapacityOf(NodeList nodes, Node dockerHost) {
         return nodes.childrenOf(dockerHost).asList().stream()
-                .map(node -> node.flavor().resources().withDiskSpeed(any))
-                .reduce(dockerHost.flavor().resources().withDiskSpeed(any), NodeResources::subtract);
+                .map(node -> node.flavor().resources().numbersOnly())
+                .reduce(dockerHost.flavor().resources().numbersOnly(), NodeResources::subtract);
     }
 }

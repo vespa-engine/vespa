@@ -11,6 +11,7 @@
   "minMainMemoryAvailableGb": 16.0,
   "minCpuCores": 2.0,
   "fastDisk": true,
+  "remoteStorage": true,
   "bandwidthGbps": 10.0,
   "environment": "BARE_METAL",
   "rebootGeneration": 1,

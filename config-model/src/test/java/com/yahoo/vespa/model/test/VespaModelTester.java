@@ -60,15 +60,6 @@ public class VespaModelTester {
     /** Adds some nodes with resources 1, 3, 9 */
     public Hosts addHosts(int count) { return addHosts(new NodeResources(1, 3, 9, 1), count); }
 
-    /** Adds some hosts to this system */
-    public Hosts addHosts(String flavor, int count) { 
-        return addHosts(Optional.empty(), NodeResources.fromLegacyName(flavor), count);
-    }
-
-    public Hosts addHosts(Flavor flavor, int count) {
-        return addHosts(Optional.of(flavor), NodeResources.fromLegacyName(flavor.name()), count);
-    }
-
     public Hosts addHosts(NodeResources resources, int count) {
         return addHosts(Optional.of(new Flavor(resources)), resources, count);
     }
