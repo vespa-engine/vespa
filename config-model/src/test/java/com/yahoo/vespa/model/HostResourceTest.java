@@ -6,9 +6,11 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Optional;
 
 import static com.yahoo.config.provision.ClusterSpec.Type.admin;
 import static com.yahoo.config.provision.ClusterSpec.Type.container;
@@ -38,50 +40,13 @@ public class HostResourceTest {
     }
 
     @Test
-    public void no_clusters_yields_no_primary_cluster_membership() {
-        HostResource host = hostResourceWithMemberships();
-        assertTrue(host.clusterMemberships().isEmpty());
-
-        assertFalse(host.primaryClusterMembership().isPresent());
-    }
-
-    @Test
-    public void one_cluster_yields_that_primary_cluster_membership() {
+    public void host_witrh_membership() {
         HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "jdisc"), 0));
         assertClusterMembership(host, container, "jdisc");
     }
 
-    @Test
-    public void content_cluster_membership_is_preferred_over_other_types() {
-        HostResource host = hostResourceWithMemberships(
-                ClusterMembership.from(clusterSpec(container, "jdisc"), 0),
-                ClusterMembership.from(clusterSpec(content, "search"), 0),
-                ClusterMembership.from(clusterSpec(admin, "admin"), 0));
-
-        assertClusterMembership(host, content, "search");
-    }
-
-    @Test
-    public void container_cluster_membership_is_preferred_over_admin() {
-        HostResource host = hostResourceWithMemberships(
-                ClusterMembership.from(clusterSpec(admin, "admin"), 0),
-                ClusterMembership.from(clusterSpec(container, "jdisc"), 0));
-
-        assertClusterMembership(host, container, "jdisc");
-    }
-
-    @Test
-    public void cluster_membership_that_was_added_first_is_preferred() {
-        HostResource host = hostResourceWithMemberships(
-                ClusterMembership.from(clusterSpec(content, "content1"), 0),
-                ClusterMembership.from(clusterSpec(content, "content0"), 0),
-                ClusterMembership.from(clusterSpec(content, "content2"), 0));
-
-        assertClusterMembership(host, content, "content1");
-    }
-
     private void assertClusterMembership(HostResource host, ClusterSpec.Type type, String id) {
-        ClusterSpec membership = host.primaryClusterMembership().map(ClusterMembership::cluster)
+        ClusterSpec membership = host.spec().membership().map(ClusterMembership::cluster)
                 .orElseThrow(() -> new RuntimeException("No cluster membership!"));
 
         assertEquals(type, membership.type());
@@ -92,14 +57,9 @@ public class HostResourceTest {
         return ClusterSpec.from(type, ClusterSpec.Id.from(id), ClusterSpec.Group.from(0), Version.fromString("6.42"), false);
     }
 
-    private HostResource mockHostResource(MockRoot root) {
-        return new HostResource(new Host(root));
-    }
-
-    private static HostResource hostResourceWithMemberships(ClusterMembership... memberships) {
-        HostResource host = new HostResource(Host.createHost(null, "hostname"));
-        Arrays.asList(memberships).forEach(host::addClusterMembership);
-        return host;
+    private static HostResource hostResourceWithMemberships(ClusterMembership membership) {
+        return new HostResource(Host.createHost(null, "hostname"),
+                                new HostSpec("hostname", Optional.of(membership)));
     }
 
     private static int counter = 0;

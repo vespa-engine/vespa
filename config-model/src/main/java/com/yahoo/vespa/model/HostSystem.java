@@ -116,19 +116,13 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     public HostResource getHost(String hostAlias) {
         HostSpec hostSpec = provisioner.allocateHost(hostAlias);
-        for (HostResource resource : hostname2host.values()) {
-            if (resource.getHostname().equals(hostSpec.hostname())) {
-                hostSpec.membership().ifPresent(resource::addClusterMembership);
-                return resource;
-            }
-        }
-        return addNewHost(hostSpec);
+        HostResource resource = hostname2host.get(hostSpec.hostname());
+        return resource != null ? resource : addNewHost(hostSpec);
     }
 
     private HostResource addNewHost(HostSpec hostSpec) {
         Host host = Host.createHost(this, hostSpec.hostname());
         HostResource hostResource = new HostResource(host, hostSpec);
-        hostSpec.membership().ifPresent(hostResource::addClusterMembership);
         hostSpec.networkPorts().ifPresent(np -> hostResource.ports().addNetworkPorts(np));
         hostname2host.put(host.getHostname(), hostResource);
         return hostResource;

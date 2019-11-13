@@ -120,7 +120,7 @@ public class MetricsProxyContainer extends Container implements
     public void getConfig(NodeDimensionsConfig.Builder builder) {
         Map<String, String> dimensions = new LinkedHashMap<>();
         if (isHostedVespa) {
-            getHostResource().primaryClusterMembership().map(ClusterMembership::cluster).ifPresent(cluster -> {
+            getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
                 dimensions.put(CLUSTER_TYPE, cluster.type().name());
                 dimensions.put(CLUSTER_ID, cluster.id().value());
             });

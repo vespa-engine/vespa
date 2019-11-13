@@ -219,10 +219,9 @@ public class ModelProvisioningTest {
         assertEquals(1, model.getHostSystem().getHosts().size());
         HostResource host = model.getHostSystem().getHosts().iterator().next();
 
-        assertEquals(1, host.clusterMemberships().size());
-        ClusterMembership membership = host.clusterMemberships().iterator().next();
-        assertEquals("container", membership.cluster().type().name());
-        assertEquals("container1", membership.cluster().id().value());
+        assertTrue(host.spec().membership().isPresent());
+        assertEquals("container", host.spec().membership().get().cluster().type().name());
+        assertEquals("container1", host.spec().membership().get().cluster().id().value());
     }
 
     @Test
