@@ -257,14 +257,32 @@ public class DefParserTest {
     }
 
     @Test
+    public void testReservedWordInCForArray() {
+        assertLineFails("auto[] int",
+                        "auto is a reserved word in C");
+    }
+
+    @Test
     public void testReservedWordInJava() {
         assertLineFails("abstract int",
                         "abstract is a reserved word in Java");
     }
 
     @Test
+    public void testReservedWordInJavaForMap() {
+        assertLineFails("abstract{} int",
+                        "abstract is a reserved word in Java");
+    }
+
+    @Test
     public void testReservedWordInCAndJava() {
         assertLineFails("continue int",
+                        "continue is a reserved word in C and Java");
+    }
+
+    @Test
+    public void testReservedWordInCAndJavaForArray() {
+        assertLineFails("continue[] int",
                         "continue is a reserved word in C and Java");
     }
 
