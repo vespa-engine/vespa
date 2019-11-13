@@ -641,7 +641,7 @@
       "public com.yahoo.config.provision.NodeResources withDiskSpeed(com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public com.yahoo.config.provision.NodeResources with(com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public com.yahoo.config.provision.NodeResources with(com.yahoo.config.provision.NodeResources$StorageType)",
-      "public com.yahoo.config.provision.NodeResources numbersOnly()",
+      "public com.yahoo.config.provision.NodeResources justNumbers()",
       "public com.yahoo.config.provision.NodeResources subtract(com.yahoo.config.provision.NodeResources)",
       "public com.yahoo.config.provision.NodeResources add(com.yahoo.config.provision.NodeResources)",
       "public boolean equals(java.lang.Object)",

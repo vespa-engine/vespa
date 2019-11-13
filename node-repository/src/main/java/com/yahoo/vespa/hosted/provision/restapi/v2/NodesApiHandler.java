@@ -53,7 +53,6 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
-import static com.yahoo.config.provision.NodeResources.StorageType.any;
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
 /**
