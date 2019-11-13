@@ -257,16 +257,18 @@ public class DefLine {
         }
     }
 
-    void validateReservedWords() {
-        if (ReservedWords.isReservedWord(name)) {
-           throw new IllegalArgumentException(name + " is a reserved word in " +
-                   ReservedWords.getLanguageForReservedWord(name));
+    private void validateReservedWords() {
+        String cleanName = (name.endsWith("[]") || name.endsWith("{}")) ?  name.substring(0, name.length()-2) : name;
+
+        if (ReservedWords.isReservedWord(cleanName)) {
+           throw new IllegalArgumentException(cleanName + " is a reserved word in " +
+                   ReservedWords.getLanguageForReservedWord(cleanName));
         }
-        if (ReservedWords.capitalizedPattern.matcher(name).matches()) {
-            throw new IllegalArgumentException("'" + name + "' cannot start with an uppercase letter");
+        if (ReservedWords.capitalizedPattern.matcher(cleanName).matches()) {
+            throw new IllegalArgumentException("'" + cleanName + "' cannot start with an uppercase letter");
         }
-        if (ReservedWords.internalPrefixPattern.matcher(name).matches()) {
-            throw new IllegalArgumentException("'" + name + "' cannot start with '" + ReservedWords.INTERNAL_PREFIX + "'");
+        if (ReservedWords.internalPrefixPattern.matcher(cleanName).matches()) {
+            throw new IllegalArgumentException("'" + cleanName + "' cannot start with '" + ReservedWords.INTERNAL_PREFIX + "'");
         }
     }
 
