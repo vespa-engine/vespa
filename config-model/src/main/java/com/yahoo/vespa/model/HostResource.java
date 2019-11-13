@@ -38,8 +38,6 @@ public class HostResource implements Comparable<HostResource> {
     /** Map from "sentinel name" to service */
     private final Map<String, Service> services = new LinkedHashMap<>();
 
-    private Set<ClusterMembership> clusterMemberships = new LinkedHashSet<>();
-
     /**
      * Create a new {@link HostResource} bound to a specific {@link com.yahoo.vespa.model.Host}.
      *
@@ -109,31 +107,6 @@ public class HostResource implements Comparable<HostResource> {
     /** Returns the flavor of this resource. Empty for self-hosted Vespa. */
     public Optional<Flavor> getFlavor() { return spec.flavor(); }
 
-    public void addClusterMembership(ClusterMembership clusterMembership) {
-        if (clusterMembership != null)
-            clusterMemberships.add(clusterMembership);
-    }
-
-    public Set<ClusterMembership> clusterMemberships() {
-        return Collections.unmodifiableSet(clusterMemberships);
-    }
-
-    /**
-     * Returns the "primary" cluster membership.
-     * Content clusters are preferred, then container clusters, and finally admin clusters.
-     * If there is more than one cluster of the preferred type, the cluster that was added first will be chosen.
-     */
-    public Optional<ClusterMembership> primaryClusterMembership() {
-        return clusterMemberships().stream()
-                .sorted(HostResource::compareClusters)
-                .findFirst();
-    }
-
-    private static int compareClusters(ClusterMembership cluster1, ClusterMembership cluster2) {
-        // This depends on the declared order of enum constants.
-        return cluster2.cluster().type().compareTo(cluster1.cluster().type());
-    }
-
     @Override
     public String toString() {
         return "host '" + host.getHostname() + "'";
@@ -163,10 +136,8 @@ public class HostResource implements Comparable<HostResource> {
      * Compare by hostname otherwise.
      */
     public int comparePrimarilyByIndexTo(HostResource other) {
-        Optional<ClusterMembership> thisMembership = this.primaryClusterMembership();
-        Optional<ClusterMembership> otherMembership = other.primaryClusterMembership();
-        if (thisMembership.isPresent() && otherMembership.isPresent())
-            return Integer.compare(thisMembership.get().index(), otherMembership.get().index());
+        if (this.spec.membership().isPresent() && other.spec.membership().isPresent())
+            return Integer.compare(this.spec.membership().get().index(), other.spec.membership().get().index());
         else
             return this.getHostname().compareTo(other.getHostname());
     }
