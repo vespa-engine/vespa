@@ -36,6 +36,9 @@ public class NodeResources {
             throw new IllegalArgumentException(this + " cannot be combined with " + other);
         }
 
+        public boolean isDefault() { return this == getDefault(); }
+        public static DiskSpeed getDefault() { return fast; }
+
     }
 
     public enum StorageType {
@@ -64,6 +67,9 @@ public class NodeResources {
             throw new IllegalArgumentException(this + " cannot be combined with " + other);
         }
 
+        public boolean isDefault() { return this == getDefault(); }
+        public static StorageType getDefault() { return any; }
+
     }
 
     private final double vcpu;
@@ -73,13 +79,12 @@ public class NodeResources {
     private final DiskSpeed diskSpeed;
     private final StorageType storageType;
 
-    /** Create node resources requiring fast disk */
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, DiskSpeed.fast);
+        this(vcpu, memoryGb, diskGb, bandwidthGbps, DiskSpeed.getDefault());
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed) {
-        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, StorageType.any);
+        this(vcpu, memoryGb, diskGb, bandwidthGbps, diskSpeed, StorageType.getDefault());
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
@@ -185,8 +190,8 @@ public class NodeResources {
     public String toString() {
         return "[vcpu: " + vcpu + ", memory: " + memoryGb + " Gb, disk " + diskGb + " Gb" +
                (bandwidthGbps > 0 ? ", bandwidth: " + bandwidthGbps + " Gbps" : "") +
-               (diskSpeed != DiskSpeed.fast ? ", disk speed: " + diskSpeed : "") +
-               (storageType != StorageType.any ? ", storage type: " + storageType : "") + "]";
+               ( ! diskSpeed.isDefault() ? ", disk speed: " + diskSpeed : "") +
+               ( ! storageType.isDefault() ? ", storage type: " + storageType : "") + "]";
     }
 
     /** Returns true if all the resources of this are the same or larger than the given resources */
@@ -237,7 +242,7 @@ public class NodeResources {
         if (cpu == 0) cpu = 0.5;
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.fast, StorageType.any);
+        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault());
     }
 
 }

@@ -177,7 +177,7 @@ public class AllocatedHostsSerializer {
     }
 
     private static NodeResources.StorageType storageTypeFromSlime(Inspector storageType) {
-        if ( ! storageType.valid()) return NodeResources.StorageType.any; // TODO: Remove this line after December 2019
+        if ( ! storageType.valid()) return NodeResources.StorageType.getDefault(); // TODO: Remove this line after December 2019
         switch (storageType.asString()) {
             case "remote" : return NodeResources.StorageType.remote;
             case "local" : return NodeResources.StorageType.local;

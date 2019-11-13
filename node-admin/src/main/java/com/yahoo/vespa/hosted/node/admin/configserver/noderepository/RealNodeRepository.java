@@ -150,7 +150,6 @@ public class RealNodeRepository implements NodeRepository {
         Optional<NodeMembership> membership = Optional.ofNullable(node.membership)
                 .map(m -> new NodeMembership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
         NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
-        System.out.println("Got node " + node);
         return new NodeSpec(
                 node.hostname,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::fromString),

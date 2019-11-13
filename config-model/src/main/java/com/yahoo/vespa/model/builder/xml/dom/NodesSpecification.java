@@ -218,7 +218,7 @@ public class NodesSpecification {
     }
 
     private static NodeResources.DiskSpeed parseOptionalDiskSpeed(String diskSpeedString) {
-        if (diskSpeedString == null) return NodeResources.DiskSpeed.fast;
+        if (diskSpeedString == null) return NodeResources.DiskSpeed.getDefault();
         switch (diskSpeedString) {
             case "fast" : return NodeResources.DiskSpeed.fast;
             case "slow" : return NodeResources.DiskSpeed.slow;
@@ -229,7 +229,7 @@ public class NodesSpecification {
     }
 
     private static NodeResources.StorageType parseOptionalStorageType(String storageTypeString) {
-        if (storageTypeString == null) return NodeResources.StorageType.any;
+        if (storageTypeString == null) return NodeResources.StorageType.getDefault();
         switch (storageTypeString) {
             case "remote" : return NodeResources.StorageType.remote;
             case "local"  : return NodeResources.StorageType.local;

@@ -221,8 +221,9 @@ class NodesResponse extends HttpResponse {
         object.setDouble("memoryGb", resources.memoryGb());
         object.setDouble("diskGb", resources.diskGb());
         object.setDouble("bandwidthGbps", resources.bandwidthGbps());
-        object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
-        if (resources.storageType() != NodeResources.StorageType.any)
+        if ( ! resources.diskSpeed().isDefault())
+            object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
+        if ( ! resources.storageType().isDefault())
             object.setString("storageType", serializer.toString(resources.storageType()));
     }
 

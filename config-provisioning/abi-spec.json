@@ -591,7 +591,9 @@
     "methods": [
       "public static com.yahoo.config.provision.NodeResources$DiskSpeed[] values()",
       "public static com.yahoo.config.provision.NodeResources$DiskSpeed valueOf(java.lang.String)",
-      "public static int compare(com.yahoo.config.provision.NodeResources$DiskSpeed, com.yahoo.config.provision.NodeResources$DiskSpeed)"
+      "public static int compare(com.yahoo.config.provision.NodeResources$DiskSpeed, com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public boolean isDefault()",
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed getDefault()"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed fast",
@@ -610,7 +612,9 @@
     "methods": [
       "public static com.yahoo.config.provision.NodeResources$StorageType[] values()",
       "public static com.yahoo.config.provision.NodeResources$StorageType valueOf(java.lang.String)",
-      "public static int compare(com.yahoo.config.provision.NodeResources$StorageType, com.yahoo.config.provision.NodeResources$StorageType)"
+      "public static int compare(com.yahoo.config.provision.NodeResources$StorageType, com.yahoo.config.provision.NodeResources$StorageType)",
+      "public boolean isDefault()",
+      "public static com.yahoo.config.provision.NodeResources$StorageType getDefault()"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.NodeResources$StorageType remote",
