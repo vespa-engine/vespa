@@ -2,6 +2,8 @@
 package com.yahoo.restapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.log.LogLevel;
 
@@ -17,7 +19,8 @@ import java.util.logging.Logger;
 public class JacksonJsonResponse<T> extends HttpResponse {
 
     private static final Logger log = Logger.getLogger(JacksonJsonResponse.class.getName());
-    private static final ObjectMapper defaultJsonMapper = new ObjectMapper();
+    private static final ObjectMapper defaultJsonMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule()).registerModule(new Jdk8Module());
 
     private final ObjectMapper jsonMapper;
     private final T entity;
