@@ -123,9 +123,14 @@ enum Policy {
                         .on(PathGroup.publicInfo)
                         .in(SystemName.all())),
 
-    /** Access to /system-flags/v1. */
-    systemFlagsDeployment(Privilege.grant(Action.all())
-                                  .on(PathGroup.systemFlags)
+    /** Access to /system-flags/v1/deploy. */
+    systemFlagsDeploy(Privilege.grant(Action.update)
+                                  .on(PathGroup.systemFlagsDeploy)
+                                  .in(SystemName.all())),
+
+    /** Access to /system-flags/v1/dryrun. */
+    systemFlagsDryrun(Privilege.grant(Action.update)
+                                  .on(PathGroup.systemFlagsDryrun)
                                   .in(SystemName.all()));
 
     private final Set<Privilege> privileges;

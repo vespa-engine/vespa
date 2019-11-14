@@ -208,8 +208,8 @@ public class AthenzFacade implements AccessControl {
         return hasAccess("launch", service.getDomain().getName() + ":service."+service.getName(), principal);
     }
 
-    public boolean hasSystemFlagsDeployAccess(AthenzIdentity identity) {
-        return hasAccess("deploy", new AthenzResourceName(service.getDomain(), "system-flags").toResourceNameString(), identity);
+    public boolean hasSystemFlagsAccess(AthenzIdentity identity, boolean dryRun) {
+        return hasAccess(dryRun ? "dryrun" : "deploy", new AthenzResourceName(service.getDomain(), "system-flags").toResourceNameString(), identity);
     }
 
     /**

@@ -115,7 +115,9 @@ public enum RoleDefinition {
                       Policy.keyManagement,
                       Policy.developmentDeployment),
 
-    systemFlagsDeployer(hostedOperator, Policy.systemFlagsDeployment);
+    systemFlagsDeployer(Policy.systemFlagsDeploy, Policy.systemFlagsDryrun),
+
+    systemFlagsDryrunner(Policy.systemFlagsDryrun);
 
     private final Set<RoleDefinition> parents;
     private final Set<Policy> policies;

@@ -101,8 +101,12 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
             && instance.get().value().equals(principal.getIdentity().getName()))
             roleMemberships.add(Role.athenzUser(tenant.get().name(), application.get(), instance.get()));
 
-        if (athenz.hasSystemFlagsDeployAccess(identity)) {
+        if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/false)) {
             roleMemberships.add(Role.systemFlagsDeployer());
+        }
+
+        if (athenz.hasSystemFlagsAccess(identity, /*dryrun*/true)) {
+            roleMemberships.add(Role.systemFlagsDryrunner());
         }
 
         return roleMemberships.isEmpty()
