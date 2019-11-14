@@ -202,9 +202,10 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         cm.setMaxTotal(200); // Increase max total connections to 200, which should be enough
 
         // Have experienced hang in socket read, which may have been because of
-        // system defaults, therefore set explicit timeouts. Set arbitrarily to
-        // 15s > 10s used by Orchestrator lock timeout.
-        int timeoutMs = 15_000;
+        // system defaults, therefore set explicit timeouts. Even though the Orchestrator
+        // server-side timeout is 10s, a 409 has been observed to be returned after ~30s
+        // in a case possibly involving zk leader election.
+        int timeoutMs = 30_000;
         RequestConfig requestBuilder = RequestConfig.custom()
                 .setConnectTimeout(timeoutMs) // establishment of connection
                 .setConnectionRequestTimeout(timeoutMs) // connection from connection manager
