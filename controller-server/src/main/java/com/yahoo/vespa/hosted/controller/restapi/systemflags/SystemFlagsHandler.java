@@ -22,7 +22,7 @@ import java.util.concurrent.Executor;
  * @author bjorncs
  */
 @SuppressWarnings("unused") // Request handler listed in controller's services.xml
-class SystemFlagsHandler extends LoggingRequestHandler {
+public class SystemFlagsHandler extends LoggingRequestHandler {
 
     private static final String API_PREFIX = "/system-flags/v1";
 
