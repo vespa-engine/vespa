@@ -17,10 +17,6 @@ dataDir string default="var/zookeeper"
 
 clientPort int default=2181
 
-# In the hosted Vespa prod.us-east-3 zone, a snapshotCount of 50000 corresponds
-# to about 5 transaction log snapshots per hour. Assuming this is a fairly
-# normal zone, a snapRetainCount of 15 gives 3-4 hours of logs before they're
-# purged.
 snapshotCount int default=50000
 # Purge interval in hours
 autopurge.purgeInterval int default=1
@@ -41,3 +37,6 @@ server[].electionPort int default=2183
 # and in general where there is a zookeeper ensemble running that has had few transactions.
 # TODO: Consider setting this to false by default (and override where appropriate)
 trustEmptySnapshot bool default=true
+
+# TLS options
+tlsForQuorumCommunication enum { OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY } default=OFF

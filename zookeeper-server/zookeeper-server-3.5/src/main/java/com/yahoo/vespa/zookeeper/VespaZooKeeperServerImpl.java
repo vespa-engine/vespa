@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.tls.TlsContext;
+
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.File;
@@ -12,6 +14,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -76,6 +79,41 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
+        sb.append(createTlsQuorumConfig(config));
+        return sb.toString();
+    }
+
+    private String createTlsQuorumConfig(ZookeeperServerConfig config) {
+        StringBuilder sb = new StringBuilder();
+
+        // Common config
+        sb.append("ssl.quorum.hostnameVerification=false\n");
+        sb.append("ssl.quorum.clientAuth=NEED\n");
+        sb.append("ssl.quorum.ciphersuites=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_CIPHER_SUITES))).append("\n");
+        sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_PROTOCOLS))).append("\n");
+        sb.append("ssl.quorum.protocol=TLSv1.2\n");
+
+        String tlsSetting = config.tlsForQuorumCommunication().name();
+        switch (tlsSetting) {
+            case "OFF":
+                sb.append("sslQuorum=false\n");
+                sb.append("portUnification=false\n");
+                break;
+            case "PORT_UNIFICATION":
+                sb.append("sslQuorum=false\n");
+                sb.append("portUnification=true\n");
+                break;
+            case "TLS_WITH_PORT_UNIFICATION":
+                sb.append("sslQuorum=true\n");
+                sb.append("portUnification=true\n");
+                break;
+            case "TLS_ONLY":
+                sb.append("sslQuorum=true\n");
+                sb.append("portUnification=false\n");
+                break;
+            default: throw new IllegalArgumentException("Unknown value of config setting tlsForQuorumCommunication: " + tlsSetting);
+        }
+
         return sb.toString();
     }
 
