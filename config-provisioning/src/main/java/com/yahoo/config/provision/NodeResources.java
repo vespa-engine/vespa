@@ -29,6 +29,10 @@ public class NodeResources {
             return 0;
         }
 
+        public boolean compatibleWith(DiskSpeed other) {
+            return this == any || other == any || other == this;
+        }
+
         private DiskSpeed combineWith(DiskSpeed other) {
             if (this == any) return other;
             if (other == any) return this;
@@ -58,6 +62,10 @@ public class NodeResources {
             if (a == remote && b == local) return -1;
             if (a == local && b == remote) return 1;
             return 0;
+        }
+
+        public boolean compatibleWith(StorageType other) {
+            return this == any || other == any || other == this;
         }
 
         private StorageType combineWith(StorageType other) {
@@ -218,8 +226,8 @@ public class NodeResources {
         if (this.memoryGb != other.memoryGb) return false;
         if (this.diskGb != other.diskGb) return false;
         if (this.bandwidthGbps != other.bandwidthGbps) return false;
-        if (other.diskSpeed != DiskSpeed.any && other.diskSpeed != this.diskSpeed) return false;
-        if (other.storageType != StorageType.any && other.storageType != this.storageType) return false;
+        if ( ! this.diskSpeed.compatibleWith(other.diskSpeed)) return false;
+        if ( ! this.storageType.compatibleWith(other.storageType)) return false;
 
         return true;
     }
