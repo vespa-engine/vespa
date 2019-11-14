@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -73,18 +74,17 @@ class SystemFlagsDeployer  {
         List<FlagDataChange> result = new ArrayList<>();
 
         wantedFlagData.forEach((id, data) -> {
-            if (currentFlagData.containsKey(id)) {
-                FlagData currentData = currentFlagData.get(id);
-                if (currentData.toJsonNode().equals(data.toJsonNode())) {
-                    return; // noop
-                }
-                result.add(FlagDataChange.updated(id, Set.of(target), data, currentData));
-            } else {
-                result.add(FlagDataChange.created(id, Set.of(target), data));
+            FlagData currentData = currentFlagData.get(id);
+            if (currentData != null && Objects.equals(currentData.toJsonNode(), data.toJsonNode())) {
+                return; // new flag data identical to existing
             }
             if (!dryRun) {
                 client.putFlagData(target, data);
             }
+            result.add(
+                    currentData != null
+                            ? FlagDataChange.updated(id, Set.of(target), data, currentData)
+                            : FlagDataChange.created(id, Set.of(target), data));
         });
 
         currentFlagData.forEach((id, data) -> {
