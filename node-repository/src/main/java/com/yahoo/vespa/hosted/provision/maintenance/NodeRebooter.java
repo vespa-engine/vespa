@@ -74,12 +74,9 @@ public class NodeRebooter extends Maintainer {
         // naturally scheduling the remaining with probability 1.
 
         int configServers = 3;
-        long runs = Math.max(1L, Math.round(rebootInterval.toSeconds() * configServers / (double) interval().toSeconds()));
-
-        double progressFraction = overdue.get().getSeconds() / (double) rebootInterval.getSeconds();
-        long currentRun = Math.max(1, Math.min(Math.round(progressFraction * runs), runs));
-
-        double probability = 1.0 / (runs + 1 - currentRun);
+        long secondsRemaining = Math.max(0, rebootInterval.getSeconds() - overdue.get().getSeconds());
+        double runsRemaining = configServers * secondsRemaining / (double) interval().getSeconds();
+        double probability = 1 / (1 + runsRemaining);
         return random.nextDouble() < probability;
     }
 
