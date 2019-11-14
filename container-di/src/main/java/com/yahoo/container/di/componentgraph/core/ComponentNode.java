@@ -154,7 +154,7 @@ public class ComponentNode extends Node {
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
             StackTraceElement dependencyInjectorMarker = new StackTraceElement("============= Dependency Injection =============", "newInstance", null, -1);
 
-            throw removeStackTrace(new ComponentConstructorException("Error constructing " + idAndType(), cutStackTraceAtConstructor(e.getCause(), dependencyInjectorMarker)));
+            throw removeStackTrace(new ComponentConstructorException("Error constructing " + idAndType() + ": " + e.getMessage(), cutStackTraceAtConstructor(e.getCause(), dependencyInjectorMarker)));
         }
 
         return initId(instance);
