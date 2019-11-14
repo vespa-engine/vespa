@@ -157,7 +157,7 @@ public:
         str += " in [";
         CommaTracker node_list;
         for (const auto &node: _entries) {
-            node_list.maybe_comma(str);
+            node_list.maybe_add_comma(str);
             str += node->dump(ctx);
         }
         str += "])";
