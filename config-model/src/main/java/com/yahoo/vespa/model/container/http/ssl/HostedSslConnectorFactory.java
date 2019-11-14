@@ -17,12 +17,15 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
 
     private static final List<String> INSECURE_WHITELISTED_PATHS = List.of("/status.html");
 
+    private final boolean enforceClientAuth;
+
     public HostedSslConnectorFactory(String serverName, TlsSecrets tlsSecrets) {
-        this(serverName, tlsSecrets, null);
+        this(serverName, tlsSecrets, null, false);
     }
 
-    public HostedSslConnectorFactory(String serverName, TlsSecrets tlsSecrets, String tlsCaCertificates) {
+    public HostedSslConnectorFactory(String serverName, TlsSecrets tlsSecrets, String tlsCaCertificates, boolean enforceClientAuth) {
         super("tls4443", 4443, createSslProvider(serverName, tlsSecrets, tlsCaCertificates));
+        this.enforceClientAuth = enforceClientAuth;
     }
 
     private static ConfiguredDirectSslProvider createSslProvider(
@@ -41,7 +44,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         super.getConfig(connectorBuilder);
         connectorBuilder.tlsClientAuthEnforcer(new ConnectorConfig.TlsClientAuthEnforcer.Builder()
                                                        .pathWhitelist(INSECURE_WHITELISTED_PATHS)
-                                                       .enable(true));
+                                                       .enable(enforceClientAuth));
     }
 
 }
