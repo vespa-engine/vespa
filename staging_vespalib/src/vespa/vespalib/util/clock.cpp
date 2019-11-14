@@ -5,6 +5,7 @@
 #include <chrono>
 
 using namespace fastos;
+using namespace std::chrono;
 
 namespace vespalib {
 
@@ -27,7 +28,7 @@ Clock::~Clock()
 
 void Clock::setTime() const
 {
-    _timeNS = ClockSystem::adjustTick2Sec(ClockSystem::now());
+    _timeNS = duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
@@ -37,13 +38,13 @@ void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
     std::unique_lock<std::mutex> guard(_lock);
     while ( ! thread->GetBreakFlag() && !_stop) {
         setTime();
-        _cond.wait_for(guard, std::chrono::milliseconds(_timePeriodMS));
+        _cond.wait_for(guard, milliseconds(_timePeriodMS));
     }
     _running = false;
 }
 
 void
-Clock::stop(void)
+Clock::stop()
 {
     std::lock_guard<std::mutex> guard(_lock);
     _stop = true;

@@ -21,6 +21,11 @@ public:
     fastos::TimeStamp now() const override { return fastos::ClockSystem::now(); }
 };
 
+class SteadyClock : public Clock {
+public:
+    fastos::TimeStamp now() const override;
+};
+
 class CountingClock : public Clock {
 public:
     CountingClock(int64_t start, int64_t increment) : _increment(increment), _nextTime(start) { }

@@ -9,7 +9,7 @@ DocsumRequest::DocsumRequest()
 {}
 
 DocsumRequest::DocsumRequest(bool useRootSlime_)
-    : DocsumRequest(RelativeTime(std::make_unique<FastosClock>()), useRootSlime_)
+    : DocsumRequest(RelativeTime(std::make_unique<SteadyClock>()), useRootSlime_)
 {}
 
 DocsumRequest::DocsumRequest(RelativeTime relativeTime, bool useRootSlime_)

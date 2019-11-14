@@ -21,7 +21,7 @@ private:
 
 public:
     SearchSessionExplorer(const SessionManager &manager) : _manager(manager) {}
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override {        
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override {
         Cursor &state = inserter.insertObject();
         state.setLong("numSessions", _manager.getNumSearchSessions());
         if (full) {

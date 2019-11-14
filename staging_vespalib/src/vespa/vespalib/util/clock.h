@@ -21,11 +21,11 @@ private:
     Clock & operator = (const Clock &);
 
     mutable fastos::TimeStamp _timeNS;
-    int               _timePeriodMS;
-    std::mutex              _lock;
-    std::condition_variable _cond;
-    bool              _stop;
-    bool              _running;
+    int                       _timePeriodMS;
+    std::mutex                _lock;
+    std::condition_variable   _cond;
+    bool                      _stop;
+    bool                      _running;
 
     void setTime() const;
 

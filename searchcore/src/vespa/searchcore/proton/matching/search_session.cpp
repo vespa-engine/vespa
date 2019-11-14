@@ -5,11 +5,11 @@
 
 namespace proton::matching {
 
-SearchSession::SearchSession(const SessionId &id, fastos::TimeStamp time_of_doom,
+SearchSession::SearchSession(const SessionId &id, fastos::TimeStamp create_time, fastos::TimeStamp time_of_doom,
                              std::unique_ptr<MatchToolsFactory> match_tools_factory,
                              OwnershipBundle &&owned_objects)
     : _session_id(id),
-      _create_time(fastos::ClockSystem::now()),
+      _create_time(create_time),
       _time_of_doom(time_of_doom),
       _owned_objects(std::move(owned_objects)),
       _match_tools_factory(std::move(match_tools_factory))
@@ -21,9 +21,9 @@ SearchSession::releaseEnumGuards() {
     _owned_objects.context->releaseEnumGuards();
 }
 
-SearchSession::~SearchSession() { }
+SearchSession::~SearchSession() = default;
 
 SearchSession::OwnershipBundle::OwnershipBundle() = default;
-SearchSession::OwnershipBundle::~OwnershipBundle() { }
+SearchSession::OwnershipBundle::~OwnershipBundle() = default;
 
 }

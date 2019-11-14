@@ -43,7 +43,7 @@ private:
 public:
     typedef std::shared_ptr<SearchSession> SP;
 
-    SearchSession(const SessionId &id, fastos::TimeStamp time_of_doom,
+    SearchSession(const SessionId &id, fastos::TimeStamp create_time, fastos::TimeStamp time_of_doom,
                   std::unique_ptr<MatchToolsFactory> match_tools_factory,
                   OwnershipBundle &&owned_objects);
     ~SearchSession();

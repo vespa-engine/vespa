@@ -4,8 +4,7 @@
 
 #include <vespa/fastos/timestamp.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 struct ISessionCachePruner {
     virtual ~ISessionCachePruner() {}
@@ -13,6 +12,4 @@ struct ISessionCachePruner {
     virtual void pruneTimedOutSessions(fastos::TimeStamp currentTime) = 0;
 };
 
-}  // namespace proton::matching
-}  // namespace proton
-
+}

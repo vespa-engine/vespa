@@ -84,7 +84,7 @@ struct SearchRequestDecoder : SearchRequest::Source::Decoder {
     QueryStats &stats;
     RelativeTime relative_time;
     SearchRequestDecoder(FRT_RPCRequest &rpc_in, QueryStats &stats_in)
-        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<FastosClock>()) {}
+        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<SteadyClock>()) {}
     std::unique_ptr<SearchRequest> decode() override {
         ProtoSearchRequest msg;
         stats.request_size = (*rpc.GetParams())[2]._data._len;
@@ -129,7 +129,7 @@ struct DocsumRequestDecoder : DocsumRequest::Source::Decoder {
     DocsumStats &stats;
     RelativeTime relative_time;
     DocsumRequestDecoder(FRT_RPCRequest &rpc_in, DocsumStats &stats_in)
-        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<FastosClock>()) {}
+        : rpc(rpc_in), stats(stats_in), relative_time(std::make_unique<SteadyClock>()) {}
     std::unique_ptr<DocsumRequest> decode() override {
         ProtoDocsumRequest msg;
         stats.request_size = (*rpc.GetParams())[2]._data._len;

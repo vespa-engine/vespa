@@ -130,7 +130,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                     ? Factor::lookup(rankProperties, _stats.softDoomFactor())
                     : 0.95;
     int64_t safeLeft = request.getTimeLeft() * factor;
-    fastos::TimeStamp safeDoom(fastos::ClockSystem::now() + safeLeft);
+    fastos::TimeStamp safeDoom(_clock.getTimeNSAssumeRunning().val() + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, softTimeout=%" PRId64 " softDoom=%" PRId64 " hardDoom=%" PRId64,
                    _stats.softDoomFactor(), factor, safeLeft, safeDoom.ns(), request.getTimeOfDoom().ns());
@@ -240,7 +240,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                                : mtf->match_limiter().getDocIdSpaceEstimate();
         uint32_t estHits = mtf->estimate().estHits;
         if (shouldCacheSearchSession && ((result->_numFs4Hits != 0) || shouldCacheGroupingSession)) {
-            auto session = std::make_shared<SearchSession>(sessionId, request.getTimeOfDoom(),
+            auto session = std::make_shared<SearchSession>(sessionId, request.getStartTime(), request.getTimeOfDoom(),
                                                            std::move(mtf), std::move(owned_objects));
             session->releaseEnumGuards();
             sessionMgr.insert(std::move(session));

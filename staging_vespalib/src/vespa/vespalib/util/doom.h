@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/clock.h>
+#include "clock.h"
 
 namespace vespalib {
 

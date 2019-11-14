@@ -71,9 +71,7 @@ public:
     void start() { _startTime = this->now(); _stopTime = _startTime; }
     void stop()  { _stopTime = this->now(); }
 
-    TimeStamp elapsedAdjusted() const { return this->adjustTick2Sec(elapsed()); }
     TimeStamp startTime()       const { return this->adjustTick2Sec(_startTime); }
-    TimeStamp stopTime()        const { return this->adjustTick2Sec(_stopTime); }
 
     TimeStamp elapsed() const {
         TimeStamp diff(_stopTime - _startTime);
