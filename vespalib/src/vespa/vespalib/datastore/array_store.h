@@ -101,6 +101,8 @@ public:
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
 
+    bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
+
     static ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                        size_t hugePageSize,
                                                        size_t smallPageSize,

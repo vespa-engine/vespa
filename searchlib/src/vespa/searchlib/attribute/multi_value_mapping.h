@@ -48,12 +48,14 @@ public:
 
     vespalib::AddressSpace getAddressSpaceUsage() const override;
     vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;
+    bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
 
     static datastore::ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                                   size_t hugePageSize,
                                                                   size_t smallPageSize,
                                                                   size_t minNumArraysForNewBuffer,
-                                                                  float allocGrowFactor);
+                                                                  float allocGrowFactor,
+                                                                  bool enable_free_lists);
 };
 
 }

@@ -316,6 +316,8 @@ public:
     void disableFreeList(uint32_t bufferId);
     void disableElemHoldList();
 
+    bool has_free_lists_enabled() const { return _freeListsEnabled; }
+
     /**
      * Returns the free list for the given type id.
      */

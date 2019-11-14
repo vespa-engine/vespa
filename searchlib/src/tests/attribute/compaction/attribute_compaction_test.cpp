@@ -174,9 +174,9 @@ TEST_F("Test that no compaction of int8 array attribute increases address space 
     f.populate(range1, 1000);
     f.hammer(range2, 101);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
-    // 100 * 1000 dead arrays due to new values for docids
+    // Only 1000 dead arrays (due to new values for docids) as free lists are used.
     // 1 reserved array accounted as dead
-    EXPECT_EQUAL(100001u, afterSpace.dead());
+    EXPECT_EQUAL(1001u, afterSpace.dead());
 }
 
 TEST_F("Test that compaction of int8 array attribute limits address space usage", Fixture(compactAddressSpaceAttributeConfig(true)))

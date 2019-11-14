@@ -80,9 +80,12 @@ MultiValueMapping<EntryT, RefT>::optimizedConfigForHugePage(size_t maxSmallArray
                                                              size_t hugePageSize,
                                                              size_t smallPageSize,
                                                              size_t minNumArraysForNewBuffer,
-                                                             float allocGrowFactor)
+                                                             float allocGrowFactor,
+                                                             bool enable_free_lists)
 {
-    return ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer, allocGrowFactor);
+    auto result = ArrayStore::optimizedConfigForHugePage(maxSmallArraySize, hugePageSize, smallPageSize, minNumArraysForNewBuffer, allocGrowFactor);
+    result.enable_free_lists(enable_free_lists);
+    return result;
 }
 
 }
