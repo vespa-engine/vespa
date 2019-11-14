@@ -147,7 +147,7 @@ public class FastSearcher extends VespaBackEndSearcher {
      * on the same host.
      */
     private SearchInvoker getSearchInvoker(Query query) {
-        return dispatcher.getSearchInvoker(query, this).get();
+        return dispatcher.getSearchInvoker(query, this);
     }
 
     /**
@@ -156,10 +156,8 @@ public class FastSearcher extends VespaBackEndSearcher {
      * content nodes.
      */
     private FillInvoker getFillInvoker(Result result) {
-        return dispatcher.getFillInvoker(result, this).get();
+        return dispatcher.getFillInvoker(result, this);
     }
-
-
 
     private static Optional<String> quotedSummaryClass(String summaryClass) {
         return Optional.of(summaryClass == null ? "[null]" : quote(summaryClass));

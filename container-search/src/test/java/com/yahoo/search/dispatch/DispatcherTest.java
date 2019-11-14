@@ -11,7 +11,6 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
-import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.Test;
 
 import java.util.List;
@@ -20,46 +19,28 @@ import java.util.OptionalInt;
 import java.util.concurrent.Callable;
 
 import static com.yahoo.search.dispatch.MockSearchCluster.createDispatchConfig;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * @author ollivir
  */
 public class DispatcherTest {
-    private static final CompoundName internalDispatch = new CompoundName("dispatch.internal");
-
-    private static Query query() {
-        Query q = new Query();
-        q.properties().set(internalDispatch, "true");
-        return q;
-    }
-
-    @Test
-    public void requireDispatcherToIgnoreMultilevelConfigurations() {
-        SearchCluster searchCluster = new MockSearchCluster("1", 2, 2);
-        DispatchConfig dispatchConfig = new DispatchConfig.Builder().useMultilevelDispatch(true).build();
-
-        var invokerFactory = new MockInvokerFactory(searchCluster);
-
-        Dispatcher disp = new Dispatcher(searchCluster, dispatchConfig, invokerFactory, invokerFactory, new MockMetric());
-        assertThat(disp.getSearchInvoker(query(), null).isPresent(), is(false));
-    }
 
     @Test
     public void requireThatDispatcherSupportsSearchPath() {
         SearchCluster cl = new MockSearchCluster("1", 2, 2);
-        Query q = query();
+        Query q = new Query();
         q.getModel().setSearchPath("1/0"); // second node in first group
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (nodes, a) -> {
-            assertThat(nodes.size(), is(1));
-            assertThat(nodes.get(0).key(), is(2));
+            assertEquals(1, nodes.size());
+            assertEquals(2, nodes.get(0).key());
             return true;
         });
         Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
-        Optional<SearchInvoker> invoker = disp.getSearchInvoker(q, null);
-        assertThat(invoker.isPresent(), is(true));
+        SearchInvoker invoker = disp.getSearchInvoker(q, null);
         invokerFactory.verifyAllEventsProcessed();
     }
 
@@ -73,8 +54,7 @@ public class DispatcherTest {
         };
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> true);
         Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
-        Optional<SearchInvoker> invoker = disp.getSearchInvoker(query(), null);
-        assertThat(invoker.isPresent(), is(true));
+        SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
     }
 
@@ -83,31 +63,34 @@ public class DispatcherTest {
         SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
         MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, acceptIncompleteCoverage) -> {
-            assertThat(acceptIncompleteCoverage, is(false));
+            assertFalse(acceptIncompleteCoverage);
             return false;
         }, (n, acceptIncompleteCoverage) -> {
-            assertThat(acceptIncompleteCoverage, is(true));
+            assertTrue(acceptIncompleteCoverage);
             return true;
         });
         Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
-        Optional<SearchInvoker> invoker = disp.getSearchInvoker(query(), null);
-        assertThat(invoker.isPresent(), is(true));
+        SearchInvoker invoker = disp.getSearchInvoker(new Query(), null);
         invokerFactory.verifyAllEventsProcessed();
     }
 
     @Test
     public void requireThatInvokerConstructionDoesNotRepeatGroups() {
-        SearchCluster cl = new MockSearchCluster("1", 2, 1);
+        try {
+            SearchCluster cl = new MockSearchCluster("1", 2, 1);
 
-        MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> false, (n, a) -> false);
-        Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
-        Optional<SearchInvoker> invoker = disp.getSearchInvoker(query(), null);
-        assertThat(invoker.isPresent(), is(false));
-        invokerFactory.verifyAllEventsProcessed();
+            MockInvokerFactory invokerFactory = new MockInvokerFactory(cl, (n, a) -> false, (n, a) -> false);
+            Dispatcher disp = new Dispatcher(cl, createDispatchConfig(), invokerFactory, invokerFactory, new MockMetric());
+            disp.getSearchInvoker(new Query(), null);
+            fail("Expected exception");
+        }
+        catch (IllegalStateException e) {
+            assertEquals("No suitable groups to dispatch query. Rejected: [0, 1]", e.getMessage());
+        }
     }
 
     interface FactoryStep {
-        public boolean returnInvoker(List<Node> nodes, boolean acceptIncompleteCoverage);
+        boolean returnInvoker(List<Node> nodes, boolean acceptIncompleteCoverage);
     }
 
     private static class MockInvokerFactory extends InvokerFactory implements PingFactory {
@@ -121,8 +104,11 @@ public class DispatcherTest {
         }
 
         @Override
-        public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher, Query query, OptionalInt groupId,
-                List<Node> nodes, boolean acceptIncompleteCoverage) {
+        public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
+                                                           Query query,
+                                                           OptionalInt groupId,
+                                                           List<Node> nodes,
+                                                           boolean acceptIncompleteCoverage) {
             if (step >= events.length) {
                 throw new RuntimeException("Was not expecting more calls to getSearchInvoker");
             }
@@ -136,7 +122,7 @@ public class DispatcherTest {
         }
 
         void verifyAllEventsProcessed() {
-            assertThat(step, is(events.length));
+            assertEquals(events.length, step);
         }
 
         @Override
@@ -146,7 +132,7 @@ public class DispatcherTest {
         }
 
         @Override
-        public Optional<FillInvoker> createFillInvoker(VespaBackEndSearcher searcher, Result result) {
+        public FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result) {
             fail("Unexpected call to createFillInvoker");
             return null;
         }
