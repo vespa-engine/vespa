@@ -402,11 +402,14 @@ public class NodeAgentImpl implements NodeAgent {
         switch (node.state()) {
             case ready:
             case reserved:
-            case parked:
             case failed:
             case inactive:
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context);
+                break;
+            case parked:
+                updateNodeRepoWithCurrentAttributes(context);
+                stopServices(context);
                 break;
             case active:
                 storageMaintainer.handleCoreDumpsForContainer(context, container);
