@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
@@ -75,7 +76,9 @@ public interface NodeRepository {
         var application = Optional.ofNullable(node.getOwner())
                                   .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
                                                                    owner.getInstance()));
-        return new Node(com.yahoo.config.provision.HostName.from(node.getHostname()),
+        var parentHostname = Optional.ofNullable(node.getParentHostname()).map(HostName::from);
+        return new Node(HostName.from(node.getHostname()),
+                        parentHostname,
                         fromJacksonState(node.getState()),
                         fromJacksonType(node.getType()),
                         application,

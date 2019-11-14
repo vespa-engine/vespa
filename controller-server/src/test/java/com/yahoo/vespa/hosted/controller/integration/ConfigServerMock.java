@@ -85,6 +85,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
     public void provision(ZoneId zone, ApplicationId application) {
         nodeRepository().putByHostname(zone, new Node(hostFor(application, zone),
+                                                      Optional.empty(),
                                                       Node.State.reserved,
                                                       NodeType.tenant,
                                                       Optional.of(application),
@@ -113,6 +114,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                     HostName.from("node-" + i + "-" + application.id().application()
                                                                                                  .value()
                                                                   + "-" + zone.value()),
+                                                    Optional.empty(),
                                                     Node.State.active, application.nodeType(),
                                                     Optional.of(application.id()),
                                                     initialVersion,
@@ -175,14 +177,14 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         for (Node node : nodeRepository().list(zone, application)) {
             Node newNode;
             if (osVersion) {
-                newNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
+                newNode = new Node(node.hostname(), Optional.empty(), node.state(), node.type(), node.owner(), node.currentVersion(),
                                    node.wantedVersion(), version, version, node.serviceState(),
                                    node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
                                    node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
                                    node.bandwidthGbps(), node.fastDisk(), node.cost(), node.canonicalFlavor(),
                                    node.clusterId(), node.clusterType());
             } else {
-                newNode = new Node(node.hostname(), node.state(), node.type(), node.owner(), version,
+                newNode = new Node(node.hostname(), Optional.empty(), node.state(), node.type(), node.owner(), version,
                                    version, node.currentOsVersion(), node.wantedOsVersion(), node.serviceState(),
                                    node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
                                    node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
@@ -306,6 +308,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             List<Node> nodes = nodeRepository.list(deployment.zoneId(), deployment.applicationId());
             for (Node node : nodes) {
                 nodeRepository.putByHostname(deployment.zoneId(), new Node(node.hostname(),
+                                                                           Optional.empty(),
                                                                            Node.State.active,
                                                                            node.type(),
                                                                            node.owner(),

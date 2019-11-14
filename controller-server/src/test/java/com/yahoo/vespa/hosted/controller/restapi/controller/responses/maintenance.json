@@ -52,6 +52,9 @@
       "name": "ResourceMeterMaintainer"
     },
     {
+      "name": "ResourceTagMaintainer"
+    },
+    {
       "name": "RotationStatusUpdater"
     },
     {

@@ -154,7 +154,7 @@ public class OsUpgraderTest {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putByHostname(zone, new Node(node.hostname(), Node.State.failed, node.type(), node.owner(),
+        nodeRepository().putByHostname(zone, new Node(node.hostname(), node.parentHostname(), Node.State.failed, node.type(), node.owner(),
                                                       node.currentVersion(), node.wantedVersion()));
     }
 
@@ -164,7 +164,7 @@ public class OsUpgraderTest {
         for (ZoneId zone : zones) {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
                 nodeRepository().putByHostname(zone, new Node(
-                        node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
+                        node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
                         node.wantedVersion(), version, version, node.serviceState(),
                         node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
                         node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
