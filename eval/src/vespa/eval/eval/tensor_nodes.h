@@ -234,7 +234,7 @@ public:
         str += ":{";
         CommaTracker child_list;
         for (const Child &child: _cells) {
-            child_list.maybe_comma(str);
+            child_list.maybe_add_comma(str);
             str += as_string(child.first);
             str += ":";
             str += child.second->dump(ctx);

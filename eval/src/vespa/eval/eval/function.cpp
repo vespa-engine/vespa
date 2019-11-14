@@ -463,10 +463,9 @@ void parse_if(ParseContext &ctx) {
 }
 
 void parse_call(ParseContext &ctx, Call_UP call) {
+    CommaTracker list;
     for (size_t i = 0; i < call->num_params(); ++i) {
-        if (i > 0) {
-            ctx.eat(',');
-        }
+        list.maybe_eat_comma(ctx);
         call->bind_next(get_expression(ctx));
     }
     ctx.push_expression(std::move(call));
@@ -480,10 +479,9 @@ std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
         ctx.skip_spaces();
         ctx.eat('(');
     }
+    CommaTracker ident_list(wrapped);
     while (!ctx.find_list_end()) {
-        if (!list.empty() || !wrapped) {
-            ctx.eat(',');
-        }
+        ident_list.maybe_eat_comma(ctx);
         list.push_back(get_ident(ctx, false));
     }
     if (wrapped) {
@@ -580,10 +578,9 @@ TensorSpec::Address get_tensor_address(ParseContext &ctx, const ValueType &type)
     TensorSpec::Address addr;
     ctx.skip_spaces();
     ctx.eat('{');
+    CommaTracker list;
     while (!ctx.find_list_end()) {
-        if (!addr.empty()) {
-            ctx.eat(',');
-        }
+        list.maybe_eat_comma(ctx);
         auto dim_name = get_ident(ctx, false);
         size_t dim_idx = type.dimension_index(dim_name);
         if (dim_idx != ValueType::Dimension::npos) {
@@ -617,10 +614,9 @@ void parse_tensor_create_verbose(ParseContext &ctx, const ValueType &type) {
     ctx.skip_spaces();
     ctx.eat('{');
     nodes::TensorCreate::Spec create_spec;
+    CommaTracker list;
     while (!ctx.find_list_end()) {
-        if (!create_spec.empty()) {
-            ctx.eat(',');
-        }
+        list.maybe_eat_comma(ctx);
         auto address = get_tensor_address(ctx, type);
         ctx.skip_spaces();
         ctx.eat(':');
@@ -638,20 +634,18 @@ void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
     nodes::TensorCreate::Spec create_spec;
     using Label = TensorSpec::Label;
     std::vector<Label> addr;
+    std::vector<CommaTracker> list;
     for (;;) {
         if (addr.size() == dim_list.size()) {
             TensorSpec::Address address;
             for (size_t i = 0; i < addr.size(); ++i) {
-                if (addr[i].is_mapped()) {
-                    address.emplace(dim_list[i].name, addr[i]);
-                } else {
-                    address.emplace(dim_list[i].name, Label(addr[i].index-1));
-                }
+                address.emplace(dim_list[i].name, addr[i]);
             }
             create_spec.emplace(std::move(address), get_expression(ctx));
         } else {
             bool mapped = dim_list[addr.size()].is_mapped();
             addr.push_back(mapped ? Label("") : Label(size_t(0)));
+            list.emplace_back();
             ctx.skip_spaces();
             ctx.eat(mapped ? '{' : '[');
         }
@@ -659,25 +653,23 @@ void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
             bool mapped = addr.back().is_mapped();
             ctx.eat(mapped ? '}' : ']');
             addr.pop_back();
+            list.pop_back();
             if (addr.empty()) {
                 return ctx.push_expression(std::make_unique<nodes::TensorCreate>(type, std::move(create_spec)));
             }
         }
-        if (addr.back().is_mapped()) {
-            if (addr.back().name != "") {
-                ctx.eat(',');
+        if (list.back().maybe_eat_comma(ctx)) {
+            if (addr.back().is_indexed()) {
+                if (++addr.back().index >= dim_list[addr.size()-1].size) {
+                    return ctx.fail(make_string("dimension too large: '%s'",
+                                    dim_list[addr.size()-1].name.c_str()));
+                }
             }
+        }
+        if (addr.back().is_mapped()) {
             addr.back().name = get_ident(ctx, false);
             ctx.skip_spaces();
             ctx.eat(':');
-        } else {
-            if (addr.back().index != 0) {
-                ctx.eat(',');
-            }
-            if (++addr.back().index > dim_list[addr.size()-1].size) {
-                return ctx.fail(make_string("dimension too large: '%s'",
-                                            dim_list[addr.size()-1].name.c_str()));
-            }
         }
     }
 }
@@ -811,11 +803,9 @@ void parse_in(ParseContext &ctx)
     ctx.skip_spaces();
     ctx.eat('[');
     ctx.skip_spaces();
-    size_t size = 0;
-    while (!ctx.eos() && ctx.get() != ']') {
-        if (++size > 1) {
-            ctx.eat(',');
-        }
+    CommaTracker list;
+    while (!ctx.find_list_end()) {
+        list.maybe_eat_comma(ctx);
         parse_value(ctx);
         ctx.skip_spaces();
         auto entry = ctx.pop_expression();

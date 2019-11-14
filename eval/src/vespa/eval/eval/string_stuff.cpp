@@ -9,7 +9,7 @@ vespalib::string as_string(const TensorSpec::Address &address) {
     CommaTracker label_list;
     vespalib::string str = "{";
     for (const auto &label: address) {
-        label_list.maybe_comma(str);
+        label_list.maybe_add_comma(str);
         if (label.second.is_mapped()) {
             str += make_string("%s:%s", label.first.c_str(), label.second.name.c_str());
         } else {
