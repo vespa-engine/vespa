@@ -655,6 +655,31 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(hostName);
     }
 
+    @Test
+    public void testStopContainerInParkedState() {
+        final NodeSpec node = nodeBuilder
+                .currentDockerImage(dockerImage)
+                .wantedDockerImage(dockerImage)
+                .state(NodeState.parked)
+                .currentVespaVersion(vespaVersion)
+                .build();
+
+        NodeAgentContext context = createContext(node);
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, false);
+
+        when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
+
+        nodeAgent.doConverge(context);
+
+        verify(dockerOperations, never()).removeContainer(eq(context), any());
+        verify(dockerOperations, never()).createContainer(eq(context), any(), any());
+        verify(dockerOperations, times(1)).stopServices(eq(context));
+
+        nodeAgent.doConverge(context);
+        // Should not be called more than once, have already been stopped
+        verify(dockerOperations, times(1)).stopServices(eq(context));
+    }
+
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
         mockGetContainer(dockerImage, isRunning);
 
