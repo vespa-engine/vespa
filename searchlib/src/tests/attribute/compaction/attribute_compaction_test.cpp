@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
@@ -167,27 +168,63 @@ TEST_F("Test that compaction of integer array attribute reduces memory usage", F
     EXPECT_LESS(afterStatus.getUsed(), beforeStatus.getUsed());
 }
 
-TEST_F("Test that no compaction of int8 array attribute increases address space usage", Fixture(compactAddressSpaceAttributeConfig(false)))
+void
+populate_and_hammer(Fixture& f, bool take_attribute_guard)
 {
     DocIdRange range1 = f.addDocs(1000);
     DocIdRange range2 = f.addDocs(1000);
-    f.populate(range1, 1000);
-    f.hammer(range2, 101);
+    if (take_attribute_guard) {
+        {
+            // When attribute guard is held free lists will not be used in the hammer step.
+            search::AttributeGuard guard(f._v);
+            f.populate(range1, 1000);
+            f.hammer(range2, 101);
+        }
+        f._v->commit(true);
+        f._v->commit();
+    } else {
+        f.populate(range1, 1000);
+        f.hammer(range2, 101);
+    }
+}
+
+TEST_F("Address space usage (dead) increases significantly when free lists are NOT used (compaction configured off)",
+       Fixture(compactAddressSpaceAttributeConfig(false)))
+{
+    populate_and_hammer(f, true);
+    AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
+    // 100 * 1000 dead arrays due to new values for docids
+    // 1 reserved array accounted as dead
+    EXPECT_EQUAL(100001u, afterSpace.dead());
+}
+
+TEST_F("Address space usage (dead) increases only slightly when free lists are used (compaction configured off)",
+       Fixture(compactAddressSpaceAttributeConfig(false)))
+{
+    populate_and_hammer(f, false);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // Only 1000 dead arrays (due to new values for docids) as free lists are used.
     // 1 reserved array accounted as dead
     EXPECT_EQUAL(1001u, afterSpace.dead());
 }
 
-TEST_F("Test that compaction of int8 array attribute limits address space usage", Fixture(compactAddressSpaceAttributeConfig(true)))
+TEST_F("Compaction limits address space usage (dead) when free lists are NOT used",
+       Fixture(compactAddressSpaceAttributeConfig(true)))
 {
-    DocIdRange range1 = f.addDocs(1000);
-    DocIdRange range2 = f.addDocs(1000);
-    f.populate(range1, 1000);
-    f.hammer(range2, 101);
+    populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // DEAD_ARRAYS_SLACK in multi value mapping is is 64k
     EXPECT_GREATER(65536u, afterSpace.dead());
+}
+
+TEST_F("Compaction is not executed when free lists are used",
+       Fixture(compactAddressSpaceAttributeConfig(true)))
+{
+    populate_and_hammer(f, false);
+    AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
+    // Only 1000 dead arrays (due to new values for docids) as free lists are used.
+    // 1 reserved array accounted as dead
+    EXPECT_EQUAL(1001u, afterSpace.dead());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
