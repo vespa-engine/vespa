@@ -55,6 +55,7 @@ public class AllocatedHostsSerializer {
     private static final String diskKey = "disk";
     private static final String bandwidthKey = "bandwidth";
     private static final String diskSpeedKey = "diskSpeed";
+    private static final String storageTypeKey = "storageType";
 
     /** Wanted version */
     private static final String hostSpecVespaVersionKey = "vespaVersion";
@@ -109,6 +110,7 @@ public class AllocatedHostsSerializer {
         resourcesObject.setDouble(diskKey, resources.diskGb());
         resourcesObject.setDouble(bandwidthKey, resources.bandwidthGbps());
         resourcesObject.setString(diskSpeedKey, diskSpeedToString(resources.diskSpeed()));
+        resourcesObject.setString(storageTypeKey, storageTypeToString(resources.storageType()));
     }
 
     public static AllocatedHosts fromJson(byte[] json, Optional<NodeFlavors> nodeFlavors) {
@@ -152,7 +154,8 @@ public class AllocatedHostsSerializer {
                                              resources.field(memoryKey).asDouble(),
                                              resources.field(diskKey).asDouble(),
                                              resources.field(bandwidthKey).asDouble(),
-                                             diskSpeedFromSlime(resources.field(diskSpeedKey))));
+                                             diskSpeedFromSlime(resources.field(diskSpeedKey)),
+                                             storageTypeFromSlime(resources.field(storageTypeKey))));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromSlime(Inspector diskSpeed) {
@@ -171,7 +174,25 @@ public class AllocatedHostsSerializer {
             case any : return "any";
             default: throw new IllegalStateException("Illegal disk-speed value '" + diskSpeed + "'");
         }
+    }
 
+    private static NodeResources.StorageType storageTypeFromSlime(Inspector storageType) {
+        if ( ! storageType.valid()) return NodeResources.StorageType.getDefault(); // TODO: Remove this line after December 2019
+        switch (storageType.asString()) {
+            case "remote" : return NodeResources.StorageType.remote;
+            case "local" : return NodeResources.StorageType.local;
+            case "any" : return NodeResources.StorageType.any;
+            default: throw new IllegalStateException("Illegal storage-type value '" + storageType.asString() + "'");
+        }
+    }
+
+    private static String storageTypeToString(NodeResources.StorageType storageType) {
+        switch (storageType) {
+            case remote : return "remote";
+            case local : return "local";
+            case any : return "any";
+            default: throw new IllegalStateException("Illegal storage-type value '" + storageType + "'");
+        }
     }
 
     private static ClusterMembership membershipFromSlime(Inspector object) {

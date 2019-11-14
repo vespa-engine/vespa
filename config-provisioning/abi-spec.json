@@ -591,12 +591,35 @@
     "methods": [
       "public static com.yahoo.config.provision.NodeResources$DiskSpeed[] values()",
       "public static com.yahoo.config.provision.NodeResources$DiskSpeed valueOf(java.lang.String)",
-      "public static int compare(com.yahoo.config.provision.NodeResources$DiskSpeed, com.yahoo.config.provision.NodeResources$DiskSpeed)"
+      "public static int compare(com.yahoo.config.provision.NodeResources$DiskSpeed, com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public boolean isDefault()",
+      "public static com.yahoo.config.provision.NodeResources$DiskSpeed getDefault()"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed fast",
       "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed slow",
       "public static final enum com.yahoo.config.provision.NodeResources$DiskSpeed any"
+    ]
+  },
+  "com.yahoo.config.provision.NodeResources$StorageType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.config.provision.NodeResources$StorageType[] values()",
+      "public static com.yahoo.config.provision.NodeResources$StorageType valueOf(java.lang.String)",
+      "public static int compare(com.yahoo.config.provision.NodeResources$StorageType, com.yahoo.config.provision.NodeResources$StorageType)",
+      "public boolean isDefault()",
+      "public static com.yahoo.config.provision.NodeResources$StorageType getDefault()"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.config.provision.NodeResources$StorageType remote",
+      "public static final enum com.yahoo.config.provision.NodeResources$StorageType local",
+      "public static final enum com.yahoo.config.provision.NodeResources$StorageType any"
     ]
   },
   "com.yahoo.config.provision.NodeResources": {
@@ -606,21 +629,23 @@
       "public"
     ],
     "methods": [
-      "public void <init>(double, double, double)",
-      "public void <init>(double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
       "public void <init>(double, double, double, double)",
       "public void <init>(double, double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public void <init>(double, double, double, double, com.yahoo.config.provision.NodeResources$DiskSpeed, com.yahoo.config.provision.NodeResources$StorageType)",
       "public double vcpu()",
       "public double memoryGb()",
       "public double diskGb()",
       "public double bandwidthGbps()",
       "public com.yahoo.config.provision.NodeResources$DiskSpeed diskSpeed()",
+      "public com.yahoo.config.provision.NodeResources$StorageType storageType()",
       "public com.yahoo.config.provision.NodeResources withVcpu(double)",
       "public com.yahoo.config.provision.NodeResources withMemoryGb(double)",
       "public com.yahoo.config.provision.NodeResources withDiskGb(double)",
       "public com.yahoo.config.provision.NodeResources withBandwidthGbps(double)",
       "public com.yahoo.config.provision.NodeResources withDiskSpeed(com.yahoo.config.provision.NodeResources$DiskSpeed)",
-      "public com.yahoo.config.provision.NodeResources anySpeed()",
+      "public com.yahoo.config.provision.NodeResources with(com.yahoo.config.provision.NodeResources$DiskSpeed)",
+      "public com.yahoo.config.provision.NodeResources with(com.yahoo.config.provision.NodeResources$StorageType)",
+      "public com.yahoo.config.provision.NodeResources justNumbers()",
       "public com.yahoo.config.provision.NodeResources subtract(com.yahoo.config.provision.NodeResources)",
       "public com.yahoo.config.provision.NodeResources add(com.yahoo.config.provision.NodeResources)",
       "public boolean equals(java.lang.Object)",

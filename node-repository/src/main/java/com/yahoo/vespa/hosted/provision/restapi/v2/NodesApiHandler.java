@@ -51,6 +51,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
 /**
@@ -239,13 +241,14 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Flavor flavorFromSlime(Inspector inspector) {
         Inspector flavorInspector = inspector.field("flavor");
-        if (!flavorInspector.valid()) {
+        if ( ! flavorInspector.valid()) {
             return new Flavor(new NodeResources(
                     requiredField(inspector, "minCpuCores", Inspector::asDouble),
                     requiredField(inspector, "minMainMemoryAvailableGb", Inspector::asDouble),
                     requiredField(inspector, "minDiskAvailableGb", Inspector::asDouble),
                     requiredField(inspector, "bandwidthGbps", Inspector::asDouble),
-                    requiredField(inspector, "fastDisk", Inspector::asBool) ? fast : slow));
+                    requiredField(inspector, "fastDisk", Inspector::asBool) ? fast : slow,
+                    requiredField(inspector, "remoteStorage", Inspector::asBool) ? remote : local));
         }
 
         Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
@@ -258,7 +261,9 @@ public class NodesApiHandler extends LoggingRequestHandler {
         if (inspector.field("bandwidthGbps").valid())
             flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidthGbps").asDouble()));
         if (inspector.field("fastDisk").valid())
-            flavor = flavor.with(flavor.resources().withDiskSpeed(inspector.field("fastDisk").asBool() ? fast : slow));
+            flavor = flavor.with(flavor.resources().with(inspector.field("fastDisk").asBool() ? fast : slow));
+        if (inspector.field("remoteStorage").valid())
+            flavor = flavor.with(flavor.resources().with(inspector.field("remoteStorage").asBool() ? remote : local));
         return flavor;
     }
 

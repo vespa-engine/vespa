@@ -47,6 +47,7 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 public class ConfigServerApiImpl implements ConfigServerApi {
+
     private static final Logger logger = Logger.getLogger(ConfigServerApiImpl.class.getName());
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -225,4 +226,5 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         Collections.shuffle(shuffledConfigServerHosts);
         return shuffledConfigServerHosts;
     }
+
 }

@@ -160,7 +160,8 @@ public class NodePrioritizer {
             Node newNode = Node.createDockerNode(allocation.get().addresses(),
                                                  allocation.get().hostname(),
                                                  host.hostname(),
-                                                 resources(requestedNodes).withDiskSpeed(host.flavor().resources().diskSpeed()),
+                                                 resources(requestedNodes).with(host.flavor().resources().diskSpeed())
+                                                                          .with(host.flavor().resources().storageType()),
                                                  NodeType.tenant);
             PrioritizableNode nodePri = toPrioritizable(newNode, false, true);
             if ( ! nodePri.violatesSpares || isAllocatingForReplacement) {

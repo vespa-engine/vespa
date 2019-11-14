@@ -28,11 +28,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
-import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
-
 /**
- * @author stiankri, dybis
+ * @author stiankri
+ * @author dybis
  */
 public class RealNodeRepository implements NodeRepository {
     private static final Logger logger = Logger.getLogger(RealNodeRepository.class.getName());
@@ -68,7 +66,7 @@ public class RealNodeRepository implements NodeRepository {
     public Optional<NodeSpec> getOptionalNode(String hostName) {
         try {
             NodeRepositoryNode nodeResponse = configServerApi.get("/nodes/v2/node/" + hostName,
-                    NodeRepositoryNode.class);
+                                                                  NodeRepositoryNode.class);
 
             return Optional.ofNullable(nodeResponse).map(RealNodeRepository::createNodeSpec);
         } catch (HttpException.NotFoundException | HttpException.ForbiddenException e) {
@@ -152,7 +150,6 @@ public class RealNodeRepository implements NodeRepository {
         Optional<NodeMembership> membership = Optional.ofNullable(node.membership)
                 .map(m -> new NodeMembership(m.clusterType, m.clusterId, m.group, m.index, m.retired));
         NodeReports reports = NodeReports.fromMap(Optional.ofNullable(node.reports).orElseGet(Map::of));
-
         return new NodeSpec(
                 node.hostname,
                 Optional.ofNullable(node.wantedDockerImage).map(DockerImage::fromString),
@@ -180,11 +177,24 @@ public class RealNodeRepository implements NodeRepository {
                         node.minMainMemoryAvailableGb,
                         node.minDiskAvailableGb,
                         node.bandwidthGbps,
-                        node.fastDisk ? fast : slow),
+                        toDiskSpeed(node.fastDisk),
+                        toStorageType(node.remoteStorage)),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
                 Optional.ofNullable(node.parentHostname));
+    }
+
+    private static NodeResources.DiskSpeed toDiskSpeed(Boolean fastDisk) {
+        if (fastDisk == null) return NodeResources.DiskSpeed.any;
+        if (fastDisk) return NodeResources.DiskSpeed.fast;
+        else return NodeResources.DiskSpeed.slow;
+    }
+
+    private static NodeResources.StorageType toStorageType(Boolean remoteStorage) {
+        if (remoteStorage == null) return NodeResources.StorageType.any;
+        if (remoteStorage) return NodeResources.StorageType.remote;
+        else return NodeResources.StorageType.local;
     }
 
     private static NodeRepositoryNode nodeRepositoryNodeFromAddNode(AddNode addNode) {
@@ -200,6 +210,7 @@ public class RealNodeRepository implements NodeRepository {
             node.minDiskAvailableGb = resources.diskGb();
             node.bandwidthGbps = resources.bandwidthGbps();
             node.fastDisk = resources.diskSpeed() == NodeResources.DiskSpeed.fast;
+            node.remoteStorage = resources.storageType() == NodeResources.StorageType.remote;
         });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;

@@ -12,6 +12,7 @@
   "minMainMemoryAvailableGb": 8.0,
   "minCpuCores": 2.0,
   "fastDisk": true,
+  "remoteStorage": true,
   "bandwidthGbps": 1.0,
   "environment": "DOCKER_CONTAINER",
   "owner": {
@@ -30,7 +31,7 @@
   "currentRestartGeneration": 1,
   "wantedDockerImage": "docker.domain.tld/my/image:6.42.0",
   "wantedVespaVersion": "6.42.0",
-  "requestedResources": { "vcpu":1.0, "memoryGb":4.0, "diskGb":100.0, "bandwidthGbps":1.0, "diskSpeed":"fast" },
+  "requestedResources": { "vcpu":1.0, "memoryGb":4.0, "diskGb":100.0, "bandwidthGbps":1.0 },
   "allowedToBeDown": false,
   "rebootGeneration": 3,
   "currentRebootGeneration": 1,

@@ -330,7 +330,7 @@ public class ProvisioningTest {
         {
             // Deploy with disk-speed any and make sure that information is retained
             SystemState state = prepare(application, 0, 0, 3, 3,
-                                        defaultResources.anySpeed(),
+                                        defaultResources.justNumbers(),
                                         tester);
             assertEquals(6, state.allHosts.size());
             tester.activate(application, state.allHosts);

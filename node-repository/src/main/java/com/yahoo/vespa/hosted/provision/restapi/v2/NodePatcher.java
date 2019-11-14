@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
+import static com.yahoo.config.provision.NodeResources.StorageType.local;
 
 /**
  * A class which can take a partial JSON node/v2 node JSON structure and apply it to a node object.
@@ -152,7 +154,9 @@ public class NodePatcher {
             case "minCpuCores":
                 return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())));
             case "fastDisk":
-                return node.with(node.flavor().with(node.flavor().resources().withDiskSpeed(value.asBool() ? fast : slow)));
+                return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? fast : slow)));
+            case "remoteStorage":
+                return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? remote : local)));
             case "bandwidthGbps":
                 return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble())));
             case "modelName":
@@ -205,7 +209,7 @@ public class NodePatcher {
         Optional<Allocation> allocation = node.allocation();
         if (allocation.isPresent())
             return node.with(allocation.get().withRequestedResources(
-                    allocation.get().requestedResources().withDiskSpeed(NodeResources.DiskSpeed.valueOf(value))));
+                    allocation.get().requestedResources().with(NodeResources.DiskSpeed.valueOf(value))));
         else
             throw new IllegalArgumentException("Node is not allocated");
     }

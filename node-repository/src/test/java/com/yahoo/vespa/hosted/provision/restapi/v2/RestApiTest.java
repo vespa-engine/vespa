@@ -847,7 +847,7 @@ public class RestApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
-                "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"bandwidthGbps\":15.0,");
+                "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"remoteStorage\":true,\"bandwidthGbps\":15.0,");
 
         // Test patching with overrides
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
@@ -861,7 +861,7 @@ public class RestApiTest {
                         Request.Method.PATCH),
                 "{\"message\":\"Updated " + hostname + "\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
-                "\"minDiskAvailableGb\":5432.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"bandwidthGbps\":15.0,");
+                "\"minDiskAvailableGb\":5432.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"remoteStorage\":true,\"bandwidthGbps\":15.0,");
     }
 
     @Test
@@ -878,20 +878,20 @@ public class RestApiTest {
 
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
                         ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
-                                "\"minDiskAvailableGb\":1234,\"minMainMemoryAvailableGb\":4321,\"minCpuCores\":5,\"fastDisk\":false,\"bandwidthGbps\":0.3}]")
+                                "\"minDiskAvailableGb\":1234,\"minMainMemoryAvailableGb\":4321,\"minCpuCores\":5,\"fastDisk\":false,\"remoteStorage\":false,\"bandwidthGbps\":0.3}]")
                                 .getBytes(StandardCharsets.UTF_8),
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
-                "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":4321.0,\"minCpuCores\":5.0,\"fastDisk\":false,\"bandwidthGbps\":0.3,");
+                "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":4321.0,\"minCpuCores\":5.0,\"fastDisk\":false,\"remoteStorage\":false,\"bandwidthGbps\":0.3,");
 
         // Test patching with overrides
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
-                        "{\"minDiskAvailableGb\":12,\"minMainMemoryAvailableGb\":34,\"minCpuCores\":56,\"fastDisk\":true,\"bandwidthGbps\":78.0}".getBytes(StandardCharsets.UTF_8),
+                        "{\"minDiskAvailableGb\":12,\"minMainMemoryAvailableGb\":34,\"minCpuCores\":56,\"fastDisk\":true,\"remoteStorage\":true,\"bandwidthGbps\":78.0}".getBytes(StandardCharsets.UTF_8),
                         Request.Method.PATCH),
                 "{\"message\":\"Updated " + hostname + "\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
-                "\"minDiskAvailableGb\":12.0,\"minMainMemoryAvailableGb\":34.0,\"minCpuCores\":56.0,\"fastDisk\":true,\"bandwidthGbps\":78.0");
+                "\"minDiskAvailableGb\":12.0,\"minMainMemoryAvailableGb\":34.0,\"minCpuCores\":56.0,\"fastDisk\":true,\"remoteStorage\":true,\"bandwidthGbps\":78.0");
     }
 
     private static String asDockerNodeJson(String hostname, String parentHostname, String... ipAddress) {

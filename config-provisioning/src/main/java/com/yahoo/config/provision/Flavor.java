@@ -38,7 +38,8 @@ public class Flavor {
                                flavorConfig.minMainMemoryAvailableGb(),
                                flavorConfig.minDiskAvailableGb(),
                                flavorConfig.bandwidth() / 1000,
-                               flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow),
+                               flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow,
+                               flavorConfig.remoteStorage() ? NodeResources.StorageType.remote : NodeResources.StorageType.local),
              Optional.empty(),
              Type.valueOf(flavorConfig.environment()),
              true,
@@ -71,11 +72,7 @@ public class Flavor {
         if (!configured)
             throw new IllegalArgumentException("Cannot override non-configured flavor");
 
-        NodeResources newResources = new NodeResources(resources.vcpu(),
-                                                       resources.memoryGb(),
-                                                       flavorOverrides.diskGb().orElseGet(resources::diskGb),
-                                                       resources.bandwidthGbps(),
-                                                       resources.diskSpeed());
+        NodeResources newResources = resources.withDiskGb(flavorOverrides.diskGb().orElseGet(resources::diskGb));
         return new Flavor(name, newResources, Optional.of(flavorOverrides), type, true, cost, minCpuCores);
     }
 

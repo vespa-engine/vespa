@@ -154,6 +154,8 @@ class NodesResponse extends HttpResponse {
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
         object.setBool("fastDisk", node.flavor().hasFastDisk());
+        if (node.flavor().resources().storageType() != NodeResources.StorageType.any)
+            object.setBool("remoteStorage", node.flavor().resources().storageType() == NodeResources.StorageType.remote);
         object.setDouble("bandwidthGbps", node.flavor().getBandwidthGbps());
         object.setString("environment", node.flavor().getType().name());
         node.allocation().ifPresent(allocation -> {
@@ -219,7 +221,10 @@ class NodesResponse extends HttpResponse {
         object.setDouble("memoryGb", resources.memoryGb());
         object.setDouble("diskGb", resources.diskGb());
         object.setDouble("bandwidthGbps", resources.bandwidthGbps());
-        object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
+        if ( ! resources.diskSpeed().isDefault())
+            object.setString("diskSpeed", serializer.toString(resources.diskSpeed()));
+        if ( ! resources.storageType().isDefault())
+            object.setString("storageType", serializer.toString(resources.storageType()));
     }
 
     // Hack: For non-docker noder, return current docker image as default prefix + current Vespa version

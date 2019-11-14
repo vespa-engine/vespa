@@ -58,6 +58,8 @@ public class NodeRepositoryNode {
     public Integer failCount;
     @JsonProperty("fastDisk")
     public Boolean fastDisk;
+    @JsonProperty("remoteStorage")
+    public Boolean remoteStorage;
     @JsonProperty("bandwidthGbps")
     public Double bandwidthGbps;
     @JsonProperty("environment")
@@ -110,6 +112,7 @@ public class NodeRepositoryNode {
                 ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                 ", failCount=" + failCount +
                 ", fastDisk=" + fastDisk +
+                ", remoteStorage=" + remoteStorage +
                 ", bandwidthGbps=" + bandwidthGbps +
                 ", environment='" + environment + '\'' +
                 ", type='" + type + '\'' +
