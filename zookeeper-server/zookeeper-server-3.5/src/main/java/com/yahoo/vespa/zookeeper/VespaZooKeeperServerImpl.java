@@ -91,7 +91,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("ssl.quorum.clientAuth=NEED\n");
         sb.append("ssl.quorum.ciphersuites=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_CIPHER_SUITES))).append("\n");
         sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_PROTOCOLS))).append("\n");
-        sb.append("ssl.quorum.protocol=TLSv1.2\n");
+        sb.append("ssl.quorum.protocol=TLS\n");
 
         String tlsSetting = config.tlsForQuorumCommunication().name();
         switch (tlsSetting) {
