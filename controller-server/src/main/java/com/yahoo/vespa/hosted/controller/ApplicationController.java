@@ -128,7 +128,6 @@ public class ApplicationController {
     private final RoutingPolicies routingPolicies;
     private final Clock clock;
     private final DeploymentTrigger deploymentTrigger;
-    private final BooleanFlag provisionApplicationCertificate;
     private final ApplicationPackageValidator applicationPackageValidator;
 
     ApplicationController(Controller controller, CuratorDb curator,
@@ -146,7 +145,6 @@ public class ApplicationController {
         routingPolicies = new RoutingPolicies(controller);
         rotationRepository = new RotationRepository(rotationsConfig, this, curator);
         deploymentTrigger = new DeploymentTrigger(controller, clock);
-        provisionApplicationCertificate = Flags.PROVISION_APPLICATION_CERTIFICATE.bindTo(controller.flagSource());
         applicationPackageValidator = new ApplicationPackageValidator(controller);
 
         // Update serialization format of all applications
@@ -565,12 +563,6 @@ public class ApplicationController {
     }
 
     private Optional<ApplicationCertificate> getApplicationCertificate(Instance instance) {
-        boolean provisionCertificate = provisionApplicationCertificate.with(FetchVector.Dimension.APPLICATION_ID,
-                                                                            instance.id().serializedForm()).value();
-        if (!provisionCertificate) {
-            return Optional.empty();
-        }
-
         // Re-use certificate if already provisioned
         Optional<ApplicationCertificate> applicationCertificate = curator.readApplicationCertificate(instance.id());
         if(applicationCertificate.isPresent())

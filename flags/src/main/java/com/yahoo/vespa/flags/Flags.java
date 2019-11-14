@@ -130,19 +130,6 @@ public class Flags {
             "Takes effect on next iteration of HostProvisionMaintainer.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag PROVISION_APPLICATION_CERTIFICATE = defineFeatureFlag(
-            "provision-application-certificate", false,
-            "Provision certificate from CA and include reference in deployment",
-            "Takes effect on deployment through controller",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag DIRECT_ROUTING_USE_HTTPS_4443 = defineFeatureFlag(
-            "direct-routing-use-https-4443", false,
-            "Decides whether NLB is pointed at container on port 4443 (https) or 4080 (http)",
-            "Takes effect at redeployment",
-            APPLICATION_ID
-    );
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             "Node resource memory in Gb for admin cluster nodes",
