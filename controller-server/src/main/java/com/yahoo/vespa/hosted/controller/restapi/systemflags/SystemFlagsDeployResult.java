@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlags
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult.WireFlagDataChange;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -150,13 +149,6 @@ class SystemFlagsDeployResult {
         OperationType(String stringValue) { this.stringValue = stringValue; }
 
         String asString() { return stringValue; }
-
-        static OperationType fromString(String stringValue) {
-            return Arrays.stream(values())
-                    .filter(v -> v.stringValue.equals(stringValue))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalArgumentException("Unknown string value: " + stringValue));
-        }
     }
 
     private static class FlagDataOperation {
