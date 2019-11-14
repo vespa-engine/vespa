@@ -167,9 +167,9 @@ public class Flags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
-    public static final UnboundBooleanFlag USE_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION = defineFeatureFlag(
-            "zookeeper-use-tls-for-quorum-communication", false,
-            "Whether to use TLS for ZooKeeper quorum communication",
+    public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION = defineStringFlag(
+            "tls-for-zookeeper-quorum-communication", "OFF",
+            "How to setup TLS for ZooKeeper quorum communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
             "Takes effect on restart of config server",
             NODE_TYPE, HOSTNAME);
 
