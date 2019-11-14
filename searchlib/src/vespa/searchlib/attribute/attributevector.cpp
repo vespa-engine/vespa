@@ -663,8 +663,13 @@ AttributeVector::clearDocs(DocId lidLow, DocId lidLimit)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= getNumDocs());
+    uint32_t count = 0;
+    constexpr uint32_t commit_interval = 1000;
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         clearDoc(lid);
+        if ((++count % commit_interval) == 0) {
+            commit();
+        }
     }
 }
 
