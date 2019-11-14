@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -9,8 +12,10 @@ import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -22,14 +27,14 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class NodeRebooter extends Maintainer {
-    
-    private final Duration rebootInterval;
+
+    private final IntFlag rebootIntervalInDays;
     private final Clock clock;
     private final Random random;
 
-    NodeRebooter(NodeRepository nodeRepository, Clock clock, Duration rebootInterval) {
-        super(nodeRepository, min(Duration.ofMinutes(25), rebootInterval));
-        this.rebootInterval = rebootInterval;
+    NodeRebooter(NodeRepository nodeRepository, Clock clock, FlagSource flagSource) {
+        super(nodeRepository, Duration.ofMinutes(25));
+        this.rebootIntervalInDays = Flags.REBOOT_INTERVAL_IN_DAYS.bindTo(flagSource);
         this.clock = clock;
         this.random = new Random(clock.millis()); // seed with clock for test determinism   
     }
@@ -37,9 +42,7 @@ public class NodeRebooter extends Maintainer {
     @Override
     protected void maintain() {
         // Reboot candidates: Nodes in long-term states, which we know can safely orchestrate a reboot
-        EnumSet<Node.State> targetStates = EnumSet.of(Node.State.active, Node.State.ready);
-        List<Node> nodesToReboot = nodeRepository().getNodes().stream()
-                .filter(node -> targetStates.contains(node.state()))
+        List<Node> nodesToReboot = nodeRepository().getNodes(Node.State.active, Node.State.ready).stream()
                 .filter(node -> node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 .filter(this::shouldReboot)
                 .collect(Collectors.toList());
@@ -49,13 +52,32 @@ public class NodeRebooter extends Maintainer {
     }
     
     private boolean shouldReboot(Node node) {
-        var rebootEvents = EnumSet.of(History.Event.Type.rebooted, History.Event.Type.osUpgraded);
-        var acceptableRebootInstant = clock.instant().minus(rebootInterval);
+        if (node.status().reboot().pending()) return false;
 
-        if (rebootEvents.stream().anyMatch(event -> node.history().hasEventAfter(event, acceptableRebootInstant)))
+        var rebootEvents = EnumSet.of(History.Event.Type.provisioned, History.Event.Type.rebooted, History.Event.Type.osUpgraded);
+        var rebootInterval = Duration.ofDays(rebootIntervalInDays.value());
+
+        Optional<Duration> overdue = node.history().events().stream()
+                .filter(event -> rebootEvents.contains(event.type()))
+                .map(History.Event::at)
+                .max(Comparator.naturalOrder())
+                .map(lastReboot -> Duration.between(lastReboot, clock.instant()).minus(rebootInterval));
+
+        if (overdue.isEmpty()) // should never happen as all !docker-container should have provisioned timestamp
+            return random.nextDouble() < interval().getSeconds() / (double) rebootInterval.getSeconds();
+
+        if (overdue.get().isNegative())
             return false;
-        else // schedule with a probability such that reboots of nodes are spread roughly over the reboot interval
-            return random.nextDouble() < (double) interval().getSeconds() / (double)rebootInterval.getSeconds();
+
+        // Use a probability such that each maintain() schedules the same number of reboots,
+        // as long as 0 <= overdue <= rebootInterval, with the last maintain() in that interval
+        // naturally scheduling the remaining with probability 1.
+
+        int configServers = 3;
+        long secondsRemaining = Math.max(0, rebootInterval.getSeconds() - overdue.get().getSeconds());
+        double runsRemaining = configServers * secondsRemaining / (double) interval().getSeconds();
+        double probability = 1 / (1 + runsRemaining);
+        return random.nextDouble() < probability;
     }
 
 }

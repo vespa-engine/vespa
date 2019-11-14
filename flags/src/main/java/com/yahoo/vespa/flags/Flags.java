@@ -111,6 +111,12 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag REBOOT_INTERVAL_IN_DAYS = defineIntFlag(
+            "reboot-interval-in-days", 30,
+            "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
+            "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
+            "Takes effect on next run of NodeRebooter");
+
     public static final UnboundBooleanFlag ENABLE_DYNAMIC_PROVISIONING = defineFeatureFlag(
             "enable-dynamic-provisioning", false,
             "Provision a new docker host when we otherwise can't allocate a docker node",
