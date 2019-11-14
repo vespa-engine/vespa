@@ -674,6 +674,10 @@ public class NodeAgentImplTest {
         verify(dockerOperations, never()).removeContainer(eq(context), any());
         verify(dockerOperations, never()).createContainer(eq(context), any(), any());
         verify(dockerOperations, times(1)).stopServices(eq(context));
+
+        nodeAgent.doConverge(context);
+        // Should not be called more than once, have already been stopped
+        verify(dockerOperations, times(1)).stopServices(eq(context));
     }
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {

@@ -249,6 +249,11 @@ public class NodeAgentImpl implements NodeAgent {
         }
     }
 
+    private void stopServicesIfNeeded(NodeAgentContext context) {
+        if (hasStartedServices)
+            stopServices(context);
+    }
+
     private void stopServices(NodeAgentContext context) {
         context.log(logger, "Stopping services");
         if (containerState == ABSENT) return;
@@ -409,7 +414,7 @@ public class NodeAgentImpl implements NodeAgent {
                 break;
             case parked:
                 updateNodeRepoWithCurrentAttributes(context);
-                stopServices(context);
+                stopServicesIfNeeded(context);
                 break;
             case active:
                 storageMaintainer.handleCoreDumpsForContainer(context, container);
