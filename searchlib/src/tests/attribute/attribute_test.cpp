@@ -2241,7 +2241,22 @@ void testNamePrefix() {
     EXPECT_EQUAL("sfsint32_pc", vS2->getNamePrefix());
     EXPECT_EQUAL("sfsint32_pc.xyz.abc", vSS1->getName());
     EXPECT_EQUAL("sfsint32_pc", vSS1->getNamePrefix());
+}
 
+class MyMultiValueAttribute : public ArrayStringAttribute {
+public:
+    MyMultiValueAttribute(const vespalib::string& name)
+        : ArrayStringAttribute(name, Config(BasicType::STRING, CollectionType::ARRAY))
+    {
+    }
+    bool has_free_lists_enabled() const { return this->_mvMapping.has_free_lists_enabled(); }
+};
+
+void
+test_multi_value_mapping_has_free_lists_enabled()
+{
+    MyMultiValueAttribute attr("mvtest");
+    EXPECT_TRUE(attr.has_free_lists_enabled());
 }
 
 void
@@ -2292,6 +2307,7 @@ int AttributeTest::Main()
     testReaderDuringLastUpdate();
     TEST_DO(testPendingCompaction());
     TEST_DO(testNamePrefix());
+    test_multi_value_mapping_has_free_lists_enabled();
 
     deleteDataDirs();
     TEST_DONE();

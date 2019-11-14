@@ -80,17 +80,19 @@ public:
           _maxSmallArraySize()
     {
     }
-    void setup(uint32_t maxSmallArraySize) {
-        _mvMapping = std::make_unique<MvMapping>(ArrayStoreConfig(maxSmallArraySize,
-                                                                  ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8 * 1024,
-                                                                                              ALLOC_GROW_FACTOR)));
+    void setup(uint32_t maxSmallArraySize, bool enable_free_lists = true) {
+        ArrayStoreConfig config(maxSmallArraySize,
+                                ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8 * 1024, ALLOC_GROW_FACTOR));
+        config.enable_free_lists(enable_free_lists);
+        _mvMapping = std::make_unique<MvMapping>(config);
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = maxSmallArraySize;
     }
-    void setup(uint32_t maxSmallArraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer) {
-        _mvMapping = std::make_unique<MvMapping>(ArrayStoreConfig(maxSmallArraySize,
-                                                                  ArrayStoreConfig::AllocSpec(minArrays, maxArrays, numArraysForNewBuffer,
-                                                                                              ALLOC_GROW_FACTOR)));
+    void setup(uint32_t maxSmallArraySize, size_t minArrays, size_t maxArrays, size_t numArraysForNewBuffer, bool enable_free_lists = true) {
+        ArrayStoreConfig config(maxSmallArraySize,
+                                ArrayStoreConfig::AllocSpec(minArrays, maxArrays, numArraysForNewBuffer, ALLOC_GROW_FACTOR));
+        config.enable_free_lists(enable_free_lists);
+        _mvMapping = std::make_unique<MvMapping>(config);
         _attr = std::make_unique<AttributeType>(*_mvMapping);
         _maxSmallArraySize = maxSmallArraySize;
     }
@@ -305,6 +307,18 @@ TEST_F(IntMappingTest, test_that_replace_works)
     replace(4, {20, 24, 27, 26});
     assertArray({20, 24, 27, 26}, old4);
     EXPECT_EQ(4u, getTotalValueCnt());
+}
+
+TEST_F(IntMappingTest, test_that_free_lists_can_be_enabled)
+{
+    setup(3, true);
+    EXPECT_TRUE(_mvMapping->has_free_lists_enabled());
+}
+
+TEST_F(IntMappingTest, test_that_free_lists_can_be_disabled)
+{
+    setup(3, false);
+    EXPECT_FALSE(_mvMapping->has_free_lists_enabled());
 }
 
 TEST_F(CompactionIntMappingTest, test_that_compaction_works)
