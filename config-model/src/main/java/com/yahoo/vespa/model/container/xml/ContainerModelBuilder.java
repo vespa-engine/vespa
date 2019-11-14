@@ -338,7 +338,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         JettyHttpServer server = cluster.getHttp().getHttpServer();
         String serverName = server.getComponentId().getName();
         HostedSslConnectorFactory connectorFactory = authorizeClient
-                ? new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get(), deployState.tlsClientAuthority().get())
+                ? new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get(), deployState.tlsClientAuthority().get(), true)
                 : new HostedSslConnectorFactory(serverName, deployState.tlsSecrets().get());
         server.addConnector(connectorFactory);
     }
