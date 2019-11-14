@@ -83,8 +83,8 @@ class SystemFlagsDeployer  {
             }
             result.add(
                     currentData != null
-                            ? FlagDataChange.updated(id, Set.of(target), data, currentData)
-                            : FlagDataChange.created(id, Set.of(target), data));
+                            ? FlagDataChange.updated(id, target, data, currentData)
+                            : FlagDataChange.created(id, target, data));
         });
 
         currentFlagData.forEach((id, data) -> {
@@ -92,7 +92,7 @@ class SystemFlagsDeployer  {
                 if (!dryRun) {
                     client.deleteFlagData(target, id);
                 }
-                result.add(FlagDataChange.deleted(id, Set.of(target)));
+                result.add(FlagDataChange.deleted(id, target));
             }
         });
 

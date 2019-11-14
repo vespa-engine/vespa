@@ -81,16 +81,16 @@ class SystemFlagsDeployResult {
             this.previousData = previousData;
         }
 
-        static FlagDataChange created(FlagId flagId, Set<FlagsTarget> targets, FlagData data) {
-            return new FlagDataChange(flagId, targets, OperationType.CREATE, data, null);
+        static FlagDataChange created(FlagId flagId, FlagsTarget target, FlagData data) {
+            return new FlagDataChange(flagId, Set.of(target), OperationType.CREATE, data, null);
         }
 
-        static FlagDataChange deleted(FlagId flagId, Set<FlagsTarget> targets) {
-            return new FlagDataChange(flagId, targets, OperationType.DELETE, null, null);
+        static FlagDataChange deleted(FlagId flagId, FlagsTarget target) {
+            return new FlagDataChange(flagId, Set.of(target), OperationType.DELETE, null, null);
         }
 
-        static FlagDataChange updated(FlagId flagId, Set<FlagsTarget> targets, FlagData data, FlagData previousData) {
-            return new FlagDataChange(flagId, targets, OperationType.UPDATE, data, previousData);
+        static FlagDataChange updated(FlagId flagId, FlagsTarget target, FlagData data, FlagData previousData) {
+            return new FlagDataChange(flagId, Set.of(target), OperationType.UPDATE, data, previousData);
         }
 
         FlagId flagId() {

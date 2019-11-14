@@ -63,8 +63,8 @@ public class SystemFlagsDeployerTest {
         List<FlagDataChange> changes = result.flagChanges();
         FlagId flagId = new FlagId("my-flag");
         assertThat(changes).containsOnly(
-                FlagDataChange.created(flagId, Set.of(controllerTarget), defaultData),
-                FlagDataChange.updated(flagId, Set.of(prodUsEast3Target), prodUsEast3Data, existingProdUsEast3Data));
+                FlagDataChange.created(flagId, controllerTarget, defaultData),
+                FlagDataChange.updated(flagId, prodUsEast3Target, prodUsEast3Data, existingProdUsEast3Data));
 
     }
 
