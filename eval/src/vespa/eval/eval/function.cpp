@@ -479,10 +479,9 @@ std::vector<vespalib::string> get_ident_list(ParseContext &ctx, bool wrapped) {
         ctx.skip_spaces();
         ctx.eat('(');
     }
+    CommaTracker ident_list(wrapped);
     while (!ctx.find_list_end()) {
-        if (!list.empty() || !wrapped) {
-            ctx.eat(',');
-        }
+        ident_list.maybe_eat_comma(ctx);
         list.push_back(get_ident(ctx, false));
     }
     if (wrapped) {
