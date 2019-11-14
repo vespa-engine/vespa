@@ -11,6 +11,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
@@ -36,7 +37,8 @@ import static org.junit.Assert.fail;
  */
 public class DockerProvisioningTest {
 
-    private static final NodeResources dockerFlavor = new NodeResources(1, 4, 10, 1);
+    private static final NodeResources dockerFlavor = new NodeResources(1, 4, 10, 1,
+                                                                        NodeResources.DiskSpeed.fast, NodeResources.StorageType.local);
 
     @Test
     public void docker_application_deployment() {
@@ -204,7 +206,7 @@ public class DockerProvisioningTest {
         }
         catch (Exception e) {
             assertEquals("No room for 3 nodes as 2 of 4 hosts are exclusive",
-                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
+                         "Could not satisfy request for 3 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, storage type: local] for container cluster 'myContainer' group 0 6.39 in tenant1.app1: Not enough nodes available due to host exclusivity constraints.",
                          e.getMessage());
         }
 
@@ -225,7 +227,25 @@ public class DockerProvisioningTest {
 
         NodeList nodes = tester.getNodes(application1, Node.State.active);
         assertEquals(1, nodes.size());
-        assertEquals("[vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps]", nodes.asList().get(0).flavor().name());
+        assertEquals("[vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, storage type: local]", nodes.asList().get(0).flavor().name());
+    }
+
+    @Test
+    public void storage_type_must_match() {
+        try {
+            ProvisioningTester tester = new ProvisioningTester.Builder()
+                                                .zone(new Zone(Environment.prod, RegionName.from("us-east-1"))).build();
+            ApplicationId application1 = tester.makeApplicationId();
+            tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost1");
+            tester.makeReadyVirtualDockerNodes(1, dockerFlavor, "dockerHost2");
+
+            List<HostSpec> hosts = tester.prepare(application1, ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent"),
+                                                                                    Version.fromString("6.42"), false), 2, 1,
+                                                  dockerFlavor.with(NodeResources.StorageType.remote));
+        }
+        catch (OutOfCapacityException e) {
+            assertTrue(e.getMessage().startsWith("Could not satisfy request for 2 nodes with [vcpu: 1.0, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 1.0 Gbps, storage type: remote]"));
+        }
     }
 
     private Set<String> hostsOf(NodeList nodes) {
