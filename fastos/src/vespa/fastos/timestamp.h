@@ -74,9 +74,7 @@ public:
 
     StopWatch & start();
     StopWatch & stop();
-
-    TimeStamp startTime() const { return _startTime; }
-
+    
     TimeStamp elapsed() const {
         TimeStamp diff(_stopTime - _startTime);
         return (diff > 0) ? diff : TimeStamp(0);
