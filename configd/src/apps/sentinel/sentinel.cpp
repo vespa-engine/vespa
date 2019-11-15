@@ -91,6 +91,10 @@ main(int argc, char **argv)
             LOG(error, "Fatal: %s", ex.getMessage().c_str());
             EV_STOPPING("config-sentinel", ex.what());
             exit(EXIT_FAILURE);
+        } catch (vespalib::FatalException& ex) {
+            LOG(error, "Fatal: %s", ex.getMessage().c_str());
+            EV_STOPPING("config-sentinel", ex.what());
+            exit(EXIT_FAILURE);
         }
         if (vespalib::SignalHandler::CHLD.check()) {
             continue;
