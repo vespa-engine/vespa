@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -79,11 +80,12 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
-        sb.append(createTlsQuorumConfig(config));
+        sb.append(createTlsQuorumConfig(getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION")
+                                                .orElse(config.tlsForQuorumCommunication().name())));
         return sb.toString();
     }
 
-    private String createTlsQuorumConfig(ZookeeperServerConfig config) {
+    private String createTlsQuorumConfig(String tlsSetting) {
         StringBuilder sb = new StringBuilder();
 
         // Common config
@@ -93,26 +95,29 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_PROTOCOLS))).append("\n");
         sb.append("ssl.quorum.protocol=TLS\n");
 
-        String tlsSetting = config.tlsForQuorumCommunication().name();
+        boolean sslQuorum;
+        boolean portUnification;
         switch (tlsSetting) {
             case "OFF":
-                sb.append("sslQuorum=false\n");
-                sb.append("portUnification=false\n");
+                sslQuorum = false;
+                portUnification = false;
                 break;
             case "PORT_UNIFICATION":
-                sb.append("sslQuorum=false\n");
-                sb.append("portUnification=true\n");
+                sslQuorum = false;
+                portUnification = true;
                 break;
             case "TLS_WITH_PORT_UNIFICATION":
-                sb.append("sslQuorum=true\n");
-                sb.append("portUnification=true\n");
+                sslQuorum = true;
+                portUnification = true;
                 break;
             case "TLS_ONLY":
-                sb.append("sslQuorum=true\n");
-                sb.append("portUnification=false\n");
+                sslQuorum = true;
+                portUnification = false;
                 break;
             default: throw new IllegalArgumentException("Unknown value of config setting tlsForQuorumCommunication: " + tlsSetting);
         }
+        sb.append("sslQuorum=").append(sslQuorum).append("\n");
+        sb.append("portUnification=").append(portUnification).append("\n");
 
         return sb.toString();
     }
@@ -168,6 +173,11 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
 
     private static Set<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
         return zookeeperServerConfig.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toSet());
+    }
+
+    private static Optional<String> getEnvironmentVariable(String variableName) {
+        return Optional.ofNullable(System.getenv().get(variableName))
+                .filter(var -> !var.isEmpty());
     }
 
 }
