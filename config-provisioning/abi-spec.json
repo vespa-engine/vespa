@@ -759,21 +759,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.config.provision.Rotation": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public java.lang.String getId()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
   "com.yahoo.config.provision.SystemName": {
     "superClass": "java.lang.Enum",
     "interfaces": [],

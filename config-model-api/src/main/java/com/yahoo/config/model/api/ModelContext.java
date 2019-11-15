@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Rotation;
 import com.yahoo.config.provision.Zone;
 
 import java.io.File;
@@ -49,7 +48,6 @@ public interface ModelContext {
         String athenzDnsSuffix();
         boolean hostedVespa();
         Zone zone();
-        default Set<Rotation> rotations() { return Set.of(); } // TODO(mpolden): Remove once 7.122 is the oldest config model
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
