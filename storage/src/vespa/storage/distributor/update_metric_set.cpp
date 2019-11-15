@@ -12,7 +12,10 @@ UpdateMetricSet::UpdateMetricSet(MetricSet* owner)
     : PersistenceOperationMetricSet("updates", owner),
       diverging_timestamp_updates("diverging_timestamp_updates", {},
                                   "Number of updates that report they were performed against "
-                                  "divergent version timestamps on different replicas", this)
+                                  "divergent version timestamps on different replicas", this),
+      fast_path_restarts("fast_path_restarts", {}, "Number of safe path (write repair) updates "
+                         "that were restarted as fast path updates because all replicas returned "
+                         "documents with the same timestamp in the initial read phase", this)
 {
 }
 

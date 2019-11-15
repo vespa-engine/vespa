@@ -35,7 +35,7 @@ public:
     const char* getName() const override { return "get"; }
     std::string getStatus() const override { return ""; }
 
-    bool hasConsistentCopies() const;
+    bool all_bucket_metadata_initially_consistent() const;
 
     // Exposed for unit testing. TODO feels a bit dirty :I
     const DistributorBucketSpace& bucketSpace() const noexcept { return _bucketSpace; }
@@ -88,6 +88,7 @@ private:
 
     PersistenceOperationMetricSet& _metric;
     framework::MilliSecTimer _operationTimer;
+    bool _has_replica_inconsistency;
 
     void sendReply(DistributorMessageSender& sender);
     bool sendForChecksum(DistributorMessageSender& sender, const document::BucketId& id, GroupVector& res);

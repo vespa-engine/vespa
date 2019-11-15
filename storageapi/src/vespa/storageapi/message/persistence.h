@@ -217,11 +217,13 @@ class GetReply : public BucketInfoReply {
     DocumentSP _doc; // Null pointer if not found
     Timestamp _beforeTimestamp;
     Timestamp _lastModifiedTime;
+    bool _had_consistent_replicas;
 
 public:
     GetReply(const GetCommand& cmd,
              const DocumentSP& doc = DocumentSP(),
-             Timestamp lastModified = 0);
+             Timestamp lastModified = 0,
+             bool had_consistent_replicas = false);
     ~GetReply() override;
 
     const DocumentSP& getDocument() const { return _doc; }
@@ -230,6 +232,8 @@ public:
 
     Timestamp getLastModifiedTimestamp() const { return _lastModifiedTime; }
     Timestamp getBeforeTimestamp() const { return _beforeTimestamp; }
+
+    bool had_consistent_replicas() const noexcept { return _had_consistent_replicas; }
 
     bool wasFound() const { return (_doc.get() != 0); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
