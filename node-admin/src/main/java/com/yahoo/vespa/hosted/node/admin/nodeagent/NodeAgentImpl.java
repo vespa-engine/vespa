@@ -250,7 +250,7 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private void stopServicesIfNeeded(NodeAgentContext context) {
-        if (hasStartedServices)
+        if (hasStartedServices && context.node().owner().isEmpty())
             stopServices(context);
     }
 
@@ -409,10 +409,8 @@ public class NodeAgentImpl implements NodeAgent {
             case reserved:
             case failed:
             case inactive:
-                removeContainerIfNeededUpdateContainerState(context, container);
-                updateNodeRepoWithCurrentAttributes(context);
-                break;
             case parked:
+                removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context);
                 stopServicesIfNeeded(context);
                 break;
