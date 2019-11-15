@@ -59,23 +59,21 @@ class ClockSystem
 {
 public:
     static int64_t now();
-    static int64_t adjustTick2Sec(int64_t tick) { return tick; }
 };
 
-template <typename ClockT>
-class StopWatchT : public ClockT
+class StopWatch
 {
 public:
-    StopWatchT(void) : _startTime(), _stopTime() { }
+    StopWatch() : _startTime(), _stopTime() { }
 
-    void start() { _startTime = this->now(); _stopTime = _startTime; }
-    void stop()  { _stopTime = this->now(); }
+    void start();
+    void stop();
 
-    TimeStamp startTime()       const { return this->adjustTick2Sec(_startTime); }
+    TimeStamp startTime() const { return _startTime; }
 
     TimeStamp elapsed() const {
         TimeStamp diff(_stopTime - _startTime);
-        return this->adjustTick2Sec((diff > 0) ? diff : TimeStamp(0));
+        return (diff > 0) ? diff : TimeStamp(0);
     }
 private:
     TimeStamp _startTime;
@@ -83,10 +81,6 @@ private:
 };
 
 time_t time();
-
-
-typedef StopWatchT<ClockSystem> TickStopWatch;
-typedef TickStopWatch          StopWatch;
 
 }
 

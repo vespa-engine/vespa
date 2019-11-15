@@ -46,4 +46,22 @@ time_t time() {
     return system_clock::to_time_t(system_clock::now());
 }
 
+namespace {
+
+TimeStamp steady_now() {
+    return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
+}
+void
+StopWatch::start() {
+    _startTime = steady_now();
+    _stopTime = _startTime;
+}
+
+void
+StopWatch::stop()  {
+    _stopTime = steady_now();
+}
+
 }

@@ -617,7 +617,7 @@ TEST_F("Test performance when using attributes", TestFixture)
     uint32_t i;
     const uint32_t loopcnt = 30000;
     LOG(info, "Starting minibm loop, %u ierations of 4 docs each", loopcnt);
-    fastos::StopWatchT<fastos::ClockSystem> sw;
+    fastos::StopWatch sw;
     sw.start();
     for (i = 0; i < loopcnt; ++i) {
         ctx._docId = 1u;
