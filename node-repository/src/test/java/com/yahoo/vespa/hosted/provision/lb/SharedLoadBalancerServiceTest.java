@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
  * @author ogronnesby
  */
 public class SharedLoadBalancerServiceTest {
+
     private final ProvisioningTester tester = new ProvisioningTester.Builder().build();
     private final SharedLoadBalancerService loadBalancerService = new SharedLoadBalancerService(tester.nodeRepository());
     private final ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "default");
@@ -29,7 +30,7 @@ public class SharedLoadBalancerServiceTest {
     @Test
     public void test_create_lb() {
         tester.makeReadyNodes(2, "default", NodeType.proxy);
-        final var lb = loadBalancerService.create(applicationId, clusterId, reals, false);
+        var lb = loadBalancerService.create(applicationId, clusterId, reals, false);
 
         assertEquals(HostName.from("host-1.yahoo.com"), lb.hostname());
         assertEquals(Optional.empty(), lb.dnsZone());
@@ -46,4 +47,5 @@ public class SharedLoadBalancerServiceTest {
     public void test_protocol() {
         assertEquals(LoadBalancerService.Protocol.dualstack, loadBalancerService.protocol());
     }
+
 }

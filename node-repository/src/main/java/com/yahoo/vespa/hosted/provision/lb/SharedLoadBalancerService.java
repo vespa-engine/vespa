@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,28 +24,30 @@ import java.util.stream.Collectors;
  * @author ogronnesby
  */
 public class SharedLoadBalancerService implements LoadBalancerService {
+
     private static final Comparator<Node> hostnameComparator = Comparator.comparing(Node::hostname);
+
     private final NodeRepository nodeRepository;
 
     @Inject
     public SharedLoadBalancerService(NodeRepository nodeRepository) {
-        this.nodeRepository = Objects.requireNonNull(nodeRepository, "Missing nodeRepository value");
+        this.nodeRepository = Objects.requireNonNull(nodeRepository, "nodeRepository must be non-null");
     }
 
     @Override
     public LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals, boolean force) {
-        final var proxyNodes = nodeRepository.getNodes(NodeType.proxy);
+        var proxyNodes = new ArrayList<>(nodeRepository.getNodes(NodeType.proxy));
         proxyNodes.sort(hostnameComparator);
 
         if (proxyNodes.size() == 0) {
-            throw new IllegalStateException("Missing proxy nodes in nodeRepository");
+            throw new IllegalStateException("Missing proxy nodes in node repository");
         }
 
-        final var firstProxyNode = proxyNodes.get(0);
-        final var networkNames = proxyNodes.stream()
-                .flatMap(node -> node.ipAddresses().stream())
-                .map(SharedLoadBalancerService::addNetworKPrefixLength)
-                .collect(Collectors.toSet());
+        var firstProxyNode = proxyNodes.get(0);
+        var networkNames = proxyNodes.stream()
+                                     .flatMap(node -> node.ipAddresses().stream())
+                                     .map(SharedLoadBalancerService::withPrefixLength)
+                                     .collect(Collectors.toSet());
 
         return new LoadBalancerInstance(
                 HostName.from(firstProxyNode.hostname()),
@@ -65,12 +68,11 @@ public class SharedLoadBalancerService implements LoadBalancerService {
         return Protocol.dualstack;
     }
 
-    private static String addNetworKPrefixLength(String address) {
+    private static String withPrefixLength(String address) {
         if (IP.isV6(address)) {
             return address + "/128";
         }
-        else {
-            return address + "/32";
-        }
+        return address + "/32";
     }
+
 }
