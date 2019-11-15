@@ -174,6 +174,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         configureDistributor(builder);
     }
 
+    void configure_update_fast_path_restart_enabled(bool enabled) {
+        ConfigBuilder builder;
+        builder.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent = enabled;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -999,6 +1005,17 @@ TEST_F(DistributorTest, stale_reads_config_is_propagated_to_external_operation_h
 
     configure_stale_reads_enabled(false);
     EXPECT_FALSE(getExternalOperationHandler().concurrent_gets_enabled());
+}
+
+TEST_F(DistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_internal_config) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_update_fast_path_restart_enabled(true);
+    EXPECT_TRUE(getConfig().update_fast_path_restart_enabled());
+
+    configure_update_fast_path_restart_enabled(false);
+    EXPECT_FALSE(getConfig().update_fast_path_restart_enabled());
 }
 
 TEST_F(DistributorTest, concurrent_reads_not_enabled_if_btree_db_is_not_enabled) {

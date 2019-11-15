@@ -121,6 +121,8 @@ private:
     bool hasTasCondition() const noexcept;
     void replyWithTasFailure(DistributorMessageSender& sender,
                              vespalib::stringref message);
+    bool may_restart_with_fast_path(const api::GetReply& reply);
+    void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender);
 
     UpdateMetricSet& _updateMetric;
     PersistenceOperationMetricSet& _putMetric;

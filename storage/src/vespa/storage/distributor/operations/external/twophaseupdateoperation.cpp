@@ -158,6 +158,7 @@ void
 TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender)
 {
     _mode = Mode::FAST_PATH;
+    LOG(debug, "Update(%s) fast path: sending Update commands", _updateCmd->getDocumentId().toString().c_str());
     auto updateOperation = std::make_shared<UpdateOperation>(_manager, _bucketSpace, _updateCmd, _updateMetric);
     UpdateOperation & op = *updateOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(updateOperation), sender);
@@ -364,6 +365,11 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
         sendReplyWithResult(sender, reply.getResult());
         return;
     }
+    if (may_restart_with_fast_path(reply)) {
+        restart_with_fast_path_due_to_consistent_get_timestamps(sender);
+        return;
+    }
+
     document::Document::SP docToUpdate;
     api::Timestamp putTimestamp = _manager.getUniqueTimestamp();
 
@@ -397,6 +403,23 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
     } catch (vespalib::Exception& e) {
         sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE, e.getMessage()));
     }
+}
+
+bool TwoPhaseUpdateOperation::may_restart_with_fast_path(const api::GetReply& reply) {
+    return (_manager.getDistributor().getConfig().update_fast_path_restart_enabled() &&
+            reply.wasFound() &&
+            reply.had_consistent_replicas());
+}
+
+void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender) {
+    LOG(debug, "Update(%s): all Gets returned in initial safe path were consistent, restarting in fast path mode",
+               _updateCmd->getDocumentId().toString().c_str());
+    if (lostBucketOwnershipBetweenPhases()) {
+        sendLostOwnershipTransientErrorReply(sender);
+        return;
+    }
+    _updateMetric.fast_path_restarts.inc();
+    startFastPathUpdate(sender);
 }
 
 bool
@@ -487,7 +510,7 @@ TwoPhaseUpdateOperation::onClose(DistributorMessageSender& sender) {
         std::shared_ptr<Operation> cb = _sentMessageMap.pop();
 
         if (cb) {
-            IntermediateMessageSender intermediate(_sentMessageMap, std::shared_ptr<Operation > (), sender);
+            IntermediateMessageSender intermediate(_sentMessageMap, std::shared_ptr<Operation>(), sender);
             cb->onClose(intermediate);
             // We will _only_ forward UpdateReply instances up, since those
             // are created by UpdateOperation and are bound to the original

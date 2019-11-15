@@ -57,7 +57,8 @@ GetOperation::GetOperation(DistributorComponent& manager,
       _doc(),
       _lastModified(0),
       _metric(metric),
-      _operationTimer(manager.getClock())
+      _operationTimer(manager.getClock()),
+      _has_replica_inconsistency(false)
 {
     assignTargetNodeGroups(*read_guard);
 }
@@ -150,6 +151,10 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
                 response.second[i].returnCode = getreply->getResult();
 
                 if (getreply->getResult().success()) {
+                    if ((_lastModified != 0) && (getreply->getLastModifiedTimestamp() != _lastModified)) {
+                        // At least two document versions returned had different timestamps.
+                        _has_replica_inconsistency = true; // This is a one-way toggle.
+                    }
                     if (getreply->getLastModifiedTimestamp() > _lastModified) {
                         _returnCode = getreply->getResult();
                         _lastModified = getreply->getLastModifiedTimestamp();
@@ -158,6 +163,12 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
                 } else {
                     if (_lastModified == 0) {
                         _returnCode = getreply->getResult();
+                    }
+                    if (!all_bucket_metadata_initially_consistent()) {
+                        // If we're sending to more than a single group of replicas it means our replica set is
+                        // out of sync. Since we are unable to verify the timestamp of at least one replicated
+                        // document, we fail safe by marking the entire operation as inconsistent.
+                        _has_replica_inconsistency = true;
                     }
 
                     // Try to send to another node in this checksum group.
@@ -205,7 +216,7 @@ void
 GetOperation::sendReply(DistributorMessageSender& sender)
 {
     if (_msg.get()) {
-        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified);
+        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified, !_has_replica_inconsistency);
         repl->setResult(_returnCode);
         update_internal_metrics();
         sender.sendReply(repl);
@@ -229,23 +240,6 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
         LOG(spam, "Entry for %s: %s", e.getBucketId().toString().c_str(),
             e->toString().c_str());
 
-        bool haveTrusted = false;
-        for (uint32_t i = 0; i < e->getNodeCount(); i++) {
-            const BucketCopy& c = e->getNodeRef(i);
-
-            if (!c.trusted()) {
-                continue;
-            }
-
-            _responses[GroupId(e.getBucketId(), c.getChecksum(), -1)].push_back(c);
-            haveTrusted = true;
-            break;
-        }
-
-        if (haveTrusted) {
-            continue;
-        }
-
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             const BucketCopy& copy = e->getNodeRef(i);
 
@@ -259,8 +253,9 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
 }
 
 bool
-GetOperation::hasConsistentCopies() const
+GetOperation::all_bucket_metadata_initially_consistent() const
 {
+    // TODO rename, calling this "responses" is confusing as it's populated before sending anything.
     return _responses.size() == 1;
 }
 

@@ -250,6 +250,13 @@ public:
         _allowStaleReadsDuringClusterStateTransitions = allow;
     }
 
+    bool update_fast_path_restart_enabled() const noexcept {
+        return _update_fast_path_restart_enabled;
+    }
+    void set_update_fast_path_restart_enabled(bool enabled) noexcept {
+        _update_fast_path_restart_enabled = enabled;
+    }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -293,6 +300,7 @@ private:
     bool _disableBucketActivation;
     bool _sequenceMutatingOperations;
     bool _allowStaleReadsDuringClusterStateTransitions;
+    bool _update_fast_path_restart_enabled;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     

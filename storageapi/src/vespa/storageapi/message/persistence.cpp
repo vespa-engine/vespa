@@ -207,13 +207,17 @@ GetCommand::print(std::ostream& out, bool verbose, const std::string& indent) co
     }
 }
 
-GetReply::GetReply(const GetCommand& cmd, const DocumentSP& doc, Timestamp lastModified)
+GetReply::GetReply(const GetCommand& cmd,
+                   const DocumentSP& doc,
+                   Timestamp lastModified,
+                   bool had_consistent_replicas)
     : BucketInfoReply(cmd),
       _docId(cmd.getDocumentId()),
       _fieldSet(cmd.getFieldSet()),
       _doc(doc),
       _beforeTimestamp(cmd.getBeforeTimestamp()),
-      _lastModifiedTime(lastModified)
+      _lastModifiedTime(lastModified),
+      _had_consistent_replicas(had_consistent_replicas)
 {
 }
 

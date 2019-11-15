@@ -10,6 +10,7 @@ namespace storage {
 class UpdateMetricSet : public PersistenceOperationMetricSet {
 public:
     metrics::LongCountMetric diverging_timestamp_updates;
+    metrics::LongCountMetric fast_path_restarts;
 
     explicit UpdateMetricSet(MetricSet* owner = nullptr);
     ~UpdateMetricSet() override;
