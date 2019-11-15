@@ -2,11 +2,13 @@
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
+import com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +21,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.FlagDataChange;
@@ -29,6 +32,8 @@ import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsD
  * @author bjorncs
  */
 class SystemFlagsDeployer  {
+
+    private static final Logger log = Logger.getLogger(SystemFlagsDeployer.class.getName());
 
     private final FlagsClient client;
     private final Set<FlagsTarget> targets;
@@ -66,34 +71,47 @@ class SystemFlagsDeployer  {
         }
     }
 
-    // TODO Handle http status code 4xx/5xx (e.g for unknown flag id)
     private SystemFlagsDeployResult deployFlags(FlagsTarget target, Set<FlagData> flagData, boolean dryRun) {
         Map<FlagId, FlagData> wantedFlagData = lookupTable(flagData);
-        Map<FlagId, FlagData> currentFlagData = lookupTable(client.listFlagData(target));
+        Map<FlagId, FlagData> currentFlagData;
+        try {
+            currentFlagData = lookupTable(client.listFlagData(target));
+        } catch (Exception e) {
+            log.log(LogLevel.WARNING, String.format("Failed to list flag data for target '%s': %s", target, e.getMessage()), e);
+            return new SystemFlagsDeployResult(List.of(OperationError.listFailed(e.getMessage(), target)));
+        }
 
-        List<FlagDataChange> result = new ArrayList<>();
+        List<OperationError> errors = new ArrayList<>();
+        List<FlagDataChange> results = new ArrayList<>();
 
-        createNewFlagData(target, dryRun, wantedFlagData, currentFlagData, result);
-        updateExistingFlagData(target, dryRun, wantedFlagData, currentFlagData, result);
-        removeOldFlagData(target, dryRun, wantedFlagData, currentFlagData, result);
+        createNewFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
+        updateExistingFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
+        removeOldFlagData(target, dryRun, wantedFlagData, currentFlagData, results, errors);
 
-        return new SystemFlagsDeployResult(result);
+        return new SystemFlagsDeployResult(results, errors);
     }
 
     private void createNewFlagData(FlagsTarget target,
                                    boolean dryRun,
                                    Map<FlagId, FlagData> wantedFlagData,
                                    Map<FlagId, FlagData> currentFlagData,
-                                   List<FlagDataChange> result) {
+                                   List<FlagDataChange> results,
+                                   List<OperationError> errors) {
         wantedFlagData.forEach((id, data) -> {
             FlagData currentData = currentFlagData.get(id);
             if (currentData != null) {
                 return; // not a new flag
             }
             if (!dryRun) {
-                client.putFlagData(target, data);
+                try {
+                    client.putFlagData(target, data);
+                } catch (Exception e) {
+                    log.log(LogLevel.WARNING, String.format("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
+                    errors.add(OperationError.createFailed(e.getMessage(), target, data));
+                    return;
+                }
+                results.add(FlagDataChange.created(id, target, data));
             }
-            result.add(FlagDataChange.created(id, target, data));
         });
     }
 
@@ -101,16 +119,23 @@ class SystemFlagsDeployer  {
                                         boolean dryRun,
                                         Map<FlagId, FlagData> wantedFlagData,
                                         Map<FlagId, FlagData> currentFlagData,
-                                        List<FlagDataChange> result) {
+                                        List<FlagDataChange> results,
+                                        List<OperationError> errors) {
         wantedFlagData.forEach((id, wantedData) -> {
             FlagData currentData = currentFlagData.get(id);
             if (currentData == null || isEqual(currentData, wantedData)) {
                 return; // not an flag data update
             }
             if (!dryRun) {
-                client.putFlagData(target, wantedData);
+                try {
+                    client.putFlagData(target, wantedData);
+                } catch (Exception e) {
+                    log.log(LogLevel.WARNING, String.format("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
+                    errors.add(OperationError.updateFailed(e.getMessage(), target, wantedData));
+                    return;
+                }
             }
-            result.add(FlagDataChange.updated(id, target, wantedData, currentData));
+            results.add(FlagDataChange.updated(id, target, wantedData, currentData));
         });
     }
 
@@ -118,15 +143,22 @@ class SystemFlagsDeployer  {
                                    boolean dryRun,
                                    Map<FlagId, FlagData> wantedFlagData,
                                    Map<FlagId, FlagData> currentFlagData,
-                                   List<FlagDataChange> result) {
+                                   List<FlagDataChange> results,
+                                   List<OperationError> errors) {
         currentFlagData.forEach((id, data) -> {
             if (wantedFlagData.containsKey(id)) {
                 return; // not a removed flag
             }
             if (!dryRun) {
-                client.deleteFlagData(target, id);
+                try {
+                    client.deleteFlagData(target, id);
+                } catch (Exception e) {
+                    log.log(LogLevel.WARNING, String.format("Failed to delete flag '%s' for target '%s': %s", id, target, e.getMessage()), e);
+                    errors.add(OperationError.deleteFailed(e.getMessage(), target, id));
+                    return;
+                }
             }
-            result.add(FlagDataChange.deleted(id, target));
+            results.add(FlagDataChange.deleted(id, target));
         });
     }
 

@@ -9,7 +9,7 @@ import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import java.util.List;
 
 /**
- *
+ * Note: This class is only annotated for serialization, deserialization is not supported.
  *
  * @author bjorncs
  */
@@ -17,6 +17,7 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WireSystemFlagsDeployResult {
     @JsonProperty("changes") public List<WireFlagDataChange> changes;
+    @JsonProperty("errors") public List<WireOperationFailure> errors;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -26,6 +27,16 @@ public class WireSystemFlagsDeployResult {
         @JsonProperty("operation") public String operation;
         @JsonProperty("data") public WireFlagData data;
         @JsonProperty("previous-data") public WireFlagData previousData;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class WireOperationFailure {
+        @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("message") public String message;
+        @JsonProperty("target") public String target;
+        @JsonProperty("operation") public String operation;
+        @JsonProperty("data") public WireFlagData data;
     }
 }
 
