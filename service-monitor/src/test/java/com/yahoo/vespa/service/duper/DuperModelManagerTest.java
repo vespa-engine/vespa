@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,7 +39,7 @@ public class DuperModelManagerTest {
     private SuperModelListener superModelListener;
 
     private void makeManager(boolean isController) {
-        manager = new DuperModelManager(true, isController, superModelProvider, duperModel, flagSource);
+        manager = new DuperModelManager(true, isController, superModelProvider, duperModel, flagSource, SystemName.cd);
 
         when(superModelProvider.getSuperModel()).thenReturn(superModel);
         verify(duperModel, times(0)).add(any());

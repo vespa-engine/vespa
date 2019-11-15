@@ -88,6 +88,7 @@ public class InfrastructureVersions {
             case controllerhost:
             case proxyhost:
             case host:
+            case devhost:
                 break;
             default:
                 throw new IllegalArgumentException("Target version for type " + nodeType + " is not allowed");
