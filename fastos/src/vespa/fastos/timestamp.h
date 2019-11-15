@@ -72,8 +72,8 @@ class StopWatch
 public:
     StopWatch() : _startTime(), _stopTime() { }
 
-    void start();
-    void stop();
+    StopWatch & start();
+    StopWatch & stop();
 
     TimeStamp startTime() const { return _startTime; }
 

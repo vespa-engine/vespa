@@ -52,7 +52,7 @@ private:
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
     bool                     _waitFinished;   // someone is waiting for _finished
-    bool                     _deleted;        // destructor called ?
+    bool                     _deleted;        // destructor called ?Ntrace
 
     FNET_TransportThread(const FNET_TransportThread &);
     FNET_TransportThread &operator=(const FNET_TransportThread &);

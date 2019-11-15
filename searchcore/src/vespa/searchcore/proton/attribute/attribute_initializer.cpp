@@ -175,7 +175,8 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
                                     search::SerialNum serialNum) const
 {
     assert(attr->hasLoadData());
-    fastos::TimeStamp startTime = fastos::ClockSystem::now();
+    fastos::StopWatch stopWatch;
+    stopWatch.start();
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
     if (!attr->load()) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
@@ -183,9 +184,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
         return false;
     } else {
         attr->commit(serialNum, serialNum);
-        fastos::TimeStamp endTime = fastos::ClockSystem::now();
-        int64_t elapsedTimeMs = (endTime - startTime).ms();
-        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), elapsedTimeMs);
+        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), stopWatch.stop().elapsed().ms());
     }
     return true;
 }

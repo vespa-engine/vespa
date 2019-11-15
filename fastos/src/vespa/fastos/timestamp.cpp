@@ -63,15 +63,17 @@ ClockSteady::now()
     return steady_now();
 }
 
-void
+StopWatch &
 StopWatch::start() {
     _startTime = steady_now();
     _stopTime = _startTime;
+    return *this;
 }
 
-void
+StopWatch &
 StopWatch::stop()  {
     _stopTime = steady_now();
+    return *this;
 }
 
 }

@@ -12,7 +12,7 @@ LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 
 namespace searchcorespi {
 
-using fastos::ClockSystem;
+using fastos::ClockSteady;
 using fastos::TimeStamp;
 using index::IDiskIndex;
 using search::fef::MatchDataLayout;
@@ -42,7 +42,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     _warmup(warmup),
     _executor(executor),
     _warmupDone(warmupDone),
-    _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
+    _warmupEndTime(ClockSteady::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
     _handledTerms(std::make_unique<FieldTermMap>())
 {
     if (next->valid()) {
@@ -68,7 +68,7 @@ WarmupIndexCollection::toString() const
 {
     vespalib::asciistream os;
     os << "warmup : ";
-    if (dynamic_cast<const IDiskIndex *>(&_warmup) != NULL) {
+    if (dynamic_cast<const IDiskIndex *>(&_warmup) != nullptr) {
         os << static_cast<const IDiskIndex &>(_warmup).getIndexDir();
     } else {
         os << typeid(_warmup).name();
@@ -114,7 +114,7 @@ WarmupIndexCollection::getSourceId(uint32_t i) const
 void
 WarmupIndexCollection::fireWarmup(Task::UP task)
 {
-    fastos::TimeStamp now(fastos::ClockSystem::now());
+    fastos::TimeStamp now(fastos::ClockSteady::now());
     if (now < _warmupEndTime) {
         _executor.execute(std::move(task));
     } else {
@@ -132,7 +132,7 @@ bool
 WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
 {
     const StringBase * sb(dynamic_cast<const StringBase *>(&term));
-    if (sb != NULL) {
+    if (sb != nullptr) {
         const vespalib::string & s = sb->getTerm();
         std::lock_guard<std::mutex> guard(_lock);
         TermMap::insert_result found = (*_handledTerms)[fieldId].insert(s);
