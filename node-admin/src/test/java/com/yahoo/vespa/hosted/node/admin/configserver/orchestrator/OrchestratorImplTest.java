@@ -30,10 +30,10 @@ public class OrchestratorImplTest {
     @Test
     public void testSuspendCall() {
         when(configServerApi.put(
-                any(),
                 eq(OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended"),
                 eq(Optional.empty()),
-                eq(UpdateHostResponse.class)
+                eq(UpdateHostResponse.class),
+                any()
         )).thenReturn(new UpdateHostResponse(hostName, null));
 
         orchestrator.suspend(hostName);
@@ -42,10 +42,10 @@ public class OrchestratorImplTest {
     @Test(expected=OrchestratorException.class)
     public void testSuspendCallWithFailureReason() {
         when(configServerApi.put(
-                any(),
                 eq(OrchestratorImpl.ORCHESTRATOR_PATH_PREFIX_HOST_API + "/" + hostName+ "/suspended"),
                 eq(Optional.empty()),
-                eq(UpdateHostResponse.class)
+                eq(UpdateHostResponse.class),
+                any()
         )).thenReturn(new UpdateHostResponse(hostName, new HostStateChangeDenialReason("hostname", "fail")));
 
         orchestrator.suspend(hostName);
@@ -53,24 +53,16 @@ public class OrchestratorImplTest {
 
     @Test(expected=OrchestratorNotFoundException.class)
     public void testSuspendCallWithNotFound() {
-        when(configServerApi.put(
-                any(),
-                any(String.class),
-                any(),
-                any()
-        )).thenThrow(new HttpException.NotFoundException("Not Found"));
+        when(configServerApi.put(any(String.class), any(), any(), any()))
+                .thenThrow(new HttpException.NotFoundException("Not Found"));
 
         orchestrator.suspend(hostName);
     }
 
     @Test(expected=RuntimeException.class)
     public void testSuspendCallWithSomeOtherException() {
-        when(configServerApi.put(
-                any(),
-                any(String.class),
-                any(),
-                any()
-        )).thenThrow(new RuntimeException("Some parameter was wrong"));
+        when(configServerApi.put(any(String.class), any(), any(), any()))
+                .thenThrow(new RuntimeException("Some parameter was wrong"));
 
         orchestrator.suspend(hostName);
     }
@@ -108,12 +100,8 @@ public class OrchestratorImplTest {
 
     @Test(expected=RuntimeException.class)
     public void testResumeCallWithSomeOtherException() {
-        when(configServerApi.put(
-                any(),
-                any(String.class),
-                any(),
-                any()
-        )).thenThrow(new RuntimeException("Some parameter was wrong"));
+        when(configServerApi.put(any(String.class), any(), any(), any()))
+                .thenThrow(new RuntimeException("Some parameter was wrong"));
 
         orchestrator.suspend(hostName);
     }
@@ -124,10 +112,10 @@ public class OrchestratorImplTest {
         List<String> hostNames = Arrays.asList("a1.host1.test.yahoo.com", "a2.host1.test.yahoo.com");
 
         when(configServerApi.put(
-                any(),
                 eq("/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com"),
                 eq(Optional.empty()),
-                eq(BatchOperationResult.class)
+                eq(BatchOperationResult.class),
+                any()
         )).thenReturn(BatchOperationResult.successResult());
 
         orchestrator.suspend(parentHostName, hostNames);
@@ -140,10 +128,10 @@ public class OrchestratorImplTest {
         String failureReason = "Failed to suspend";
 
         when(configServerApi.put(
-                any(),
                 eq("/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com"),
                 eq(Optional.empty()),
-                eq(BatchOperationResult.class)
+                eq(BatchOperationResult.class),
+                any()
         )).thenReturn(new BatchOperationResult(failureReason));
 
         orchestrator.suspend(parentHostName, hostNames);
@@ -156,10 +144,10 @@ public class OrchestratorImplTest {
         String exceptionMessage = "Exception: Something crashed!";
 
         when(configServerApi.put(
-                any(),
                 eq("/orchestrator/v1/suspensions/hosts/host1.test.yahoo.com?hostname=a1.host1.test.yahoo.com&hostname=a2.host1.test.yahoo.com"),
                 eq(Optional.empty()),
-                eq(BatchOperationResult.class)
+                eq(BatchOperationResult.class),
+                any()
         )).thenThrow(new RuntimeException(exceptionMessage));
 
         orchestrator.suspend(parentHostName, hostNames);

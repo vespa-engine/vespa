@@ -47,11 +47,7 @@ public class OrchestratorImpl implements Orchestrator {
         UpdateHostResponse response;
         try {
             var params = new ConfigServerApi.Params().setConnectionTimeout(CONNECTION_TIMEOUT);
-            response = configServerApi.put(
-                    params,
-                    getSuspendPath(hostName),
-                    Optional.empty(), /* body */
-                    UpdateHostResponse.class);
+            response = configServerApi.put(getSuspendPath(hostName), Optional.empty(), UpdateHostResponse.class, params);
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
         } catch (HttpException e) {
@@ -75,7 +71,7 @@ public class OrchestratorImpl implements Orchestrator {
             String hostnames = String.join("&hostname=", hostNames);
             String url = String.format("%s/%s?hostname=%s", ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
                                        parentHostName, hostnames);
-            batchOperationResult = configServerApi.put(params, url, Optional.empty(), BatchOperationResult.class);
+            batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class, params);
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e.toString());
         } catch (ConnectionException e) {

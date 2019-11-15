@@ -32,7 +32,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -135,11 +134,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     @Override
     public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
-        return put(null, path, bodyJsonPojo, wantedReturnType);
+        return put(path, bodyJsonPojo, wantedReturnType, null);
     }
 
     @Override
-    public <T> T put(Params paramsOrNull, String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut(configServer.resolve(path));
             setRequestConfigOverride(paramsOrNull, put);
@@ -230,8 +229,8 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         RequestConfig.Builder builder = RequestConfig.copy(request.getConfig());
 
         paramsOrNull.getConnectionTimeout().ifPresent(connectionTimeout -> {
-            builder.setConnectTimeout((int) connectionTimeout.getSeconds());
-            builder.setSocketTimeout((int) connectionTimeout.getSeconds());
+            builder.setConnectTimeout((int) connectionTimeout.toMillis());
+            builder.setSocketTimeout((int) connectionTimeout.toMillis());
         });
 
         request.setConfig(builder.build());

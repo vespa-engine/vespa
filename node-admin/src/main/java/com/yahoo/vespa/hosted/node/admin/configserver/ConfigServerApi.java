@@ -28,7 +28,7 @@ public interface ConfigServerApi extends AutoCloseable {
 
     <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType);
 
-    <T> T put(Params params, String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType);
+    <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params params);
 
     <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType);
 
