@@ -106,8 +106,8 @@ class SystemFlagsDeployer  {
                     errors.add(OperationError.createFailed(e.getMessage(), target, data));
                     return;
                 }
-                results.add(FlagDataChange.created(id, target, data));
             }
+            results.add(FlagDataChange.created(id, target, data));
         });
     }
 
