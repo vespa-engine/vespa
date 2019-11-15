@@ -26,9 +26,8 @@ class ReprocessDocumentsTask : public IReprocessingTask,
     double                               _visitorProgress;
     double                               _visitorCost;
     DocumentReprocessingHandler          _handler;
-    int64_t                              _startTime;
+    fastos::StopWatch                    _stopWatch;
     double                               _loggedProgress;
-    int64_t                              _loggedTime;
 
 public:
     ReprocessDocumentsTask(IReprocessingInitializer &initializer,
@@ -37,13 +36,9 @@ public:
                            const vespalib::string &subDbName,
                            uint32_t docIdLimit);
 
-    virtual void
-    run() override;
-
-    virtual void
-    updateProgress(double progress) override;
-
-    virtual Progress getProgress() const override;
+    void run() override;
+    void updateProgress(double progress) override;
+    Progress getProgress() const override;
 };
 
 } // namespace proton

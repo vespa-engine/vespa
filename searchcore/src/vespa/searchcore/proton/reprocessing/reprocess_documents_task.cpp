@@ -19,9 +19,7 @@ ReprocessDocumentsTask(IReprocessingInitializer &initializer,
       _visitorProgress(0.0),
       _visitorCost(0.0),
       _handler(docIdLimit),
-      _startTime(0),
-      _loggedProgress(0.0),
-      _loggedTime(0)
+      _loggedProgress(0.0)
 {
     initializer.initialize(_handler);
     if (_handler.hasProcessors()) {
@@ -30,35 +28,23 @@ ReprocessDocumentsTask(IReprocessingInitializer &initializer,
     }
 }
 
-
 void
 ReprocessDocumentsTask::run()
 {
     if (_handler.hasProcessors()) {
-        EventLogger::reprocessDocumentsStart(_subDbName,
-                                             _visitorCost);
-        fastos::TimeStamp ts(fastos::ClockSystem::now());
-        _startTime = ts.ms();
-        _loggedTime = _startTime;
+        EventLogger::reprocessDocumentsStart(_subDbName,_visitorCost);
+        _stopWatch.start();
         search::IDocumentStore &docstore = _sm->getBackingStore();
         if (_handler.hasRewriters()) {
-            docstore.accept(_handler.getRewriteVisitor(),
-                    *this,
-                    *_docTypeRepo);
+            docstore.accept(_handler.getRewriteVisitor(),*this,*_docTypeRepo);
         } else {
-            docstore.accept(_handler,
-                    *this,
-                    *_docTypeRepo);
+            docstore.accept(_handler,*this,*_docTypeRepo);
         }
         _handler.done();
-        ts = fastos::ClockSystem::now();
-        int64_t elapsedTime = ts.ms() - _startTime;
-        EventLogger::reprocessDocumentsComplete(_subDbName,
-                                                _visitorCost,
-                                                elapsedTime);
+        _stopWatch.stop();
+        EventLogger::reprocessDocumentsComplete(_subDbName,_visitorCost, _stopWatch.elapsed().ms());
     }
 }
-
 
 void
 ReprocessDocumentsTask::updateProgress(double progress)
@@ -66,18 +52,15 @@ ReprocessDocumentsTask::updateProgress(double progress)
     _visitorProgress = progress;
     double deltaProgress = progress - _loggedProgress;
     if (deltaProgress >= 0.01) {
-        fastos::TimeStamp ts = fastos::ClockSystem::now();
-        int64_t logDelayTime = ts.ms() - _loggedTime;
-        if (logDelayTime >= 60000 || deltaProgress >= 0.10) {
-            EventLogger::reprocessDocumentsProgress(_subDbName,
-                                                    progress,
-                                                    _visitorCost);
-            _loggedTime = ts.ms();
+        fastos::StopWatch intermediate = _stopWatch;
+        fastos::TimeStamp logDelayTime = intermediate.stop().elapsed() - _stopWatch.elapsed();
+        if (logDelayTime.ms() >= 60000 || deltaProgress >= 0.10) {
+            EventLogger::reprocessDocumentsProgress(_subDbName, progress,_visitorCost);
+            _stopWatch.stop();
             _loggedProgress = progress;
         }
     }
 }
-
 
 IReprocessingTask::Progress
 ReprocessDocumentsTask::getProgress() const
