@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.Flags;
@@ -655,29 +656,45 @@ public class NodeAgentImplTest {
         inOrder.verify(orchestrator).resume(hostName);
     }
 
+
+    // Tests that only containers without owners are stopped
     @Test
-    public void testStopContainerInParkedState() {
-        final NodeSpec node = nodeBuilder
+    public void testThatStopContainerDependsOnOwnerPresent() {
+        verifyThatContainerIsStopped(NodeState.parked, Optional.empty());
+        verifyThatContainerIsStopped(NodeState.parked, Optional.of(ApplicationId.defaultId()));
+        verifyThatContainerIsStopped(NodeState.failed, Optional.empty());
+        verifyThatContainerIsStopped(NodeState.failed, Optional.of(ApplicationId.defaultId()));
+        verifyThatContainerIsStopped(NodeState.inactive, Optional.of(ApplicationId.defaultId()));
+    }
+
+    private void verifyThatContainerIsStopped(NodeState nodeState, Optional<ApplicationId> owner) {
+        NodeSpec.Builder nodeBuilder = new NodeSpec.Builder()
+                .hostname(hostName)
+                .type(NodeType.tenant)
+                .flavor("docker")
                 .currentDockerImage(dockerImage)
                 .wantedDockerImage(dockerImage)
-                .state(NodeState.parked)
-                .currentVespaVersion(vespaVersion)
-                .build();
+                .state(nodeState);
+
+        owner.ifPresent(nodeBuilder::owner);
+        NodeSpec node = nodeBuilder.build();
 
         NodeAgentContext context = createContext(node);
-        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, false);
+        NodeAgentImpl nodeAgent = makeNodeAgent(dockerImage, true);
 
         when(nodeRepository.getOptionalNode(eq(hostName))).thenReturn(Optional.of(node));
 
         nodeAgent.doConverge(context);
 
         verify(dockerOperations, never()).removeContainer(eq(context), any());
-        verify(dockerOperations, never()).createContainer(eq(context), any(), any());
-        verify(dockerOperations, times(1)).stopServices(eq(context));
-
-        nodeAgent.doConverge(context);
-        // Should not be called more than once, have already been stopped
-        verify(dockerOperations, times(1)).stopServices(eq(context));
+        if (owner.isPresent()) {
+            verify(dockerOperations, never()).stopServices(eq(context));
+        } else {
+            verify(dockerOperations, times(1)).stopServices(eq(context));
+            nodeAgent.doConverge(context);
+            // Should not be called more than once, have already been stopped
+            verify(dockerOperations, times(1)).stopServices(eq(context));
+        }
     }
 
     private NodeAgentImpl makeNodeAgent(DockerImage dockerImage, boolean isRunning) {
