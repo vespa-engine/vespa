@@ -1,7 +1,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
@@ -30,9 +30,9 @@ public class ResourceTagMaintainerTest {
                                                                                 mockResourceTagger);
         resourceTagMaintainer.maintain();
         assertEquals(2, mockResourceTagger.getValues().size());
-        Map<HostName, TenantName> tenanForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));
-        assertEquals(TenantName.from("tenant1"), tenanForHost.get(HostName.from("parentHostA")));
-        assertEquals(TenantName.from("tenant2"), tenanForHost.get(HostName.from("parentHostB")));
+        Map<HostName, ApplicationId> applicationForHost = mockResourceTagger.getValues().get(ZoneId.from("prod.region-2"));
+        assertEquals(ApplicationId.from("tenant1", "app1", "default"), applicationForHost.get(HostName.from("parentHostA")));
+        assertEquals(ApplicationId.from("tenant2", "app2", "default"), applicationForHost.get(HostName.from("parentHostB")));
 
 
     }

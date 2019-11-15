@@ -1,9 +1,9 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
@@ -31,8 +31,8 @@ public class ResourceTagMaintainer extends Maintainer {
                 .ofCloud(CloudName.from("aws"))
                 .reachable()
                 .zones().forEach(zone -> {
-                    Map<HostName, TenantName> tenantOfHosts = getTenantOfParentHosts(zone.getId());
-                    int taggedResources = resourceTagger.tagResources(zone, tenantOfHosts);
+                    Map<HostName, ApplicationId> applicationOfHosts = getTenantOfParentHosts(zone.getId());
+                    int taggedResources = resourceTagger.tagResources(zone, applicationOfHosts);
                     if (taggedResources > 0)
                         log.log(Level.INFO, "Tagged " + taggedResources + " resources in " + zone.getId());
         });
@@ -40,14 +40,14 @@ public class ResourceTagMaintainer extends Maintainer {
 
     }
 
-    private Map<HostName, TenantName> getTenantOfParentHosts(ZoneId zoneId) {
+    private Map<HostName, ApplicationId> getTenantOfParentHosts(ZoneId zoneId) {
         return controller().serviceRegistry().configServer().nodeRepository()
                 .list(zoneId)
                 .stream()
                 .filter(node -> node.parentHostname().isPresent() && node.owner().isPresent())
                 .collect(Collectors.toMap(
                         node -> node.parentHostname().get(),
-                        node -> node.owner().get().tenant()
+                        node -> node.owner().get()
                 ));
     }
 }
