@@ -16,11 +16,6 @@ public:
     virtual fastos::TimeStamp now() const = 0;
 };
 
-class FastosClock : public Clock {
-public:
-    fastos::TimeStamp now() const override { return fastos::ClockSystem::now(); }
-};
-
 class SteadyClock : public Clock {
 public:
     fastos::TimeStamp now() const override;
