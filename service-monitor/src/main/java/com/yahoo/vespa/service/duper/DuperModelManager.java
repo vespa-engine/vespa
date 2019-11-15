@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.SuperModelListener;
 import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
 import com.yahoo.vespa.service.monitor.InfraApplicationApi;
@@ -35,6 +36,7 @@ public class DuperModelManager implements DuperModelInfraApi {
     static final ConfigServerApplication configServerApplication = new ConfigServerApplication();
     static final ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
     static final TenantHostApplication tenantHostApplication = new TenantHostApplication();
+    static final DevHostApplication devHostApplicaton = new DevHostApplication();
 
     private final Map<ApplicationId, InfraApplication> supportedInfraApplications;
 
@@ -48,14 +50,20 @@ public class DuperModelManager implements DuperModelInfraApi {
     public DuperModelManager(ConfigserverConfig configServerConfig, FlagSource flagSource, SuperModelProvider superModelProvider) {
         this(configServerConfig.multitenant(),
                 configServerConfig.serverNodeType() == ConfigserverConfig.ServerNodeType.Enum.controller,
-                superModelProvider, new DuperModel(), flagSource);
+             superModelProvider, new DuperModel(), flagSource, SystemName.from(configServerConfig.system()));
     }
 
     /** For testing */
-    DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource) {
+    DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource, SystemName system) {
         this.duperModel = duperModel;
 
-        if (multitenant) {
+        if (system == SystemName.dev) {
+            supportedInfraApplications =
+                    (isController ?
+                            Stream.of(devHostApplicaton, controllerApplication) :
+                            Stream.of(devHostApplicaton, configServerApplication)
+                    ).collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
+        } else if (multitenant) {
             supportedInfraApplications =
                     (isController ?
                             Stream.of(controllerHostApplication, controllerApplication) :
