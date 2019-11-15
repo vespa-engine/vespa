@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -134,8 +135,14 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     @Override
     public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
+        return put(null, path, bodyJsonPojo, wantedReturnType);
+    }
+
+    @Override
+    public <T> T put(Params paramsOrNull, String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut(configServer.resolve(path));
+            setRequestConfigOverride(paramsOrNull, put);
             setContentTypeToApplicationJson(put);
             if (bodyJsonPojo.isPresent()) {
                 put.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo.get())));
@@ -202,22 +209,32 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         cm.setMaxTotal(200); // Increase max total connections to 200, which should be enough
 
         // Have experienced hang in socket read, which may have been because of
-        // system defaults, therefore set explicit timeouts. Even though the Orchestrator
-        // server-side timeout is 10s, a 409 has been observed to be returned after ~30s
-        // in a case possibly involving zk leader election.
-        int timeoutMs = 30_000;
-        RequestConfig requestBuilder = RequestConfig.custom()
-                .setConnectTimeout(timeoutMs) // establishment of connection
-                .setConnectionRequestTimeout(timeoutMs) // connection from connection manager
-                .setSocketTimeout(timeoutMs) // waiting for data
+        // system defaults, therefore set explicit timeouts.
+        RequestConfig defaultRequestConfig = RequestConfig.custom()
+                .setConnectionRequestTimeout(1_000) // connection from connection manager
+                .setConnectTimeout(10_000) // establishment of connection
+                .setSocketTimeout(10_000) // waiting for data
                 .build();
 
         return HttpClientBuilder.create()
-                .setDefaultRequestConfig(requestBuilder)
+                .setDefaultRequestConfig(defaultRequestConfig)
                 .disableAutomaticRetries()
                 .setUserAgent("node-admin")
                 .setConnectionManager(cm)
                 .build();
+    }
+
+    private static void setRequestConfigOverride(Params paramsOrNull, HttpRequestBase request) {
+        if (paramsOrNull == null) return;
+
+        RequestConfig.Builder builder = RequestConfig.copy(request.getConfig());
+
+        paramsOrNull.getConnectionTimeout().ifPresent(connectionTimeout -> {
+            builder.setConnectTimeout((int) connectionTimeout.getSeconds());
+            builder.setSocketTimeout((int) connectionTimeout.getSeconds());
+        });
+
+        request.setConfig(builder.build());
     }
 
     // Shuffle config server URIs to balance load
