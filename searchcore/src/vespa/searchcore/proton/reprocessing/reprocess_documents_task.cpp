@@ -32,17 +32,17 @@ void
 ReprocessDocumentsTask::run()
 {
     if (_handler.hasProcessors()) {
-        EventLogger::reprocessDocumentsStart(_subDbName,_visitorCost);
+        EventLogger::reprocessDocumentsStart(_subDbName, _visitorCost);
         _stopWatch = fastos::StopWatch();
         search::IDocumentStore &docstore = _sm->getBackingStore();
         if (_handler.hasRewriters()) {
-            docstore.accept(_handler.getRewriteVisitor(),*this,*_docTypeRepo);
+            docstore.accept(_handler.getRewriteVisitor(), *this, *_docTypeRepo);
         } else {
-            docstore.accept(_handler,*this,*_docTypeRepo);
+            docstore.accept(_handler, *this, *_docTypeRepo);
         }
         _handler.done();
         _stopWatch.stop();
-        EventLogger::reprocessDocumentsComplete(_subDbName,_visitorCost, _stopWatch.elapsed().ms());
+        EventLogger::reprocessDocumentsComplete(_subDbName, _visitorCost, _stopWatch.elapsed().ms());
     }
 }
 
@@ -55,7 +55,7 @@ ReprocessDocumentsTask::updateProgress(double progress)
         fastos::StopWatch intermediate = _stopWatch;
         fastos::TimeStamp logDelayTime = intermediate.stop().elapsed() - _stopWatch.elapsed();
         if (logDelayTime.ms() >= 60000 || deltaProgress >= 0.10) {
-            EventLogger::reprocessDocumentsProgress(_subDbName, progress,_visitorCost);
+            EventLogger::reprocessDocumentsProgress(_subDbName, progress, _visitorCost);
             _stopWatch.stop();
             _loggedProgress = progress;
         }
