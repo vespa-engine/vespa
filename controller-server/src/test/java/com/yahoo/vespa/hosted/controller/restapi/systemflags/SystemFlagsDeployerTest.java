@@ -15,11 +15,12 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Set;
 
-import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.*;
 import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.FlagDataChange;
+import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -68,6 +69,28 @@ public class SystemFlagsDeployerTest {
         assertThat(changes).containsOnly(
                 FlagDataChange.created(FLAG_ID, controllerTarget, defaultData),
                 FlagDataChange.updated(FLAG_ID, prodUsEast3Target, prodUsEast3Data, existingProdUsEast3Data));
+    }
+
+    @Test
+    public void dryrun_should_not_change_flags() throws IOException {
+        FlagsClient flagsClient = mock(FlagsClient.class);
+        when(flagsClient.listFlagData(controllerTarget)).thenReturn(List.of());
+
+        FlagData defaultData = flagData("flags/my-flag/main.json");
+        SystemFlagsDataArchive archive = new SystemFlagsDataArchive.Builder()
+                .addFile("main.json", defaultData)
+                .build();
+
+        SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, Set.of(controllerTarget));
+        SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
+
+        verify(flagsClient, times(1)).listFlagData(controllerTarget);
+        verify(flagsClient, never()).putFlagData(controllerTarget, defaultData);
+        verify(flagsClient, never()).deleteFlagData(controllerTarget, FLAG_ID);
+
+        assertThat(result.flagChanges()).containsOnly(
+                FlagDataChange.created(FLAG_ID, controllerTarget, defaultData));
+        assertThat(result.errors()).isEmpty();
     }
 
     @Test
