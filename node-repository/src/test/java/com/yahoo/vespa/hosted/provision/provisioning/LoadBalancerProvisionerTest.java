@@ -67,9 +67,9 @@ public class LoadBalancerProvisionerTest {
         assertEquals(containerCluster1, lbApp1.get().get(0).id().cluster());
         assertEquals(Collections.singleton(4443), lbApp1.get().get(0).instance().ports());
         assertEquals("127.0.0.1", get(lbApp1.get().get(0).instance().reals(), 0).ipAddress());
-        assertEquals(4080, get(lbApp1.get().get(0).instance().reals(), 0).port());
+        assertEquals(4443, get(lbApp1.get().get(0).instance().reals(), 0).port());
         assertEquals("127.0.0.2", get(lbApp1.get().get(0).instance().reals(), 1).ipAddress());
-        assertEquals(4080, get(lbApp1.get().get(0).instance().reals(), 1).port());
+        assertEquals(4443, get(lbApp1.get().get(0).instance().reals(), 1).port());
 
         // A container is failed
         Supplier<List<Node>> containers = () -> tester.getNodes(app1).type(ClusterSpec.Type.container).asList();

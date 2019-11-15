@@ -21,12 +21,12 @@
         {
           "hostname": "host1.yahoo.com",
           "ipAddress": "127.0.1.1",
-          "port": 4080
+          "port": 4443
         },
         {
           "hostname": "host10.yahoo.com",
           "ipAddress": "127.0.10.1",
-          "port": 4080
+          "port": 4443
         }
       ]
     },
@@ -51,12 +51,12 @@
         {
           "hostname": "host13.yahoo.com",
           "ipAddress": "127.0.13.1",
-          "port": 4080
+          "port": 4443
         },
         {
           "hostname": "host14.yahoo.com",
           "ipAddress": "127.0.14.1",
-          "port": 4080
+          "port": 4443
         }
       ]
     }

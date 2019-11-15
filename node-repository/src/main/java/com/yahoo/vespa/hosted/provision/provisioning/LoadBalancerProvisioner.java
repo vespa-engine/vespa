@@ -50,13 +50,11 @@ public class LoadBalancerProvisioner {
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
-    private final BooleanFlag usePort4443Flag;
 
     public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
-        this.usePort4443Flag = Flags.DIRECT_ROUTING_USE_HTTPS_4443.bindTo(flagSource);
         // Read and write all load balancers to make sure they are stored in the latest version of the serialization format
         try (var lock = db.lockLoadBalancers()) {
             for (var id : db.readLoadBalancerIds()) {
@@ -170,10 +168,9 @@ public class LoadBalancerProvisioner {
         Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
                                                                .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
                                                                                          this::reachableIpAddresses));
-        boolean usePort4443 = usePort4443Flag.with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm()).value();
         Set<Real> reals = new LinkedHashSet<>();
         hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
-            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress, usePort4443 ? 4443 : 4080)));
+            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
         });
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
                                ", targeting: " + reals);

@@ -741,7 +741,6 @@ public class ControllerTest {
 
     @Test
     public void testDeploySelectivelyProvisionsCertificate() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.PROVISION_APPLICATION_CERTIFICATE.id(), true);
         Function<Instance, Optional<ApplicationCertificate>> certificate = (application) -> tester.controller().curator().readApplicationCertificate(application.id());
 
         // Create app1
