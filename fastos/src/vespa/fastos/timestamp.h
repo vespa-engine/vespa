@@ -64,7 +64,7 @@ public:
 class ClockSteady
 {
 public:
-    static int64_t now();
+    static TimeStamp now();
 };
 
 class StopWatch

@@ -3,9 +3,6 @@
 #include <vespa/fastos/timestamp.h>
 #include <chrono>
 
-using fastos::TimeStamp;
-using namespace std::chrono;
-
 namespace proton {
 
 using matching::ISessionCachePruner;
@@ -19,7 +16,7 @@ PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, double j
 bool
 PruneSessionCacheJob::run()
 {
-    TimeStamp now(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
+    fastos::TimeStamp now = fastos::ClockSteady::now();
     _pruner.pruneTimedOutSessions(now);
     return true;
 }

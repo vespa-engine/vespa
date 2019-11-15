@@ -50,14 +50,14 @@ time() {
 
 namespace {
 
-int64_t
+TimeStamp
 steady_now() {
     return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
 }
 
 }
 
-int64_t
+TimeStamp
 ClockSteady::now()
 {
     return steady_now();

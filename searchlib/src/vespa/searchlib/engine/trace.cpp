@@ -3,12 +3,11 @@
 #include "trace.h"
 #include <vespa/vespalib/data/slime/slime.h>
 
-using namespace std::chrono;
-
 namespace search::engine {
 
-fastos::TimeStamp SteadyClock::now() const {
-    return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+fastos::TimeStamp
+SteadyClock::now() const {
+    return fastos::ClockSteady::now();
 }
 
 RelativeTime::RelativeTime(std::unique_ptr<Clock> clock)
