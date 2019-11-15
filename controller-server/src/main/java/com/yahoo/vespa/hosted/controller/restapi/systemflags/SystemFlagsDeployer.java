@@ -12,12 +12,13 @@ import com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployRe
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
@@ -37,8 +38,7 @@ class SystemFlagsDeployer  {
 
     private final FlagsClient client;
     private final Set<FlagsTarget> targets;
-    private final ExecutorCompletionService<SystemFlagsDeployResult> completionService =
-            new ExecutorCompletionService<>(Executors.newCachedThreadPool(new DaemonThreadFactory("system-flags-deployer-")));
+    private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("system-flags-deployer-"));
 
 
     SystemFlagsDeployer(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
@@ -51,24 +51,20 @@ class SystemFlagsDeployer  {
     }
 
     SystemFlagsDeployResult deployFlags(SystemFlagsDataArchive archive, boolean dryRun) {
+        Map<FlagsTarget, Future<SystemFlagsDeployResult>> futures = new HashMap<>();
         for (FlagsTarget target : targets) {
-            completionService.submit(() -> deployFlags(target, archive.flagData(target), dryRun));
+            futures.put(target, executor.submit(() -> deployFlags(target, archive.flagData(target), dryRun)));
         }
         List<SystemFlagsDeployResult> results = new ArrayList<>();
-        Future<SystemFlagsDeployResult> future;
-        try {
-            while (results.size() < targets.size() && (future = completionService.take()) != null) {
-                try {
-                    results.add(future.get());
-                } catch (ExecutionException e) {
-                    // TODO Handle errors
-                    throw new RuntimeException(e);
-                }
+        futures.forEach((target, future) -> {
+            try {
+                results.add(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                log.log(LogLevel.ERROR, String.format("Failed to deploy flags for target '%s': %s", target, e.getMessage()), e);
+                throw new RuntimeException(e);
             }
-            return SystemFlagsDeployResult.merge(results);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        });
+        return SystemFlagsDeployResult.merge(results);
     }
 
     private SystemFlagsDeployResult deployFlags(FlagsTarget target, Set<FlagData> flagData, boolean dryRun) {

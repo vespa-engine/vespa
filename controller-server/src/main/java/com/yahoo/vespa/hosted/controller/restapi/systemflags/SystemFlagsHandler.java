@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.log.LogLevel;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.Path;
@@ -55,14 +56,19 @@ public class SystemFlagsHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deploy(HttpRequest request, boolean dryRun) {
-        // TODO Error handling
-        String contentType = request.getHeader("Content-Type");
-        if (!contentType.equalsIgnoreCase("application/zip")) {
-            return ErrorResponse.badRequest("Invalid content type: " + contentType);
+        try {
+            String contentType = request.getHeader("Content-Type");
+            if (!contentType.equalsIgnoreCase("application/zip")) {
+                return ErrorResponse.badRequest("Invalid content type: " + contentType);
+            }
+            SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(request.getData());
+            SystemFlagsDeployResult result = deployer.deployFlags(archive, dryRun);
+            return new JacksonJsonResponse<>(200, result.toWire());
+        } catch (Exception e) {
+            String errorMessage = "System flags deploy failed: " + e.getMessage();
+            log.log(LogLevel.ERROR, errorMessage, e);
+            return ErrorResponse.internalServerError(errorMessage);
         }
-        SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(request.getData());
-        SystemFlagsDeployResult result = deployer.deployFlags(archive, dryRun);
-        return new JacksonJsonResponse<>(200, result.toWire());
     }
 
 }
