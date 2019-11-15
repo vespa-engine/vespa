@@ -5,6 +5,8 @@
 
 #include <vespa/vespalib/net/simple_metric_snapshot.h>
 #include <vespa/vespalib/net/socket_address.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <string>
 #include <fcntl.h>
 #include <sys/wait.h>
 
@@ -24,9 +26,7 @@ ConfigHandler::configure_port(int port)
         }
     }
     if (port <= 0 || port > 65535) {
-        LOG(error, "Fatal: bad port %d, expected range [1,65535]", port);
-        EV_STOPPING("config-sentinel", "bad port");
-        exit(EXIT_FAILURE);
+        throw vespalib::FatalException("Bad port " + std::to_string(port) + ", expected range [1, 65535]", VESPA_STRLOC);
     }
     if (port != _boundPort) {
         LOG(debug, "Config-sentinel accepts connections on port %d", port);
