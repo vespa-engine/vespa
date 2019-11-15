@@ -15,11 +15,11 @@ namespace logdemon {
  */
 class StateReporter {
     int _port;
-    std::unique_ptr<vespalib::StateServer> _server;
     vespalib::SimpleHealthProducer _health;
     vespalib::SimpleComponentConfigProducer _components;
     std::shared_ptr<vespalib::metrics::MetricsManager> _metrics;
     vespalib::metrics::Producer _producer;
+    std::unique_ptr<vespalib::StateServer> _server;
 public:
     StateReporter();
     ~StateReporter();

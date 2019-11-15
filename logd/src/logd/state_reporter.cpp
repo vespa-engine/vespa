@@ -13,11 +13,11 @@ using vespalib::metrics::SimpleManagerConfig;
 
 StateReporter::StateReporter()
     : _port(-1),
-      _server(),
       _health(),
       _components(),
       _metrics(SimpleMetricsManager::create(SimpleManagerConfig())),
-      _producer(_metrics)
+      _producer(_metrics),
+      _server()
 {
 }
 
