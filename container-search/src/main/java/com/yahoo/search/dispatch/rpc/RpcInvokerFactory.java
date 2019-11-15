@@ -40,7 +40,7 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
     }
 
     @Override
-    public FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result) {
+    public Optional<FillInvoker> createFillInvoker(VespaBackEndSearcher searcher, Result result) {
         Query query = result.getQuery();
 
         boolean summaryNeedsQuery = searcher.summaryNeedsQuery(query);
@@ -48,8 +48,8 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
         boolean useDispatchDotSummaries = query.properties().getBoolean(dispatchSummaries, false);
 
         return  ((useDispatchDotSummaries || !useProtoBuf) && ! summaryNeedsQuery)
-                ? new RpcFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query))
-                : new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery);
+                ? Optional.of(new RpcFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query)))
+                : Optional.of(new RpcProtobufFillInvoker(rpcResourcePool, searcher.getDocumentDatabase(query), searcher.getServerId(), summaryNeedsQuery));
     }
 
     // for testing

@@ -49,6 +49,7 @@ public class Dispatcher extends AbstractComponent {
     private static final String INTERNAL = "internal";
     private static final String PROTOBUF = "protobuf";
 
+    private static final String FDISPATCH_METRIC = "dispatch_fdispatch";
     private static final String INTERNAL_METRIC = "dispatch_internal";
 
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
@@ -60,6 +61,7 @@ public class Dispatcher extends AbstractComponent {
     private final SearchCluster searchCluster;
 
     private final LoadBalancer loadBalancer;
+    private final boolean multilevelDispatch;
 
     private final InvokerFactory invokerFactory;
 
@@ -113,13 +115,11 @@ public class Dispatcher extends AbstractComponent {
                          InvokerFactory invokerFactory,
                          PingFactory pingFactory,
                          Metric metric) {
-        if (dispatchConfig.useMultilevelDispatch())
-            throw new IllegalArgumentException(searchCluster + " is configured with multilevel dispatch, but this is not supported");
-
         this.searchCluster = searchCluster;
         this.loadBalancer = new LoadBalancer(searchCluster,
                                   dispatchConfig.distributionPolicy() == DispatchConfig.DistributionPolicy.ROUNDROBIN);
         this.invokerFactory = invokerFactory;
+        this.multilevelDispatch = dispatchConfig.useMultilevelDispatch();
         this.metric = metric;
         this.metricContext = metric.createContext(null);
 
@@ -137,18 +137,27 @@ public class Dispatcher extends AbstractComponent {
         searchCluster.shutDown();
     }
 
-    public FillInvoker getFillInvoker(Result result, VespaBackEndSearcher searcher) {
+    public Optional<FillInvoker> getFillInvoker(Result result, VespaBackEndSearcher searcher) {
         return invokerFactory.createFillInvoker(searcher, result);
     }
 
-    public SearchInvoker getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
-        SearchInvoker invoker = getSearchPathInvoker(query, searcher).orElseGet(() -> getInternalInvoker(query, searcher));
+    public Optional<SearchInvoker> getSearchInvoker(Query query, VespaBackEndSearcher searcher) {
+        if (multilevelDispatch) {
+            emitDispatchMetric(Optional.empty());
+            return Optional.empty();
+        }
 
-        if (query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
+        Optional<SearchInvoker> invoker = getSearchPathInvoker(query, searcher);
+
+        if (invoker.isEmpty()) {
+            invoker = getInternalInvoker(query, searcher);
+        }
+        if (invoker.isPresent() && query.properties().getBoolean(com.yahoo.search.query.Model.ESTIMATE)) {
             query.setHits(0);
             query.setOffset(0);
         }
-        metric.add(INTERNAL_METRIC, 1, metricContext);
+        emitDispatchMetric(invoker);
+
         return invoker;
     }
 
@@ -168,13 +177,12 @@ public class Dispatcher extends AbstractComponent {
         }
     }
 
-    private SearchInvoker getInternalInvoker(Query query, VespaBackEndSearcher searcher) {
+    private Optional<SearchInvoker> getInternalInvoker(Query query, VespaBackEndSearcher searcher) {
         Optional<Node> directNode = searchCluster.localCorpusDispatchTarget();
         if (directNode.isPresent()) {
             Node node = directNode.get();
-            query.trace(false, 2, "Dispatching to ", node);
-            return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), Arrays.asList(node), true)
-                                 .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
+            query.trace(false, 2, "Dispatching directly to ", node);
+            return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), Arrays.asList(node), true);
         }
 
         int covered = searchCluster.groupsWithSufficientCoverage();
@@ -193,10 +201,10 @@ public class Dispatcher extends AbstractComponent {
                                                                                  group.nodes(),
                                                                                  acceptIncompleteCoverage);
             if (invoker.isPresent()) {
-                query.trace(false, 2, "Dispatching to group ", group.id());
+                query.trace(false, 2, "Dispatching internally to search group ", group.id());
                 query.getModel().setSearchPath("/" + group.id());
                 invoker.get().teardown((success, time) -> loadBalancer.releaseGroup(group, success, time));
-                return invoker.get();
+                return invoker;
             } else {
                 loadBalancer.releaseGroup(group, false, 0);
                 if (rejected == null) {
@@ -205,7 +213,16 @@ public class Dispatcher extends AbstractComponent {
                 rejected.add(group.id());
             }
         }
-        throw new IllegalStateException("No suitable groups to dispatch query. Rejected: " + rejected);
+
+        return Optional.empty();
+    }
+
+    private void emitDispatchMetric(Optional<SearchInvoker> invoker) {
+        if (invoker.isEmpty()) {
+            metric.add(FDISPATCH_METRIC, 1, metricContext);
+        } else {
+            metric.add(INTERNAL_METRIC, 1, metricContext);
+        }
     }
 
 }

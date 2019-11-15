@@ -20,7 +20,6 @@ import java.util.Set;
  * @author ollivir
  */
 public abstract class InvokerFactory {
-
     protected final SearchCluster searchCluster;
 
     public InvokerFactory(SearchCluster searchCluster) {
@@ -29,18 +28,24 @@ public abstract class InvokerFactory {
 
     protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node);
 
-    public abstract FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result);
+    public abstract Optional<FillInvoker> createFillInvoker(VespaBackEndSearcher searcher, Result result);
 
     /**
      * Create a {@link SearchInvoker} for a list of content nodes.
      *
-     * @param searcher the searcher processing the query
-     * @param query the search query being processed
-     * @param groupId the id of the node group to which the nodes belong
-     * @param nodes pre-selected list of content nodes
-     * @param acceptIncompleteCoverage if some of the nodes are unavailable and this parameter is
-     *                                 false, verify that the remaining set of nodes has sufficient coverage
-     * @return Optional containing the SearchInvoker or empty if some node in the
+     * @param searcher
+     *            the searcher processing the query
+     * @param query
+     *            the search query being processed
+     * @param groupId
+     *            the id of the node group to which the nodes belong
+     * @param nodes
+     *            pre-selected list of content nodes
+     * @param acceptIncompleteCoverage
+     *            if some of the nodes are unavailable and this parameter is
+     *            <b>false</b>, verify that the remaining set of nodes has enough
+     *            coverage
+     * @return Optional containing the SearchInvoker or <i>empty</i> if some node in the
      *         list is invalid and the remaining coverage is not sufficient
      */
     public Optional<SearchInvoker> createSearchInvoker(VespaBackEndSearcher searcher,
@@ -71,11 +76,11 @@ public abstract class InvokerFactory {
         if (failed != null) {
             List<Node> success = new ArrayList<>(nodes.size() - failed.size());
             for (Node node : nodes) {
-                if ( ! failed.contains(node.key())) {
+                if (!failed.contains(node.key())) {
                     success.add(node);
                 }
             }
-            if ( ! searchCluster.isPartialGroupCoverageSufficient(groupId, success) && !acceptIncompleteCoverage) {
+            if (!searchCluster.isPartialGroupCoverageSufficient(groupId, success) && !acceptIncompleteCoverage) {
                 return Optional.empty();
             }
             if(invokers.size() == 0) {
@@ -108,5 +113,4 @@ public abstract class InvokerFactory {
     }
 
     public void release() {}
-
 }
