@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include <vespa/vespalib/util/signalhandler.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/defaults.h>
 #include "config-handler.h"
 
@@ -85,8 +86,11 @@ main(int argc, char **argv)
             vespalib::SignalHandler::CHLD.clear();
             handler.doWork();       // Check for child procs & commands
         } catch (InvalidConfigException& ex) {
-            LOG(warning, "Configuration problem: (ignoring): %s",
-                ex.what());
+            LOG(warning, "Configuration problem: (ignoring): %s", ex.what());
+        } catch (vespalib::PortListenException& ex) {
+            LOG(error, "Fatal: %s", ex.getMessage().c_str());
+            EV_STOPPING("config-sentinel", ex.what());
+            exit(EXIT_FAILURE);
         }
         if (vespalib::SignalHandler::CHLD.check()) {
             continue;
