@@ -73,34 +73,69 @@ class SystemFlagsDeployer  {
 
         List<FlagDataChange> result = new ArrayList<>();
 
-        wantedFlagData.forEach((id, data) -> {
-            FlagData currentData = currentFlagData.get(id);
-            if (currentData != null && Objects.equals(currentData.toJsonNode(), data.toJsonNode())) {
-                return; // new flag data identical to existing
-            }
-            if (!dryRun) {
-                client.putFlagData(target, data);
-            }
-            result.add(
-                    currentData != null
-                            ? FlagDataChange.updated(id, target, data, currentData)
-                            : FlagDataChange.created(id, target, data));
-        });
-
-        currentFlagData.forEach((id, data) -> {
-            if (!wantedFlagData.containsKey(id)) {
-                if (!dryRun) {
-                    client.deleteFlagData(target, id);
-                }
-                result.add(FlagDataChange.deleted(id, target));
-            }
-        });
+        createNewFlagData(target, dryRun, wantedFlagData, currentFlagData, result);
+        updateExistingFlagData(target, dryRun, wantedFlagData, currentFlagData, result);
+        removeOldFlagData(target, dryRun, wantedFlagData, currentFlagData, result);
 
         return new SystemFlagsDeployResult(result);
     }
 
+    private void createNewFlagData(FlagsTarget target,
+                                   boolean dryRun,
+                                   Map<FlagId, FlagData> wantedFlagData,
+                                   Map<FlagId, FlagData> currentFlagData,
+                                   List<FlagDataChange> result) {
+        wantedFlagData.forEach((id, data) -> {
+            FlagData currentData = currentFlagData.get(id);
+            if (currentData != null) {
+                return; // not a new flag
+            }
+            if (!dryRun) {
+                client.putFlagData(target, data);
+            }
+            result.add(FlagDataChange.created(id, target, data));
+        });
+    }
+
+    private void updateExistingFlagData(FlagsTarget target,
+                                        boolean dryRun,
+                                        Map<FlagId, FlagData> wantedFlagData,
+                                        Map<FlagId, FlagData> currentFlagData,
+                                        List<FlagDataChange> result) {
+        wantedFlagData.forEach((id, wantedData) -> {
+            FlagData currentData = currentFlagData.get(id);
+            if (currentData == null || isEqual(currentData, wantedData)) {
+                return; // not an flag data update
+            }
+            if (!dryRun) {
+                client.putFlagData(target, wantedData);
+            }
+            result.add(FlagDataChange.updated(id, target, wantedData, currentData));
+        });
+    }
+
+    private void removeOldFlagData(FlagsTarget target,
+                                   boolean dryRun,
+                                   Map<FlagId, FlagData> wantedFlagData,
+                                   Map<FlagId, FlagData> currentFlagData,
+                                   List<FlagDataChange> result) {
+        currentFlagData.forEach((id, data) -> {
+            if (wantedFlagData.containsKey(id)) {
+                return; // not a removed flag
+            }
+            if (!dryRun) {
+                client.deleteFlagData(target, id);
+            }
+            result.add(FlagDataChange.deleted(id, target));
+        });
+    }
+
     private static Map<FlagId, FlagData> lookupTable(Collection<FlagData> data) {
         return data.stream().collect(Collectors.toMap(FlagData::id, Function.identity()));
+    }
+
+    private static boolean isEqual(FlagData l, FlagData r) {
+        return Objects.equals(l.toJsonNode(), r.toJsonNode());
     }
 
 }
