@@ -696,6 +696,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType PREDICATE_QUERY",
       "public static final enum com.yahoo.prelude.query.Item$ItemType REGEXP",
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD_ALTERNATIVES",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType NEAREST_NEIGHBOR",
       "public final int code"
     ]
   },
@@ -846,6 +847,27 @@
       "protected int distance",
       "public static final int defaultDistance"
     ]
+  },
+  "com.yahoo.prelude.query.NearestNeighborItem": {
+    "superClass": "com.yahoo.prelude.query.SimpleTaggableItem",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public int getTargetNumHits()",
+      "public void setTargetNumHits(int)",
+      "public java.lang.String getQueryProperty()",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String getIndexName()",
+      "public void setIndexName(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public int getTermCount()",
+      "public int encode(java.nio.ByteBuffer)",
+      "protected void appendBodyString(java.lang.StringBuilder)"
+    ],
+    "fields": []
   },
   "com.yahoo.prelude.query.NonReducibleCompositeItem": {
     "superClass": "com.yahoo.prelude.query.CompositeItem",

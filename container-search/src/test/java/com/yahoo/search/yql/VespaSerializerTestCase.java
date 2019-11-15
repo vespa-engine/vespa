@@ -125,6 +125,12 @@ public class VespaSerializerTestCase {
     }
 
     @Test
+    public void testNearestNeighbor() {
+        parseAndConfirm("[{\"label\": \"foo\", \"targetNumHits\": 1000}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("[{\"targetNumHits\": 42}]nearestNeighbor(semantic_embedding, my_property)");
+    }
+
+    @Test
     public void testNumbers() {
         parseAndConfirm("title = 500");
         parseAndConfirm("title > 500");

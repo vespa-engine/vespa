@@ -35,6 +35,7 @@ import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.Limit;
 import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.ONearItem;
@@ -151,6 +152,7 @@ public class YqlParser implements Parser {
     static final String IMPLICIT_TRANSFORMS = "implicitTransforms";
     static final String LABEL = "label";
     static final String NEAR = "near";
+    static final String NEAREST_NEIGHBOR = "nearestNeighbor";
     static final String NORMALIZE_CASE = "normalizeCase";
     static final String ONEAR = "onear";
     static final String ORIGIN_LENGTH = "length";
@@ -367,6 +369,8 @@ public class YqlParser implements Parser {
                 return buildWeightedSet(ast);
             case DOT_PRODUCT:
                 return buildDotProduct(ast);
+            case NEAREST_NEIGHBOR:
+                return buildNearestNeighbor(ast);
             case PREDICATE:
                 return buildPredicate(ast);
             case RANK:
@@ -378,7 +382,7 @@ public class YqlParser implements Parser {
             case NON_EMPTY:
                 return ensureNonEmpty(ast);
             default:
-                throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT,
+                throw newUnexpectedArgumentException(names.get(0), DOT_PRODUCT, NEAREST_NEIGHBOR,
                                                      RANGE, RANK, USER_QUERY, WAND, WEAK_AND, WEIGHTED_SET,
                                                      PREDICATE, USER_INPUT, NON_EMPTY);
         }
@@ -404,6 +408,24 @@ public class YqlParser implements Parser {
         Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
 
         return fillWeightedSet(ast, args.get(1), new DotProductItem(getIndex(args.get(0))));
+    }
+
+    private Item buildNearestNeighbor(OperatorNode<ExpressionOperator> ast) {
+        List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
+        Preconditions.checkArgument(args.size() == 2, "Expected 2 arguments, got %s.", args.size());
+        String field = fetchFieldRead(args.get(0));
+        String property = fetchFieldRead(args.get(1));
+        NearestNeighborItem item = new NearestNeighborItem(field, property);
+        Integer targetNumHits = getAnnotation(ast, TARGET_NUM_HITS,
+                Integer.class, null, "desired minimum hits to produce");
+        if (targetNumHits != null) {
+            item.setTargetNumHits(targetNumHits);
+        }
+        String label = getAnnotation(ast, LABEL, String.class, null, "item label");
+        if (label != null) {
+                item.setLabel(label);
+        }
+        return item;
     }
 
     private Item buildPredicate(OperatorNode<ExpressionOperator> ast) {

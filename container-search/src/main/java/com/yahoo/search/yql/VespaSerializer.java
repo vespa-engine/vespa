@@ -20,6 +20,7 @@ import static com.yahoo.search.yql.YqlParser.HIT_LIMIT;
 import static com.yahoo.search.yql.YqlParser.IMPLICIT_TRANSFORMS;
 import static com.yahoo.search.yql.YqlParser.LABEL;
 import static com.yahoo.search.yql.YqlParser.NEAR;
+import static com.yahoo.search.yql.YqlParser.NEAREST_NEIGHBOR;
 import static com.yahoo.search.yql.YqlParser.NORMALIZE_CASE;
 import static com.yahoo.search.yql.YqlParser.ONEAR;
 import static com.yahoo.search.yql.YqlParser.ORIGIN;
@@ -73,6 +74,7 @@ import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.MarkerWordItem;
 import com.yahoo.prelude.query.NearItem;
+import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.NotItem;
 import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.ONearItem;
@@ -687,6 +689,28 @@ public class VespaSerializer {
 
     }
 
+    private static class NearestNeighborSerializer extends Serializer<NearestNeighborItem> {
+
+        @Override
+        void onExit(StringBuilder destination, NearestNeighborItem item) { }
+
+        @Override
+        boolean serialize(StringBuilder destination, NearestNeighborItem item) {
+            destination.append("[{");
+            int initLen = destination.length();
+            destination.append(leafAnnotations(item));
+            comma(destination, initLen);
+            int targetNumHits = item.getTargetNumHits();
+            destination.append("\"targetNumHits\": ").append(targetNumHits);
+            destination.append("}]");
+            destination.append(NEAREST_NEIGHBOR).append('(');
+            destination.append(item.getIndexName()).append(", ");
+            destination.append(item.getQueryProperty()).append(')');
+            return false;
+        }
+
+    }
+
     private static class PredicateQuerySerializer extends Serializer<PredicateQueryItem> {
 
         @Override
@@ -1131,6 +1155,7 @@ public class VespaSerializer {
         dispatchBuilder.put(BoolItem.class, new BoolSerializer());
         dispatchBuilder.put(MarkerWordItem.class, new WordSerializer()); // gotcha
         dispatchBuilder.put(NearItem.class, new NearSerializer());
+        dispatchBuilder.put(NearestNeighborItem.class, new NearestNeighborSerializer());
         dispatchBuilder.put(NotItem.class, new NotSerializer());
         dispatchBuilder.put(NullItem.class, new NullSerializer());
         dispatchBuilder.put(ONearItem.class, new ONearSerializer());
