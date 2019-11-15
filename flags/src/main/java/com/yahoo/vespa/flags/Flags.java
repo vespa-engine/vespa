@@ -162,7 +162,7 @@ public class Flags {
             HOSTNAME);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_MAJOR_MINOR_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.4",
+            "zookeeper-server-version", "3.5",
             "The version of ZooKeeper server to use (major.minor, not full version)",
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
