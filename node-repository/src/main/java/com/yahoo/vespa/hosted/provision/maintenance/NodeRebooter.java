@@ -73,7 +73,7 @@ public class NodeRebooter extends Maintainer {
         // as long as 0 <= overdue <= rebootInterval, with the last maintain() in that interval
         // naturally scheduling the remaining with probability 1.
 
-        int configServers = 3;
+        int configServers = nodeRepository().database().cluster().size();
         long secondsRemaining = Math.max(0, rebootInterval.getSeconds() - overdue.get().getSeconds());
         double runsRemaining = configServers * secondsRemaining / (double) interval().getSeconds();
         double probability = 1 / (1 + runsRemaining);

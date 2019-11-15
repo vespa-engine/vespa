@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
  */
 public class MaintenanceTester {
 
-    private final Curator curator = new MockCurator();
+    private final MockCurator curator = new MockCurator();
     public final ManualClock clock = new ManualClock(Instant.ofEpochMilli(0L)); // determinism
     private final Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
@@ -37,6 +36,10 @@ public class MaintenanceTester {
                                                                     new MockNameResolver().mockAnyLookup(),
                                                                     DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                                     true);
+
+    public MaintenanceTester() {
+        curator.setZooKeeperEnsembleConnectionSpec("zk1.host:1,zk2.host:2,zk3.host:3");
+    }
 
     public NodeRepository nodeRepository() { return nodeRepository; }
     
