@@ -242,6 +242,11 @@ public class IP {
                 return pool;
             }
 
+            // For dev hosts, allow only ipv4 addresses
+            if(ipv6AddrCount == 0 && ipv4AddrCount == pool.size()) {
+                return pool;
+            }
+
             throw new IllegalArgumentException(String.format("Dual-stacked IP address list must have an " +
                                                              "equal number of addresses of each version " +
                                                              "[IPv6 address count = %d, IPv4 address count = %d]",

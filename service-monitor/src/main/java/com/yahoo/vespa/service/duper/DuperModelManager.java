@@ -58,11 +58,10 @@ public class DuperModelManager implements DuperModelInfraApi {
         this.duperModel = duperModel;
 
         if (system == SystemName.dev) {
+            // TODO (mortent): Support controllerApplication in dev system
             supportedInfraApplications =
-                    (isController ?
-                            Stream.of(devHostApplicaton, controllerApplication) :
-                            Stream.of(devHostApplicaton, configServerApplication)
-                    ).collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
+                    Stream.of(devHostApplicaton, configServerApplication)
+                    .collect(Collectors.toUnmodifiableMap(InfraApplication::getApplicationId, Function.identity()));
         } else if (multitenant) {
             supportedInfraApplications =
                     (isController ?
