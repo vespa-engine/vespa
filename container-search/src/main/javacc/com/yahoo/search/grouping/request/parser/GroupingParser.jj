@@ -926,7 +926,7 @@ void bucket(GroupingOperation grp, BucketResolver resolver) :
                  ( rbracket() { inclusiveTo = true; } )
                )
     )
-    { resolver.push(from, inclusiveFrom); resolver.push((to == null) ? from : to, inclusiveTo); }
+    { resolver.push(from, inclusiveFrom); resolver.push((to == null) ? from : to, inclusiveTo || to == null); }
 }
 
 Number signedNumber() :

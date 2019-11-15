@@ -539,7 +539,7 @@ public class GroupingParserTestCase {
                     "max(55) output(count()) each(each(output(summary())))))");
         assertParse("all(group(artist) max(13) each(group(predefined(year, bucket(7.1, 19.0), bucket(90.7, 300.0))) " +
                     "max(55) output(count()) each(each(output(summary())))))");
-        assertParse("all(group(artist) max(13) each(group(predefined(year, bucket('a', 'b'), bucket('cd', 'cde'))) " +
+        assertParse("all(group(artist) max(13) each(group(predefined(year, bucket('a', 'b'), bucket('cd'))) " +
                     "max(55) output(count()) each(each(output(summary())))))");
 
         assertParse("all(output(count()))");
@@ -581,6 +581,14 @@ public class GroupingParserTestCase {
     }
 
     @Test
+    public void testBucket() {
+        List<GroupingOperation> operations = assertParse("all(group(predefined(artist, bucket('a'), bucket('c', 'z'))))");
+        assertEquals(1, operations.size());
+        assertEquals("all(group(predefined(artist, bucket[\"a\", \"a \">, bucket[\"c\", \"z\">)))",
+                     operations.get(0).toString());
+    }
+
+    @Test
     public void requireThatParseExceptionMessagesContainErrorMarker() {
         assertIllegalArgument("foo",
                               "Encountered \" <IDENTIFIER> \"foo\"\" at line 1, column 1.\n\n" +
@@ -605,12 +613,10 @@ public class GroupingParserTestCase {
     }
 
     // --------------------------------------------------------------------------------
-    //
     // Utilities.
-    //
     // --------------------------------------------------------------------------------
 
-    private static void assertParse(String request, String... expectedOperations) {
+    private static List<GroupingOperation> assertParse(String request, String... expectedOperations) {
         List<GroupingOperation> operations = GroupingOperation.fromStringAsList(request);
         List<String> actual = new ArrayList<>(operations.size());
         for (GroupingOperation operation : operations) {
@@ -628,6 +634,7 @@ public class GroupingParserTestCase {
 
         // make sure that yql+ is capable of handling request
         assertYqlParsable(request, expectedOperations);
+        return operations;
     }
 
     private static void assertYqlParsable(String request, String... expectedOperations) {
@@ -653,4 +660,5 @@ public class GroupingParserTestCase {
             }
         }
     }
+
 }
