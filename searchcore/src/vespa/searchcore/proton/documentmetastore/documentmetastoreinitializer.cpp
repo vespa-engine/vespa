@@ -23,11 +23,12 @@ DocumentMetaStoreInitializer(const vespalib::string baseDir,
     : _baseDir(baseDir),
       _subDbName(subDbName),
       _docTypeName(docTypeName),
-      _dms(dms)
+      _dms(std::move(dms))
 { }
 
 namespace {
-vespalib::string failedMsg(const char * msg) {
+vespalib::string
+failedMsg(const char * msg) {
     return make_string("Failed to load document meta store for document type '%s' from disk", msg);
 }
 }
@@ -44,7 +45,6 @@ DocumentMetaStoreInitializer::run()
             _dms->setBaseFileName(attrFileName);
             assert(_dms->hasLoadData());
             fastos::StopWatch stopWatch;
-            stopWatch.start();
             EventLogger::loadDocumentMetaStoreStart(_subDbName);
             if (!_dms->load()) {
                 throw IllegalStateException(failedMsg(_docTypeName.c_str()));

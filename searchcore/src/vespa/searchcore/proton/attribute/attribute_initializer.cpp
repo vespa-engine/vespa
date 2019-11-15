@@ -176,7 +176,6 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
 {
     assert(attr->hasLoadData());
     fastos::StopWatch stopWatch;
-    stopWatch.start();
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
     if (!attr->load()) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",

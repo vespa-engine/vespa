@@ -30,8 +30,8 @@ public:
             for (const auto &session: sessions) {
                 Cursor &entry = array.addObject();
                 entry.setString("id", session.id);
-                entry.setString("created", session.created.toString());
-                entry.setString("doom", session.doom.toString());
+                entry.setString("created", session.created.toUTC().toString());
+                entry.setString("doom", session.doom.toUTC().toString());
             }
         }
     }
@@ -54,9 +54,9 @@ std::unique_ptr<StateExplorer>
 SessionManagerExplorer::get_child(vespalib::stringref name) const
 {
     if (name == SEARCH) {
-        return std::unique_ptr<StateExplorer>(new SearchSessionExplorer(_manager));
+        return std::make_unique<SearchSessionExplorer>(_manager);
     }
-    return std::unique_ptr<StateExplorer>(nullptr);
+    return std::unique_ptr<StateExplorer>();
 }
 
 }

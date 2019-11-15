@@ -9,7 +9,7 @@ namespace proton::matching {
 struct ISessionCachePruner {
     virtual ~ISessionCachePruner() {}
 
-    virtual void pruneTimedOutSessions(fastos::TimeStamp currentTime) = 0;
+    virtual void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) = 0;
 };
 
 }

@@ -618,7 +618,6 @@ TEST_F("Test performance when using attributes", TestFixture)
     const uint32_t loopcnt = 30000;
     LOG(info, "Starting minibm loop, %u ierations of 4 docs each", loopcnt);
     fastos::StopWatch sw;
-    sw.start();
     for (i = 0; i < loopcnt; ++i) {
         ctx._docId = 1u;
         if (sel->contains(ctx) != Result::False)

@@ -20,7 +20,7 @@ private:
     Clock(const Clock &);
     Clock & operator = (const Clock &);
 
-    mutable fastos::TimeStamp _timeNS;
+    mutable fastos::SteadyTimeStamp _timeNS;
     int                       _timePeriodMS;
     std::mutex                _lock;
     std::condition_variable   _cond;
@@ -35,13 +35,13 @@ public:
     Clock(double timePeriod=0.100);
     ~Clock();
 
-    fastos::TimeStamp getTimeNS() const {
+    fastos::SteadyTimeStamp getTimeNS() const {
         if (!_running) {
             setTime();
         }
         return _timeNS;
     }
-    fastos::TimeStamp getTimeNSAssumeRunning() const { return _timeNS; }
+    fastos::SteadyTimeStamp getTimeNSAssumeRunning() const { return _timeNS; }
 
     void stop();
 };

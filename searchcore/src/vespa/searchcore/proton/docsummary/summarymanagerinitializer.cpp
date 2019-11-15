@@ -39,7 +39,6 @@ SummaryManagerInitializer::run()
 {
     vespalib::mkdir(_baseDir, false);
     fastos::StopWatch stopWatch;
-    stopWatch.start();
     EventLogger::loadDocumentStoreStart(_subDbName);
     *_result = std::make_shared<SummaryManager>
                (_summaryExecutor, _storeCfg, _grow, _baseDir, _docTypeName,

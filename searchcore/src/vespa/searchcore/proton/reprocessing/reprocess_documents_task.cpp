@@ -33,7 +33,7 @@ ReprocessDocumentsTask::run()
 {
     if (_handler.hasProcessors()) {
         EventLogger::reprocessDocumentsStart(_subDbName,_visitorCost);
-        _stopWatch.start();
+        _stopWatch = fastos::StopWatch();
         search::IDocumentStore &docstore = _sm->getBackingStore();
         if (_handler.hasRewriters()) {
             docstore.accept(_handler.getRewriteVisitor(),*this,*_docTypeRepo);

@@ -50,7 +50,7 @@ GroupingContext::setDistributionKey(uint32_t distributionKey)
     }
 }
 
-GroupingContext::GroupingContext(const vespalib::Clock & clock, fastos::TimeStamp timeOfDoom, const char *groupSpec, uint32_t groupSpecLen) :
+GroupingContext::GroupingContext(const vespalib::Clock & clock, fastos::SteadyTimeStamp timeOfDoom, const char *groupSpec, uint32_t groupSpecLen) :
     _clock(clock),
     _timeOfDoom(timeOfDoom),
     _os(),
@@ -59,7 +59,7 @@ GroupingContext::GroupingContext(const vespalib::Clock & clock, fastos::TimeStam
     deserialize(groupSpec, groupSpecLen);
 }
 
-GroupingContext::GroupingContext(const vespalib::Clock & clock, fastos::TimeStamp timeOfDoom) :
+GroupingContext::GroupingContext(const vespalib::Clock & clock, fastos::SteadyTimeStamp timeOfDoom) :
     _clock(clock),
     _timeOfDoom(timeOfDoom),
     _os(),

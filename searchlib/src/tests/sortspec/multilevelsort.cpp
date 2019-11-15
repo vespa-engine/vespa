@@ -241,7 +241,7 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
     }
 
     vespalib::Clock clock;
-    vespalib::Doom doom(clock, std::numeric_limits<fastos::TimeStamp::TimeT>::max());
+    vespalib::Doom doom(clock, fastos::SteadyTimeStamp::FUTURE);
     search::uca::UcaConverterFactory ucaFactory;
     FastS_SortSpec sorter(7, doom, ucaFactory, _sortMethod);
     // init sorter with sort data
@@ -399,7 +399,7 @@ TEST("require that all sort methods behave the same")
 
 TEST("test that [docid] translates to [lid][paritionid]") {
     vespalib::Clock clock;
-    vespalib::Doom doom(clock, fastos::ClockSystem::now() + fastos::TimeStamp::SEC*10);
+    vespalib::Doom doom(clock, fastos::SteadyTimeStamp::FUTURE);
     search::uca::UcaConverterFactory ucaFactory;
     FastS_SortSpec asc(7, doom, ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};

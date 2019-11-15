@@ -9,11 +9,11 @@ namespace vespalib {
 class Doom
 {
 private:
-    const vespalib::Clock &_clock;
-    fastos::TimeStamp      _timeOfDoom;
+    const vespalib::Clock   &_clock;
+    fastos::SteadyTimeStamp  _timeOfDoom;
 
 public:
-    Doom(const vespalib::Clock &clock, fastos::TimeStamp timeOfDoom);
+    Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp timeOfDoom);
     bool doom() const {
         return (_clock.getTimeNSAssumeRunning() > _timeOfDoom);
     }

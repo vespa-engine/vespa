@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/sumaggregationresult.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -12,7 +11,7 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <iostream>
-
+#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_test");
 
@@ -23,7 +22,14 @@ using namespace search::grouping;
 using namespace search;
 using search::attribute::test::MockAttributeContext;
 using proton::matching::SessionManager;
+using fastos::SteadyTimeStamp;
 
+namespace fastos {
+    std::ostream &
+    operator<<(std::ostream &os, SteadyTimeStamp ts) {
+        return os << ts.toString();
+    }
+}
 
 //-----------------------------------------------------------------------------
 
@@ -112,8 +118,8 @@ private:
 
 struct DoomFixture {
     vespalib::Clock clock;
-    fastos::TimeStamp timeOfDoom;
-    DoomFixture() : clock(), timeOfDoom(fastos::TimeStamp::FUTURE) {}
+    fastos::SteadyTimeStamp timeOfDoom;
+    DoomFixture() : clock(), timeOfDoom(fastos::SteadyTimeStamp::FUTURE) {}
 };
 
 //-----------------------------------------------------------------------------
@@ -383,6 +389,7 @@ TEST_F("testSessionManager", DoomFixture()) {
     GroupingSession::UP s1(new GroupingSession(id1, initContext, world.attributeContext));
     GroupingSession::UP s2(new GroupingSession(id2, initContext, world.attributeContext));
     GroupingSession::UP s3(new GroupingSession(id3, initContext, world.attributeContext));
+
     ASSERT_EQUAL(f1.timeOfDoom, s1->getTimeOfDoom());
     mgr.insert(std::move(s1));
     s1 = mgr.pickGrouping(id1);
@@ -395,9 +402,9 @@ TEST_F("testSessionManager", DoomFixture()) {
     s1 = mgr.pickGrouping(id1);
     s2 = mgr.pickGrouping(id2);
     s3 = mgr.pickGrouping(id3);
-    ASSERT_TRUE(s1.get() == NULL);
-    ASSERT_TRUE(s2.get() != NULL);
-    ASSERT_TRUE(s3.get() != NULL);
+    ASSERT_FALSE(s1);
+    ASSERT_TRUE(s2);
+    ASSERT_TRUE(s3);
     EXPECT_EQUAL(id2, s2->getSessionId());
     EXPECT_EQUAL(id3, s3->getSessionId());
     SessionManager::Stats stats = mgr.getGroupingStats();
@@ -472,24 +479,24 @@ TEST_F("test session timeout", DoomFixture()) {
     SessionId id1("foo");
     SessionId id2("bar");
 
-    GroupingContext initContext1(f1.clock, 10);
-    GroupingContext initContext2(f1.clock, 20);
+    GroupingContext initContext1(f1.clock, SteadyTimeStamp(10));
+    GroupingContext initContext2(f1.clock, SteadyTimeStamp(20));
     GroupingSession::UP s1(new GroupingSession(id1, initContext1, world.attributeContext));
     GroupingSession::UP s2(new GroupingSession(id2, initContext2, world.attributeContext));
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
-    mgr.pruneTimedOutSessions(5);
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(5));
     SessionManager::Stats stats(mgr.getGroupingStats());
     ASSERT_EQUAL(2u, stats.numCached);
-    mgr.pruneTimedOutSessions(10);
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(10));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(2u, stats.numCached);
 
-    mgr.pruneTimedOutSessions(11);
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(11));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(1u, stats.numCached);
 
-    mgr.pruneTimedOutSessions(21);
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(21));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(0u, stats.numCached);
 }

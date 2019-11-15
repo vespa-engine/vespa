@@ -36,7 +36,7 @@ struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     }
     Hits selectBest(SortedHitSequence sortedHits) override {
         auto result = communicator.selectBest(sortedHits);
-        rerank_time.start();
+        rerank_time = fastos::StopWatch();
         return result;
     }
     RangePair rangeCover(const RangePair &ranges) override {
@@ -70,7 +70,6 @@ MatchMaster::match(search::engine::Trace & trace,
                    uint32_t numSearchPartitions)
 {
     fastos::StopWatch query_latency_time;
-    query_latency_time.start();
     vespalib::DualMergeDirector mergeDirector(threadBundle.size());
     MatchLoopCommunicator communicator(threadBundle.size(), params.heapSize, mtf.createDiversifier(params.heapSize));
     TimedMatchLoopCommunicator timedCommunicator(communicator);

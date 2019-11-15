@@ -30,12 +30,12 @@ Test::testRUsage()
     RUsage diff = r2-r1;
     EXPECT_EQUAL(diff.toString(), r2.toString());
     {
-        RUsage then = RUsage::createSelf(7);
+        RUsage then = RUsage::createSelf(fastos::SteadyTimeStamp(7));
         RUsage now = RUsage::createSelf();
         EXPECT_NOT_EQUAL(now.toString(), then.toString());
     }
     {
-        RUsage then = RUsage::createChildren(1337583);
+        RUsage then = RUsage::createChildren(fastos::SteadyTimeStamp(1337583));
         RUsage now = RUsage::createChildren();
         EXPECT_NOT_EQUAL(now.toString(), then.toString());
     }

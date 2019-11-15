@@ -4,7 +4,7 @@
 
 namespace vespalib {
 
-Doom::Doom(const vespalib::Clock &clock, fastos::TimeStamp timeOfDoom) :
+Doom::Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp timeOfDoom) :
     _clock(clock),
     _timeOfDoom(timeOfDoom)
 {

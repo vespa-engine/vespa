@@ -111,7 +111,7 @@ Test::Main()
         count = strtol(_argv[2], NULL, 0);
     }
     TEST_INIT("allocinarray_benchmark");
-    fastos::TimeStamp start(fastos::ClockSteady::now());
+    fastos::SteadyTimeStamp start(fastos::ClockSteady::now());
     if (type == "direct") {
         benchmarkTree(count);
     } else {

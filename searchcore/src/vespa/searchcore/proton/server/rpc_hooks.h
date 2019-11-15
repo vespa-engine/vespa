@@ -49,14 +49,14 @@ private:
 
     };
     struct StateArg {
-        StateArg(Session::SP session, FRT_RPCRequest * req, fastos::TimeStamp dueTime) :
+        StateArg(Session::SP session, FRT_RPCRequest * req, fastos::SteadyTimeStamp dueTime) :
             _session(std::move(session)),
             _req(req),
             _dueTime(dueTime)
         { }
-        Session::SP       _session;
-        FRT_RPCRequest  * _req;
-        fastos::TimeStamp _dueTime;
+        Session::SP             _session;
+        FRT_RPCRequest        * _req;
+        fastos::SteadyTimeStamp _dueTime;
     };
 
     Proton                         & _proton;

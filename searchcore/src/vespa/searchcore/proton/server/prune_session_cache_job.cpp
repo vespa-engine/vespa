@@ -16,8 +16,7 @@ PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, double j
 bool
 PruneSessionCacheJob::run()
 {
-    fastos::TimeStamp now = fastos::ClockSteady::now();
-    _pruner.pruneTimedOutSessions(now);
+    _pruner.pruneTimedOutSessions(fastos::ClockSteady::now());
     return true;
 }
 

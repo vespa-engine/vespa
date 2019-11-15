@@ -16,8 +16,8 @@ public:
     Request & operator =(const Request &) = delete;
     virtual ~Request();
     void setTimeout(const fastos::TimeStamp & timeout);
-    fastos::TimeStamp getStartTime() const { return _relativeTime.timeOfDawn(); }
-    fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
+    fastos::SteadyTimeStamp getStartTime() const { return _relativeTime.timeOfDawn(); }
+    fastos::SteadyTimeStamp getTimeOfDoom() const { return _timeOfDoom; }
     fastos::TimeStamp getTimeout() const { return _timeOfDoom - getStartTime(); }
     fastos::TimeStamp getTimeUsed() const;
     fastos::TimeStamp getTimeLeft() const;
@@ -37,8 +37,8 @@ public:
 
     Trace & trace() const { return _trace; }
 private:
-    RelativeTime            _relativeTime;
-    fastos::TimeStamp       _timeOfDoom;
+    RelativeTime             _relativeTime;
+    fastos::SteadyTimeStamp  _timeOfDoom;
 public:
     /// Everything here should move up to private section and have accessors
     bool               dumpFeatures;

@@ -18,6 +18,7 @@ using vespalib::string;
 using namespace proton;
 using namespace proton::matching;
 using vespalib::StateExplorer;
+using fastos::SteadyTimeStamp;
 
 namespace {
 
@@ -34,8 +35,8 @@ void checkStats(SessionManager::Stats stats, uint32_t numInsert,
 
 TEST("require that SessionManager handles SearchSessions.") {
     string session_id("foo");
-    fastos::TimeStamp start(100);
-    fastos::TimeStamp doom(1000);
+    SteadyTimeStamp start(100);
+    SteadyTimeStamp doom(1000);
     MatchToolsFactory::UP mtf;
     SearchSession::OwnershipBundle owned_objects;
     auto session = std::make_shared<SearchSession>(session_id, start, doom, std::move(mtf), std::move(owned_objects));
@@ -49,9 +50,9 @@ TEST("require that SessionManager handles SearchSessions.") {
     TEST_DO(checkStats(session_manager.getSearchStats(), 0, 1, 0, 1, 0));
     session_manager.insert(std::move(session));
     TEST_DO(checkStats(session_manager.getSearchStats(), 1, 0, 0, 1, 0));
-    session_manager.pruneTimedOutSessions(500);
+    session_manager.pruneTimedOutSessions(SteadyTimeStamp(500));
     TEST_DO(checkStats(session_manager.getSearchStats(), 0, 0, 0, 1, 0));
-    session_manager.pruneTimedOutSessions(2000);
+    session_manager.pruneTimedOutSessions(SteadyTimeStamp(2000));
     TEST_DO(checkStats(session_manager.getSearchStats(), 0, 0, 0, 0, 1));
 
     session = session_manager.pickSearch(session_id);
@@ -59,8 +60,8 @@ TEST("require that SessionManager handles SearchSessions.") {
 }
 
 TEST("require that SessionManager can be explored") {
-    fastos::TimeStamp start(100);
-    fastos::TimeStamp doom(1000);
+    SteadyTimeStamp start(100);
+    SteadyTimeStamp doom(1000);
     SessionManager session_manager(10);
     session_manager.insert(std::make_shared<SearchSession>("foo", start, doom,
                                                            MatchToolsFactory::UP(), SearchSession::OwnershipBundle()));

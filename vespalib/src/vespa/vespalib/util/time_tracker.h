@@ -17,7 +17,7 @@ private:
         vespalib::string name;
         fastos::StopWatch task_time;
         std::vector<Task> sub_tasks;
-        Task(const char *name_in) : name(name_in), task_time() { task_time.start(); }
+        Task(const char *name_in) : name(name_in), task_time() { }
         ~Task();
         void close_task() { task_time.stop(); }
         double ms() const { return (task_time.elapsed().sec() * 1000.0); }

@@ -289,7 +289,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
-    RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(1500000000), 1700000L));
+    RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(10000000), 1700000L));
     Trace trace(clock, 7);
     trace.start(4);
     SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, trace.maybeCreateCursor(7, "limit"));
@@ -315,7 +315,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     trace.done();
     verify(
         "{"
-        "    start_time_utc: '2017-07-14 02:40:00.000 UTC',"
+        "    start_time_relative: '1970-04-26 17:46:40.000 UTC',"
         "    traces: ["
         "        {"
         "            timestamp_ms: 1.7,"

@@ -5,7 +5,7 @@
 
 namespace search::engine {
 
-fastos::TimeStamp
+fastos::SteadyTimeStamp
 SteadyClock::now() const {
     return fastos::ClockSteady::now();
 }
@@ -38,7 +38,7 @@ Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
 void
 Trace::start(int level) {
     if (shouldTrace(level) && !hasTrace()) {
-        root().setString("start_time_utc", _relativeTime.timeOfDawn().toString());
+        root().setString("start_time_relative", _relativeTime.timeOfDawn().toString());
     }
 }
 

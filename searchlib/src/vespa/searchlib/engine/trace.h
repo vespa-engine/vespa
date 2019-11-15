@@ -13,21 +13,21 @@ namespace search::engine {
 class Clock {
 public:
     virtual ~Clock() = default;
-    virtual fastos::TimeStamp now() const = 0;
+    virtual fastos::SteadyTimeStamp now() const = 0;
 };
 
 class SteadyClock : public Clock {
 public:
-    fastos::TimeStamp now() const override;
+    fastos::SteadyTimeStamp now() const override;
 };
 
 class CountingClock : public Clock {
 public:
     CountingClock(int64_t start, int64_t increment) : _increment(increment), _nextTime(start) { }
-    fastos::TimeStamp now() const override {
+    fastos::SteadyTimeStamp now() const override {
         int64_t prev = _nextTime;
         _nextTime += _increment;
-        return prev;
+        return fastos::SteadyTimeStamp(prev);
     }
 private:
     const int64_t   _increment;
@@ -37,12 +37,12 @@ private:
 class RelativeTime {
 public:
     RelativeTime(std::unique_ptr<Clock> clock);
-    fastos::TimeStamp timeOfDawn() const { return _start; }
+    fastos::SteadyTimeStamp timeOfDawn() const { return _start; }
     fastos::TimeStamp timeSinceDawn() const { return _clock->now() - _start; }
-    fastos::TimeStamp now() const { return _clock->now(); }
+    fastos::SteadyTimeStamp now() const { return _clock->now(); }
 private:
-    fastos::TimeStamp      _start;
-    std::unique_ptr<Clock> _clock;
+    fastos::SteadyTimeStamp _start;
+    std::unique_ptr<Clock>  _clock;
 };
 
 /**

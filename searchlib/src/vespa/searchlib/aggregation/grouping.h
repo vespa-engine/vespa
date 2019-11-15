@@ -6,11 +6,11 @@
 #include <vespa/vespalib/util/clock.h>
 
 namespace search {
+    class BitVector;
+    struct IDocumentMetaStore;
+}
 
-class BitVector;
-struct IDocumentMetaStore;
-
-namespace aggregation {
+namespace search::aggregation {
 
 /**
  * This class represents a top-level grouping request.
@@ -22,18 +22,18 @@ public:
     typedef std::unique_ptr<Grouping> UP;
 
 private:
-    uint32_t               _id;         // client id for this grouping
-    bool                   _valid;      // is this grouping object valid?
-    bool                   _all;        // if true, group all document, not just hits (streaming only)
-    int64_t                _topN;       // hits to process per search node
-    uint32_t               _firstLevel; // first processing level this iteration (levels before considered frozen)
-    uint32_t               _lastLevel;  // last processing level this iteration
-    GroupingLevelList      _levels;     // grouping parameters per level
-    Group                  _root;       // the grouping tree
-    const vespalib::Clock *_clock;      // An optional clock to be used for timeout handling.
-    fastos::TimeStamp      _timeOfDoom; // Used if clock is specified. This is time when request expires.
+    uint32_t                 _id;         // client id for this grouping
+    bool                     _valid;      // is this grouping object valid?
+    bool                     _all;        // if true, group all document, not just hits (streaming only)
+    int64_t                  _topN;       // hits to process per search node
+    uint32_t                 _firstLevel; // first processing level this iteration (levels before considered frozen)
+    uint32_t                 _lastLevel;  // last processing level this iteration
+    GroupingLevelList        _levels;     // grouping parameters per level
+    Group                    _root;       // the grouping tree
+    const vespalib::Clock   *_clock;      // An optional clock to be used for timeout handling.
+    fastos::SteadyTimeStamp  _timeOfDoom; // Used if clock is specified. This is time when request expires.
 
-    bool hasExpired() const { return _clock->getTimeNS() >= _timeOfDoom; }
+    bool hasExpired() const { return _clock->getTimeNS() > _timeOfDoom; }
     void aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len);
     void aggregateWithClock(const RankedHit * rankedHit, unsigned int len);
     void postProcess();
@@ -46,7 +46,7 @@ public:
     Grouping & operator = (const Grouping &);
     Grouping(Grouping &&) = default;
     Grouping & operator = (Grouping &&) = default;
-    ~Grouping();
+    ~Grouping() override;
 
     Grouping unchain() const { return *this; }
 
@@ -59,7 +59,7 @@ public:
     Grouping &addLevel(GroupingLevel && level)  { _levels.push_back(std::move(level)); return *this; }
     Grouping &setRoot(const Group &root_)       { _root = root_;            return *this; }
     Grouping &setClock(const vespalib::Clock * clock) { _clock = clock; return *this; }
-    Grouping &setTimeOfDoom(fastos::TimeStamp timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }
+    Grouping &setTimeOfDoom(fastos::SteadyTimeStamp timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }
 
     unsigned int getId()     const { return _id; }
     bool valid()             const { return _valid; }
@@ -96,5 +96,4 @@ public:
     void cleanupAttributeReferences();
 };
 
-}
 }

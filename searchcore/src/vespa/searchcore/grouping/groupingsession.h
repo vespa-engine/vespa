@@ -30,7 +30,7 @@ private:
     std::unique_ptr<GroupingContext> _mgrContext;
     std::unique_ptr<GroupingManager> _groupingManager;
     GroupingMap                      _groupingMap;
-    fastos::TimeStamp                _timeOfDoom;
+    fastos::SteadyTimeStamp          _timeOfDoom;
 
 public:
     typedef std::unique_ptr<GroupingSession> UP;
@@ -108,7 +108,7 @@ public:
     /**
      * Get this sessions timeout.
      */
-    fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
+    fastos::SteadyTimeStamp getTimeOfDoom() const { return _timeOfDoom; }
 };
 
 }

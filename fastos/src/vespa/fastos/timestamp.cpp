@@ -50,25 +50,33 @@ time() {
 
 namespace {
 
-TimeStamp
+SteadyTimeStamp
 steady_now() {
-    return duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
+    return SteadyTimeStamp(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
 }
 
 }
 
-TimeStamp
+SteadyTimeStamp
 ClockSteady::now()
 {
     return steady_now();
 }
 
-StopWatch &
-StopWatch::start() {
-    _startTime = steady_now();
-    _stopTime = _startTime;
-    return *this;
+const SteadyTimeStamp SteadyTimeStamp::ZERO;
+const SteadyTimeStamp SteadyTimeStamp::FUTURE(TimeStamp::FUTURE);
+
+TimeStamp
+SteadyTimeStamp::toUTC() const {
+    TimeStamp nowUtc = ClockSystem::now();
+    SteadyTimeStamp nowSteady = ClockSteady::now();
+    return nowUtc - (nowSteady - *this);
 }
+
+StopWatch::StopWatch()
+    : _startTime(steady_now()),
+      _stopTime(_startTime)
+{ }
 
 StopWatch &
 StopWatch::stop()  {
