@@ -376,6 +376,19 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testExpand() {
+        EvaluationTester tester = new EvaluationTester();
+        // Add a dimension using a literal tensor
+        tester.assertEvaluates("tensor(d0[1], d1[3]):[1, 2, 3]",
+                               "tensor0 * tensor(d0[1]):[1]",
+                               "tensor(d1[3]):[1, 2, 3]");
+        // Add a dimension using tensor generate
+        tester.assertEvaluates("tensor(d0[1], d1[3]):[1, 2, 3]",
+                               "tensor0 * tensor(d0[1])(1)",
+                               "tensor(d1[3]):[1, 2, 3]");
+    }
+
+    @Test
     public void testProgrammaticBuildingAndPrecedence() {
         RankingExpression standardPrecedence = new RankingExpression(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, new ArithmeticNode(constant(3), ArithmeticOperator.MULTIPLY, constant(4))));
         RankingExpression oppositePrecedence = new RankingExpression(new ArithmeticNode(new ArithmeticNode(constant(2), ArithmeticOperator.PLUS, constant(3)), ArithmeticOperator.MULTIPLY, constant(4)));
