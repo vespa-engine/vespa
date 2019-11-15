@@ -61,6 +61,12 @@ public:
     static int64_t now();
 };
 
+class ClockSteady
+{
+public:
+    static int64_t now();
+};
+
 class StopWatch
 {
 public:

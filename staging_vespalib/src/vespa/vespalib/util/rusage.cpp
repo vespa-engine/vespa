@@ -43,7 +43,7 @@ RUsage RUsage::createChildren()
 RUsage RUsage::createSelf(const fastos::TimeStamp & since)
 {
     RUsage r;
-    r._time = fastos::TimeStamp(fastos::ClockSystem::now()) - since;
+    r._time = fastos::TimeStamp(fastos::ClockSteady::now()) - since;
     if (getrusage(RUSAGE_SELF, &r) != 0) {
         throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
@@ -53,7 +53,7 @@ RUsage RUsage::createSelf(const fastos::TimeStamp & since)
 RUsage RUsage::createChildren(const fastos::TimeStamp & since)
 {
     RUsage r;
-    r._time = fastos::TimeStamp(fastos::ClockSystem::now()) - since;
+    r._time = fastos::TimeStamp(fastos::ClockSteady::now()) - since;
     if (getrusage(RUSAGE_CHILDREN, &r) != 0) {
         throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }

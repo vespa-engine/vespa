@@ -30,7 +30,7 @@ Test::testRUsage()
     RUsage diff = r2-r1;
     EXPECT_EQUAL(diff.toString(), r2.toString());
     {
-        RUsage then = RUsage::createSelf(17765895674);
+        RUsage then = RUsage::createSelf(7);
         RUsage now = RUsage::createSelf();
         EXPECT_NOT_EQUAL(now.toString(), then.toString());
     }
