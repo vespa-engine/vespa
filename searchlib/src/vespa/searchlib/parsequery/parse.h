@@ -72,23 +72,19 @@ public:
      *  (juniper/src/query.h)
      */
     enum ItemCreator {
-        CREA_ORIG = 0,  // Original user query
-        CREA_FILTER     // Automatically applied filter (no specific type)
+        CREA_ORIG = 0  // Original user query
     };
 
     enum ItemFeatures {
-        IF_MASK           = 0xE0, // mask for item features
         IF_WEIGHT         = 0x20, // item has rank weight
         IF_UNIQUEID       = 0x40, // item has unique id
         IF_FLAGS          = 0x80, // item has extra flags
-        IF_SUPPORTED_MASK = 0xE0  // mask for supported item features
     };
 
     enum ItemFlags {
         IFLAG_NORANK         = 0x00000001, // this term should not be ranked (not exposed to rank framework)
         IFLAG_SPECIALTOKEN   = 0x00000002,
         IFLAG_NOPOSITIONDATA = 0x00000004, // we should not use position data when ranking this term
-        IFLAG_FILTER         = 0x00000008
     };
 
 private:
@@ -160,15 +156,6 @@ public:
     ParseItem(ItemType type, int arity, const char *index);
 
 /**
- * Overloaded constructor for ParseItem. Used for TERMs.
- *
- * @param type The type of the ParseItem.
- * @param idx The name of the index of the ParseItem.
- * @param term The actual term string of the ParseItem.
- */
-    ParseItem(ItemType type, vespalib::stringref index, const char *term);
-
-/**
  * Overloaded constructor for ParseItem. Used for TERMs without index.
  *
  * @param type The type of the ParseItem.
@@ -215,8 +202,6 @@ public:
      * @param buf Pointer to a buffer containing the encoded contents.
      */
     void AppendBuffer(RawBuf *buf) const;
-
-    size_t GetBufferLen() const;
 };
 
 }

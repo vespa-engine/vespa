@@ -10,6 +10,7 @@
 #include <vespa/vsm/searcher/intfieldsearcher.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -148,13 +149,9 @@ vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearc
     return os;
 }
 
-FieldSearchSpecMap::FieldSearchSpecMap() :
-    _specMap(),
-    _documentTypeMap(),
-    _nameIdMap()
-{ }
+FieldSearchSpecMap::FieldSearchSpecMap() = default;
 
-FieldSearchSpecMap::~FieldSearchSpecMap() {}
+FieldSearchSpecMap::~FieldSearchSpecMap() = default;
 
 namespace {
     const std::string _G_empty("");
