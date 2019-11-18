@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.protect.Validator;
 
 import java.nio.ByteBuffer;
@@ -15,7 +14,6 @@ import java.util.Optional;
  *
  * @author baldersheim
  */
-@Beta
 public class SameElementItem extends NonReducibleCompositeItem {
 
     private final String fieldName;
