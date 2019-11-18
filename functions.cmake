@@ -550,8 +550,7 @@ function(install_java_artifact NAME)
 endfunction()
 
 function(install_java_artifact_dependencies NAME)
-    install(DIRECTORY "target/dependency/" DESTINATION lib/jars/${NAME} FILES_MATCHING PATTERN "*.jar")
-    install(CODE "execute_process(COMMAND bash -c \"cd \$ENV{DESTDIR}/${CMAKE_INSTALL_PREFIX}/lib/jars && if [ -d ${NAME} ]; then ln -sf ${NAME}/*.jar . ; fi\")")
+    install(DIRECTORY "target/dependency/" DESTINATION lib/jars FILES_MATCHING PATTERN "*.jar")
 endfunction()
 
 function(install_fat_java_artifact NAME)
