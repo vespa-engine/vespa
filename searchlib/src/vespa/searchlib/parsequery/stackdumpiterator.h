@@ -59,6 +59,7 @@ private:
     vespalib::string readString(const char *&p);
     vespalib::stringref read_stringref(const char *&p);
     uint64_t readUint64(const char *&p);
+    double read_double(const char *&p);
     uint64_t readCompressedPositiveInt(const char *&p);
 
 public:

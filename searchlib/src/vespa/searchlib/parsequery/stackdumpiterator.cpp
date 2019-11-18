@@ -33,7 +33,9 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref b
 
 SimpleQueryStackDumpIterator::~SimpleQueryStackDumpIterator() = default;
 
-vespalib::string SimpleQueryStackDumpIterator::readString(const char *&p) {
+vespalib::string
+SimpleQueryStackDumpIterator::readString(const char *&p)
+{
     if (p >= _bufEnd) throw false;
     uint64_t tmp;
     p += vespalib::compress::Integer::decompressPositive(tmp, p);
@@ -55,18 +57,32 @@ SimpleQueryStackDumpIterator::read_stringref(const char *&p)
     return result;
 }
 
-uint64_t SimpleQueryStackDumpIterator::readUint64(const char *&p) {
+uint64_t
+SimpleQueryStackDumpIterator::readUint64(const char *&p)
+{
     if (p + sizeof(uint64_t) > _bufEnd) throw false;
     uint64_t l = vespalib::nbo::n2h(*(const uint64_t *)(const void *)p);
     p += sizeof(uint64_t);
     return l;
 }
 
+double
+SimpleQueryStackDumpIterator::read_double(const char *&p)
+{
+    if (p >= _bufEnd) throw false;
+    double result = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p));
+    p += sizeof(double);
+    if (p > _bufEnd) throw false;
+    return result;
+}
+
 uint64_t
-SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char *&p) {
+SimpleQueryStackDumpIterator::readCompressedPositiveInt(const char *&p)
+{
     if (p >= _bufEnd) throw false;
     uint64_t tmp;
     p += vespalib::compress::Integer::decompressPositive(tmp, p);
+    if (p > _bufEnd) throw false;
     return tmp;
 }
 
@@ -85,7 +101,6 @@ SimpleQueryStackDumpIterator::next()
     uint8_t typefield = *p++;
     _currType = ParseItem::GetType(typefield);
 
-    uint64_t tmp(0);
     if (ParseItem::GetFeature_Weight(typefield)) {
         int64_t tmpLong;
         if (p >= _bufEnd) return false;
@@ -96,9 +111,11 @@ SimpleQueryStackDumpIterator::next()
         _currWeight.setPercent(100);
     }
     if (ParseItem::getFeature_UniqueId(typefield)) {
-        if (p >= _bufEnd) return false;
-        p += vespalib::compress::Integer::decompressPositive(tmp, p);
-        _currUniqueId = tmp;
+        try {
+            _currUniqueId = readCompressedPositiveInt(p);
+        } catch (...) {
+            return false;
+        }
     } else {
         _currUniqueId = 0;
     }
@@ -119,37 +136,32 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_NOT:
     case ParseItem::ITEM_RANK:
     case ParseItem::ITEM_ANY:
-        if (p >= _bufEnd) return false;
-        p += vespalib::compress::Integer::decompressPositive(tmp, p);
-        _currArity = tmp;
-        if (p > _bufEnd) return false;
-        _currArg1 = 0;
-        _curr_index_name = vespalib::stringref();
-        _curr_term = vespalib::stringref();
+        try {
+            _currArity = readCompressedPositiveInt(p);
+            _currArg1 = 0;
+            _curr_index_name = vespalib::stringref();
+            _curr_term = vespalib::stringref();
+        } catch (...) {
+            return false;
+        }
         break;
 
     case ParseItem::ITEM_NEAR:
     case ParseItem::ITEM_ONEAR:
-        if (p >= _bufEnd) return false;
-        p += vespalib::compress::Integer::decompressPositive(tmp, p);
-        _currArity = tmp;
-        if (p > _bufEnd) return false;
-        p += vespalib::compress::Integer::decompressPositive(tmp, p);
-        _currArg1 = tmp;
-        if (p > _bufEnd) return false;
-        _curr_index_name = vespalib::stringref();
-        _curr_term = vespalib::stringref();
+        try {
+            _currArity = readCompressedPositiveInt(p);
+            _currArg1 = readCompressedPositiveInt(p);
+            _curr_index_name = vespalib::stringref();
+            _curr_term = vespalib::stringref();
+        } catch (...) {
+            return false;
+        }
         break;
 
     case ParseItem::ITEM_WEAK_AND:
         try {
-            if (p >= _bufEnd) return false;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            _currArity = tmp;
-            if (p > _bufEnd) return false;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            _currArg1 = tmp;
-            if (p > _bufEnd) return false;
+            _currArity = readCompressedPositiveInt(p);
+            _currArg1 = readCompressedPositiveInt(p);
             _curr_index_name = read_stringref(p);
             _curr_term = vespalib::stringref();
         } catch (...) {
@@ -158,9 +170,7 @@ SimpleQueryStackDumpIterator::next()
         break;
     case ParseItem::ITEM_SAME_ELEMENT:
         try {
-            if (p >= _bufEnd) return false;
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            _currArity = tmp;
+            _currArity = readCompressedPositiveInt(p);
             _currArg1 = 0;
             _curr_index_name = read_stringref(p);
             _curr_term = vespalib::stringref();
@@ -194,7 +204,6 @@ SimpleQueryStackDumpIterator::next()
             _curr_index_name = read_stringref(p);
             _currArity = readCompressedPositiveInt(p);
             _curr_term = vespalib::stringref();
-            if (p > _bufEnd) return false;
         } catch (...) {
             return false;
         }
@@ -246,17 +255,12 @@ SimpleQueryStackDumpIterator::next()
     case ParseItem::ITEM_WAND:
     case ParseItem::ITEM_PHRASE:
         try {
-            p += vespalib::compress::Integer::decompressPositive(tmp, p);
-            _currArity = tmp;
-            if (p > _bufEnd) return false;
+            _currArity = readCompressedPositiveInt(p);
             _curr_index_name = read_stringref(p);
             if (_currType == ParseItem::ITEM_WAND) {
-                p += vespalib::compress::Integer::decompressPositive(tmp, p); // targetNumHits
-                _currArg1 = tmp;
-                _currArg2 = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // scoreThreshold
-                p += sizeof(double);
-                _currArg3 = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p)); // thresholdBoostFactor
-                p += sizeof(double);
+                _currArg1 = readCompressedPositiveInt(p); // targetNumHits
+                _currArg2 = read_double(p); // scoreThreshold
+                _currArg3 = read_double(p); // thresholdBoostFactor
             } else {
                 _currArg1 = 0;
             }
