@@ -57,6 +57,7 @@ public class InfraDeployerImpl implements InfraDeployer {
     }
 
     private class InfraDeployment implements Deployment {
+
         private final InfraApplicationApi application;
 
         private boolean prepared = false;

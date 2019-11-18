@@ -128,6 +128,10 @@ public final class Node {
     /** Returns the parent hostname for this node if this node is a docker container or a VM (i.e. it has a parent host). Otherwise, empty **/
     public Optional<String> parentHostname() { return parentHostname; }
 
+    public boolean hasParent(String hostname) {
+        return parentHostname.isPresent() && parentHostname.get().equals(hostname);
+    }
+
     /** Returns the flavor of this node */
     public Flavor flavor() { return flavor; }
 

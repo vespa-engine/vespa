@@ -122,7 +122,7 @@ class Activator {
             // Note: log parent hosts not ready, but do not add to exception (to avoid leaking hostnames)
             logger.log(LogLevel.INFO, application + ": Parent hosts not ready: " + nonActiveHosts);
             throw new ParentHostUnavailableException("Waiting for hosts to finish booting: " +
-                    numNonActive + "/" + parentHostnames.size() + " left.");
+                                                     numNonActive + "/" + parentHostnames.size() + " left.");
         }
     }
 

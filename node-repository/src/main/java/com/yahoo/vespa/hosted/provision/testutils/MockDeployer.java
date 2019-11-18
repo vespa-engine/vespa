@@ -73,7 +73,7 @@ public class MockDeployer implements Deployer {
         }
         try {
             return Optional.ofNullable(applications.get(id))
-                    .map(application -> new MockDeployment(provisioner, application));
+                           .map(application -> new MockDeployment(provisioner, application));
         } finally {
             lock.unlock();
         }
