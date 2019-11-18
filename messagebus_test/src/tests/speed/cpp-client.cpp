@@ -108,20 +108,17 @@ App::Main()
     // let the system 'warm up'
     FastOS_Thread::Sleep(5000);
 
-    FastOS_Time start;
-    FastOS_Time stop;
+    fastos::StopWatch stopWatch;
     uint32_t okBefore   = 0;
     uint32_t okAfter    = 0;
     uint32_t failBefore = 0;
     uint32_t failAfter  = 0;
 
-    start.SetNow();
     client.sample(okBefore, failBefore);
     FastOS_Thread::Sleep(10000); // Benchmark time
-    stop.SetNow();
+    stopWatch.stop();
     client.sample(okAfter, failAfter);
-    stop -= start;
-    double time = stop.MilliSecs();
+    double time = stopWatch.elapsed().ms();
     double msgCnt = (double)(okAfter - okBefore);
     double throughput = (msgCnt / time) * 1000.0;
     fprintf(stdout, "CPP-CLIENT: %g msg/s\n", throughput);

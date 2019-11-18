@@ -3,8 +3,8 @@
 
 #include "routable.h"
 #include <vespa/messagebus/routing/route.h>
-#include <vespa/fastos/time.h>
 #include <memory>
+#include <chrono>
 
 namespace mbus {
 
@@ -13,9 +13,10 @@ namespace mbus {
  */
 class Message : public Routable {
 private:
+    using time_point = std::chrono::steady_clock::time_point;
     Route       _route;
-    FastOS_Time _timeReceived;
-    uint64_t    _timeRemaining;
+    time_point  _timeReceived;
+    int64_t     _timeRemaining;
     bool        _retryEnabled;
     uint32_t    _retry;
 
@@ -39,7 +40,7 @@ public:
      * will log an error and generate an auto-reply to avoid having the sender
      * wait indefinetly for a reply.
      */
-    ~Message();
+    ~Message() override;
 
     void swapState(Routable &rhs) override;
 
@@ -50,20 +51,7 @@ public:
      *
      * @return The timestamp this was last seen.
      */
-    uint64_t getTimeReceived() const { return (uint64_t)_timeReceived.MilliSecs(); }
-
-    /**
-     * Sets the timestamp for when this message was last seen by message bus to
-     * the given time in milliseconds since epoch. Please see comment on {@link
-     * #isExpired()} for more information on how to determine whether or not a
-     * message has expired. You should never need to call this method yourself,
-     * as it is touched automatically whenever message bus encounters a new
-     * message.
-     *
-     * @param timeReceived The time received in milliseconds.
-     * @return This, to allow chaining.
-     */
-    Message &setTimeReceived(uint64_t timeReceived);
+    uint64_t getTimeReceived() const;
 
     /**
      * This is a convenience method to call {@link #setTimeReceived(uint64_t)}
@@ -106,14 +94,6 @@ public:
      * @return The remaining time in milliseconds.
      */
     uint64_t getTimeRemainingNow() const;
-
-    /**
-     * Returns whether or not this message has expired.
-     *
-     * @return True if {@link this#getTimeRemainingNow()} is less than or equal
-     *         to zero.
-     */
-    bool isExpired() { return getTimeRemainingNow() == 0; }
 
     /**
      * Access the route associated with this message.
@@ -171,16 +151,6 @@ public:
      * @return True to enable bucket sequencing.
      */
     virtual bool hasBucketSequence() { return false; }
-
-    /**
-     * Returns the identifier used to order message buckets. Any two messages
-     * that have the same bucket sequence are ensured to arrive at the NEXT peer
-     * in the order they were sent by THIS peer. This value is only respected if
-     * the {@link #hasBucketSequence()} method returns true.
-     *
-     * @return The bucket sequence.
-     */
-    virtual uint64_t getBucketSequence() { return 0; }
 
     /**
      * Obtain the approximate size of this message object in bytes. This enables

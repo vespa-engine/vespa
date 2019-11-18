@@ -10,6 +10,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".message");
 
+using namespace std::chrono;
 namespace mbus {
 
 Message::Message() :
@@ -29,7 +30,7 @@ Message::~Message()
         string backtrace = vespalib::getStackTrace(0);
         LOG(warning, "Deleted message %p with non-empty call-stack. Deleted at:\n%s",
             this, backtrace.c_str());
-        Reply::UP reply(new EmptyReply());
+        auto reply = std::make_unique<EmptyReply>();
         swapState(*reply);
         reply->addError(Error(ErrorCode::TRANSIENT_ERROR,
                               "The message object was deleted while containing state information; "
@@ -55,23 +56,21 @@ Message::swapState(Routable &rhs)
 }
 
 Message &
-Message::setTimeReceived(uint64_t timeReceived)
+Message::setTimeReceivedNow()
 {
-    _timeReceived.SetMilliSecs(timeReceived);
+    _timeReceived = steady_clock::now();
     return *this;
 }
 
-Message &
-Message::setTimeReceivedNow()
-{
-    _timeReceived.SetNow();
-    return *this;
+uint64_t
+Message::getTimeReceived() const {
+    return duration_cast<milliseconds>(_timeReceived.time_since_epoch()).count();
 }
 
 uint64_t
 Message::getTimeRemainingNow() const
 {
-    return (uint64_t)std::max(0.0, _timeRemaining - _timeReceived.MilliSecsToNow());
+    return std::max(0L, _timeRemaining - duration_cast<milliseconds>(steady_clock::now() - _timeReceived).count());
 }
 
 } // namespace mbus
