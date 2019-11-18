@@ -19,6 +19,7 @@ import java.util.Optional;
 public class Node {
 
     private final HostName hostname;
+    private final Optional<HostName> parentHostname;
     private final State state;
     private final NodeType type;
     private final Optional<ApplicationId> owner;
@@ -41,11 +42,12 @@ public class Node {
     private final String clusterId;
     private final ClusterType clusterType;
 
-    public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
+    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
                 double vcpu, double memoryGb, double diskGb, double bandwidthGbps, boolean fastDisk, int cost, String canonicalFlavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
+        this.parentHostname = parentHostname;
         this.state = state;
         this.type = type;
         this.owner = owner;
@@ -70,15 +72,19 @@ public class Node {
     }
 
     @TestOnly
-    public Node(HostName hostname, State state, NodeType type, Optional<ApplicationId> owner,
+    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion) {
-        this(hostname, state, type, owner, currentVersion, wantedVersion,
+        this(hostname, parentHostname, state, type, owner, currentVersion, wantedVersion,
              Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0,
              2, 8, 50, 1, true, 0, "d-2-8-50", "cluster", ClusterType.container);
     }
 
     public HostName hostname() {
         return hostname;
+    }
+
+    public Optional<HostName> parentHostname() {
+        return parentHostname;
     }
 
     public State state() { return state; }

@@ -54,6 +54,7 @@ public class ClusterInfoMaintainerTest {
 
     private void addNodes(ZoneId zone) {
         var nodeA = new Node(HostName.from("hostA"),
+                             Optional.empty(),
                              Node.State.active,
                              NodeType.tenant,
                              Optional.of(ApplicationId.from("tenant1", "app1", "default")),
@@ -76,6 +77,7 @@ public class ClusterInfoMaintainerTest {
                              "clusterA",
                              Node.ClusterType.container);
         var nodeB = new Node(HostName.from("hostB"),
+                             Optional.empty(),
                              Node.State.active,
                              NodeType.tenant,
                              Optional.of(ApplicationId.from("tenant1", "app1", "default")),

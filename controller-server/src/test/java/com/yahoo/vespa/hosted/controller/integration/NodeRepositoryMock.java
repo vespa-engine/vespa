@@ -67,6 +67,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void addFixedNodes(ZoneId zone) {
         var nodeA = new Node(HostName.from("hostA"),
+                             Optional.of(HostName.from("parentHostA")),
                              Node.State.active,
                              NodeType.tenant,
                              Optional.of(ApplicationId.from("tenant1", "app1", "default")),
@@ -89,6 +90,7 @@ public class NodeRepositoryMock implements NodeRepository {
                              "clusterA",
                              Node.ClusterType.container);
         var nodeB = new Node(HostName.from("hostB"),
+                             Optional.of(HostName.from("parentHostB")),
                              Node.State.active,
                              NodeType.tenant,
                              Optional.of(ApplicationId.from("tenant2", "app2", "default")),
@@ -160,7 +162,7 @@ public class NodeRepositoryMock implements NodeRepository {
         nodeRepository.getOrDefault(zone, Collections.emptyMap()).values()
                       .stream()
                       .filter(node -> node.type() == type)
-                      .map(node -> new Node(node.hostname(), node.state(), node.type(), node.owner(),
+                      .map(node -> new Node(node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(),
                                             node.currentVersion(), version))
                       .forEach(node -> putByHostname(zone, node));
     }
@@ -191,7 +193,7 @@ public class NodeRepositoryMock implements NodeRepository {
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
         modifyNodes(deployment, hostName, node -> {
             assert node.wantedVersion().equals(version);
-            return new Node(node.hostname(), node.state(), node.type(), node.owner(), version, version);
+            return new Node(node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(), version, version);
         });
     }
 
@@ -205,6 +207,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void requestRestart(DeploymentId deployment, Optional<HostName> hostname) {
         modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
+                                                           node.parentHostname(),
                                                            node.state(),
                                                            node.type(),
                                                            node.owner(),
@@ -230,6 +233,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void doRestart(DeploymentId deployment, Optional<HostName> hostname) {
         modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
+                                                           node.parentHostname(),
                                                            node.state(),
                                                            node.type(),
                                                            node.owner(),
@@ -255,6 +259,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void requestReboot(DeploymentId deployment, Optional<HostName> hostname) {
         modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
+                                                           node.parentHostname(),
                                                            node.state(),
                                                            node.type(),
                                                            node.owner(),
@@ -280,6 +285,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     public void doReboot(DeploymentId deployment, Optional<HostName> hostname) {
         modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
+                                                           node.parentHostname(),
                                                            node.state(),
                                                            node.type(),
                                                            node.owner(),

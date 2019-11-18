@@ -145,7 +145,7 @@ public class OsApiTest extends ControllerContainerTest {
                 for (Node node : nodeRepository().list(zone, application.id())) {
                     var version = targetVersion.orElse(node.wantedOsVersion());
                     nodeRepository().putByHostname(zone, new Node(
-                            node.hostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
+                            node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
                             node.wantedVersion(), version, version, node.serviceState(),
                             node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
                             node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
