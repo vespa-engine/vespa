@@ -14,8 +14,8 @@ import java.net.SocketTimeoutException;
 @SuppressWarnings("serial")
 public class ConnectionException extends ConvergenceException {
 
-    private ConnectionException(String message) {
-        super(message);
+    private ConnectionException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     /**
@@ -24,7 +24,7 @@ public class ConnectionException extends ConvergenceException {
      */
     public static RuntimeException handleException(String prefix, Throwable t) {
         if (isKnownConnectionException(t))
-            return new ConnectionException(prefix + t.getMessage());
+            return new ConnectionException(prefix + t.getMessage(), t);
 
         return new RuntimeException(prefix, t);
     }

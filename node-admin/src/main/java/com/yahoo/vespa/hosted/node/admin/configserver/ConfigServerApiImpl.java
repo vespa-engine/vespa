@@ -49,6 +49,11 @@ import java.util.logging.Logger;
 public class ConfigServerApiImpl implements ConfigServerApi {
 
     private static final Logger logger = Logger.getLogger(ConfigServerApiImpl.class.getName());
+    private static final RequestConfig DEFAULT_REQUEST_CONFIG = RequestConfig.custom()
+            .setConnectionRequestTimeout(1_000) // connection from connection manager
+            .setConnectTimeout(10_000) // establishment of connection
+            .setSocketTimeout(10_000) // waiting for data
+            .build();
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -134,9 +139,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut(configServer.resolve(path));
+            requestConfigOverride.ifPresent(put::setConfig);
             setContentTypeToApplicationJson(put);
             if (bodyJsonPojo.isPresent()) {
                 put.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo.get())));
@@ -146,9 +153,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch(configServer.resolve(path));
+            requestConfigOverride.ifPresent(patch::setConfig);
             setContentTypeToApplicationJson(patch);
             patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return patch;
@@ -156,21 +165,31 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T delete(String path, Class<T> wantedReturnType) {
-        return tryAllConfigServers(configServer ->
-                new HttpDelete(configServer.resolve(path)), wantedReturnType);
+    public <T> T delete(String path, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
+        return tryAllConfigServers(configServer -> {
+            HttpDelete delete = new HttpDelete(configServer.resolve(path));
+            requestConfigOverride.ifPresent(delete::setConfig);
+            return delete;
+        }, wantedReturnType);
     }
 
     @Override
-    public <T> T get(String path, Class<T> wantedReturnType) {
-        return tryAllConfigServers(configServer ->
-                new HttpGet(configServer.resolve(path)), wantedReturnType);
+    public <T> T get(String path, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfig = getRequestConfigOverride(paramsOrNull);
+        return tryAllConfigServers(configServer -> {
+            HttpGet get = new HttpGet(configServer.resolve(path));
+            requestConfig.ifPresent(get::setConfig);
+            return get;
+        }, wantedReturnType);
     }
 
     @Override
-    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
             HttpPost post = new HttpPost(configServer.resolve(path));
+            requestConfigOverride.ifPresent(post::setConfig);
             setContentTypeToApplicationJson(post);
             post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return post;
@@ -203,21 +222,26 @@ public class ConfigServerApiImpl implements ConfigServerApi {
         cm.setMaxTotal(200); // Increase max total connections to 200, which should be enough
 
         // Have experienced hang in socket read, which may have been because of
-        // system defaults, therefore set explicit timeouts. Set arbitrarily to
-        // 15s > 10s used by Orchestrator lock timeout.
-        int timeoutMs = 15_000;
-        RequestConfig requestBuilder = RequestConfig.custom()
-                .setConnectTimeout(timeoutMs) // establishment of connection
-                .setConnectionRequestTimeout(timeoutMs) // connection from connection manager
-                .setSocketTimeout(timeoutMs) // waiting for data
-                .build();
-
+        // system defaults, therefore set explicit timeouts.
         return HttpClientBuilder.create()
-                .setDefaultRequestConfig(requestBuilder)
+                .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
                 .disableAutomaticRetries()
                 .setUserAgent("node-admin")
                 .setConnectionManager(cm)
                 .build();
+    }
+
+    private static Optional<RequestConfig> getRequestConfigOverride(Params paramsOrNull) {
+        if (paramsOrNull == null) return Optional.empty();
+
+        RequestConfig.Builder builder = RequestConfig.copy(DEFAULT_REQUEST_CONFIG);
+
+        paramsOrNull.getConnectionTimeout().ifPresent(connectionTimeout -> {
+            builder.setConnectTimeout((int) connectionTimeout.toMillis());
+            builder.setSocketTimeout((int) connectionTimeout.toMillis());
+        });
+
+        return Optional.of(builder.build());
     }
 
     // Shuffle config server URIs to balance load

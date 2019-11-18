@@ -15,15 +15,19 @@ import org.junit.Test;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +40,9 @@ import static org.mockito.Mockito.when;
  * @author dybis
  */
 public class ConfigServerApiImplTest {
+
+    private static final int FAIL_RETURN_CODE = 100000;
+    private static final int TIMEOUT_RETURN_CODE = 100001;
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class TestPojo {
@@ -50,7 +57,7 @@ public class ConfigServerApiImplTest {
     private final List<URI> configServers = Arrays.asList(URI.create(uri1), URI.create(uri2));
     private final StringBuilder mockLog = new StringBuilder();
 
-    private ConfigServerApiImpl executor;
+    private ConfigServerApiImpl configServerApi;
     private int mockReturnCode = 200;
 
     @Before
@@ -59,7 +66,11 @@ public class ConfigServerApiImplTest {
         when(httpMock.execute(any())).thenAnswer(invocationOnMock -> {
             HttpGet get = (HttpGet) invocationOnMock.getArguments()[0];
             mockLog.append(get.getMethod()).append(" ").append(get.getURI()).append("  ");
-            if (mockReturnCode == 100000) throw new RuntimeException("FAIL");
+
+            switch (mockReturnCode) {
+                case FAIL_RETURN_CODE: throw new RuntimeException("FAIL");
+                case TIMEOUT_RETURN_CODE: throw new SocketTimeoutException("read timed out");
+            }
 
             BasicStatusLine statusLine = new BasicStatusLine(HttpVersion.HTTP_1_1, mockReturnCode, null);
             BasicHttpEntity entity = new BasicHttpEntity();
@@ -73,12 +84,12 @@ public class ConfigServerApiImplTest {
 
             return response;
         });
-        executor = ConfigServerApiImpl.createForTestingWithClient(configServers, httpMock);
+        configServerApi = ConfigServerApiImpl.createForTestingWithClient(configServers, httpMock);
     }
 
     @Test
     public void testBasicParsingSingleServer() {
-        TestPojo answer = executor.get("/path", TestPojo.class);
+        TestPojo answer = configServerApi.get("/path", TestPojo.class);
         assertThat(answer.foo, is("bar"));
         assertLogStringContainsGETForAHost();
     }
@@ -88,7 +99,7 @@ public class ConfigServerApiImplTest {
         // Server is returning 400, no retries.
         mockReturnCode = 400;
 
-        TestPojo testPojo = executor.get("/path", TestPojo.class);
+        TestPojo testPojo = configServerApi.get("/path", TestPojo.class);
         assertEquals(testPojo.errorCode.intValue(), mockReturnCode);
         assertLogStringContainsGETForAHost();
     }
@@ -98,17 +109,33 @@ public class ConfigServerApiImplTest {
         // Server is returning 201, no retries.
         mockReturnCode = 201;
 
-        TestPojo testPojo = executor.get("/path", TestPojo.class);
+        TestPojo testPojo = configServerApi.get("/path", TestPojo.class);
         assertEquals(testPojo.errorCode.intValue(), mockReturnCode);
         assertLogStringContainsGETForAHost();
     }
 
     @Test
+    public void testBasicSuccessWithCustomTimeouts() {
+        mockReturnCode = TIMEOUT_RETURN_CODE;
+
+        var params = new ConfigServerApi.Params();
+        params.setConnectionTimeout(Duration.ofSeconds(3));
+
+        try {
+            TestPojo testPojo = configServerApi.get("/path", TestPojo.class, params);
+            fail();
+        } catch (ConnectionException e) {
+            assertNotNull(e.getCause());
+            assertEquals("read timed out", e.getCause().getMessage());
+        }
+    }
+
+    @Test
     public void testRetries() {
         // Client is throwing exception, should be retries.
-        mockReturnCode = 100000;
+        mockReturnCode = FAIL_RETURN_CODE;
         try {
-            executor.get("/path", TestPojo.class);
+            configServerApi.get("/path", TestPojo.class);
             fail("Expected failure");
         } catch (Exception e) {
             // ignore
@@ -123,7 +150,7 @@ public class ConfigServerApiImplTest {
         // Client is throwing exception, should be retries.
         mockReturnCode = 503;
         try {
-            executor.get("/path", TestPojo.class);
+            configServerApi.get("/path", TestPojo.class);
             fail("Expected failure");
         } catch (Exception e) {
             // ignore
@@ -136,7 +163,7 @@ public class ConfigServerApiImplTest {
     public void testForbidden() {
         mockReturnCode = 403;
         try {
-            executor.get("/path", TestPojo.class);
+            configServerApi.get("/path", TestPojo.class);
             fail("Expected exception");
         } catch (HttpException.ForbiddenException e) {
             // ignore
@@ -149,7 +176,7 @@ public class ConfigServerApiImplTest {
         // Server is returning 404, special exception is thrown.
         mockReturnCode = 404;
         try {
-            executor.get("/path", TestPojo.class);
+            configServerApi.get("/path", TestPojo.class);
             fail("Expected exception");
         } catch (HttpException.NotFoundException e) {
             // ignore
@@ -161,7 +188,7 @@ public class ConfigServerApiImplTest {
     public void testConflict() {
         // Server is returning 409, no exception is thrown.
         mockReturnCode = 409;
-        executor.get("/path", TestPojo.class);
+        configServerApi.get("/path", TestPojo.class);
         assertLogStringContainsGETForAHost();
     }
 
