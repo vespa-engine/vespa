@@ -71,7 +71,7 @@ public class DeploymentIssueReporter extends Maintainer {
 
         for (Application application : applications)
             if (failingApplications.contains(application.id()))
-                fileDeploymentIssueFor(application.id());
+                fileDeploymentIssueFor(application);
             else
                 store(application.id(), null);
     }
@@ -116,18 +116,18 @@ public class DeploymentIssueReporter extends Maintainer {
     }
 
     /** File an issue for applicationId, if it doesn't already have an open issue associated with it. */
-    private void fileDeploymentIssueFor(TenantAndApplicationId applicationId) {
+    private void fileDeploymentIssueFor(Application application) {
         try {
-            Tenant tenant = ownerOf(applicationId);
+            Tenant tenant = ownerOf(application.id());
             tenant.contact().ifPresent(contact -> {
-                User assignee = tenant.type() == Tenant.Type.user ? userFor(tenant) : null;
-                Optional<IssueId> ourIssueId = controller().applications().requireApplication(applicationId).deploymentIssueId();
-                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, applicationId.defaultInstance(), assignee, contact);
-                store(applicationId, issueId);
+                User assignee = tenant.type() == Tenant.Type.user ? userFor(tenant) : application.owner().orElse(null);
+                Optional<IssueId> ourIssueId = application.deploymentIssueId();
+                IssueId issueId = deploymentIssues.fileUnlessOpen(ourIssueId, application.id().defaultInstance(), assignee, contact);
+                store(application.id(), issueId);
             });
         }
         catch (RuntimeException e) { // Catch errors due to wrong data in the controller, or issues client timeout.
-            log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + applicationId + "': " + Exceptions.toMessageString(e));
+            log.log(Level.INFO, "Exception caught when attempting to file an issue for '" + application.id() + "': " + Exceptions.toMessageString(e));
         }
     }
 

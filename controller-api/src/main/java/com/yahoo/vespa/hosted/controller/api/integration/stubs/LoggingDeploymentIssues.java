@@ -55,7 +55,7 @@ public class LoggingDeploymentIssues implements DeploymentIssues {
     }
 
     @Override
-    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User asignee, Contact contact) {
+    public IssueId fileUnlessOpen(Optional<IssueId> issueId, ApplicationId applicationId, User assignee, Contact contact) {
         return fileUnlessPresent(issueId, applicationId);
     }
 
