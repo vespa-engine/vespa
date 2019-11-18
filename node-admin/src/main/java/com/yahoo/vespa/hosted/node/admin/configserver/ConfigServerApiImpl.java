@@ -49,6 +49,11 @@ import java.util.logging.Logger;
 public class ConfigServerApiImpl implements ConfigServerApi {
 
     private static final Logger logger = Logger.getLogger(ConfigServerApiImpl.class.getName());
+    private static final RequestConfig DEFAULT_REQUEST_CONFIG = RequestConfig.custom()
+            .setConnectionRequestTimeout(1_000) // connection from connection manager
+            .setConnectTimeout(10_000) // establishment of connection
+            .setSocketTimeout(10_000) // waiting for data
+            .build();
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -140,9 +145,10 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     @Override
     public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
             HttpPut put = new HttpPut(configServer.resolve(path));
-            setRequestConfigOverride(paramsOrNull, put);
+            requestConfigOverride.ifPresent(put::setConfig);
             setContentTypeToApplicationJson(put);
             if (bodyJsonPojo.isPresent()) {
                 put.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo.get())));
@@ -169,8 +175,17 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
     @Override
     public <T> T get(String path, Class<T> wantedReturnType) {
-        return tryAllConfigServers(configServer ->
-                new HttpGet(configServer.resolve(path)), wantedReturnType);
+        return get(path, wantedReturnType, null);
+    }
+
+    @Override
+    public <T> T get(String path, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfig = getRequestConfigOverride(paramsOrNull);
+        return tryAllConfigServers(configServer -> {
+            HttpGet get = new HttpGet(configServer.resolve(path));
+            requestConfig.ifPresent(get::setConfig);
+            return get;
+        }, wantedReturnType);
     }
 
     @Override
@@ -210,31 +225,25 @@ public class ConfigServerApiImpl implements ConfigServerApi {
 
         // Have experienced hang in socket read, which may have been because of
         // system defaults, therefore set explicit timeouts.
-        RequestConfig defaultRequestConfig = RequestConfig.custom()
-                .setConnectionRequestTimeout(1_000) // connection from connection manager
-                .setConnectTimeout(10_000) // establishment of connection
-                .setSocketTimeout(10_000) // waiting for data
-                .build();
-
         return HttpClientBuilder.create()
-                .setDefaultRequestConfig(defaultRequestConfig)
+                .setDefaultRequestConfig(DEFAULT_REQUEST_CONFIG)
                 .disableAutomaticRetries()
                 .setUserAgent("node-admin")
                 .setConnectionManager(cm)
                 .build();
     }
 
-    private static void setRequestConfigOverride(Params paramsOrNull, HttpRequestBase request) {
-        if (paramsOrNull == null) return;
+    private static Optional<RequestConfig> getRequestConfigOverride(Params paramsOrNull) {
+        if (paramsOrNull == null) return Optional.empty();
 
-        RequestConfig.Builder builder = RequestConfig.copy(request.getConfig());
+        RequestConfig.Builder builder = RequestConfig.copy(DEFAULT_REQUEST_CONFIG);
 
         paramsOrNull.getConnectionTimeout().ifPresent(connectionTimeout -> {
             builder.setConnectTimeout((int) connectionTimeout.toMillis());
             builder.setSocketTimeout((int) connectionTimeout.toMillis());
         });
 
-        request.setConfig(builder.build());
+        return Optional.of(builder.build());
     }
 
     // Shuffle config server URIs to balance load
