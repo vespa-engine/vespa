@@ -116,7 +116,6 @@ public class ConfigServerApiImplTest {
 
     @Test
     public void testBasicSuccessWithCustomTimeouts() {
-        // Server is returning 201, no retries.
         mockReturnCode = TIMEOUT_RETURN_CODE;
 
         var params = new ConfigServerApi.Params();

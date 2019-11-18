@@ -139,11 +139,6 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType) {
-        return put(path, bodyJsonPojo, wantedReturnType, null);
-    }
-
-    @Override
     public <T> T put(String path, Optional<Object> bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
         Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
@@ -158,9 +153,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T patch(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
             HttpPatch patch = new HttpPatch(configServer.resolve(path));
+            requestConfigOverride.ifPresent(patch::setConfig);
             setContentTypeToApplicationJson(patch);
             patch.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return patch;
@@ -168,14 +165,13 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T delete(String path, Class<T> wantedReturnType) {
-        return tryAllConfigServers(configServer ->
-                new HttpDelete(configServer.resolve(path)), wantedReturnType);
-    }
-
-    @Override
-    public <T> T get(String path, Class<T> wantedReturnType) {
-        return get(path, wantedReturnType, null);
+    public <T> T delete(String path, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
+        return tryAllConfigServers(configServer -> {
+            HttpDelete delete = new HttpDelete(configServer.resolve(path));
+            requestConfigOverride.ifPresent(delete::setConfig);
+            return delete;
+        }, wantedReturnType);
     }
 
     @Override
@@ -189,9 +185,11 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     }
 
     @Override
-    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType) {
+    public <T> T post(String path, Object bodyJsonPojo, Class<T> wantedReturnType, Params paramsOrNull) {
+        Optional<RequestConfig> requestConfigOverride = getRequestConfigOverride(paramsOrNull);
         return tryAllConfigServers(configServer -> {
             HttpPost post = new HttpPost(configServer.resolve(path));
+            requestConfigOverride.ifPresent(post::setConfig);
             setContentTypeToApplicationJson(post);
             post.setEntity(new StringEntity(mapper.writeValueAsString(bodyJsonPojo)));
             return post;
