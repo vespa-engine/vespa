@@ -675,7 +675,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                     .build();
             createModel(root, state, null, clusterElem);
         } catch (RuntimeException e) {
-            assertEquals(e.getMessage(), "Client certificate authority security/clients.pem is missing - see: https://vespa.ai/documentation/security-model#data-plane");
+            assertEquals(e.getMessage(), "Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
             return;
         }
         fail();

@@ -323,7 +323,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addTlsPort(DeployState deployState, ApplicationContainerCluster cluster) {
         boolean authorizeClient = deployState.zone().system().isPublic();
         if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
-            throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://vespa.ai/documentation/security-model#data-plane");
+            throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
         }
         if(cluster.getHttp() == null) {
             Http http = new Http(Collections.emptyList());
