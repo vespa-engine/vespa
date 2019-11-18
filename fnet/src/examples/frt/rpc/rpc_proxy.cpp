@@ -2,6 +2,7 @@
 
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fastos/app.h>
+#include <chrono>
 
 #include <vespa/log/log.h>
 LOG_SETUP("rpc_proxy");
@@ -83,13 +84,17 @@ ReqDone::RequestDone(FRT_RPCRequest *req)
 const char *
 RPCProxy::GetPrefix(FRT_RPCRequest *req)
 {
-    FastOS_Time t;
     tm currTime;
     tm *currTimePt;
 
-    t.SetNow();
-    time_t secs = t.Secs();
-    currTimePt = localtime_r(&secs, &currTime);
+    using clock = std::chrono::system_clock;
+    auto now = clock::now();
+    auto since = now.time_since_epoch();
+    auto secs = std::chrono::duration_cast<std::chrono::seconds>(since);
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(since - secs);
+    time_t my_time = clock::to_time_t(now);
+
+    currTimePt = localtime_r(&my_time, &currTime);
     assert(currTimePt == &currTime);
     (void) currTimePt;
 
@@ -107,7 +112,7 @@ RPCProxy::GetPrefix(FRT_RPCRequest *req)
             currTime.tm_hour,
             currTime.tm_min,
             currTime.tm_sec,
-            (int)(t.GetMicroSeconds() / 1000),
+            int(ms.count()),
             GetSession(req)->id,
             rid);
 

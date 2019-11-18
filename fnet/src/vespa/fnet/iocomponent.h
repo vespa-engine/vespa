@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include <vespa/fastos/timestamp.h>
+#include "scheduler.h"
 #include <vespa/vespalib/net/selector.h>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 class FNET_TransportThread;
 class FNET_Config;
@@ -24,6 +25,8 @@ class FNET_IOComponent
     FNET_IOComponent &operator=(const FNET_IOComponent &);
 
     using Selector = vespalib::Selector<FNET_IOComponent>;
+    using clock = FNET_Scheduler::clock;
+    using time_point = clock::time_point;
 
     struct Flags {
         Flags(bool shouldTimeout) :
@@ -47,7 +50,7 @@ protected:
     Selector                *_ioc_selector;      // attached event selector
     char                    *_ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
-    fastos::UTCTimeStamp     _ioc_timestamp;     // last I/O activity
+    time_point               _ioc_timestamp;     // last I/O activity
     std::mutex               _ioc_lock;          // synchronization
     std::condition_variable  _ioc_cond;          // synchronization
     uint32_t                 _ioc_refcnt;        // reference counter

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/databuffer.h>
-#include <vespa/fastos/time.h>
+#include <chrono>
 
 TEST("test resetIfEmpty") {
     FNET_DataBuffer buf(64);
@@ -53,11 +53,14 @@ TEST("testResize") {
 }
 
 TEST("testSpeed") {
+  using clock = std::chrono::steady_clock;
+  using ms_double = std::chrono::duration<double, std::milli>;
+
   FNET_DataBuffer buf0(20000);
   FNET_DataBuffer buf1(20000);
   FNET_DataBuffer buf2(20000);
-  FastOS_Time     start;
-  FastOS_Time     stop;
+  clock::time_point start;
+  ms_double         ms;
 
   int        i;
   int        k;
@@ -76,7 +79,7 @@ TEST("testSpeed") {
   buf0.DeadToData(buf0.GetDeadLen());
 
   // test encode/decode speed
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 5000; i++) {
     buf2.Clear();
@@ -109,15 +112,14 @@ TEST("testSpeed") {
     }
   }
   buf2.DeadToData(buf2.GetDeadLen());
-  stop.SetNow();
 
-  stop -= start;
-  fprintf(stderr, "encode/decode time (~160MB): %1.2f\n", stop.MilliSecs());
+  ms = (clock::now() - start);
+  fprintf(stderr, "encode/decode time (~160MB): %1.2f\n", ms.count());
 
   EXPECT_TRUE(buf0.Equals(&buf1) && buf0.Equals(&buf2));
 
   // test encode[fast]/decode speed
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 5000; i++) {
     buf2.Clear();
@@ -150,10 +152,9 @@ TEST("testSpeed") {
     }
   }
   buf2.DeadToData(buf2.GetDeadLen());
-  stop.SetNow();
 
-  stop -= start;
-  fprintf(stderr, "encode[fast]/decode time (~160MB): %1.2f\n", stop.MilliSecs());
+  ms = (clock::now() - start);
+  fprintf(stderr, "encode[fast]/decode time (~160MB): %1.2f\n", ms.count());
 
   EXPECT_TRUE(buf0.Equals(&buf1) && buf0.Equals(&buf2));
 
@@ -164,7 +165,7 @@ TEST("testSpeed") {
   }
 
   // test byte-swap table encoding speed
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 10000; i++) {
     buf1.Clear();
@@ -179,13 +180,12 @@ TEST("testSpeed") {
       buf1.WriteInt32Fast(table[k + 7]);
     }
   }
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "byte-swap array encoding[fast] (~160 MB): %1.2f ms\n",
-          stop.MilliSecs());
+          ms.count());
 
   // test direct-copy table encoding speed
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 10000; i++) {
     buf2.Clear();
@@ -193,10 +193,9 @@ TEST("testSpeed") {
     memcpy(buf2.GetFree(), table, 16000);
     buf2.FreeToData(16000);
   }
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "direct-copy array encoding (~160 MB): %1.2f ms\n",
-          stop.MilliSecs());
+          ms.count());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

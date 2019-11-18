@@ -2,7 +2,6 @@
 
 #include "packetqueue.h"
 #include "packet.h"
-#include <vespa/fastos/time.h>
 #include <cassert>
 #include <chrono>
 
@@ -226,19 +225,20 @@ FNET_PacketQueue::DequeuePacket(FNET_Context *context)
 FNET_Packet*
 FNET_PacketQueue::DequeuePacket(uint32_t maxwait, FNET_Context *context)
 {
+    using clock = std::chrono::steady_clock;
     FNET_Packet *packet = nullptr;
-    FastOS_Time  startTime;
-    int          waitTime;
+    clock::time_point end_time;
 
-    if (maxwait > 0)
-        startTime.SetNow();
+    if (maxwait > 0) {
+        end_time = (clock::now() + std::chrono::milliseconds(maxwait));
+    }
     std::unique_lock<std::mutex> guard(_lock);
     if (maxwait > 0) {
         bool timeout = false;
 
         _waitCnt++;
-        while ((_bufused == 0) && !timeout && (waitTime = (int)(maxwait - startTime.MilliSecsToNow())) > 0) {
-            timeout = _cond.wait_for(guard, std::chrono::milliseconds(waitTime)) == std::cv_status::timeout;
+        while ((_bufused == 0) && !timeout) {
+            timeout = _cond.wait_until(guard, end_time) == std::cv_status::timeout;
         }
         _waitCnt--;
     }

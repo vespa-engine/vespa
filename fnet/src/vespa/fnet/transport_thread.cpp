@@ -80,7 +80,7 @@ FNET_TransportThread::RemoveComponent(FNET_IOComponent *comp)
 void
 FNET_TransportThread::UpdateTimeOut(FNET_IOComponent *comp)
 {
-    comp->_ioc_timestamp = fastos::UTCTimeStamp(_now);
+    comp->_ioc_timestamp = _now;
     RemoveComponent(comp);
     AddComponent(comp);
 }
@@ -206,8 +206,7 @@ extern "C" {
 
 FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
     : _owner(owner_in),
-      _startTime(),
-      _now(),
+      _now(clock::now()),
       _scheduler(&_now),
       _config(),
       _componentsHead(nullptr),
@@ -224,10 +223,8 @@ FNET_TransportThread::FNET_TransportThread(FNET_Transport &owner_in)
       _started(false),
       _shutdown(false),
       _finished(false),
-      _waitFinished(false),
-      _deleted(false)
+      _waitFinished(false)
 {
-    _now.SetNow();
     trapsigpipe();
 }
 
@@ -236,7 +233,6 @@ FNET_TransportThread::~FNET_TransportThread()
 {
     {
         std::lock_guard<std::mutex> guard(_lock);
-        _deleted = true;
     }
     if (_started && !_finished) {
         LOG(error, "Transport: delete called on active object!");
@@ -386,12 +382,10 @@ bool
 FNET_TransportThread::InitEventLoop()
 {
     bool wasStarted;
-    bool wasDeleted;
     {
         std::lock_guard<std::mutex> guard(_lock);
         wasStarted = _started;
-        wasDeleted = _deleted;
-        if (!_started && !_deleted) {
+        if (!_started) {
             _started = true;
         }
     }
@@ -399,12 +393,7 @@ FNET_TransportThread::InitEventLoop()
         LOG(error, "Transport: InitEventLoop: object already active!");
         return false;
     }
-    if (wasDeleted) {
-        LOG(error, "Transport: InitEventLoop: object was deleted!");
-        return false;
-    }
-    _now.SetNow();
-    _startTime = _now;
+    _now = clock::now();
     return true;
 }
 
@@ -482,45 +471,21 @@ bool
 FNET_TransportThread::EventLoopIteration()
 {
     FNET_IOComponent   *component = nullptr;
-    int                 msTimeout = FNET_Scheduler::SLOT_TICK;
-
-#ifdef FNET_SANITY_CHECKS
-    FastOS_Time beforeGetEvents;
-#endif
+    int                 msTimeout = FNET_Scheduler::tick_ms.count();
 
     if (!IsShutDown()) {
-
-#ifdef FNET_SANITY_CHECKS
-        // Warn if event loop takes more than 250ms
-        beforeGetEvents.SetNow();
-        double loopTime = beforeGetEvents.MilliSecs() - _now.MilliSecs();
-        if (loopTime > 250.0)
-            LOG(warning, "SANITY: Transport loop time: %.2f ms", loopTime);
-#endif
-
         // obtain I/O events
         _selector.poll(msTimeout);
 
         // sample current time (performed once per event loop iteration)
-        _now.SetNow();
-
-#ifdef FNET_SANITY_CHECKS
-        // Warn if event extraction takes more than timeout + 100ms
-        double extractTime = _now.MilliSecs() - beforeGetEvents.MilliSecs();
-        if (extractTime > (double) msTimeout + 100.0)
-            LOG(warning, "SANITY: Event extraction time: %.2f ms (timeout: %d ms)",
-                extractTime, msTimeout);
-#endif
+        _now = clock::now();
 
         // handle wakeup and io-events
         _selector.dispatch(*this);
 
         // handle IOC time-outs
         if (_config._iocTimeOut > 0) {
-
-            FastOS_Time t = _now;
-            t.SubtractMilliSecs((double)_config._iocTimeOut);
-            fastos::UTCTimeStamp oldest(t);
+            time_point oldest = (_now - std::chrono::milliseconds(_config._iocTimeOut));
             while (_timeOutHead != nullptr &&
                    oldest > _timeOutHead->_ioc_timestamp) {
 

@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
 #include "dummy.h"
+#include <chrono>
 
 class SpinLock {
 private:
@@ -17,8 +18,12 @@ public:
 };
 
 TEST("lock speed") {
-  FastOS_Time      start;
-  FastOS_Time       stop;
+  using clock = std::chrono::steady_clock;
+  using ms_double = std::chrono::duration<double, std::milli>;
+
+  clock::time_point start;
+  ms_double         ms;
+
   DummyLock        dummy;
   std::mutex        lock;
   SpinLock          spin;
@@ -29,7 +34,7 @@ TEST("lock speed") {
   double     spin_factor;
   uint32_t             i;
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
     dummy.Lock();
     dummy.Unlock();
@@ -52,15 +57,14 @@ TEST("lock speed") {
     dummy.Lock();
     dummy.Unlock();
   }
-  stop.SetNow();
-  stop -= start;
-  dummyTime = stop.MilliSecs();
+  ms = (clock::now() - start);
+  dummyTime = ms.count();
 
   fprintf(stderr,
           "10M dummy lock/unlock: %f ms (%1.2f/ms)\n",
           dummyTime, 10000000.0 / dummyTime);
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
     lock.lock();
     lock.unlock();
@@ -83,17 +87,16 @@ TEST("lock speed") {
     lock.lock();
     lock.unlock();
   }
-  stop.SetNow();
-  stop -= start;
-  actualTime = stop.MilliSecs();
+  ms = (clock::now() - start);
+  actualTime = ms.count();
 
   fprintf(stderr,
           "10M actual lock/unlock: %f ms (%1.2f/ms)\n",
-          stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+          ms.count(), 10000000.0 / ms.count());
 
   overhead = (actualTime - dummyTime) / 10000.0;
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
     spin.lock();
     spin.unlock();
@@ -116,13 +119,12 @@ TEST("lock speed") {
     spin.lock();
     spin.unlock();
   }
-  stop.SetNow();
-  stop -= start;
-  actualTime = stop.MilliSecs();
+  ms = (clock::now() - start);
+  actualTime = ms.count();
 
   fprintf(stderr,
           "10M actual (spin) lock/unlock: %f ms (%1.2f/ms)\n",
-          stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+          ms.count(), 10000000.0 / ms.count());
 
   spin_overhead = (actualTime - dummyTime) / 10000.0;
 
@@ -142,7 +144,7 @@ TEST("lock speed") {
 
   //---------------------------------------------------------------------------
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
       [[maybe_unused]] std::mutex lock0;
       [[maybe_unused]] std::mutex lock1;
@@ -155,14 +157,13 @@ TEST("lock speed") {
       [[maybe_unused]] std::mutex lock8;
       [[maybe_unused]] std::mutex lock9;
   }
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "10M mutex create/destroy %f ms (%1.2f/ms)\n",
-      stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+      ms.count(), 10000000.0 / ms.count());
 
   //---------------------------------------------------------------------------
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
       std::condition_variable cond0;
       std::condition_variable cond1;
@@ -175,14 +176,13 @@ TEST("lock speed") {
       std::condition_variable cond8;
       std::condition_variable cond9;
   }
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "10M cond create/destroy %f ms (%1.2f/ms)\n",
-      stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+      ms.count(), 10000000.0 / ms.count());
 
   //---------------------------------------------------------------------------
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
       DummyObj dummy0;
       DummyObj dummy1;
@@ -195,14 +195,13 @@ TEST("lock speed") {
       DummyObj dummy8;
       DummyObj dummy9;
   }
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "10M dummy create/destroy %f ms (%1.2f/ms)\n",
-      stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+      ms.count(), 10000000.0 / ms.count());
 
   //---------------------------------------------------------------------------
 
-  start.SetNow();
+  start = clock::now();
   for (i = 0; i < 1000000; i++) {
       DummyObj *dummy0 = new DummyObj();
       DummyObj *dummy1 = new DummyObj();
@@ -225,10 +224,9 @@ TEST("lock speed") {
       delete dummy1;
       delete dummy0;
   }
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "10M dummy new/delete %f ms (%1.2f/ms)\n",
-          stop.MilliSecs(), 10000000.0 / stop.MilliSecs());
+          ms.count(), 10000000.0 / ms.count());
 
   //---------------------------------------------------------------------------
 }
