@@ -1,0 +1,5 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=vespa.config.search.core
+
+## The number of transport threads used when talking to search nodes.
+transportthreads                int         default=1 restart
