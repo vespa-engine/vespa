@@ -155,7 +155,7 @@ public class Flags {
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
     public static final UnboundBooleanFlag START_AND_STOP_VESPA_WITH_YINST = defineFeatureFlag(
-            "start-and-stop-vespa-with-yinst", false,
+            "start-and-stop-vespa-with-yinst", true,
             "Whether to start and stop Vespa with yinst commands or with start and stop scripts ",
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
