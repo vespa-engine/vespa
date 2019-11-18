@@ -35,8 +35,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.yolean.Exceptions;
 
@@ -534,9 +532,11 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         try {
-            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
-            return Optional.of(running);
+            return retrying(10, () -> {
+                logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+                controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+                return running;
+            });
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting application " + id.application(), e);
@@ -546,14 +546,32 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         try {
-            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-            controller.jobController().deactivateTester(id.tester(), id.type());
-            return Optional.of(running);
+            return retrying(10, () -> {
+                logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+                controller.jobController().deactivateTester(id.tester(), id.type());
+                return running;
+            });
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
             return Optional.of(error);
         }
+    }
+
+    private static Optional<RunStatus> retrying(int retries, Supplier<RunStatus> task) {
+        RuntimeException exception = null;
+        do {
+            try {
+                return Optional.of(task.get());
+            }
+            catch (RuntimeException e) {
+                if (exception == null)
+                    exception = e;
+                else
+                    exception.addSuppressed(e);
+            }
+        } while (--retries >= 0);
+        throw exception;
     }
 
     private Optional<RunStatus> report(RunId id, DualLogger logger) {
