@@ -131,7 +131,7 @@ public:
 AggregationContext::AggregationContext()
     : _attrMan(), _result(), _attrCtx(_attrMan.createContext())
 {}
-AggregationContext::~AggregationContext() {}
+AggregationContext::~AggregationContext() = default;
 //-----------------------------------------------------------------------------
 
 class Test : public TestApp
@@ -277,7 +277,7 @@ Test::Main()
     LOG(info, "sizeof(CountAggregationResult) = %ld", sizeof(CountAggregationResult));
     LOG(info, "sizeof(Int64ResultNode) = %ld", sizeof(Int64ResultNode));
 
-    fastos::TimeStamp start(fastos::ClockSystem::now());
+    fastos::SteadyTimeStamp start(fastos::ClockSteady::now());
     if (idType == "int") {
         if (aggrType == "sum") {
             benchmarkIntegerSum(useEngine, numDocs, numQueries, maxGroups);

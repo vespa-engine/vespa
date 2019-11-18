@@ -32,7 +32,8 @@ TimeStamp::asString(double timeInSeconds)
     return std::string(retval);
 }
 
-int64_t ClockSystem::now()
+int64_t
+ClockSystem::now()
 {
     struct timeval timeNow;
     gettimeofday(&timeNow, nullptr);
@@ -42,8 +43,45 @@ int64_t ClockSystem::now()
     return ns;
 }
 
-time_t time() {
+time_t
+time() {
     return system_clock::to_time_t(system_clock::now());
+}
+
+namespace {
+
+SteadyTimeStamp
+steady_now() {
+    return SteadyTimeStamp(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
+}
+
+}
+
+SteadyTimeStamp
+ClockSteady::now()
+{
+    return steady_now();
+}
+
+const SteadyTimeStamp SteadyTimeStamp::ZERO;
+const SteadyTimeStamp SteadyTimeStamp::FUTURE(TimeStamp::FUTURE);
+
+TimeStamp
+SteadyTimeStamp::toUTC() const {
+    TimeStamp nowUtc = ClockSystem::now();
+    SteadyTimeStamp nowSteady = ClockSteady::now();
+    return nowUtc - (nowSteady - *this);
+}
+
+StopWatch::StopWatch()
+    : _startTime(steady_now()),
+      _stopTime(_startTime)
+{ }
+
+StopWatch &
+StopWatch::stop()  {
+    _stopTime = steady_now();
+    return *this;
 }
 
 }

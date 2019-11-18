@@ -13,6 +13,8 @@ LOG_SETUP(".proton.server.rtchooks");
 
 using namespace vespalib;
 using vespalib::compression::CompressionConfig;
+using fastos::SteadyTimeStamp;
+using fastos::TimeStamp;
 
 namespace {
 
@@ -34,12 +36,12 @@ Pair::~Pair() = default;
 namespace proton {
 
 void
-RPCHooksBase::checkState(StateArg::UP arg)
+RPCHooksBase::checkState(std::unique_ptr<StateArg> arg)
 {
-    fastos::TimeStamp now(fastos::ClockSystem::now());
+    SteadyTimeStamp now(fastos::ClockSteady::now());
     if (now < arg->_dueTime) {
         std::unique_lock<std::mutex> guard(_stateLock);
-        if (_stateCond.wait_for(guard, std::chrono::milliseconds(std::min(INT64_C(1000), (arg->_dueTime - now)/fastos::TimeStamp::MS))) == std::cv_status::no_timeout) {
+        if (_stateCond.wait_for(guard, std::chrono::milliseconds(std::min(INT64_C(1000), (arg->_dueTime - now)/TimeStamp::MS))) == std::cv_status::no_timeout) {
             LOG(debug, "state has changed");
             reportState(*arg->_session, arg->_req);
             arg->_req->Return();
@@ -108,8 +110,7 @@ RPCHooksBase::reportState(Session & session, FRT_RPCRequest * req)
 }
 
 RPCHooksBase::Session::Session()
-    : _createTime(fastos::ClockSystem::now()),
-      _numDocs(0u),
+    : _numDocs(0u),
       _delayedConfigs(),
       _gen(-1),
       _down(false)
@@ -284,8 +285,8 @@ RPCHooksBase::rpc_GetState(FRT_RPCRequest *req)
     if (sharedSession->getGen() < 0 || sharedSession->getNumDocs() != numDocs) {  // NB Should use something else to define generation.
         reportState(*sharedSession, req);
     } else {
-        fastos::TimeStamp dueTime(fastos::ClockSystem::now() + timeoutMS * fastos::TimeStamp::MS);
-        StateArg::UP stateArg(new StateArg(sharedSession, req, dueTime));
+        SteadyTimeStamp dueTime(fastos::ClockSteady::now() + TimeStamp(timeoutMS * TimeStamp::MS));
+        auto stateArg = std::make_unique<StateArg>(sharedSession, req, dueTime);
         if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
             reportState(*sharedSession, req);
             req->Return();
@@ -349,8 +350,8 @@ RPCHooksBase::rpc_getIncrementalState(FRT_RPCRequest *req)
     if (sharedSession->getGen() < 0 || sharedSession->getNumDocs() != numDocs) {  // NB Should use something else to define generation.
         reportState(*sharedSession, req);
     } else {
-        fastos::TimeStamp dueTime(fastos::ClockSystem::now() + timeoutMS * fastos::TimeStamp::MS);
-        StateArg::UP stateArg(new StateArg(sharedSession, req, dueTime));
+        SteadyTimeStamp dueTime(fastos::ClockSteady::now() + TimeStamp(timeoutMS * TimeStamp::MS));
+        auto stateArg = std::make_unique<StateArg>(sharedSession, req, dueTime);
         if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
             reportState(*sharedSession, req);
             req->Return();

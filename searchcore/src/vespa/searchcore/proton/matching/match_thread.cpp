@@ -39,9 +39,7 @@ struct WaitTimer {
     fastos::StopWatch wait_time;
     WaitTimer(double &wait_time_s_in)
         : wait_time_s(wait_time_s_in), wait_time()
-    {
-        wait_time.start();
-    }
+    { }
     void done() {
         wait_time.stop();
         wait_time_s += wait_time.elapsed().sec();
@@ -433,8 +431,6 @@ MatchThread::run()
 {
     fastos::StopWatch total_time;
     fastos::StopWatch match_time;
-    total_time.start();
-    match_time.start();
     trace->addEvent(4, "Start MatchThread::run");
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);

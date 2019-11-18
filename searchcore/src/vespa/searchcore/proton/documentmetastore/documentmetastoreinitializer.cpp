@@ -23,11 +23,12 @@ DocumentMetaStoreInitializer(const vespalib::string baseDir,
     : _baseDir(baseDir),
       _subDbName(subDbName),
       _docTypeName(docTypeName),
-      _dms(dms)
+      _dms(std::move(dms))
 { }
 
 namespace {
-vespalib::string failedMsg(const char * msg) {
+vespalib::string
+failedMsg(const char * msg) {
     return make_string("Failed to load document meta store for document type '%s' from disk", msg);
 }
 }
@@ -43,16 +44,14 @@ DocumentMetaStoreInitializer::run()
             vespalib::string attrFileName = _baseDir + "/" + snap.dirName + "/" + name;
             _dms->setBaseFileName(attrFileName);
             assert(_dms->hasLoadData());
-            fastos::TimeStamp startTime = fastos::ClockSystem::now();
+            fastos::StopWatch stopWatch;
             EventLogger::loadDocumentMetaStoreStart(_subDbName);
             if (!_dms->load()) {
                 throw IllegalStateException(failedMsg(_docTypeName.c_str()));
             } else {
                 _dms->commit(snap.syncToken, snap.syncToken);
             }
-            fastos::TimeStamp endTime = fastos::ClockSystem::now();
-            int64_t elapsedTimeMs = (endTime - startTime).ms();
-            EventLogger::loadDocumentMetaStoreComplete(_subDbName, elapsedTimeMs);
+            EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.stop().elapsed().ms());
         }
     } else {
         vespalib::mkdir(_baseDir, false);

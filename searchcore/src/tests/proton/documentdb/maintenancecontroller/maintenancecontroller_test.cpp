@@ -199,7 +199,7 @@ struct MySessionCachePruner : public ISessionCachePruner
 {
     bool isInvoked;
     MySessionCachePruner() : isInvoked(false) { }
-    void pruneTimedOutSessions(fastos::TimeStamp current) override {
+    void pruneTimedOutSessions(fastos::SteadyTimeStamp current) override {
         (void) current;
         isInvoked = true;
     }

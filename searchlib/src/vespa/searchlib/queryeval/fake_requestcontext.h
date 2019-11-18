@@ -7,13 +7,12 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <limits>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 class FakeRequestContext : public IRequestContext
 {
 public:
-    FakeRequestContext(attribute::IAttributeContext * context = nullptr, fastos::TimeStamp doom=std::numeric_limits<int64_t>::max());
+    FakeRequestContext(attribute::IAttributeContext * context = nullptr, fastos::SteadyTimeStamp doom=fastos::SteadyTimeStamp(fastos::TimeStamp::FUTURE));
     const vespalib::Doom & getSoftDoom() const override { return _doom; }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
         return _attributeContext
@@ -31,5 +30,4 @@ private:
     attribute::IAttributeContext *_attributeContext;
 };
 
-}
 }

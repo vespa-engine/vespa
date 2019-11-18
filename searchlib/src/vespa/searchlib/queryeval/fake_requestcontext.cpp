@@ -2,14 +2,12 @@
 
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
-FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, fastos::TimeStamp doom_in) :
+FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, fastos::SteadyTimeStamp doom_in) :
     _clock(),
     _doom(_clock, doom_in),
     _attributeContext(context)
 { }
 
-}
 }

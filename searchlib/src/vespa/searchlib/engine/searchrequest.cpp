@@ -5,7 +5,7 @@
 namespace search::engine {
 
 SearchRequest::SearchRequest()
-    : SearchRequest(RelativeTime(std::make_unique<FastosClock>())) {}
+    : SearchRequest(RelativeTime(std::make_unique<SteadyClock>())) {}
 
 SearchRequest::SearchRequest(RelativeTime relativeTime)
     : Request(std::move(relativeTime)),

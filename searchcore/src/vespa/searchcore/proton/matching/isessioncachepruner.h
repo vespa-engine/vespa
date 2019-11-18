@@ -4,15 +4,12 @@
 
 #include <vespa/fastos/timestamp.h>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 struct ISessionCachePruner {
     virtual ~ISessionCachePruner() {}
 
-    virtual void pruneTimedOutSessions(fastos::TimeStamp currentTime) = 0;
+    virtual void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) = 0;
 };
 
-}  // namespace proton::matching
-}  // namespace proton
-
+}

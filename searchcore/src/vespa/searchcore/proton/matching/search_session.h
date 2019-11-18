@@ -34,16 +34,16 @@ public:
 private:
     typedef vespalib::string SessionId;
 
-    SessionId _session_id;
-    fastos::TimeStamp _create_time;
-    fastos::TimeStamp _time_of_doom;
-    OwnershipBundle   _owned_objects;
+    SessionId               _session_id;
+    fastos::SteadyTimeStamp _create_time;
+    fastos::SteadyTimeStamp _time_of_doom;
+    OwnershipBundle         _owned_objects;
     std::unique_ptr<MatchToolsFactory> _match_tools_factory;
 
 public:
     typedef std::shared_ptr<SearchSession> SP;
 
-    SearchSession(const SessionId &id, fastos::TimeStamp time_of_doom,
+    SearchSession(const SessionId &id, fastos::SteadyTimeStamp create_time, fastos::SteadyTimeStamp time_of_doom,
                   std::unique_ptr<MatchToolsFactory> match_tools_factory,
                   OwnershipBundle &&owned_objects);
     ~SearchSession();
@@ -54,12 +54,12 @@ public:
     /**
      * Gets this session's create time.
      */
-    fastos::TimeStamp getCreateTime() const { return _create_time; }
+    fastos::SteadyTimeStamp getCreateTime() const { return _create_time; }
 
     /**
      * Gets this session's timeout.
      */
-    fastos::TimeStamp getTimeOfDoom() const { return _time_of_doom; }
+    fastos::SteadyTimeStamp getTimeOfDoom() const { return _time_of_doom; }
 
     MatchToolsFactory &getMatchToolsFactory() { return *_match_tools_factory; }
 };

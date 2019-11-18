@@ -4,8 +4,6 @@
 #include <cassert>
 #include <chrono>
 
-using namespace fastos;
-
 namespace vespalib {
 
 
@@ -27,7 +25,7 @@ Clock::~Clock()
 
 void Clock::setTime() const
 {
-    _timeNS = ClockSystem::adjustTick2Sec(ClockSystem::now());
+    _timeNS = fastos::ClockSteady::now();
 }
 
 void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
@@ -43,7 +41,7 @@ void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
 }
 
 void
-Clock::stop(void)
+Clock::stop()
 {
     std::lock_guard<std::mutex> guard(_lock);
     _stop = true;

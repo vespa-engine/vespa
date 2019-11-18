@@ -30,37 +30,42 @@ RUsage::RUsage() :
     ru_nivcsw = 0;
 }
 
-RUsage RUsage::createSelf()
+RUsage
+RUsage::createSelf()
 {
-    return createSelf(0);
+    return createSelf(fastos::SteadyTimeStamp());
 }
 
-RUsage RUsage::createChildren()
+RUsage
+RUsage::createChildren()
 {
-    return createChildren(0);
+    return createChildren(fastos::SteadyTimeStamp());
 }
 
-RUsage RUsage::createSelf(const fastos::TimeStamp & since)
+RUsage
+RUsage::createSelf(fastos::SteadyTimeStamp since)
 {
     RUsage r;
-    r._time = fastos::TimeStamp(fastos::ClockSystem::now()) - since;
+    r._time = fastos::ClockSteady::now() - since;
     if (getrusage(RUSAGE_SELF, &r) != 0) {
         throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
     return r;
 }
 
-RUsage RUsage::createChildren(const fastos::TimeStamp & since)
+RUsage
+RUsage::createChildren(fastos::SteadyTimeStamp since)
 {
     RUsage r;
-    r._time = fastos::TimeStamp(fastos::ClockSystem::now()) - since;
+    r._time = fastos::ClockSteady::now() - since;
     if (getrusage(RUSAGE_CHILDREN, &r) != 0) {
         throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
     return r;
 }
 
-vespalib::string RUsage::toString()
+vespalib::string
+RUsage::toString()
 {
     vespalib::string s;
     if (_time.sec() != 0.0) s += make_string("duration = %1.6f\n", _time.sec());

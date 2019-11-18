@@ -33,11 +33,11 @@ public:
 
     struct SearchSessionInfo {
         vespalib::string id;
-        fastos::TimeStamp created;
-        fastos::TimeStamp doom;
+        fastos::SteadyTimeStamp created;
+        fastos::SteadyTimeStamp doom;
         SearchSessionInfo(const vespalib::string &id_in,
-                          fastos::TimeStamp created_in,
-                          fastos::TimeStamp doom_in)
+                          fastos::SteadyTimeStamp created_in,
+                          fastos::SteadyTimeStamp doom_in)
             : id(id_in), created(created_in), doom(doom_in) {}
     };
 
@@ -50,7 +50,7 @@ public:
     typedef std::shared_ptr<SessionManager> SP;
 
     SessionManager(uint32_t maxSizeGrouping);
-    ~SessionManager();
+    ~SessionManager() override;
 
     void insert(search::grouping::GroupingSession::UP session);
     search::grouping::GroupingSession::UP pickGrouping(const SessionId &id);
@@ -62,7 +62,7 @@ public:
     size_t getNumSearchSessions() const;
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
-    void pruneTimedOutSessions(fastos::TimeStamp currentTime) override;
+    void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) override;
     void close();
 };
 

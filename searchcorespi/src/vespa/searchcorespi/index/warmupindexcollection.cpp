@@ -12,7 +12,7 @@ LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 
 namespace searchcorespi {
 
-using fastos::ClockSystem;
+using fastos::ClockSteady;
 using fastos::TimeStamp;
 using index::IDiskIndex;
 using search::fef::MatchDataLayout;
@@ -42,7 +42,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     _warmup(warmup),
     _executor(executor),
     _warmupDone(warmupDone),
-    _warmupEndTime(ClockSystem::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
+    _warmupEndTime(ClockSteady::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
     _handledTerms(std::make_unique<FieldTermMap>())
 {
     if (next->valid()) {
@@ -68,7 +68,7 @@ WarmupIndexCollection::toString() const
 {
     vespalib::asciistream os;
     os << "warmup : ";
-    if (dynamic_cast<const IDiskIndex *>(&_warmup) != NULL) {
+    if (dynamic_cast<const IDiskIndex *>(&_warmup) != nullptr) {
         os << static_cast<const IDiskIndex &>(_warmup).getIndexDir();
     } else {
         os << typeid(_warmup).name();
@@ -81,7 +81,7 @@ WarmupIndexCollection::toString() const
 
 WarmupIndexCollection::~WarmupIndexCollection()
 {
-    if (_warmupEndTime != 0) {
+    if (_warmupEndTime != fastos::SteadyTimeStamp::ZERO) {
         LOG(info, "Warmup aborted due to new state change or application shutdown");
     }
    _executor.sync();
@@ -114,13 +114,13 @@ WarmupIndexCollection::getSourceId(uint32_t i) const
 void
 WarmupIndexCollection::fireWarmup(Task::UP task)
 {
-    fastos::TimeStamp now(fastos::ClockSystem::now());
+    fastos::SteadyTimeStamp now(fastos::ClockSteady::now());
     if (now < _warmupEndTime) {
         _executor.execute(std::move(task));
     } else {
         std::unique_lock<std::mutex> guard(_lock);
-        if (_warmupEndTime != 0) {
-            _warmupEndTime = 0;
+        if (_warmupEndTime != fastos::SteadyTimeStamp::ZERO) {
+            _warmupEndTime = fastos::SteadyTimeStamp::ZERO;
             guard.unlock();
             LOG(info, "Done warming up. Posting WarmupDoneTask");
             _warmupDone.warmupDone(shared_from_this());
@@ -132,7 +132,7 @@ bool
 WarmupIndexCollection::handledBefore(uint32_t fieldId, const Node &term)
 {
     const StringBase * sb(dynamic_cast<const StringBase *>(&term));
-    if (sb != NULL) {
+    if (sb != nullptr) {
         const vespalib::string & s = sb->getTerm();
         std::lock_guard<std::mutex> guard(_lock);
         TermMap::insert_result found = (*_handledTerms)[fieldId].insert(s);
@@ -155,7 +155,7 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
                                        const FieldSpecList &fields,
                                        const Node &term)
 {
-    if ( _warmupEndTime == 0) {
+    if ( _warmupEndTime == fastos::SteadyTimeStamp::ZERO) {
         // warmup done
         return _next->createBlueprint(requestContext, fields, term);
     }
@@ -224,7 +224,7 @@ WarmupIndexCollection::getSearchableSP(uint32_t i) const
 void
 WarmupIndexCollection::WarmupTask::run()
 {
-    if (_warmup._warmupEndTime != 0) {
+    if (_warmup._warmupEndTime != fastos::SteadyTimeStamp::ZERO) {
         LOG(debug, "Warming up %s", _bluePrint->asString().c_str());
         _bluePrint->fetchPostings(true);
         SearchIterator::UP it(_bluePrint->createSearch(*_matchData, true));

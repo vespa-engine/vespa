@@ -36,59 +36,85 @@ public:
     TimeStamp(long long v) : _time(v)     { }
     TimeStamp(unsigned long long v) : _time(v)  { }
     TimeStamp(Seconds v) : _time(v.val())    { }
-    TimeT val()                              const { return _time; }
-    operator TimeT ()                        const { return val(); }
-    TimeStamp & operator += (const TimeStamp & b)  { _time += b._time; return *this; }
-    TimeStamp & operator -= (const TimeStamp & b)  { _time -= b._time; return *this; }
-    TimeT time()                             const { return val()/NANO; }
-    TimeT ms()                               const { return val()/1000000; }
-    TimeT us()                               const { return val()/1000; }
-    TimeT ns()                               const { return val(); }
-    double sec()                             const { return val()/1000000000.0; }
-    std::string toString()                   const { return asString(sec()); }
+    TimeT val()                      const { return _time; }
+    operator TimeT ()                const { return val(); }
+    TimeStamp & operator += (TimeStamp b)  { _time += b._time; return *this; }
+    TimeStamp & operator -= (TimeStamp b)  { _time -= b._time; return *this; }
+    TimeT time()                     const { return val()/NANO; }
+    TimeT ms()                       const { return val()/1000000; }
+    TimeT us()                       const { return val()/1000; }
+    TimeT ns()                       const { return val(); }
+    double sec()                     const { return val()/1000000000.0; }
+    std::string toString()           const { return asString(sec()); }
     static std::string asString(double timeInSeconds);
     static TimeStamp fromSec(double sec) { return Seconds(sec); }
 private:
     TimeT _time;
 };
 
-inline TimeStamp operator +(const TimeStamp & a, const TimeStamp & b) { return TimeStamp(a.val() + b.val()); }
-inline TimeStamp operator -(const TimeStamp & a, const TimeStamp & b) { return TimeStamp(a.val() - b.val()); }
+inline TimeStamp operator +(TimeStamp a, TimeStamp b) { return TimeStamp(a.val() + b.val()); }
+inline TimeStamp operator -(TimeStamp a, TimeStamp b) { return TimeStamp(a.val() - b.val()); }
+
+class SteadyTimeStamp {
+public:
+    static const SteadyTimeStamp ZERO;
+    static const SteadyTimeStamp FUTURE;
+    SteadyTimeStamp() : _timeStamp() { }
+    explicit SteadyTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
+
+    friend TimeStamp operator -(SteadyTimeStamp a, SteadyTimeStamp b) {
+        return a._timeStamp - b._timeStamp;
+    }
+    friend SteadyTimeStamp operator +(SteadyTimeStamp a, TimeStamp b) {
+        return SteadyTimeStamp(a._timeStamp + b);
+    }
+    friend bool operator != (SteadyTimeStamp a, SteadyTimeStamp b) {
+        return a._timeStamp != b._timeStamp;
+    }
+    friend bool operator == (SteadyTimeStamp a, SteadyTimeStamp b) {
+        return a._timeStamp == b._timeStamp;
+    }
+    friend bool operator < (SteadyTimeStamp a, SteadyTimeStamp b) {
+        return a._timeStamp < b._timeStamp;
+    }
+    friend bool operator > (SteadyTimeStamp a, SteadyTimeStamp b) {
+        return a._timeStamp > b._timeStamp;
+    }
+    TimeStamp toUTC() const;
+    std::string toString() const { return _timeStamp.toString(); };
+private:
+    TimeStamp _timeStamp;
+};
 
 class ClockSystem
 {
 public:
     static int64_t now();
-    static int64_t adjustTick2Sec(int64_t tick) { return tick; }
 };
 
-template <typename ClockT>
-class StopWatchT : public ClockT
+class ClockSteady
 {
 public:
-    StopWatchT(void) : _startTime(), _stopTime() { }
+    static SteadyTimeStamp now();
+};
 
-    void start() { _startTime = this->now(); _stopTime = _startTime; }
-    void stop()  { _stopTime = this->now(); }
+class StopWatch
+{
+public:
+    StopWatch();
 
-    TimeStamp elapsedAdjusted() const { return this->adjustTick2Sec(elapsed()); }
-    TimeStamp startTime()       const { return this->adjustTick2Sec(_startTime); }
-    TimeStamp stopTime()        const { return this->adjustTick2Sec(_stopTime); }
+    StopWatch & stop();
 
     TimeStamp elapsed() const {
         TimeStamp diff(_stopTime - _startTime);
-        return this->adjustTick2Sec((diff > 0) ? diff : TimeStamp(0));
+        return (diff > 0) ? diff : TimeStamp(0);
     }
 private:
-    TimeStamp _startTime;
-    TimeStamp _stopTime;
+    SteadyTimeStamp _startTime;
+    SteadyTimeStamp _stopTime;
 };
 
 time_t time();
-
-
-typedef StopWatchT<ClockSystem> TickStopWatch;
-typedef TickStopWatch          StopWatch;
 
 }
 

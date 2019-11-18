@@ -50,11 +50,11 @@ struct SessionCache : SessionCacheBase {
         }
         return ret;
     }
-    void pruneTimedOutSessions(fastos::TimeStamp currentTime) {
+    void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) {
         std::vector<EntryUP> toDestruct = stealTimedOutSessions(currentTime);
         toDestruct.clear();
     }
-    std::vector<EntryUP> stealTimedOutSessions(fastos::TimeStamp currentTime) {
+    std::vector<EntryUP> stealTimedOutSessions(fastos::SteadyTimeStamp currentTime) {
         std::vector<EntryUP> toDestruct;
         std::lock_guard<std::mutex> guard(_lock);
         toDestruct.reserve(_cache.size());
@@ -103,11 +103,11 @@ struct SessionMap : SessionCacheBase {
         }
         return EntrySP();
     }
-    void pruneTimedOutSessions(fastos::TimeStamp currentTime) {
+    void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) {
         std::vector<EntrySP> toDestruct = stealTimedOutSessions(currentTime);
         toDestruct.clear();
     }
-    std::vector<EntrySP> stealTimedOutSessions(fastos::TimeStamp currentTime) {
+    std::vector<EntrySP> stealTimedOutSessions(fastos::SteadyTimeStamp currentTime) {
         std::vector<EntrySP> toDestruct;
         std::vector<SessionId> keys;
         std::lock_guard<std::mutex> guard(_lock);
@@ -210,13 +210,13 @@ SessionManager::getSortedSearchSessionInfo() const
     return sessions;
 }
 
-void SessionManager::pruneTimedOutSessions(fastos::TimeStamp currentTime) {
+void SessionManager::pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) {
     _grouping_cache->pruneTimedOutSessions(currentTime);
     _search_map->pruneTimedOutSessions(currentTime);
 }
 
 void SessionManager::close() {
-    pruneTimedOutSessions(fastos::TimeStamp::FUTURE);
+    pruneTimedOutSessions(fastos::SteadyTimeStamp::FUTURE);
     assert(_grouping_cache->empty());
     assert(_search_map->empty());
 }

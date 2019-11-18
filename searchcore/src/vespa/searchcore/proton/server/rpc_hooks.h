@@ -25,7 +25,6 @@ private:
 
     class Session {
     private:
-        fastos::TimeStamp _createTime;
         int64_t           _numDocs;
         vespalib::string  _delayedConfigs;
         int64_t           _gen;
@@ -34,12 +33,10 @@ private:
         typedef std::shared_ptr<Session> SP;
         Session();
         int64_t                  getGen() const { return _gen; }
-        fastos::TimeStamp getCreateTime() const { return _createTime; }
         Session & setGen(int64_t gen) { _gen = gen; return *this; }
 
         int64_t getNumDocs() const { return _numDocs; }
         void setNumDocs(int64_t numDocs) { _numDocs = numDocs; }
-        bool getDown() const { return _down; }
         void setDown() { _down = true; }
 
         const vespalib::string & getDelayedConfigs() const {
@@ -52,15 +49,14 @@ private:
 
     };
     struct StateArg {
-        typedef std::unique_ptr<StateArg> UP;
-        StateArg(Session::SP session, FRT_RPCRequest * req, fastos::TimeStamp dueTime) :
-            _session(session),
+        StateArg(Session::SP session, FRT_RPCRequest * req, fastos::SteadyTimeStamp dueTime) :
+            _session(std::move(session)),
             _req(req),
             _dueTime(dueTime)
         { }
-        Session::SP _session;
-        FRT_RPCRequest * _req;
-        fastos::TimeStamp _dueTime;
+        Session::SP             _session;
+        FRT_RPCRequest        * _req;
+        fastos::SteadyTimeStamp _dueTime;
     };
 
     Proton                         & _proton;
@@ -78,7 +74,7 @@ private:
 
     void triggerFlush(FRT_RPCRequest *req);
     void prepareRestart(FRT_RPCRequest *req);
-    void checkState(StateArg::UP arg);
+    void checkState(std::unique_ptr<StateArg> arg);
     void reportState(Session & session, FRT_RPCRequest * req) __attribute__((noinline));
     void getProtonStatus(FRT_RPCRequest * req);
     void getDocsums(FRT_RPCRequest *req);

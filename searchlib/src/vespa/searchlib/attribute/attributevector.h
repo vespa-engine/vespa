@@ -572,22 +572,22 @@ private:
     LoadedBufferUP loadFile(const char *suffix);
 
 
-    BaseName               _baseFileName;
-    Config                 _config;
+    BaseName                              _baseFileName;
+    Config                                _config;
     std::shared_ptr<attribute::Interlock> _interlock;
-    mutable std::shared_timed_mutex _enumLock;
-    GenerationHandler      _genHandler;
-    GenerationHolder       _genHolder;
-    Status                 _status;
-    int                    _highestValueCount;
-    uint32_t               _enumMax;
-    uint32_t               _committedDocIdLimit; // docid limit for search
-    uint32_t               _uncommittedDocIdLimit; // based on queued changes
-    uint64_t               _createSerialNum;
-    uint64_t               _compactLidSpaceGeneration; 
-    bool                   _hasEnum;
-    bool                   _loaded;
-    fastos::TimeStamp      _nextStatUpdateTime;
+    mutable std::shared_timed_mutex       _enumLock;
+    GenerationHandler                     _genHandler;
+    GenerationHolder                      _genHolder;
+    Status                                _status;
+    int                                   _highestValueCount;
+    uint32_t                              _enumMax;
+    uint32_t                              _committedDocIdLimit; // docid limit for search
+    uint32_t                              _uncommittedDocIdLimit; // based on queued changes
+    uint64_t                              _createSerialNum;
+    uint64_t                              _compactLidSpaceGeneration;
+    bool                                  _hasEnum;
+    bool                                  _loaded;
+    fastos::SteadyTimeStamp               _nextStatUpdateTime;
 
 ////// Locking strategy interface. only available from the Guards.
     /**

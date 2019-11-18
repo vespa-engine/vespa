@@ -38,14 +38,12 @@ void
 SummaryManagerInitializer::run()
 {
     vespalib::mkdir(_baseDir, false);
-    fastos::TimeStamp startTime = fastos::ClockSystem::now();
+    fastos::StopWatch stopWatch;
     EventLogger::loadDocumentStoreStart(_subDbName);
     *_result = std::make_shared<SummaryManager>
                (_summaryExecutor, _storeCfg, _grow, _baseDir, _docTypeName,
                 _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
-    fastos::TimeStamp endTime = fastos::ClockSystem::now();
-    int64_t elapsedTimeMs = (endTime - startTime).ms();
-    EventLogger::loadDocumentStoreComplete(_subDbName, elapsedTimeMs);
+    EventLogger::loadDocumentStoreComplete(_subDbName, stopWatch.stop().elapsed().ms());
 }
 
 } // namespace proton

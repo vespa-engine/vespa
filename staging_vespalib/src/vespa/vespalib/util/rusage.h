@@ -17,12 +17,12 @@ public:
      * Will create an RUsage and initialize member with RUSAGE_SELF
      **/
     static RUsage createSelf();
-    static RUsage createSelf(const fastos::TimeStamp & since);
+    static RUsage createSelf(fastos::SteadyTimeStamp since);
     /**
      * Will create an RUsage and initialize member with RUSAGE_CHILDREN
      **/
     static RUsage createChildren();
-    static RUsage createChildren(const fastos::TimeStamp & since);
+    static RUsage createChildren(fastos::SteadyTimeStamp since);
     /**
      * Will create an RUsage and initialize member with RUSAGE_CHILDREN
      **/

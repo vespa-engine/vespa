@@ -22,7 +22,7 @@ public:
 
 private:
     const vespalib::Clock     & _clock;
-    fastos::TimeStamp           _timeOfDoom;
+    fastos::SteadyTimeStamp     _timeOfDoom;
     vespalib::nbostream         _os;
     GroupingList                _groupingList;
 public:
@@ -40,14 +40,14 @@ public:
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, fastos::TimeStamp timeOfDoom, const char *groupSpec, uint32_t groupSpecLen);
+    GroupingContext(const vespalib::Clock & clock, fastos::SteadyTimeStamp timeOfDoom, const char *groupSpec, uint32_t groupSpecLen);
 
     /**
      * Create a new grouping context from a byte buffer.
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, fastos::TimeStamp timeOfDoom);
+    GroupingContext(const vespalib::Clock & clock, fastos::SteadyTimeStamp timeOfDoom);
 
     /**
      * Shallow copy of references
@@ -105,7 +105,7 @@ public:
     /**
      * Obtain the time of doom.
      */
-    fastos::TimeStamp getTimeOfDoom() const { return _timeOfDoom; }
+    fastos::SteadyTimeStamp getTimeOfDoom() const { return _timeOfDoom; }
     /**
      * Figure out if ranking is necessary for any of the grouping requests here.
      * @return true if ranking is required.

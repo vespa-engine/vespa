@@ -60,6 +60,13 @@ using vespalib::nbostream;
 using vespalib::eval::TensorSpec;
 using vespalib::tensor::DefaultTensorEngine;
 
+namespace fastos {
+    std::ostream &
+    operator<<(std::ostream &os, SteadyTimeStamp ts) {
+        return os << ts.toString();
+    }
+}
+
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
 {
     Properties cfg;
@@ -767,7 +774,7 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
     ASSERT_EQUAL(0u, fs->numDocs());  // "spread" has no hits
 
     // Empty cache
-    auto pruneTime = fastos::ClockSystem::now() +
+    auto pruneTime = fastos::ClockSteady::now() +
                      fastos::TimeStamp::MINUTE * 10;
     world.sessionManager->pruneTimedOutSessions(pruneTime);
 
