@@ -7,8 +7,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <persistence/spi/types.h>
 
-namespace proton {
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 
 /**
@@ -117,8 +116,7 @@ struct IStore
      * Removes a list of lids.
      * The caller must call removeBatchComplete() after documents removal is done.
      */
-    virtual void removeBatch(const std::vector<DocId> &lidsToRemove,
-                             const DocId docIdLimit) = 0;
+    virtual void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) = 0;
 
     /**
      * Signal that the removal of the documents associated with these lids is complete.
@@ -138,6 +136,5 @@ struct IStore
     virtual bool getFreeListActive() const = 0;
 };
 
-} // namespace documentmetastore
-} // namespace proton
+}
 

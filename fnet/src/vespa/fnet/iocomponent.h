@@ -47,7 +47,7 @@ protected:
     Selector                *_ioc_selector;      // attached event selector
     char                    *_ioc_spec;          // connect/listen spec
     Flags                    _flags;             // Compressed representation of boolean flags;
-    fastos::TimeStamp        _ioc_timestamp;     // last I/O activity
+    fastos::UTCTimeStamp     _ioc_timestamp;     // last I/O activity
     std::mutex               _ioc_lock;          // synchronization
     std::condition_variable  _ioc_cond;          // synchronization
     uint32_t                 _ioc_refcnt;        // reference counter

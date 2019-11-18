@@ -12,8 +12,7 @@ namespace config {
 struct SystemClock : public Clock
 {
     int64_t currentTimeMillis() const override {
-        fastos::TimeStamp ts(fastos::ClockSystem::now());
-        return ts.ms();
+        return fastos::ClockSystem::now().timeSinceEpoch().ms();
     }
 };
 

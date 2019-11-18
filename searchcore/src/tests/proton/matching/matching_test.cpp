@@ -60,13 +60,6 @@ using vespalib::nbostream;
 using vespalib::eval::TensorSpec;
 using vespalib::tensor::DefaultTensorEngine;
 
-namespace fastos {
-    std::ostream &
-    operator<<(std::ostream &os, SteadyTimeStamp ts) {
-        return os << ts.toString();
-    }
-}
-
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
 {
     Properties cfg;

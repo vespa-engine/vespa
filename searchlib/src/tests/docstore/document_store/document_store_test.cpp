@@ -27,7 +27,7 @@ struct NullDataStore : IDataStore {
     size_t getDiskBloat() const override { return 0; }
     uint64_t lastSyncToken() const override { return 0; }
     uint64_t tentativeLastSyncToken() const override { return 0; }
-    fastos::TimeStamp getLastFlushTime() const override { return fastos::TimeStamp(); }
+    fastos::UTCTimeStamp getLastFlushTime() const override { return fastos::UTCTimeStamp::ZERO; }
     void accept(IDataStoreVisitor &, IDataStoreVisitorProgress &, bool) override { }
     double getVisitCost() const override { return 1.0; }
     DataStoreStorageStats getStorageStats() const override {

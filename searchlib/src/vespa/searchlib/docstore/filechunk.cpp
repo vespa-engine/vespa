@@ -293,7 +293,7 @@ FileChunk::getLastPersistedSerialNum() const
     return _lastPersistedSerialNum;
 }
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 FileChunk::getModificationTime() const
 {
     return _modificationTime;

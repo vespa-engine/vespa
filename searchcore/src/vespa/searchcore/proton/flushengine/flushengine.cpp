@@ -51,15 +51,15 @@ logTarget(const char * text, const FlushContext & ctx) {
 
 }
 
-FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id)
+FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, uint32_t id)
     : _name(name),
-      _start(start),
+      _stopWatch(),
       _id(id)
 { }
 FlushEngine::FlushMeta::~FlushMeta() = default;
 
 FlushEngine::FlushInfo::FlushInfo()
-    : FlushMeta("", fastos::ClockSystem::now(), 0),
+    : FlushMeta("", 0),
       _target()
 {
 }
@@ -68,7 +68,7 @@ FlushEngine::FlushInfo::~FlushInfo() = default;
 
 
 FlushEngine::FlushInfo::FlushInfo(uint32_t taskId, const IFlushTarget::SP &target, const vespalib::string & destination)
-    : FlushMeta(destination, fastos::ClockSystem::now(), taskId),
+    : FlushMeta(destination, taskId),
       _target(target)
 {
 }
@@ -351,7 +351,7 @@ FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
     fastos::TimeStamp duration;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        duration = fastos::TimeStamp(fastos::ClockSystem::now()) - _flushing[taskId].getStart();
+        duration = _flushing[taskId].elapsed();
     }
     if (LOG_WOULD_LOG(event)) {
         FlushStats stats = ctx.getTarget()->getLastFlushStats();

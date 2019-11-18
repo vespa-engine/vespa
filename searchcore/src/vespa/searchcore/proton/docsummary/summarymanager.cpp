@@ -50,7 +50,7 @@ class ShrinkSummaryLidSpaceFlushTarget : public  ShrinkLidSpaceFlushTarget
 
 public:
     ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
-                                     SerialNum flushedSerialNum, Time lastFlushTime,
+                                     SerialNum flushedSerialNum, fastos::UTCTimeStamp lastFlushTime,
                                      searchcorespi::index::IThreadService & summaryService,
                                      std::shared_ptr<ICompactableLidSpace> target);
     ~ShrinkSummaryLidSpaceFlushTarget() override;
@@ -59,7 +59,7 @@ public:
 
 ShrinkSummaryLidSpaceFlushTarget::
 ShrinkSummaryLidSpaceFlushTarget(const vespalib::string &name, Type type, Component component,
-                                 SerialNum flushedSerialNum, Time lastFlushTime,
+                                 SerialNum flushedSerialNum, fastos::UTCTimeStamp lastFlushTime,
                                  searchcorespi::index::IThreadService & summaryService,
                                  std::shared_ptr<ICompactableLidSpace> target)
     : ShrinkLidSpaceFlushTarget(name, type, component, flushedSerialNum, lastFlushTime, std::move(target)),
@@ -194,7 +194,7 @@ createShrinkLidSpaceFlushTarget(searchcorespi::index::IThreadService & summarySe
                                                        IFlushTarget::Type::GC,
                                                        IFlushTarget::Component::DOCUMENT_STORE,
                                                        docStore->lastSyncToken(),
-                                                       docStore->getLastFlushTime(),
+                                                       fastos::UTCTimeStamp(docStore->getLastFlushTime()),
                                                        summaryService,
                                                        docStore);
 }

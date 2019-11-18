@@ -2,26 +2,23 @@
 
 #include "fileheadercontext.h"
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/fastos/timestamp.h>
+#include <chrono>
+
+using namespace std::chrono;
 
 namespace search::common {
 
 using vespalib::GenericHeader;
 
-FileHeaderContext::FileHeaderContext()
-{
-}
+FileHeaderContext::FileHeaderContext() = default;
 
-FileHeaderContext::~FileHeaderContext()
-{
-}
+FileHeaderContext::~FileHeaderContext() = default;
 
 void
 FileHeaderContext::addCreateAndFreezeTime(GenericHeader &header)
 {
     typedef GenericHeader::Tag Tag;
-    fastos::TimeStamp ts(fastos::ClockSystem::now());
-    header.putTag(Tag("createTime", ts.us()));
+    header.putTag(Tag("createTime", duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()));
     header.putTag(Tag("freezeTime", 0));
 }
 
@@ -31,8 +28,7 @@ FileHeaderContext::setFreezeTime(GenericHeader &header)
     typedef GenericHeader::Tag Tag;
     if (header.hasTag("freezeTime") &&
         header.getTag("freezeTime").getType() == Tag::TYPE_INTEGER) {
-        fastos::TimeStamp ts(fastos::ClockSystem::now());
-        header.putTag(Tag("freezeTime", ts.us()));
+        header.putTag(Tag("freezeTime", duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()));
     }
 }
 

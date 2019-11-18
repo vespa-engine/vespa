@@ -42,14 +42,14 @@ public:
                               std::shared_ptr<ICompactableLidSpace> target);
 
     // Implements IFlushTarget.
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual DiskGain getApproxDiskGain() const override;
-    virtual SerialNum getFlushedSerialNum() const override;
-    virtual Time getLastFlushTime() const override;
-    virtual bool needUrgentFlush() const override;
-    virtual Task::UP initFlush(SerialNum currentSerial) override;
-    virtual searchcorespi::FlushStats getLastFlushStats() const override;
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain getApproxDiskGain() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Time getLastFlushTime() const override;
+    bool needUrgentFlush() const override;
+    Task::UP initFlush(SerialNum currentSerial) override;
+    searchcorespi::FlushStats getLastFlushStats() const override;
+    uint64_t getApproxBytesToWriteToDisk() const override;
 };
 
 } // namespace proton

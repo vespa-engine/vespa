@@ -11,9 +11,9 @@ namespace proton {
 class CommitTimeTracker
 {
 private:
-    fastos::TimeStamp           _visibilityDelay;
-    mutable fastos::TimeStamp   _nextCommit;
-    bool                        _replayDone;
+    fastos::TimeStamp                _visibilityDelay;
+    mutable fastos::SteadyTimeStamp  _nextCommit;
+    bool                             _replayDone;
 
 public:
     CommitTimeTracker(fastos::TimeStamp visibilityDelay);

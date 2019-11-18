@@ -8,8 +8,7 @@ LOG_SETUP(".searchcorespi.index.indexflushtarget");
 
 using vespalib::makeClosure;
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
 IndexFlushTarget::IndexFlushTarget(IndexMaintainer &indexMaintainer)
     : IFlushTarget("memoryindex.flush", Type::FLUSH, Component::INDEX),
@@ -22,7 +21,7 @@ IndexFlushTarget::IndexFlushTarget(IndexMaintainer &indexMaintainer)
     _lastStats.setPathElementsToLog(7);
 }
 
-IndexFlushTarget::~IndexFlushTarget() {}
+IndexFlushTarget::~IndexFlushTarget() = default;
 
 IFlushTarget::MemoryGain
 IndexFlushTarget::getApproxMemoryGain() const
@@ -38,7 +37,7 @@ IndexFlushTarget::getApproxDiskGain() const
 
 
 bool
-IndexFlushTarget::needUrgentFlush(void) const
+IndexFlushTarget::needUrgentFlush() const
 {
     bool urgent = _numFrozenMemoryIndexes > _maxFrozenMemoryIndexes;
     SerialNum flushedSerial = _indexMaintainer.getFlushedSerialNum();
@@ -80,6 +79,4 @@ IndexFlushTarget::getApproxBytesToWriteToDisk() const
     }
 }
 
-
-}  // namespace index
-}  // namespace searchcorespi
+}

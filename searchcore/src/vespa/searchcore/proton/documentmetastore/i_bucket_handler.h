@@ -8,18 +8,12 @@
 #include <vespa/searchcore/proton/bucketdb/bucketdeltapair.h>
 #include <vector>
 
-namespace proton {
-
-namespace bucketdb
-{
-
-class SplitBucketSession;
-class JoinBucketsSession;
-
+namespace proton::bucketdb {
+    class SplitBucketSession;
+    class JoinBucketsSession;
 }
 
-
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 /**
  * Interface for handling bucket changes relevant to the document meta store.
@@ -63,6 +57,4 @@ struct IBucketHandler
 
 };
 
-} // namespace documentmetastore
-} // namespace proton
-
+}

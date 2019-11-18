@@ -7,12 +7,13 @@
 #include <vespa/searchcore/proton/server/memoryflush.h>
 
 using fastos::TimeStamp;
+using fastos::UTCTimeStamp;
+using fastos::SteadyTimeStamp;
 using search::SerialNum;
 using namespace proton;
 using namespace searchcorespi;
 
-namespace
-{
+namespace{
 
 static constexpr uint64_t gibi = UINT64_C(1024) * UINT64_C(1024) * UINT64_C(1024);
 
@@ -40,15 +41,15 @@ public:
 
 class MyFlushTarget : public test::DummyFlushTarget {
 private:
-    MemoryGain _memoryGain;
-    DiskGain   _diskGain;
-    SerialNum  _flushedSerial;
-    TimeStamp  _lastFlushTime;
-    bool       _urgentFlush;
+    MemoryGain    _memoryGain;
+    DiskGain      _diskGain;
+    SerialNum     _flushedSerial;
+    UTCTimeStamp  _lastFlushTime;
+    bool          _urgentFlush;
 public:
     MyFlushTarget(const vespalib::string &name, MemoryGain memoryGain,
                   DiskGain diskGain, SerialNum flushedSerial,
-                  TimeStamp lastFlushTime, bool urgentFlush) :
+                  UTCTimeStamp lastFlushTime, bool urgentFlush) :
         test::DummyFlushTarget(name),
         _memoryGain(memoryGain),
         _diskGain(diskGain),
@@ -61,7 +62,7 @@ public:
     virtual MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
     virtual DiskGain getApproxDiskGain() const override { return _diskGain; }
     virtual SerialNum getFlushedSerialNum() const override { return _flushedSerial; }
-    virtual TimeStamp getLastFlushTime() const override { return _lastFlushTime; }
+    virtual UTCTimeStamp getLastFlushTime() const override { return _lastFlushTime; }
     virtual bool needUrgentFlush() const override { return _urgentFlush; }
 };
 
@@ -116,41 +117,36 @@ public:
 ContextBuilder::ContextBuilder()
     : _list(), _handler(new MyFlushHandler("myhandler"))
 {}
-ContextBuilder::~ContextBuilder() {}
+ContextBuilder::~ContextBuilder() = default;
 
 MyFlushTarget::SP
 createTargetM(const vespalib::string &name, MemoryGain memoryGain)
 {
-    return MyFlushTarget::SP(new MyFlushTarget(name, memoryGain, DiskGain(),
-                                               SerialNum(), TimeStamp(), false));
+    return std::make_shared<MyFlushTarget>(name, memoryGain, DiskGain(),SerialNum(), UTCTimeStamp::ZERO, false);
 }
 
 MyFlushTarget::SP
 createTargetD(const vespalib::string &name, DiskGain diskGain, SerialNum serial = 0)
 {
-    return MyFlushTarget::SP(new MyFlushTarget(name, MemoryGain(), diskGain,
-                                               serial, TimeStamp(), false));
+    return std::make_shared<MyFlushTarget>(name, MemoryGain(), diskGain, serial, UTCTimeStamp::ZERO, false);
 }
 
 MyFlushTarget::SP
-createTargetS(const vespalib::string &name, SerialNum serial, TimeStamp timeStamp = TimeStamp())
+createTargetS(const vespalib::string &name, SerialNum serial, UTCTimeStamp timeStamp = UTCTimeStamp::ZERO)
 {
-    return MyFlushTarget::SP(new MyFlushTarget(name, MemoryGain(), DiskGain(),
-                                               serial, timeStamp, false));
+    return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), serial, timeStamp, false);
 }
 
 MyFlushTarget::SP
-createTargetT(const vespalib::string &name, TimeStamp lastFlushTime, SerialNum serial = 0)
+createTargetT(const vespalib::string &name, UTCTimeStamp lastFlushTime, SerialNum serial = 0)
 {
-    return MyFlushTarget::SP(new MyFlushTarget(name, MemoryGain(), DiskGain(),
-                                               serial, lastFlushTime, false));
+    return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), serial, lastFlushTime, false);
 }
 
 MyFlushTarget::SP
 createTargetF(const vespalib::string &name, bool urgentFlush)
 {
-    return MyFlushTarget::SP(new MyFlushTarget(name, MemoryGain(), DiskGain(),
-                                               SerialNum(), TimeStamp(), urgentFlush));
+    return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), SerialNum(), UTCTimeStamp::ZERO, urgentFlush);
 }
 
 bool
@@ -236,13 +232,13 @@ requireThatWeCanOrderByDiskGainWithSmallValues()
 void
 requireThatWeCanOrderByAge()
 {
-    TimeStamp now(fastos::ClockSystem::now());
-    TimeStamp start(now.val() - 20 * TimeStamp::SEC);
+    UTCTimeStamp now(fastos::ClockSystem::now());
+    UTCTimeStamp start(now - TimeStamp(20 * TimeStamp::SEC));
     ContextBuilder cb;
-    cb.add(createTargetT("t2", TimeStamp(now.val() - 10 * TimeStamp::SEC)))
-      .add(createTargetT("t1", TimeStamp(now.val() - 5 * TimeStamp::SEC)))
-      .add(createTargetT("t4", TimeStamp()))
-      .add(createTargetT("t3", TimeStamp(now.val() - 15 * TimeStamp::SEC)));
+    cb.add(createTargetT("t2", now - TimeStamp(10 * TimeStamp::SEC)))
+      .add(createTargetT("t1", now - TimeStamp(5 * TimeStamp::SEC)))
+      .add(createTargetT("t4", UTCTimeStamp::ZERO))
+      .add(createTargetT("t3", now - TimeStamp(15 * TimeStamp::SEC)));
 
     { // all targets have timeDiff >= maxTimeGain
         MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, TimeStamp(2 * TimeStamp::SEC)}, start);
@@ -258,33 +254,17 @@ requireThatWeCanOrderByAge()
 void
 requireThatWeCanOrderByTlsSize()
 {
-    TimeStamp now(fastos::ClockSystem::now());
-    TimeStamp start(now.val() - 20 * TimeStamp::SEC);
+    UTCTimeStamp now(fastos::ClockSystem::now());
+    UTCTimeStamp start = now - TimeStamp(20 * TimeStamp::SEC);
     ContextBuilder cb;
     IFlushHandler::SP handler1(std::make_shared<MyFlushHandler>("handler1"));
     IFlushHandler::SP handler2(std::make_shared<MyFlushHandler>("handler2"));
     cb.addTls("handler1", {20 * gibi, 1001, 2000 });
     cb.addTls("handler2", { 5 * gibi, 1001, 2000 });
-    cb.add(std::make_shared<FlushContext>
-           (handler1,
-            createTargetT("t2", TimeStamp(now.val() - 10 * TimeStamp::SEC),
-                          1900),
-            2000)).
-        add(std::make_shared<FlushContext>
-            (handler2,
-             createTargetT("t1", TimeStamp(now.val() - 5 * TimeStamp::SEC),
-                           1000),
-             2000)).
-        add(std::make_shared<FlushContext>
-            (handler1,
-             createTargetT("t4", TimeStamp(),
-                           1000),
-             2000)).
-        add(std::make_shared<FlushContext>
-            (handler2,
-             createTargetT("t3", TimeStamp(now.val() - 15 * TimeStamp::SEC),
-                           1900),
-             2000));
+    cb.add(std::make_shared<FlushContext>(handler1, createTargetT("t2", now - TimeStamp(10 * TimeStamp::SEC), 1900), 2000)).
+        add(std::make_shared<FlushContext>(handler2, createTargetT("t1", now - TimeStamp(5 * TimeStamp::SEC), 1000), 2000)).
+        add(std::make_shared<FlushContext>(handler1, createTargetT("t4", UTCTimeStamp::ZERO, 1000), 2000)).
+        add(std::make_shared<FlushContext>(handler2, createTargetT("t3", now - TimeStamp(15 * TimeStamp::SEC), 1900), 2000));
     { // sum of tls sizes above limit, trigger sort order based on tls size
         MemoryFlush flush({1000, 3 * gibi, 1.0, 1000, 1.0, TimeStamp(2 * TimeStamp::SEC)}, start);
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t1").add("t2").add("t3"),
@@ -304,22 +284,18 @@ requireThatWeHandleLargeSerialNumbersWhenOrderingByTlsSize()
     SerialNum firstSerial = 10;
     SerialNum lastSerial = uint32_max + 10;
     builder.addTls("myhandler", {uint32_max, firstSerial, lastSerial});
-    builder.add(createTargetT("t1", TimeStamp(), uint32_max + 5), lastSerial);
-    builder.add(createTargetT("t2", TimeStamp(), uint32_max - 5), lastSerial);
+    builder.add(createTargetT("t1", UTCTimeStamp::ZERO, uint32_max + 5), lastSerial);
+    builder.add(createTargetT("t2", UTCTimeStamp::ZERO, uint32_max - 5), lastSerial);
     uint64_t maxMemoryGain = 10;
-    MemoryFlush flush({maxMemoryGain, 1000, 0, maxMemoryGain, 0, TimeStamp()}, TimeStamp());
-    EXPECT_TRUE(assertOrder(StringList().add("t2").add("t1"),
-                            flush.getFlushTargets(builder.list(), builder.tlsStats())));
+    MemoryFlush flush({maxMemoryGain, 1000, 0, maxMemoryGain, 0, TimeStamp()}, UTCTimeStamp::ZERO);
+    EXPECT_TRUE(assertOrder(StringList().add("t2").add("t1"), flush.getFlushTargets(builder.list(), builder.tlsStats())));
 }
 
 void
 requireThatOrderTypeIsPreserved()
 {
-    TimeStamp now(fastos::ClockSystem::now());
-    TimeStamp ts1(now.val() - 30 * TimeStamp::SEC);
-    TimeStamp ts2(now.val() - 20 * TimeStamp::SEC);
-    TimeStamp ts3(now.val() - 10 * TimeStamp::SEC);
-    TimeStamp maxTimeGain(15 * TimeStamp::SEC);
+    UTCTimeStamp now(fastos::ClockSystem::now());
+    UTCTimeStamp ts2 = now - TimeStamp(20 * TimeStamp::SEC);
 
     { // MAXAGE VS DISKBLOAT
         ContextBuilder cb;
@@ -354,5 +330,3 @@ TEST_MAIN()
     TEST_DO(requireThatWeHandleLargeSerialNumbersWhenOrderingByTlsSize());
     TEST_DO(requireThatOrderTypeIsPreserved());
 }
-
-

@@ -102,7 +102,7 @@ public:
     size_t memoryMeta() const override;
     uint64_t lastSyncToken() const override;
     uint64_t tentativeLastSyncToken() const override;
-    fastos::TimeStamp getLastFlushTime() const override;
+    fastos::UTCTimeStamp getLastFlushTime() const override;
     size_t getDiskFootprint() const override;
     size_t getDiskHeaderFootprint() const override;
     size_t getDiskBloat() const override;

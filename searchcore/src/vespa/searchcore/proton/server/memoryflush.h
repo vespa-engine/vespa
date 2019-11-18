@@ -42,7 +42,7 @@ private:
     mutable std::mutex _lock;
     Config             _config;
     /// The time when the strategy was started.
-    fastos::TimeStamp  _startTime;
+    fastos::UTCTimeStamp  _startTime;
 
     class CompareTarget
     {
@@ -63,7 +63,7 @@ public:
 
     MemoryFlush();
     explicit MemoryFlush(const Config &config) : MemoryFlush(config, fastos::ClockSystem::now()) { }
-    MemoryFlush(const Config &config, fastos::TimeStamp startTime);
+    MemoryFlush(const Config &config, fastos::UTCTimeStamp startTime);
     ~MemoryFlush();
 
     FlushContext::List

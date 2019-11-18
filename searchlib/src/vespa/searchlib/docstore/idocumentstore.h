@@ -130,7 +130,7 @@ public:
      * or 0 if no flush has been performed yet.
      * @return Time of last flush.
      **/
-    virtual fastos::TimeStamp getLastFlushTime() const = 0;
+    virtual fastos::UTCTimeStamp getLastFlushTime() const = 0;
 
     /**
      * Get the number of entries (including removed IDs

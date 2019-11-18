@@ -24,13 +24,6 @@ using search::attribute::test::MockAttributeContext;
 using proton::matching::SessionManager;
 using fastos::SteadyTimeStamp;
 
-namespace fastos {
-    std::ostream &
-    operator<<(std::ostream &os, SteadyTimeStamp ts) {
-        return os << ts.toString();
-    }
-}
-
 //-----------------------------------------------------------------------------
 
 const uint32_t NUM_DOCS = 1000;

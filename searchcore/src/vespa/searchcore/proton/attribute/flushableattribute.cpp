@@ -203,21 +203,18 @@ FlushableAttribute::internalInitFlush(SerialNum currentSerial)
 {
     // Called by attribute field writer thread while document db executor waits
     _attr->removeAllOldGenerations();
-    SerialNum syncToken = std::max(currentSerial,
-                                   _attr->getStatus().getLastSyncToken());
+    SerialNum syncToken = std::max(currentSerial, _attr->getStatus().getLastSyncToken());
     auto writer = _attrDir->tryGetWriter();
     if (!writer) {
         return Task::UP();
     }
     if (syncToken <= getFlushedSerialNum()) {
         writer->setLastFlushTime(fastos::ClockSystem::now());
-        LOG(debug,
-            "No attribute vector to flush."
-            " Update flush time to current: lastFlushTime(%f)",
-            getLastFlushTime().sec());
+        LOG(debug,"No attribute vector to flush. Update flush time to current: lastFlushTime(%f)",
+            getLastFlushTime().timeSinceEpoch().sec());
         return Task::UP();
     }
-    return Task::UP(new Flusher(*this, syncToken, *writer));
+    return std::make_unique<Flusher>(*this, syncToken, *writer);
 }
 
 

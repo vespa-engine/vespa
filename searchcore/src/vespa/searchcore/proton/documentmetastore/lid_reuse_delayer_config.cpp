@@ -13,8 +13,7 @@ LidReuseDelayerConfig::LidReuseDelayerConfig()
 
 LidReuseDelayerConfig::LidReuseDelayerConfig(const DocumentDBConfig &
                                              configSnapshot)
-    : _visibilityDelay(configSnapshot.getMaintenanceConfigSP()->
-                       getVisibilityDelay()),
+    : _visibilityDelay(configSnapshot.getMaintenanceConfigSP()->getVisibilityDelay()),
       _hasIndexedOrAttributeFields(configSnapshot.getSchemaSP()->getNumIndexFields() > 0 ||
                                    configSnapshot.getSchemaSP()->getNumAttributeFields() > 0)
 {

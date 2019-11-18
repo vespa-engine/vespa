@@ -159,7 +159,7 @@ public:
     size_t   getErasedBytes() const { return _erasedBytes; }
     uint64_t getLastPersistedSerialNum() const;
     uint32_t getDocIdLimit() const { return _docIdLimit; }
-    virtual fastos::TimeStamp getModificationTime() const;
+    virtual fastos::UTCTimeStamp getModificationTime() const;
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
     void compact(const IGetLid & iGetLid);
@@ -239,17 +239,17 @@ protected:
     static void writeDocIdLimit(vespalib::GenericHeader &header, uint32_t docIdLimit);
 
     typedef vespalib::Array<ChunkInfo> ChunkInfoVector;
-    const IBucketizer * _bucketizer;
-    size_t              _addedBytes;
-    TuneFileSummary     _tune;
-    vespalib::string    _dataFileName;
-    vespalib::string    _idxFileName;
-    ChunkInfoVector     _chunkInfo;
-    uint32_t            _dataHeaderLen;
-    uint32_t            _idxHeaderLen;
-    uint64_t            _lastPersistedSerialNum;
-    uint32_t            _docIdLimit; // Limit when the file was created. Stored in idx file header.
-    fastos::TimeStamp   _modificationTime;
+    const IBucketizer   * _bucketizer;
+    size_t                _addedBytes;
+    TuneFileSummary       _tune;
+    vespalib::string      _dataFileName;
+    vespalib::string      _idxFileName;
+    ChunkInfoVector       _chunkInfo;
+    uint32_t              _dataHeaderLen;
+    uint32_t              _idxHeaderLen;
+    uint64_t              _lastPersistedSerialNum;
+    uint32_t              _docIdLimit; // Limit when the file was created. Stored in idx file header.
+    fastos::UTCTimeStamp  _modificationTime;
 };
 
 } // namespace search
