@@ -68,12 +68,8 @@ public class Rebalancer extends Maintainer {
 
         Move bestMove = findBestMove(allNodes);
         if (bestMove == Move.none) return;
-        boolean couldMarkRetired = markWantToRetire(bestMove.node, true);
-        if ( ! couldMarkRetired) return;
-        boolean success = deployTo(bestMove);
-        if ( ! success)
-            markWantToRetire(bestMove.node, false);
-    }
+        deployTo(bestMove);
+   }
 
     /** We do this here rather than in MetricsReporter because it is expensive and frequent updates are unnecessary */
     private void updateSkewMetric(NodeList allNodes) {
@@ -123,7 +119,8 @@ public class Rebalancer extends Maintainer {
             if (nodeToMove.isEmpty()) return false;
             if (nodeToMove.get().state() != Node.State.active) return false;
 
-            nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.system, clock.instant()), lock);
+            if (node.status().wantToRetire() != wantToRetire)
+                nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.system, clock.instant()), lock);
             return true;
         }
     }
@@ -137,13 +134,23 @@ public class Rebalancer extends Maintainer {
     private boolean deployTo(Move move) {
         ApplicationId application = move.node.allocation().get().owner();
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
-            if ( ! deployment.prepare()) return false;
-            if (nodeRepository().getNodes(application, Node.State.reserved).stream().noneMatch(node -> node.hasParent(move.toHost.hostname())))
-                return false; // Deployment is not moving the from node to the target we identified for some reason
+            if ( ! deployment.isValid()) return false;
 
-            if ( ! deployment.activate()) return false;
-            log.info("Rebalancer redeployed " + application + " to " + move);
-            return true;
+            boolean couldMarkRetired = markWantToRetire(move.node, true);
+            if ( ! couldMarkRetired) return false;
+
+            try {
+                if ( ! deployment.prepare()) return false;
+                if (nodeRepository().getNodes(application, Node.State.reserved).stream().noneMatch(node -> node.hasParent(move.toHost.hostname())))
+                    return false; // Deployment is not moving the from node to the target we identified for some reason
+                if ( ! deployment.activate()) return false;
+
+                log.info("Rebalancer redeployed " + application + " to " + move);
+                return true;
+            }
+            finally {
+                markWantToRetire(move.node, false); // Necessary if this failed
+            }
         }
     }
 
@@ -198,6 +205,11 @@ public class Rebalancer extends Maintainer {
             deployment = tryDeployment(lock, application, deployer, nodeRepository);
         }
 
+        /** Return whether this is - as yet - functional and can be used to carry out the deployment */
+        public boolean isValid() {
+            return deployment.isPresent();
+        }
+
         private Optional<Mutex> tryLock(ApplicationId application, NodeRepository nodeRepository) {
             try {
                 // Use a short lock to avoid interfering with change deployments
@@ -226,7 +238,7 @@ public class Rebalancer extends Maintainer {
         }
 
         private boolean doStep(Runnable action) {
-            if ( deployment.isEmpty()) return false;
+            if ( ! isValid()) return false;
             try {
                 action.run();
                 return true;
