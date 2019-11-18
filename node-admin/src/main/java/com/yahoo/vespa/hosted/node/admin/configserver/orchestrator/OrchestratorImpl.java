@@ -10,6 +10,7 @@ import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,15 @@ import java.util.Optional;
  * @author dybis
  */
 public class OrchestratorImpl implements Orchestrator {
+    // The server-side Orchestrator has an internal timeout of 10s.
+    //
+    // Note: A 409 has been observed to be returned after 33s in a case possibly involving
+    // zk leader election (which is unfortunate as it is difficult to differentiate between
+    // transient timeouts (do not allow suspend on timeout) and the config server being
+    // permanently down (allow suspend)). For now we'd like to investigate such long
+    // requests so keep the timeout low(er).
+    private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(15);
+
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
@@ -36,9 +46,8 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspend(final String hostName) {
         UpdateHostResponse response;
         try {
-            response = configServerApi.put(getSuspendPath(hostName),
-                    Optional.empty(), /* body */
-                    UpdateHostResponse.class);
+            var params = new ConfigServerApi.Params().setConnectionTimeout(CONNECTION_TIMEOUT);
+            response = configServerApi.put(getSuspendPath(hostName), Optional.empty(), UpdateHostResponse.class, params);
         } catch (HttpException.NotFoundException n) {
             throw new OrchestratorNotFoundException("Failed to suspend " + hostName + ", host not found");
         } catch (HttpException e) {
@@ -58,10 +67,11 @@ public class OrchestratorImpl implements Orchestrator {
     public void suspend(String parentHostName, List<String> hostNames) {
         final BatchOperationResult batchOperationResult;
         try {
-            String params = String.join("&hostname=", hostNames);
+            var params = new ConfigServerApi.Params().setConnectionTimeout(CONNECTION_TIMEOUT);
+            String hostnames = String.join("&hostname=", hostNames);
             String url = String.format("%s/%s?hostname=%s", ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API,
-                                       parentHostName, params);
-            batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class);
+                                       parentHostName, hostnames);
+            batchOperationResult = configServerApi.put(url, Optional.empty(), BatchOperationResult.class, params);
         } catch (HttpException e) {
             throw new OrchestratorException("Failed to batch suspend for " + parentHostName + ": " + e.toString());
         } catch (ConnectionException e) {
