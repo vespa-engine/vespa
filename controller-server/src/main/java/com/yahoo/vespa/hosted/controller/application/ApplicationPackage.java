@@ -10,6 +10,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -61,8 +63,8 @@ public class ApplicationPackage {
         this.deploymentSpec = files.getAsReader("deployment.xml").map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
         this.validationOverrides = files.getAsReader("validation-overrides.xml").map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
         Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
-        this.compileVersion = buildMetaObject.map(object -> Version.fromString(object.field("compileVersion").asString()));
-        this.buildTime = buildMetaObject.map(object -> Instant.ofEpochMilli(object.field("buildTime").asLong()));
+        this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
+        this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
         this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
     }
 
@@ -104,6 +106,16 @@ public class ApplicationPackage {
     /** Returns the list of certificates trusted by this application, or an empty list if no trust configured. */
     public List<X509Certificate> trustedCertificates() {
         return trustedCertificates;
+    }
+
+    private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
+        try {
+            return buildMetaObject.field(fieldName).valid() ? Optional.of(mapper.apply(buildMetaObject.field(fieldName)))
+                                                            : Optional.empty();
+        }
+        catch (RuntimeException e) {
+            throw new IllegalArgumentException("Failed parsing \"" + fieldName + "\" in 'build-meta.json': " + Exceptions.toMessageString(e));
+        }
     }
 
     private static class Files {
