@@ -113,16 +113,14 @@ public class Rebalancer extends Maintainer {
         return bestMove;
     }
 
-    private boolean markWantToRetire(Node node, boolean wantToRetire) {
-        try (Mutex lock = nodeRepository().lock(node)) {
-            Optional<Node> nodeToMove = nodeRepository().getNode(node.hostname());
-            if (nodeToMove.isEmpty()) return false;
-            if (nodeToMove.get().state() != Node.State.active) return false;
+    private boolean markWantToRetire(Node node, boolean wantToRetire, Mutex lock) {
+        Optional<Node> nodeToMove = nodeRepository().getNode(node.hostname());
+        if (nodeToMove.isEmpty()) return false;
+        if (nodeToMove.get().state() != Node.State.active) return false;
 
-            if (node.status().wantToRetire() != wantToRetire)
-                nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.system, clock.instant()), lock);
-            return true;
-        }
+        if (node.status().wantToRetire() != wantToRetire)
+            nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.system, clock.instant()), lock);
+        return true;
     }
 
     /**
@@ -135,21 +133,21 @@ public class Rebalancer extends Maintainer {
         ApplicationId application = move.node.allocation().get().owner();
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
             if ( ! deployment.isValid()) return false;
+            try (Mutex lock = nodeRepository().lock(move.node)) {
+                boolean couldMarkRetired = markWantToRetire(move.node, true, lock);
+                if ( ! couldMarkRetired) return false;
+                try {
+                    if ( ! deployment.prepare()) return false;
+                    if (nodeRepository().getNodes(application, Node.State.reserved).stream().noneMatch(node -> node.hasParent(move.toHost.hostname())))
+                        return false; // Deployment is not moving the from node to the target we identified for some reason
+                    if ( ! deployment.activate()) return false;
 
-            boolean couldMarkRetired = markWantToRetire(move.node, true);
-            if ( ! couldMarkRetired) return false;
-
-            try {
-                if ( ! deployment.prepare()) return false;
-                if (nodeRepository().getNodes(application, Node.State.reserved).stream().noneMatch(node -> node.hasParent(move.toHost.hostname())))
-                    return false; // Deployment is not moving the from node to the target we identified for some reason
-                if ( ! deployment.activate()) return false;
-
-                log.info("Rebalancer redeployed " + application + " to " + move);
-                return true;
-            }
-            finally {
-                markWantToRetire(move.node, false); // Necessary if this failed
+                    log.info("Rebalancer redeployed " + application + " to " + move);
+                    return true;
+                }
+                finally {
+                    markWantToRetire(move.node, false, lock); // In case this failed, noop otherwise
+                }
             }
         }
     }
