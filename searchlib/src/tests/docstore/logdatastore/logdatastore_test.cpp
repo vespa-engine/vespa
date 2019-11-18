@@ -757,21 +757,21 @@ TEST("requireThatSyncTokenIsUpdatedAfterFlush") {
 
 TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     TmpDirectory testDir("flushtime");
-    fastos::TimeStamp before(fastos::ClockSystem::now());
+    fastos::UTCTimeStamp before(fastos::ClockSystem::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
     vespalib::ThreadStackExecutor executor(1, 128*1024);
     MyTlSyncer tlSyncer;
     LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
                        TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-    EXPECT_EQUAL(0, store.getLastFlushTime().time());
+    EXPECT_EQUAL(0, store.getLastFlushTime().timeSinceEpoch().time());
     uint64_t flushToken = store.initFlush(5);
     EXPECT_EQUAL(5u, flushToken);
     store.flush(flushToken);
-    fastos::TimeStamp after(fastos::ClockSystem::now());
+    fastos::UTCTimeStamp after(fastos::ClockSystem::now());
     // the file name of the dat file is 'magic', using the clock instead of stating the file
-    EXPECT_LESS_EQUAL(before.time(), store.getLastFlushTime().time());
-    EXPECT_GREATER_EQUAL(after.time(), store.getLastFlushTime().time());
+    EXPECT_LESS_EQUAL(before, store.getLastFlushTime());
+    EXPECT_GREATER_EQUAL(after, store.getLastFlushTime());
 }
 
 

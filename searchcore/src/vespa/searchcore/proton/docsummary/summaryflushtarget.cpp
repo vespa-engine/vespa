@@ -82,7 +82,7 @@ SummaryFlushTarget::getFlushedSerialNum() const
 
 IFlushTarget::Task::UP
 SummaryFlushTarget::internalInitFlush(SerialNum currentSerial) {
-    return Task::UP(new Flusher(_docStore, _lastStats, currentSerial));
+    return std::make_unique<Flusher>(_docStore, _lastStats, currentSerial);
 }
 IFlushTarget::Task::UP
 SummaryFlushTarget::initFlush(SerialNum currentSerial)

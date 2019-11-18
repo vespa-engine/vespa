@@ -17,16 +17,18 @@ private:
     SerialNum        _serialNum;
 public:
     Fusioner(IndexMaintainer &indexMaintainer, FlushStats &stats, SerialNum serialNum) :
-        _indexMaintainer(indexMaintainer), _stats(stats), _serialNum(serialNum) {}
-    virtual void run() override {
+        _indexMaintainer(indexMaintainer),
+        _stats(stats),
+        _serialNum(serialNum)
+    {}
+
+    void run() override {
         vespalib::string outputFusionDir = _indexMaintainer.doFusion(_serialNum);
         // the target must live until this task is done (handled by flush engine).
         _stats.setPath(outputFusionDir);
     }
 
-    virtual SerialNum
-    getFlushSerial(void) const override
-    {
+    SerialNum getFlushSerial() const override {
         return 0u; // Zero means that no tls syncing is needed
     }
 };
@@ -42,7 +44,7 @@ IndexFusionTarget::IndexFusionTarget(IndexMaintainer &indexMaintainer)
     LOG(debug, "New target, Num flushed: %d, Disk usage: %" PRIu64, _fusionStats.numUnfused, _fusionStats.diskUsage);
 }
 
-IndexFusionTarget::~IndexFusionTarget() {}
+IndexFusionTarget::~IndexFusionTarget() = default;
 
 IFlushTarget::MemoryGain
 IndexFusionTarget::getApproxMemoryGain() const
@@ -54,13 +56,7 @@ IFlushTarget::DiskGain
 IndexFusionTarget::getApproxDiskGain() const
 {
     uint64_t diskUsageBefore = _fusionStats.diskUsage;
-    uint64_t diskUsageGain =
-        static_cast<uint64_t>((0.1 *
-                               (diskUsageBefore *
-                                std::max(0,
-                                        static_cast<int>
-                                        (_fusionStats.numUnfused - 1)
-                                         ))));
+    uint64_t diskUsageGain = static_cast<uint64_t>((0.1 * (diskUsageBefore * std::max(0,static_cast<int>(_fusionStats.numUnfused - 1)))));
     diskUsageGain = std::min(diskUsageGain, diskUsageBefore);
     if (!_fusionStats._canRunFusion)
         diskUsageGain = 0;
@@ -70,8 +66,7 @@ IndexFusionTarget::getApproxDiskGain() const
 bool
 IndexFusionTarget::needUrgentFlush() const
 {
-    bool urgent = _fusionStats.numUnfused > _fusionStats.maxFlushed &&
-                  _fusionStats._canRunFusion;
+    bool urgent = (_fusionStats.numUnfused > _fusionStats.maxFlushed) && (_fusionStats._canRunFusion);
     LOG(debug, "Num flushed: %d Urgent: %d", _fusionStats.numUnfused, urgent);
     return urgent;
 }
@@ -93,7 +88,7 @@ IndexFusionTarget::getFlushedSerialNum() const
 IFlushTarget::Task::UP
 IndexFusionTarget::initFlush(SerialNum serialNum)
 {
-    return Task::UP(new Fusioner(_indexMaintainer, _lastStats, serialNum));
+    return std::make_unique<Fusioner>(_indexMaintainer, _lastStats, serialNum);
 }
 
 uint64_t
@@ -101,6 +96,5 @@ IndexFusionTarget::getApproxBytesToWriteToDisk() const
 {
     return _fusionStats.diskUsage;
 }
-
 
 }

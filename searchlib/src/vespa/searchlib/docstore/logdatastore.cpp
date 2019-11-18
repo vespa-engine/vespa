@@ -247,20 +247,21 @@ LogDataStore::tentativeLastSyncToken() const
     return getActive(guard).getSerialNum();
 }
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 LogDataStore::getLastFlushTime() const
 {
     if (lastSyncToken() == 0) {
-        return fastos::TimeStamp();
+        return fastos::UTCTimeStamp::ZERO;
     }
     LockGuard guard(_updateLock);
-    fastos::TimeStamp timeStamp(getActive(guard).getModificationTime());
-    if (timeStamp == 0) {
+    fastos::UTCTimeStamp timeStamp(getActive(guard).getModificationTime());
+    if (timeStamp == fastos::UTCTimeStamp::ZERO) {
         const FileChunk * prev = getPrevActive(guard);
         if (prev != nullptr) {
             timeStamp = prev->getModificationTime();
         }
     }
+    // TODO Needs to change when we decide on Flush time reference
     return timeStamp;
 }
 
@@ -655,7 +656,7 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
 FileChunk::UP
 LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum)
 {
-    return createWritableFile(fileId, serialNum, NameId(fastos::ClockSystem::now()));
+    return createWritableFile(fileId, serialNum, NameId(fastos::ClockSystem::now().timeSinceEpoch()));
 }
 
 namespace {

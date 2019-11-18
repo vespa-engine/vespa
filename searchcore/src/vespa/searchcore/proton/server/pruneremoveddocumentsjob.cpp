@@ -12,8 +12,7 @@ LOG_SETUP(".proton.server.pruneremoveddocumentsjob");
 using document::BucketId;
 using storage::spi::Timestamp;
 
-namespace proton
-{
+namespace proton {
 
 PruneRemovedDocumentsJob::
 PruneRemovedDocumentsJob(const Config &config,
@@ -45,10 +44,8 @@ PruneRemovedDocumentsJob::flush(DocId lowLid, DocId nextLowLid,
     DocId docIdLimit = _metaStore.getCommittedDocIdLimit();
     PruneRemovedDocumentsOperation pruneOp(docIdLimit, _subDbId);
     LidVectorContext::SP lvCtx(pruneOp.getLidsToRemove());
-    for (std::vector<DocId>::const_iterator it = _pruneLids.begin(),
-                                           ite = _pruneLids.end();
-         it != ite; ++it) {
-        lvCtx->addLid(*it);
+    for (DocId docId : _pruneLids) {
+        lvCtx->addLid(docId);
     }
     _pruneLids.clear();
     LOG(debug,
@@ -68,9 +65,9 @@ bool
 PruneRemovedDocumentsJob::run()
 {
     uint64_t tshz = 1000000;
-    fastos::TimeStamp now = fastos::ClockSystem::now();
+    fastos::UTCTimeStamp now = fastos::ClockSystem::now();
     const Timestamp ageLimit(static_cast<Timestamp::Type>
-                             ((now.sec() - _cfgAgeLimit) * tshz));
+                             ((now.timeSinceEpoch().sec() - _cfgAgeLimit) * tshz));
     DocId lid(_nextLid);
     const DocId olid(lid);
     const DocId docIdLimit(_metaStore.getCommittedDocIdLimit());

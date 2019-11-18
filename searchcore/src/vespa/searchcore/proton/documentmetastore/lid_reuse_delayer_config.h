@@ -3,11 +3,10 @@
 #pragma once
 
 #include <vespa/fastos/timestamp.h>
-namespace proton {
 
-class DocumentDBConfig;
+namespace proton { class DocumentDBConfig; }
 
-namespace documentmetastore {
+namespace proton::documentmetastore {
 
 /*
  * Class representing configuration for lid reuse delayer.
@@ -24,6 +23,4 @@ public:
     bool hasIndexedOrAttributeFields() const { return _hasIndexedOrAttributeFields; }
 };
 
-} // namespace proton::documentmetastore
-
-} // namespace proton
+}

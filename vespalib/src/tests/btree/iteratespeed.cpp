@@ -21,8 +21,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("iteratespeed");
 
-namespace search {
-namespace btree {
+namespace search::btree {
 
 enum class IterateMethod
 {
@@ -84,7 +83,7 @@ IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
     assert(numEntries == tree.size());
     assert(tree.isValid());
     for (int l = 0; l < loops; ++l) {
-        fastos::TimeStamp before = fastos::ClockSystem::now();
+        fastos::StopWatch stopWatch;
         uint64_t sum = 0;
         for (size_t innerl = 0; innerl < numInnerLoops; ++innerl) {
             if (iterateMethod == IterateMethod::FORWARD) {
@@ -107,8 +106,7 @@ IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
                                                 [&](int key) { sum += key; } );
             }
         }
-        fastos::TimeStamp after = fastos::ClockSystem::now();
-        double used = after.sec() - before.sec();
+        double used = stopWatch.stop().elapsed().sec();
         printf("Elapsed time for iterating %ld steps is %8.5f, "
                "direction=%s, fanout=%u,%u, sum=%" PRIu64 "\n",
                numEntries * numInnerLoops,
@@ -204,7 +202,6 @@ IterateSpeed::Main()
     return 0;
 }
 
-}
 }
 
 FASTOS_MAIN(search::btree::IterateSpeed);

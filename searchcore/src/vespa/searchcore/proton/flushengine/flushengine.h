@@ -20,15 +20,16 @@ class FlushEngine final : public FastOS_Runnable
 public:
     class FlushMeta {
     public:
-        FlushMeta(const vespalib::string & name, fastos::TimeStamp start, uint32_t id);
+        FlushMeta(const vespalib::string & name, uint32_t id);
         ~FlushMeta();
         const vespalib::string & getName() const { return _name; }
-        fastos::TimeStamp getStart() const { return _start; }
+        fastos::UTCTimeStamp getStart() const { return fastos::ClockSystem::now() - elapsed(); }
+        fastos::TimeStamp elapsed() const { return _stopWatch.stop().elapsed(); }
         uint32_t getId() const { return _id; }
         bool operator < (const FlushMeta & rhs) const { return _id < rhs._id; }
     private:
         vespalib::string  _name;
-        fastos::TimeStamp _start;
+        mutable fastos::StopWatch _stopWatch;
         uint32_t          _id;
     };
     typedef std::set<FlushMeta> FlushMetaSet;

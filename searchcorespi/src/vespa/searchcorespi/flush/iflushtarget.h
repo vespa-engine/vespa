@@ -38,7 +38,7 @@ public:
 
 private:
     vespalib::string _name;
-    Type _type;
+    Type      _type;
     Component _component;
 
 public:
@@ -57,10 +57,10 @@ public:
         T _before;
         T _after;
     };
-    typedef Gain<int64_t> MemoryGain;
-    typedef Gain<int64_t> DiskGain;
-    typedef search::SerialNum SerialNum;
-    typedef fastos::TimeStamp Time;
+    using MemoryGain = Gain<int64_t>;
+    using DiskGain = Gain<int64_t>;
+    using SerialNum = search::SerialNum;
+    using Time = fastos::UTCTimeStamp;
 
     /**
      * Convenience typedefs.

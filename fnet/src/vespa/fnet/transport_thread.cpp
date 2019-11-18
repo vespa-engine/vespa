@@ -80,7 +80,7 @@ FNET_TransportThread::RemoveComponent(FNET_IOComponent *comp)
 void
 FNET_TransportThread::UpdateTimeOut(FNET_IOComponent *comp)
 {
-    comp->_ioc_timestamp = _now;
+    comp->_ioc_timestamp = fastos::UTCTimeStamp(_now);
     RemoveComponent(comp);
     AddComponent(comp);
 }
@@ -520,9 +520,9 @@ FNET_TransportThread::EventLoopIteration()
 
             FastOS_Time t = _now;
             t.SubtractMilliSecs((double)_config._iocTimeOut);
-            fastos::TimeStamp oldest(t);
+            fastos::UTCTimeStamp oldest(t);
             while (_timeOutHead != nullptr &&
-                   oldest >= _timeOutHead->_ioc_timestamp) {
+                   oldest > _timeOutHead->_ioc_timestamp) {
 
                 component = _timeOutHead;
                 RemoveComponent(component);

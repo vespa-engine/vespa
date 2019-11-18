@@ -11,8 +11,6 @@ LOG_SETUP("bufferwriter_bm");
 
 using search::DrainingBufferWriter;
 
-double getTime() { return fastos::TimeStamp(fastos::ClockSystem::now()).sec(); }
-
 constexpr size_t million = 1000000;
 
 enum class WorkFuncDispatch
@@ -33,7 +31,7 @@ callWork(size_t size, WorkFuncDispatch dispatch)
     foo.resize(size);
     std::cout << "will write " << size << " elements of size " << sizeof(T) <<
         std::endl;
-    double before = getTime();
+    fastos::StopWatch stopWatch;
     switch (dispatch) {
     case WorkFuncDispatch::DIRECT:
         work(foo, writer);
@@ -50,8 +48,7 @@ callWork(size_t size, WorkFuncDispatch dispatch)
     default:
         LOG_ABORT("should not be reached");
     }
-    double after = getTime();
-    double delta = (after - before);
+    double delta = stopWatch.stop().elapsed();
     double writeSpeed = writer.getBytesWritten() / delta;
     EXPECT_GREATER(writeSpeed, 1000);
     std::cout << "written is " << writer.getBytesWritten() << std::endl;

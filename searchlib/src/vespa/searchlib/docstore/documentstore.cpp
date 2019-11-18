@@ -274,7 +274,7 @@ DocumentStore::tentativeLastSyncToken() const
     return _backingStore.tentativeLastSyncToken();
 }
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 DocumentStore::getLastFlushTime() const
 {
     return _backingStore.getLastFlushTime();

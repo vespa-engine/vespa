@@ -57,7 +57,7 @@ struct Fixture
                                                           IFlushTarget::Type::GC,
                                                           IFlushTarget::Component::ATTRIBUTE,
                                                           10,
-                                                          IFlushTarget::Time(),
+                                                          fastos::UTCTimeStamp::ZERO,
                                                           _lidSpace))
     {
     }

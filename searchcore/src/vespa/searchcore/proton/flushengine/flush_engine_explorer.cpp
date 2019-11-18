@@ -15,15 +15,13 @@ namespace proton {
 namespace {
 
 void
-convertToSlime(const FlushEngine::FlushMetaSet &flushingTargets,
-               const fastos::TimeStamp &now,
-               Cursor &array)
+convertToSlime(const FlushEngine::FlushMetaSet &flushingTargets, Cursor &array)
 {
     for (const auto &target : flushingTargets) {
         Cursor &object = array.addObject();
         object.setString("name", target.getName());
         object.setString("startTime", target.getStart().toString());
-        fastos::TimeStamp elapsedTime = now - target.getStart();
+        fastos::TimeStamp elapsedTime = target.elapsed();
         object.setDouble("elapsedTime", elapsedTime.sec());
     }
 }
@@ -40,7 +38,7 @@ sortTargetList(FlushContext::List &allTargets)
 
 void
 convertToSlime(const FlushContext::List &allTargets,
-               const fastos::TimeStamp &now,
+               const fastos::UTCTimeStamp &now,
                Cursor &array)
 {
     for (const auto &ctx : allTargets) {
@@ -69,8 +67,8 @@ FlushEngineExplorer::get_state(const Inserter &inserter, bool full) const
 {
     Cursor &object = inserter.insertObject();
     if (full) {
-        fastos::TimeStamp now = fastos::ClockSystem::now();
-        convertToSlime(_engine.getCurrentlyFlushingSet(), now, object.setArray("flushingTargets"));
+        fastos::UTCTimeStamp now = fastos::ClockSystem::now();
+        convertToSlime(_engine.getCurrentlyFlushingSet(), object.setArray("flushingTargets"));
         FlushContext::List allTargets = _engine.getTargetList(true);
         sortTargetList(allTargets);
         convertToSlime(allTargets, now, object.setArray("allTargets"));

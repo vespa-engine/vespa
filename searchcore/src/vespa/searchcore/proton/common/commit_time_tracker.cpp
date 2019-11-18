@@ -6,10 +6,10 @@ namespace proton {
 
 CommitTimeTracker::CommitTimeTracker(fastos::TimeStamp visibilityDelay)
     : _visibilityDelay(visibilityDelay),
-      _nextCommit(fastos::ClockSystem::now()),
+      _nextCommit(fastos::ClockSteady::now()),
       _replayDone(false)
 {
-    _nextCommit += visibilityDelay;
+    _nextCommit = _nextCommit + visibilityDelay;
 }
 
 bool
@@ -19,8 +19,8 @@ CommitTimeTracker::needCommit() const
         if (_replayDone) {
             return false; // maintenance job will do forced commits now
         }
-        fastos::TimeStamp now(fastos::ClockSystem::now());
-        if (now >= _nextCommit) {
+        fastos::SteadyTimeStamp now(fastos::ClockSteady::now());
+        if (now > _nextCommit) {
             _nextCommit = now + _visibilityDelay;
             return true;
         }
@@ -32,13 +32,11 @@ CommitTimeTracker::needCommit() const
 void
 CommitTimeTracker::setVisibilityDelay(fastos::TimeStamp visibilityDelay)
 {
-    fastos::TimeStamp now(fastos::ClockSystem::now());
-    fastos::TimeStamp nextCommit = now + visibilityDelay;
-    if (nextCommit.val() < _nextCommit.val()) {
+    fastos::SteadyTimeStamp nextCommit = fastos::ClockSteady::now() + visibilityDelay;
+    if (nextCommit < _nextCommit) {
         _nextCommit = nextCommit;
     }
     _visibilityDelay = visibilityDelay;
 }
-
 
 } // namespace proton

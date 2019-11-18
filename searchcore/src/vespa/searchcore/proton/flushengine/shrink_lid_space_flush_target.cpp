@@ -15,8 +15,8 @@ class ShrinkLidSpaceFlushTarget::Flusher : public FlushTask
     SerialNum _flushSerialNum;
 public:
     Flusher(ShrinkLidSpaceFlushTarget &target, SerialNum flushSerialNum);
-    virtual void run() override;
-    virtual search::SerialNum getFlushSerial() const override;
+    void run() override;
+    search::SerialNum getFlushSerial() const override;
 };
 
 ShrinkLidSpaceFlushTarget::Flusher::Flusher(ShrinkLidSpaceFlushTarget &target, SerialNum flushSerialNum)

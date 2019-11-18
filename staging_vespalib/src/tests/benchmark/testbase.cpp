@@ -165,8 +165,8 @@ size_t ReturnByValueMultiVectorString::onRun()
 
 size_t ClockSystem::onRun()
 {
-    fastos::TimeStamp start(fastos::ClockSystem::now());
-    fastos::TimeStamp end(start);
+    fastos::UTCTimeStamp start(fastos::ClockSystem::now());
+    fastos::UTCTimeStamp end(start);
     for (size_t i=0; i < 1000; i++) {
         end = fastos::ClockSystem::now();
     }

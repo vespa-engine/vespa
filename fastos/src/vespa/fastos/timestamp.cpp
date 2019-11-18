@@ -32,7 +32,7 @@ TimeStamp::asString(double timeInSeconds)
     return std::string(retval);
 }
 
-int64_t
+UTCTimeStamp
 ClockSystem::now()
 {
     struct timeval timeNow;
@@ -40,7 +40,7 @@ ClockSystem::now()
     int64_t ns = timeNow.tv_sec;
     ns *= TimeStamp::NANO;
     ns += timeNow.tv_usec*1000;
-    return ns;
+    return UTCTimeStamp(ns);
 }
 
 time_t
@@ -57,6 +57,16 @@ steady_now() {
 
 }
 
+std::ostream &
+operator << (std::ostream & os, UTCTimeStamp ts) {
+    return os << ts.toString();
+}
+
+std::ostream &
+operator << (std::ostream & os, SteadyTimeStamp ts) {
+    return os << ts.toString();
+}
+
 SteadyTimeStamp
 ClockSteady::now()
 {
@@ -65,10 +75,12 @@ ClockSteady::now()
 
 const SteadyTimeStamp SteadyTimeStamp::ZERO;
 const SteadyTimeStamp SteadyTimeStamp::FUTURE(TimeStamp::FUTURE);
+const UTCTimeStamp UTCTimeStamp::ZERO;
+const UTCTimeStamp UTCTimeStamp::FUTURE(TimeStamp::FUTURE);
 
-TimeStamp
+UTCTimeStamp
 SteadyTimeStamp::toUTC() const {
-    TimeStamp nowUtc = ClockSystem::now();
+    UTCTimeStamp nowUtc = ClockSystem::now();
     SteadyTimeStamp nowSteady = ClockSteady::now();
     return nowUtc - (nowSteady - *this);
 }

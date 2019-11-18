@@ -524,7 +524,7 @@ WriteableFileChunk::fileWriter(const uint32_t firstChunkId)
     }
 }
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 WriteableFileChunk::getModificationTime() const
 {
     LockGuard guard(_lock);
@@ -832,7 +832,7 @@ WriteableFileChunk::flushPendingChunks(uint64_t serialNum) {
     if (frozen())
         return;
     uint64_t datFileLen = _dataFile.getSize();
-    fastos::TimeStamp timeStamp(fastos::ClockSystem::now());
+    fastos::UTCTimeStamp timeStamp(fastos::ClockSystem::now());
     if (needFlushPendingChunks(serialNum, datFileLen)) {
         timeStamp = unconditionallyFlushPendingChunks(flushGuard, serialNum, datFileLen);
     }
@@ -840,7 +840,7 @@ WriteableFileChunk::flushPendingChunks(uint64_t serialNum) {
     _modificationTime = std::max(timeStamp, _modificationTime);
 }
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard &flushGuard, uint64_t serialNum, uint64_t datFileLen)
 {
     (void) flushGuard;
@@ -870,7 +870,7 @@ WriteableFileChunk::unconditionallyFlushPendingChunks(const vespalib::LockGuard 
             os.write(os2.c_str(), os2.size());
         }
     }
-    fastos::TimeStamp timeStamp(fastos::ClockSystem::now());
+    fastos::UTCTimeStamp timeStamp(fastos::ClockSystem::now());
     auto idxFile = openIdx();
     idxFile->SetPosition(idxFile->GetSize());
     ssize_t wlen = idxFile->Write2(os.c_str(), os.size());

@@ -5,8 +5,7 @@
 #include "document_db_maintenance_config.h"
 #include <persistence/spi/types.h>
 
-namespace proton
-{
+namespace proton {
 
 struct IDocumentMetaStore;
 class IPruneRemovedDocumentsHandler;
@@ -30,8 +29,7 @@ private:
     std::vector<DocId>             _pruneLids;
     DocId                          _nextLid;
 
-    void
-    flush(DocId lowLid, DocId nextLowLid, const storage::spi::Timestamp ageLimit);
+    void flush(DocId lowLid, DocId nextLowLid, const storage::spi::Timestamp ageLimit);
 public:
     using Config = DocumentDBPruneRemovedDocumentsConfig;
 
@@ -43,7 +41,7 @@ public:
                              IFrozenBucketHandler &frozenHandler);
 
     // Implements IMaintenanceJob
-    virtual bool run() override;
+    bool run() override;
 };
 
 } // namespace proton

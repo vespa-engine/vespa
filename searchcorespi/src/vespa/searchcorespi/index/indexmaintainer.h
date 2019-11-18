@@ -87,14 +87,14 @@ class IndexMaintainer : public IIndexManager,
     // _selector is protected by SL + IUL
     ISourceSelector::SP             _selector;
     ISearchableIndexCollection::SP  _source_list; // Protected by SL + NSL, only set by master thread
-    uint32_t          _last_fusion_id;   // Protected by SL + IUL
-    uint32_t          _next_id;          // Protected by SL + IUL
-    uint32_t          _current_index_id; // Protected by SL + IUL
-    IMemoryIndex::SP  _current_index;    // Protected by SL + IUL
-    bool              _flush_empty_current_index;
-    SerialNum         _current_serial_num;// Protected by IUL
-    SerialNum         _flush_serial_num;  // Protected by SL
-    fastos::TimeStamp _lastFlushTime; // Protected by SL
+    uint32_t             _last_fusion_id;   // Protected by SL + IUL
+    uint32_t             _next_id;          // Protected by SL + IUL
+    uint32_t             _current_index_id; // Protected by SL + IUL
+    IMemoryIndex::SP     _current_index;    // Protected by SL + IUL
+    bool                 _flush_empty_current_index;
+    SerialNum            _current_serial_num;// Protected by IUL
+    SerialNum            _flush_serial_num;  // Protected by SL
+    fastos::UTCTimeStamp _lastFlushTime; // Protected by SL
     // Extra frozen memory indexes.  This list is empty unless new
     // memory index has been added by force (due to config change or
     // data structure limitations).
@@ -335,7 +335,7 @@ public:
     uint32_t getNumFrozenMemoryIndexes() const;
     uint32_t getMaxFrozenMemoryIndexes() const { return _maxFrozen; }
 
-    fastos::TimeStamp getLastFlushTime() const { return _lastFlushTime; }
+    fastos::UTCTimeStamp getLastFlushTime() const { return _lastFlushTime; }
 
     // Implements IIndexManager
     void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) override;

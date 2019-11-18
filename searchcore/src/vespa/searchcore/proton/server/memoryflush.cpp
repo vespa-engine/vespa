@@ -74,7 +74,7 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
       maxTimeGain(maxTimeGain_in)
 { }
 
-MemoryFlush::MemoryFlush(const Config &config, fastos::TimeStamp startTime)
+MemoryFlush::MemoryFlush(const Config &config, fastos::UTCTimeStamp startTime)
     : _lock(),
       _config(config),
       _startTime(startTime)
@@ -85,7 +85,7 @@ MemoryFlush::MemoryFlush()
     : MemoryFlush(Config(), fastos::ClockSystem::now())
 { }
 
-MemoryFlush::~MemoryFlush() { }
+MemoryFlush::~MemoryFlush() = default;
 
 MemoryFlush::Config
 MemoryFlush::getConfig() const
@@ -133,14 +133,14 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
     uint64_t totalTlsSize(0);
     const Config config(getConfig());
     vespalib::hash_set<const void *> visitedHandlers;
-    fastos::TimeStamp now(fastos::ClockSystem::now());
+    fastos::UTCTimeStamp now(fastos::ClockSystem::now());
     LOG(debug,
         "getFlushTargets(): globalMaxMemory(%" PRIu64 "), maxGlobalTlsSize(%" PRIu64 "), globalDiskBloatFactor(%f), "
         "maxMemoryGain(%" PRIu64 "), diskBloatFactor(%f), maxTimeGain(%f), startTime(%f)",
         config.maxGlobalMemory, config.maxGlobalTlsSize, config.globalDiskBloatFactor,
         config.maxMemoryGain, config.diskBloatFactor,
         config.maxTimeGain.sec(),
-        _startTime.sec());
+        _startTime.timeSinceEpoch().sec());
     for (size_t i(0), m(targetList.size()); i < m; i++) {
         const IFlushTarget & target(*targetList[i]->getTarget());
         const IFlushHandler & handler(*targetList[i]->getHandler());
@@ -150,8 +150,8 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
         SerialNum localLastSerial = targetList[i]->getLastSerial();
         int64_t serialDiff = getSerialDiff(localLastSerial, target);
         vespalib::string name(getName(handler, target));
-        fastos::TimeStamp lastFlushTime = target.getLastFlushTime();
-        fastos::TimeStamp timeDiff(now - (lastFlushTime.val() > 0 ? lastFlushTime : _startTime));
+        fastos::UTCTimeStamp lastFlushTime = target.getLastFlushTime();
+        fastos::TimeStamp timeDiff(now - (lastFlushTime > fastos::UTCTimeStamp::ZERO ? lastFlushTime : _startTime));
         totalMemory += mgain;
         const flushengine::TlsStats &tlsStats = tlsStatsMap.getTlsStats(handler.getName());
         if (visitedHandlers.insert(&handler).second) {
@@ -183,8 +183,8 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             target.getFlushedSerialNum(),
             localLastSerial,
             serialDiff,
-            lastFlushTime.sec(),
-            now.sec(),
+            lastFlushTime.timeSinceEpoch().sec(),
+            now.timeSinceEpoch().sec(),
             timeDiff.sec(),
             getOrderName(order).c_str());
     }

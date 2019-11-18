@@ -75,14 +75,14 @@ AttributeDirectory::getFlushedSerialNum() const
     return bestSnap.valid ? bestSnap.syncToken : 0;
 }
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 AttributeDirectory::getLastFlushTime() const
 {
     return _lastFlushTime;
 }
 
 void
-AttributeDirectory::setLastFlushTime(fastos::TimeStamp lastFlushTime)
+AttributeDirectory::setLastFlushTime(fastos::UTCTimeStamp lastFlushTime)
 {
     _lastFlushTime = lastFlushTime;
 }

@@ -20,7 +20,7 @@ public:
      * Returns the modification time of the given file/directory,
      * or time stamp 0 if stating of file/directory fails.
      **/
-    static fastos::TimeStamp getModificationTime(const vespalib::string &name);
+    static fastos::UTCTimeStamp getModificationTime(const vespalib::string &name);
 };
 
 }

@@ -90,14 +90,14 @@ FileKit::removeStamp(const vespalib::string &name)
 }
 
 
-fastos::TimeStamp
+fastos::UTCTimeStamp
 FileKit::getModificationTime(const vespalib::string &name)
 {
     FastOS_StatInfo statInfo;
     if (FastOS_File::Stat(name.c_str(), &statInfo)) {
-        return fastos::TimeStamp(statInfo._modifiedTimeNS);
+        return fastos::UTCTimeStamp(statInfo._modifiedTimeNS);
     }
-    return fastos::TimeStamp();
+    return fastos::UTCTimeStamp();
 }
 
 

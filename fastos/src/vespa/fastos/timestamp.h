@@ -54,6 +54,48 @@ private:
 
 inline TimeStamp operator +(TimeStamp a, TimeStamp b) { return TimeStamp(a.val() + b.val()); }
 inline TimeStamp operator -(TimeStamp a, TimeStamp b) { return TimeStamp(a.val() - b.val()); }
+inline TimeStamp operator *(long a, TimeStamp b) { return TimeStamp(a * b.val()); }
+inline TimeStamp operator *(double a, TimeStamp b) { return TimeStamp(static_cast<int64_t>(a * b.val())); }
+
+class UTCTimeStamp {
+public:
+    static const UTCTimeStamp ZERO;
+    static const UTCTimeStamp FUTURE;
+    UTCTimeStamp() : _timeStamp() { }
+    explicit UTCTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
+
+    friend TimeStamp operator -(UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp - b._timeStamp;
+    }
+    friend UTCTimeStamp operator -(UTCTimeStamp a, TimeStamp b) {
+        return UTCTimeStamp(a._timeStamp - b);
+    }
+    friend UTCTimeStamp operator +(UTCTimeStamp a, TimeStamp b) {
+        return UTCTimeStamp(a._timeStamp + b);
+    }
+    friend bool operator != (UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp != b._timeStamp;
+    }
+    friend bool operator == (UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp == b._timeStamp;
+    }
+    friend bool operator < (UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp < b._timeStamp;
+    }
+    friend bool operator <= (UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp <= b._timeStamp;
+    }
+    friend bool operator > (UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp > b._timeStamp;
+    }
+    friend bool operator >= (UTCTimeStamp a, UTCTimeStamp b) {
+        return a._timeStamp >= b._timeStamp;
+    }
+    TimeStamp timeSinceEpoch() const { return _timeStamp - ZERO._timeStamp; }
+    std::string toString() const { return _timeStamp.toString(); };
+private:
+    TimeStamp _timeStamp;
+};
 
 class SteadyTimeStamp {
 public:
@@ -64,6 +106,9 @@ public:
 
     friend TimeStamp operator -(SteadyTimeStamp a, SteadyTimeStamp b) {
         return a._timeStamp - b._timeStamp;
+    }
+    friend SteadyTimeStamp operator -(SteadyTimeStamp a, TimeStamp b) {
+        return SteadyTimeStamp(a._timeStamp - b);
     }
     friend SteadyTimeStamp operator +(SteadyTimeStamp a, TimeStamp b) {
         return SteadyTimeStamp(a._timeStamp + b);
@@ -80,16 +125,19 @@ public:
     friend bool operator > (SteadyTimeStamp a, SteadyTimeStamp b) {
         return a._timeStamp > b._timeStamp;
     }
-    TimeStamp toUTC() const;
+    UTCTimeStamp toUTC() const;
     std::string toString() const { return _timeStamp.toString(); };
 private:
     TimeStamp _timeStamp;
 };
 
+std::ostream & operator << (std::ostream & os, UTCTimeStamp ts);
+std::ostream & operator << (std::ostream & os, SteadyTimeStamp ts);
+
 class ClockSystem
 {
 public:
-    static int64_t now();
+    static UTCTimeStamp now();
 };
 
 class ClockSteady

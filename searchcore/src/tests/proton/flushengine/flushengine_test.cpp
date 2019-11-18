@@ -55,14 +55,14 @@ public:
 
 class SimpleGetSerialNum : public IGetSerialNum
 {
-    virtual search::SerialNum getSerialNum() const override {
+    search::SerialNum getSerialNum() const override {
         return 0u;
     }
 };
 
 class SimpleTlsStatsFactory : public flushengine::ITlsStatsFactory
 {
-    virtual flushengine::TlsStatsMap create() override {
+    flushengine::TlsStatsMap create() override {
         vespalib::hash_map<vespalib::string, flushengine::TlsStats> map;
         return flushengine::TlsStatsMap(std::move(map));
     }
@@ -76,7 +76,7 @@ class WrappedFlushTask : public searchcorespi::FlushTask
     SimpleHandler &_handler;
 
 public:
-    virtual void run() override;
+    void run() override;
     WrappedFlushTask(searchcorespi::FlushTask::UP task,
                      SimpleHandler &handler)
         : _task(std::move(task)),
@@ -84,8 +84,7 @@ public:
     {
     }
 
-    virtual search::SerialNum getFlushSerial() const override
-    {
+    search::SerialNum getFlushSerial() const override {
         return _task->getFlushSerial();
     }
 };
@@ -101,7 +100,7 @@ public:
     {
     }
 
-    virtual Task::UP initFlush(SerialNum currentSerial) override
+    Task::UP initFlush(SerialNum currentSerial) override
     {
         Task::UP task(_target->initFlush(currentSerial));
         if (task) {
@@ -228,11 +227,7 @@ public:
         _done.countDown();
     }
 
-    virtual search::SerialNum
-    getFlushSerial() const override
-    {
-        return 0u;
-    }
+    search::SerialNum getFlushSerial() const override { return 0u; }
 };
 
 class SimpleTarget : public test::DummyFlushTarget {
@@ -284,22 +279,15 @@ public:
             : SimpleTarget(name, Type::OTHER, flushedSerial, proceedImmediately)
     { }
 
-    virtual Time
-    getLastFlushTime() const override { return fastos::ClockSystem::now(); }
+    Time getLastFlushTime() const override { return fastos::ClockSystem::now(); }
 
-    virtual SerialNum
-    getFlushedSerialNum() const override
-    {
-        LOG(info, "SimpleTarget(%s)::getFlushedSerialNum() = %" PRIu64,
-            getName().c_str(), _flushedSerial);
+    SerialNum getFlushedSerialNum() const override {
+        LOG(info, "SimpleTarget(%s)::getFlushedSerialNum() = %" PRIu64, getName().c_str(), _flushedSerial);
         return _flushedSerial;
     }
 
-    virtual Task::UP
-    initFlush(SerialNum currentSerial) override
-    {
-        LOG(info, "SimpleTarget(%s)::initFlush(%" PRIu64 ")",
-            getName().c_str(), currentSerial);
+    Task::UP initFlush(SerialNum currentSerial) override {
+        LOG(info, "SimpleTarget(%s)::initFlush(%" PRIu64 ")", getName().c_str(), currentSerial);
         _currentSerial = currentSerial;
         _initDone.countDown();
         return std::move(_task);
@@ -329,17 +317,13 @@ public:
     {
     }
 
-    virtual MemoryGain
-    getApproxMemoryGain() const override
-    {
+    MemoryGain getApproxMemoryGain() const override {
         LOG_ASSERT(_mgain == false);
         _mgain = true;
         return SimpleTarget::getApproxMemoryGain();
     }
 
-    virtual search::SerialNum
-    getFlushedSerialNum() const override
-    {
+    search::SerialNum getFlushedSerialNum() const override {
         LOG_ASSERT(_serial == false);
         _serial = true;
         return SimpleTarget::getFlushedSerialNum();
@@ -358,8 +342,8 @@ public:
         const SimpleStrategy &_flush;
     };
 
-    virtual FlushContext::List getFlushTargets(const FlushContext::List &targetList,
-                                               const flushengine::TlsStatsMap &) const override {
+    FlushContext::List getFlushTargets(const FlushContext::List &targetList,
+                                       const flushengine::TlsStatsMap &) const override {
         FlushContext::List fv(targetList);
         std::sort(fv.begin(), fv.end(), CompareTarget(*this));
         return fv;
@@ -403,8 +387,8 @@ public:
 
 class NoFlushStrategy : public SimpleStrategy
 {
-    virtual FlushContext::List getFlushTargets(const FlushContext::List &,
-                                               const flushengine::TlsStatsMap &) const override {
+    FlushContext::List getFlushTargets(const FlushContext::List &,
+                                       const flushengine::TlsStatsMap &) const override {
         return FlushContext::List();
     }
 };
@@ -427,11 +411,7 @@ public:
         _list.push_back(_name);
         _done.countDown();
     }
-    virtual search::SerialNum
-    getFlushSerial() const override
-    {
-        return 0u;
-    }
+    search::SerialNum getFlushSerial() const override { return 0u; }
     std::vector<vespalib::string> & _list;
     vespalib::Gate    & _done;
     vespalib::string    _name;
