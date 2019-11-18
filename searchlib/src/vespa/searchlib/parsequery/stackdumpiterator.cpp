@@ -29,8 +29,7 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref b
     _currIndexNameLen(0),
     _currTerm(nullptr),
     _currTermLen(0),
-    _generatedTerm(),
-    _currNum(-1)
+    _generatedTerm()
 {
 }
 
@@ -288,9 +287,7 @@ SimpleQueryStackDumpIterator::next()
     default:
         // Unknown item, so report that no more are available
         return false;
-        break;
     }
-    _currNum++;
     _currEnd = p;
 
     // We should not have passed the buffer

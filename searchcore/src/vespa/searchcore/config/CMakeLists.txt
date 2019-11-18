@@ -3,8 +3,6 @@ vespa_add_library(searchcore_fconfig STATIC
     SOURCES
     DEPENDS
 )
-vespa_generate_config(searchcore_fconfig partitions.def)
-install_config_definition(partitions.def vespa.config.search.core.partitions.def)
 vespa_generate_config(searchcore_fconfig fdispatchrc.def)
 install_config_definition(fdispatchrc.def vespa.config.search.core.fdispatchrc.def)
 vespa_generate_config(searchcore_fconfig proton.def)

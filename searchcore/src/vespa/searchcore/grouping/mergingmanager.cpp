@@ -20,18 +20,14 @@ private:
     uint32_t _rowBits;
     uint32_t _partId;
     uint32_t _rowId;
-    bool     _mld;
 
 public:
     typedef search::aggregation::FS4Hit FS4Hit;
-    PathMangler(uint32_t partBits, uint32_t rowBits, uint32_t partId, uint32_t rowId, bool mld)
-        : _partBits(partBits), _rowBits(rowBits), _partId(partId), _rowId(rowId), _mld(mld) {}
+    PathMangler(uint32_t partBits, uint32_t rowBits, uint32_t partId, uint32_t rowId)
+        : _partBits(partBits), _rowBits(rowBits), _partId(partId), _rowId(rowId) {}
     bool check(const vespalib::Identifiable &obj) const override;
     void execute(vespalib::Identifiable &obj) override __attribute__((noinline));
     uint32_t computeNewPath(uint32_t path) const {
-        if (_mld) {
-            path = (path + 1) << _partBits;
-        }
         path += _partId;
         if (_rowBits > 0) {
             path = (path << _rowBits) + _rowId;
@@ -70,18 +66,16 @@ MergingManager::~MergingManager()
 }
 
 void
-MergingManager::addResult(uint32_t partId, uint32_t rowId, bool mld,
+MergingManager::addResult(uint32_t partId, uint32_t rowId,
                           const char *groupResult, size_t groupResultLen)
 {
-    _input.push_back(Entry(partId, rowId, mld, groupResult, groupResultLen));
+    _input.push_back(Entry(partId, rowId, groupResult, groupResultLen));
 }
 
 bool MergingManager::needMerge() const
 {
     if (_input.size() == 1) {
-        PathMangler pathMangler(_partBits, _rowBits,
-                                _input[0].partId, _input[0].rowId,
-                                _input[0].mld);
+        PathMangler pathMangler(_partBits, _rowBits, _input[0].partId, _input[0].rowId);
         if (pathMangler.computeNewPath(0) == 0) {
             return false;
         }
@@ -110,7 +104,7 @@ namespace {
 void mergeOne(MAP & map, const MergingManager::Entry & input, uint32_t partBits, uint32_t rowBits) __attribute__((noinline));
 
 void mergeOne(MAP & map, const MergingManager::Entry & input, uint32_t partBits, uint32_t rowBits) {
-    PathMangler pathMangler(partBits, rowBits, input.partId, input.rowId, input.mld);
+    PathMangler pathMangler(partBits, rowBits, input.partId, input.rowId);
     vespalib::nbostream is(input.data, input.length);
     vespalib::NBOSerializer nis(is);
     uint32_t cnt = 0;

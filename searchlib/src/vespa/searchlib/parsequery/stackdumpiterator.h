@@ -60,9 +60,6 @@ private:
     size_t _currTermLen;
     vespalib::asciistream _generatedTerm;
 
-    /** The number of the current item */
-    int _currNum;
-
     vespalib::string readString(const char *&p);
     uint64_t readUint64(const char *&p);
     uint64_t readCompressedPositiveInt(const char *&p);
@@ -88,13 +85,6 @@ public:
      * or if there was errors in extracting the next item.
      */
     bool next();
-
-    /**
-     * Get the number of the current item.
-     *
-     * @return The ordinal of the current item. -1 if at the start.
-     */
-    int getNum() const { return _currNum; }
 
     /**
      * Get the type of the current item.

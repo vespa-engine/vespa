@@ -112,12 +112,12 @@ useful for enabling debug output only in parts of a program.
 
 Some hypothetical examples:
 
-In the application "fdispatch" there could be some files that have
+In the application "dispatch" there could be some files that have
 code primarily for query parsing. It also links with the library "fnet"
 for communicating.
 
 in main.cpp the following is done:
-LOG_SETUP("fdispatch");
+LOG_SETUP("dispatch");
 LOG_RCSID("$Id$");
 
 In the .cpp files that worry about query parsing, the following is done:

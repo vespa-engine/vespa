@@ -5,7 +5,7 @@
 namespace search {
 
 // since everything is real-time, the docstamp does no longer change
-// as before. The value 0 still means invalid in fdispatch, and the
+// as before. The value 0 still means invalid , and the
 // value 42 was selected randomly to reflect a valid value. Defined
 // here for a single source of truth.
 

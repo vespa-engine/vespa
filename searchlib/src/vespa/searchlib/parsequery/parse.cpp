@@ -58,15 +58,6 @@ void assert_type(ParseItem::ItemType type)
 
 }
 
-ParseItem::ParseItem(ItemType type, vespalib::stringref idx, const char *term)
-    : PARSEITEM_DEFAULT_CONSTRUCTOR_LIST
-{
-    assert_type(type);
-    SetType(type);
-    SetIndex(idx.data());
-    SetTerm(term);
-}
-
 ParseItem::ParseItem(ItemType type, const char *term)
     : PARSEITEM_DEFAULT_CONSTRUCTOR_LIST
 {

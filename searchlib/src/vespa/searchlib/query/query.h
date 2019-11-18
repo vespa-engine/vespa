@@ -3,7 +3,7 @@
 
 #include "queryterm.h"
 #include "base.h"
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/parsequery/parse.h>
 
 namespace search
 {

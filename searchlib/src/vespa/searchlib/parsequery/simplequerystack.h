@@ -17,15 +17,7 @@ namespace search {
  */
 class SimpleQueryStack
 {
-
 private:
-    SimpleQueryStack(const SimpleQueryStack &);
-    SimpleQueryStack& operator=(const SimpleQueryStack &);
-
-    static vespalib::string ReadString(const char *&p);
-    static uint64_t ReadUint64(const char *&p);
-    static uint64_t ReadCompressedPositiveInt(const char *&p);
-
     /** The number of items on the stack. */
     uint32_t _numItems;
 
@@ -35,10 +27,9 @@ private:
      */
     search::ParseItem *_stack;
 
-    /** Is this query OK for FirstPage? */
-    bool _FP_queryOK;
-
 public:
+    SimpleQueryStack(const SimpleQueryStack &) = delete;
+    SimpleQueryStack& operator=(const SimpleQueryStack &) = delete;
     /**
      * Constructor for SimpleQueryStack.
      */
@@ -52,16 +43,7 @@ public:
      * @param item The search::ParseItem to push.
      */
     void Push(search::ParseItem *item);
-    /**
-     * Pop an item of the stack.
-     * @return Pointer to the search::ParseItem poped, or NULL if stack is empty.
-     */
-    search::ParseItem *Pop();
-    /**
-     * Top node of the stack.
-     * @return Pointer to the top search::ParseItem, or NULL if stack is empty.
-     */
-    search::ParseItem *Top() { return _stack; }
+
 
     /**
      * Encode the contents of the stack in a binary buffer.
@@ -81,18 +63,6 @@ public:
      * @param numItems The number of items on the stack.
      */
     void SetSize(uint32_t numItems) { _numItems = numItems; }
-
-    /**
-     * Is it possible to run this query on FirstPage?
-     * @return true if ok
-     */
-    bool _FP_isAllowed();
-    /**
-     * Make a string representation of the search::RawBuf representing a querystack.
-     * @param theBuf The querystack encoded buffer.
-     * @return a fresh string
-     */
-    static vespalib::string StackbufToString(vespalib::stringref theBuf);
 };
 
 } // namespace search

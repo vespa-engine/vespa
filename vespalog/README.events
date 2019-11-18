@@ -41,7 +41,7 @@ is not required to track processes, but is useful in cases where a
 sub-process may fail during startup.
 
 Example:
-starting name=fdispatch
+starting name=dispatch
 
 
 Event: started
@@ -50,7 +50,7 @@ Payload: name=<name>
 The "started" event is sent by a process that just started up.
 
 Example:
-started name=fdispatch
+started name=dispatch
 
 
 Event: stopping
@@ -59,7 +59,7 @@ Payload: name=<name> why=<why>
 The "stopping" event is sent by a process that is about to exit.
 
 Example:
-stopping name=fdispatch why="clean exit"
+stopping name=dispatch why="clean exit"
 
 
 Event: stopped
@@ -69,7 +69,7 @@ Payload: name=<name> pid=<pid> exitcode=<exitcode>
 This event is sent by a process monitoring when a sub-process exits.
 
 Example:
-stopped name=fdispatch pid=76512
+stopped name=dispatch pid=76512
 
 
 Event: reloading
