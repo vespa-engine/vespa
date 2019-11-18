@@ -5,13 +5,26 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.log.LogLevel;
+import com.yahoo.security.KeyStoreBuilder;
+import com.yahoo.security.KeyStoreType;
+import com.yahoo.security.KeyStoreUtils;
+import com.yahoo.security.KeyUtils;
+import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
+import com.yahoo.security.tls.TransportSecurityOptions;
+import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.text.Utf8;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,14 +44,19 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
     private final Thread zkServerThread;
     private final ZookeeperServerConfig zookeeperServerConfig;
+    private final String configFilePath;
+    private final String jksKeyStoreFilePath;
 
-    VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig, boolean startServer) {
+    VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig, boolean startServer,
+                            Optional<TransportSecurityOptions> transportSecurityOptions) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         System.setProperty("zookeeper.jmx.log4j.disable", "true");
         System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
 
-        writeConfigToDisk(zookeeperServerConfig);
+        configFilePath = getDefaults().underVespaHome(zookeeperServerConfig.zooKeeperConfigFile());
+        jksKeyStoreFilePath = getDefaults().underVespaHome(zookeeperServerConfig.jksKeyStoreFile());
+        writeConfigToDisk(zookeeperServerConfig, transportSecurityOptions);
         zkServerThread = new Thread(this, "zookeeper server");
         if (startServer) {
             zkServerThread.start();
@@ -47,21 +65,30 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
 
     @Inject
     public VespaZooKeeperServerImpl(ZookeeperServerConfig zookeeperServerConfig) {
-        this(zookeeperServerConfig, true);
+        this(zookeeperServerConfig, true, TransportSecurityUtils.getOptions());
     }
 
-    private void writeConfigToDisk(ZookeeperServerConfig config) {
-       String configFilePath = getDefaults().underVespaHome(config.zooKeeperConfigFile());
-       new File(configFilePath).getParentFile().mkdirs();
-       try (FileWriter writer = new FileWriter(configFilePath)) {
-           writer.write(transformConfigToString(config));
-           writeMyIdFile(config);
-       } catch (IOException e) {
-           throw new RuntimeException("Error writing zookeeper config", e);
-       }
+    private void writeConfigToDisk(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
+        new File(configFilePath).getParentFile().mkdirs();
+
+        try {
+            writeZooKeeperConfigFile(zookeeperServerConfig, transportSecurityOptions);
+            writeMyIdFile(config);
+            transportSecurityOptions.ifPresent(this::writeJksKeystore);
+        } catch (IOException e) {
+            throw new RuntimeException("Error writing zookeeper config", e);
+        }
    }
 
-    private String transformConfigToString(ZookeeperServerConfig config) {
+    private void writeZooKeeperConfigFile(ZookeeperServerConfig config,
+                                          Optional<TransportSecurityOptions> transportSecurityOptions) throws IOException {
+        try (FileWriter writer = new FileWriter(configFilePath)) {
+            writer.write(transformConfigToString(config, transportSecurityOptions));
+        }
+    }
+
+    private String transformConfigToString(ZookeeperServerConfig config,
+                                           Optional<TransportSecurityOptions> transportSecurityOptions) {
         StringBuilder sb = new StringBuilder();
         sb.append("tickTime=").append(config.tickTime()).append("\n");
         sb.append("initLimit=").append(config.initLimit()).append("\n");
@@ -80,12 +107,16 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
-        sb.append(createTlsQuorumConfig(getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION")
-                                                .orElse(config.tlsForQuorumCommunication().name())));
+        sb.append(createTlsQuorumConfig(config, transportSecurityOptions));
         return sb.toString();
     }
 
-    private String createTlsQuorumConfig(String tlsSetting) {
+    private String createTlsQuorumConfig(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
+        String tlsSetting = getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION")
+                .orElse(config.tlsForQuorumCommunication().name());
+        if (transportSecurityOptions.isEmpty() && !tlsSetting.equals("OFF"))
+            throw new RuntimeException("Could not retrieve transport security options");
+
         StringBuilder sb = new StringBuilder();
 
         // Common config
@@ -119,6 +150,15 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("sslQuorum=").append(sslQuorum).append("\n");
         sb.append("portUnification=").append(portUnification).append("\n");
 
+        transportSecurityOptions.ifPresent(options -> {
+            sb.append("ssl.quorum.keyStore.location=").append(jksKeyStoreFilePath).append("\n");
+            sb.append("ssl.quorum.keyStore.type=JKS\n");
+
+            Path caCertificatesFile = options.getCaCertificatesFile().orElseThrow(() -> new RuntimeException("Could not find ca certificates file"));
+            sb.append("ssl.quorum.trustStore.location=").append(caCertificatesFile).append("\n");
+            sb.append("ssl.quorum.trustStore.type=PEM\n");
+        });
+
         return sb.toString();
     }
 
@@ -128,6 +168,25 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
                 writer.write(config.myid() + "\n");
             }
         }
+    }
+
+    private void writeJksKeystore(TransportSecurityOptions options) {
+        Path privateKeyFile = options.getPrivateKeyFile().orElseThrow(() -> new RuntimeException("Could not find private key file"));
+        Path certificatesFile = options.getCertificatesFile().orElseThrow(() -> new RuntimeException("Could not find certificates file"));
+
+        PrivateKey privateKey;
+        List<X509Certificate> certificates;
+        try {
+            privateKey = KeyUtils.fromPemEncodedPrivateKey(Utf8.toString(Files.readAllBytes(privateKeyFile)));
+            certificates = X509CertificateUtils.certificateListFromPem(Utf8.toString(Files.readAllBytes(certificatesFile)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        KeyStoreBuilder keyStoreBuilder = KeyStoreBuilder
+                .withType(KeyStoreType.JKS)
+                .withKeyEntry("foo", privateKey, certificates);
+
+        KeyStoreUtils.writeKeyStoreToFile(keyStoreBuilder.build(), Paths.get(jksKeyStoreFilePath));
     }
 
     private void ensureThisServerIsRepresented(int myid, List<ZookeeperServerConfig.Server> servers) {
