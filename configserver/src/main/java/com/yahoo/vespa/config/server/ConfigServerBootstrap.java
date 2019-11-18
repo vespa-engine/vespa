@@ -246,12 +246,14 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             ApplicationId app = f.getKey();
             try {
                 f.getValue().get();
-            } catch (TransientException e) {
-                log.log(LogLevel.INFO, "Redeploying " + app +
-                        " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
             } catch (ExecutionException e) {
-                log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
-                failedDeployments.add(app);
+                if (e.getCause() instanceof TransientException) {
+                    log.log(LogLevel.INFO, "Redeploying " + app +
+                            " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
+                } else {
+                    log.log(LogLevel.WARNING, "Redeploying " + app + " failed, will retry", e);
+                    failedDeployments.add(app);
+                }
             }
         }
         executor.shutdown();
