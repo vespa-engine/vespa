@@ -93,11 +93,11 @@ public class VersionTestCase {
     public void testOrder() {
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.3"))==0);
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.4"))<0);
+        assertTrue(new Version("1.2.3").compareTo(new Version("1.2.3.foo"))<0);
         assertTrue(new Version("1.2.3").compareTo(new Version("1.2.2"))>0);
-
+        assertTrue(new Version("1.2.3.foo").compareTo(new Version("1.2.3"))>0);
         assertTrue(new Version("1.2.3").compareTo(new Version("2"))<0);
         assertTrue(new Version("1.2.3").compareTo(new Version("1.3"))<0);
-
         assertTrue(new Version("1.0.0").compareTo(new Version("1"))==0);
     }
     
@@ -107,9 +107,11 @@ public class VersionTestCase {
         assertFalse(new Version("1.2.3").isBefore(new Version("1.1.3")));
         assertFalse(new Version("1.2.3").isBefore(new Version("1.2.2")));
         assertFalse(new Version("1.2.3").isBefore(new Version("1.2.3")));
+        assertFalse(new Version("1.2.3.foo").isBefore(new Version("1.2.3")));
         assertTrue( new Version("1.2.3").isBefore(new Version("1.2.4")));
         assertTrue( new Version("1.2.3").isBefore(new Version("1.3.3")));
         assertTrue( new Version("1.2.3").isBefore(new Version("2.2.3")));
+        assertTrue( new Version("1.2.3").isBefore(new Version("1.2.3.foo")));
     }
 
     @Test
@@ -117,10 +119,12 @@ public class VersionTestCase {
         assertTrue( new Version("1.2.3").isAfter(new Version("0.2.3")));
         assertTrue( new Version("1.2.3").isAfter(new Version("1.1.3")));
         assertTrue( new Version("1.2.3").isAfter(new Version("1.2.2")));
+        assertTrue( new Version("1.2.3.foo").isAfter(new Version("1.2.3")));
         assertFalse(new Version("1.2.3").isAfter(new Version("1.2.3")));
         assertFalse(new Version("1.2.3").isAfter(new Version("1.2.4")));
         assertFalse(new Version("1.2.3").isAfter(new Version("1.3.3")));
         assertFalse(new Version("1.2.3").isAfter(new Version("2.2.3")));
+        assertFalse(new Version("1.2.3").isAfter(new Version("1.2.3.foo")));
     }
 
 }

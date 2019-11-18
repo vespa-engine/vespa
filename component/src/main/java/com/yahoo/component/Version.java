@@ -347,17 +347,21 @@ public final class Version implements Comparable<Version> {
 
         return getQualifier().compareTo(other.getQualifier());
     }
-    
-    /** Returns whether this version number (ignoring qualifier) is strictly lower than the given version */
+
+    /**
+     * Returns whether this version number is strictly lower than the given version. This has the same semantics as
+     * {@link this#compareTo}.
+     */
     public boolean isBefore(Version other) {
-        if (this.major == other.major && this.minor == other.minor) return this.micro < other.micro;
-        if (this.major == other.major) return this.minor < other.minor;
-        return this.major < other.major;
+        return compareTo(other) < 0;
     }
 
-    /** Returns whether this version number (ignoring qualifier) is strictly higher than the given version */
+    /**
+     * Returns whether this version number is strictly higher than the given version. This has the same semantics as
+     * {@link this#compareTo}.
+     */
     public boolean isAfter(Version other) {
-        return ! this.isBefore(other) && ! this.equals(other);
+        return compareTo(other) > 0;
     }
 
     /** Creates a version specification that only matches this version */
