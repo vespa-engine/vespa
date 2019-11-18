@@ -1,12 +1,14 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -16,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
 import java.net.URI;
@@ -51,7 +54,7 @@ public class RoutingPoliciesTest {
             .build();
 
     @Test
-    public void maintains_global_routing_policies() {
+    public void global_routing_policies() {
         int clustersPerZone = 2;
         int numberOfDeployments = 2;
         var applicationPackage = new ApplicationPackageBuilder()
@@ -137,10 +140,9 @@ public class RoutingPoliciesTest {
     }
 
     @Test
-    public void maintains_routing_policies_per_zone() {
+    public void zone_routing_policies() {
         // Deploy application
         int clustersPerZone = 2;
-        int buildNumber = 42;
         provisionLoadBalancers(clustersPerZone, context1.instanceId(), zone1, zone2);
         context1.submit(applicationPackage).deploy();
 
@@ -236,6 +238,43 @@ public class RoutingPoliciesTest {
                             ClusterSpec.Id.from("c2"),
                             URI.create("https://c2.app1.tenant1.us-west-1.vespa.oath.cloud/")),
                      tester.controller().applications().clusterEndpoints(context1.deploymentIdIn(zone1)));
+    }
+
+    @Test
+    public void manual_deployment_creates_routing_policy() {
+        // Empty application package is valid in manually deployed environments
+        var emptyApplicationPackage = new ApplicationPackageBuilder().build();
+        var zone = ZoneId.from("dev", "us-east-1");
+        tester.controllerTester().serviceRegistry().zoneRegistry().setZones(ZoneApiMock.from(zone.environment(), zone.region()));
+        provisionLoadBalancers(1, context1.instanceId(), zone);
+
+        // Deploy to dev
+        tester.controller().applications().deploy(context1.instanceId(), zone, Optional.of(emptyApplicationPackage), DeployOptions.none());
+        assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, context1.application().deploymentSpec());
+        context1.flushDnsUpdates();
+
+        // Routing policy is created and DNS is updated
+        assertEquals(1, policies(context1.instance()).size());
+        assertEquals(Set.of("c0.app1.tenant1.us-east-1.dev.vespa.oath.cloud"), recordNames());
+    }
+
+    @Test
+    public void manual_deployment_creates_routing_policy_with_non_empty_spec() {
+        // Initial deployment
+        context1.submit(applicationPackage).deploy();
+        var zone = ZoneId.from("dev", "us-east-1");
+        tester.controllerTester().serviceRegistry().zoneRegistry().setZones(ZoneApiMock.from(zone.environment(), zone.region()));
+
+        // Deploy to dev under different instance
+        var devInstance = context1.application().id().instance("user");
+        provisionLoadBalancers(1, devInstance, zone);
+        tester.controller().applications().deploy(devInstance, zone, Optional.of(applicationPackage), DeployOptions.none());
+        assertEquals("DeploymentSpec is persisted", applicationPackage.deploymentSpec(), context1.application().deploymentSpec());
+        context1.flushDnsUpdates();
+
+        // Routing policy is created and DNS is updated
+        assertEquals(1, policies(tester.instance(devInstance)).size());
+        assertEquals(Set.of("c0.user.app1.tenant1.us-east-1.dev.vespa.oath.cloud"), recordNames());
     }
 
     private Set<RoutingPolicy> policies(Instance instance) {
