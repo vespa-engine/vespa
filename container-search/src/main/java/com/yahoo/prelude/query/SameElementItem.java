@@ -15,7 +15,6 @@ import java.util.Optional;
  *
  * @author baldersheim
  */
-@Beta
 public class SameElementItem extends NonReducibleCompositeItem {
 
     private final String fieldName;
