@@ -79,11 +79,6 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         if (this.node.state() != other.node.state())
             throw new IllegalStateException("Nodes " + this.node + " and " + other.node + " have different states");
 
-        // Choose nodes where host is in more desirable state
-        int thisHostStatePri = this.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
-        int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
-        if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
-
         if (this.parent.isPresent() && other.parent.isPresent()) {
             int diskCostDifference = NodeResources.DiskSpeed.compare(this.parent.get().flavor().resources().diskSpeed(),
                                                                      other.parent.get().flavor().resources().diskSpeed());
@@ -103,6 +98,11 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         // Choose cheapest node
         if (this.node.flavor().cost() < other.node.flavor().cost()) return -1;
         if (other.node.flavor().cost() < this.node.flavor().cost()) return 1;
+
+        // Choose nodes where host is in more desirable state
+        int thisHostStatePri = this.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
+        int otherHostStatePri = other.parent.map(host -> ALLOCATABLE_HOST_STATES.indexOf(host.state())).orElse(-2);
+        if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
 
         // All else equal choose hostname alphabetically
         return this.node.hostname().compareTo(other.node.hostname());
