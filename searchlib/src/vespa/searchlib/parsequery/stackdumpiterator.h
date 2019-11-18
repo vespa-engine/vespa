@@ -50,17 +50,14 @@ private:
     double _currArg3;
     /** The predicate query specification */
     query::PredicateQueryTerm::UP _predicate_query_term;
-    /** Pointer to the position of the index name in the current item */
-    const char *_currIndexName;
-    /** The length of the index name in the current item */
-    size_t _currIndexNameLen;
-    /** Pointer to the position of the term in the current item */
-    const char *_currTerm;
-    /** The length of the term in the current item */
-    size_t _currTermLen;
+    /** The index name (field name) in the current item */
+    vespalib::stringref _curr_index_name;
+    /** The term in the current item */
+    vespalib::stringref _curr_term;
     vespalib::asciistream _generatedTerm;
 
     vespalib::string readString(const char *&p);
+    vespalib::stringref read_stringref(const char *&p);
     uint64_t readUint64(const char *&p);
     uint64_t readCompressedPositiveInt(const char *&p);
 
@@ -136,8 +133,8 @@ public:
     query::PredicateQueryTerm::UP getPredicateQueryTerm()
     { return std::move(_predicate_query_term); }
 
-    vespalib::stringref getIndexName() const { return vespalib::stringref(_currIndexName, _currIndexNameLen); }
-    vespalib::stringref getTerm() const { return vespalib::stringref(_currTerm, _currTermLen); }
+    vespalib::stringref getIndexName() const { return _curr_index_name; }
+    vespalib::stringref getTerm() const { return _curr_term; }
 };
 
 }
