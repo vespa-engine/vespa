@@ -2,6 +2,8 @@
 
 #include "routablequeue.h"
 
+using namespace std::chrono;
+
 namespace mbus {
 
 RoutableQueue::RoutableQueue()
@@ -39,15 +41,14 @@ RoutableQueue::enqueue(Routable::UP r)
 Routable::UP
 RoutableQueue::dequeue(uint32_t msTimeout)
 {
-    FastOS_Time t;
-    t.SetNow();
-    uint32_t msLeft = msTimeout;
+    steady_clock::time_point startTime = steady_clock::now();
+    uint64_t msLeft = msTimeout;
     vespalib::MonitorGuard guard(_monitor);
     while (_queue.size() == 0 && msLeft > 0) {
         if (!guard.wait(msLeft) || _queue.size() > 0) {
             break;
         }
-        uint32_t elapsed = (uint32_t)t.MilliSecsToNow();
+        uint64_t elapsed = duration_cast<milliseconds>(steady_clock::now() - startTime).count();
         msLeft = (elapsed > msTimeout) ? 0 : msTimeout - elapsed;
     }
     if (_queue.size() == 0) {

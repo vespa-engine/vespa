@@ -3,7 +3,7 @@
 #include "extractkeywordstest.h"
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 
 #define NUMTESTS 5
 
@@ -94,11 +94,10 @@ ExtractKeywordsTest::Main()
     int testCnt = 0;
 
     // init keyword extractor
-    _extractor = new search::docsummary::KeywordExtractor(NULL);
+    _extractor = new search::docsummary::KeywordExtractor(nullptr);
     _extractor->AddLegalIndexSpec("*");
 
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch timer;
 
     // Actually run the tests that we wanted.
     for (int j = 0; j < multiplier; j++)
@@ -110,7 +109,7 @@ ExtractKeywordsTest::Main()
             }
 
     // Print time taken
-    double timeTaken = timer.MilliSecsToNow();
+    double timeTaken = timer.stop().elapsed().ms();
 
     printf("Time taken : %f ms\n", timeTaken);
     printf("Number of tests run: %d\n", testCnt);
@@ -118,7 +117,7 @@ ExtractKeywordsTest::Main()
     printf("Tests pr Sec: %f\n", avgTestPrMSec * 1000.0);
 
     delete _extractor;
-    _extractor  = NULL;
+    _extractor  = nullptr;
 
     return failed ? 1 : 0;
 }
@@ -159,8 +158,8 @@ ExtractKeywordsTest::RunTest(int testno, bool verify)
 {
     search::SimpleQueryStack stack;
     search::RawBuf buf(32768);
-    const char *correct = NULL;
-    const char *keywords = NULL;
+    const char *correct = nullptr;
+    const char *keywords = nullptr;
 
     switch (testno) {
     case 0:
