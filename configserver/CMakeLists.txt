@@ -19,6 +19,5 @@ install_symlink(lib/jars/orchestrator-jar-with-dependencies.jar conf/configserve
 install_symlink(lib/jars/service-monitor-jar-with-dependencies.jar conf/configserver-app/components/service-monitor.jar)
 install_symlink(lib/jars/application-model-jar-with-dependencies.jar conf/configserver-app/components/application-model.jar)
 install_symlink(lib/jars/node-repository-jar-with-dependencies.jar conf/configserver-app/components/node-repository.jar)
-install_symlink(lib/jars/zkfacade-jar-with-dependencies.jar conf/configserver-app/components/zkfacade.jar)
 install_symlink(lib/jars/zookeeper-server-jar-with-dependencies.jar conf/configserver-app/components/zookeeper-server.jar)
 install_symlink(conf/configserver-app/components lib/jars/config-models)
