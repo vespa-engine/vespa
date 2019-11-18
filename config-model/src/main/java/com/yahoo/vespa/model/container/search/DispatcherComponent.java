@@ -10,6 +10,8 @@ import com.yahoo.vespa.model.search.IndexedSearchCluster;
 /**
  * Represents a dispatcher component - an instance of a dispatcher in a search container cluster
  * knows how to communicate with one indexed search cluster and owns the connections to it.
+ *
+ * @author bratseth
  */
 public class DispatcherComponent extends Component<DispatcherComponent, ComponentModel>
         implements DispatchConfig.Producer {

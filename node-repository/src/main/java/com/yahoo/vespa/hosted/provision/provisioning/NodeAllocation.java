@@ -96,14 +96,14 @@ class NodeAllocation {
      */
     List<Node> offer(List<PrioritizableNode> nodesPrioritized) {
         List<Node> accepted = new ArrayList<>();
-        for (PrioritizableNode offeredPriority : nodesPrioritized) {
-            Node offered = offeredPriority.node;
+        for (PrioritizableNode node : nodesPrioritized) {
+            Node offered = node.node;
 
             if (offered.allocation().isPresent()) {
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
                 if ( ! membership.cluster().equalsIgnoringGroupAndVespaVersion(cluster)) continue; // wrong cluster id/type
-                if ((! offeredPriority.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
+                if ((! node.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
                 if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
 
@@ -114,12 +114,11 @@ class NodeAllocation {
                     if (offered.status().wantToRetire()) wantToRetireNode = true;
                     if (requestedNodes.isExclusive() && ! hostsOnly(application.tenant(), offered.parentHostname()))
                         wantToRetireNode = true;
-
                     if (( ! saturated() && hasCompatibleFlavor(offered)) || acceptToRetire(offered))
-                        accepted.add(acceptNode(offeredPriority, wantToRetireNode));
+                        accepted.add(acceptNode(node, wantToRetireNode));
                 }
                 else {
-                    accepted.add(acceptNode(offeredPriority, false));
+                    accepted.add(acceptNode(node, false));
                 }
             }
             else if ( ! saturated() && hasCompatibleFlavor(offered)) {
@@ -138,11 +137,11 @@ class NodeAllocation {
                 if (offered.status().wantToRetire()) {
                     continue;
                 }
-                offeredPriority.node = offered.allocate(application,
+                node.node = offered.allocate(application,
                                                         ClusterMembership.from(cluster, highestIndex.add(1)),
-                                                        requestedNodes.resources().orElse(offeredPriority.node.flavor().resources()),
+                                                        requestedNodes.resources().orElse(node.node.flavor().resources()),
                                                         clock.instant());
-                accepted.add(acceptNode(offeredPriority, false));
+                accepted.add(acceptNode(node, false));
             }
         }
 

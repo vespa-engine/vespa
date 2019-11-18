@@ -90,9 +90,7 @@ public class Dispatcher extends AbstractComponent {
              metric);
     }
 
-    private Dispatcher(SearchCluster searchCluster,
-                      DispatchConfig dispatchConfig,
-                      Metric metric) {
+    private Dispatcher(SearchCluster searchCluster, DispatchConfig dispatchConfig, Metric metric) {
         this(searchCluster,
              dispatchConfig,
              new RpcInvokerFactory(new RpcResourcePool(dispatchConfig), searchCluster),
@@ -161,7 +159,7 @@ public class Dispatcher extends AbstractComponent {
             List<Node> nodes = SearchPath.selectNodes(searchPath, searchCluster);
             if (nodes.isEmpty()) return Optional.empty();
 
-            query.trace(false, 2, "Dispatching internally with search path ", searchPath);
+            query.trace(false, 2, "Dispatching with search path ", searchPath);
             return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), nodes, true);
         } catch (InvalidSearchPathException e) {
             return Optional.of(new SearchErrorInvoker(ErrorMessage.createIllegalQuery(e.getMessage())));

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -12,16 +13,19 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -35,60 +39,78 @@ public class RebalancerTest {
 
     @Test
     public void testRebalancing() {
+        ApplicationId cpuApp = makeApplicationId("t1", "a1");
+        ApplicationId memApp = makeApplicationId("t2", "a2");
+        NodeResources cpuResources = new NodeResources(8, 4, 1, 0.1);
+        NodeResources memResources = new NodeResources(4, 9, 1, 0.1);
+
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.perf, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         MetricsReporterTest.TestMetric metric = new MetricsReporterTest.TestMetric();
-        Rebalancer rebalancer = new Rebalancer(tester.nodeRepository(),
+
+        Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
+                cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.fromCount(1, cpuResources), 1),
+                memApp, new MockDeployer.ApplicationContext(memApp, clusterSpec("c"), Capacity.fromCount(1, memResources), 1));
+        MockDeployer deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
+
+        Rebalancer rebalancer = new Rebalancer(deployer,
+                                               tester.nodeRepository(),
                                                new IdentityHostResourcesCalculator(),
                                                Optional.empty(),
                                                metric,
                                                tester.clock(),
                                                Duration.ofMinutes(1));
 
-        NodeResources cpuResources = new NodeResources(8, 4, 1, 0.1);
-        NodeResources memResources = new NodeResources(4, 9, 1, 0.1);
 
         tester.makeReadyNodes(3, "flt", NodeType.host, 8);
         tester.deployZoneApp();
 
         // Cpu heavy application - causing 1 of these nodes to be skewed
-        ApplicationId cpuApp = makeApplicationId("t1", "a1");
         deployApp(cpuApp, clusterSpec("c"), cpuResources, tester, 1);
-        String cpuSkewedNodeHostname = tester.nodeRepository().getNodes(cpuApp).get(0).hostname();
+        Node cpuSkewedNode = tester.nodeRepository().getNodes(cpuApp).get(0);
 
         rebalancer.maintain();
         assertFalse("No better place to move the skewed node, so no action is taken",
-                    tester.nodeRepository().getNode(cpuSkewedNodeHostname).get().status().wantToRetire());
+                    tester.nodeRepository().getNode(cpuSkewedNode.hostname()).get().status().wantToRetire());
         assertEquals(0.00325, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
-        tester.makeReadyNodes(1, "cpu", NodeType.host, 8);
+        Node newCpuHost = tester.makeReadyNodes(1, "cpu", NodeType.host, 8).get(0);
+        tester.deployZoneApp();
 
         rebalancer.maintain();
-        assertTrue("We can now move the node to the cpu skewed host to reduce skew",
-                   tester.nodeRepository().getNode(cpuSkewedNodeHostname).get().status().wantToRetire());
-        assertEquals("We're not actually moving the node here so skew remains steady",
-                     0.00325, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
+        assertTrue("Rebalancer retired the node we wanted to move away from",
+                   tester.nodeRepository().getNode(cpuSkewedNode.hostname()).get().allocation().get().membership().retired());
+        assertTrue("... and added a node on the new host instead",
+                   tester.nodeRepository().getNodes(cpuApp, Node.State.active).stream().anyMatch(node -> node.hasParent(newCpuHost.hostname())));
+        assertEquals("Skew is reduced",
+                     0.00244, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
-        ApplicationId memApp = makeApplicationId("t2", "a2");
         deployApp(memApp, clusterSpec("c"), memResources, tester, 1);
         assertEquals("Assigned to a flat node as that causes least skew", "flt",
                      tester.nodeRepository().list().parentOf(tester.nodeRepository().getNodes(memApp).get(0)).get().flavor().name());
-        String memSkewedNodeHostname = tester.nodeRepository().getNodes(memApp).get(0).hostname();
 
-        tester.makeReadyNodes(1, "mem", NodeType.host, 8);
         rebalancer.maintain();
         assertEquals("Deploying the mem skewed app increased skew",
-                     0.00752, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
-        assertFalse("The mem skewed node is not set want to retire as the cpu skewed node still is",
-                    tester.nodeRepository().getNode(memSkewedNodeHostname).get().status().wantToRetire());
+                     0.00734, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
-        Node cpuSkewedNode = tester.nodeRepository().getNode(cpuSkewedNodeHostname).get();
-        tester.nodeRepository().write(cpuSkewedNode.withWantToRetire(false, Agent.system, tester.clock().instant()),
-                                      tester.nodeRepository().lock(cpuSkewedNode));
+        Node memSkewedNode = tester.nodeRepository().getNodes(memApp).get(0);
+        Node newMemHost = tester.makeReadyNodes(1, "mem", NodeType.host, 8).get(0);
+        tester.deployZoneApp();
+
         rebalancer.maintain();
-        assertTrue("The mem skewed node is now scheduled for moving",
-                    tester.nodeRepository().getNode(memSkewedNodeHostname).get().status().wantToRetire());
-        assertFalse("(The cpu skewed node is not because it causes slightly less skew)",
-                    tester.nodeRepository().getNode(cpuSkewedNodeHostname).get().status().wantToRetire());
+        assertFalse("No rebalancing happens because cpuSkewedNode is still retired",
+                   tester.nodeRepository().getNode(memSkewedNode.hostname()).get().allocation().get().membership().retired());
+
+        NestedTransaction tx = new NestedTransaction();
+        tester.nodeRepository().deactivate(List.of(cpuSkewedNode), tx);
+        tx.commit();
+
+        rebalancer.maintain();
+        assertTrue("Rebalancer retired the node we wanted to move away from",
+                   tester.nodeRepository().getNode(memSkewedNode.hostname()).get().allocation().get().membership().retired());
+        assertTrue("... and added a node on the new host instead",
+                   tester.nodeRepository().getNodes(memApp, Node.State.active).stream().anyMatch(node -> node.hasParent(newMemHost.hostname())));
+        assertEquals("Skew is reduced",
+                     0.00587, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
     }
 
     private ClusterSpec clusterSpec(String clusterId) {
