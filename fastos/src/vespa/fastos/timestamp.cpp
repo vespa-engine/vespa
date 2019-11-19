@@ -2,6 +2,7 @@
 #include "timestamp.h"
 #include <chrono>
 #include <cmath>
+#include <thread>
 #include <sys/time.h>
 
 using namespace std::chrono;
@@ -90,10 +91,31 @@ StopWatch::StopWatch()
       _stopTime(_startTime)
 { }
 
+void
+StopWatch::restart() {
+    _startTime = steady_now();
+    _stopTime = _startTime;
+}
+
 StopWatch &
 StopWatch::stop()  {
     _stopTime = steady_now();
     return *this;
+}
+
+void
+StopWatch::waitAtLeast(std::chrono::microseconds us, bool busyWait) {
+    steady_clock::time_point startTime = steady_clock::now();
+    steady_clock::time_point deadline = startTime + us;
+    while (steady_clock::now() < deadline) {
+        if (busyWait) {
+            for (int i = 0; i < 1000; i++)
+                ;
+        } else {
+            microseconds rem = (us - duration_cast<microseconds>(steady_clock::now() - startTime));
+            std::this_thread::sleep_for(rem);
+        }
+    }
 }
 
 }

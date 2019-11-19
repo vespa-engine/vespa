@@ -153,29 +153,28 @@ LoadAttribute::Main()
 
     vespalib::string fileName(_argv[idx]);
     vespalib::FileHeader fh;
-    do {
+    {
         vespalib::string datFileName(fileName + ".dat");
         Fast_BufferedFile file;
         file.ReadOpenExisting(datFileName.c_str());
         (void) fh.readFile(file);
-    } while (0);
+    }
     attribute::BasicType bt(fh.getTag("datatype").asString());
     attribute::CollectionType ct(fh.getTag("collectiontype").asString());
     attribute::Config c(bt, ct);
     c.setFastSearch(doFastSearch);
     c.setHuge(doHuge);
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch timer;
     load(ptr);
-    std::cout << "load time: " << timer.MilliSecsToNow() / 1000 << " seconds " << std::endl;
+    std::cout << "load time: " << timer.stop().elapsed().ms() << " seconds " << std::endl;
 
     std::cout << "numDocs: " << ptr->getNumDocs() << std::endl;
 
     if (doApplyUpdate) {
-        timer.SetNow();
+        timer.restart();
         applyUpdate(ptr);
-        std::cout << "update time: " << timer.MilliSecsToNow() / 1000 << " seconds " << std::endl;
+        std::cout << "update time: " << timer.stop().elapsed().ms() << " seconds " << std::endl;
     }
 
     if (doPrintContent) {
@@ -192,9 +191,9 @@ LoadAttribute::Main()
     if (doSave) {
         vespalib::string saveFile = fileName + ".save";
         std::cout << "saving attribute: " << saveFile << std::endl;
-        timer.SetNow();
+        timer.restart();
         ptr->save(saveFile);
-        std::cout << "save time: " << timer.MilliSecsToNow() / 1000 << " seconds " << std::endl;
+        std::cout << "save time: " << timer.stop().elapsed().ms() << " seconds " << std::endl;
     }
 
     return 0;

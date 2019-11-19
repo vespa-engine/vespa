@@ -2,7 +2,7 @@
 #pragma once
 
 #include "named_service.h"
-#include <vespa/fastos/time.h>
+#include <chrono>
 
 namespace slobrok {
 
@@ -18,19 +18,14 @@ namespace slobrok {
 class ReservedName: public NamedService
 {
 private:
-    FastOS_Time _reservedTime;
+    using steady_clock = std::chrono::steady_clock;
+    steady_clock::time_point _reservedTime;
+    int64_t milliseconds() const;
 public:
     const bool isLocal;
 
-    ReservedName(const std::string &name, const std::string &spec, bool local)
-        : NamedService(name, spec), _reservedTime(), isLocal(local)
-    {
-        _reservedTime.SetNow();
-    }
-    bool stillReserved() const {
-        return (_reservedTime.MilliSecsToNow() < 15000);
-    }
-    int seconds() const { return _reservedTime.MilliSecsToNow() / 1000; }
+    ReservedName(const std::string &name, const std::string &spec, bool local);
+    bool stillReserved() const;
 };
 
 //-----------------------------------------------------------------------------

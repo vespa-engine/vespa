@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <string>
+#include <chrono>
 
 namespace fastos {
 
@@ -152,11 +153,13 @@ public:
     StopWatch();
 
     StopWatch & stop();
+    void restart();
 
     TimeStamp elapsed() const {
         TimeStamp diff(_stopTime - _startTime);
         return (diff > 0) ? diff : TimeStamp(0);
     }
+    static void waitAtLeast(std::chrono::microseconds us, bool busyWait);
 private:
     SteadyTimeStamp _startTime;
     SteadyTimeStamp _stopTime;

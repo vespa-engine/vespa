@@ -1,16 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "nowfeature.h"
-#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/queryproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/fastos/time.h>
+#include <chrono>
 
-namespace search {
-namespace features {
+namespace search::features {
 
 NowExecutor::NowExecutor(int64_t timestamp) :
-    search::fef::FeatureExecutor(),
+    fef::FeatureExecutor(),
     _timestamp(timestamp)
 {
 }
@@ -21,39 +19,37 @@ NowExecutor::execute(uint32_t) {
 }
 
 void
-NowBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                search::fef::IDumpFeatureVisitor &visitor) const
+NowBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &visitor) const
 {
     visitor.visitDumpFeature(getBaseName());
 }
 
 bool
-NowBlueprint::setup(const search::fef::IIndexEnvironment &,
-                    const search::fef::ParameterList &)
+NowBlueprint::setup(const fef::IIndexEnvironment &, const fef::ParameterList &)
 {
     describeOutput("out", "The timestamp (seconds since epoch) of query execution.");
     return true;
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 NowBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new NowBlueprint());
+    return std::make_unique<NowBlueprint>();
 }
 
-search::fef::FeatureExecutor &
-NowBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+using namespace std::chrono;
+
+fef::FeatureExecutor &
+NowBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     int64_t timestamp;
     const fef::Property &prop = env.getProperties().lookup(fef::queryproperties::now::SystemTime::NAME);
     if (prop.found()) {
         timestamp = atoll(prop.get().c_str());
     } else {
-        FastOS_Time now;
-        now.SetNow();
-        timestamp = (int64_t)now.Secs();
+        timestamp = duration_cast<seconds>(system_clock::now().time_since_epoch()).count();
     }
     return stash.create<NowExecutor>(timestamp);
 }
 
-}}
+}
