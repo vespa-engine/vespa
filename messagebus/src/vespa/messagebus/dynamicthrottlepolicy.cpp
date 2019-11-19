@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "dynamicthrottlepolicy.h"
-#include "systemtimer.h"
+#include "steadytimer.h"
 #include <climits>
 
 #include <vespa/log/log.h>
@@ -9,7 +9,7 @@ LOG_SETUP(".dynamicthrottlepolicy");
 namespace mbus {
 
 DynamicThrottlePolicy::DynamicThrottlePolicy() :
-    _timer(new SystemTimer()),
+    _timer(new SteadyTimer()),
     _numSent(0),
     _numOk(0),
     _resizeRate(3),
@@ -27,7 +27,7 @@ DynamicThrottlePolicy::DynamicThrottlePolicy() :
 { }
 
 DynamicThrottlePolicy::DynamicThrottlePolicy(double windowSizeIncrement) :
-    _timer(new SystemTimer()),
+    _timer(new SteadyTimer()),
     _numSent(0),
     _numOk(0),
     _resizeRate(3),

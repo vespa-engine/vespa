@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpctargetpool.h"
-#include <vespa/messagebus/systemtimer.h>
+#include <vespa/messagebus/steadytimer.h>
 
 namespace mbus {
 
@@ -12,7 +12,7 @@ RPCTargetPool::Entry::Entry(RPCTarget::SP target, uint64_t lastUse) :
 RPCTargetPool::RPCTargetPool(double expireSecs) :
     _lock(),
     _targets(),
-    _timer(new SystemTimer()),
+    _timer(new SteadyTimer()),
     _expireMillis(static_cast<uint64_t>(expireSecs * 1000))
 { }
 
