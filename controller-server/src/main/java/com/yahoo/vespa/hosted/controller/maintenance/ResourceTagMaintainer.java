@@ -47,7 +47,8 @@ public class ResourceTagMaintainer extends Maintainer {
                 .filter(node -> node.parentHostname().isPresent() && node.owner().isPresent())
                 .collect(Collectors.toMap(
                         node -> node.parentHostname().get(),
-                        node -> node.owner().get()
+                        node -> node.owner().get(),
+                        (node1, node2) -> node1
                 ));
     }
 }
