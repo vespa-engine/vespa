@@ -16,13 +16,15 @@ private:
     double             _timeout;
 
 public:
-    typedef std::unique_ptr<SendContext> UP;
+    using milliseconds = std::chrono::milliseconds;
+    using UP = std::unique_ptr<SendContext>;
     SendContext(const SendContext &) = delete;
     SendContext & operator = (const SendContext &) = delete;
-    SendContext(mbus::RoutingNode &recipient, uint64_t timeRemaining)
-            : _recipient(recipient),
-              _trace(recipient.getTrace().getLevel()),
-              _timeout(timeRemaining * 0.001) { }
+    SendContext(mbus::RoutingNode &recipient, milliseconds timeRemaining)
+        : _recipient(recipient),
+          _trace(recipient.getTrace().getLevel()),
+          _timeout(timeRemaining.count() * 0.001)
+   { }
     mbus::RoutingNode &getRecipient() { return _recipient; }
     mbus::Trace &getTrace() { return _trace; }
     double getTimeout() { return _timeout; }

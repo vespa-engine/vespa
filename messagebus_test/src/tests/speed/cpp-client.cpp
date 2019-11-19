@@ -10,6 +10,7 @@
 #include <vespa/fastos/app.h>
 
 using namespace mbus;
+using namespace std::chrono_literals;
 
 class Client : public IReplyHandler
 {
@@ -95,7 +96,7 @@ App::Main()
     RPCMessageBus mb(MessageBusParams().setRetryPolicy(retryPolicy).addProtocol(std::make_shared<SimpleProtocol>()),
                      RPCNetworkParams("file:slobrok.cfg").setIdentity(Identity("server/cpp")),
                      "file:routing.cfg");
-    Client client(mb.getMessageBus(), SourceSessionParams().setTimeout(30));
+    Client client(mb.getMessageBus(), SourceSessionParams().setTimeout(30s));
 
     // let the system 'warm up'
     FastOS_Thread::Sleep(5000);

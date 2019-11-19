@@ -3,7 +3,6 @@
 
 #include "routable.h"
 #include <vespa/messagebus/routing/route.h>
-#include <memory>
 #include <chrono>
 
 namespace mbus {
@@ -12,23 +11,11 @@ namespace mbus {
  * A Message is a question, a Reply is the answer.
  */
 class Message : public Routable {
-private:
-    using time_point = std::chrono::steady_clock::time_point;
-    Route       _route;
-    time_point  _timeReceived;
-    int64_t     _timeRemaining;
-    bool        _retryEnabled;
-    uint32_t    _retry;
-
 public:
-    /**
-     * Convenience typedef for an auto pointer to a Message object.
-     */
-    typedef std::unique_ptr<Message> UP;
+    using time_point = std::chrono::steady_clock::time_point;
+    using milliseconds = std::chrono::milliseconds;
+    using UP = std::unique_ptr<Message>;
 
-    /**
-     * Constructs a new instance of this class.
-     */
     Message();
     Message(const Message &) = delete;
     Message(Message &&) = delete;
@@ -51,7 +38,7 @@ public:
      *
      * @return The timestamp this was last seen.
      */
-    uint64_t getTimeReceived() const;
+    time_point getTimeReceived() const;
 
     /**
      * This is a convenience method to call {@link #setTimeReceived(uint64_t)}
@@ -69,7 +56,7 @@ public:
      *
      * @return The remaining time in milliseconds.
      */
-    uint64_t getTimeRemaining() const { return _timeRemaining; }
+    milliseconds getTimeRemaining() const { return _timeRemaining; }
 
     /**
      * Sets the numer of milliseconds that remain before this message times
@@ -79,7 +66,7 @@ public:
      * @param timeRemaining The number of milliseconds until expiration.
      * @return This, to allow chaining.
      */
-    Message &setTimeRemaining(uint64_t timeRemaining) { _timeRemaining = timeRemaining; return *this; }
+    Message &setTimeRemaining(milliseconds timeRemaining) { _timeRemaining = timeRemaining; return *this; }
 
     /**
      * Returns the number of milliseconds that remain right now before this
@@ -93,7 +80,7 @@ public:
      *
      * @return The remaining time in milliseconds.
      */
-    uint64_t getTimeRemainingNow() const;
+    milliseconds getTimeRemainingNow() const;
 
     /**
      * Access the route associated with this message.
@@ -196,6 +183,12 @@ public:
      * @return This, to allow chaining.
      */
     Message &setRetry(uint32_t retry) { _retry = retry; return *this; }
+private:
+    Route         _route;
+    time_point    _timeReceived;
+    milliseconds  _timeRemaining;
+    bool          _retryEnabled;
+    uint32_t      _retry;
 };
 
 } // namespace mbus

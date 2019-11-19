@@ -237,11 +237,11 @@ Visitor::sendMessage(documentapi::DocumentMessage::UP cmd)
     framework::MicroSecTime time(_component.getClock().getTimeInMicros());
 
     if (time + _docBlockTimeout.getMicros() > _timeToDie) {
-        cmd->setTimeRemaining((_timeToDie > time)
+        cmd->setTimeRemaining(std::chrono::milliseconds((_timeToDie > time)
                               ? (_timeToDie - time).getMillis().getTime()
-                              : 0);
+                              : 0));
     } else {
-        cmd->setTimeRemaining(_docBlockTimeout.getTime());
+        cmd->setTimeRemaining(std::chrono::milliseconds(_docBlockTimeout.getTime()));
     }
     cmd->getTrace().setLevel(_traceLevel);
 
@@ -301,7 +301,7 @@ Visitor::sendInfoMessage(documentapi::VisitorInfoMessage::UP cmd)
     if (_controlDestination->toString().length()) {
         cmd->setRoute(_controlDestination->getRoute());
         cmd->setPriority(_documentPriority);
-        cmd->setTimeRemaining(_visitorInfoTimeout.getTime());
+        cmd->setTimeRemaining(std::chrono::milliseconds(_visitorInfoTimeout.getTime()));
         auto& msgMeta = _visitorTarget.insertMessage(std::move(cmd));
         sendDocumentApiMessage(msgMeta);
     }
@@ -637,7 +637,7 @@ Visitor::handleDocumentApiReply(mbus::Reply::UP reply,
 
     if (!reply->hasErrors()) {
         metrics.averageMessageSendTime[getLoadType()].addValue(
-                (message->getTimeRemaining() - message->getTimeRemainingNow()) / 1000.0);
+                (message->getTimeRemaining() - message->getTimeRemainingNow()).count() / 1000.0);
         LOG(debug, "Visitor '%s' reply %s for message ID %" PRIu64 " was OK", _id.c_str(),
             reply->toString().c_str(), messageId);
 

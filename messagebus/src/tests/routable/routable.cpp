@@ -11,6 +11,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 
 using namespace mbus;
+using namespace std::chrono_literals;
 
 TEST_SETUP(Test);
 
@@ -26,14 +27,14 @@ Test::Main()
         foo.setRoute(fooRoute);
         foo.setRetry(1);
         foo.setTimeReceivedNow();
-        foo.setTimeRemaining(2);
+        foo.setTimeRemaining(2ms);
 
         SimpleMessage bar("bar");
         Route barRoute = Route::parse("bar");
         bar.setRoute(barRoute);
         bar.setRetry(3);
         bar.setTimeReceivedNow();
-        bar.setTimeRemaining(4);
+        bar.setTimeRemaining(4ms);
 
         foo.swapState(bar);
         EXPECT_EQUAL(barRoute.toString(), foo.getRoute().toString());
@@ -41,8 +42,8 @@ Test::Main()
         EXPECT_EQUAL(3u, foo.getRetry());
         EXPECT_EQUAL(1u, bar.getRetry());
         EXPECT_TRUE(foo.getTimeReceived() >= bar.getTimeReceived());
-        EXPECT_EQUAL(4u, foo.getTimeRemaining());
-        EXPECT_EQUAL(2u, bar.getTimeRemaining());
+        EXPECT_EQUAL(4u, foo.getTimeRemaining().count());
+        EXPECT_EQUAL(2u, bar.getTimeRemaining().count());
     }
     {
         // Test reply swap state.
@@ -73,7 +74,7 @@ Test::Main()
         msg.discard();
 
         Reply::UP reply = handler.getReply(0);
-        ASSERT_TRUE(reply.get() == NULL);
+        ASSERT_FALSE(reply);
     }
     {
         // Test reply discard logic.
@@ -86,7 +87,7 @@ Test::Main()
         reply.discard();
 
         Reply::UP ap = handler.getReply(0);
-        ASSERT_TRUE(ap.get() == NULL);
+        ASSERT_FALSE(ap);
     }
 
     TEST_DONE();

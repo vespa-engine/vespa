@@ -24,14 +24,14 @@ SourceSessionParams::setThrottlePolicy(IThrottlePolicy::SP throttlePolicy)
     return *this;
 }
 
-double
+seconds
 SourceSessionParams::getTimeout() const
 {
     return _timeout;
 }
 
 SourceSessionParams &
-SourceSessionParams::setTimeout(double timeout)
+SourceSessionParams::setTimeout(seconds timeout)
 {
     _timeout = timeout;
     return *this;

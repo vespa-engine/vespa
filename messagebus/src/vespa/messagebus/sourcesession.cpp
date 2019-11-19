@@ -9,6 +9,9 @@
 
 using vespalib::make_string;
 
+using namespace std::chrono_literals;
+using namespace std::chrono;
+
 namespace mbus {
 
 SourceSession::SourceSession(MessageBus &mbus, const SourceSessionParams &params)
@@ -71,8 +74,8 @@ Result
 SourceSession::send(Message::UP msg)
 {
     msg->setTimeReceivedNow();
-    if (msg->getTimeRemaining() == 0) {
-        msg->setTimeRemaining((uint64_t)(_timeout * 1000));
+    if (msg->getTimeRemaining() == 0ms) {
+        msg->setTimeRemaining(duration_cast<milliseconds>(_timeout));
     }
     {
         vespalib::MonitorGuard guard(_monitor);
@@ -145,7 +148,7 @@ SourceSession &
 SourceSession::setTimeout(double timeout)
 {
     vespalib::MonitorGuard guard(_monitor);
-    _timeout = timeout;
+    _timeout = seconds(timeout);
     return *this;
 }
 

@@ -15,6 +15,7 @@ LOG_SETUP(".messagebus");
 
 using vespalib::LockGuard;
 using vespalib::make_string;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -64,7 +65,7 @@ public:
           _gate(gate)
     { }
 
-    ~ShutdownTask() {
+    ~ShutdownTask() override {
         _gate.countDown();
     }
 
@@ -150,7 +151,7 @@ MessageBus::setup(const MessageBusParams &params)
     if (!_network.start()) {
         throw vespalib::NetworkSetupFailureException("Failed to start network.");
     }
-    if (!_network.waitUntilReady(120)) {
+    if (!_network.waitUntilReady(120s)) {
         throw vespalib::NetworkSetupFailureException("Network failed to become ready in time.");
     }
 
@@ -396,7 +397,7 @@ MessageBus::deliverReply(Reply::UP reply, IReplyHandler &handler)
     _msn->deliverReply(std::move(reply), handler);
 }
 
-const string
+string
 MessageBus::getConnectionSpec() const
 {
     return _network.getConnectionSpec();
