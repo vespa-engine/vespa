@@ -80,7 +80,7 @@ public abstract class AbstractVespaMojo extends AbstractMojo {
                     ? ControllerHttpClient.withSignatureKey(URI.create(endpoint), Paths.get(apiKeyFile), id)
                     : ControllerHttpClient.withKeyAndCertificate(URI.create(endpoint), Paths.get(apiKeyFile), Paths.get(apiCertificateFile));
         } else {
-            throw new IllegalArgumentException("One of the properties 'privateKey' or 'privateKeyFile' is required.");
+            throw new IllegalArgumentException("One of the properties 'apiKey' or 'apiKeyFile' is required.");
         }
     }
 
