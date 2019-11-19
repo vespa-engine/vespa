@@ -10,6 +10,7 @@
 #include "config-my.h"
 
 using namespace config;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -91,7 +92,7 @@ namespace {
             2000,  // successTimeout
             500,  // errorTimeout
             500,   // initialTimeout
-            4000,  // unsubscribeTimeout
+            4000ms,  // unsubscribeTimeout
             0,     // fixedDelay
             250,   // successDelay
             250,   // unconfiguredDelay
@@ -111,7 +112,7 @@ namespace {
 
         void subscribe()
         {
-            sub = _mgr.subscribe(key, 5000);
+            sub = _mgr.subscribe(key, 5000ms);
         }
     };
 

@@ -21,7 +21,7 @@ extract(const cloud::config::SlobroksConfig &cfg)
 bool
 Configurator::poll()
 {
-    bool retval = _subscriber.nextGeneration(0);
+    bool retval = _subscriber.nextGenerationNow();
     if (retval) {
         std::unique_ptr<cloud::config::SlobroksConfig> cfg = _handle->getConfig();
         _target.setup(extract(*cfg));
@@ -58,8 +58,7 @@ ConfiguratorFactory::ConfiguratorFactory(const std::vector<std::string> & spec)
 Configurator::UP
 ConfiguratorFactory::create(Configurable& target) const
 {
-    Configurator::UP r(new Configurator(target, _uri));
-    return r;
+    return std::make_unique<Configurator>(target, _uri);
 }
 
 } // namespace slobrok

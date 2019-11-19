@@ -2,8 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/fastos/time.h>
-#include <fstream>
+#include <vespa/fastos/timestamp.h>
 #include "config-my.h"
 #include <atomic>
 
@@ -66,15 +65,14 @@ TEST("requireThatConfigUpdatesArePerformed") {
         writeFile("test1.cfg", "bar");
 
         cb._configured = false;
-        FastOS_Time timer;
-        timer.SetNow();
-        while (!cb._configured && timer.MilliSecsToNow() < 20000.0) {
+        fastos::StopWatch timer;
+        while (!cb._configured && timer.elapsed().ms() < 20000.0) {
             if (cb._configured)
                 break;
             FastOS_Thread::Sleep(1000);
         }
         ASSERT_TRUE(cb._configured);
-        ASSERT_TRUE(cb._config.get() != NULL);
+        ASSERT_TRUE(cb._config);
         ASSERT_EQUAL("my", cb._config->defName());
         ASSERT_EQUAL("bar", cb._config->myField);
     }
@@ -99,8 +97,8 @@ TEST("requireThatFetcherCanHandleMultipleConfigs") {
 
         ASSERT_TRUE(cb1._configured);
         ASSERT_TRUE(cb2._configured);
-        ASSERT_TRUE(cb1._config.get() != NULL);
-        ASSERT_TRUE(cb2._config.get() != NULL);
+        ASSERT_TRUE(cb1._config);
+        ASSERT_TRUE(cb2._config);
         ASSERT_EQUAL("my", cb1._config->defName());
         ASSERT_EQUAL("foo", cb1._config->myField);
         ASSERT_EQUAL("my", cb2._config->defName());
@@ -147,9 +145,8 @@ TEST_F("verify that config generation can be obtained from config fetcher", Conf
         f1.builder.myField = "bar";
         cb._configured = false;
         f1.context->reload();
-        FastOS_Time timer;
-        timer.SetNow();
-        while (timer.MilliSecsToNow() < 120000) {
+        fastos::StopWatch timer;
+        while (timer.elapsed().ms() < 120000) {
             if (cb._configured) {
                 break;
             }

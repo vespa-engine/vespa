@@ -28,7 +28,7 @@ DistributorProcess::shutdown()
 }
 
 void
-DistributorProcess::setupConfig(uint64_t subscribeTimeout)
+DistributorProcess::setupConfig(milliseconds subscribeTimeout)
 {
     using vespa::config::content::core::StorServerConfig;
     using vespa::config::content::core::StorDistributormanagerConfig;
@@ -39,13 +39,10 @@ DistributorProcess::setupConfig(uint64_t subscribeTimeout)
     if (stor_config->persistenceProvider.type != StorServerConfig::PersistenceProvider::Type::STORAGE) {
         _activeFlag = DistributorNode::NEED_ACTIVE_BUCKET_STATES_SET;
     }
-    auto dist_config = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(
-            _configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
+    auto dist_config = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(_configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
     _use_btree_database = dist_config->useBtreeDatabase;
-    _distributorConfigHandler
-            = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
-    _visitDispatcherConfigHandler
-            = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
+    _distributorConfigHandler = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
+    _visitDispatcherConfigHandler = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
 }
 

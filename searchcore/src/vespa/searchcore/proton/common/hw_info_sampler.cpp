@@ -1,9 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "hw_info_sampler.h"
-#include <vespa/config/common/configholder.h>
 #include <vespa/config/config.h>
-#include <vespa/config/file/filesource.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/config/config-hwinfo.h>
@@ -59,7 +57,7 @@ std::unique_ptr<HwinfoConfig> readConfig(const vespalib::string &path) {
     FileSpec spec(path + "/" + "hwinfo.cfg");
     ConfigSubscriber s(spec);
     std::unique_ptr<ConfigHandle<HwinfoConfig>> handle = s.subscribe<HwinfoConfig>("hwinfo");
-    s.nextConfig(0);
+    s.nextConfigNow();
     return handle->getConfig();
 }
 

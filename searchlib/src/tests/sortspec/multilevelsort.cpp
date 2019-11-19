@@ -263,10 +263,9 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
         }
     }
 
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch timer;
     sorter.sortResults(hits, num, num);
-    LOG(info, "sort time = %f ms", timer.MilliSecsToNow());
+    LOG(info, "sort time = %ld ms", timer.elapsed().ms());
 
     uint32_t *offsets = new uint32_t[num + 1];
     char *buf = new char[sorter.getSortDataSize(0, num)];

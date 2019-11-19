@@ -38,12 +38,13 @@ private:
     std::vector<DocumentTypeRepoSP> _repos;
 
 public:
-    typedef std::unique_ptr<Process> UP;
+    using UP = std::unique_ptr<Process>;
+    using milliseconds = std::chrono::milliseconds;
 
     Process(const config::ConfigUri & configUri);
     virtual ~Process() {}
 
-    virtual void setupConfig(uint64_t subscribeTimeout);
+    virtual void setupConfig(milliseconds subscribeTimeout);
     virtual void createNode() = 0;
     virtual bool configUpdated();
     virtual void updateConfig();
@@ -54,7 +55,7 @@ public:
     virtual StorageNode& getNode() = 0;
     virtual StorageNodeContext& getContext() = 0;
 
-    virtual int64_t getGeneration() const override;
+    int64_t getGeneration() const override;
 };
 
 } // storage

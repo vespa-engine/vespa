@@ -1,31 +1,27 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/field_length_info.h>
 #include <vespa/searchlib/index/postinglisthandle.h>
-#include <vespa/searchlib/diskindex/zcposocc.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <openssl/sha.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
 
-using search::ResultSet;
 using search::TuneFileRandRead;
 using search::TuneFileSeqRead;
 using search::TuneFileSeqWrite;
@@ -362,18 +358,13 @@ writeField(FakeWordSet &wordSet,
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
-    FastOS_Time tv;
-    double before;
-    double after;
-
     LOG(info,
         "enter writeField, "
         "namepref=%s, dynamicK=%s, encode_interleaved_features=%s",
         namepref.c_str(),
         dynamicKStr,
         bool_to_str(encode_interleaved_features));
-    tv.SetNow();
-    before = tv.Secs();
+    fastos::StopWatch tv;
     WrappedFieldWriter ostate(namepref,
                               dynamicK, encode_interleaved_features,
                               wordSet.getNumWords(), docIdLimit);
@@ -390,8 +381,6 @@ writeField(FakeWordSet &wordSet,
     }
     ostate.close();
 
-    tv.SetNow();
-    after = tv.Secs();
     LOG(info,
         "leave writeField, "
         "namepref=%s, dynamicK=%s, encode_interleaved_features=%s"
@@ -399,7 +388,7 @@ writeField(FakeWordSet &wordSet,
         namepref.c_str(),
         dynamicKStr,
         bool_to_str(encode_interleaved_features),
-        after - before);
+        tv.elapsed().sec());
 }
 
 
@@ -413,19 +402,11 @@ readField(FakeWordSet &wordSet,
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
-    FastOS_Time tv;
-    double before;
-    double after;
-    WrappedFieldReader istate(namepref, wordSet.getNumWords(),
-                             docIdLimit);
-    LOG(info,
-        "enter readField, "
-        "namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
-        namepref.c_str(),
-        dynamicKStr,
-        bool_to_str(decode_interleaved_features));
-    tv.SetNow();
-    before = tv.Secs();
+    WrappedFieldReader istate(namepref, wordSet.getNumWords(), docIdLimit);
+    LOG(info, "enter readField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
+        namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
+
+    fastos::StopWatch tv;
     istate.open();
     if (istate._fieldReader->isValid())
         istate._fieldReader->read();
@@ -448,16 +429,10 @@ readField(FakeWordSet &wordSet,
     }
 
     istate.close();
-    tv.SetNow();
-    after = tv.Secs();
-    LOG(info,
-        "leave readField, "
-        "namepref=%s, dynamicK=%s, decode_interleaved_features=%s"
-        " elapsed=%10.6f",
-        namepref.c_str(),
-        dynamicKStr,
+    LOG(info, "leave readField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s elapsed=%10.6f",
+        namepref.c_str(), dynamicKStr,
         bool_to_str(decode_interleaved_features),
-        after - before);
+        tv.elapsed().sec());
 }
 
 
@@ -470,19 +445,12 @@ randReadField(FakeWordSet &wordSet,
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
-    FastOS_Time tv;
-    double before;
-    double after;
     PostingListCounts counts;
 
-    LOG(info,
-        "enter randReadField,"
-        " namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
-        namepref.c_str(),
-        dynamicKStr,
-        bool_to_str(decode_interleaved_features));
-    tv.SetNow();
-    before = tv.Secs();
+    LOG(info, "enter randReadField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
+        namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
+
+    fastos::StopWatch tv;
 
     std::string cname = dirprefix + namepref;
     cname += "dictionary";
@@ -490,15 +458,12 @@ randReadField(FakeWordSet &wordSet,
     std::unique_ptr<search::index::DictionaryFileRandRead> dictFile;
     dictFile.reset(new PageDict4RandRead);
 
-    search::index::PostingListFileRandRead *postingFile = NULL;
+    search::index::PostingListFileRandRead *postingFile = nullptr;
     if (dynamicK)
-        postingFile =
-            new search::diskindex::ZcPosOccRandRead;
+        postingFile = new search::diskindex::ZcPosOccRandRead;
     else
-        postingFile =
-            new search::diskindex::Zc4PosOccRandRead;
+        postingFile = new search::diskindex::Zc4PosOccRandRead;
 
-    TuneFileSeqRead tuneFileRead;
     TuneFileRandRead tuneFileRandRead;
     bool openCntRes = dictFile->open(cname, tuneFileRandRead);
     assert(openCntRes);
@@ -560,16 +525,11 @@ randReadField(FakeWordSet &wordSet,
     dictFile->close();
     delete postingFile;
     dictFile.reset();
-    tv.SetNow();
-    after = tv.Secs();
-    LOG(info,
-        "leave randReadField, namepref=%s,"
-        " dynamicK=%s, decode_interleaved_features=%s, "
-        "elapsed=%10.6f",
+    LOG(info, "leave randReadField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s, elapsed=%10.6f",
         namepref.c_str(),
         dynamicKStr,
         bool_to_str(decode_interleaved_features),
-        after - before);
+        tv.elapsed().sec());
 }
 
 
@@ -595,16 +555,10 @@ fusionField(uint32_t numWordIds,
         rawStr,
         dynamicKStr, bool_to_str(encode_interleaved_features));
 
-    FastOS_Time tv;
-    double before;
-    double after;
-    WrappedFieldWriter ostate(opref,
-                              dynamicK, encode_interleaved_features,
-                              numWordIds, docIdLimit);
+    WrappedFieldWriter ostate(opref, dynamicK, encode_interleaved_features, numWordIds, docIdLimit);
     WrappedFieldReader istate(ipref, numWordIds, docIdLimit);
 
-    tv.SetNow();
-    before = tv.Secs();
+    fastos::StopWatch tv;
 
     ostate.open();
     istate.open();
@@ -624,8 +578,7 @@ fusionField(uint32_t numWordIds,
     }
     istate.close();
     ostate.close();
-    tv.SetNow();
-    after = tv.Secs();
+
     LOG(info,
         "leave fusionField, ipref=%s, opref=%s,"
         " raw=%s dynamicK=%s, encode_interleaved_features=%s,"
@@ -634,7 +587,7 @@ fusionField(uint32_t numWordIds,
         opref.c_str(),
         rawStr,
         dynamicKStr, bool_to_str(encode_interleaved_features),
-        after - before);
+        tv.elapsed().sec());
 }
 
 
@@ -754,7 +707,7 @@ main(int argc, char **argv)
 {
     fieldwriter::FieldWriterTest app;
 
-    setvbuf(stdout, NULL, _IOLBF, 32768);
+    setvbuf(stdout, nullptr, _IOLBF, 32768);
     app._rnd.srand48(32);
     return app.Entry(argc, argv);
 }

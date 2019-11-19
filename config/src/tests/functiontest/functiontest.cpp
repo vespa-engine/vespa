@@ -110,7 +110,7 @@ struct TestFixture : public LazyTestFixture
     TestFixture(const std::string & dirName)
         : LazyTestFixture(dirName)
     {
-        ASSERT_TRUE(_subscriber.nextConfig(0));
+        ASSERT_TRUE(_subscriber.nextConfigNow());
         _config = _handle->getConfig();
     }
 };
@@ -120,7 +120,7 @@ struct ErrorFixture
     LazyTestFixture & f;
     ErrorFixture(LazyTestFixture & f1) : f(f1) { }
     void run() {
-        f._subscriber.nextConfig(0);
+        f._subscriber.nextConfigNow();
         bool thrown = false;
         try {
             f._handle->getConfig();
@@ -153,7 +153,7 @@ void attemptLacking(const std::string& param, bool isArray) {
         RawSpec spec(config.str());
         ConfigSubscriber subscriber(spec);
         ConfigHandle<FunctionTestConfig>::UP handle = subscriber.subscribe<FunctionTestConfig>("foo");
-        ASSERT_TRUE(subscriber.nextConfig(0));
+        ASSERT_TRUE(subscriber.nextConfigNow());
         std::unique_ptr<FunctionTestConfig> cfg = handle->getConfig();
         if (isArray) {
             // Arrays are empty by default

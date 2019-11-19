@@ -11,6 +11,8 @@
 
 LOG_SETUP(".storageservertest");
 
+using namespace std::chrono_literals;
+
 namespace storage {
 
 struct StorageServerTest : public ::testing::Test {
@@ -61,7 +63,7 @@ struct Storage : public Node {
 Distributor::Distributor(vdstestlib::DirConfig& config)
     : _process(config.getConfigId())
 {
-    _process.setupConfig(60000);
+    _process.setupConfig(60000ms);
     _process.createNode();
 }
 
@@ -70,7 +72,7 @@ Distributor::~Distributor() = default;
 Storage::Storage(vdstestlib::DirConfig& config)
     : _process(config.getConfigId())
 {
-    _process.setupConfig(60000);
+    _process.setupConfig(60000ms);
     _process.createNode();
     _component.reset(new StorageComponent(
     getContext().getComponentRegister(), "test"));

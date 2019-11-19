@@ -42,6 +42,7 @@ using namespace cloud::config::filedistribution;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
+using namespace std::chrono_literals;
 using vespa::config::content::core::BucketspacesConfig;
 
 using std::shared_ptr;
@@ -189,7 +190,7 @@ public:
                                                   std::make_shared<BucketspacesConfig>(),
                                                   tuneFileDocDB, HwInfo()));
         mgr.forwardConfig(b);
-        mgr.nextGeneration(0);
+        mgr.nextGeneration(0ms);
         return DocumentDB::SP(
                 new DocumentDB(_baseDir,
                                mgr.getConfig(),

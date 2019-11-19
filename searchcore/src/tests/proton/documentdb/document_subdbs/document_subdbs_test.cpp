@@ -43,6 +43,7 @@ using namespace search::transactionlog;
 using namespace search;
 using namespace searchcorespi;
 using namespace vespalib;
+using namespace std::chrono_literals;
 
 using document::test::makeBucketSpace;
 using proton::bucketdb::BucketDBHandler;
@@ -278,7 +279,7 @@ struct MyConfigSnapshot
         config::DirSpec spec(cfgDir);
         DocumentDBConfigHelper mgr(spec, "searchdocument");
         mgr.forwardConfig(_bootstrap);
-        mgr.nextGeneration(1);
+        mgr.nextGeneration(1ms);
         _cfg = mgr.getConfig();
     }
 };

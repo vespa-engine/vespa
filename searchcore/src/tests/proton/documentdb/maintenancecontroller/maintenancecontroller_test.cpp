@@ -26,8 +26,6 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
@@ -70,8 +68,7 @@ typedef std::set<BucketId> BucketIdSet;
 constexpr int TIMEOUT_MS = 60000;
 constexpr double TIMEOUT_SEC = 60.0;
 
-namespace
-{
+namespace {
 
 void
 sampleThreadId(FastOS_ThreadId *threadId)
@@ -806,12 +803,9 @@ MyExecutor::isIdle()
 bool
 MyExecutor::waitIdle(double timeout)
 {
-    FastOS_Time startTime;
-    startTime.SetNow();
+    fastos::StopWatch timer;
     while (!isIdle()) {
-        FastOS_Time cTime;
-        cTime.SetNow();
-        if (cTime.Secs() - startTime.Secs() >= timeout)
+        if (timer.elapsed().sec() >= timeout)
             return false;
     }
     return true;

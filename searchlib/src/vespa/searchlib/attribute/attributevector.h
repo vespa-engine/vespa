@@ -20,7 +20,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <cmath>
 #include <mutex>
 #include <shared_mutex>

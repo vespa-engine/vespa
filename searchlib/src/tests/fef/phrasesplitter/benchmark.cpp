@@ -6,7 +6,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("phrasesplitter_test");
@@ -16,11 +16,11 @@ namespace search::fef {
 class Benchmark : public vespalib::TestApp
 {
 private:
-    FastOS_Time _timer;
-    double      _sample;
+    fastos::StopWatch _timer;
+    fastos::TimeStamp _sample;
 
-    void start() { _timer.SetNow(); }
-    void sample() { _sample = _timer.MilliSecsToNow(); }
+    void start() { _timer.restart(); }
+    void sample() { _sample = _timer.elapsed(); }
     void run(size_t numRuns, size_t numPositions);
 
 public:
@@ -69,13 +69,13 @@ Benchmark::Main()
         return 0;
     }
 
-    size_t numRuns = strtoull(_argv[1], NULL, 10);
-    size_t numPositions = strtoull(_argv[2], NULL, 10);
+    size_t numRuns = strtoull(_argv[1], nullptr, 10);
+    size_t numPositions = strtoull(_argv[2], nullptr, 10);
 
     run(numRuns, numPositions);
 
-    std::cout << "TET:  " << _sample << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << _sample / numRuns << " (ms)" << std::endl;
+    std::cout << "TET:  " << _sample.ms() << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << _sample.ms() / numRuns << " (ms)" << std::endl;
 
     TEST_DONE();
 }

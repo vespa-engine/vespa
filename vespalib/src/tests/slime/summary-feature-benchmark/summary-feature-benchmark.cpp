@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 
 using namespace vespalib;
 using namespace vespalib::slime::convenience;
@@ -22,7 +22,7 @@ struct MyBuffer : public Output {
     }
 };
 
-MyBuffer::~MyBuffer() { }
+MyBuffer::~MyBuffer() = default;
 
 std::string make_name(size_t idx) {
     return make_string("summary_feature_%zu", idx);
@@ -47,13 +47,12 @@ TEST_F("slime -> json speed", FeatureFixture()) {
     double minTime = 1000000.0;
     MyBuffer buffer;
     for (size_t i = 0; i < 16; ++i) {
-        FastOS_Time timer;
-        timer.SetNow();
+        fastos::StopWatch timer;
         for (size_t j = 0; j < 256; ++j) {
             buffer.used = 0;
             slime::JsonFormat::encode(f1.slime, buffer, true);
         }
-        minTime = std::min(minTime, timer.MilliSecsToNow() / 256.0);
+        minTime = std::min(minTime, timer.elapsed().ms() / 256.0);
         size = buffer.used;
     }
     fprintf(stderr, "time: %g ms (size: %zu bytes)\n", minTime, size);
@@ -64,13 +63,12 @@ TEST_F("slime -> binary speed", FeatureFixture()) {
     double minTime = 1000000.0;
     MyBuffer buffer;
     for (size_t i = 0; i < 16; ++i) {
-        FastOS_Time timer;
-        timer.SetNow();
+        fastos::StopWatch timer;
         for (size_t j = 0; j < 256; ++j) {
             buffer.used = 0;
             slime::BinaryFormat::encode(f1.slime, buffer);
         }
-        minTime = std::min(minTime, timer.MilliSecsToNow() / 256.0);
+        minTime = std::min(minTime, timer.elapsed().ms() / 256.0);
         size = buffer.used;
     }
     fprintf(stderr, "time: %g ms (size: %zu bytes)\n", minTime, size);

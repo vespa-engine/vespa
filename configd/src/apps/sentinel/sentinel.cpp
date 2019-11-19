@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/config/common/exceptions.h>
-#include <csignal>
 #include <unistd.h>
 #include <sys/time.h>
 #include <vespa/vespalib/util/signalhandler.h>
@@ -14,7 +13,7 @@ LOG_SETUP("config-sentinel");
 
 using namespace config;
 
-constexpr uint64_t CONFIG_TIMEOUT_MS = 3 * 60 * 1000;
+constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS(3 * 60 * 1000);
 
 static bool stop()
 {

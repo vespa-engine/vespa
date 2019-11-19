@@ -155,7 +155,7 @@ public:
 
     Proton(const config::ConfigUri & configUri,
            const vespalib::string &progName,
-           uint64_t subscribeTimeout);
+           std::chrono::milliseconds subscribeTimeout);
     ~Proton() override;
 
     /**

@@ -45,6 +45,7 @@ using namespace search::engine;
 using namespace search::index;
 using namespace search::transactionlog;
 using namespace search;
+using namespace std::chrono_literals;
 
 using document::DocumenttypesConfig;
 using document::test::makeBucketSpace;
@@ -210,7 +211,7 @@ public:
                                                    std::make_shared<BucketspacesConfig>(),
                                                    _tuneFileDocumentDB, _hwInfo);
         _configMgr.forwardConfig(b);
-        _configMgr.nextGeneration(0);
+        _configMgr.nextGeneration(0ms);
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) {
             LOG_ABORT("should not be reached");
         }

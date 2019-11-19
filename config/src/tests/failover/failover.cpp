@@ -15,6 +15,7 @@ using vespalib::Barrier;
 using namespace config::protocol::v2;
 using namespace vespalib::slime;
 using namespace vespalib;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -173,7 +174,7 @@ TimingValues testTimingValues(
     500,  // successTimeout
     500,  // errorTimeout
     500,   // initialTimeout
-    400,  // unsubscribeTimeout
+    400ms,  // unsubscribeTimeout
     0,     // fixedDelay
     250,   // successDelay
     250,   // unconfiguredDelay

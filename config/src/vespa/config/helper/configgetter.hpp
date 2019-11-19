@@ -18,7 +18,7 @@ ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & con
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & configId, const IConfigContext::SP & context, uint64_t subscribeTimeout)
+ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & configId, const IConfigContext::SP & context, milliseconds subscribeTimeout)
 {
     ConfigSubscriber s(context);
     std::unique_ptr< ConfigHandle<ConfigType> > h = s.subscribe<ConfigType>(configId, subscribeTimeout);
@@ -37,7 +37,7 @@ ConfigGetter<ConfigType>::getConfig(const std::string & configId, const SourceSp
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigGetter<ConfigType>::getConfig(const std::string & configId, const IConfigContext::SP & context, uint64_t subscribeTimeout)
+ConfigGetter<ConfigType>::getConfig(const std::string & configId, const IConfigContext::SP & context, milliseconds subscribeTimeout)
 {
     int64_t ignoreGeneration;
     return getConfig(ignoreGeneration, configId, context, subscribeTimeout);

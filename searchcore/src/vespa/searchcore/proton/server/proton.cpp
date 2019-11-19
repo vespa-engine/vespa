@@ -175,7 +175,7 @@ Proton::ProtonFileHeaderContext::setClusterName(const vespalib::string & cluster
 
 Proton::Proton(const config::ConfigUri & configUri,
                const vespalib::string &progName,
-               uint64_t subscribeTimeout)
+               std::chrono::milliseconds subscribeTimeout)
     : IProtonConfigurerOwner(),
       search::engine::MonitorServer(),
       IDocumentDBOwner(),
@@ -221,12 +221,10 @@ Proton::Proton(const config::ConfigUri & configUri,
       _initStarted(false),
       _initComplete(false),
       _initDocumentDbsInSequence(false),
-      _documentDBReferenceRegistry(),
+      _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
       _nodeUp()
-{
-    _documentDBReferenceRegistry = std::make_shared<DocumentDBReferenceRegistry>();
-}
+{ }
 
 BootstrapConfig::SP
 Proton::init()

@@ -6,7 +6,6 @@
 #include <vespa/fastos/file.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/flushableattribute.h>
-#include <vespa/searchcore/proton/common/feedtoken.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchcore/proton/docsummary/summaryflushtarget.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastoreflushtarget.h>
@@ -31,6 +30,7 @@
 using namespace cloud::config::filedistribution;
 using namespace proton;
 using namespace vespalib::slime;
+using namespace std::chrono_literals;
 
 using document::DocumentType;
 using document::DocumentTypeRepo;
@@ -103,7 +103,7 @@ Fixture::Fixture()
                               std::make_shared<BucketspacesConfig>(),
                               tuneFileDocumentDB, HwInfo()));
     mgr.forwardConfig(b);
-    mgr.nextGeneration(0);
+    mgr.nextGeneration(0ms);
     _db.reset(new DocumentDB(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _tls, _dummy,
