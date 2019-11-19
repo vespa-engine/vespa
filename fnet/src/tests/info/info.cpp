@@ -54,10 +54,10 @@ TEST("info") {
     FRT_Values &l = *local_info->GetReturn();
  // FRT_Values &r = *remote_info->GetReturn();
 
-    fprintf(stderr, "FNET Version: %s\n", l[1]._string._str);
-    fprintf(stderr, "Endian: %s\n", l[2]._string._str);
-    fprintf(stderr, "FD_SETSIZE: %d\n", l[3]._intval32);
-    fprintf(stderr, "sizeof(FRT_RPCRequest): %d\n", l[4]._intval32);
+    fprintf(stderr, "FNET Version: %s\n", l[0]._string._str);
+    fprintf(stderr, "Endian: %s\n", l[1]._string._str);
+    fprintf(stderr, "FD_SETSIZE: %d\n", l[2]._intval32);
+    fprintf(stderr, "sizeof(FRT_RPCRequest): %d\n", l[3]._intval32);
 
     target->SubRef();
     local_info->SubRef();
