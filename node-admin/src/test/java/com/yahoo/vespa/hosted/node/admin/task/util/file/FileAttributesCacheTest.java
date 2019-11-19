@@ -1,5 +1,4 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import org.junit.Test;
@@ -22,17 +21,17 @@ public class FileAttributesCacheTest {
         FileAttributesCache cache = new FileAttributesCache(unixPath);
 
         when(unixPath.getAttributesIfExists()).thenReturn(Optional.empty());
-        assertFalse(cache.exists());
+        assertFalse(cache.get().isPresent());
         verify(unixPath, times(1)).getAttributesIfExists();
         verifyNoMoreInteractions(unixPath);
 
         FileAttributes attributes = mock(FileAttributes.class);
         when(unixPath.getAttributesIfExists()).thenReturn(Optional.of(attributes));
-        assertTrue(cache.exists());
+        assertTrue(cache.get().isPresent());
         verify(unixPath, times(1 + 1)).getAttributesIfExists();
         verifyNoMoreInteractions(unixPath);
 
-        assertEquals(attributes, cache.get());
+        assertEquals(attributes, cache.getOrThrow());
         verifyNoMoreInteractions(unixPath);
     }
 }
