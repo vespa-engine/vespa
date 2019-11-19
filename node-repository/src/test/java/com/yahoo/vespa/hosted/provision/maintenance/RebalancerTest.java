@@ -39,6 +39,7 @@ public class RebalancerTest {
 
     @Test
     public void testRebalancing() {
+        // --- Setup
         ApplicationId cpuApp = makeApplicationId("t1", "a1");
         ApplicationId memApp = makeApplicationId("t2", "a2");
         NodeResources cpuResources = new NodeResources(8, 4, 1, 0.1);
@@ -64,7 +65,7 @@ public class RebalancerTest {
         tester.makeReadyNodes(3, "flt", NodeType.host, 8);
         tester.deployZoneApp();
 
-        // Cpu heavy application - causing 1 of these nodes to be skewed
+        // --- Deploying a cpu heavy application - causing 1 of these nodes to be skewed
         deployApp(cpuApp, clusterSpec("c"), cpuResources, tester, 1);
         Node cpuSkewedNode = tester.nodeRepository().getNodes(cpuApp).get(0);
 
@@ -73,6 +74,7 @@ public class RebalancerTest {
                     tester.nodeRepository().getNode(cpuSkewedNode.hostname()).get().status().wantToRetire());
         assertEquals(0.00325, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
+        // --- Making a more suitable node configuration available causes rebalancing
         Node newCpuHost = tester.makeReadyNodes(1, "cpu", NodeType.host, 8).get(0);
         tester.deployZoneApp();
 
@@ -84,14 +86,15 @@ public class RebalancerTest {
         assertEquals("Skew is reduced",
                      0.00244, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
+        // --- Deploying a mem heavy application - allocated to the best option and causing increased skew
         deployApp(memApp, clusterSpec("c"), memResources, tester, 1);
         assertEquals("Assigned to a flat node as that causes least skew", "flt",
                      tester.nodeRepository().list().parentOf(tester.nodeRepository().getNodes(memApp).get(0)).get().flavor().name());
-
         rebalancer.maintain();
         assertEquals("Deploying the mem skewed app increased skew",
                      0.00734, metric.values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
 
+        // --- Adding a more suitable node reconfiguration causes no action as the system is not stable
         Node memSkewedNode = tester.nodeRepository().getNodes(memApp).get(0);
         Node newMemHost = tester.makeReadyNodes(1, "mem", NodeType.host, 8).get(0);
         tester.deployZoneApp();
@@ -100,10 +103,22 @@ public class RebalancerTest {
         assertFalse("No rebalancing happens because cpuSkewedNode is still retired",
                    tester.nodeRepository().getNode(memSkewedNode.hostname()).get().allocation().get().membership().retired());
 
+        // --- Making the system stable enables rebalancing
         NestedTransaction tx = new NestedTransaction();
         tester.nodeRepository().deactivate(List.of(cpuSkewedNode), tx);
         tx.commit();
 
+        //     ... if activation fails when trying, we clean up the state
+        deployer.setFailActivate(true);
+        rebalancer.maintain();
+        assertTrue("Want to retire is reset", tester.nodeRepository().getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
+        assertEquals("Reserved node was moved to dirty", 1, tester.nodeRepository().getNodes(Node.State.dirty).size());
+        String reservedHostname = tester.nodeRepository().getNodes(Node.State.dirty).get(0).hostname();
+        tester.nodeRepository().setReady(reservedHostname, Agent.system, "Cleanup");
+        tester.nodeRepository().removeRecursively(reservedHostname);
+
+        //     ... otherwise we successfully rebalance, again reducing skew
+        deployer.setFailActivate(false);
         rebalancer.maintain();
         assertTrue("Rebalancer retired the node we wanted to move away from",
                    tester.nodeRepository().getNode(memSkewedNode.hostname()).get().allocation().get().membership().retired());

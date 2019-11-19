@@ -37,6 +37,8 @@ public class MockDeployer implements Deployer {
     private final Clock clock;
     private final ReentrantLock lock = new ReentrantLock();
 
+    private boolean failActivate = false;
+
     @Inject
     @SuppressWarnings("unused")
     public MockDeployer() {
@@ -55,9 +57,9 @@ public class MockDeployer implements Deployer {
         this.applications = new HashMap<>(applications);
     }
 
-    public ReentrantLock lock() {
-        return lock;
-    }
+    public ReentrantLock lock() { return lock; }
+
+    public void setFailActivate(boolean failActivate) { this.failActivate = failActivate; }
 
     @Override
     public Optional<Deployment> deployFromLocalActive(ApplicationId id, boolean bootstrap) {
@@ -119,6 +121,8 @@ public class MockDeployer implements Deployer {
             if (preparedHosts == null)
                 prepare();
             redeployments++;
+            if (failActivate)
+                throw new IllegalStateException("failActivate is true");
             try (NestedTransaction t = new NestedTransaction()) {
                 provisioner.activate(t, application.id(), preparedHosts);
                 t.commit();
