@@ -137,6 +137,7 @@ typedef ProtonTerm<search::query::DotProduct>      ProtonDotProduct;
 typedef ProtonTerm<search::query::WandTerm>        ProtonWandTerm;
 typedef ProtonTerm<search::query::PredicateQuery>  ProtonPredicateQuery;
 typedef ProtonTerm<search::query::RegExpTerm>      ProtonRegExpTerm;
+typedef ProtonTerm<search::query::NearestNeighborTerm> ProtonNearestNeighborTerm;
 
 struct ProtonNodeTypes {
     typedef ProtonAnd             And;
@@ -161,6 +162,7 @@ struct ProtonNodeTypes {
     typedef ProtonWandTerm        WandTerm;
     typedef ProtonPredicateQuery  PredicateQuery;
     typedef ProtonRegExpTerm      RegExpTerm;
+    typedef ProtonNearestNeighborTerm NearestNeighborTerm;
 };
 
 }

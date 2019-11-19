@@ -203,6 +203,13 @@ createRegExpTerm(vespalib::stringref term, vespalib::stringref view, int32_t id,
 }
 
 template <class NodeTypes>
+typename NodeTypes::NearestNeighborTerm *
+create_nearest_neighbor_term(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+                             int32_t id, Weight weight, uint32_t target_num_hits) {
+    return new typename NodeTypes::NearestNeighborTerm(query_tensor_name, field_name, id, weight, target_num_hits);
+}
+
+template <class NodeTypes>
 class QueryBuilder : public QueryBuilderBase {
     template <class T>
     T &addIntermediate(T *node, int child_count) {
@@ -308,6 +315,11 @@ public:
     typename NodeTypes::RegExpTerm &addRegExpTerm(stringref term, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
         return addTerm(createRegExpTerm<NodeTypes>(term, view, id, weight));
+    }
+    typename NodeTypes::NearestNeighborTerm &add_nearest_neighbor_term(stringref query_tensor_name, stringref field_name,
+                                                                       int32_t id, Weight weight, uint32_t target_num_hits) {
+        adjustWeight(weight);
+        return addTerm(create_nearest_neighbor_term<NodeTypes>(query_tensor_name, field_name, id, weight, target_num_hits));
     }
 };
 

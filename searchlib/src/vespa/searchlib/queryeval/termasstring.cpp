@@ -14,28 +14,29 @@ LOG_SETUP(".termasstring");
 
 using search::query::And;
 using search::query::AndNot;
+using search::query::DotProduct;
 using search::query::Equiv;
-using search::query::NumberTerm;
 using search::query::LocationTerm;
 using search::query::Near;
+using search::query::NearestNeighborTerm;
 using search::query::Node;
+using search::query::NumberTerm;
 using search::query::ONear;
 using search::query::Or;
 using search::query::Phrase;
-using search::query::SameElement;
 using search::query::PredicateQuery;
 using search::query::PrefixTerm;
 using search::query::QueryVisitor;
 using search::query::RangeTerm;
 using search::query::Rank;
 using search::query::RegExpTerm;
+using search::query::SameElement;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
+using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
-using search::query::DotProduct;
-using search::query::WandTerm;
 using vespalib::string;
 
 namespace search::queryeval {
@@ -101,6 +102,7 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(SuffixTerm &n) override {visitTerm(n); }
     void visit(RegExpTerm &n) override {visitTerm(n); }
     void visit(PredicateQuery &) override {illegalVisit(); }
+    void visit(NearestNeighborTerm &) override { illegalVisit(); }
 };
 }  // namespace
 

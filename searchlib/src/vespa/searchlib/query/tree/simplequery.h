@@ -103,31 +103,38 @@ struct SimpleRegExpTerm : RegExpTerm {
         : RegExpTerm(term, view, id, weight) {
     }
 };
+struct SimpleNearestNeighborTerm : NearestNeighborTerm {
+    SimpleNearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+                              int32_t id, Weight weight, uint32_t target_num_hits)
+        : NearestNeighborTerm(query_tensor_name, field_name, id, weight, target_num_hits)
+    {}
+};
 
 
 struct SimpleQueryNodeTypes {
-    typedef SimpleAnd And;
-    typedef SimpleAndNot AndNot;
-    typedef SimpleEquiv Equiv;
-    typedef SimpleNumberTerm NumberTerm;
-    typedef SimpleLocationTerm LocationTerm;
-    typedef SimpleNear Near;
-    typedef SimpleONear ONear;
-    typedef SimpleOr Or;
-    typedef SimplePhrase Phrase;
-    typedef SimpleSameElement SameElement;
-    typedef SimplePrefixTerm PrefixTerm;
-    typedef SimpleRangeTerm RangeTerm;
-    typedef SimpleRank Rank;
-    typedef SimpleStringTerm StringTerm;
-    typedef SimpleSubstringTerm SubstringTerm;
-    typedef SimpleSuffixTerm SuffixTerm;
-    typedef SimpleWeakAnd WeakAnd;
-    typedef SimpleWeightedSetTerm WeightedSetTerm;
-    typedef SimpleDotProduct DotProduct;
-    typedef SimpleWandTerm WandTerm;
-    typedef SimplePredicateQuery PredicateQuery;
-    typedef SimpleRegExpTerm RegExpTerm;
+    using And = SimpleAnd;
+    using AndNot = SimpleAndNot;
+    using Equiv = SimpleEquiv;
+    using NumberTerm = SimpleNumberTerm;
+    using LocationTerm = SimpleLocationTerm;
+    using Near = SimpleNear;
+    using ONear = SimpleONear;
+    using Or = SimpleOr;
+    using Phrase = SimplePhrase;
+    using SameElement = SimpleSameElement;
+    using PrefixTerm = SimplePrefixTerm;
+    using RangeTerm = SimpleRangeTerm;
+    using Rank = SimpleRank;
+    using StringTerm = SimpleStringTerm;
+    using SubstringTerm = SimpleSubstringTerm;
+    using SuffixTerm = SimpleSuffixTerm;
+    using WeakAnd = SimpleWeakAnd;
+    using WeightedSetTerm = SimpleWeightedSetTerm;
+    using DotProduct = SimpleDotProduct;
+    using WandTerm = SimpleWandTerm;
+    using PredicateQuery = SimplePredicateQuery;
+    using RegExpTerm = SimpleRegExpTerm;
+    using NearestNeighborTerm = SimpleNearestNeighborTerm;
 };
 
 }

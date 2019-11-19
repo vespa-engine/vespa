@@ -26,6 +26,7 @@ class WandTerm;
 class PredicateQuery;
 class RegExpTerm;
 class SameElement;
+class NearestNeighborTerm;
 
 struct QueryVisitor {
     virtual ~QueryVisitor() {}
@@ -52,6 +53,7 @@ struct QueryVisitor {
     virtual void visit(WandTerm &) = 0;
     virtual void visit(PredicateQuery &) = 0;
     virtual void visit(RegExpTerm &) = 0;
+    virtual void visit(NearestNeighborTerm &) = 0;
 };
 
 }

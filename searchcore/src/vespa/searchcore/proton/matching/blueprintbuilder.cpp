@@ -109,6 +109,12 @@ private:
         _result = builder.build();
     }
 
+    void buildNearestNeighborTerm(ProtonNearestNeighborTerm &n) {
+        (void) n;
+        // TODO (geirst): implement
+        _result = std::make_unique<EmptyBlueprint>();
+    }
+
     template <typename NodeType>
     void buildTerm(NodeType &n) {
         FieldSpecList indexFields;
@@ -143,6 +149,7 @@ protected:
     void visit(ProtonNear &n)        override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
     void visit(ProtonONear &n)       override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
     void visit(ProtonSameElement &n) override { buildSameElement(n); }
+    void visit(ProtonNearestNeighborTerm &n) override { buildNearestNeighborTerm(n); }
 
 
     void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }
