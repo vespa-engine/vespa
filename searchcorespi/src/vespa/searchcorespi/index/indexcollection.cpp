@@ -202,7 +202,7 @@ private:
     void visit(SuffixTerm &n)      override { visitTerm(n); }
     void visit(PredicateQuery &n)  override { visitTerm(n); }
     void visit(RegExpTerm &n)      override { visitTerm(n); }
-    void visit(NearestNeighborTerm &) override { }
+    void visit(NearestNeighborTerm &n) override { visitTerm(n); }
 
 public:
     CreateBlueprintVisitor(const IIndexCollection &indexes,

@@ -90,12 +90,4 @@ CreateBlueprintVisitorHelper::visitWandTerm(query::WandTerm &n) {
                       n);
 }
 
-void
-CreateBlueprintVisitorHelper::visitNearestNeighborTerm(query::NearestNeighborTerm &n)
-{
-    (void) n;
-    // TODO (geirst): implement
-    setResult(std::make_unique<EmptyBlueprint>());
-}
-
 }

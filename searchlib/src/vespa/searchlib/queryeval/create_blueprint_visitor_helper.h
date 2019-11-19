@@ -63,7 +63,6 @@ public:
     void visit(query::WeightedSetTerm &n) override { visitWeightedSetTerm(n); }
     void visit(query::DotProduct &n) override { visitDotProduct(n); }
     void visit(query::WandTerm &n) override { visitWandTerm(n); }
-    void visit(query::NearestNeighborTerm &n) override { visitNearestNeighborTerm(n); }
 
     void visit(query::NumberTerm &n) override = 0;
     void visit(query::LocationTerm &n) override = 0;
@@ -73,6 +72,7 @@ public:
     void visit(query::SubstringTerm &n) override = 0;
     void visit(query::SuffixTerm &n) override = 0;
     void visit(query::RegExpTerm &n) override = 0;
+    void visit(query::NearestNeighborTerm &n) override = 0;
 };
 
 }

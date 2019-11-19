@@ -592,6 +592,11 @@ public:
             createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
         }
     }
+    void visit(query::NearestNeighborTerm &n) override {
+        (void) n;
+        // TODO (geirst): implement
+        setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
+    }
 };
 
 } // namespace
