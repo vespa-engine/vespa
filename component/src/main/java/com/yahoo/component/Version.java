@@ -350,7 +350,7 @@ public final class Version implements Comparable<Version> {
 
     /**
      * Returns whether this version number is strictly lower than the given version. This has the same semantics as
-     * {@link this#compareTo}.
+     * {@link Version#compareTo}.
      */
     public boolean isBefore(Version other) {
         return compareTo(other) < 0;
@@ -358,7 +358,7 @@ public final class Version implements Comparable<Version> {
 
     /**
      * Returns whether this version number is strictly higher than the given version. This has the same semantics as
-     * {@link this#compareTo}.
+     * {@link Version#compareTo}.
      */
     public boolean isAfter(Version other) {
         return compareTo(other) > 0;
