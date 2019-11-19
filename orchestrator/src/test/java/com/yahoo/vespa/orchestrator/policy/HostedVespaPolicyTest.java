@@ -10,6 +10,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
+import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.ClusterApi;
 import com.yahoo.vespa.orchestrator.model.StorageNode;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -33,6 +34,7 @@ public class HostedVespaPolicyTest {
 
     private final ClusterControllerClientFactory clientFactory = mock(ClusterControllerClientFactory.class);
     private final ClusterControllerClient client = mock(ClusterControllerClient.class);
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
     @Before
     public void setUp() {
@@ -42,7 +44,7 @@ public class HostedVespaPolicyTest {
     @Test
     public void testGrantSuspension() throws HostStateChangeDeniedException {
         final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
-        final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory);
+        final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory, applicationApiFactory);
         final ApplicationApi applicationApi = mock(ApplicationApi.class);
         when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
 
@@ -94,7 +96,7 @@ public class HostedVespaPolicyTest {
     @Test
     public void testAcquirePermissionToRemove() throws OrchestrationException {
         final HostedVespaClusterPolicy clusterPolicy = mock(HostedVespaClusterPolicy.class);
-        final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory);
+        final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clientFactory, applicationApiFactory);
         final ApplicationApi applicationApi = mock(ApplicationApi.class);
         when(applicationApi.applicationId()).thenReturn(ApplicationId.fromSerializedForm("tenant:app:default"));
 

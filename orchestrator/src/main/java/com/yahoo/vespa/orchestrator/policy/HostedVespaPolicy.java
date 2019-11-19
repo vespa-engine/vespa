@@ -7,16 +7,13 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
-import com.yahoo.vespa.orchestrator.model.ApplicationApiImpl;
+import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.ClusterApi;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.StorageNode;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
-import com.yahoo.vespa.orchestrator.status.StatusService;
-
-import java.util.logging.Logger;
 
 /**
  * @author oyving
@@ -31,10 +28,12 @@ public class HostedVespaPolicy implements Policy {
 
     private final HostedVespaClusterPolicy clusterPolicy;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
+    private final ApplicationApiFactory applicationApiFactory;
 
-    public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy, ClusterControllerClientFactory clusterControllerClientFactory) {
+    public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy, ClusterControllerClientFactory clusterControllerClientFactory, ApplicationApiFactory applicationApiFactory) {
         this.clusterPolicy = clusterPolicy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
+        this.applicationApiFactory = applicationApiFactory;
     }
 
     @Override
@@ -107,7 +106,7 @@ public class HostedVespaPolicy implements Policy {
             HostName hostName,
             MutableStatusRegistry hostStatusService) throws HostStateChangeDeniedException {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostName);
-        ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup, hostStatusService, clusterControllerClientFactory);
+        ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, hostStatusService, clusterControllerClientFactory);
         releaseSuspensionGrant(context, applicationApi);
     }
 

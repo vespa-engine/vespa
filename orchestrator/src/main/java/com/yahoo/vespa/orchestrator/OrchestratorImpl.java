@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
@@ -17,7 +18,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
-import com.yahoo.vespa.orchestrator.model.ApplicationApiImpl;
+import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
@@ -56,19 +57,22 @@ public class OrchestratorImpl implements Orchestrator {
     private final int serviceMonitorConvergenceLatencySeconds;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final Clock clock;
+    private final ApplicationApiFactory applicationApiFactory;
 
     @Inject
     public OrchestratorImpl(ClusterControllerClientFactory clusterControllerClientFactory,
                             StatusService statusService,
                             OrchestratorConfig orchestratorConfig,
-                            InstanceLookupService instanceLookupService)
+                            InstanceLookupService instanceLookupService,
+                            ConfigserverConfig configServerConfig)
     {
-        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory),
-                clusterControllerClientFactory,
-                statusService,
-                instanceLookupService,
-                orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
-                Clock.systemUTC());
+        this(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, new ApplicationApiFactory(configServerConfig.zookeeperserver().size())),
+             clusterControllerClientFactory,
+             statusService,
+             instanceLookupService,
+             orchestratorConfig.serviceMonitorConvergenceLatencySeconds(),
+             Clock.systemUTC(),
+             new ApplicationApiFactory(configServerConfig.zookeeperserver().size()));
     }
 
     public OrchestratorImpl(Policy policy,
@@ -76,7 +80,8 @@ public class OrchestratorImpl implements Orchestrator {
                             StatusService statusService,
                             InstanceLookupService instanceLookupService,
                             int serviceMonitorConvergenceLatencySeconds,
-                            Clock clock)
+                            Clock clock,
+                            ApplicationApiFactory applicationApiFactory)
     {
         this.policy = policy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
@@ -84,6 +89,7 @@ public class OrchestratorImpl implements Orchestrator {
         this.serviceMonitorConvergenceLatencySeconds = serviceMonitorConvergenceLatencySeconds;
         this.instanceLookupService = instanceLookupService;
         this.clock = clock;
+        this.applicationApiFactory = applicationApiFactory;
     }
 
     @Override
@@ -171,10 +177,8 @@ public class OrchestratorImpl implements Orchestrator {
         OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock);
         try (MutableStatusRegistry statusRegistry = statusService
                 .lockApplicationInstance_forCurrentThreadOnly(context, appInstance.reference())) {
-            ApplicationApi applicationApi = new ApplicationApiImpl(
-                    nodeGroup,
-                    statusRegistry,
-                    clusterControllerClientFactory);
+            ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, statusRegistry,
+                                                                         clusterControllerClientFactory);
 
             policy.acquirePermissionToRemove(context.createSubcontextWithinLock(), applicationApi);
         }
@@ -196,9 +200,8 @@ public class OrchestratorImpl implements Orchestrator {
                 return;
             }
 
-            ApplicationApi applicationApi = new ApplicationApiImpl(nodeGroup,
-                                                                   hostStatusRegistry,
-                                                                   clusterControllerClientFactory);
+            ApplicationApi applicationApi = applicationApiFactory.create(nodeGroup, hostStatusRegistry,
+                                                                         clusterControllerClientFactory);
             policy.grantSuspensionRequest(context.createSubcontextWithinLock(), applicationApi);
         }
     }
