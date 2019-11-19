@@ -19,12 +19,14 @@ public class MakeDirectory {
 
     private final UnixPath path;
     private final AttributeSync attributeSync;
+    private final FileAttributesCache attributesCache;
 
     private boolean createParents = false;
 
     public MakeDirectory(Path path) {
         this.path = new UnixPath(path);
         this.attributeSync = new AttributeSync(path);
+        this.attributesCache = new FileAttributesCache(this.path);
     }
 
     /**
@@ -42,8 +44,8 @@ public class MakeDirectory {
     public boolean converge(TaskContext context) {
         boolean systemModified = false;
 
-        FileAttributesCache attributes = new FileAttributesCache(path);
-        if (attributes.exists()) {
+        Optional<FileAttributes> attributes = attributesCache.forceGet();
+        if (attributes.isPresent()) {
             if (!attributes.get().isDirectory()) {
                 throw new UncheckedIOException(new NotDirectoryException(path.toString()));
             }
@@ -65,7 +67,7 @@ public class MakeDirectory {
             }
         }
 
-        systemModified |= attributeSync.converge(context, attributes);
+        systemModified |= attributeSync.converge(context, attributesCache);
 
         return systemModified;
     }
