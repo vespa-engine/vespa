@@ -99,7 +99,6 @@ public class Rebalancer extends Maintainer {
         Move bestMove = Move.none;
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
-            if (node.allocation().get().owner().instance().isTester())) continue;
             for (Node toHost : allNodes.nodeType(NodeType.host).state(NodePrioritizer.ALLOCATABLE_HOST_STATES)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
