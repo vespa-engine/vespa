@@ -17,7 +17,7 @@ ReservedName::stillReserved() const {
 }
 
 int64_t ReservedName::milliseconds() const {
-    return duration_cast<std::chrono::seconds>(steady_clock::now() - _reservedTime).count();
+    return duration_cast<std::chrono::milliseconds>(steady_clock::now() - _reservedTime).count();
 }
 
 }
