@@ -20,7 +20,7 @@ public class ApplicationApiImplTest {
 
     @Test
     public void testApplicationId() {
-        ApplicationApiImpl applicationApi =
+        ApplicationApi applicationApi =
                 modelUtils.createApplicationApiImpl(modelUtils.createApplicationInstance(new ArrayList<>()));
         assertEquals("tenant:application-name:default", applicationApi.applicationId().serializedForm());
     }
@@ -179,7 +179,7 @@ public class ApplicationApiImplTest {
 
         modelUtils.createNode("host1", hostStatus);
 
-        ApplicationApiImpl applicationApi = modelUtils.createApplicationApiImpl(applicationInstance, hostName1);
+        ApplicationApi applicationApi = modelUtils.createApplicationApiImpl(applicationInstance, hostName1);
         List<HostName> upStorageNodes = expectUp ? Arrays.asList(hostName1) : new ArrayList<>();
 
         List<HostName> actualStorageNodes = applicationApi.getUpStorageNodesInGroupInClusterOrder().stream()
