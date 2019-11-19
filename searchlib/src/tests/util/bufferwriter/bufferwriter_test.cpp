@@ -6,8 +6,7 @@
 #include <vespa/searchlib/util/drainingbufferwriter.h>
 #include <vespa/searchlib/util/rand48.h>
 
-namespace search
-{
+namespace search {
 
 namespace {
 
@@ -39,7 +38,7 @@ StoreBufferWriter::StoreBufferWriter()
     setup(&_buf[0], _buf.size());
 }
 
-StoreBufferWriter::~StoreBufferWriter() {}
+StoreBufferWriter::~StoreBufferWriter() = default;
 
 
 void

@@ -183,7 +183,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
         return false;
     } else {
         attr->commit(serialNum, serialNum);
-        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), stopWatch.stop().elapsed().ms());
+        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), stopWatch.elapsed().ms());
     }
     return true;
 }

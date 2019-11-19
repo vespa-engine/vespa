@@ -23,7 +23,7 @@ private:
     mutable std::condition_variable _replayCond;
     volatile bool                   _replayDone;
     bool                            _replayStarted;
-    mutable fastos::StopWatch       _replayStopWatch;
+    fastos::StopWatch               _replayStopWatch;
 
 protected:
     typedef search::SerialNum SerialNum;
@@ -38,7 +38,7 @@ protected:
     StatusResult init();
 
     void internalStartReplay();
-    virtual void doLogReplayComplete(const vespalib::string &domainName, int64_t elapsedTime) const = 0;
+    virtual void doLogReplayComplete(const vespalib::string &domainName, std::chrono::milliseconds elapsedTime) const = 0;
 
 public:
     TransactionLogManagerBase(const TransactionLogManagerBase &) = delete;

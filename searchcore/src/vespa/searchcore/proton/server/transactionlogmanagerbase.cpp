@@ -69,7 +69,7 @@ TransactionLogManagerBase::internalStartReplay()
     std::lock_guard<std::mutex> guard(_replayLock);
     _replayStarted = true;
     _replayDone = false;
-    _replayStopWatch = fastos::StopWatch();
+    _replayStopWatch.restart();
 }
 
 void TransactionLogManagerBase::changeReplayDone()
@@ -117,7 +117,7 @@ bool TransactionLogManagerBase::isDoingReplay() const {
 }
 
 void TransactionLogManagerBase::logReplayComplete() const {
-    doLogReplayComplete(_domainName, _replayStopWatch.stop().elapsed().ms());
+    doLogReplayComplete(_domainName, std::chrono::milliseconds(_replayStopWatch.elapsed().ms()));
 }
 
 } // namespace proton

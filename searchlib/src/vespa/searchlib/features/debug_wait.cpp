@@ -29,9 +29,9 @@ using namespace std::chrono;
 void
 DebugWaitExecutor::execute(uint32_t)
 {
-    steady_clock::time_point start = steady_clock::now();
+    fastos::StopWatch timer;
     fastos::StopWatch::waitAtLeast(microseconds(static_cast<long>(_params.waitTime * 1000000)), _params.busyWait);
-    outputs().set_number(0, (1.0e-6 * (steady_clock::now() - start)).count());
+    outputs().set_number(0, timer.elapsed().sec());
 }
 
 //-----------------------------------------------------------------------------

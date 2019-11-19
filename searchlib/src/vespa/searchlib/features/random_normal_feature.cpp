@@ -69,7 +69,7 @@ RandomNormalBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::
 {
     uint64_t seed = _seed;
     if (seed == 0) {
-        seed = static_cast<uint64_t>(duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count()) ^
+        seed = static_cast<uint64_t>(duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()) ^
                 reinterpret_cast<uint64_t>(&seed); // results in different seeds in different threads
     }
     return stash.create<RandomNormalExecutor>(seed, _mean, _stddev);

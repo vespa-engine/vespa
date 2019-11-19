@@ -141,7 +141,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     }
 
     if (toMsg.get() != 0) {
-        milliseconds timeout = std::max(milliseconds(INT_MAX), fromMsg.getTimeRemaining());
+        milliseconds timeout = std::min(milliseconds(INT_MAX), fromMsg.getTimeRemaining());
         toMsg->setTimeout(timeout.count());
         toMsg->setPriority(_priConverter->toStoragePriority(fromMsg.getPriority()));
         toMsg->setLoadType(fromMsg.getLoadType());

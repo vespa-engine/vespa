@@ -42,9 +42,9 @@ DebugAttributeWaitExecutor::execute(uint32_t docId)
         _buf.fill(*_attribute, docId);
         waitTime = _buf[0];
     }
-    steady_clock::time_point start = steady_clock::now();
+    fastos::StopWatch timer;
     fastos::StopWatch::waitAtLeast(microseconds(static_cast<long>(waitTime * 1000000)), _params.busyWait);
-    outputs().set_number(0, (1.0e-6 * (steady_clock::now() - start)).count());
+    outputs().set_number(0, timer.elapsed().sec());
 }
 
 //-----------------------------------------------------------------------------
