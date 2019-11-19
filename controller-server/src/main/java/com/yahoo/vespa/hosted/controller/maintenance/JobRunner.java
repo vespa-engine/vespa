@@ -95,8 +95,7 @@ public class JobRunner extends Maintainer {
                                                                                                                                                : DeploymentJobs.JobError.unknown));
                 controller().applications().deploymentTrigger().notifyOfCompletion(report);
             });
-
-            }
+        }
         catch (Exception e) {
             log.log(LogLevel.WARNING, "Exception finishing " + id, e);
         }
