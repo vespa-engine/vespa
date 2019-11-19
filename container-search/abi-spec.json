@@ -855,10 +855,10 @@
       "public"
     ],
     "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
       "public int getTargetNumHits()",
       "public java.lang.String getIndexName()",
-      "public java.lang.String getQueryRankFeatureName()",
-      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String getQueryTensorName()",
       "public void setTargetNumHits(int)",
       "public void setIndexName(java.lang.String)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",

@@ -9,9 +9,9 @@ import java.nio.ByteBuffer;
 
 /**
  * Represent a query item matching the K nearest neighbors in a multi-dimensional vector space.
- * The query point vector is referenced by the name of a tensor rank feature passed in the query,
- * so specifying "myvector" as the name means the query must set "ranking.features.query(myvector)",
- * which must be configured with the correct tensor type in the active query profile.
+ * The query point vector is referenced by the name of a tensor passed as a query rank feature;
+ * specifying "myvector" as the name means the query must set "ranking.features.query(myvector)".
+ * This rank feature must be configured with the correct tensor type in the active query profile.
  * The field name (AKA the index name) given must be an attribute, with the exact same tensor type.
  *
  * @author arnej
@@ -19,25 +19,26 @@ import java.nio.ByteBuffer;
 @Beta
 public class NearestNeighborItem extends SimpleTaggableItem {
 
-    private int targetNumber = 0;
+    private int targetNumHits = 0;
     private String field;
-    private String property;
+    private String queryTensorName;
 
-    /** @return the K number of hits to produce */
-    public int getTargetNumHits() { return targetNumber; }
-
-    /** @return the field name */
-    public String getIndexName() { return field; }
-
-    /** @return the name of the query ranking feature */
-    public String getQueryRankFeatureName() { return property; }
-
-    public NearestNeighborItem(String fieldName, String queryRankFeatureName) {
+    public NearestNeighborItem(String fieldName, String queryTensorName) {
         this.field = fieldName;
-        this.property = queryRankFeatureName;
+        this.queryTensorName = queryTensorName;
     }
 
-    public void setTargetNumHits(int target) { this.targetNumber = target; }
+    /** Returns the K number of hits to produce */
+    public int getTargetNumHits() { return targetNumHits; }
+
+    /** Returns the field name */
+    public String getIndexName() { return field; }
+
+    /** Returns the name of the query tensor */
+    public String getQueryTensorName() { return queryTensorName; }
+
+    /** Set the K number of hits to produce */
+    public void setTargetNumHits(int target) { this.targetNumHits = target; }
 
     @Override
     public void setIndexName(String index) { this.field = index; }
@@ -55,15 +56,15 @@ public class NearestNeighborItem extends SimpleTaggableItem {
     public int encode(ByteBuffer buffer) {
         super.encodeThis(buffer);
         putString(field, buffer);
-        putString(property, buffer);
-        IntegerCompressor.putCompressedPositiveNumber(targetNumber, buffer);
+        putString(queryTensorName, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(targetNumHits, buffer);
         return 1;  // number of encoded stack dump items
     }
 
     @Override
     protected void appendBodyString(StringBuilder buffer) {
         buffer.append("{field=").append(field);
-        buffer.append(",property=").append(property);
-        buffer.append(",targetNumHits=").append(targetNumber).append("}");
+        buffer.append(",queryTensorName=").append(queryTensorName);
+        buffer.append(",targetNumHits=").append(targetNumHits).append("}");
     }
 }

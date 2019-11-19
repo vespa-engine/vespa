@@ -705,7 +705,7 @@ public class VespaSerializer {
             destination.append("}]");
             destination.append(NEAREST_NEIGHBOR).append('(');
             destination.append(item.getIndexName()).append(", ");
-            destination.append(item.getQueryRankFeatureName()).append(')');
+            destination.append(item.getQueryTensorName()).append(')');
             return false;
         }
 
