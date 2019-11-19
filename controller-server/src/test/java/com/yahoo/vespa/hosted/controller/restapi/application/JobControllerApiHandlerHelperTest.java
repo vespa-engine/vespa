@@ -122,7 +122,7 @@ public class JobControllerApiHandlerHelperTest {
         var userApp = tester.newDeploymentContext(app.instanceId().tenant().value(), app.instanceId().application().value(), "user");
         userApp.runJob(devAwsUsEast2a, applicationPackage);
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
-        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview.json");
+        assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
     }
 
     @Test
