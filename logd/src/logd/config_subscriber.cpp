@@ -3,8 +3,6 @@
 #include "config_subscriber.h"
 #include "empty_forwarder.h"
 #include "rpc_forwarder.h"
-#include <fcntl.h>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("");
@@ -71,7 +69,7 @@ ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
 bool
 ConfigSubscriber::checkAvailable()
 {
-    if (_subscriber.nextGeneration(0)) {
+    if (_subscriber.nextGenerationNow()) {
         _has_available = true;
     }
     return _has_available;
@@ -103,7 +101,7 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
       _server()
 {
     _handle = _subscriber.subscribe<LogdConfig>(configUri.getConfigId());
-    _subscriber.nextConfig(0);
+    _subscriber.nextConfigNow();
     configure(_handle->getConfig());
 
     LOG(debug, "got logServer %s", _logserver_host.c_str());

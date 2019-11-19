@@ -4,7 +4,7 @@ namespace config {
 
 template <typename ConfigType>
 void
-ConfigFetcher::subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, uint64_t subscribeTimeout)
+ConfigFetcher::subscribe(const std::string & configId, IFetcherCallback<ConfigType> * callback, milliseconds subscribeTimeout)
 {
     _poller.subscribe<ConfigType>(configId, callback, subscribeTimeout);
 }

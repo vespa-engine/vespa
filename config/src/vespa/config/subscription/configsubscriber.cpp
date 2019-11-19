@@ -11,17 +11,17 @@ ConfigSubscriber::ConfigSubscriber(const IConfigContext::SP & context)
 { }
 
 ConfigSubscriber::ConfigSubscriber(const SourceSpec & spec)
-    : _set(IConfigContext::SP(new ConfigContext(spec)))
+    : _set(std::make_shared<ConfigContext>(spec))
 { }
 
 bool
-ConfigSubscriber::nextConfig(uint64_t timeoutInMillis)
+ConfigSubscriber::nextConfig(milliseconds timeoutInMillis)
 {
     return _set.acquireSnapshot(timeoutInMillis, false);
 }
 
 bool
-ConfigSubscriber::nextGeneration(uint64_t timeoutInMillis)
+ConfigSubscriber::nextGeneration(milliseconds timeoutInMillis)
 {
     return _set.acquireSnapshot(timeoutInMillis, true);
 }
@@ -44,4 +44,4 @@ ConfigSubscriber::getGeneration() const
     return _set.getGeneration();
 }
 
-} // namespace config
+}

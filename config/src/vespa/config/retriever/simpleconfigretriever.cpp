@@ -4,17 +4,17 @@
 namespace config {
 SimpleConfigRetriever::SimpleConfigRetriever(const ConfigKeySet & keySet,
                                              const IConfigContext::SP & context,
-                                             uint64_t subscribeTimeout)
+                                             milliseconds subscribeTimeout)
     : _set(context),
       _subscriptionList()
 {
-    for (ConfigKeySet::const_iterator it(keySet.begin()), mt(keySet.end()); it != mt; it++) {
-        _subscriptionList.push_back(_set.subscribe(*it, subscribeTimeout));
+    for (const ConfigKey & key : keySet) {
+        _subscriptionList.push_back(_set.subscribe(key, subscribeTimeout));
     }
 }
 
 ConfigSnapshot
-SimpleConfigRetriever::getConfigs(uint64_t timeoutInMillis)
+SimpleConfigRetriever::getConfigs(milliseconds timeoutInMillis)
 {
     if (_set.acquireSnapshot(timeoutInMillis, true)) {
         return ConfigSnapshot(_subscriptionList, _set.getGeneration());

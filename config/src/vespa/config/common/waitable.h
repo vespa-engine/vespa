@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <memory>
+#include <chrono>
 
 namespace config {
 
@@ -11,7 +11,8 @@ namespace config {
  */
 struct Waitable
 {
-    virtual bool wait(uint64_t timeoutInMillis) = 0;
+    using milliseconds = std::chrono::milliseconds;
+    virtual bool wait(milliseconds) = 0;
     virtual ~Waitable() {}
 };
 

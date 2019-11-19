@@ -2,6 +2,7 @@
 
 #include "configgetter.h"
 #include <vespa/config/subscription/configsubscriber.h>
+
 namespace config {
 
 template <typename ConfigType>
@@ -10,7 +11,7 @@ ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & con
 {
     ConfigSubscriber s(spec);
     std::unique_ptr< ConfigHandle<ConfigType> > h = s.subscribe<ConfigType>(configId);
-    s.nextConfig(0);
+    s.nextConfigNow();
     generation = s.getGeneration();
     return h->getConfig();
 }
@@ -21,7 +22,7 @@ ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & con
 {
     ConfigSubscriber s(context);
     std::unique_ptr< ConfigHandle<ConfigType> > h = s.subscribe<ConfigType>(configId, subscribeTimeout);
-    s.nextConfig(0);
+    s.nextConfigNow();
     generation = s.getGeneration();
     return h->getConfig();
 }

@@ -806,7 +806,7 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
     }
 
     // Check for new config and reconfigure
-    if (_configSubscriber.get() && _configSubscriber->nextConfig(0)) {
+    if (_configSubscriber.get() && _configSubscriber->nextConfigNow()) {
         configure(guard, _configHandle->getConfig());
     }
 
@@ -841,8 +841,7 @@ MetricManager::tick(const MetricLockGuard & guard, time_t currentTime)
             visit(guard, *_totalMetrics, totalVisitor, "log");
             visit(guard, _snapshots[0]->getSnapshot(), fiveMinVisitor , "log");
             if (_logPeriod.second + _logPeriod.first < currentTime) {
-                uint64_t next = _snapshots[0]->getFromTime()
-                              + _logPeriod.first;
+                uint64_t next = _snapshots[0]->getFromTime() + _logPeriod.first;
                 LOG(warning, "Logged events at time %" PRIu64 " for time %"
                              PRIu64 ". Since this is more than a period %u "
                              "in the past, next run has been set to next "

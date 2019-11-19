@@ -19,6 +19,7 @@ namespace config {
 class ConfigSubscriptionSet
 {
 public:
+    using milliseconds = std::chrono::milliseconds;
     /**
      * Constructs a new ConfigSubscriptionSet object which can be used to subscribe for 1
      * or more configs from a specific source.
@@ -48,10 +49,10 @@ public:
     bool isClosed() const;
 
     // Helpers for doing the subscription
-    ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis);
+    ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
 
     // Tries to acquire a new snapshot of config within the timeout
-    bool acquireSnapshot(uint64_t timeoutInMillis, bool requireDifference);
+    bool acquireSnapshot(milliseconds timeoutInMillis, bool requireDifference);
 
 private:
     // Describes the state of the subscriber.

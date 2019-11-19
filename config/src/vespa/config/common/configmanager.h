@@ -25,7 +25,7 @@ public:
     ~ConfigManager();
 
     // Implements IConfigManager
-    ConfigSubscription::SP subscribe(const ConfigKey & key, uint64_t timeoutInMillis) override;
+    ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis) override;
 
     // Implements IConfigManager
     void unsubscribe(const ConfigSubscription::SP & subscription) override;

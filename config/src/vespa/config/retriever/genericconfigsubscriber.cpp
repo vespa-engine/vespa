@@ -8,13 +8,13 @@ GenericConfigSubscriber::GenericConfigSubscriber(const IConfigContext::SP & cont
 { }
 
 bool
-GenericConfigSubscriber::nextGeneration(int timeoutInMillis)
+GenericConfigSubscriber::nextGeneration(milliseconds timeoutInMillis)
 {
     return _set.acquireSnapshot(timeoutInMillis, true);
 }
 
 ConfigSubscription::SP
-GenericConfigSubscriber::subscribe(const ConfigKey & key, int timeoutInMillis)
+GenericConfigSubscriber::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
 {
     return _set.subscribe(key, timeoutInMillis);
 }

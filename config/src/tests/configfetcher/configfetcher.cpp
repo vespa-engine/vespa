@@ -29,7 +29,7 @@ public:
 };
 
 MyCallback::MyCallback(const std::string & badConfig) : _config(), _configured(false), _badConfig(badConfig) { }
-MyCallback::~MyCallback() { }
+MyCallback::~MyCallback() = default;
 
 TEST("requireThatConfigIsAvailableOnConstruction") {
     RawSpec spec("myField \"foo\"\n");
@@ -39,7 +39,7 @@ TEST("requireThatConfigIsAvailableOnConstruction") {
         ConfigFetcher fetcher(spec);
         fetcher.subscribe<MyConfig>("myid", &cb);
         fetcher.start();
-        ASSERT_TRUE(cb._config.get() != NULL);
+        ASSERT_TRUE(cb._config);
         ASSERT_EQUAL("my", cb._config->defName());
         ASSERT_EQUAL("foo", cb._config->myField);
     }

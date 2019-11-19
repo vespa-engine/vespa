@@ -1,13 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("unittest");
+
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/config.h>
 #include "config-my.h"
 #include "config-foo.h"
 #include "config-bar.h"
 
+#include <vespa/log/log.h>
+LOG_SETUP("unittest");
+
 using namespace config;
+using namespace std::chrono_literals;
 
 namespace {
     void verifyConfig(const std::string & expected, std::unique_ptr<FooConfig> cfg)
@@ -41,15 +44,15 @@ TEST("requireThatConfigCanBeReloaded") {
     ConfigSubscriber subscriber(ctx);
 
     ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>("myid");
-    ASSERT_TRUE(subscriber.nextConfig(0));
+    ASSERT_TRUE(subscriber.nextConfigNow());
     std::unique_ptr<MyConfig> cfg(handle->getConfig());
     ASSERT_TRUE(cfg.get() != NULL);
     ASSERT_EQUAL("myfoo", cfg->myField);
     ctx->reload();
-    ASSERT_FALSE(subscriber.nextConfig(1000));
+    ASSERT_FALSE(subscriber.nextConfig(1000ms));
     builder.myField = "foobar";
     ctx->reload();
-    ASSERT_TRUE(subscriber.nextConfig(10000));
+    ASSERT_TRUE(subscriber.nextConfig(10000ms));
     cfg = handle->getConfig();
     ASSERT_TRUE(cfg.get() != NULL);
     ASSERT_EQUAL("foobar", cfg->myField);
@@ -71,21 +74,21 @@ TEST("requireThatCanSubscribeWithSameIdToDifferentDefs") {
     ConfigHandle<FooConfig>::UP h1 = subscriber.subscribe<FooConfig>("fooid");
     ConfigHandle<BarConfig>::UP h2 = subscriber.subscribe<BarConfig>("fooid");
 
-    ASSERT_TRUE(subscriber.nextConfig(0));
+    ASSERT_TRUE(subscriber.nextConfigNow());
     verifyConfig("myfoo", h1->getConfig());
     verifyConfig("mybar", h2->getConfig());
     ctx->reload();
-    ASSERT_FALSE(subscriber.nextConfig(100));
+    ASSERT_FALSE(subscriber.nextConfig(100ms));
 
     fooBuilder.fooValue = "blabla";
     ctx->reload();
-    ASSERT_TRUE(subscriber.nextConfig(5000));
+    ASSERT_TRUE(subscriber.nextConfig(5000ms));
     verifyConfig("blabla", h1->getConfig());
     verifyConfig("mybar", h2->getConfig());
 
     barBuilder.barValue = "blabar";
     ctx->reload();
-    ASSERT_TRUE(subscriber.nextConfig(5000));
+    ASSERT_TRUE(subscriber.nextConfig(5000ms));
     verifyConfig("blabla", h1->getConfig());
     verifyConfig("blabar", h2->getConfig());
 }

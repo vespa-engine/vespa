@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/config/subscription/configsubscriptionset.h>
 #include "configkeyset.h"
 #include "configsnapshot.h"
+#include <vespa/config/subscription/configsubscriptionset.h>
 
 namespace config {
 
@@ -14,8 +14,9 @@ namespace config {
 class FixedConfigSubscriber
 {
 public:
-    FixedConfigSubscriber(const ConfigKeySet & keySet, const IConfigContext::SP & context, int64_t subscribeTimeout);
-    bool nextGeneration(int timeoutInMillis);
+    using milliseconds = std::chrono::milliseconds;
+    FixedConfigSubscriber(const ConfigKeySet & keySet, const IConfigContext::SP & context, milliseconds subscribeTimeout);
+    bool nextGeneration(milliseconds timeoutInMillis);
     void close();
     int64_t getGeneration() const;
     ConfigSnapshot getConfigSnapshot() const;

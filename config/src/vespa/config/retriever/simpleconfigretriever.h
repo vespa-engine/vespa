@@ -17,10 +17,11 @@ class SimpleConfigRetriever
 {
 public:
     typedef std::unique_ptr<SimpleConfigRetriever> UP;
+    using milliseconds = std::chrono::milliseconds;
 
     SimpleConfigRetriever(const ConfigKeySet & keySet,
                           const IConfigContext::SP & context,
-                          uint64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+                          milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
      * Attempt retrieving a snapshot of configs.
@@ -28,7 +29,7 @@ public:
      * @return A new snapshot. The snapshot is empty if timeout was reached or
      *         if the retriever was closed.
      */
-    ConfigSnapshot getConfigs(uint64_t timeoutInMillis = DEFAULT_GETCONFIGS_TIMEOUT);
+    ConfigSnapshot getConfigs(milliseconds timeoutInMillis = DEFAULT_GETCONFIGS_TIMEOUT);
     void close();
     bool isClosed() const;
 

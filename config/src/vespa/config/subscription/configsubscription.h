@@ -7,6 +7,7 @@
 #include "subscriptionid.h"
 
 #include <atomic>
+#include <chrono>
 
 namespace config {
 
@@ -45,7 +46,7 @@ public:
     /// Used by ConfigSubscriptionSet
     SubscriptionId getSubscriptionId() const { return _id; }
     const ConfigKey & getKey() const;
-    bool nextUpdate(int64_t generation, uint64_t timeoutInMillis);
+    bool nextUpdate(int64_t generation, std::chrono::milliseconds timeoutInMillis);
     int64_t getGeneration() const;
     bool hasChanged() const;
     bool hasGenerationChanged() const;
