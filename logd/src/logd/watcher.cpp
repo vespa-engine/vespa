@@ -6,6 +6,7 @@
 #include "watcher.h"
 #include <vespa/log/log.h>
 #include <vespa/vespalib/util/sig_catch.h>
+#include <vespa/fastos/time.h>
 #include <fcntl.h>
 #include <glob.h>
 #include <sys/stat.h>

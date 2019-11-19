@@ -8,7 +8,6 @@ struct RPC : public FRT_Invokable
 {
   void GetInfo(FRT_RPCRequest *req)
   {
-    req->GetReturn()->AddString("fastos X current");
     req->GetReturn()->AddString(FNET_Info::GetFNETVersion());
     const char *endian_str = "UNKNOWN";
     if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE)
@@ -24,9 +23,8 @@ struct RPC : public FRT_Invokable
   {
     FRT_ReflectionBuilder rb(s);
     //-------------------------------------------------------------------
-    rb.DefineMethod("getInfo", "", "sssii",
+    rb.DefineMethod("getInfo", "", "ssii",
                     FRT_METHOD(RPC::GetInfo), this);
-    // FastOS version
     // FNET version
     // endian
     // FD_SETSIZE
@@ -56,7 +54,6 @@ TEST("info") {
     FRT_Values &l = *local_info->GetReturn();
  // FRT_Values &r = *remote_info->GetReturn();
 
-    fprintf(stderr, "FastOS Version: %s\n", l[0]._string._str);
     fprintf(stderr, "FNET Version: %s\n", l[1]._string._str);
     fprintf(stderr, "Endian: %s\n", l[2]._string._str);
     fprintf(stderr, "FD_SETSIZE: %d\n", l[3]._intval32);
@@ -80,9 +77,7 @@ TEST("size of important objects")
     EXPECT_EQUAL(MUTEX_SIZE + 432u, sizeof(FNET_Connection));
     EXPECT_EQUAL(48u, sizeof(std::condition_variable));
     EXPECT_EQUAL(56u, sizeof(FNET_DataBuffer));
-    EXPECT_EQUAL(24u, sizeof(FastOS_Time));
     EXPECT_EQUAL(8u, sizeof(FNET_Context));
-    EXPECT_EQUAL(8u, sizeof(fastos::TimeStamp));
     EXPECT_EQUAL(MUTEX_SIZE, sizeof(std::mutex));
     EXPECT_EQUAL(MUTEX_SIZE, sizeof(pthread_mutex_t));
     EXPECT_EQUAL(48u, sizeof(pthread_cond_t));

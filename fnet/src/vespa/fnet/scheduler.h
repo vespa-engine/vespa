@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <vespa/fastos/time.h>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 class FNET_Task;
 
@@ -19,9 +19,11 @@ class FNET_Task;
 class FNET_Scheduler
 {
 public:
+    using clock = std::chrono::steady_clock;
+    using time_point = clock::time_point;
+    static constexpr auto tick_ms = std::chrono::milliseconds(10);
 
     enum scheduler_constants {
-        SLOT_TICK   =   10,
         NUM_SLOTS   = 4096,
         SLOTS_MASK  = 4095,
         SLOTS_SHIFT =   12
@@ -31,9 +33,9 @@ private:
     std::mutex              _lock;
     std::condition_variable _cond;
     FNET_Task   *_slots[NUM_SLOTS + 1];
-    FastOS_Time  _next;
-    FastOS_Time  _now;
-    FastOS_Time *_sampler;
+    time_point   _next;
+    time_point   _now;
+    time_point  *_sampler;
     uint32_t     _currIter;
     uint32_t     _currSlot;
     FNET_Task   *_currPt;
@@ -71,8 +73,8 @@ public:
      * @param now if given, indicates the current time. This value is
      *            used by the constructor to init internal variables.
      **/
-    FNET_Scheduler(FastOS_Time *sampler = nullptr,
-                   FastOS_Time *now = nullptr);
+    FNET_Scheduler(time_point *sampler = nullptr,
+                   time_point *now = nullptr);
     virtual ~FNET_Scheduler();
 
 
@@ -120,17 +122,6 @@ public:
      * @param dst where to print the contents of this scheduler
      **/
     void Print(FILE *dst = stdout);
-
-
-    /**
-     * Obtain a pointer to the current time sampler used by this
-     * scheduler. The returned object may only be used in the thread
-     * servicing this scheduler; this includes all tasks performed by
-     * this scheduler.
-     *
-     * @return pointer to current time sampler.
-     **/
-    FastOS_Time *GetTimeSampler() { return _sampler; }
 
 
     /**

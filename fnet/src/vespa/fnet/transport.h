@@ -9,7 +9,6 @@
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
-class FastOS_TimeInterface;
 class FNET_TransportThread;
 class FastOS_ThreadPool;
 class FNET_Connector;

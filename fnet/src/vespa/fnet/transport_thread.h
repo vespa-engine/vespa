@@ -7,12 +7,12 @@
 #include "task.h"
 #include "packetqueue.h"
 #include <vespa/fastos/thread.h>
-#include <vespa/fastos/time.h>
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/net/selector.h>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 class FNET_Transport;
 class FNET_ControlPacket;
@@ -30,11 +30,12 @@ class FNET_TransportThread : public FastOS_Runnable
 
 public:
     using Selector = vespalib::Selector<FNET_IOComponent>;
+    using clock = FNET_Scheduler::clock;
+    using time_point = clock::time_point;
 
 private:
     FNET_Transport          &_owner;          // owning transport layer
-    FastOS_Time              _startTime;      // when event loop started
-    FastOS_Time              _now;            // current time sampler
+    time_point               _now;            // current time sampler
     FNET_Scheduler           _scheduler;      // transport thread scheduler
     FNET_Config              _config;         // FNET configuration [static]
     FNET_IOComponent        *_componentsHead; // I/O component list head
@@ -52,7 +53,6 @@ private:
     std::atomic<bool>        _shutdown;       // should stop event loop ?
     bool                     _finished;       // event loop stopped ?
     bool                     _waitFinished;   // someone is waiting for _finished
-    bool                     _deleted;        // destructor called ?
 
     FNET_TransportThread(const FNET_TransportThread &);
     FNET_TransportThread &operator=(const FNET_TransportThread &);

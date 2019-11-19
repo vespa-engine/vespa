@@ -2,14 +2,27 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
 
-FastOS_Time         _time;
-FNET_Scheduler     *_scheduler;
+using my_clock = FNET_Scheduler::clock;
+using time_point = my_clock::time_point;
+using ms_double = std::chrono::duration<double, std::milli>;
 
+time_point _time;
+FNET_Scheduler *_scheduler;
+
+template <class Rep, class Period>
+int as_ms(std::chrono::duration<Rep,Period> duration) {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
+}
+
+template <class Clock, class Duration>
+int as_ms(std::chrono::time_point<Clock,Duration> time) {
+    return as_ms(time.time_since_epoch());
+}
 
 class MyTask : public FNET_Task
 {
 public:
-  FastOS_Time _time;
+  time_point  _time;
   int         _target;
   bool        _done;
 
@@ -24,7 +37,7 @@ public:
   bool Check() const
   {
     int a = _target;
-    int b = (int)_time.MilliSecs();
+    int b = as_ms(_time);
 
     if (!_done)
       return false;
@@ -32,7 +45,7 @@ public:
     if (b < a)
       return false;
 
-    if ((b - a) > (3 * FNET_Scheduler::SLOT_TICK))
+    if ((b - a) > (3 * FNET_Scheduler::tick_ms.count()))
       return false;
 
     return true;
@@ -66,7 +79,7 @@ public:
 
 
 TEST("schedule") {
-  _time.SetMilliSecs(0);
+  _time = time_point(std::chrono::milliseconds(0));
   _scheduler = new FNET_Scheduler(&_time, &_time);
 
   RealTimeTask rt_task1;
@@ -84,35 +97,32 @@ TEST("schedule") {
     assert(tasks[i] != nullptr);
   }
 
-  FastOS_Time start;
-  FastOS_Time stop;
+  time_point start;
+  ms_double  ms;
 
-  start.SetNow();
+  start = my_clock::now();
   for (uint32_t j = 0; j < taskCnt; j++) {
     tasks[j]->Schedule(tasks[j]->GetTarget() / 1000.0);
   }
-  stop.SetNow();
-  stop -= start;
-  double scheduleTime = stop.MilliSecs() / (double)taskCnt;
+  ms = (my_clock::now() - start);
+  double scheduleTime = ms.count() / (double)taskCnt;
   fprintf(stderr, "scheduling cost: %1.2f microseconds\n", scheduleTime * 1000.0);
 
-  start.SetNow();
+  start = my_clock::now();
   uint32_t tickCnt = 0;
-  while (_time.MilliSecs() < 135000.0) {
-    _time.AddMilliSecs(FNET_Scheduler::SLOT_TICK);
+  while (as_ms(_time) < 135000.0) {
+    _time += FNET_Scheduler::tick_ms;
     _scheduler->CheckTasks();
     tickCnt++;
   }
-  stop.SetNow();
-  stop -= start;
-  double runTime = stop.MilliSecs();
+  ms = (my_clock::now() - start);
   fprintf(stderr, "3 RT tasks + %d one-shot tasks over 135s\n", taskCnt);
-  fprintf(stderr, "%1.2f seconds actual run time\n", runTime / 1000.0);
+  fprintf(stderr, "%1.2f seconds actual run time\n", ms.count() / 1000.0);
   fprintf(stderr, "%1.2f tasks per simulated second\n", (double)taskCnt / (double)135);
   fprintf(stderr, "%d ticks\n", tickCnt);
-  fprintf(stderr, "%1.2f %% simulated CPU usage\n", 100 * (runTime / 135000.0));
+  fprintf(stderr, "%1.2f %% simulated CPU usage\n", 100 * (ms.count() / 135000.0));
   fprintf(stderr, "%1.2f microseconds per performed task\n",
-      1000.0 * (runTime / (taskCnt + tickCnt * 3.0)));
+          1000.0 * (ms.count() / (taskCnt + tickCnt * 3.0)));
 
   for (uint32_t k = 0; k < taskCnt; k++) {
     EXPECT_TRUE(tasks[k]->Check());

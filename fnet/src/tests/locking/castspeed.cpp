@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
+#include <chrono>
 
 class B;
 
@@ -62,8 +63,11 @@ public:
 #define LOOPCNT 30000000
 
 TEST("cast speed") {
-    FastOS_Time      start;
-    FastOS_Time       stop;
+    using clock = std::chrono::steady_clock;
+    using ms_double = std::chrono::duration<double, std::milli>;
+
+    clock::time_point start;
+    ms_double         ms;
 
     CastTest       casttest;
 
@@ -71,7 +75,7 @@ TEST("cast speed") {
     uint32_t             i;
 
     taken = 0;
-    start.SetNow();
+    start = clock::now();
     for (i = 0; i < LOOPCNT; i++) {
         takeB(casttest.DummyCast());
         takeB(casttest.DummyCast());
@@ -84,17 +88,16 @@ TEST("cast speed") {
         takeB(casttest.DummyCast());
         takeB(casttest.DummyCast());
     }
-    stop.SetNow();
-    stop -= start;
-    actualTime = stop.MilliSecs();
+    ms = (clock::now() - start);
+    actualTime = ms.count();
     fprintf(stderr,
         "%d dummy cast calls: %f ms (%1.2f/us) [%f]\n",
-        taken, stop.MilliSecs(),
-        0.001 * taken / stop.MilliSecs(),
+        taken, ms.count(),
+        0.001 * taken / ms.count(),
         actualTime);
 
     taken = 0;
-    start.SetNow();
+    start = clock::now();
     for (i = 0; i < LOOPCNT; i++) {
         takeB(casttest.DynamicCast());
         takeB(casttest.DynamicCast());
@@ -107,17 +110,16 @@ TEST("cast speed") {
         takeB(casttest.DynamicCast());
         takeB(casttest.DynamicCast());
     }
-    stop.SetNow();
-    stop -= start;
-    actualTime = stop.MilliSecs();
+    ms = (clock::now() - start);
+    actualTime = ms.count();
     fprintf(stderr,
         "%d dynamic cast calls: %f ms (%1.2f/us) [%f]\n",
-        taken, stop.MilliSecs(),
-        0.001 * taken / stop.MilliSecs(),
+        taken, ms.count(),
+        0.001 * taken / ms.count(),
         actualTime);
 
     taken = 0;
-    start.SetNow();
+    start = clock::now();
     for (i = 0; i < LOOPCNT; i++) {
         takeB(casttest.TypesafeCast());
         takeB(casttest.TypesafeCast());
@@ -130,17 +132,16 @@ TEST("cast speed") {
         takeB(casttest.TypesafeCast());
         takeB(casttest.TypesafeCast());
     }
-    stop.SetNow();
-    stop -= start;
-    actualTime = stop.MilliSecs();
+    ms = (clock::now() - start);
+    actualTime = ms.count();
     fprintf(stderr,
         "%d typesafe cast calls: %f ms (%1.2f/us) [%f]\n",
-        taken, stop.MilliSecs(),
-        0.001 * taken / stop.MilliSecs(),
+        taken, ms.count(),
+        0.001 * taken / ms.count(),
         actualTime);
 
     taken = 0;
-    start.SetNow();
+    start = clock::now();
     for (i = 0; i < LOOPCNT; i++) {
         takeB(casttest.StaticCast());
         takeB(casttest.StaticCast());
@@ -153,17 +154,16 @@ TEST("cast speed") {
         takeB(casttest.StaticCast());
         takeB(casttest.StaticCast());
     }
-    stop.SetNow();
-    stop -= start;
-    actualTime = stop.MilliSecs();
+    ms = (clock::now() - start);
+    actualTime = ms.count();
     fprintf(stderr,
         "%d static cast calls: %f ms (%1.2f/us) [%f]\n",
-        taken, stop.MilliSecs(),
-        0.001 * taken / stop.MilliSecs(),
+        taken, ms.count(),
+        0.001 * taken / ms.count(),
         actualTime);
 
     taken = 0;
-    start.SetNow();
+    start = clock::now();
     for (i = 0; i < LOOPCNT; i++) {
         takeB(casttest.UnsafeCast());
         takeB(casttest.UnsafeCast());
@@ -176,17 +176,16 @@ TEST("cast speed") {
         takeB(casttest.UnsafeCast());
         takeB(casttest.UnsafeCast());
     }
-    stop.SetNow();
-    stop -= start;
-    actualTime = stop.MilliSecs();
+    ms = (clock::now() - start);
+    actualTime = ms.count();
     fprintf(stderr,
         "%d reinterpret_cast calls: %f ms (%1.2f/us) [%f]\n",
-        taken, stop.MilliSecs(),
-        0.001 * taken / stop.MilliSecs(),
+        taken, ms.count(),
+        0.001 * taken / ms.count(),
         actualTime);
 
     taken = 0;
-    start.SetNow();
+    start = clock::now();
     for (i = 0; i < LOOPCNT; i++) {
         takeB(casttest.DummyCast());
         takeB(casttest.DummyCast());
@@ -199,13 +198,12 @@ TEST("cast speed") {
         takeB(casttest.DummyCast());
         takeB(casttest.DummyCast());
     }
-    stop.SetNow();
-    stop -= start;
-    actualTime = stop.MilliSecs();
+    ms = (clock::now() - start);
+    actualTime = ms.count();
     fprintf(stderr,
         "%d dummy cast calls: %f ms (%1.2f/us) [%f]\n",
-        taken, stop.MilliSecs(),
-        0.001 * taken / stop.MilliSecs(),
+        taken, ms.count(),
+        0.001 * taken / ms.count(),
         actualTime);
 }
 
