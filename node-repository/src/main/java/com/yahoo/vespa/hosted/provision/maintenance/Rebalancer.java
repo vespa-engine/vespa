@@ -115,10 +115,9 @@ public class Rebalancer extends Maintainer {
     }
 
     /** Returns true only if this operation changes the state of the wantToRetire flag */
-    private boolean markWantToRetire(Optional<Node> node, boolean wantToRetire) {
-        if (node.isEmpty()) return false;
-        try (Mutex lock = nodeRepository().lock(node.get())) {
-            Optional<Node> nodeToMove = nodeRepository().getNode(node.get().hostname());
+    private boolean markWantToRetire(Node node, boolean wantToRetire) {
+        try (Mutex lock = nodeRepository().lock(node)) {
+            Optional<Node> nodeToMove = nodeRepository().getNode(node.hostname());
             if (nodeToMove.isEmpty()) return false;
             if (nodeToMove.get().state() != Node.State.active) return false;
 
@@ -140,7 +139,7 @@ public class Rebalancer extends Maintainer {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
             if ( ! deployment.isValid()) return false;
 
-            boolean couldMarkRetiredNow = markWantToRetire(Optional.of(move.node), true);
+            boolean couldMarkRetiredNow = markWantToRetire(move.node, true);
             if ( ! couldMarkRetiredNow) return false;
 
             Optional<Node> expectedNewNode = Optional.empty();
@@ -158,7 +157,7 @@ public class Rebalancer extends Maintainer {
                 return true;
             }
             finally {
-                markWantToRetire(nodeRepository().getNode(move.node.hostname()), false); // Necessary if this failed, no-op otherwise
+                markWantToRetire(move.node, false); // Necessary if this failed, no-op otherwise
                 if (expectedNewNode.isPresent()) { // Immediately clean up if we reserved the node but could not activate
                      Optional<Node> reservedNewNode = nodeRepository().getNode(expectedNewNode.get().hostname(), Node.State.reserved);
                      reservedNewNode.ifPresent(reserved -> nodeRepository().setDirty(reserved, Agent.system, "Expired by Rebalancer"));
