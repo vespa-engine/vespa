@@ -1,14 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "debug_wait.h"
-#include <vespa/fastos/time.h>
-#include <thread>
+#include <vespa/fastos/timestamp.h>
 
-namespace search {
+using namespace search::fef;
 
-using namespace fef;
-
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -22,29 +19,19 @@ public:
     void execute(uint32_t docId) override;
 };
 
-DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &env, const DebugWaitParams &params)
+DebugWaitExecutor::DebugWaitExecutor(const IQueryEnvironment &, const DebugWaitParams &params)
     : _params(params)
 {
-    (void)env;
 }
+
+using namespace std::chrono;
 
 void
 DebugWaitExecutor::execute(uint32_t)
 {
-    FastOS_Time time;
-    time.SetNow();
-    double millis = _params.waitTime * 1000.0;
-
-    while (time.MilliSecsToNow() < millis) {
-        if (_params.busyWait) {
-            for (int i = 0; i < 1000; i++)
-                ;
-        } else {
-            int rem = (int)(millis - time.MilliSecsToNow());
-            std::this_thread::sleep_for(std::chrono::milliseconds(rem));
-        }
-    }
-    outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());
+    steady_clock::time_point start = steady_clock::now();
+    fastos::StopWatch::waitAtLeast(microseconds(static_cast<long>(_params.waitTime * 1000000)), _params.busyWait);
+    outputs().set_number(0, (1.0e-6 * (steady_clock::now() - start)).count());
 }
 
 //-----------------------------------------------------------------------------
@@ -56,16 +43,14 @@ DebugWaitBlueprint::DebugWaitBlueprint()
 }
 
 void
-DebugWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &env, IDumpFeatureVisitor &visitor) const
+DebugWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
-    (void)env;
-    (void)visitor;
 }
 
 Blueprint::UP
 DebugWaitBlueprint::createInstance() const
 {
-    return Blueprint::UP(new DebugWaitBlueprint());
+    return std::make_unique<DebugWaitBlueprint>();
 }
 
 bool
@@ -87,5 +72,4 @@ DebugWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash
 
 //-----------------------------------------------------------------------------
 
-} // namespace features
-} // namespace search
+}

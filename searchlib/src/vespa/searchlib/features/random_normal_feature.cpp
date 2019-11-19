@@ -3,16 +3,16 @@
 #include "random_normal_feature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/fastos/time.h>
+#include <chrono>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalfeature");
 
 namespace search::features {
 
-RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double stddev) :
-    search::fef::FeatureExecutor(),
-    _rnd(mean, stddev, true)
+RandomNormalExecutor::RandomNormalExecutor(uint64_t seed, double mean, double stddev)
+    : fef::FeatureExecutor(),
+      _rnd(mean, stddev, true)
 {
     LOG(debug, "RandomNormalExecutor: seed=%" PRIu64 ", mean=%f, stddev=%f", seed, mean, stddev);
     _rnd.seed(seed);
@@ -25,7 +25,7 @@ RandomNormalExecutor::execute(uint32_t)
 }
 
 RandomNormalBlueprint::RandomNormalBlueprint() :
-    search::fef::Blueprint("randomNormal"),
+    fef::Blueprint("randomNormal"),
     _seed(0),
     _mean(0.0),
     _stddev(1.0)
@@ -33,22 +33,20 @@ RandomNormalBlueprint::RandomNormalBlueprint() :
 }
 
 void
-RandomNormalBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                   search::fef::IDumpFeatureVisitor &) const
+RandomNormalBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const
 {
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 RandomNormalBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new RandomNormalBlueprint());
+    return std::make_unique<RandomNormalBlueprint>();
 }
 
 bool
-RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList & params)
+RandomNormalBlueprint::setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params)
 {
-    search::fef::Property p = env.getProperties().lookup(getName(), "seed");
+    fef::Property p = env.getProperties().lookup(getName(), "seed");
     if (p.found()) {
         _seed = util::strToNum<uint64_t>(p.get());
     }
@@ -64,14 +62,14 @@ RandomNormalBlueprint::setup(const search::fef::IIndexEnvironment & env,
     return true;
 }
 
-search::fef::FeatureExecutor &
-RandomNormalBlueprint::createExecutor(const search::fef::IQueryEnvironment &, vespalib::Stash &stash) const
+using namespace std::chrono;
+
+fef::FeatureExecutor &
+RandomNormalBlueprint::createExecutor(const fef::IQueryEnvironment &, vespalib::Stash &stash) const
 {
     uint64_t seed = _seed;
     if (seed == 0) {
-        FastOS_Time time;
-        time.SetNow();
-        seed = static_cast<uint64_t>(time.MicroSecs()) ^
+        seed = static_cast<uint64_t>(duration_cast<microseconds>(steady_clock::now().time_since_epoch()).count()) ^
                 reinterpret_cast<uint64_t>(&seed); // results in different seeds in different threads
     }
     return stash.create<RandomNormalExecutor>(seed, _mean, _stddev);

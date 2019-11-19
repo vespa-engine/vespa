@@ -6,8 +6,7 @@
 #include "resultvector.h"
 #include <vespa/searchlib/common/sortspec.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 class DebugWaitFunctionNode : public UnaryFunctionNode
 {
@@ -15,7 +14,7 @@ public:
     DECLARE_EXPRESSIONNODE(DebugWaitFunctionNode);
     DECLARE_NBO_SERIALIZE;
     DebugWaitFunctionNode();
-    ~DebugWaitFunctionNode();
+    ~DebugWaitFunctionNode() override;
     DebugWaitFunctionNode(ExpressionNode::UP arg, double waitTime, bool busyWait);
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:
@@ -24,5 +23,4 @@ private:
     bool   _busyWait;
 };
 
-}
 }
