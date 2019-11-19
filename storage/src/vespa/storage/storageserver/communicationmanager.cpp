@@ -148,7 +148,7 @@ CommunicationManager::handleMessage(std::unique_ptr<mbus::Message> msg)
 
         //TODO: Can it be moved ?
         std::shared_ptr<api::StorageCommand> cmd = storMsgPtr->getCommand();
-        cmd->setTimeout(storMsgPtr->getTimeRemaining());
+        cmd->setTimeout(storMsgPtr->getTimeRemaining().count());
         cmd->setTrace(storMsgPtr->getTrace());
         cmd->setTransportContext(std::make_unique<StorageTransportContext>(std::move(storMsgPtr)));
 
@@ -567,7 +567,7 @@ CommunicationManager::sendCommand(
 
         cmd->setContext(mbus::Context(msg->getMsgId()));
         cmd->setRetryEnabled(address.retryEnabled());
-        cmd->setTimeRemaining(msg->getTimeout());
+        cmd->setTimeRemaining(std::chrono::milliseconds(msg->getTimeout()));
         cmd->setTrace(msg->getTrace());
         sendMessageBusMessage(msg, std::move(cmd), address.getRoute());
         break;

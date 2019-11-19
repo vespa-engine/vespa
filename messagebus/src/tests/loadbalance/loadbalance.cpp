@@ -16,6 +16,7 @@
 #include <vespa/messagebus/testlib/testserver.h>
 
 using namespace mbus;
+using namespace std::chrono_literals;
 
 struct Handler : public IMessageHandler
 {
@@ -64,7 +65,7 @@ Test::Main()
 
     RoutableQueue queue;
     SourceSessionParams params;
-    params.setTimeout(30.0);
+    params.setTimeout(30s);
     params.setThrottlePolicy(IThrottlePolicy::SP());
     SourceSession::UP ss = src.mb.createSourceSession(queue, params);
 

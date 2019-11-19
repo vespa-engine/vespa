@@ -20,6 +20,8 @@ LOG_SETUP(".documentapiconverter");
 
 using document::BucketSpace;
 
+using std::chrono::milliseconds;
+
 namespace storage {
 
 DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
@@ -28,7 +30,7 @@ DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
       _bucketResolver(std::move(bucketResolver))
 {}
 
-DocumentApiConverter::~DocumentApiConverter() {}
+DocumentApiConverter::~DocumentApiConverter()  = default;
 
 std::unique_ptr<api::StorageCommand>
 DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
@@ -139,11 +141,8 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     }
 
     if (toMsg.get() != 0) {
-        int64_t timeout = fromMsg.getTimeRemaining();
-        if (timeout > INT_MAX) {
-            timeout = INT_MAX;
-        }
-        toMsg->setTimeout(timeout);
+        milliseconds timeout = std::max(milliseconds(INT_MAX), fromMsg.getTimeRemaining());
+        toMsg->setTimeout(timeout.count());
         toMsg->setPriority(_priConverter->toStoragePriority(fromMsg.getPriority()));
         toMsg->setLoadType(fromMsg.getLoadType());
 
@@ -310,7 +309,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
     }
 
     if (toMsg.get()) {
-        toMsg->setTimeRemaining(fromMsg.getTimeout());
+        toMsg->setTimeRemaining(milliseconds(fromMsg.getTimeout()));
         toMsg->setContext(mbus::Context(fromMsg.getMsgId()));
         if (LOG_WOULD_LOG(spam)) {
             toMsg->getTrace().setLevel(9);

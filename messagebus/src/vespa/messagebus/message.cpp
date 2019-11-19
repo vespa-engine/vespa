@@ -62,15 +62,15 @@ Message::setTimeReceivedNow()
     return *this;
 }
 
-uint64_t
+steady_clock::time_point
 Message::getTimeReceived() const {
-    return duration_cast<milliseconds>(_timeReceived.time_since_epoch()).count();
+    return _timeReceived;
 }
 
-uint64_t
+milliseconds
 Message::getTimeRemainingNow() const
 {
-    return std::max(0L, _timeRemaining - duration_cast<milliseconds>(steady_clock::now() - _timeReceived).count());
+    return std::max(milliseconds(0), _timeRemaining - duration_cast<milliseconds>(steady_clock::now() - _timeReceived));
 }
 
 } // namespace mbus

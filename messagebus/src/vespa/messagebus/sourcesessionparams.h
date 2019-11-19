@@ -3,10 +3,11 @@
 
 #include "ireplyhandler.h"
 #include "ithrottlepolicy.h"
+#include <chrono>
 
 namespace mbus {
 
-/**
+    /**
  * To facilitate several configuration parameters to the {@link MessageBus#createSourceSession(ReplyHandler,
  * SourceSessionParams)}, all parameters are held by this class. This class has reasonable default values for each
  * parameter.
@@ -18,7 +19,7 @@ class SourceSessionParams {
 private:
     IReplyHandler      *_replyHandler;
     IThrottlePolicy::SP _throttlePolicy;
-    double              _timeout;
+    seconds             _timeout;
 
 public:
     /**
@@ -46,14 +47,14 @@ public:
      *
      * @return The total timeout parameter.
      */
-    double getTimeout() const;
+    seconds getTimeout() const;
 
     /**
      * Returns the number of seconds a message can spend trying to succeed.
      *
      * @return The timeout in seconds.
      */
-    SourceSessionParams &setTimeout(double timeout);
+    SourceSessionParams &setTimeout(seconds timeout);
 
     /**
      * Returns whether or not a reply handler has been assigned to this.

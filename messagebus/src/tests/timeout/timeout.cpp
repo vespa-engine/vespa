@@ -13,6 +13,8 @@
 #include <vespa/messagebus/testlib/testserver.h>
 
 using namespace mbus;
+using namespace std::chrono_literals;
+
 
 class Test : public vespalib::TestApp {
 public:
@@ -42,7 +44,7 @@ Test::testZeroTimeout()
     TestServer dstServer(Identity("dst"), RoutingSpec(), slobrok);
 
     Receptor srcHandler;
-    SourceSession::UP srcSession = srcServer.mb.createSourceSession(srcHandler, SourceSessionParams().setTimeout(0));
+    SourceSession::UP srcSession = srcServer.mb.createSourceSession(srcHandler, SourceSessionParams().setTimeout(0s));
     Receptor dstHandler;
     DestinationSession::UP dstSession = dstServer.mb.createDestinationSession("session", true, dstHandler);
 
@@ -50,7 +52,7 @@ Test::testZeroTimeout()
     ASSERT_TRUE(srcSession->send(Message::UP(new SimpleMessage("msg")), "dst/session", true).isAccepted());
 
     Reply::UP reply = srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
 }
@@ -63,19 +65,19 @@ Test::testMessageExpires()
     TestServer dstServer(Identity("dst"), RoutingSpec(), slobrok);
 
     Receptor srcHandler, dstHandler;
-    SourceSession::UP srcSession = srcServer.mb.createSourceSession(srcHandler, SourceSessionParams().setTimeout(1));
+    SourceSession::UP srcSession = srcServer.mb.createSourceSession(srcHandler, SourceSessionParams().setTimeout(1s));
     DestinationSession::UP dstSession = dstServer.mb.createDestinationSession("session", true, dstHandler);
 
     ASSERT_TRUE(srcServer.waitSlobrok("dst/session", 1));
     ASSERT_TRUE(srcSession->send(Message::UP(new SimpleMessage("msg")), "dst/session", true).isAccepted());
 
     Reply::UP reply = srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
 
     Message::UP msg = dstHandler.getMessage(1);
-    if (msg.get() != NULL) {
+    if (msg) {
         msg->discard();
     }
 }

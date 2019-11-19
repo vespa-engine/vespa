@@ -10,6 +10,7 @@
 #include <vespa/fastos/app.h>
 
 using namespace mbus;
+using namespace std::chrono_literals;
 
 class App : public FastOS_Application
 {
@@ -29,7 +30,7 @@ App::Main()
     Message::UP msg;
     Reply::UP reply;
 
-    SourceSession::UP ss = mb.getMessageBus().createSourceSession(src, SourceSessionParams().setTimeout(300));
+    SourceSession::UP ss = mb.getMessageBus().createSourceSession(src, SourceSessionParams().setTimeout(300s));
     for (int i = 0; i < 10; ++i) {
         msg.reset(new SimpleMessage("test"));
         msg->getTrace().setLevel(9);

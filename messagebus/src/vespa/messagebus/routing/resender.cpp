@@ -74,7 +74,8 @@ Resender::scheduleRetry(RoutingNode &node)
     if (delay < 0) {
         delay = _retryPolicy->getRetryDelay(retry);
     }
-    if (msg.getTimeRemainingNow() * 0.001 - delay <= 0) {
+    milliseconds delayMS(static_cast<long>(delay * 1000));
+    if (msg.getTimeRemainingNow() <= delayMS) {
         node.addError(ErrorCode::TIMEOUT, "Timeout exceeded by resender, giving up.");
         return false;
     }
@@ -83,7 +84,7 @@ Resender::scheduleRetry(RoutingNode &node)
         TraceLevel::COMPONENT,
         vespalib::make_string("Message scheduled for retry %u in %.3f seconds.", retry, delay));
     msg.setRetry(retry);
-    _queue.push(Entry(steady_clock::now() + milliseconds(static_cast<long>(delay * 1000)), &node));
+    _queue.push(Entry(steady_clock::now() + delayMS, &node));
     return true;
 }
 

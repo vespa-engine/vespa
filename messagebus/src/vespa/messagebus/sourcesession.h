@@ -27,7 +27,7 @@ private:
     Sequencer           _sequencer;
     IReplyHandler      &_replyHandler;
     IThrottlePolicy::SP _throttlePolicy;
-    double              _timeout;
+    seconds             _timeout;
     uint32_t            _pendingCount;
     bool                _closed;
     bool                _done;
@@ -53,7 +53,7 @@ public:
      * messages. After this method returns, messagebus will not invoke any handlers associated with this
      * session.
      **/
-    virtual ~SourceSession();
+    ~SourceSession() override;
 
     /**
      * This is a convenience function to assign a named route to the given message, and then pass it to the

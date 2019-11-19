@@ -98,20 +98,20 @@ RPCSend::handleDiscard(Context ctx)
 }
 
 void
-RPCSend::sendByHandover(RoutingNode &recipient, const vespalib::Version &version, Blob payload, uint64_t timeRemaining)
+RPCSend::sendByHandover(RoutingNode &recipient, const vespalib::Version &version, Blob payload, milliseconds timeRemaining)
 {
     send(recipient, version, FillByHandover(std::move(payload)), timeRemaining);
 }
 
 void
-RPCSend::send(RoutingNode &recipient, const vespalib::Version &version, BlobRef payload, uint64_t timeRemaining)
+RPCSend::send(RoutingNode &recipient, const vespalib::Version &version, BlobRef payload, milliseconds timeRemaining)
 {
     send(recipient, version, FillByCopy(payload), timeRemaining);
 }
 
 void
 RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
-              const PayLoadFiller & payload, uint64_t timeRemaining)
+              const PayLoadFiller & payload, milliseconds timeRemaining)
 {
     SendContext::UP ctx(new SendContext(recipient, timeRemaining));
     RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
