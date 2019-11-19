@@ -203,12 +203,15 @@ public class RoutingPolicies {
 
         /** Compute all endpoint IDs for given load balancer */
         private Set<EndpointId> endpointIdsOf(LoadBalancer loadBalancer) {
-            if (zone.environment().isManuallyDeployed()) { // Manual deployments do not have any configurable endpoints
+            if (zone.environment().isManuallyDeployed()) {
+                // Manual deployments are never declared in deployment spec and thus don't have any configurable endpoints
                 return Set.of();
             }
             var instanceSpec = deploymentSpec.instance(loadBalancer.application().instance());
             if (instanceSpec.isEmpty()) {
-                return Set.of();
+                throw new IllegalStateException("Found load balancer " + loadBalancer.hostname() + " for instance " +
+                                                loadBalancer.application() + ", but no such instance is declared in " +
+                                                "deployment spec");
             }
             return instanceSpec.get().endpoints().stream()
                                .filter(endpoint -> endpoint.containerId().equals(loadBalancer.cluster().value()))
