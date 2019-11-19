@@ -87,20 +87,18 @@ SteadyTimeStamp::toUTC() const {
 }
 
 StopWatch::StopWatch()
-    : _startTime(steady_now()),
-      _stopTime(_startTime)
+    : _startTime(steady_now())
 { }
 
 void
 StopWatch::restart() {
     _startTime = steady_now();
-    _stopTime = _startTime;
 }
 
-StopWatch &
-StopWatch::stop()  {
-    _stopTime = steady_now();
-    return *this;
+TimeStamp
+StopWatch::elapsed() const {
+    TimeStamp diff(steady_now() - _startTime);
+    return (diff > 0) ? diff : TimeStamp(0);
 }
 
 void

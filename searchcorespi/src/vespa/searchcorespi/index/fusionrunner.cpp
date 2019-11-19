@@ -124,7 +124,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     }
 
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskFusionComplete(fusion_dir, stopWatch.stop().elapsed().ms());
+        EventLogger::diskFusionComplete(fusion_dir, stopWatch.elapsed().ms());
     }
     return fusion_id;
 }

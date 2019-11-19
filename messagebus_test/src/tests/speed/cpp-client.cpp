@@ -117,9 +117,9 @@ App::Main()
 
     client.sample(okBefore, failBefore);
     FastOS_Thread::Sleep(10000); // Benchmark time
-    stopWatch.stop();
+    fastos::TimeStamp elapsed = stopWatch.elapsed();
     client.sample(okAfter, failAfter);
-    double time = stopWatch.elapsed().ms();
+    double time = elapsed.ms();
     double msgCnt = (double)(okAfter - okBefore);
     double throughput = (msgCnt / time) * 1000.0;
     fprintf(stdout, "CPP-CLIENT: %g msg/s\n", throughput);

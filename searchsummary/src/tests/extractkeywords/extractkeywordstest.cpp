@@ -109,7 +109,7 @@ ExtractKeywordsTest::Main()
             }
 
     // Print time taken
-    double timeTaken = timer.stop().elapsed().ms();
+    double timeTaken = timer.elapsed().ms();
 
     printf("Time taken : %f ms\n", timeTaken);
     printf("Number of tests run: %d\n", testCnt);

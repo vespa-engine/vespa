@@ -30,18 +30,19 @@ namespace {
 struct TimedMatchLoopCommunicator : IMatchLoopCommunicator {
     IMatchLoopCommunicator &communicator;
     fastos::StopWatch rerank_time;
+    fastos::TimeStamp elapsed;
     TimedMatchLoopCommunicator(IMatchLoopCommunicator &com) : communicator(com) {}
     double estimate_match_frequency(const Matches &matches) override {
         return communicator.estimate_match_frequency(matches);
     }
     Hits selectBest(SortedHitSequence sortedHits) override {
         auto result = communicator.selectBest(sortedHits);
-        rerank_time = fastos::StopWatch();
+        rerank_time.restart();
         return result;
     }
     RangePair rangeCover(const RangePair &ranges) override {
         RangePair result = communicator.rangeCover(ranges);
-        rerank_time.stop();
+        elapsed = rerank_time.elapsed();
         return result;
     }
 };
@@ -89,9 +90,8 @@ MatchMaster::match(search::engine::Trace & trace,
     resultProcessor.prepareThreadContextCreation(threadBundle.size());
     threadBundle.run(targets);
     ResultProcessor::Result::UP reply = resultProcessor.makeReply(threadState[0]->extract_result());
-    query_latency_time.stop();
     double query_time_s = query_latency_time.elapsed().sec();
-    double rerank_time_s = timedCommunicator.rerank_time.elapsed().sec();
+    double rerank_time_s = timedCommunicator.elapsed.sec();
     double match_time_s = 0.0;
     std::unique_ptr<vespalib::slime::Inserter> inserter;
     if (trace.shouldTrace(4)) {

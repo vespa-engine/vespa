@@ -632,14 +632,11 @@ TEST_F("Test performance when using attributes", TestFixture)
         if (sel->contains(ctx) != Result::Invalid)
             break;
     }
-    sw.stop();
+    fastos::TimeStamp elapsed = sw.elapsed();
     EXPECT_EQUAL(loopcnt, i);
     LOG(info,
-        "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, "
-        "%8.4f ns/doc",
-        i,
-        sw.elapsed().ns(),
-        static_cast<double>(sw.elapsed().ns()) / ( 4 * i));
+        "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc",
+        i, elapsed.ns(), static_cast<double>(elapsed.ns()) / ( 4 * i));
     
 }
 

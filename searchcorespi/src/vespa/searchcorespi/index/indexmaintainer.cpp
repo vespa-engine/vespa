@@ -282,7 +282,7 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
                           (_operations.loadDiskIndex(indexDir),
                            makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.stop().elapsed().ms());
+        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.elapsed().ms());
     }
     return retval;
 }
@@ -303,7 +303,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
                           (_operations.reloadDiskIndex(wrappedDiskIndex),
                            makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.stop().elapsed().ms());
+        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.elapsed().ms());
     }
     return retval;
 }

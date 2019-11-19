@@ -151,18 +151,11 @@ class StopWatch
 {
 public:
     StopWatch();
-
-    StopWatch & stop();
     void restart();
-
-    TimeStamp elapsed() const {
-        TimeStamp diff(_stopTime - _startTime);
-        return (diff > 0) ? diff : TimeStamp(0);
-    }
+    TimeStamp elapsed() const;
     static void waitAtLeast(std::chrono::microseconds us, bool busyWait);
 private:
     SteadyTimeStamp _startTime;
-    SteadyTimeStamp _stopTime;
 };
 
 time_t time();
