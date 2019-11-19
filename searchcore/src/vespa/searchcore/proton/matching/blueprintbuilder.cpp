@@ -159,6 +159,7 @@ protected:
     void visit(ProtonSuffixTerm &n)      override { buildTerm(n); }
     void visit(ProtonPredicateQuery &n)  override { buildTerm(n); }
     void visit(ProtonRegExpTerm &n)      override { buildTerm(n); }
+    void visit(ProtonNearestNeighborTerm &n) override { buildTerm(n); }
 
 public:
     BlueprintBuilderVisitor(const IRequestContext & requestContext, ISearchContext &context) :

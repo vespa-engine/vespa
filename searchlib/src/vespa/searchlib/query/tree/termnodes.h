@@ -113,5 +113,33 @@ public:
     virtual ~RegExpTerm() = 0;
 };
 
+/**
+ * Term matching the K nearest neighbors in a multi-dimensional vector space.
+ *
+ * The query point is specified as a dense tensor of order 1.
+ * This is found in fef::IQueryEnvironment using the query tensor name as key.
+ * The field name is the name of a dense document tensor of order 1.
+ * Both tensors are validated to have the same tensor type before the query is sent to the backend.
+ *
+ * Target num hits (K) is a hint to how many neighbors to return.
+ * The actual returned number might be higher (or lower if the query returns fewer hits).
+ */
+class NearestNeighborTerm : public QueryNodeMixin<NearestNeighborTerm, TermNode> {
+private:
+    vespalib::string _query_tensor_name;
+    uint32_t _target_num_hits;
+
+public:
+    NearestNeighborTerm(vespalib::stringref query_tensor_name, vespalib::stringref field_name,
+                        int32_t id, Weight weight, uint32_t target_num_hits)
+        : QueryNodeMixinType(field_name, id, weight),
+          _query_tensor_name(query_tensor_name),
+          _target_num_hits(target_num_hits)
+    {}
+    virtual ~NearestNeighborTerm() {}
+    const vespalib::string& get_query_tensor_name() const { return _query_tensor_name; }
+    uint32_t get_target_num_hits() const { return _target_num_hits; }
+};
+
 
 }

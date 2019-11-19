@@ -54,6 +54,7 @@ struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct("view", 0, Weight
 struct MyWandTerm : WandTerm { MyWandTerm() : WandTerm("view", 0, Weight(42), 57, 67, 77.7) {} };
 struct MyPredicateQuery : InitTerm<PredicateQuery> {};
 struct MyRegExpTerm : InitTerm<RegExpTerm>  {};
+struct MyNearestNeighborTerm : NearestNeighborTerm {};
 
 struct MyQueryNodeTypes {
     typedef MyAnd And;
@@ -78,6 +79,7 @@ struct MyQueryNodeTypes {
     typedef MyWandTerm WandTerm;
     typedef MyPredicateQuery PredicateQuery;
     typedef MyRegExpTerm RegExpTerm;
+    typedef MyNearestNeighborTerm NearestNeighborTerm;
 };
 
 class MyCustomVisitor : public CustomTypeVisitor<MyQueryNodeTypes>
@@ -113,6 +115,7 @@ public:
     void visit(MyWandTerm &) override { setVisited<MyWandTerm>(); }
     void visit(MyPredicateQuery &) override { setVisited<MyPredicateQuery>(); }
     void visit(MyRegExpTerm &) override { setVisited<MyRegExpTerm>(); }
+    void visit(MyNearestNeighborTerm &) override { setVisited<MyNearestNeighborTerm>(); }
 };
 
 template <class T>

@@ -109,6 +109,13 @@ private:
             pureTermView = vespalib::stringref();
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);
+        } else if (type == ParseItem::ITEM_NEAREST_NEIGHBOR) {
+            vespalib::stringref query_tensor_name = queryStack.getTerm();
+            vespalib::stringref field_name = queryStack.getIndexName();
+            uint32_t target_num_hits = queryStack.getArg1();
+            int32_t id = queryStack.getUniqueId();
+            Weight weight = queryStack.GetWeight();
+            builder.add_nearest_neighbor_term(query_tensor_name, field_name, id, weight, target_num_hits);
         } else {
             vespalib::stringref term = queryStack.getTerm();
             vespalib::stringref view = queryStack.getIndexName();

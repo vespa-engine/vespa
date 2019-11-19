@@ -196,8 +196,7 @@ class QueryNodeConverter : public QueryVisitor {
 
     template <typename T> void appendTerm(const TermBase<T> &node);
 
-    template <class Term>
-    void createTerm(const Term &node, size_t type) {
+    void createTermNode(const TermNode &node, size_t type) {
         uint8_t typefield = type | ParseItem::IF_WEIGHT | ParseItem::IF_UNIQUEID;
         uint8_t flags = 0;
         if (!node.isRanked()) {
@@ -216,6 +215,11 @@ class QueryNodeConverter : public QueryVisitor {
             appendByte(flags);
         }
         appendString(node.getView());
+    }
+
+    template <class Term>
+    void createTerm(const Term &node, size_t type) {
+        createTermNode(node, type);
         appendTerm(node);
     }
 
@@ -253,6 +257,12 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(RegExpTerm &node) override {
         createTerm(node, ParseItem::ITEM_REGEXP);
+    }
+
+    void visit(NearestNeighborTerm &node) override {
+        createTermNode(node, ParseItem::ITEM_NEAREST_NEIGHBOR);
+        appendString(node.get_query_tensor_name());
+        appendCompressedPositiveNumber(node.get_target_num_hits());
     }
 
 public:
