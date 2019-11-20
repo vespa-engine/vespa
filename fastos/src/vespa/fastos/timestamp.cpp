@@ -97,22 +97,20 @@ StopWatch::restart() {
 
 TimeStamp
 StopWatch::elapsed() const {
-    TimeStamp diff(steady_now() - _startTime);
-    return (diff > 0) ? diff : TimeStamp(0);
+    return (steady_now() - _startTime);
 }
 
 void
 StopWatch::waitAtLeast(std::chrono::microseconds us, bool busyWait) {
-    steady_clock::time_point startTime = steady_clock::now();
-    steady_clock::time_point deadline = startTime + us;
-    while (steady_clock::now() < deadline) {
-        if (busyWait) {
-            for (int i = 0; i < 1000; i++)
-                ;
-        } else {
-            microseconds rem = (us - duration_cast<microseconds>(steady_clock::now() - startTime));
-            std::this_thread::sleep_for(rem);
+    if (busyWait) {
+        steady_clock::time_point deadline = steady_clock::now() + us;
+        while (steady_clock::now() < deadline) {
+            if (busyWait) {
+                for (int i = 0; i < 1000; i++) { }
+            }
         }
+    } else {
+        std::this_thread::sleep_for(us);
     }
 }
 
