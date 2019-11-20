@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "debugwaitfunctionnode.h"
-#include <vespa/fastos/time.h>
-#include <thread>
+#include <vespa/fastos/timestamp.h>
 
-namespace search {
-namespace expression {
+namespace search::expression {
 
 using vespalib::FieldBase;
 using vespalib::Serializer;
 using vespalib::Deserializer;
+using namespace std::chrono;
 
 IMPLEMENT_EXPRESSIONNODE(DebugWaitFunctionNode, UnaryFunctionNode);
 
@@ -17,9 +16,7 @@ DebugWaitFunctionNode::DebugWaitFunctionNode()
       _busyWait(true)
 { }
 
-DebugWaitFunctionNode::~DebugWaitFunctionNode()
-{
-}
+DebugWaitFunctionNode::~DebugWaitFunctionNode() = default;
 
 DebugWaitFunctionNode::DebugWaitFunctionNode(ExpressionNode::UP arg, double waitTime, bool busyWait)
     : UnaryFunctionNode(std::move(arg)),
@@ -28,22 +25,13 @@ DebugWaitFunctionNode::DebugWaitFunctionNode(ExpressionNode::UP arg, double wait
 {
 }
 
+using std::chrono::microseconds;
+
 bool
 DebugWaitFunctionNode::onExecute() const
 {
-    FastOS_Time time;
-    time.SetNow();
-    double millis = _waitTime * 1000.0;
+    fastos::StopWatch::waitAtLeast(microseconds(long(_waitTime * 1000000)), _busyWait);
 
-    while (time.MilliSecsToNow() < millis) {
-        if (_busyWait) {
-            for (int i = 0; i < 1000; i++)
-                ;
-        } else {
-            int rem = (int)(millis - time.MilliSecsToNow());
-            std::this_thread::sleep_for(std::chrono::milliseconds(rem));
-        }
-    }
     getArg().execute();
     updateResult().assign(getArg().getResult());
     return true;
@@ -72,7 +60,6 @@ DebugWaitFunctionNode::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "busyWait", _busyWait);
 }
 
-}
 }
 
 // this function was added by ../../forcelink.sh

@@ -18,8 +18,7 @@ class TransactionLogManager : public TransactionLogManagerBase
 {
     TransLogClient::Visitor::UP _visitor;
 
-    virtual void doLogReplayComplete(const vespalib::string &domainName,
-                                     int64_t elapsedTime) const override;
+    void doLogReplayComplete(const vespalib::string &domainName, std::chrono::milliseconds elapsedTime) const override;
 
 public:
     /**
@@ -28,8 +27,7 @@ public:
      * @param tlsSpec the spec of the transaction log server.
      * @param domainName the name of the domain this manager should handle.
      **/
-    TransactionLogManager(const vespalib::string &tlsSpec,
-                          const vespalib::string &domainName);
+    TransactionLogManager(const vespalib::string &tlsSpec, const vespalib::string &domainName);
     ~TransactionLogManager();
 
     /**
@@ -41,10 +39,7 @@ public:
      * @param the current serial num will be set to 1 higher than
      *        the serial num of the last entry in the transaction log.
      **/
-    void
-    init(SerialNum oldestConfigSerial,
-         SerialNum &prunedSerialNum,
-         SerialNum &serialNum);
+    void init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &serialNum);
 
     /**
      * Prepare replay of the transaction log.
@@ -59,10 +54,7 @@ public:
     /**
      * Start replay of the transaction log.
      **/
-    TlsReplayProgress::UP
-    startReplay(SerialNum first,
-                SerialNum syncToken,
-                TransLogClient::Session::Callback &callback);
+    TlsReplayProgress::UP startReplay(SerialNum first, SerialNum syncToken, TransLogClient::Session::Callback &callback);
 
     /**
      * Indicate that replay is done.

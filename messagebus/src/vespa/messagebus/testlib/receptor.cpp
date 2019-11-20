@@ -2,17 +2,12 @@
 
 #include "receptor.h"
 
+using namespace std::chrono;
+
 namespace mbus {
 
-Receptor::Receptor()
-    : IMessageHandler(),
-      IReplyHandler(),
-      _mon(),
-      _msg(),
-      _reply()
-{ }
-
-Receptor::~Receptor() {}
+Receptor::Receptor() = default;
+Receptor::~Receptor() = default;
 
 void
 Receptor::handleMessage(Message::UP msg)
@@ -33,12 +28,11 @@ Receptor::handleReply(Reply::UP reply)
 Message::UP
 Receptor::getMessage(double maxWait)
 {
-    int ms = (int)(maxWait * 1000);
-    FastOS_Time startTime;
-    startTime.SetNow();
+    int64_t ms = (int64_t)(maxWait * 1000);
+    steady_clock::time_point startTime = steady_clock::now();
     vespalib::MonitorGuard guard(_mon);
     while (_msg.get() == 0) {
-        int w = ms - (int)startTime.MilliSecsToNow();
+        int64_t w = ms - duration_cast<milliseconds>(steady_clock::now() - startTime).count();
         if (w <= 0 || !guard.wait(w)) {
             break;
         }
@@ -49,12 +43,11 @@ Receptor::getMessage(double maxWait)
 Reply::UP
 Receptor::getReply(double maxWait)
 {
-    int ms = (int)(maxWait * 1000);
-    FastOS_Time startTime;
-    startTime.SetNow();
+    int64_t ms = (int)(maxWait * 1000);
+    steady_clock::time_point startTime = steady_clock::now();
     vespalib::MonitorGuard guard(_mon);
     while (_reply.get() == 0) {
-        int w = ms - (int)startTime.MilliSecsToNow();
+        int64_t w = ms - duration_cast<milliseconds>(steady_clock::now() - startTime).count();
         if (w <= 0 || !guard.wait(w)) {
             break;
         }

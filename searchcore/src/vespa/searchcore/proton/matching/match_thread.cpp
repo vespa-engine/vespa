@@ -41,7 +41,6 @@ struct WaitTimer {
         : wait_time_s(wait_time_s_in), wait_time()
     { }
     void done() {
-        wait_time.stop();
         wait_time_s += wait_time.elapsed().sec();
     }
 };
@@ -434,7 +433,6 @@ MatchThread::run()
     trace->addEvent(4, "Start MatchThread::run");
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);
-    match_time.stop();
     match_time_s = match_time.elapsed().sec();
     resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id, _distributionKey);
     {
@@ -450,7 +448,6 @@ MatchThread::run()
         trace->addEvent(5, "Start result processing");
         processResult(matchTools->getHardDoom(), std::move(result), *resultContext);
     }
-    total_time.stop();
     total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
     trace->addEvent(4, "Start thread merge");

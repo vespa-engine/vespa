@@ -18,14 +18,13 @@ namespace proton {
 
 void
 TransactionLogManager::doLogReplayComplete(const vespalib::string &domainName,
-                                           int64_t elapsedTime) const
+                                           std::chrono::milliseconds elapsedTime) const
 {
-    EventLogger::transactionLogReplayComplete(domainName, elapsedTime);
+    EventLogger::transactionLogReplayComplete(domainName, elapsedTime.count());
 }
 
 
-TransactionLogManager::TransactionLogManager(const vespalib::string &tlsSpec,
-        const vespalib::string &domainName)
+TransactionLogManager::TransactionLogManager(const vespalib::string &tlsSpec, const vespalib::string &domainName)
     : TransactionLogManagerBase(tlsSpec, domainName),
       _visitor()
 {
@@ -34,9 +33,7 @@ TransactionLogManager::TransactionLogManager(const vespalib::string &tlsSpec,
 TransactionLogManager::~TransactionLogManager() = default;
 
 void
-TransactionLogManager::init(SerialNum oldestConfigSerial,
-                            SerialNum &prunedSerialNum,
-                            SerialNum &serialNum)
+TransactionLogManager::init(SerialNum oldestConfigSerial, SerialNum &prunedSerialNum, SerialNum &serialNum)
 {
     StatusResult res = TransactionLogManagerBase::init();
     prunedSerialNum = res.serialBegin > 0 ? (res.serialBegin - 1) : 0;

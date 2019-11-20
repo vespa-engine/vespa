@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "timestamp.h"
-#include <chrono>
 #include <cmath>
+#include <thread>
 #include <sys/time.h>
 
 using namespace std::chrono;
@@ -86,14 +86,31 @@ SteadyTimeStamp::toUTC() const {
 }
 
 StopWatch::StopWatch()
-    : _startTime(steady_now()),
-      _stopTime(_startTime)
+    : _startTime(steady_now())
 { }
 
-StopWatch &
-StopWatch::stop()  {
-    _stopTime = steady_now();
-    return *this;
+void
+StopWatch::restart() {
+    _startTime = steady_now();
+}
+
+TimeStamp
+StopWatch::elapsed() const {
+    return (steady_now() - _startTime);
+}
+
+void
+StopWatch::waitAtLeast(std::chrono::microseconds us, bool busyWait) {
+    if (busyWait) {
+        steady_clock::time_point deadline = steady_clock::now() + us;
+        while (steady_clock::now() < deadline) {
+            if (busyWait) {
+                for (int i = 0; i < 1000; i++) { }
+            }
+        }
+    } else {
+        std::this_thread::sleep_for(us);
+    }
 }
 
 }

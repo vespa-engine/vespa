@@ -3,8 +3,7 @@
 
 #include "routable.h"
 #include <vespa/messagebus/routing/route.h>
-#include <vespa/fastos/time.h>
-#include <memory>
+#include <chrono>
 
 namespace mbus {
 
@@ -12,22 +11,10 @@ namespace mbus {
  * A Message is a question, a Reply is the answer.
  */
 class Message : public Routable {
-private:
-    Route       _route;
-    FastOS_Time _timeReceived;
-    uint64_t    _timeRemaining;
-    bool        _retryEnabled;
-    uint32_t    _retry;
-
 public:
-    /**
-     * Convenience typedef for an auto pointer to a Message object.
-     */
-    typedef std::unique_ptr<Message> UP;
+    using time_point = std::chrono::steady_clock::time_point;
+    using UP = std::unique_ptr<Message>;
 
-    /**
-     * Constructs a new instance of this class.
-     */
     Message();
     Message(const Message &) = delete;
     Message(Message &&) = delete;
@@ -39,7 +26,7 @@ public:
      * will log an error and generate an auto-reply to avoid having the sender
      * wait indefinetly for a reply.
      */
-    ~Message();
+    ~Message() override;
 
     void swapState(Routable &rhs) override;
 
@@ -50,20 +37,7 @@ public:
      *
      * @return The timestamp this was last seen.
      */
-    uint64_t getTimeReceived() const { return (uint64_t)_timeReceived.MilliSecs(); }
-
-    /**
-     * Sets the timestamp for when this message was last seen by message bus to
-     * the given time in milliseconds since epoch. Please see comment on {@link
-     * #isExpired()} for more information on how to determine whether or not a
-     * message has expired. You should never need to call this method yourself,
-     * as it is touched automatically whenever message bus encounters a new
-     * message.
-     *
-     * @param timeReceived The time received in milliseconds.
-     * @return This, to allow chaining.
-     */
-    Message &setTimeReceived(uint64_t timeReceived);
+    time_point getTimeReceived() const;
 
     /**
      * This is a convenience method to call {@link #setTimeReceived(uint64_t)}
@@ -81,7 +55,7 @@ public:
      *
      * @return The remaining time in milliseconds.
      */
-    uint64_t getTimeRemaining() const { return _timeRemaining; }
+    milliseconds getTimeRemaining() const { return _timeRemaining; }
 
     /**
      * Sets the numer of milliseconds that remain before this message times
@@ -91,7 +65,7 @@ public:
      * @param timeRemaining The number of milliseconds until expiration.
      * @return This, to allow chaining.
      */
-    Message &setTimeRemaining(uint64_t timeRemaining) { _timeRemaining = timeRemaining; return *this; }
+    Message &setTimeRemaining(milliseconds timeRemaining) { _timeRemaining = timeRemaining; return *this; }
 
     /**
      * Returns the number of milliseconds that remain right now before this
@@ -105,15 +79,7 @@ public:
      *
      * @return The remaining time in milliseconds.
      */
-    uint64_t getTimeRemainingNow() const;
-
-    /**
-     * Returns whether or not this message has expired.
-     *
-     * @return True if {@link this#getTimeRemainingNow()} is less than or equal
-     *         to zero.
-     */
-    bool isExpired() { return getTimeRemainingNow() == 0; }
+    milliseconds getTimeRemainingNow() const;
 
     /**
      * Access the route associated with this message.
@@ -173,16 +139,6 @@ public:
     virtual bool hasBucketSequence() { return false; }
 
     /**
-     * Returns the identifier used to order message buckets. Any two messages
-     * that have the same bucket sequence are ensured to arrive at the NEXT peer
-     * in the order they were sent by THIS peer. This value is only respected if
-     * the {@link #hasBucketSequence()} method returns true.
-     *
-     * @return The bucket sequence.
-     */
-    virtual uint64_t getBucketSequence() { return 0; }
-
-    /**
      * Obtain the approximate size of this message object in bytes. This enables
      * messagebus to track the size of the send queue in both memory usage and
      * item count. This method returns 1 by default, and must be overridden to
@@ -226,6 +182,12 @@ public:
      * @return This, to allow chaining.
      */
     Message &setRetry(uint32_t retry) { _retry = retry; return *this; }
+private:
+    Route         _route;
+    time_point    _timeReceived;
+    milliseconds  _timeRemaining;
+    bool          _retryEnabled;
+    uint32_t      _retry;
 };
 
 } // namespace mbus

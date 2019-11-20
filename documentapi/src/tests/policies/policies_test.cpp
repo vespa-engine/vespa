@@ -40,6 +40,8 @@ using namespace documentapi;
 using vespalib::make_string;
 using std::make_unique;
 using std::make_shared;
+using namespace std::chrono_literals;
+
 
 class Test : public vespalib::TestApp {
 private:
@@ -308,7 +310,7 @@ Test::testExternSend()
     mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local,
                          std::make_shared<DocumentProtocol>(_loadTypes, _repo));
     mbus::Receptor sr;
-    mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60));
+    mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60s));
 
     mbus::Slobrok slobrok;
     mbus::TestServer itr(mbus::Identity("itr"), mbus::RoutingSpec()
@@ -349,7 +351,7 @@ Test::testExternMultipleSlobroks()
     mbus::TestServer src(mbus::Identity("src"), mbus::RoutingSpec(), local,
                          std::make_shared<DocumentProtocol>(_loadTypes, _repo));
     mbus::Receptor sr;
-    mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60));
+    mbus::SourceSession::UP ss = src.mb.createSourceSession(sr, mbus::SourceSessionParams().setTimeout(60s));
 
     string spec;
     mbus::Receptor dr;

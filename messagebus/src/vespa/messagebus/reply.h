@@ -40,7 +40,7 @@ public:
      * will log an error and generate an auto-reply to avoid having the sender
      * wait indefinetly for a reply.
      */
-    ~Reply();
+    ~Reply() override;
 
     void swapState(Routable &rhs) override;
     bool isReply() const override;

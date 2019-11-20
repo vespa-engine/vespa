@@ -101,7 +101,7 @@ private:
 void
 RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Route & route,
                          const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
-                         const PayLoadFiller &filler, uint64_t timeRemaining) const
+                         const PayLoadFiller &filler, milliseconds timeRemaining) const
 {
     FRT_Values &args = *req.GetParams();
     req.SetMethodName(METHOD_NAME);
@@ -118,7 +118,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     root.setString(SESSION_F, address.getSessionName());
     root.setBool(USERETRY_F, msg.getRetryEnabled());
     root.setLong(RETRY_F, msg.getRetry());
-    root.setLong(TIMELEFT_F, timeRemaining);
+    root.setLong(TIMELEFT_F, timeRemaining.count());
     root.setString(PROTOCOL_F, msg.getProtocol());
     root.setLong(TRACELEVEL_F, traceLevel);
     filler.fill(BLOB_F, root);
@@ -156,7 +156,7 @@ public:
     uint32_t getTraceLevel() const override { return _slime.get()[TRACELEVEL_F].asLong(); }
     bool useRetry() const override { return _slime.get()[USERETRY_F].asBool(); }
     uint32_t getRetries() const override { return _slime.get()[RETRY_F].asLong(); }
-    uint64_t getRemainingTime() const override { return _slime.get()[TIMELEFT_F].asLong(); }
+    milliseconds getRemainingTime() const override { return milliseconds(_slime.get()[TIMELEFT_F].asLong()); }
 
     Version getVersion() const override {
         return Version(_slime.get()[VERSION_F].asString().make_stringref());

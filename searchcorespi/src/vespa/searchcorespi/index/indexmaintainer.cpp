@@ -10,7 +10,6 @@
 #include "indexwriteutilities.h"
 #include <vespa/fastos/file.h>
 #include <vespa/searchcorespi/flush/closureflushtask.h>
-#include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
@@ -277,14 +276,13 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
     }
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch stopWatch;
     _active_indexes->setActive(indexDir);
     IDiskIndex::SP retval(new DiskIndexWithDestructorClosure
                           (_operations.loadDiskIndex(indexDir),
                            makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskIndexLoadComplete(indexDir, (int64_t)timer.MilliSecsToNow());
+        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.elapsed().ms());
     }
     return retval;
 }
@@ -297,8 +295,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
     }
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch stopWatch;
     _active_indexes->setActive(indexDir);
     const IDiskIndex &wrappedDiskIndex =
         (dynamic_cast<const DiskIndexWithDestructorClosure &>(oldIndex)).getWrapped();
@@ -306,7 +303,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
                           (_operations.reloadDiskIndex(wrappedDiskIndex),
                            makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskIndexLoadComplete(indexDir, (int64_t)timer.MilliSecsToNow());
+        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.elapsed().ms());
     }
     return retval;
 }
@@ -441,7 +438,7 @@ IndexMaintainer::FlushArgs::FlushArgs()
       _prunedSchema()
 {
 }
-IndexMaintainer::FlushArgs::~FlushArgs() { }
+IndexMaintainer::FlushArgs::~FlushArgs() = default;
 IndexMaintainer::FlushArgs::FlushArgs(FlushArgs &&) = default;
 IndexMaintainer::FlushArgs & IndexMaintainer::FlushArgs::operator=(FlushArgs &&) = default;
 

@@ -3,19 +3,17 @@
 #include "randomfeature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastos/time.h>
-
+#include <chrono>
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomfeature");
 
 namespace search::features {
 
-RandomExecutor::RandomExecutor(uint64_t seed, uint64_t matchSeed) :
-    search::fef::FeatureExecutor(),
-    _rnd(),
-    _matchRnd(),
-    _matchSeed(matchSeed)
+RandomExecutor::RandomExecutor(uint64_t seed, uint64_t matchSeed)
+    : fef::FeatureExecutor(),
+      _rnd(),
+      _matchRnd(),
+      _matchSeed(matchSeed)
 {
     LOG(debug, "RandomExecutor: seed=%" PRIu64 ", matchSeed=%" PRIu64, seed, matchSeed);
     _rnd.srand48(seed);
@@ -33,28 +31,26 @@ RandomExecutor::execute(uint32_t docId)
 
 
 RandomBlueprint::RandomBlueprint() :
-    search::fef::Blueprint("random"),
+    fef::Blueprint("random"),
     _seed(0)
 {
 }
 
 void
-RandomBlueprint::visitDumpFeatures(const search::fef::IIndexEnvironment &,
-                                   search::fef::IDumpFeatureVisitor &) const
+RandomBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const
 {
 }
 
-search::fef::Blueprint::UP
+fef::Blueprint::UP
 RandomBlueprint::createInstance() const
 {
-    return search::fef::Blueprint::UP(new RandomBlueprint());
+    return std::make_unique<RandomBlueprint>();
 }
 
 bool
-RandomBlueprint::setup(const search::fef::IIndexEnvironment & env,
-                       const search::fef::ParameterList &)
+RandomBlueprint::setup(const fef::IIndexEnvironment & env, const fef::ParameterList &)
 {
-    search::fef::Property p = env.getProperties().lookup(getName(), "seed");
+    fef::Property p = env.getProperties().lookup(getName(), "seed");
     if (p.found()) {
         _seed = util::strToNum<uint64_t>(p.get());
     }
@@ -63,14 +59,14 @@ RandomBlueprint::setup(const search::fef::IIndexEnvironment & env,
     return true;
 }
 
-search::fef::FeatureExecutor &
-RandomBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib::Stash &stash) const
+using namespace std::chrono;
+
+fef::FeatureExecutor &
+RandomBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     uint64_t seed = _seed;
     if (seed == 0) {
-        FastOS_Time time;
-        time.SetNow();
-        seed = static_cast<uint64_t>(time.MicroSecs()) ^
+        seed = static_cast<uint64_t>(duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()) ^
                 reinterpret_cast<uint64_t>(&seed); // results in different seeds in different threads
     }
     uint64_t matchSeed = util::strToNum<uint64_t>

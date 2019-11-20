@@ -13,6 +13,7 @@
 LOG_SETUP("messageordering_test");
 
 using namespace mbus;
+using namespace std::chrono_literals;
 
 TEST_SETUP(Test);
 
@@ -151,10 +152,10 @@ Test::Main()
 
     SourceSessionParams ssp;
     ssp.setThrottlePolicy(IThrottlePolicy::SP());
-    ssp.setTimeout(400);
+    ssp.setTimeout(400s);
     SourceSession::UP      ss = srcNet.mb.createSourceSession(src, ssp);
     DestinationSession::UP ds = dstNet.mb.createDestinationSession("session", true, dst);
-    ASSERT_EQUAL(400u, ssp.getTimeout());
+    ASSERT_EQUAL(400s, ssp.getTimeout());
 
     // wait for slobrok registration
     ASSERT_TRUE(srcNet.waitSlobrok("test/dst/session"));

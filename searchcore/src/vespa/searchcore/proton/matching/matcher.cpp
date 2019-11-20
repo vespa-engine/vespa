@@ -279,7 +279,6 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount,
             request.ranking.c_str());
     }
-    total_matching_time.stop();
     my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
     {
         fastos::TimeStamp duration = request.getTimeUsed();

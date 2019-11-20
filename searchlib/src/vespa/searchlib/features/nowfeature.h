@@ -36,8 +36,7 @@ public:
     fef::ParameterDescriptions getDescriptions() const override {
         return fef::ParameterDescriptions().desc();
     }
-    bool setup(const fef::IIndexEnvironment & env,
-                       const fef::ParameterList & params) override;
+    bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 

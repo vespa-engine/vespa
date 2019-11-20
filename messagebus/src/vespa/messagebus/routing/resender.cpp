@@ -6,15 +6,14 @@
 #include <vespa/messagebus/tracelevel.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
+using namespace std::chrono;
+
 namespace mbus {
 
 Resender::Resender(IRetryPolicy::SP retryPolicy) :
     _queue(),
-    _retryPolicy(retryPolicy),
-    _time()
-{
-    _time.SetNow();
-}
+    _retryPolicy(retryPolicy)
+{ }
 
 Resender::~Resender()
 {
@@ -30,18 +29,15 @@ Resender::resendScheduled()
     typedef std::vector<RoutingNode*> NodeList;
     NodeList sendList;
 
-    double now = _time.MilliSecsToNow();
+    time_point now = steady_clock::now();
     while (!_queue.empty() && _queue.top().first <= now) {
         sendList.push_back(_queue.top().second);
         _queue.pop();
     }
 
-    for (NodeList::iterator it = sendList.begin();
-         it != sendList.end(); ++it)
-    {
-        (*it)->getTrace().trace(mbus::TraceLevel::COMPONENT,
-                                "Resender resending message.");
-        (*it)->send();
+    for (RoutingNode *node : sendList) {
+        node->getTrace().trace(mbus::TraceLevel::COMPONENT, "Resender resending message.");
+        node->send();
     }
 }
 
@@ -78,7 +74,8 @@ Resender::scheduleRetry(RoutingNode &node)
     if (delay < 0) {
         delay = _retryPolicy->getRetryDelay(retry);
     }
-    if (msg.getTimeRemainingNow() * 0.001 - delay <= 0) {
+    milliseconds delayMS(long(delay * 1000));
+    if (msg.getTimeRemainingNow() <= delayMS) {
         node.addError(ErrorCode::TIMEOUT, "Timeout exceeded by resender, giving up.");
         return false;
     }
@@ -87,7 +84,7 @@ Resender::scheduleRetry(RoutingNode &node)
         TraceLevel::COMPONENT,
         vespalib::make_string("Message scheduled for retry %u in %.3f seconds.", retry, delay));
     msg.setRetry(retry);
-    _queue.push(Entry((uint64_t)(_time.MilliSecsToNow() + delay * 1000), &node));
+    _queue.push(Entry(steady_clock::now() + delayMS, &node));
     return true;
 }
 

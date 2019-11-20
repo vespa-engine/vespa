@@ -1,16 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "debug_attribute_wait.h"
-#include <vespa/fastos/time.h>
-#include <thread>
+#include <vespa/fastos/timestamp.h>
 
 using search::attribute::IAttributeVector;
+using namespace search::fef;
+using namespace std::chrono;
 
-namespace search {
-
-using namespace fef;
-
-namespace features {
+namespace search::features {
 
 //-----------------------------------------------------------------------------
 
@@ -28,39 +25,26 @@ public:
     void execute(uint32_t docId) override;
 };
 
-DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &env,
+DebugAttributeWaitExecutor::DebugAttributeWaitExecutor(const IQueryEnvironment &,
                                                        const IAttributeVector *attribute,
                                                        const DebugAttributeWaitParams &params)
     : _attribute(attribute),
       _buf(),
       _params(params)
-{
-    (void)env;
-}
+{ }
 
 void
 DebugAttributeWaitExecutor::execute(uint32_t docId)
 {
     double waitTime = 0.0;
-    FastOS_Time time;
-    time.SetNow();
 
-    if (_attribute != NULL) {
+    if (_attribute != nullptr) {
         _buf.fill(*_attribute, docId);
         waitTime = _buf[0];
     }
-    double millis = waitTime * 1000.0;
-
-    while (time.MilliSecsToNow() < millis) {
-        if (_params.busyWait) {
-            for (int i = 0; i < 1000; i++)
-                ;
-        } else {
-            int rem = (int)(millis - time.MilliSecsToNow());
-            std::this_thread::sleep_for(std::chrono::milliseconds(rem));
-        }
-    }
-    outputs().set_number(0, 1.0e-6 * time.MicroSecsToNow());
+    fastos::StopWatch timer;
+    fastos::StopWatch::waitAtLeast(microseconds(long(waitTime * 1000000)), _params.busyWait);
+    outputs().set_number(0, timer.elapsed().sec());
 }
 
 //-----------------------------------------------------------------------------
@@ -72,22 +56,19 @@ DebugAttributeWaitBlueprint::DebugAttributeWaitBlueprint()
 }
 
 void
-DebugAttributeWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &env, IDumpFeatureVisitor &visitor) const
+DebugAttributeWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
-    (void)env;
-    (void)visitor;
 }
 
 Blueprint::UP
 DebugAttributeWaitBlueprint::createInstance() const
 {
-    return Blueprint::UP(new DebugAttributeWaitBlueprint());
+    return std::make_unique<DebugAttributeWaitBlueprint>();
 }
 
 bool
 DebugAttributeWaitBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
-    (void)env;
     _attribute = params[0].getValue();
     _params.busyWait = (params[1].asDouble() == 1.0);
 
@@ -107,10 +88,7 @@ DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespal
 fef::ParameterDescriptions
 DebugAttributeWaitBlueprint::getDescriptions() const
 {
-    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY).number();
+    return fef::ParameterDescriptions().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY).number();
 }
 
-//-----------------------------------------------------------------------------
-
-} // namespace features
-} // namespace search
+}

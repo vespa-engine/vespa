@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/messagebus/blobref.h>
+#include <vespa/messagebus/common.h>
 #include <vespa/vespalib/component/version.h>
 
 namespace mbus {
@@ -42,7 +43,7 @@ public:
      * @param timeRemaining The time remaining until the message expires.
      */
     virtual void send(RoutingNode &recipient, const vespalib::Version &version,
-                      BlobRef payload, uint64_t timeRemaining) = 0;
+                      BlobRef payload, milliseconds timeRemaining) = 0;
 
     /**
      * Performs the actual sending to the given recipient.
@@ -53,7 +54,7 @@ public:
      * @param timeRemaining The time remaining until the message expires.
      */
     virtual void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
-                      Blob payload, uint64_t timeRemaining) = 0;
+                      Blob payload, milliseconds timeRemaining) = 0;
 };
 
 } // namespace mbus

@@ -2,11 +2,17 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <chrono>
 
 namespace mbus {
 
 // Decide the type of string used once
-typedef vespalib::string string;
+using string = vespalib::string;
+
+using seconds = std::chrono::duration<double>;
+using milliseconds = std::chrono::milliseconds;
+
+
 
 } // namespace mbus
 

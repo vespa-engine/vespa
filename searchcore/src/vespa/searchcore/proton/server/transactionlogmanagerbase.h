@@ -5,6 +5,7 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <mutex>
 #include <condition_variable>
+#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 
@@ -12,18 +13,19 @@ namespace proton {
  * Base class managing the initialization and replay of a transaction log.
  **/
 class TransactionLogManagerBase {
-
-    search::transactionlog::TransLogClient _tlc;
-    search::transactionlog::TransLogClient::Session::UP _tlcSession;
-    vespalib::string            _domainName;
-    mutable std::mutex          _replayLock;
+protected:
+    using TransLogClient = search::transactionlog::TransLogClient;
+private:
+    TransLogClient                  _tlc;
+    TransLogClient::Session::UP     _tlcSession;
+    vespalib::string                _domainName;
+    mutable std::mutex              _replayLock;
     mutable std::condition_variable _replayCond;
-    volatile bool               _replayDone;
-    bool                        _replayStarted;
-    double                      _replayStartTime;
+    volatile bool                   _replayDone;
+    bool                            _replayStarted;
+    fastos::StopWatch               _replayStopWatch;
 
 protected:
-    typedef search::transactionlog::TransLogClient TransLogClient;
     typedef search::SerialNum SerialNum;
 
     struct StatusResult {
@@ -36,8 +38,7 @@ protected:
     StatusResult init();
 
     void internalStartReplay();
-    virtual void doLogReplayComplete(const vespalib::string &domainName,
-                                     int64_t elapsedTime) const = 0;
+    virtual void doLogReplayComplete(const vespalib::string &domainName, std::chrono::milliseconds elapsedTime) const = 0;
 
 public:
     TransactionLogManagerBase(const TransactionLogManagerBase &) = delete;
@@ -65,10 +66,6 @@ public:
     bool isDoingReplay() const;
     void logReplayComplete() const;
     const vespalib::string &getRpcTarget() const { return _tlc.getRPCTarget(); }
-
-    void
-    markReplayStarted();
 };
 
 } // namespace proton
-

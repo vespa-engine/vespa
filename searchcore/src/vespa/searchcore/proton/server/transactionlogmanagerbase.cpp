@@ -2,7 +2,6 @@
 
 #include "transactionlogmanagerbase.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastos/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.transactionlogmanagerbase");
@@ -21,7 +20,7 @@ TransactionLogManagerBase::TransactionLogManagerBase(
     _replayCond(),
     _replayDone(false),
     _replayStarted(false),
-    _replayStartTime(0)
+    _replayStopWatch()
 {
 }
 
@@ -31,7 +30,7 @@ TransactionLogManagerBase::StatusResult
 TransactionLogManagerBase::init()
 {
     TransLogClient::Session::UP session = _tlc.open(_domainName);
-    if (session.get() == NULL) {
+    if ( ! session) {
         if (!_tlc.create(_domainName)) {
             vespalib::string str = vespalib::make_string(
                     "Failed creating domain '%s' on TLS '%s'",
@@ -41,7 +40,7 @@ TransactionLogManagerBase::init()
         LOG(debug, "Created domain '%s' on TLS '%s'",
             _domainName.c_str(), _tlc.getRPCTarget().c_str());
         session = _tlc.open(_domainName);
-        if (session.get() == NULL) {
+        if ( ! session) {
             vespalib::string str = vespalib::make_string(
                     "Could not open session for domain '%s' on TLS '%s'",
                     _domainName.c_str(), _tlc.getRPCTarget().c_str());
@@ -70,16 +69,7 @@ TransactionLogManagerBase::internalStartReplay()
     std::lock_guard<std::mutex> guard(_replayLock);
     _replayStarted = true;
     _replayDone = false;
-    FastOS_Time timer;
-    timer.SetNow();
-    _replayStartTime = timer.MilliSecs();
-}
-
-void
-TransactionLogManagerBase::markReplayStarted()
-{
-    std::lock_guard<std::mutex> guard(_replayLock);
-    _replayStarted = true;
+    _replayStopWatch.restart();
 }
 
 void TransactionLogManagerBase::changeReplayDone()
@@ -101,18 +91,18 @@ TransactionLogManagerBase::waitForReplayDone() const
 void
 TransactionLogManagerBase::close()
 {
-    if (_tlcSession.get() != NULL) {
+    if (_tlcSession) {
         _tlcSession->close();
     }
     // Delay destruction until replay is not active.
     waitForReplayDone();
-    if (_tlcSession.get() != NULL) {
+    if (_tlcSession) {
         _tlcSession->clear();
     }
 }
 
-TransLogClient::Visitor::UP TransactionLogManagerBase::createTlcVisitor(
-        TransLogClient::Session::Callback &callback) {
+TransLogClient::Visitor::UP
+TransactionLogManagerBase::createTlcVisitor(TransLogClient::Session::Callback &callback) {
     return _tlc.createVisitor(_domainName, callback);
 }
 
@@ -127,9 +117,7 @@ bool TransactionLogManagerBase::isDoingReplay() const {
 }
 
 void TransactionLogManagerBase::logReplayComplete() const {
-    FastOS_Time timer;
-    timer.SetMilliSecs(_replayStartTime);
-    doLogReplayComplete(_domainName, static_cast<int64_t>(timer.MilliSecsToNow()));
+    doLogReplayComplete(_domainName, std::chrono::milliseconds(_replayStopWatch.elapsed().ms()));
 }
 
 } // namespace proton

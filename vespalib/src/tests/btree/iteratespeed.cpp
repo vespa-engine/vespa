@@ -106,7 +106,7 @@ IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
                                                 [&](int key) { sum += key; } );
             }
         }
-        double used = stopWatch.stop().elapsed().sec();
+        double used = stopWatch.elapsed().sec();
         printf("Elapsed time for iterating %ld steps is %8.5f, "
                "direction=%s, fanout=%u,%u, sum=%" PRIu64 "\n",
                numEntries * numInnerLoops,

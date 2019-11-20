@@ -20,13 +20,15 @@ namespace proton
 class ReprocessDocumentsTask : public IReprocessingTask,
                                public search::IDocumentStoreVisitorProgress
 {
+    using clock = std::chrono::steady_clock;
     proton::ISummaryManager::SP          _sm;
     std::shared_ptr<const document::DocumentTypeRepo>       _docTypeRepo;
     vespalib::string                     _subDbName;
     double                               _visitorProgress;
     double                               _visitorCost;
     DocumentReprocessingHandler          _handler;
-    fastos::StopWatch                    _stopWatch;
+    clock::time_point                    _start;
+    clock::time_point                    _lastLogTime;
     double                               _loggedProgress;
 
 public:

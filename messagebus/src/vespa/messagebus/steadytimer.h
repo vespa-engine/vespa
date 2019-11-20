@@ -10,8 +10,9 @@ namespace mbus {
  * constructs in message bus use by default. The only reason for replacing this
  * is for writing unit tests.
  */
-class SystemTimer : public ITimer {
+class SteadyTimer : public ITimer {
 public:
+    //TODO Return chrono::duration
     uint64_t getMilliTime() const override;
 };
 

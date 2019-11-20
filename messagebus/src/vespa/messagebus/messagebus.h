@@ -274,7 +274,7 @@ public:
      *
      * @return The connection string.
      */
-    const string getConnectionSpec() const;
+    string getConnectionSpec() const;
 
     /**
      * Provide access to the underlying {@link Messenger} object.

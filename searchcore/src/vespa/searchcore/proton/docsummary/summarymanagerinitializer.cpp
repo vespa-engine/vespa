@@ -43,7 +43,7 @@ SummaryManagerInitializer::run()
     *_result = std::make_shared<SummaryManager>
                (_summaryExecutor, _storeCfg, _grow, _baseDir, _docTypeName,
                 _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
-    EventLogger::loadDocumentStoreComplete(_subDbName, stopWatch.stop().elapsed().ms());
+    EventLogger::loadDocumentStoreComplete(_subDbName, stopWatch.elapsed().ms());
 }
 
 } // namespace proton

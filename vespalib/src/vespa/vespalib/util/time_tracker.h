@@ -16,11 +16,12 @@ private:
     struct Task {
         vespalib::string name;
         fastos::StopWatch task_time;
+        fastos::TimeStamp elapsed;
         std::vector<Task> sub_tasks;
-        Task(const char *name_in) : name(name_in), task_time() { }
+        Task(const char *name_in) : name(name_in), task_time(), elapsed() { }
         ~Task();
-        void close_task() { task_time.stop(); }
-        double ms() const { return (task_time.elapsed().sec() * 1000.0); }
+        void close_task() { elapsed = task_time.elapsed(); }
+        double ms() const { return elapsed.sec()*1000.0; }
     };
 
     std::vector<Task> _tasks;

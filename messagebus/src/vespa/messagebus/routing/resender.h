@@ -5,7 +5,6 @@
 #include <vespa/messagebus/queue.h>
 #include <vespa/messagebus/reply.h>
 #include <vespa/vespalib/util/sync.h>
-#include <vespa/fastos/time.h>
 #include <queue>
 #include <vector>
 
@@ -23,18 +22,17 @@ class RoutingNode;
 class Resender
 {
 private:
-    typedef std::pair<uint64_t, RoutingNode*> Entry;
+    using time_point = std::chrono::steady_clock::time_point;
+    typedef std::pair<time_point , RoutingNode*> Entry;
     struct Cmp {
         bool operator()(const Entry &a, const Entry &b) {
             return (b.first < a.first);
         }
     };
-    typedef std::priority_queue<Entry, std::vector<Entry>, Cmp> PriorityQueue;
+    using PriorityQueue = std::priority_queue<Entry, std::vector<Entry>, Cmp>;
 
     PriorityQueue    _queue;
     IRetryPolicy::SP _retryPolicy;
-    FastOS_Time      _time;
-
 public:
     /**
      * Convenience typedefs.

@@ -7,7 +7,6 @@
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/util/dirtraverse.h>
-#include <vespa/vespalib/util/jsonwriter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.fusionrunner");
@@ -23,7 +22,6 @@ using search::diskindex::SelectorArray;
 using search::SerialNum;
 using std::vector;
 using vespalib::string;
-using vespalib::JSONStringer;
 
 namespace searchcorespi::index {
 
@@ -37,8 +35,7 @@ FusionRunner::FusionRunner(const string &base_dir,
       _fileHeaderContext(fileHeaderContext)
 { }
 
-FusionRunner::~FusionRunner() {
-}
+FusionRunner::~FusionRunner() = default;
 
 namespace {
 
@@ -102,16 +99,15 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
         id_map[0] = sources.size();
         sources.push_back(_diskLayout.getFusionDir(fusion_spec.last_fusion_id));
     }
-    for (size_t i = 0; i < ids.size(); ++i) {
-        id_map[ids[i] - fusion_spec.last_fusion_id] = sources.size();
-        sources.push_back(_diskLayout.getFlushDir(ids[i]));
+    for (uint32_t id : ids) {
+        id_map[id - fusion_spec.last_fusion_id] = sources.size();
+        sources.push_back(_diskLayout.getFlushDir(id));
     }
 
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskFusionStart(sources, fusion_dir);
     }
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch stopWatch;
 
     const string selector_name = IndexDiskLayout::getSelectorFileName(_diskLayout.getFlushDir(fusion_id));
     SelectorArray selector_array;
@@ -128,7 +124,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     }
 
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskFusionComplete(fusion_dir, (int64_t)timer.MilliSecsToNow());
+        EventLogger::diskFusionComplete(fusion_dir, stopWatch.elapsed().ms());
     }
     return fusion_id;
 }

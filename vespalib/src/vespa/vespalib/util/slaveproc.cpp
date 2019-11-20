@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/time.h>
 #include "guard.h"
 #include "slaveproc.h"
 #include <cstring>
 
-#ifndef FASTOS_NO_THREADS
-
 namespace vespalib {
 
 namespace slaveproc {
+
+using namespace std::chrono;
 
 /**
  * @brief SlaveProc internal timeout management.
@@ -17,31 +16,33 @@ namespace slaveproc {
 class Timer
 {
 private:
-    FastOS_Time _startTime;
-    int         _maxTime;
-    int         _elapsed;
+    const steady_clock::time_point _startTime;
+    const int64_t                  _maxTimeMS;
+    milliseconds                   _elapsed;
 
 public:
-    Timer(int maxTime) : _startTime(), _maxTime(maxTime), _elapsed(0) {
-        _startTime.SetNow();
-    }
+    Timer(int64_t maxTimeMS)
+        : _startTime(steady_clock::now()),
+          _maxTimeMS(maxTimeMS),
+          _elapsed(0)
+    { }
     Timer &update() {
-        _elapsed = (int) _startTime.MilliSecsToNow();
+        _elapsed = duration_cast<milliseconds>(steady_clock::now() - _startTime);
         return *this;
     }
-    int elapsed() const {
-        return _elapsed;
+    int64_t elapsed() const {
+        return _elapsed.count();
     }
-    int remaining() const {
-        if (_maxTime == -1) {
+    int64_t remaining() const {
+        if (_maxTimeMS == -1) {
             return -1;
         }
-        if (_elapsed > _maxTime) {
+        if (elapsed() > _maxTimeMS) {
             return 0;
         }
-        return (_maxTime - _elapsed);
+        return (_maxTimeMS - _elapsed.count());
     }
-    int waitTime() const {
+    int64_t waitTime() const {
         int res = remaining();
         if (res >= 0 && res <= 10000) {
             return res;
@@ -216,9 +217,7 @@ SlaveProc::SlaveProc(const char *cmd)
 }
 
 
-SlaveProc::~SlaveProc()
-{
-}
+SlaveProc::~SlaveProc() = default;
 
 
 bool
@@ -234,7 +233,7 @@ SlaveProc::write(const char *buf, uint32_t len)
 bool
 SlaveProc::close()
 {
-    return _proc.WriteStdin(NULL, 0);
+    return _proc.WriteStdin(nullptr, 0);
 }
 
 
@@ -309,7 +308,7 @@ SlaveProc::run(const std::string &input, const char *cmd,
         output.append(buf, res);
         timer.update();
     }
-    if (output.size() > 0 && output.find('\n') == output.size() - 1) {
+    if ( ! output.empty() && output.find('\n') == output.size() - 1) {
         output.erase(output.size() - 1, 1);
     }
     proc.wait(timer.update().remaining());
@@ -334,5 +333,3 @@ SlaveProc::run(const char *cmd, int msTimeout)
 }
 
 } // namespace vespalib
-
-#endif // FASTOS_NO_THREADS

@@ -7,7 +7,6 @@
 #include "rpcnetworkparams.h"
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingnode.h>
 #include <vespa/slobrok/sbregister.h>
@@ -15,7 +14,6 @@
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -46,7 +44,7 @@ public:
         _gate() {
         ScheduleNow();
     }
-    ~SyncTask() = default;
+    ~SyncTask() override = default;
 
     void await() {
         _gate.await();
@@ -227,12 +225,12 @@ RPCNetwork::start()
 }
 
 bool
-RPCNetwork::waitUntilReady(double seconds) const
+RPCNetwork::waitUntilReady(seconds timeout) const
 {
     slobrok::api::SlobrokList brokerList;
     slobrok::Configurator::UP configurator = _slobrokCfgFactory->create(brokerList);
     bool hasConfig = false;
-    for (uint32_t i = 0; i < seconds * 100; ++i) {
+    for (uint32_t i = 0; i < timeout.count() * 100; ++i) {
         if (configurator->poll()) {
             hasConfig = true;
         }
@@ -242,10 +240,10 @@ RPCNetwork::waitUntilReady(double seconds) const
         std::this_thread::sleep_for(10ms);
     }
     if (! hasConfig) {
-        LOG(error, "failed to get config for slobroks in %d seconds", (int)seconds);
+        LOG(error, "failed to get config for slobroks in %2.2f seconds", timeout.count());
     } else if (! _mirror->ready()) {
         auto brokers = brokerList.logString();
-        LOG(error, "mirror (of %s) failed to become ready in %d seconds", brokers.c_str(), (int)seconds);
+        LOG(error, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), timeout.count());
     }
     return false;
 }
@@ -322,7 +320,7 @@ void
 RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients)
 {
     SendContext &ctx = *(new SendContext(*this, msg, recipients)); // deletes self
-    double timeout = ctx._msg.getTimeRemainingNow() / 1000.0;
+    seconds timeout = ctx._msg.getTimeRemainingNow();
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
         RoutingNode *&recipient = ctx._recipients[i];
 
@@ -335,7 +333,8 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
 
 namespace {
 
-void emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
+void
+emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
     if (recipient.hasServiceAddress()) {
         // At this point the service addresses _should_ be RPCServiceAddress instances,
         // but stay on the safe side of the tracks anyway.
@@ -352,7 +351,8 @@ void emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& r
 
 }
 
-vespalib::string RPCNetwork::buildRecipientListString(const SendContext& ctx) {
+vespalib::string
+RPCNetwork::buildRecipientListString(const SendContext& ctx) {
     vespalib::asciistream s;
     bool first = true;
     for (const auto* recipient : ctx._recipients) {
@@ -373,13 +373,13 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
                 make_string("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
                             buildRecipientListString(ctx).c_str(), getIdentity().getHostname().c_str()));
     } else {
-        uint64_t timeRemaining = ctx._msg.getTimeRemainingNow();
+        std::chrono::milliseconds timeRemaining = ctx._msg.getTimeRemainingNow();
         Blob payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);
         RPCSendAdapter *adapter = getSendAdapter(ctx._version);
         if (adapter == nullptr) {
             replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
                        make_string("Can not send to version '%s' recipient.", ctx._version.toString().c_str()));
-        } else if (timeRemaining == 0) {
+        } else if (timeRemaining == 0ms) {
             replyError(ctx, ErrorCode::TIMEOUT, "Aborting transmission because zero time remains.");
         } else if (payload.size() == 0) {
             replyError(ctx, ErrorCode::ENCODE_ERROR,

@@ -33,9 +33,7 @@ StatusMetricConsumer::StatusMetricConsumer(
     _component.registerStatusPage(*this);
 }
 
-StatusMetricConsumer::~StatusMetricConsumer()
-{
-}
+StatusMetricConsumer::~StatusMetricConsumer() = default;
 
 void
 StatusMetricConsumer::updateMetrics(const MetricLockGuard & guard)
@@ -79,7 +77,6 @@ namespace {
             name = "Clone of total metrics with active metrics added";
         }
         std::vector<char> buffer(40);
-        //FastOS_Time::GMT_timestr(&buffer[0], data.first)
         out << "  <tr>\n"
             << "    <td>" << name << "</td>\n";
         //if (snapshot.getToTime() != 0 || interval < 0 || building != 0)

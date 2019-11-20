@@ -3,6 +3,17 @@
 #pragma once
 
 #include <vespa/vespalib/util/approx.h>
+#include <ostream>
+#include <chrono>
+
+namespace std::chrono {
+//TODO Move to a more suitable place
+template <typename rep, typename period>
+ostream & operator << (ostream & os, duration<rep, period> ts) {
+    return os << ts.count();
+}
+
+}
 
 namespace vespalib {
 

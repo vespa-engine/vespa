@@ -23,7 +23,7 @@ RPCTarget::~RPCTarget()
 }
 
 void
-RPCTarget::resolveVersion(double timeout, RPCTarget::IVersionHandler &handler)
+RPCTarget::resolveVersion(seconds timeout, RPCTarget::IVersionHandler &handler)
 {
     bool hasVersion = false;
     bool shouldInvoke = false;
@@ -47,7 +47,7 @@ RPCTarget::resolveVersion(double timeout, RPCTarget::IVersionHandler &handler)
     } else if (shouldInvoke) {
         FRT_RPCRequest *req = _orb.AllocRPCRequest();
         req->SetMethodName("mbus.getVersion");
-        _target.InvokeAsync(req, timeout, this);
+        _target.InvokeAsync(req, timeout.count(), this);
     }
 }
 
@@ -84,10 +84,8 @@ RPCTarget::RequestDone(FRT_RPCRequest *req)
         _versionHandlers.swap(handlers);
         _state = PROCESSING_HANDLERS;
     }
-    for (HandlerList::iterator it = handlers.begin();
-         it != handlers.end(); ++it)
-    {
-        (*it)->handleVersion(_version.get());
+    for (IVersionHandler * handler : handlers) {
+        handler->handleVersion(_version.get());
     }
     {
         vespalib::MonitorGuard guard(_lock);

@@ -28,6 +28,7 @@ using document::DocumentTypeRepo;
 using document::readDocumenttypesConfig;
 using document::test::makeDocumentBucket;
 using namespace ::testing;
+using namespace std::chrono_literals;
 
 namespace storage {
 
@@ -186,7 +187,7 @@ TEST_F(DocumentApiConverterTest, get) {
 TEST_F(DocumentApiConverterTest, create_visitor) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
     cv.setBucketSpace(defaultSpaceName);
-    cv.setTimeRemaining(123456);
+    cv.setTimeRemaining(123456ms);
 
     auto cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
     EXPECT_EQ(defaultBucketSpace, cmd->getBucket().getBucketSpace());
@@ -202,7 +203,7 @@ TEST_F(DocumentApiConverterTest, create_visitor) {
 
 TEST_F(DocumentApiConverterTest, create_visitor_high_timeout) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
-    cv.setTimeRemaining((uint64_t)std::numeric_limits<uint32_t>::max() + 1); // Will be INT_MAX
+    cv.setTimeRemaining(std::chrono::milliseconds(1l << 32)); // Will be larger than INT_MAX
 
     auto cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
     EXPECT_EQ("mylib", cmd->getLibraryName());
