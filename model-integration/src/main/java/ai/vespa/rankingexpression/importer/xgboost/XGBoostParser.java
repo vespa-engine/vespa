@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 class XGBoostParser {
 
     private List<XGBoostTree> xgboostTrees;
-    private boolean doIfInversion = false;
 
     /**
      * Constructor stores parsed JSON trees.
@@ -32,7 +31,6 @@ class XGBoostParser {
         for (JsonNode treeNode : forestNode) {
             this.xgboostTrees.add(mapper.treeToValue(treeNode, XGBoostTree.class));
         }
-        doIfInversion = filePath.endsWith("if_inversion.json");
     }
 
     /**
@@ -71,9 +69,12 @@ class XGBoostParser {
                 trueExp = treeToRankExp(node.getChildren().get(1));
                 falseExp = treeToRankExp(node.getChildren().get(0));
             }
-            String condition = node.getSplit() + " < " + node.getSplit_condition();
-            if (doIfInversion && node.getMissing() == node.getYes()) {
+            String condition;
+            if (node.getMissing() == node.getYes()) {
+                // Note: this is for handling missing features, as the backend handles comparison with NaN as false.
                 condition = "!(" + node.getSplit() + " >= " + node.getSplit_condition() + ")";
+            } else {
+                condition = node.getSplit() + " < " + node.getSplit_condition();
             }
             return "if (" + condition + ", " + trueExp + ", " + falseExp + ")";
         }
