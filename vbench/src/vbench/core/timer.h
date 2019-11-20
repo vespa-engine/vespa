@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/fastos/time.h>
+#include <chrono>
 
 namespace vbench {
 
@@ -12,8 +12,8 @@ namespace vbench {
 class Timer
 {
 private:
-    FastOS_Time _time;
-
+    using clock = std::chrono::steady_clock;
+    clock::time_point _zero;
 public:
     Timer();
     void reset();
@@ -21,4 +21,3 @@ public:
 };
 
 } // namespace vbench
-
