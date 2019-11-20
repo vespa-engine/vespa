@@ -28,7 +28,7 @@ public class Flavor {
 
     private final Optional<FlavorOverrides> flavorOverrides;
 
-    private static final double cpuSpeedupRolloutFactor = 1.0/3.0; // TODO: Increase to 2/3 (then 1) on later releases
+    private static final double cpuSpeedupRolloutFactor = 2.0/3.0; // TODO: Increase to 1 on a later release
 
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
