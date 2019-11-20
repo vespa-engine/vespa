@@ -7,6 +7,7 @@ import com.google.common.annotations.Beta;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;
+import com.yahoo.prelude.query.QueryCanonicalizer;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -17,11 +18,16 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.yolean.chain.After;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+// This depends on tensors in query.getRanking which are moved to rank.properties during query.prepare()
+// Query.prepare is done at the same time as canonicalization (by GroupingExecutor), so use that constraint.
+@After(QueryCanonicalizer.queryCanonicalization)
 
 /**
  * Validates any NearestNeighborItem query items.
@@ -79,6 +85,15 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             errorMessage = Optional.of(ErrorMessage.createIllegalQuery(description));
         }
 
+        private static boolean isDenseVector(TensorType tt) {
+            List<TensorType.Dimension> dims = tt.dimensions();
+            if (dims.size() != 1) return false;
+            for (var d : dims) {
+                if (d.type() != TensorType.Dimension.Type.indexedBound) return false;
+            }
+            return true;
+        }
+
         private void validate(NearestNeighborItem item) {
             int target = item.getTargetNumHits();
             if (target < 1) {
@@ -88,16 +103,17 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             String qprop = item.getQueryTensorName();
             List<Object> rankPropValList = rankProperties.asMap().get(qprop);
             if (rankPropValList == null) {
-                setError(item.toString() + " query property not found");
+                setError(item.toString() + " query tensor not found");
                 return;
             }
             if (rankPropValList.size() != 1) {
-                setError(item.toString() + " query property does not have a single value");
+                setError(item.toString() + " query tensor does not have a single value");
                 return;
             }
             Object rankPropValue = rankPropValList.get(0);
             if (! (rankPropValue instanceof Tensor)) {
-                setError(item.toString() + " query property should be a tensor, was: "+rankPropValue);
+                setError(item.toString() + " query tensor should be a tensor, was: "+
+                    (rankPropValue == null ? "null" : rankPropValue.getClass().toString()));
                 return;
             }
             Tensor qTensor = (Tensor)rankPropValue;
@@ -111,7 +127,11 @@ public class ValidateNearestNeighborSearcher extends Searcher {
                     return;
                 }
                 if (! fTensorType.equals(qTensorType)) {
-                    setError(item.toString() + " field type "+fTensorType+" does not match query property type "+qTensorType);
+                    setError(item.toString() + " field type "+fTensorType+" does not match query tensor type "+qTensorType);
+                    return;
+                }
+                if (! isDenseVector(fTensorType)) {
+                    setError(item.toString() + " tensor type "+fTensorType+" is not a dense vector");
                     return;
                 }
             } else {
