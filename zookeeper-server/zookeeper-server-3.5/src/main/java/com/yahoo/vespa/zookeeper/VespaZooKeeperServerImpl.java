@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -122,7 +123,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         // Common config
         sb.append("ssl.quorum.hostnameVerification=false\n");
         sb.append("ssl.quorum.clientAuth=NEED\n");
-        sb.append("ssl.quorum.ciphersuites=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_CIPHER_SUITES))).append("\n");
+        sb.append("ssl.quorum.ciphersuites=").append(String.join(",", getCipherSuites())).append("\n");
         sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_PROTOCOLS))).append("\n");
         sb.append("ssl.quorum.protocol=TLS\n");
 
@@ -160,6 +161,13 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         });
 
         return sb.toString();
+    }
+
+    private TreeSet<String> getCipherSuites() {
+        Set<String> cipherSuites = new HashSet<>(TlsContext.ALLOWED_CIPHER_SUITES);
+        // Remove cipher suite not supported by Java
+        cipherSuites.remove("TLS_CHACHA20_POLY1305_SHA256");
+        return new TreeSet<>(cipherSuites);
     }
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
