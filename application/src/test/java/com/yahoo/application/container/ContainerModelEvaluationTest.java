@@ -50,7 +50,7 @@ public class ContainerModelEvaluationTest {
         }
 
         {
-            String expected = "{\"cells\":[{\"address\":{},\"value\":-4.376589999999999}]}";
+            String expected = "{\"cells\":[{\"address\":{},\"value\":2.496898}]}";
             assertResponse("http://localhost/model-evaluation/v1/xgboost_xgboost_2_2/eval", expected, jdisc);
         }
 
