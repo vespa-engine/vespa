@@ -31,6 +31,10 @@ public class SystemCtlTester extends SystemCtl {
         runningUnits.add(unit);
     }
 
+    private void expectCommand(String command, int exitCode, String output) {
+        terminal.expectCommand((useSudo() ? "sudo " : "") + command, exitCode, output);
+    }
+
     public static class Expectation {
 
         private final String unit;
@@ -58,22 +62,22 @@ public class SystemCtlTester extends SystemCtl {
 
         /** Expect that given unit will be restarted */
         public Expectation toRestart() {
-            systemCtl.terminal.expectCommand("systemctl restart " + unit + " 2>&1", 0, "");
+            systemCtl.expectCommand("systemctl restart " + unit + " 2>&1", 0, "");
             systemCtl.startUnit(unit);
             return this;
         }
 
         /** Expect that this will be stopped */
         public Expectation toStop() {
-            systemCtl.terminal.expectCommand("systemctl stop " + unit + " 2>&1", 0, "");
+            systemCtl.expectCommand("systemctl stop " + unit + " 2>&1", 0, "");
             systemCtl.runningUnits.remove(unit);
             return this;
         }
 
         /** Expect query for state of this */
         public Expectation toQueryState() {
-            systemCtl.terminal.expectCommand("systemctl --quiet is-active " + unit + ".service 2>&1",
-                                             systemCtl.runningUnits.contains(unit) ? 0 : 1, "");
+            systemCtl.expectCommand("systemctl --quiet is-active " + unit + ".service 2>&1",
+                                    systemCtl.runningUnits.contains(unit) ? 0 : 1, "");
             return this;
         }
 
@@ -88,19 +92,19 @@ public class SystemCtlTester extends SystemCtl {
         }
 
         private Expectation toStart(boolean start) {
-            systemCtl.terminal.expectCommand("systemctl show " + unit + " 2>&1", 0,
-                                   "ActiveState=" + (start ? "inactive" : "active"));
+            systemCtl.expectCommand("systemctl show " + unit + " 2>&1", 0,
+                                    "ActiveState=" + (start ? "inactive" : "active"));
             if (start) {
-                systemCtl.terminal.expectCommand("systemctl start " + unit + " 2>&1", 0, "");
+                systemCtl.expectCommand("systemctl start " + unit + " 2>&1", 0, "");
                 systemCtl.startUnit(unit);
             }
             return this;
         }
 
         private Expectation toEnable(boolean enable) {
-            systemCtl.terminal.expectCommand("systemctl --quiet is-enabled " + unit + " 2>&1", enable ? 1 : 0, "");
+            systemCtl.expectCommand("systemctl --quiet is-enabled " + unit + " 2>&1", enable ? 1 : 0, "");
             if (enable) {
-                systemCtl.terminal.expectCommand("systemctl enable " + unit + " 2>&1", 0, "");
+                systemCtl.expectCommand("systemctl enable " + unit + " 2>&1", 0, "");
             }
             return this;
         }

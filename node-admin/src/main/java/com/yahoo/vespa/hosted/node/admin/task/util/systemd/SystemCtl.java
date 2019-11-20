@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.systemd;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
+import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandLine;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.CommandResult;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
@@ -25,6 +26,7 @@ public class SystemCtl {
     private static final Pattern ACTIVE_STATE_PROPERTY_PATTERN = createPropertyPattern("ActiveState");
 
     private final Terminal terminal;
+    private boolean useSudo = false;
 
     private static Pattern createPropertyPattern(String propertyName) {
         if (!PROPERTY_NAME_PATTERN.matcher(propertyName).matches()) {
@@ -41,10 +43,20 @@ public class SystemCtl {
         this.terminal = terminal;
     }
 
+    /** Call all commands through sudo */
+    public SystemCtl withSudo() {
+        this.useSudo = true;
+        return this;
+    }
+
+    /** Returns whether this is configured to use sudo */
+    public boolean useSudo() {
+        return useSudo;
+    }
+
     public void daemonReload(TaskContext taskContext) {
-        terminal.newCommandLine(taskContext)
-                .add("systemctl", "daemon-reload")
-                .execute();
+        newCommandLine(taskContext).add("systemctl", "daemon-reload")
+                                   .execute();
     }
 
     public SystemCtlEnable enable(String unit) { return new SystemCtlEnable(unit); }
@@ -54,7 +66,7 @@ public class SystemCtl {
     public SystemCtlRestart restart(String unit) { return new SystemCtlRestart(unit); }
 
     public boolean serviceExists(TaskContext context, String unit) {
-        return terminal.newCommandLine(context)
+        return newCommandLine(context)
                 .add("systemctl", "list-unit-files", unit + ".service").executeSilently()
                 .mapOutput(output -> {
                     // Last line of the form: "1 unit files listed."
@@ -69,11 +81,19 @@ public class SystemCtl {
 
     /** Returns true if the unit exists and is active (i.e. running). unit is e.g. "docker". */
     public boolean isActive(TaskContext context, String unit) {
-        return terminal.newCommandLine(context)
+        return newCommandLine(context)
                 .add("systemctl", "--quiet", "is-active", unit + ".service")
                 .ignoreExitCode()
                 .executeSilently()
                 .map(CommandResult::getExitCode) == 0;
+    }
+
+    private CommandLine newCommandLine(TaskContext context) {
+        var commandLine = terminal.newCommandLine(context);
+        if (useSudo) {
+            commandLine.add("sudo");
+        }
+        return commandLine;
     }
 
     public class SystemCtlEnable extends SystemCtlCommand {
@@ -144,21 +164,17 @@ public class SystemCtl {
             if (isAlreadyConverged(context)) {
                 return false;
             }
-
-            terminal.newCommandLine(context)
-                    .add("systemctl", command, unit)
-                    .execute();
-
+            newCommandLine(context).add("systemctl", command, unit)
+                                   .execute();
             return true;
         }
 
         /** Returns true if unit is enabled */
         boolean isUnitEnabled(TaskContext context) {
-            return terminal.newCommandLine(context)
-                           .add("systemctl", "--quiet", "is-enabled", unit)
-                           .ignoreExitCode()
-                           .executeSilently()
-                           .map(CommandResult::getExitCode) == 0;
+            return newCommandLine(context).add("systemctl", "--quiet", "is-enabled", unit)
+                                          .ignoreExitCode()
+                                          .executeSilently()
+                                          .map(CommandResult::getExitCode) == 0;
         }
 
         /**
@@ -167,10 +183,9 @@ public class SystemCtl {
          * @return The matched group from the 'systemctl show' output.
          */
         String getSystemCtlProperty(TaskContext context, Pattern propertyPattern) {
-            return terminal.newCommandLine(context)
-                    .add("systemctl", "show", unit)
-                    .executeSilently()
-                    .mapOutput(output -> extractProperty(output, propertyPattern));
+            return newCommandLine(context).add("systemctl", "show", unit)
+                                          .executeSilently()
+                                          .mapOutput(output -> extractProperty(output, propertyPattern));
         }
     }
 
