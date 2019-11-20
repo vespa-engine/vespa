@@ -22,7 +22,7 @@ public class XGBoostImportEvaluationTestCase {
     @Test
     public void testXGBoostEvaluation() {
         RankingExpression expression = new XGBoostImporter()
-                .importModel("xgb", "src/test/models/xgboost/xgboost.test.if_inversion.json")
+                .importModel("xgb", "src/test/models/xgboost/xgboost.test.json")
                 .expressions().get("xgb");
 
         ArrayContext context = new ArrayContext(expression, DoubleValue.NaN);
