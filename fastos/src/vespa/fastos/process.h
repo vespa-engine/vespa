@@ -51,9 +51,6 @@ private:
     FastOS_ProcessInterface &operator=(const FastOS_ProcessInterface &);
 
 protected:
-    // Hack to achieve 64-bit alignment of
-    // FastOS_ProcessInterface pointers (for Sparc)
-    double _extradoublehackforalignment;
 
     char *_cmdLine;
     bool _pipeStdin;
@@ -62,40 +59,12 @@ protected:
     FastOS_ProcessRedirectListener *_stderrListener;
 
     int _bufferSize;
-
-    FastOS_ThreadPool *GetThreadPool ();
-
 public:
     FastOS_ProcessInterface *_next, *_prev;
     static FastOS_ApplicationInterface *_app;
 
-    /**
-     * Call this prior to opening files with fopen to avoid having
-     * these file handles inherited by child processes. Remember
-     * to call PostfopenNoInherit(x) after fopen. x is the return value
-     * of PrefopenNoInherit.
-     * @return              Internal data needed to cancel object inheritance.
-     */
-    static void *PrefopenNoInherit (void) {return nullptr;}
-
-    /**
-     * Call this after opening files with fopen to avoid having
-     * these files handles inherited by child processes. Remember
-     * to call PrefopenNoInherit before fopen, and save its return
-     * value to be used as a parameter of this method.
-     * @param  inheritData    Data returned by PrefopenNoInherit
-     * @return                Number of files processed (should be >= 1)
-     */
-    static int PostfopenNoInherit (void *inheritData)
-    {
-        (void) inheritData;
-        return 1;
-    }
-
     enum Constants
     {
-        NOTFOUND_EXITCODE = 65533,		/* Process starter out of sync */
-        DETACH_EXITCODE = 65534,		/* Process detached */
         KILL_EXITCODE = 65535,		/* Process killed or failed */
         CONSTEND
     };
@@ -171,15 +140,6 @@ public:
     virtual bool Kill () = 0;
 
     /**
-     * Special case kill used in conjunction with wrapper processes
-     * that use process groups to kill all descendant processes.
-     * On UNIX, this sends SIGTERM.
-     * Only use this method with wrapper processes.
-     * @return                    Boolean success / failure
-     */
-    virtual bool WrapperKill () = 0;
-
-    /**
      * Wait for the process to finish / terminate. This is called
      * automatically by the destructor, but it is recommended that
      * it is called as early as possible to free up resources.
@@ -210,56 +170,10 @@ public:
     virtual bool PollWait (int *returnCode, bool *stillRunning) = 0;
 
     /**
-     * Detach a process, allowing it to exist beyond parent.
-     * Only implemented on UNIX platforms.
-     *
-     * @return                   Boolean success / failure
-     */
-    virtual bool Detach(void) { return false; }
-
-    /**
-     * Check if child is a direct child or a proxied child.
-     *
-     * @return			Boolean true = direct, false = proxied
-     */
-    virtual bool GetDirectChild(void) const { return true; }
-
-    /**
-     * Specify that child should be a direct child.
-     *
-     * @return			Boolean success / failure
-     */
-    virtual bool SetDirectChild(void) { return true; }
-
-    /**
-     * Check if child inherits open file descriptors if it's a direct child.
-     *
-     * @return			Boolean true = inherit, false = close
-     */
-    virtual bool GetKeepOpenFilesIfDirectChild(void) const { return false; }
-
-    /**
-     * Specify that child should inherit open file descriptors from parent
-     * if it's a direct child.  This reduces the cost of starting direct
-     * children.
-     *
-     * @return			Boolean true = inherit, false = close
-     */
-    virtual bool SetKeepOpenFilesIfDirectChild(void) { return false; }
-
-    /**
      * Get process identification number.
      * @return                   Process id
      */
     virtual unsigned int GetProcessId() = 0;
-
-    /**
-     * Send IPC message to process.
-     * @param  data              Pointer to data
-     * @param  length            Length of data block in bytes
-     * @return                   Boolean success / failure
-     */
-    virtual bool SendIPCMessage (const void *data, size_t length) = 0;
 
     /**
      * Get command line string.

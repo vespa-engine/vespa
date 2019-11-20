@@ -145,7 +145,6 @@ protected:
     FastOS_ProcessInterface *_processList;
     std::mutex              *_processListMutex;
 
-    bool _disableLeakReporting;
     virtual bool PreThreadInit () { return true; }
 
 public:
@@ -196,43 +195,12 @@ public:
      */
     virtual void Cleanup ();
 
-    /**
-     * This method is invoked each time an IPC message is received.
-     * The default implementation discards the message. Subclass this
-     * method to process the data. You should assume that any
-     * thread can invoke this method.
-     * @param  data              Pointer to binary message data
-     * @param  length            Length of message in bytes
-     */
-    virtual void OnReceivedIPCMessage (const void *data, size_t length);
-
-    /**
-     * Send an IPC message to the parent process. The method fails
-     * if the parent process is not a FastOS process.
-     * @param  data              Pointer to binary message data
-     * @param  length            Length of message in bytes
-     * @return                   Boolean success/failure
-     */
-    virtual bool SendParentIPCMessage (const void *data, size_t length) = 0;
-
     void AddChildProcess (FastOS_ProcessInterface *node);
     void RemoveChildProcess (FastOS_ProcessInterface *node);
     std::unique_lock<std::mutex> getProcessGuard() { return std::unique_lock<std::mutex>(*_processListMutex); }
     FastOS_ProcessInterface *GetProcessList () { return _processList; }
 
     FastOS_ThreadPool *GetThreadPool ();
-
-    /**
-     * Disable reporting of memory- and other resource leaks.
-     * If you want to disable leak reporting, call this method
-     * before FastOS_Application::Entry() is invoked, as irreversible
-     * actions which set up leak reporting can be performed at this point.
-     * Leak reporting is either performed during FastOS_Application::Cleanup()
-     * or when the application process terminates.
-     * Leak reporting is currently only supported with the debug build
-     * on Win32.
-     */
-    void DisableLeakReporting () { _disableLeakReporting = true; }
 };
 
 

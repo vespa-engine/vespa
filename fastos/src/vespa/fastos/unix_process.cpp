@@ -40,7 +40,7 @@ extern char **environ;
 
 #endif
 
-static pid_t safe_fork (void)
+static pid_t safe_fork ()
 {
     pid_t pid;
     int retry = 1;
@@ -96,62 +96,62 @@ private:
 
     void CloseDescriptor(int fd);
     void CloseAndResetDescriptor(int *fd);
-    void CloseDescriptors(void);
+    void CloseDescriptors();
 
 public:
     void SetRunDir(const char * runDir) { _runDir = runDir; }
-    int GetIPCDescriptor(void) const { return _ipcSockPair[0]; }
-    int GetStdinDescriptor(void) const { return _stdinDes[1]; }
-    int GetStdoutDescriptor(void) const { return _stdoutDes[0]; }
-    int GetStderrDescriptor(void) const { return _stderrDes[0]; }
-    int HandoverIPCDescriptor(void) {
+    int GetIPCDescriptor() const { return _ipcSockPair[0]; }
+    int GetStdinDescriptor() const { return _stdinDes[1]; }
+    int GetStdoutDescriptor() const { return _stdoutDes[0]; }
+    int GetStderrDescriptor() const { return _stderrDes[0]; }
+    int HandoverIPCDescriptor() {
         int ret = _ipcSockPair[0];
         _ipcSockPair[0] = -1;
         return ret;
     }
 
-    int HandoverStdinDescriptor(void) {
+    int HandoverStdinDescriptor() {
         int ret = _stdinDes[1];
         _stdinDes[1] = -1;
         return ret;
     }
 
-    int HandoverStdoutDescriptor(void) {
+    int HandoverStdoutDescriptor() {
         int ret = _stdoutDes[0];
         _stdoutDes[0] = -1;
         return ret;
     }
 
-    int HandoverStderrDescriptor(void) {
+    int HandoverStderrDescriptor() {
         int ret = _stderrDes[0];
         _stderrDes[0] = -1;
         return ret;
     }
 
-    void CloseIPCDescriptor(void);
-    void CloseStdinDescriptor(void);
-    void CloseStdoutDescriptor(void);
-    void CloseStderrDescriptor(void);
+    void CloseIPCDescriptor();
+    void CloseStdinDescriptor();
+    void CloseStdoutDescriptor();
+    void CloseStderrDescriptor();
 
     FastOS_UNIX_RealProcess *_prev, *_next;
 
     FastOS_UNIX_RealProcess (int streamMask);
-    ~FastOS_UNIX_RealProcess(void);
-    pid_t GetProcessID(void) const { return _pid; }
+    ~FastOS_UNIX_RealProcess();
+    pid_t GetProcessID() const { return _pid; }
 
-    bool IsStdinPiped(void) const {
+    bool IsStdinPiped() const {
         return (_streamMask & STREAM_STDIN ) != 0;
     }
 
-    bool IsStdoutPiped(void) const {
+    bool IsStdoutPiped() const {
         return (_streamMask & STREAM_STDOUT) != 0;
     }
 
-    bool IsStderrPiped(void) const {
+    bool IsStderrPiped() const {
         return (_streamMask & STREAM_STDERR) != 0;
     }
 
-    bool IsUsingShell(void) const {
+    bool IsUsingShell() const {
         return (_streamMask & EXEC_SHELL) != 0;
     }
 
@@ -190,9 +190,9 @@ public:
                 FastOS_UNIX_Process *process,
                 FastOS_UNIX_ProcessStarter *processStarter);
 
-    bool Setup(void);
-    pid_t GetProcessId(void) const { return _pid; }
-    void SetTerse(void) { _terse = true; }
+    bool Setup();
+    pid_t GetProcessId() const { return _pid; }
+    void SetTerse() { _terse = true; }
     ssize_t HandshakeRead(void *buf, size_t len);
     void HandshakeWrite(int val);
 };
@@ -216,7 +216,7 @@ FastOS_UNIX_RealProcess::CloseAndResetDescriptor(int *fd)
 
 
 void
-FastOS_UNIX_RealProcess::CloseDescriptors(void)
+FastOS_UNIX_RealProcess::CloseDescriptors()
 {
     CloseAndResetDescriptor(&_stdinDes[0]);
     CloseAndResetDescriptor(&_stdinDes[1]);
@@ -232,28 +232,28 @@ FastOS_UNIX_RealProcess::CloseDescriptors(void)
 
 
 void
-FastOS_UNIX_RealProcess::CloseIPCDescriptor(void)
+FastOS_UNIX_RealProcess::CloseIPCDescriptor()
 {
     CloseAndResetDescriptor(&_ipcSockPair[0]);
 }
 
 
 void
-FastOS_UNIX_RealProcess::CloseStdinDescriptor(void)
+FastOS_UNIX_RealProcess::CloseStdinDescriptor()
 {
     CloseAndResetDescriptor(&_stdinDes[1]);
 }
 
 
 void
-FastOS_UNIX_RealProcess::CloseStdoutDescriptor(void)
+FastOS_UNIX_RealProcess::CloseStdoutDescriptor()
 {
     CloseAndResetDescriptor(&_stdoutDes[0]);
 }
 
 
 void
-FastOS_UNIX_RealProcess::CloseStderrDescriptor(void)
+FastOS_UNIX_RealProcess::CloseStderrDescriptor()
 {
     CloseAndResetDescriptor(&_stderrDes[0]);
 }
@@ -280,7 +280,7 @@ FastOS_UNIX_RealProcess::FastOS_UNIX_RealProcess(int streamMask)
 }
 
 
-FastOS_UNIX_RealProcess::~FastOS_UNIX_RealProcess(void)
+FastOS_UNIX_RealProcess::~FastOS_UNIX_RealProcess()
 {
     CloseDescriptors();
 }
@@ -546,19 +546,14 @@ ForkAndExec(const char *command,
         CloseDescriptor(_handshakeDes[0]);
         _handshakeDes[0] = -1;
         if (process != nullptr) {
-            if (!process->GetKeepOpenFilesIfDirectChild()) {
-                int fdlimit = sysconf(_SC_OPEN_MAX);
-                // Close everything else
-                //         printf("fdlimit = %d\n", fdlimit);
-                for(int fd = STDERR_FILENO + 1; fd < fdlimit; fd++)
-                {
-                    if (fd != _ipcSockPair[1] &&
-                        fd != _handshakeDes[1])
-                        CloseDescriptor(fd);
-                }
-            } else {
-                // Close only other endpoints of pipes.
-                process->CloseDescriptorsDirectChild();
+            int fdlimit = sysconf(_SC_OPEN_MAX);
+            // Close everything else
+            //         printf("fdlimit = %d\n", fdlimit);
+            for(int fd = STDERR_FILENO + 1; fd < fdlimit; fd++)
+            {
+                if (fd != _ipcSockPair[1] &&
+                    fd != _handshakeDes[1])
+                    CloseDescriptor(fd);
             }
         } else {
             processStarter->CloseProxiedChildDescs();
@@ -766,7 +761,7 @@ FastOS_UNIX_RealProcess::HandshakeRead(void *buf, size_t len)
 
 
 bool
-FastOS_UNIX_RealProcess::Setup(void)
+FastOS_UNIX_RealProcess::Setup()
 {
     bool rc = true;
 
@@ -789,8 +784,6 @@ FastOS_UNIX_Process (const char *cmdLine, bool pipeStdin,
                             stderrListener, bufferSize),
     _pid(0),
     _died(false),
-    _directChild(true),
-    _keepOpenFilesIfDirectChild(false),
     _returnCode(-1),
     _descriptor(),
     _runDir(),
@@ -841,27 +834,6 @@ FastOS_UNIX_Process::~FastOS_UNIX_Process ()
     CloseListener(TYPE_STDOUT);
     CloseListener(TYPE_STDERR);
 }
-
-
-void
-FastOS_UNIX_Process::SetRunDir(const char *runDir)
-{
-    _runDir = runDir ? runDir : "";
-}
-
-
-void
-FastOS_UNIX_Process::SetStdoutRedirName(const char *stdoutRedirName)
-{
-    _stdoutRedirName = stdoutRedirName ? stdoutRedirName : "";
-}
-
-
-void
-FastOS_UNIX_Process::SetStderrRedirName(const char *stderrRedirName) {
-    _stderrRedirName = stderrRedirName ? stderrRedirName : "";
-}
-
 
 bool FastOS_UNIX_Process::CreateInternal (bool useShell)
 {
@@ -918,11 +890,6 @@ bool FastOS_UNIX_Process::Kill ()
     return Signal(SIGKILL);
 }
 
-bool FastOS_UNIX_Process::WrapperKill ()
-{
-    return Signal(SIGTERM);
-}
-
 bool FastOS_UNIX_Process::InternalWait (int *returnCode,
                                         int timeOutSeconds,
                                         bool *pollStillRunning)
@@ -947,23 +914,6 @@ bool FastOS_UNIX_Process::Wait (int *returnCode, int timeOutSeconds)
 bool FastOS_UNIX_Process::PollWait (int *returnCode, bool *stillRunning)
 {
     return InternalWait(returnCode, -1, stillRunning);
-}
-
-
-bool FastOS_UNIX_Process::Detach(void)
-{
-    return GetProcessStarter()->Detach(this);
-}
-
-
-bool FastOS_UNIX_Process::SendIPCMessage (const void *data,
-                                          size_t length)
-{
-    if (_descriptor[TYPE_IPC]._fd != -1) {
-        return static_cast<FastOS_UNIX_Application *>
-            (_app)->SendIPCMessage(this, data, length);
-    }
-    return false;
 }
 
 int FastOS_UNIX_Process::BuildStreamMask (bool useShell)
@@ -1187,52 +1137,6 @@ void FastOS_UNIX_ProcessStarter::StarterDoWait ()
     }
 }
 
-void FastOS_UNIX_ProcessStarter::StarterDoDetachProcess ()
-{
-    //            printf("DETACH A PROCESS\n");
-
-    pid_t dpid;
-    pid_t pid;
-    int status;
-
-    int returnCode;
-
-    ReadBytes(_starterSocket, &dpid, sizeof(pid_t));
-
-    bool foundProcess = false;
-
-    pid = waitpid(dpid, &status, WNOHANG);
-
-    FastOS_UNIX_RealProcess *process, *next;
-    for(process = FastOS_UNIX_ProcessStarter::_processList;
-        process != nullptr; process = next) {
-
-        // Need to do this here since we are deleting entries
-        next = process->_next;
-
-        if (process->GetProcessId() == dpid) {
-            foundProcess = true;
-            _hasDetachedProcess = true;
-            RemoveChildProcess(process);
-            delete process;
-            break;
-        }
-    }
-
-    if (foundProcess) {
-        if (pid == dpid) {
-            if (WIFEXITED(status))
-                returnCode = WEXITSTATUS(status);
-            else
-                returnCode = -1;
-        } else
-            returnCode = FastOS_ProcessInterface::DETACH_EXITCODE;
-    } else
-        returnCode = FastOS_ProcessInterface::NOTFOUND_EXITCODE;
-
-    WriteBytes(_starterSocket, &returnCode, sizeof(int));
-}
-
 void FastOS_UNIX_ProcessStarter::StarterDoCreateProcess ()
 {
     int stringLength = ReadInt(_starterSocket);
@@ -1376,7 +1280,6 @@ void FastOS_UNIX_ProcessStarter::Run ()
         switch(command)
         {
         case CODE_WAIT:       StarterDoWait();           break;
-        case CODE_DETACH:     StarterDoDetachProcess();    break;
         case CODE_NEWPROCESS: StarterDoCreateProcess();  break;
         case CODE_EXIT:       _exit(2);
         }
@@ -1474,94 +1377,6 @@ void FastOS_UNIX_ProcessStarter::Stop ()
     waitpid(_pid, &result, 0);
 }
 
-int FastOS_UNIX_ProcessStarter::ReadFileDescriptor ()
-{
-    struct msghdr msg;
-    struct iovec iov;
-
-#ifndef FASTOS_HAVE_ACCRIGHTSLEN
-    union
-    {
-        struct cmsghdr cm;
-        char control[CMSG_SPACE(sizeof(int))];
-    } control_un;
-    struct cmsghdr *cmptr;
-
-    msg.msg_control = control_un.control;
-    msg.msg_controllen = sizeof(control_un.control);
-#else
-    int newfd;
-    msg.msg_accrights = static_cast<caddr_t>(&newfd);
-    msg.msg_accrightslen = sizeof(int);
-#endif
-
-    msg.msg_name = nullptr;
-    msg.msg_namelen = 0;
-
-    char dummyData = '\0';
-    iov.iov_base = &dummyData;
-    iov.iov_len = 1;
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-
-    int recvmsgrc = recvmsg(_mainSocketDescr, &msg, 0);
-
-    if (recvmsgrc <= 0) {
-        perror("recvmsg");
-        return recvmsgrc;
-    }
-    //   printf("recvmsgrc = %d\n", recvmsgrc);
-
-#ifndef FASTOS_HAVE_ACCRIGHTSLEN
-    if ((cmptr = CMSG_FIRSTHDR(&msg)) != nullptr &&
-        cmptr->cmsg_len == CMSG_LEN(sizeof(int)))
-    {
-        if (cmptr->cmsg_level != SOL_SOCKET)
-            perror("FastOS_UNIX_ProcessStarter: control level != SOL_SOCKET");
-        if (cmptr->cmsg_type != SCM_RIGHTS)
-            perror("FastOS_UNIX_ProcessStarter: control type != SCM_RIGHTS");
-        int fileDescriptor;
-        memcpy(&fileDescriptor, CMSG_DATA(cmptr), sizeof(int));
-        return fileDescriptor;
-    }
-    else
-        return -1;
-#else
-    if (msg.msg_accrightslen == sizeof(int))
-        return newfd;
-    else
-        return -1;
-#endif
-}
-
-bool FastOS_UNIX_ProcessStarter::
-ReceiveFileDescriptor (bool use, FastOS_UNIX_Process::DescriptorType type,
-                       FastOS_UNIX_Process *xproc)
-{
-    bool rc = false;
-    if (!use)
-        rc = true;
-    else {
-        int sendFileDescResult = ReadInt(_mainSocket);
-
-        if (sendFileDescResult == CODE_SUCCESS) {
-            int fd = ReadFileDescriptor();
-
-            //         printf("Got file descriptor %d, type %d\n", fd, type);
-
-            if (fd > 0) {
-                xproc->SetDescriptor(type, fd);
-                rc = true;
-                WriteInt(_mainSocket, CODE_SUCCESS);
-            }
-            else
-                WriteInt(_mainSocket, CODE_FAILURE);
-        }
-    }
-
-    return rc;
-}
-
 char ** FastOS_UNIX_ProcessStarter::ReceiveEnvironmentVariables ()
 {
     int numEnvVars = ReadInt(_starterSocket);
@@ -1591,42 +1406,8 @@ char ** FastOS_UNIX_ProcessStarter::ReceiveEnvironmentVariables ()
     return myEnvironment;
 }
 
-
-void FastOS_UNIX_ProcessStarter::SendEnvironmentVariables ()
-{
-    int numEnvVars = 0;
-    char **pe = environ;
-
-    while(*pe++ != nullptr)
-        numEnvVars++;
-
-    WriteInt(_mainSocket, numEnvVars);
-
-    // In case someone deletes environment variables at the same time
-    bool gotNull = false;
-
-    pe = environ;
-    for(int i=0; i<numEnvVars; i++)
-    {
-        const char *envString = "";
-        if (!gotNull) {
-            envString = *pe++;
-            if (envString == nullptr) {
-                envString = "";
-                gotNull = true;
-            }
-        }
-
-        int envBytes = strlen(envString) + 1;
-        WriteInt(_mainSocket, envBytes);
-        WriteBytes(_mainSocket, envString, envBytes);
-    }
-}
-
-
 void
-FastOS_UNIX_ProcessStarter::
-CloseProxiedChildDescs(void)
+FastOS_UNIX_ProcessStarter::CloseProxiedChildDescs()
 {
     if (_starterSocket >= 0)      close(_starterSocket);
     if (_starterSocketDescr >= 0) close(_starterSocketDescr);
@@ -1634,13 +1415,8 @@ CloseProxiedChildDescs(void)
 
 
 void
-FastOS_UNIX_ProcessStarter::
-CloseProxyDescs(int stdinPipedDes,
-                int stdoutPipedDes,
-                int stderrPipedDes,
-                int ipcDes,
-                int handshakeDes0,
-                int handshakeDes1)
+FastOS_UNIX_ProcessStarter::CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
+                                            int ipcDes, int handshakeDes0, int handshakeDes1)
 {
     return;
     if (_closedProxyProcessFiles)
@@ -1662,8 +1438,7 @@ CloseProxyDescs(int stdinPipedDes,
 }
 
 char **
-FastOS_UNIX_ProcessStarter::
-CopyEnvironmentVariables(void)
+FastOS_UNIX_ProcessStarter::CopyEnvironmentVariables()
 {
     char **env = environ;
     while (*env != nullptr)
@@ -1690,8 +1465,7 @@ CopyEnvironmentVariables(void)
 
 
 void
-FastOS_UNIX_ProcessStarter::
-FreeEnvironmentVariables(char **env)
+FastOS_UNIX_ProcessStarter::FreeEnvironmentVariables(char **env)
 {
     char **p = env;
     while (*p != nullptr) {
@@ -1716,135 +1490,52 @@ CreateProcess (FastOS_UNIX_Process *process,
 
     auto guard = _app->getProcessGuard();
 
-    if (process->GetDirectChild()) {
-        _hasDirectChildren = true;
-        FastOS_UNIX_RealProcess *rprocess =
-            new FastOS_UNIX_RealProcess(process->BuildStreamMask(useShell));
-        const char *runDir = process->GetRunDir();
-        if (runDir != nullptr) {
-            rprocess->SetRunDir(runDir);            // Handover
-        }
-        const char *stdoutRedirName = process->GetStdoutRedirName();
-        if (stdoutRedirName != nullptr) {
-            rprocess->SetStdoutRedirName(stdoutRedirName);
-        }
-        const char *stderrRedirName = process->GetStderrRedirName();
-        if (stderrRedirName != nullptr) {
-            rprocess->SetStderrRedirName(stderrRedirName);
-        }
-        char **env = CopyEnvironmentVariables();
-        rprocess->SetTerse();
-        rprocess->Setup();
-        if (!useShell)
-            process->SetDescriptor(FastOS_UNIX_Process::TYPE_IPC,
-                                                         rprocess->HandoverIPCDescriptor());
-        if (pipeStdin)
-            process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDIN,
-                                                         rprocess->HandoverStdinDescriptor());
-        if (pipeStdout)
-            process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDOUT,
-                                                          rprocess->HandoverStdoutDescriptor());
-        if (pipeStderr)
-            process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDERR,
-                                                          rprocess->HandoverStderrDescriptor());
-        pid_t processId = -1;
-        if (rprocess->ForkAndExec(cmdLine, env, process, this)) {
-            processId = rprocess->GetProcessID();
-        }
-        if (processId != -1) {
-            process->SetProcessId(static_cast<unsigned int>(processId));
-            if (!useShell || pipeStdout || pipeStderr)
-                static_cast<FastOS_UNIX_Application *>
-                    (_app)->AddToIPCComm(process);
-            rc = true;
-        } else {
-            fprintf(stderr,
-                    "Forkandexec %s failed\n",
-                    cmdLine);
-        }
-        guard.unlock();
-        delete rprocess;
-        FreeEnvironmentVariables(env);
-        return rc;
-    }
-
-    _hasProxiedChildren = true;
-    int cmdLineLength = strlen(cmdLine) + 1;
-    WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_NEWPROCESS);
-    WriteInt(_mainSocket, cmdLineLength);
-    WriteBytes(_mainSocket, cmdLine, cmdLineLength);
-    WriteInt(_mainSocket, process->BuildStreamMask(useShell));
-
-    SendEnvironmentVariables();
-
+    _hasDirectChildren = true;
+    FastOS_UNIX_RealProcess *rprocess = new FastOS_UNIX_RealProcess(process->BuildStreamMask(useShell));
     const char *runDir = process->GetRunDir();
     if (runDir != nullptr) {
-        int runDirLength = strlen(runDir) + 1;
-        WriteInt(_mainSocket, runDirLength);
-        WriteBytes(_mainSocket, runDir, runDirLength);
-    } else
-        WriteInt(_mainSocket, 0);
-
+        rprocess->SetRunDir(runDir);            // Handover
+    }
     const char *stdoutRedirName = process->GetStdoutRedirName();
     if (stdoutRedirName != nullptr) {
-        int stdoutRedirNameLength = strlen(stdoutRedirName) + 1;
-        WriteInt(_mainSocket, stdoutRedirNameLength);
-        WriteBytes(_mainSocket, stdoutRedirName, stdoutRedirNameLength);
-    } else
-        WriteInt(_mainSocket, 0);
-
+        rprocess->SetStdoutRedirName(stdoutRedirName);
+    }
     const char *stderrRedirName = process->GetStderrRedirName();
     if (stderrRedirName != nullptr) {
-        int stderrRedirNameLength = strlen(stderrRedirName) + 1;
-        WriteInt(_mainSocket, stderrRedirNameLength);
-        WriteBytes(_mainSocket, stderrRedirName, stderrRedirNameLength);
-    } else
-        WriteInt(_mainSocket, 0);
-
-
-    // Check return code of process Setup
-    if (ReadInt(_mainSocket) == CODE_SUCCESS) {
-        if (ReceiveFileDescriptor(!useShell,
-                                  FastOS_UNIX_Process::TYPE_IPC,
-                                  process))
-        {
-            if (ReceiveFileDescriptor(pipeStdin,
-                                      FastOS_UNIX_Process::TYPE_STDIN,
-                                      process))
-            {
-                if (ReceiveFileDescriptor(pipeStdout,
-                                          FastOS_UNIX_Process::TYPE_STDOUT,
-                                          process))
-                {
-                    if (ReceiveFileDescriptor(pipeStderr,
-                                              FastOS_UNIX_Process::TYPE_STDERR,
-                                              process))
-                    {
-                        pid_t processId;
-                        ReadBytes(_mainSocket, &processId, sizeof(pid_t));
-                        //                  printf("Received pid = %d\n", int(processId));
-
-                        if (processId != -1) {
-                            process->
-                                SetProcessId(static_cast<unsigned int>(processId));
-
-                            if (!useShell || pipeStdout || pipeStderr)
-                                static_cast<FastOS_UNIX_Application *>
-                                    (_app)->AddToIPCComm(process);
-
-                            rc = true;
-                        }
-                    }
-                }
-            }
-        }
+        rprocess->SetStderrRedirName(stderrRedirName);
     }
+    char **env = CopyEnvironmentVariables();
+    rprocess->SetTerse();
+    rprocess->Setup();
+    if (!useShell)
+        process->SetDescriptor(FastOS_UNIX_Process::TYPE_IPC, rprocess->HandoverIPCDescriptor());
+    if (pipeStdin)
+        process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDIN, rprocess->HandoverStdinDescriptor());
+    if (pipeStdout)
+        process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDOUT, rprocess->HandoverStdoutDescriptor());
+    if (pipeStderr)
+        process->SetDescriptor(FastOS_UNIX_Process::TYPE_STDERR, rprocess->HandoverStderrDescriptor());
+    pid_t processId = -1;
+    if (rprocess->ForkAndExec(cmdLine, env, process, this)) {
+        processId = rprocess->GetProcessID();
+    }
+    if (processId != -1) {
+        process->SetProcessId(static_cast<unsigned int>(processId));
+        if (!useShell || pipeStdout || pipeStderr)
+            static_cast<FastOS_UNIX_Application *>(_app)->AddToIPCComm(process);
+        rc = true;
+    } else {
+        fprintf(stderr, "Forkandexec %s failed\n", cmdLine);
+    }
+    guard.unlock();
+    delete rprocess;
+    FreeEnvironmentVariables(env);
     return rc;
 }
 
 
 void
-FastOS_UNIX_ProcessStarter::PollReapDirectChildren(void)
+FastOS_UNIX_ProcessStarter::PollReapDirectChildren()
 {
     int status;
     pid_t pid;
@@ -1858,8 +1549,7 @@ FastOS_UNIX_ProcessStarter::PollReapDirectChildren(void)
         for(node = _app->GetProcessList();
             node != nullptr; node = node->_next)
         {
-            FastOS_UNIX_Process *xproc =
-                static_cast<FastOS_UNIX_Process *>(node);
+            FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
 
             if (xproc->GetProcessId() == static_cast<unsigned int>(pid))
                 xproc->DeathNotification(normalizedWaitStatus(status));
@@ -1869,7 +1559,7 @@ FastOS_UNIX_ProcessStarter::PollReapDirectChildren(void)
 
 
 void
-FastOS_UNIX_ProcessStarter::PollReapProxiedChildren(void)
+FastOS_UNIX_ProcessStarter::PollReapProxiedChildren()
 {
     // Ask our process starter to report dead processes
     WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_WAIT);
@@ -1888,8 +1578,7 @@ FastOS_UNIX_ProcessStarter::PollReapProxiedChildren(void)
         FastOS_ProcessInterface *node;
         for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
         {
-            FastOS_UNIX_Process *xproc =
-                static_cast<FastOS_UNIX_Process *>(node);
+            FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
 
             if (xproc->GetProcessId() == static_cast<unsigned int>(deadProcess))
             {
@@ -1929,9 +1618,6 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
             break;
         }
 
-        //      printf("wasn't dead yet (%d), sleeping\n",
-        //             process->GetProcessId());
-
         if (pollStillRunning != nullptr)
             break;
 
@@ -1949,45 +1635,6 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
     return rc;
 }
 
-bool FastOS_UNIX_ProcessStarter::Detach(FastOS_UNIX_Process *process)
-{
-    bool rc = true;
-    pid_t pid;
-
-    auto guard = process->_app->getProcessGuard();
-
-    pid = process->GetProcessId();
-
-    if (pid == 0) {
-        return false;                   // Cannot detach nonstarted process.
-    }
-    if (process->GetDeathFlag()) {
-        return true;
-    }
-
-    if (process->GetDirectChild()) {
-        int status = 0;
-        _hasDetachedProcess = true;
-        pid_t rpid = waitpid(pid, &status, WNOHANG);
-        if (rpid > 0) {
-            status = normalizedWaitStatus(status);
-        } else if (rpid < 0)
-            status = FastOS_ProcessInterface::NOTFOUND_EXITCODE;
-        else
-            status = FastOS_ProcessInterface::DETACH_EXITCODE;
-        process->DeathNotification(status);
-    } else {
-        // Ask our process starter to detach process
-        WriteInt(_mainSocket, FastOS_UNIX_ProcessStarter::CODE_DETACH);
-        WriteBytes(_mainSocket, &pid, sizeof(pid_t));
-
-        int returnCode;
-        ReadBytes(_mainSocket, &returnCode, sizeof(int));
-        process->DeathNotification(returnCode);
-    }
-    return rc;
-}
-
 FastOS_UNIX_Process::DescriptorHandle::DescriptorHandle()
     : _fd(-1),
       _wantRead(false),
@@ -1999,7 +1646,7 @@ FastOS_UNIX_Process::DescriptorHandle::DescriptorHandle()
       _writeBuffer()
 {
 }
-FastOS_UNIX_Process::DescriptorHandle::~DescriptorHandle() { }
+FastOS_UNIX_Process::DescriptorHandle::~DescriptorHandle() = default;
 void
 FastOS_UNIX_Process::DescriptorHandle::CloseHandle()
 {
@@ -2016,12 +1663,4 @@ FastOS_UNIX_Process::DescriptorHandle::CloseHandle()
         _readBuffer->Close();
     if (_writeBuffer.get() != nullptr)
         _writeBuffer->Close();
-}
-void
-FastOS_UNIX_Process::DescriptorHandle::CloseHandleDirectChild()
-{
-    if (_fd != -1) {
-        close(_fd);
-        _fd = -1;
-    }
 }

@@ -150,7 +150,7 @@ BuildPollCheck(bool isRead, int filedes,
 
 
 void FastOS_UNIX_IPCHelper::
-PerformAsyncIO(void)
+PerformAsyncIO()
 {
     FastOS_ProcessInterface *node;
     for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
@@ -172,7 +172,7 @@ PerformAsyncIO(void)
 }
 
 void FastOS_UNIX_IPCHelper::
-PerformAsyncIPCIO(void)
+PerformAsyncIPCIO()
 {
     FastOS_UNIX_Process::DescriptorHandle &desc = _appParentIPCDescriptor;
     if (desc._canRead)
@@ -183,7 +183,7 @@ PerformAsyncIPCIO(void)
 
 
 void FastOS_UNIX_IPCHelper::
-BuildPollChecks(void)
+BuildPollChecks()
 {
     FastOS_ProcessInterface *node;
     for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
@@ -389,7 +389,7 @@ SavePollArray(pollfd *fds, unsigned int nfds)
 
 
 void FastOS_UNIX_IPCHelper::
-RemoveClosingProcesses(void)
+RemoveClosingProcesses()
 {
     // We assume that not updating maxFD isn't harmless.
 
@@ -478,13 +478,9 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
             for(node = _app->GetProcessList(); node != nullptr; node = node->_next)
             {
                 FastOS_UNIX_Process *xproc = static_cast<FastOS_UNIX_Process *>(node);
-                FastOS_UNIX_Process::DescriptorHandle &desc =
-                    xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC);
-                DeliverMessages(desc._readBuffer.get());
                 PipeData(xproc, FastOS_UNIX_Process::TYPE_STDOUT);
                 PipeData(xproc, FastOS_UNIX_Process::TYPE_STDERR);
             }
-            DeliverMessages(_appParentIPCDescriptor._readBuffer.get());
 
             // Setup file descriptor sets for the next select() call
             BuildPollChecks();
@@ -567,41 +563,10 @@ Run(FastOS_ThreadInterface *thisThread, void *arg)
     free(fds);
 
     delete this;
-    //      printf("IPCHelper exits\n");
 }
 
-
-bool FastOS_UNIX_IPCHelper::
-SendMessage (FastOS_UNIX_Process *xproc, const void *buffer,
-             int length)
-{
-    bool rc = false;
-
-    FastOS_RingBuffer *ipcBuffer;
-
-    FastOS_UNIX_Process::DescriptorHandle &desc =
-        xproc != nullptr ?
-        xproc->GetDescriptorHandle(FastOS_UNIX_Process::TYPE_IPC) :
-        _appParentIPCDescriptor;
-    ipcBuffer = desc._writeBuffer.get();
-
-    if(ipcBuffer != nullptr) {
-        auto ipcBufferGuard = ipcBuffer->getGuard();
-
-        if(ipcBuffer->GetWriteSpace() >= int((length + sizeof(int)))) {
-            memcpy(ipcBuffer->GetWritePtr(), &length, sizeof(int));
-            ipcBuffer->Produce(sizeof(int));
-            memcpy(ipcBuffer->GetWritePtr(), buffer, length);
-            ipcBuffer->Produce(length);
-
-            NotifyProcessListChange();
-            rc = true;
-        }
-    }
-    return rc;
-}
-
-void FastOS_UNIX_IPCHelper::NotifyProcessListChange ()
+void
+FastOS_UNIX_IPCHelper::NotifyProcessListChange ()
 {
     char dummy = 'x';
     ssize_t nbwtp = write(_wakeupPipe[1], &dummy, 1);
@@ -610,25 +575,24 @@ void FastOS_UNIX_IPCHelper::NotifyProcessListChange ()
     }
 }
 
-void FastOS_UNIX_IPCHelper::Exit ()
+void
+FastOS_UNIX_IPCHelper::Exit ()
 {
     std::lock_guard<std::mutex> guard(_lock);
     _exitFlag = true;
     NotifyProcessListChange();
 }
 
-void FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
+void
+FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
 {
     bool newStream = false;
     for(int type=0; type < int(FastOS_UNIX_Process::TYPE_READCOUNT); type++)
     {
-        FastOS_UNIX_Process::DescriptorType type_ =
-            FastOS_UNIX_Process::DescriptorType(type);
-        FastOS_UNIX_Process::DescriptorHandle &desc =
-            xproc->GetDescriptorHandle(type_);
+        FastOS_UNIX_Process::DescriptorType type_ = FastOS_UNIX_Process::DescriptorType(type);
+        FastOS_UNIX_Process::DescriptorHandle &desc = xproc->GetDescriptorHandle(type_);
 
-        if (desc._fd != -1)
-        {
+        if (desc._fd != -1) {
             newStream = true;
             SetBlocking(desc._fd, false);
         }
@@ -637,7 +601,8 @@ void FastOS_UNIX_IPCHelper::AddProcess (FastOS_UNIX_Process *xproc)
         NotifyProcessListChange();
 }
 
-void FastOS_UNIX_IPCHelper::RemoveProcess (FastOS_UNIX_Process *xproc)
+void
+FastOS_UNIX_IPCHelper::RemoveProcess (FastOS_UNIX_Process *xproc)
 {
     auto closePromise = std::make_unique<std::promise<void>>();
     auto closeFuture = closePromise->get_future();
@@ -646,33 +611,8 @@ void FastOS_UNIX_IPCHelper::RemoveProcess (FastOS_UNIX_Process *xproc)
     closeFuture.wait();
 }
 
-void FastOS_UNIX_IPCHelper::DeliverMessages (FastOS_RingBuffer *buffer)
-{
-    if(buffer == nullptr)
-        return;
-
-    auto bufferGuard = buffer->getGuard();
-
-    unsigned int readSpace;
-    while((readSpace = buffer->GetReadSpace()) > sizeof(int))
-    {
-        FastOS_RingBufferData *bufferData = buffer->GetData();
-
-        if((readSpace - sizeof(int)) >= bufferData->_messageSize)
-        {
-            _app->OnReceivedIPCMessage(&bufferData->_buffer[0] + sizeof(int),
-                                       bufferData->_messageSize);
-            buffer->Consume(sizeof(int) + bufferData->_messageSize);
-            buffer->RepositionDataAt0();
-        }
-        else
-            break;
-    }
-}
-
-void FastOS_UNIX_IPCHelper::
-PipeData (FastOS_UNIX_Process *process,
-          FastOS_UNIX_Process::DescriptorType type)
+void
+FastOS_UNIX_IPCHelper::PipeData(FastOS_UNIX_Process *process, FastOS_UNIX_Process::DescriptorType type)
 {
     FastOS_UNIX_Process::DescriptorHandle &desc = process->GetDescriptorHandle(type);
     FastOS_RingBuffer *buffer = desc._readBuffer.get();

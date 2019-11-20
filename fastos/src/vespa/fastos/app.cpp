@@ -8,17 +8,12 @@
 
 #include "app.h"
 #include "file.h"
-
 #include "process.h"
 #include "thread.h"
 #include <cstring>
 #include <fcntl.h>
 
-FastOS_ApplicationInterface *FastOS_ProcessInterface::_app;
-FastOS_ThreadPool *FastOS_ProcessInterface::GetThreadPool ()
-{
-    return _app->GetThreadPool();
-}
+FastOS_ApplicationInterface *FastOS_ProcessInterface::_app = nullptr;
 
 FastOS_ThreadPool *FastOS_ApplicationInterface::GetThreadPool ()
 {
@@ -29,7 +24,6 @@ FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
     _threadPool(nullptr),
     _processList(nullptr),
     _processListMutex(nullptr),
-    _disableLeakReporting(false),
     _argc(0),
     _argv(nullptr)
 {
@@ -48,21 +42,18 @@ FastOS_ApplicationInterface::FastOS_ApplicationInterface() :
 #endif
 }
 
-FastOS_ApplicationInterface::~FastOS_ApplicationInterface ()
-{
-}
+FastOS_ApplicationInterface::~FastOS_ApplicationInterface () = default;
 
 bool FastOS_ApplicationInterface::Init ()
 {
     bool rc=false;
 
-    if(PreThreadInit()) {
-        if(FastOS_Thread::InitializeClass()) {
-            if(FastOS_File::InitializeClass()) {
-
-                    _processListMutex = new std::mutex;
-                    _threadPool = new FastOS_ThreadPool(128 * 1024);
-                    rc = true;
+    if (PreThreadInit()) {
+        if (FastOS_Thread::InitializeClass()) {
+            if (FastOS_File::InitializeClass()) {
+                _processListMutex = new std::mutex;
+                _threadPool = new FastOS_ThreadPool(128 * 1024);
+                rc = true;
             } else
                 fprintf(stderr, "FastOS_File class initialization failed.\n");
         } else
@@ -77,9 +68,7 @@ bool FastOS_ApplicationInterface::Init ()
 void FastOS_ApplicationInterface::Cleanup ()
 {
     if(_threadPool != nullptr) {
-        //      printf("Closing threadpool...\n");
         _threadPool->Close();
-        //      printf("Deleting threadpool...\n");
         delete _threadPool;
         _threadPool = nullptr;
     }
@@ -100,8 +89,7 @@ int FastOS_ApplicationInterface::Entry (int argc, char **argv)
     _argc = argc;
     _argv = argv;
 
-    if(Init())
-    {
+    if (Init()) {
         rc = Main();
     }
 
@@ -110,16 +98,8 @@ int FastOS_ApplicationInterface::Entry (int argc, char **argv)
     return rc;
 }
 
-void FastOS_ApplicationInterface::
-OnReceivedIPCMessage (const void *data, size_t length)
-{
-    (void)data;
-    (void)length;
-    // Default dummy handler
-}
-
-void FastOS_ApplicationInterface::
-AddChildProcess (FastOS_ProcessInterface *node)
+void
+FastOS_ApplicationInterface::AddChildProcess (FastOS_ProcessInterface *node)
 {
     node->_prev = nullptr;
     node->_next = _processList;
@@ -130,8 +110,8 @@ AddChildProcess (FastOS_ProcessInterface *node)
     _processList = node;
 }
 
-void FastOS_ApplicationInterface::
-RemoveChildProcess (FastOS_ProcessInterface *node)
+void
+FastOS_ApplicationInterface::RemoveChildProcess (FastOS_ProcessInterface *node)
 {
     if(node->_prev)
         node->_prev->_next = node->_next;

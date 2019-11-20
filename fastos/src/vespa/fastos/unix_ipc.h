@@ -27,18 +27,16 @@ protected:
     void BuildPollCheck (bool isRead, int filedes, FastOS_RingBuffer *buffer, bool *check);
     void BuildPollArray(pollfd **fds, unsigned int *nfds, unsigned int *allocnfds);
     bool SavePollArray(pollfd *fds, unsigned int nfds);
-    void PerformAsyncIO (void);
-    void PerformAsyncIPCIO (void);
-    void BuildPollChecks(void);
-    void DeliverMessages (FastOS_RingBuffer *buffer);
+    void PerformAsyncIO ();
+    void PerformAsyncIPCIO ();
+    void BuildPollChecks();
     void PipeData (FastOS_UNIX_Process *process, FastOS_UNIX_Process::DescriptorType type);
-    void RemoveClosingProcesses(void);
+    void RemoveClosingProcesses();
 
 public:
     FastOS_UNIX_IPCHelper (FastOS_ApplicationInterface *app, int appDescriptor);
     ~FastOS_UNIX_IPCHelper ();
     void Run (FastOS_ThreadInterface *thisThread, void *arg) override;
-    bool SendMessage (FastOS_UNIX_Process *xproc, const void *buffer, int length);
     void NotifyProcessListChange ();
     void AddProcess (FastOS_UNIX_Process *xproc);
     void RemoveProcess (FastOS_UNIX_Process *xproc);

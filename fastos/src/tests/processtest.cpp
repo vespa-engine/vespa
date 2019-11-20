@@ -2,7 +2,6 @@
 #include "tests.h"
 #include <vespa/fastos/process.h>
 #include <vespa/fastos/timestamp.h>
-#include <vespa/fastos/file.h>
 
 class MyListener : public FastOS_ProcessRedirectListener
 {
@@ -47,10 +46,6 @@ public:
       _receivedBytes += length;
       if(data != nullptr)
       {
-#if 0
-         printf("[%s] received %u bytes of data:\n%s\n",
-                _title, length, static_cast<const char *>(data));
-#endif
       }
       else
          delete(this);
@@ -61,43 +56,6 @@ int MyListener::_allocCount = 0;
 int MyListener::_successCount = 0;
 int MyListener::_failCount = 0;
 std::mutex *MyListener::_counterLock = nullptr;
-
-
-class ThreadRunJob : public FastOS_Runnable
-{
-private:
-   ThreadRunJob(const ThreadRunJob&);
-   ThreadRunJob& operator=(const ThreadRunJob&);
-
-   const char *_processCmdLine;
-   int _timeSpent;
-public:
-   ThreadRunJob (const char *commandLine) :
-      _processCmdLine(commandLine),
-      _timeSpent(0)
-   {
-   }
-
-   void Run (FastOS_ThreadInterface *, void *) override
-   {
-
-      fastos::StopWatch timer;
-
-      FastOS_Process xproc(_processCmdLine);
-      int returnCode = -1;
-
-      if (xproc.Create()) {
-         xproc.Wait(&returnCode);
-      }
-
-      _timeSpent = int(timer.elapsed().ms());
-   }
-
-   int GetTimeSpent ()
-   {
-      return _timeSpent;
-   }
-};
 
 class ProcessTest : public BaseTest
 {
@@ -121,33 +79,6 @@ public:
        _counterLock(nullptr),
        _isChild(true)
    {
-   }
-
-   void OnReceivedIPCMessage (const void *data, size_t length) override
-   {
-      //      printf("Data: [%s]\n", static_cast<const char *>(data));
-
-      if(length == 5) {
-         const char *dataMatch = "IPCM";
-         if(!_isChild)
-            dataMatch = "IPCR";
-         if(strcmp(static_cast<const char *>(data), dataMatch) != 0)
-            Progress(false,
-                     "Received message did not match \"%s\" (%s)",
-                     dataMatch, static_cast<const char *>(data));
-      }
-      else
-         Progress(false,
-                  "Received message was not 5 bytes long (%d)", length);
-
-      _gotMessage = true;
-
-      // We only have the counter lock if we are the parent process.
-      if(_counterLock != nullptr)
-      {
-          std::lock_guard<std::mutex> guard(*_counterLock);
-          _receivedMessages++;
-      }
    }
 
    void PollWaitTest ()
@@ -316,8 +247,7 @@ public:
             break;
       }
 
-      Progress(MyListener::_allocCount == 0, "MyListener alloc count = %d",
-               MyListener::_allocCount);
+      Progress(MyListener::_allocCount == 0, "MyListener alloc count = %d", MyListener::_allocCount);
 
       if (!doKill && !waitKill) {
          Progress(MyListener::_successCount == (2 * numLoops * numEachTime),
@@ -333,106 +263,13 @@ public:
       PrintSeparator();
    }
 
-   int DoChildRole () {
-      int rc = 124;
-      int i;
-      for(i=0; i<(20*10); i++) {
-         if(_gotMessage)
-            break;
-
-         FastOS_Thread::Sleep(100);
-      }
-      if(i < (20*10))
-      {
-         // Send a message to the parent process.
-         const char *messageString = "IPCR";
-         SendParentIPCMessage(messageString, strlen(messageString) + 1);
-         rc = 123;
-      }
-      else
-         Progress(false, "Child timed out waiting for IPC message");
-
-      return rc;
-   }
-
-   void IPCTest () {
-      TestHeader ("IPC Test");
-      const char *childProgram = _argv[1];
-
-      _counterLock = new std::mutex;
-
-      int i;
-      for(i=0; i<30; i++)
-      {
-         FastOS_Process process(childProgram);
-         if(process.Create())
-         {
-            // Send a message to the child process.
-            const char *messageString = "IPCM";
-            process.SendIPCMessage(messageString,
-                                   strlen(messageString) + 1);
-
-            // Wait for the process to end.
-            int returnCode;
-            if(process.Wait(&returnCode))
-            {
-               Progress(returnCode == 123,
-                        "Child exited with code: %d", returnCode);
-            }
-            else
-               Progress(false, "process.Wait() failed");
-         }
-         else
-            Progress(false, "process.Create() (%s) failed", childProgram);
-      }
-
-      Progress(_receivedMessages == i,
-               "Received %d messages", _receivedMessages);
-
-      delete _counterLock;
-      _counterLock = nullptr;
-
-      PrintSeparator();
-   }
-
-   void NoInheritTest ()
-   {
-      TestHeader("No Inherit Test");
-
-      const char *filename = "process__test.tmp___";
-
-      Progress(true, "Opening '%s' for writing...", filename);
-      void *inheritData = FastOS_Process::PrefopenNoInherit();
-      FILE *fp = fopen(filename, "w");
-      int numProc = FastOS_Process::PostfopenNoInherit(inheritData);
-      Progress(fp != nullptr, "Open file");
-      if(fp != nullptr)
-      {
-         Progress(numProc > 0, "Number of files processed = %d\n",
-                  numProc);
-         fclose(fp);
-      }
-      FastOS_File::Delete(filename);
-
-      PrintSeparator();
-   }
-
    int Main () override
    {
-      // This process is started as either a parent or a child.
-      // When the parent role is desired, a child program is supplied
-      // as argv[1]
-
-      if(_argc != 3)
-         return DoChildRole();
-
       _isChild = false;
 
       printf("grep for the string '%s' to detect failures.\n\n", failString);
 
-      NoInheritTest();
       PollWaitTest();
-      IPCTest();
       ProcessTests(false, true, false);
       ProcessTests(true, true, false);
       ProcessTests(true, false, false);

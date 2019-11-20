@@ -26,7 +26,7 @@ private:
     FastOS_UNIX_Application& operator=(const FastOS_UNIX_Application&);
 
     FastOS_UNIX_ProcessStarter *_processStarter;
-    FastOS_UNIX_IPCHelper *_ipcHelper;
+    FastOS_UNIX_IPCHelper     *_ipcHelper;
 
 protected:
     bool PreThreadInit () override;
@@ -68,15 +68,11 @@ public:
     /**
      * Called before calling GetOpt() or GetOptLong() by sub-applications.
      */
-    void resetOptIndex(int OptionIndex);
-
-    static unsigned int GetCurrentProcessId ();
+    static void resetOptIndex(int OptionIndex);
 
     FastOS_UNIX_ProcessStarter *GetProcessStarter ();
     bool Init () override;
     void Cleanup () override;
-    bool SendParentIPCMessage (const void *data, size_t length) override;
-    bool SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer, int length);
     void AddToIPCComm (FastOS_UNIX_Process *process);
     void RemoveFromIPCComm (FastOS_UNIX_Process *process);
 };
