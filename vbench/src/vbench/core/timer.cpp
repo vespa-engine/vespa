@@ -5,21 +5,22 @@
 namespace vbench {
 
 Timer::Timer()
-    : _time()
+    : _zero(clock::now())
 {
-    reset();
 }
 
 void
 Timer::reset()
 {
-    _time.SetNow();
+    _zero = clock::now();
 }
 
 double
 Timer::sample() const
 {
-    return (_time.MilliSecsToNow() / 1000.0);
+    using seconds = std::chrono::duration<double>;
+    seconds seconds_since_zero = (clock::now() - _zero);
+    return seconds_since_zero.count();
 }
 
 } // namespace vbench
