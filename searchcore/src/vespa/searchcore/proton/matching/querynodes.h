@@ -93,7 +93,6 @@ struct ProtonTermBase : public Base,
 
     // ITermData interface
     uint32_t getPhraseLength() const override final { return numTerms<Base>(*this); }
-    uint32_t getTermIndex() const override final { return -1; }
     search::query::Weight getWeight() const override final { return Base::getWeight(); }
     uint32_t getUniqueId() const override final { return Base::getId(); }
 };

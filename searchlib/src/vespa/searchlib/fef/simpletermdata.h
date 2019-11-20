@@ -49,13 +49,6 @@ public:
     uint32_t getPhraseLength() const override { return _numTerms; }
 
     /**
-     * Obtain the location of this term in the original user query.
-     *
-     * @return term index
-     **/
-    uint32_t getTermIndex() const override { return _termIndex; }
-
-    /**
      * Obtain the unique id of this term. 0 means not set.
      *
      * @return unique id or 0

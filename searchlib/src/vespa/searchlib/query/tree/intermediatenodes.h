@@ -47,18 +47,15 @@ class Equiv : public QueryNodeMixin<Equiv, Intermediate> {
 private:
     int32_t _id;
     Weight  _weight;
-    int32_t _term_index;
 public:
     virtual ~Equiv() = 0;
 
     Equiv(int32_t id, Weight weight)
-        : _id(id), _weight(weight), _term_index(-1)
+        : _id(id), _weight(weight)
     {}
-    void setTermIndex(int32_t term_index) { _term_index = term_index; }
 
     Weight getWeight() const { return _weight; }
     int32_t getId() const { return _id; }
-    int32_t getTermIndex() const { return _term_index; }
 };
 
 //-----------------------------------------------------------------------------

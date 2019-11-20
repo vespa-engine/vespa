@@ -463,30 +463,6 @@ TEST("require that Invalid Trees Cannot Be Built") {
                  builder.error());
 }
 
-TEST("require that Term Index Can Be Added") {
-    const int term_index0 = 14;
-    const int term_index1 = 65;
-
-    QueryBuilder<SimpleQueryNodeTypes> builder;
-    builder.addAnd(2);
-    builder.addStringTerm(str[0], view[0], id[0], weight[0])
-        .setTermIndex(term_index0);
-    builder.addSubstringTerm(str[1], view[1], id[1], weight[1])
-        .setTermIndex(term_index1);
-
-    Node::UP node = builder.build();
-    ASSERT_TRUE(!builder.hasError());
-    Intermediate *intermediate = dynamic_cast<Intermediate *>(node.get());
-    ASSERT_TRUE(intermediate);
-    ASSERT_TRUE(intermediate->getChildren().size() == 2);
-    Term *term = dynamic_cast<Term *>(intermediate->getChildren()[0]);
-    ASSERT_TRUE(term);
-    EXPECT_EQUAL(term_index0, term->getTermIndex());
-    term = dynamic_cast<Term *>(intermediate->getChildren()[1]);
-    ASSERT_TRUE(term);
-    EXPECT_EQUAL(term_index1, term->getTermIndex());
-}
-
 TEST("require that Rank Can Be Turned Off") {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(3);
