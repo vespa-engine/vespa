@@ -348,9 +348,8 @@ public class InternalStepRunner implements StepRunner {
             return false;
 
         for (URI endpoint : endpoints.get(zoneId).values()) {
-            boolean ready = id.instance().isTester() ?
-                    controller.jobController().cloud().testerReady(endpoint)
-                    : controller.jobController().cloud().ready(endpoint);
+            boolean ready = id.instance().isTester() ? controller.jobController().cloud().testerReady(endpoint)
+                                                     : controller.jobController().cloud().ready(endpoint);
 
             if (!ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);

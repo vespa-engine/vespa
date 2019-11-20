@@ -48,7 +48,7 @@ public class HttpEndpoint implements Endpoint {
             return client.send(authenticator.authenticated(request).build(), handler);
         }
         catch (IOException | InterruptedException e) {
-            throw new RuntimeException(request.build() + " failed: " + e);
+            throw new RuntimeException(request.build() + " failed: " + e.getMessage(), e);
         }
     }
 
