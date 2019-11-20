@@ -7,13 +7,12 @@
 
 namespace mbus {
 
-    /**
+/**
  * To facilitate several configuration parameters to the {@link MessageBus#createSourceSession(ReplyHandler,
  * SourceSessionParams)}, all parameters are held by this class. This class has reasonable default values for each
  * parameter.
  *
  * @author Simon Thoresen Hult
- * @version $Id$
  */
 class SourceSessionParams {
 private:

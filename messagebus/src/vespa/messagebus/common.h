@@ -10,6 +10,8 @@ namespace mbus {
 using string = vespalib::string;
 
 using seconds = std::chrono::duration<double>;
+using milliseconds = std::chrono::milliseconds;
+
 
 
 } // namespace mbus

@@ -42,8 +42,8 @@ Test::Main()
         EXPECT_EQUAL(3u, foo.getRetry());
         EXPECT_EQUAL(1u, bar.getRetry());
         EXPECT_TRUE(foo.getTimeReceived() >= bar.getTimeReceived());
-        EXPECT_EQUAL(4u, foo.getTimeRemaining().count());
-        EXPECT_EQUAL(2u, bar.getTimeRemaining().count());
+        EXPECT_EQUAL(4ms, foo.getTimeRemaining());
+        EXPECT_EQUAL(2ms, bar.getTimeRemaining());
     }
     {
         // Test reply swap state.

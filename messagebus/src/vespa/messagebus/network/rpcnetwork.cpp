@@ -7,7 +7,6 @@
 #include "rpcnetworkparams.h"
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/tracelevel.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/routing/routingnode.h>
 #include <vespa/slobrok/sbregister.h>
@@ -15,7 +14,6 @@
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/frt/supervisor.h>
@@ -46,7 +44,7 @@ public:
         _gate() {
         ScheduleNow();
     }
-    ~SyncTask() = default;
+    ~SyncTask() override = default;
 
     void await() {
         _gate.await();
@@ -322,7 +320,7 @@ void
 RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients)
 {
     SendContext &ctx = *(new SendContext(*this, msg, recipients)); // deletes self
-    double timeout = ctx._msg.getTimeRemainingNow().count() / 1000.0;
+    seconds timeout = ctx._msg.getTimeRemainingNow();
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
         RoutingNode *&recipient = ctx._recipients[i];
 
@@ -335,7 +333,8 @@ RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients
 
 namespace {
 
-void emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
+void
+emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& recipient) {
     if (recipient.hasServiceAddress()) {
         // At this point the service addresses _should_ be RPCServiceAddress instances,
         // but stay on the safe side of the tracks anyway.
@@ -352,7 +351,8 @@ void emit_recipient_endpoint(vespalib::asciistream& stream, const RoutingNode& r
 
 }
 
-vespalib::string RPCNetwork::buildRecipientListString(const SendContext& ctx) {
+vespalib::string
+RPCNetwork::buildRecipientListString(const SendContext& ctx) {
     vespalib::asciistream s;
     bool first = true;
     for (const auto* recipient : ctx._recipients) {

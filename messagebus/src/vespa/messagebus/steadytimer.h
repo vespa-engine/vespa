@@ -12,6 +12,7 @@ namespace mbus {
  */
 class SteadyTimer : public ITimer {
 public:
+    //TODO Return chrono::duration
     uint64_t getMilliTime() const override;
 };
 

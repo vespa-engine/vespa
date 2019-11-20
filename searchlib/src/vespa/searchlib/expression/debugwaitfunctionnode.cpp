@@ -30,7 +30,7 @@ using std::chrono::microseconds;
 bool
 DebugWaitFunctionNode::onExecute() const
 {
-    fastos::StopWatch::waitAtLeast(microseconds(static_cast<long>(_waitTime * 1000000)), _busyWait);
+    fastos::StopWatch::waitAtLeast(microseconds(long(_waitTime * 1000000)), _busyWait);
 
     getArg().execute();
     updateResult().assign(getArg().getResult());

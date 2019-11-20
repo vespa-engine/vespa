@@ -2,8 +2,8 @@
 #pragma once
 
 #include <vespa/messagebus/blobref.h>
+#include <vespa/messagebus/common.h>
 #include <vespa/vespalib/component/version.h>
-#include <chrono>
 
 namespace mbus {
 
@@ -20,7 +20,6 @@ class RPCSendAdapter
 protected:
     RPCSendAdapter() = default;
 public:
-    using milliseconds = std::chrono::milliseconds;
     RPCSendAdapter(const RPCSendAdapter &) = delete;
     RPCSendAdapter & operator = (const RPCSendAdapter &) = delete;
     /**

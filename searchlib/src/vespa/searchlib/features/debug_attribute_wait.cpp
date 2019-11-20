@@ -43,7 +43,7 @@ DebugAttributeWaitExecutor::execute(uint32_t docId)
         waitTime = _buf[0];
     }
     fastos::StopWatch timer;
-    fastos::StopWatch::waitAtLeast(microseconds(static_cast<long>(waitTime * 1000000)), _params.busyWait);
+    fastos::StopWatch::waitAtLeast(microseconds(long(waitTime * 1000000)), _params.busyWait);
     outputs().set_number(0, timer.elapsed().sec());
 }
 

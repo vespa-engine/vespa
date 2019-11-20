@@ -10,24 +10,22 @@ namespace mbus::network::internal {
  * an rpc return value. This object is held as the context of an FRT_RPCRequest.
  */
 class SendContext {
-private:
-    mbus::RoutingNode &_recipient;
-    mbus::Trace        _trace;
-    double             _timeout;
-
 public:
-    using milliseconds = std::chrono::milliseconds;
     using UP = std::unique_ptr<SendContext>;
     SendContext(const SendContext &) = delete;
     SendContext & operator = (const SendContext &) = delete;
     SendContext(mbus::RoutingNode &recipient, milliseconds timeRemaining)
         : _recipient(recipient),
           _trace(recipient.getTrace().getLevel()),
-          _timeout(timeRemaining.count() * 0.001)
+          _timeout(timeRemaining)
    { }
     mbus::RoutingNode &getRecipient() { return _recipient; }
     mbus::Trace &getTrace() { return _trace; }
-    double getTimeout() { return _timeout; }
+    seconds getTimeout() { return _timeout; }
+private:
+    mbus::RoutingNode &_recipient;
+    mbus::Trace        _trace;
+    seconds             _timeout;
 };
 
 /**

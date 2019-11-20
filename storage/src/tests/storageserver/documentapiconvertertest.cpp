@@ -203,7 +203,7 @@ TEST_F(DocumentApiConverterTest, create_visitor) {
 
 TEST_F(DocumentApiConverterTest, create_visitor_high_timeout) {
     documentapi::CreateVisitorMessage cv("mylib", "myinstance", "control-dest", "data-dest");
-    cv.setTimeRemaining(std::chrono::milliseconds(std::numeric_limits<uint32_t>::max() + 1l)); // Will be INT_MAX
+    cv.setTimeRemaining(std::chrono::milliseconds(1l << 32)); // Will be larger than INT_MAX
 
     auto cmd = toStorageAPI<api::CreateVisitorCommand>(cv);
     EXPECT_EQ("mylib", cmd->getLibraryName());

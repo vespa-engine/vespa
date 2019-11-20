@@ -13,7 +13,6 @@ namespace mbus {
 class Message : public Routable {
 public:
     using time_point = std::chrono::steady_clock::time_point;
-    using milliseconds = std::chrono::milliseconds;
     using UP = std::unique_ptr<Message>;
 
     Message();

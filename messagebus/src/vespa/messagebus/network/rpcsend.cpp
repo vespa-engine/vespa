@@ -126,7 +126,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
         ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
                               make_string("Sending message (version %s) from %s to '%s' with %.2f seconds timeout.",
                                           version.toString().c_str(), _clientIdent.c_str(),
-                                          address.getServiceName().c_str(), ctx->getTimeout()));
+                                          address.getServiceName().c_str(), ctx->getTimeout().count()));
     }
 
     if (hop.getIgnoreResult()) {
@@ -141,7 +141,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
     } else {
         SendContext *ptr = ctx.release();
         req->SetContext(FNET_Context(ptr));
-        address.getTarget().getFRTTarget().InvokeAsync(req, ptr->getTimeout(), this);
+        address.getTarget().getFRTTarget().InvokeAsync(req, ptr->getTimeout().count(), this);
     }
 }
 
@@ -164,7 +164,7 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
             case FRTE_RPC_TIMEOUT:
                 error = Error(ErrorCode::TIMEOUT,
                               make_string("A timeout occured while waiting for '%s' (%g seconds expired); %s",
-                                          serviceName.c_str(), ctx->getTimeout(), req->GetErrorMessage()));
+                                          serviceName.c_str(), ctx->getTimeout().count(), req->GetErrorMessage()));
                 break;
             case FRTE_RPC_CONNECTION:
                 error = Error(ErrorCode::CONNECTION_ERROR,

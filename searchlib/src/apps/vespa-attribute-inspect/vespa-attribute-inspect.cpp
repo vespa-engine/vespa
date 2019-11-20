@@ -167,14 +167,14 @@ LoadAttribute::Main()
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
     fastos::StopWatch timer;
     load(ptr);
-    std::cout << "load time: " << timer.elapsed().ms() << " seconds " << std::endl;
+    std::cout << "load time: " << timer.elapsed().sec() << " seconds " << std::endl;
 
     std::cout << "numDocs: " << ptr->getNumDocs() << std::endl;
 
     if (doApplyUpdate) {
         timer.restart();
         applyUpdate(ptr);
-        std::cout << "update time: " << timer.elapsed().ms() << " seconds " << std::endl;
+        std::cout << "update time: " << timer.elapsed().sec() << " seconds " << std::endl;
     }
 
     if (doPrintContent) {
@@ -193,7 +193,7 @@ LoadAttribute::Main()
         std::cout << "saving attribute: " << saveFile << std::endl;
         timer.restart();
         ptr->save(saveFile);
-        std::cout << "save time: " << timer.elapsed().ms() << " seconds " << std::endl;
+        std::cout << "save time: " << timer.elapsed().sec() << " seconds " << std::endl;
     }
 
     return 0;

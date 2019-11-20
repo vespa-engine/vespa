@@ -38,7 +38,6 @@ class RPCSend : public RPCSendAdapter,
 public:
     class Params {
     public:
-        using milliseconds = std::chrono::milliseconds;
         virtual ~Params() {}
         virtual vespalib::Version getVersion() const = 0;
         virtual vespalib::stringref getProtocol() const = 0;

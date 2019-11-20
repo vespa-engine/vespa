@@ -74,7 +74,7 @@ Resender::scheduleRetry(RoutingNode &node)
     if (delay < 0) {
         delay = _retryPolicy->getRetryDelay(retry);
     }
-    milliseconds delayMS(static_cast<long>(delay * 1000));
+    milliseconds delayMS(long(delay * 1000));
     if (msg.getTimeRemainingNow() <= delayMS) {
         node.addError(ErrorCode::TIMEOUT, "Timeout exceeded by resender, giving up.");
         return false;
