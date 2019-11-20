@@ -6,7 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search::attribute { class IAttributeVector; }
-namespace vespalib::tensor { class Tensor; }
+namespace vespalib::eval { class Value; }
 
 namespace search::queryeval {
 
@@ -35,7 +35,7 @@ public:
      * Returns the tensor of the given name that was passed with the query.
      * Returns nullptr if the tensor is not found or if it is not a tensor.
      */
-    virtual std::unique_ptr<vespalib::tensor::Tensor> get_query_tensor(const vespalib::string& tensor_name) const = 0;
+    virtual std::unique_ptr<vespalib::eval::Value> get_query_tensor(const vespalib::string& tensor_name) const = 0;
 };
 
 }

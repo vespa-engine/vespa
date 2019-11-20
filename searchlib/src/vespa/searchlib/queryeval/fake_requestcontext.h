@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/eval/tensor/tensor.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
@@ -25,9 +25,9 @@ public:
                    ? _attributeContext->getAttribute(name)
                    : nullptr;
     }
-    vespalib::tensor::Tensor::UP get_query_tensor(const vespalib::string& tensor_name) const override {
+    vespalib::eval::Value::UP get_query_tensor(const vespalib::string& tensor_name) const override {
         (void) tensor_name;
-        return vespalib::tensor::Tensor::UP();
+        return vespalib::eval::Value::UP();
     }
 
 private:

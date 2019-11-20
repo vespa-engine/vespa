@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "requestcontext.h"
-#include <vespa/eval/tensor/serialization/typed_binary_format.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -40,7 +40,7 @@ RequestContext::asyncForAttribute(const vespalib::string &name, std::unique_ptr<
     _attributeContext.asyncForAttribute(name, std::move(func));
 }
 
-vespalib::tensor::Tensor::UP
+vespalib::eval::Value::UP
 RequestContext::get_query_tensor(const vespalib::string& tensor_name) const
 {
     auto property = _rank_properties.lookup(tensor_name);
@@ -48,13 +48,13 @@ RequestContext::get_query_tensor(const vespalib::string& tensor_name) const
         const vespalib::string& value = property.get();
         vespalib::nbostream stream(value.data(), value.size());
         try {
-            return vespalib::tensor::TypedBinaryFormat::deserialize(stream);
+            return vespalib::tensor::DefaultTensorEngine::ref().decode(stream);
         } catch (vespalib::IllegalArgumentException& ex) {
             LOG(warning, "Query tensor '%s' could not be deserialized", tensor_name.c_str());
-            return vespalib::tensor::Tensor::UP();
+            return vespalib::eval::Value::UP();
         }
     }
-    return vespalib::tensor::Tensor::UP();
+    return vespalib::eval::Value::UP();
 }
 
 }

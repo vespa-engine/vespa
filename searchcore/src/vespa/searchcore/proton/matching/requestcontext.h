@@ -27,7 +27,7 @@ public:
 
     const search::attribute::IAttributeVector *getAttributeStableEnum(const vespalib::string &name) const override;
 
-    vespalib::tensor::Tensor::UP get_query_tensor(const vespalib::string& tensor_name) const override;
+    vespalib::eval::Value::UP get_query_tensor(const vespalib::string& tensor_name) const override;
 
 
 private:
