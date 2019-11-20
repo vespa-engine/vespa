@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.model;
 
 import com.yahoo.cloud.config.LbServicesConfig;
-import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.model.api.ApplicationInfo;
@@ -21,17 +20,14 @@ import java.util.Map;
  * 
  * @author Vegard Havdal
  */
-public class SuperModelConfigProvider implements LbServicesConfig.Producer, RoutingConfig.Producer  {
+public class SuperModelConfigProvider implements LbServicesConfig.Producer  {
 
     private final SuperModel superModel;
     private final LbServicesProducer lbProd;
-    @SuppressWarnings("removal") private final RoutingProducer zoneProd;
 
-    @SuppressWarnings("removal") // For RoutingProducer
     public SuperModelConfigProvider(SuperModel superModel, Zone zone, FlagSource flagSource) {
         this.superModel = superModel;
         this.lbProd = new LbServicesProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()), zone, flagSource);
-        this.zoneProd = new RoutingProducer(Collections.unmodifiableMap(superModel.getModelsPerTenant()));
     }
 
     public SuperModel getSuperModel() {
@@ -44,10 +40,6 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer, Rout
             LbServicesConfig.Builder builder = new LbServicesConfig.Builder();
             getConfig(builder);
             return ConfigPayload.fromInstance(new LbServicesConfig(builder));
-        } else if (configKey.equals(new ConfigKey<>(RoutingConfig.class, configKey.getConfigId()))) {
-            RoutingConfig.Builder builder = new RoutingConfig.Builder();
-            getConfig(builder);
-            return ConfigPayload.fromInstance(new RoutingConfig(builder));
         } else {
             throw new ConfigurationRuntimeException(configKey + " is not valid when asking for config from SuperModel");
         }
@@ -59,12 +51,7 @@ public class SuperModelConfigProvider implements LbServicesConfig.Producer, Rout
     public void getConfig(LbServicesConfig.Builder builder) {
         lbProd.getConfig(builder);
     }
-    
-    @Override
-    public void getConfig(RoutingConfig.Builder builder) {
-        zoneProd.getConfig(builder);
-    }
-    
+
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> configClass, 
                                                                     ApplicationId applicationId,
                                                                     String configId) {

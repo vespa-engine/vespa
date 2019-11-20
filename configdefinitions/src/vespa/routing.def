@@ -1,9 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-# List of routing hosts populated from the zone-application in Hosted mode
-
-# TODO Remove once YCA filter is removed
-
-namespace=cloud.config
-
-# Host name(s) of routing/proxy nodes
-hosts[] string
