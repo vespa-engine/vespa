@@ -6,6 +6,7 @@
 #include <vespa/vespalib/net/simple_metric_snapshot.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/fastos/time.h>
 #include <string>
 #include <fcntl.h>
 #include <sys/wait.h>

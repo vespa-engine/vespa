@@ -398,6 +398,8 @@ public:
         handleNumberTermAsText(n);
     }
 
+    void not_supported(Node &) {}
+
     void visit(LocationTerm &n)  override { visitTerm(n); }
     void visit(PrefixTerm &n)    override { visitTerm(n); }
     void visit(RangeTerm &n)     override { visitTerm(n); }
@@ -405,7 +407,8 @@ public:
     void visit(SubstringTerm &n) override { visitTerm(n); }
     void visit(SuffixTerm &n)    override { visitTerm(n); }
     void visit(RegExpTerm &n)    override { visitTerm(n); }
-    void visit(PredicateQuery &) override { }
+    void visit(PredicateQuery &n) override { not_supported(n); }
+    void visit(NearestNeighborTerm &n) override { not_supported(n); }
 };
 
 Blueprint::UP

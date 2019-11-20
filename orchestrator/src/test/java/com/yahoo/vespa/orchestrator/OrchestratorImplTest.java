@@ -4,6 +4,7 @@ package com.yahoo.vespa.orchestrator;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.test.TestTimer;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -16,17 +17,18 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
+import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZookeeperStatusService;
 import com.yahoo.vespa.service.monitor.ServiceModel;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -61,6 +63,8 @@ import static org.mockito.Mockito.spy;
  */
 public class OrchestratorImplTest {
 
+    private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
+
     private ApplicationId app1;
     private ApplicationId app2;
     private HostName app1_host1;
@@ -69,7 +73,7 @@ public class OrchestratorImplTest {
     private ClusterControllerClientFactoryMock clustercontroller;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         // Extract applications and hosts from dummy instance lookup service
         Iterator<ApplicationInstance> iterator = DummyInstanceLookupService.getApplications().iterator();
         ApplicationInstanceReference app1_ref = iterator.next().reference();
@@ -78,19 +82,15 @@ public class OrchestratorImplTest {
         app2 = OrchestratorUtil.toApplicationId(iterator.next().reference());
 
         clustercontroller = new ClusterControllerClientFactoryMock();
-        orchestrator = new OrchestratorImpl(
-                clustercontroller,
-                new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
-                new OrchestratorConfig(new OrchestratorConfig.Builder()),
-                new DummyInstanceLookupService());
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clustercontroller, applicationApiFactory),
+                                            clustercontroller,
+                                            new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer()),
+                                            new DummyInstanceLookupService(),
+                                            0,
+                                            new ManualClock(),
+                                            applicationApiFactory);
 
         clustercontroller.setAllDummyNodesAsUp();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        orchestrator = null;
-        clustercontroller = null;
     }
 
     @Test
@@ -112,7 +112,7 @@ public class OrchestratorImplTest {
     }
 
     @Test
-    public void appliations_list_returns_empty_initially() throws Exception {
+    public void appliations_list_returns_empty_initially() {
         assertThat(orchestrator.getAllSuspendedApplications(), is(empty()));
     }
 
@@ -343,11 +343,13 @@ public class OrchestratorImplTest {
         InstanceLookupService lookupService = new ServiceMonitorInstanceLookupService(
                 () -> new ServiceModel(Map.of(reference, applicationInstance)));
 
-        orchestrator = new OrchestratorImpl(
-                clusterControllerClientFactory,
-                statusService,
-                new OrchestratorConfig(new OrchestratorConfig.Builder()),
-                lookupService);
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory),
+                                            clusterControllerClientFactory,
+                                            statusService,
+                                            lookupService,
+                                            0,
+                                            new ManualClock(),
+                                            applicationApiFactory);
 
         orchestrator.setNodeStatus(hostName, HostStatus.ALLOWED_TO_BE_DOWN);
 

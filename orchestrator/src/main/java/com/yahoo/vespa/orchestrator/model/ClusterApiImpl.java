@@ -19,6 +19,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * @author hakonhall
+ */
 class ClusterApiImpl implements ClusterApi {
 
     private final ApplicationApi applicationApi;
@@ -31,10 +34,14 @@ class ClusterApiImpl implements ClusterApi {
     private final Set<ServiceInstance> servicesNotInGroup;
     private final Set<ServiceInstance> servicesDownAndNotInGroup;
 
-    /**
-     * There are supposed to be (at least) 3 config servers in a production-like environment.
-     * However the number of config servers in the zone-config-servers application/cluster may only be 2,
-     * if only 2 have been provisioned so far, or 1 is being reprovisioned. In these cases it is
+    /*
+     * There are two sources for the number of config servers in a cluster. The config server config and the node
+     * repository.
+     *
+     * The actual number of config servers in the zone-config-servers application/cluster may be less than
+     * the configured number.
+     *
+     * For example: If only 2/3 have been provisioned so far, or 1 is being reprovisioned. In these cases it is
      * important for the Orchestrator to count that third config server as down.
      */
     private final int missingServices;
@@ -44,7 +51,8 @@ class ClusterApiImpl implements ClusterApi {
                           ServiceCluster serviceCluster,
                           NodeGroup nodeGroup,
                           Map<HostName, HostStatus> hostStatusMap,
-                          ClusterControllerClientFactory clusterControllerClientFactory) {
+                          ClusterControllerClientFactory clusterControllerClientFactory,
+                          int numberOfConfigServers) {
         this.applicationApi = applicationApi;
         this.serviceCluster = serviceCluster;
         this.nodeGroup = nodeGroup;
@@ -64,8 +72,8 @@ class ClusterApiImpl implements ClusterApi {
         servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
 
         int serviceInstances = serviceCluster.serviceInstances().size();
-        if (serviceCluster.isConfigServerCluster() && serviceInstances < 3) {
-            missingServices = 3 - serviceInstances;
+        if (serviceCluster.isConfigServerCluster() && serviceInstances < numberOfConfigServers) {
+            missingServices = numberOfConfigServers - serviceInstances;
             descriptionOfMissingServices = missingServices + " missing config server" + (missingServices > 1 ? "s" : "");
         } else {
             missingServices = 0;

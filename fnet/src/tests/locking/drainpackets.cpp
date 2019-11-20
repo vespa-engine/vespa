@@ -2,6 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/fnet.h>
 #include <mutex>
+#include <chrono>
 
 class MyPacket : public FNET_Packet
 {
@@ -14,8 +15,11 @@ public:
 
 
 TEST("drain packets") {
-  FastOS_Time     start;
-  FastOS_Time     stop;
+  using clock = std::chrono::steady_clock;
+  using ms_double = std::chrono::duration<double, std::milli>;
+
+  clock::time_point start;
+  ms_double         ms;
 
   std::mutex      lock;
 
@@ -33,7 +37,7 @@ TEST("drain packets") {
 
   // drain packets directly with single lock interval
 
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 10000; i++) {
 
@@ -59,14 +63,13 @@ TEST("drain packets") {
     }
   }
 
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "direct, single lock interval (10M packets): %1.2f ms\n",
-          stop.MilliSecs());
+          ms.count());
 
   // flush packets, then move without lock
 
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 10000; i++) {
 
@@ -96,13 +99,12 @@ TEST("drain packets") {
     }
   }
 
-  stop.SetNow();
-  stop -= start;
-  fprintf(stderr, "indirect (10M packets): %1.2f ms\n", stop.MilliSecs());
+  ms = (clock::now() - start);
+  fprintf(stderr, "indirect (10M packets): %1.2f ms\n", ms.count());
 
   // drain packets directly with multiple lock intervals
 
-  start.SetNow();
+  start = clock::now();
 
   for (i = 0; i < 10000; i++) {
 
@@ -120,10 +122,9 @@ TEST("drain packets") {
     }
   }
 
-  stop.SetNow();
-  stop -= start;
+  ms = (clock::now() - start);
   fprintf(stderr, "direct, multiple lock intervals (10M packets): %1.2f ms\n",
-          stop.MilliSecs());
+          ms.count());
 
   EXPECT_TRUE(q1.GetPacketCnt_NoLock() == 500 &&
          q2.GetPacketCnt_NoLock() == 0 &&

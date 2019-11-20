@@ -1,17 +1,13 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
 
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.logging.Logger;
-
-import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * Class to minimize resource usage with repetitive and mostly identical, idempotent, and
@@ -27,10 +23,12 @@ public class FileSync {
 
     private final UnixPath path;
     private final FileContentCache contentCache;
+    private final FileAttributesCache attributesCache;
 
     public FileSync(Path path) {
         this.path = new UnixPath(path);
         this.contentCache = new FileContentCache(this.path);
+        this.attributesCache = new FileAttributesCache(this.path);
     }
 
     public boolean convergeTo(TaskContext taskContext, PartialFileData partialFileData) {
@@ -46,38 +44,41 @@ public class FileSync {
      *         system is only modified if necessary (different).
      */
     public boolean convergeTo(TaskContext taskContext, PartialFileData partialFileData, boolean atomicWrite) {
-        FileAttributesCache currentAttributes = new FileAttributesCache(path);
+        boolean modifiedSystem = false;
 
-        boolean modifiedSystem = maybeUpdateContent(taskContext, partialFileData.getContent(), currentAttributes, atomicWrite);
+        if (partialFileData.getContent().isPresent())
+            modifiedSystem |= convergeTo(taskContext, partialFileData.getContent().get(), atomicWrite);
 
         AttributeSync attributeSync = new AttributeSync(path.toPath()).with(partialFileData);
-        modifiedSystem |= attributeSync.converge(taskContext, currentAttributes);
+        modifiedSystem |= attributeSync.converge(taskContext, this.attributesCache);
 
         return modifiedSystem;
     }
 
-    private boolean maybeUpdateContent(TaskContext taskContext,
-                                       Optional<byte[]> content,
-                                       FileAttributesCache currentAttributes,
-                                       boolean atomicWrite) {
-        if (!content.isPresent()) {
-            return false;
-        }
+    /**
+     * CPU, I/O, and memory usage is optimized for repeated calls with the same argument.
+     *
+     * @param atomicWrite Whether to write updates to a temporary file in the same directory, and atomically move it
+     *                    to path. Ensures the file cannot be read while in the middle of writing it.
+     * @return true if the content was written. Only modified if necessary (different).
+     */
+    public boolean convergeTo(TaskContext taskContext, byte[] content, boolean atomicWrite) {
+        Optional<Instant> lastModifiedTime = attributesCache.forceGet().map(FileAttributes::lastModifiedTime);
 
-        if (!currentAttributes.exists()) {
+        if (lastModifiedTime.isEmpty()) {
             taskContext.recordSystemModification(logger, "Creating file " + path);
             path.createParents();
-            writeBytes(content.get(), atomicWrite);
-            contentCache.updateWith(content.get(), currentAttributes.forceGet().lastModifiedTime());
+            writeBytes(content, atomicWrite);
+            contentCache.updateWith(content, attributesCache.forceGet().orElseThrow().lastModifiedTime());
             return true;
         }
 
-        if (Arrays.equals(content.get(), contentCache.get(currentAttributes.get().lastModifiedTime()))) {
+        if (Arrays.equals(content, contentCache.get(attributesCache.getOrThrow().lastModifiedTime()))) {
             return false;
         } else {
             taskContext.recordSystemModification(logger, "Patching file " + path);
-            writeBytes(content.get(), atomicWrite);
-            contentCache.updateWith(content.get(), currentAttributes.forceGet().lastModifiedTime());
+            writeBytes(content, atomicWrite);
+            contentCache.updateWith(content, attributesCache.forceGet().orElseThrow().lastModifiedTime());
             return true;
         }
     }

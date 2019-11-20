@@ -28,6 +28,7 @@ using index::IndexBuilder;
 using index::Schema;
 using index::SchemaUtil;
 using query::LocationTerm;
+using query::NearestNeighborTerm;
 using query::Node;
 using query::NumberTerm;
 using query::PredicateQuery;
@@ -163,6 +164,8 @@ public:
         setResult(fieldIndex->make_term_blueprint(termStr, _field, _fieldId));
     }
 
+    void not_supported(Node &) {}
+
     void visit(LocationTerm &n)  override { visitTerm(n); }
     void visit(PrefixTerm &n)    override { visitTerm(n); }
     void visit(RangeTerm &n)     override { visitTerm(n); }
@@ -170,7 +173,8 @@ public:
     void visit(SubstringTerm &n) override { visitTerm(n); }
     void visit(SuffixTerm &n)    override { visitTerm(n); }
     void visit(RegExpTerm &n)    override { visitTerm(n); }
-    void visit(PredicateQuery &) override { }
+    void visit(PredicateQuery &n) override { not_supported(n); }
+    void visit(NearestNeighborTerm &n) override { not_supported(n); }
 
     void visit(NumberTerm &n) override {
         handleNumberTermAsText(n);

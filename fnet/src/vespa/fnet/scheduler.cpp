@@ -9,8 +9,8 @@
 LOG_SETUP(".fnet.scheduler");
 
 
-FNET_Scheduler::FNET_Scheduler(FastOS_Time *sampler,
-                               FastOS_Time *now)
+FNET_Scheduler::FNET_Scheduler(time_point *sampler,
+                               time_point *now)
     : _cond(),
       _next(),
       _now(),
@@ -29,9 +29,9 @@ FNET_Scheduler::FNET_Scheduler(FastOS_Time *sampler,
     if (now != nullptr) {
         _next = *now;
     } else {
-        _next.SetNow();
+        _next = clock::now();
     }
-    _next.AddMilliSecs(SLOT_TICK);
+    _next += tick_ms;
 }
 
 
@@ -69,7 +69,7 @@ FNET_Scheduler::~FNET_Scheduler()
 void
 FNET_Scheduler::Schedule(FNET_Task *task, double seconds)
 {
-    uint32_t ticks = 2 + (uint32_t) std::ceil(seconds * (1000.0 / SLOT_TICK));
+    uint32_t ticks = 2 + (uint32_t) std::ceil(seconds * (1000.0 / tick_ms.count()));
 
     std::lock_guard<std::mutex> guard(_lock);
     if (!task->_killed) {
@@ -144,7 +144,7 @@ FNET_Scheduler::CheckTasks()
     if (_sampler != nullptr) {
         _now = *_sampler;
     } else {
-        _now.SetNow();
+        _now = clock::now();
     }
 
     // assume timely value propagation
@@ -160,7 +160,7 @@ FNET_Scheduler::CheckTasks()
 
     // handle bucket timeout(s)
 
-    for (int i = 0; _now >= _next; ++i, _next.AddMilliSecs(SLOT_TICK)) {
+    for (int i = 0; _now >= _next; ++i, _next += tick_ms) {
         if (i < 25) {
             if (++_currSlot >= NUM_SLOTS) {
                 _currSlot = 0;

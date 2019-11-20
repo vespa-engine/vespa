@@ -6,6 +6,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
+import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
@@ -18,10 +19,13 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
@@ -32,9 +36,13 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * @author hakonhall
+ */
 public class ClusterApiImplTest {
-    final ApplicationApi applicationApi = mock(ApplicationApi.class);
-    final ModelTestUtils modelUtils = new ModelTestUtils();
+
+    private final ApplicationApi applicationApi = mock(ApplicationApi.class);
+    private final ModelTestUtils modelUtils = new ModelTestUtils();
 
     @Test
     public void testServicesDownAndNotInGroup() {
@@ -68,7 +76,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), hostName5),
                 modelUtils.getHostStatusMap(),
-                modelUtils.getClusterControllerClientFactory());
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertEquals("{ clusterId=cluster, serviceType=service-type }", clusterApi.clusterInfo());
         assertFalse(clusterApi.isStorageCluster());
@@ -87,39 +95,7 @@ public class ClusterApiImplTest {
 
     /** Make a ClusterApiImpl for the cfg1 config server, with cfg3 missing from the cluster (not provisioned). */
     private ClusterApiImpl makeCfg1ClusterApi(ServiceStatus cfg1ServiceStatus, ServiceStatus cfg2ServiceStatus) {
-        HostName cfg1Hostname = new HostName("cfg1");
-        HostName cfg2Hostname = new HostName("cfg2");
-
-        ServiceCluster serviceCluster = modelUtils.createServiceCluster(
-                ClusterId.CONFIG_SERVER.s(),
-                ServiceType.CONFIG_SERVER,
-                Arrays.asList(
-                        modelUtils.createServiceInstance("cs1", cfg1Hostname, cfg1ServiceStatus),
-                        modelUtils.createServiceInstance("cs2", cfg2Hostname, cfg2ServiceStatus))
-        );
-
-        Set<ServiceCluster> serviceClusterSet = new HashSet<>(Set.of(serviceCluster));
-
-        ApplicationInstance application = new ApplicationInstance(
-                TenantId.HOSTED_VESPA,
-                ApplicationInstanceId.CONFIG_SERVER,
-                serviceClusterSet);
-
-        serviceCluster.setApplicationInstance(application);
-
-        when(applicationApi.applicationId()).thenReturn(OrchestratorUtil.toApplicationId(application.reference()));
-
-        ClusterApiImpl clusterApi = new ClusterApiImpl(
-                applicationApi,
-                serviceCluster,
-                new NodeGroup(application, cfg1Hostname),
-                modelUtils.getHostStatusMap(),
-                modelUtils.getClusterControllerClientFactory());
-
-        assertEquals(1, clusterApi.missingServices());
-        assertFalse(clusterApi.noServicesOutsideGroupIsDown());
-
-        return clusterApi;
+        return makeConfigClusterApi(ModelTestUtils.NUMBER_OF_CONFIG_SERVERS, cfg1ServiceStatus, cfg2ServiceStatus);
     }
 
     @Test
@@ -146,6 +122,19 @@ public class ClusterApiImplTest {
         HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy();
 
         policy.verifyGroupGoingDownIsFine(clusterApi);
+    }
+
+    @Test
+    public void testSingleConfigServerCanSuspend() {
+        for (var status : EnumSet.of(ServiceStatus.UP, ServiceStatus.DOWN)) {
+            var clusterApi = makeConfigClusterApi(1, status);
+            var policy = new HostedVespaClusterPolicy();
+            try {
+                policy.verifyGroupGoingDownIsFine(clusterApi);
+            } catch (HostStateChangeDeniedException e) {
+                fail("Expected suspension to succeed");
+            }
+        }
     }
 
     @Test
@@ -196,7 +185,7 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(modelUtils.createApplicationInstance(new ArrayList<>()), groupNodes),
                 modelUtils.getHostStatusMap(),
-                modelUtils.getClusterControllerClientFactory());
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertEquals(expectedNoServicesInGroupIsUp, clusterApi.noServicesInGroupIsUp());
         assertEquals(expectedNoServicesOutsideGroupIsDown, clusterApi.noServicesOutsideGroupIsDown());
@@ -226,10 +215,52 @@ public class ClusterApiImplTest {
                 serviceCluster,
                 new NodeGroup(applicationInstance, hostName1, hostName3),
                 new HashMap<>(),
-                modelUtils.getClusterControllerClientFactory());
+                modelUtils.getClusterControllerClientFactory(), ModelTestUtils.NUMBER_OF_CONFIG_SERVERS);
 
         assertTrue(clusterApi.isStorageCluster());
         assertEquals(Optional.of(hostName1), clusterApi.storageNodeInGroup().map(storageNode -> storageNode.hostName()));
         assertEquals(Optional.of(hostName1), clusterApi.upStorageNodeInGroup().map(storageNode -> storageNode.hostName()));
     }
+
+    private ClusterApiImpl makeConfigClusterApi(int clusterSize, ServiceStatus first, ServiceStatus... rest) {
+        var serviceStatusList = new ArrayList<ServiceStatus>();
+        serviceStatusList.add(first);
+        serviceStatusList.addAll(List.of(rest));
+        var hostnames = IntStream.rangeClosed(1, serviceStatusList.size())
+                                 .mapToObj(i -> new HostName("cfg" + i))
+                                 .collect(Collectors.toList());
+        var instances = new ArrayList<ServiceInstance>();
+        for (int i = 0; i < hostnames.size(); i++) {
+            instances.add(modelUtils.createServiceInstance("cs" + i + 1, hostnames.get(i), serviceStatusList.get(i)));
+        }
+        ServiceCluster serviceCluster = modelUtils.createServiceCluster(
+                ClusterId.CONFIG_SERVER.s(),
+                ServiceType.CONFIG_SERVER,
+                instances
+        );
+
+        Set<ServiceCluster> serviceClusterSet = Set.of(serviceCluster);
+
+        ApplicationInstance application = new ApplicationInstance(
+                TenantId.HOSTED_VESPA,
+                ApplicationInstanceId.CONFIG_SERVER,
+                serviceClusterSet);
+
+        serviceCluster.setApplicationInstance(application);
+
+        when(applicationApi.applicationId()).thenReturn(OrchestratorUtil.toApplicationId(application.reference()));
+
+        ClusterApiImpl clusterApi = new ClusterApiImpl(
+                applicationApi,
+                serviceCluster,
+                new NodeGroup(application, hostnames.get(0)),
+                modelUtils.getHostStatusMap(),
+                modelUtils.getClusterControllerClientFactory(), clusterSize);
+
+        assertEquals(clusterSize - serviceStatusList.size(), clusterApi.missingServices());
+        assertEquals(clusterSize == serviceStatusList.size(), clusterApi.noServicesOutsideGroupIsDown());
+
+        return clusterApi;
+    }
+
 }

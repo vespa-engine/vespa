@@ -99,6 +99,7 @@ public class Rebalancer extends Maintainer {
         Move bestMove = Move.none;
         for (Node node : allNodes.nodeType(NodeType.tenant).state(Node.State.active)) {
             if (node.parentHostname().isEmpty()) continue;
+            if (node.allocation().get().owner().instance().isTester()) continue;
             for (Node toHost : allNodes.nodeType(NodeType.host).state(NodePrioritizer.ALLOCATABLE_HOST_STATES)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.flavor().resources())) continue;
@@ -120,7 +121,7 @@ public class Rebalancer extends Maintainer {
             if (nodeToMove.isEmpty()) return false;
             if (nodeToMove.get().state() != Node.State.active) return false;
 
-            if (node.status().wantToRetire() == wantToRetire) return false;
+            if (nodeToMove.get().status().wantToRetire() == wantToRetire) return false;
 
             nodeRepository().write(nodeToMove.get().withWantToRetire(wantToRetire, Agent.system, clock.instant()), lock);
             return true;
@@ -141,10 +142,15 @@ public class Rebalancer extends Maintainer {
             boolean couldMarkRetiredNow = markWantToRetire(move.node, true);
             if ( ! couldMarkRetiredNow) return false;
 
+            Optional<Node> expectedNewNode = Optional.empty();
             try {
                 if ( ! deployment.prepare()) return false;
-                if (nodeRepository().getNodes(application, Node.State.reserved).stream().noneMatch(node -> node.hasParent(move.toHost.hostname())))
-                    return false; // Deployment is not moving the from node to the target we identified for some reason
+                expectedNewNode =
+                        nodeRepository().getNodes(application, Node.State.reserved).stream()
+                                        .filter(node -> node.hasParent(move.toHost.hostname()))
+                                        .filter(node -> node.allocation().get().membership().cluster().id().equals(move.node.allocation().get().membership().cluster().id()))
+                                        .findAny();
+                if (expectedNewNode.isEmpty()) return false;
                 if ( ! deployment.activate()) return false;
 
                 log.info("Rebalancer redeployed " + application + " to " + move);
@@ -152,6 +158,10 @@ public class Rebalancer extends Maintainer {
             }
             finally {
                 markWantToRetire(move.node, false); // Necessary if this failed, no-op otherwise
+                if (expectedNewNode.isPresent()) { // Immediately clean up if we reserved the node but could not activate
+                     Optional<Node> reservedNewNode = nodeRepository().getNode(expectedNewNode.get().hostname(), Node.State.reserved);
+                     reservedNewNode.ifPresent(reserved -> nodeRepository().setDirty(reserved, Agent.system, "Expired by Rebalancer"));
+                }
             }
         }
     }

@@ -17,15 +17,14 @@ public:
 
 
 TEST("slow event loop") {
-  FastOS_Time t;
-  t.SetMilliSecs(0);
+  FNET_Scheduler::time_point t(std::chrono::milliseconds(0));
 
   FNET_Scheduler scheduler(&t, &t);
   MyTask         task(scheduler);
   MyTask         task2(scheduler);
 
   scheduler.CheckTasks();
-  t.AddMilliSecs(10000);
+  t += std::chrono::milliseconds(10000);
   task.Schedule(5.0);
 
   uint32_t cnt = 0;
@@ -35,7 +34,7 @@ TEST("slow event loop") {
           break;
       }
       ++cnt;
-      t.AddMilliSecs(1);
+      t += std::chrono::milliseconds(1);
   }
 
   if (!EXPECT_TRUE(cnt > 4700 && cnt < 4800)) {
@@ -43,7 +42,7 @@ TEST("slow event loop") {
   }
 
   scheduler.CheckTasks();
-  t.AddMilliSecs(10000);
+  t += std::chrono::milliseconds(10000);
   task2.Schedule(5.0);
 
   uint32_t cnt2 = 0;
@@ -53,7 +52,7 @@ TEST("slow event loop") {
           break;
       }
       ++cnt2;
-      t.AddMilliSecs(10000);
+      t += std::chrono::milliseconds(10000);
   }
 
   if (!EXPECT_TRUE(cnt2 > 15 && cnt2 < 25)) {

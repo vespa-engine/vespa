@@ -60,7 +60,8 @@ public:
         ITEM_PREDICATE_QUERY       =   23,
         ITEM_REGEXP                =   24,
         ITEM_WORD_ALTERNATIVES     =   25,
-        ITEM_MAX                   =   26,  // Indicates how long tables must be.
+        ITEM_NEAREST_NEIGHBOR      =   26,
+        ITEM_MAX                   =   27,  // Indicates how long tables must be.
         ITEM_UNDEF                 =   31,
     };
 

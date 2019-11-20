@@ -1,7 +1,6 @@
 package com.yahoo.vespa.config.server.rpc.security;// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.yahoo.cloud.config.LbServicesConfig;
-import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -103,17 +102,6 @@ public class MultiTenantRpcAuthorizerTest {
 
         Request configRequest = createConfigRequest(
                 new ConfigKey<>(LbServicesConfig.CONFIG_DEF_NAME, "*", LbServicesConfig.CONFIG_DEF_NAMESPACE),
-                HOSTNAME);
-        authorizer.authorizeConfigRequest(configRequest)
-                .get();
-    }
-
-    @Test
-    public void tenant_node_can_access_routing_config() throws ExecutionException, InterruptedException {
-        RpcAuthorizer authorizer = createAuthorizer(new NodeIdentity.Builder(NodeType.tenant).build(), new HostRegistry<>());
-
-        Request configRequest = createConfigRequest(
-                new ConfigKey<>(RoutingConfig.CONFIG_DEF_NAME, "*", RoutingConfig.CONFIG_DEF_NAMESPACE),
                 HOSTNAME);
         authorizer.authorizeConfigRequest(configRequest)
                 .get();

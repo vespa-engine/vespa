@@ -27,6 +27,7 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
+import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
@@ -52,6 +53,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -76,6 +78,7 @@ public class HostResourceTest {
     private static final ApplicationInstanceId APPLICATION_INSTANCE_ID = new ApplicationInstanceId("applicationId");
     private static final StatusService EVERY_HOST_IS_UP_HOST_STATUS_SERVICE = new ZookeeperStatusService(
             new MockCurator(), mock(Metric.class), new TestTimer());
+    private static final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3);
 
     private static final InstanceLookupService mockInstanceLookupService = mock(InstanceLookupService.class);
     static {
@@ -131,7 +134,8 @@ public class HostResourceTest {
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, mockInstanceLookupService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-            clock
+            clock,
+            applicationApiFactory
     );
 
     private static final OrchestratorImpl hostNotFoundOrchestrator = new OrchestratorImpl(
@@ -139,7 +143,8 @@ public class HostResourceTest {
             new ClusterControllerClientFactoryMock(),
             EVERY_HOST_IS_UP_HOST_STATUS_SERVICE, alwaysEmptyInstanceLookUpService,
             SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-            clock
+            clock,
+            applicationApiFactory
     );
 
     private final UriInfo uriInfo = mock(UriInfo.class);
@@ -172,8 +177,7 @@ public class HostResourceTest {
     @Test
     public void returns_200_empty_batch() {
         HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysAllowOrchestrator);
-        BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname",
-                                                                          Collections.emptyList());;
+        BatchOperationResult response = hostSuspensionResource.suspendAll("parentHostname", List.of());
         assertThat(response.success());
     }
 
@@ -242,7 +246,8 @@ public class HostResourceTest {
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-                clock);
+                clock,
+                applicationApiFactory);
 
         try {
             HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
@@ -261,7 +266,8 @@ public class HostResourceTest {
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
                 mockInstanceLookupService,
                 SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-                clock);
+                clock,
+                applicationApiFactory);
 
         try {
             HostSuspensionResource hostSuspensionResource = new HostSuspensionResource(alwaysRejectResolver);

@@ -208,7 +208,6 @@ public class ContainerClusterTest {
         cluster.getConfig(builder);
         RoutingProviderConfig config = new RoutingProviderConfig(builder);
         assertFalse(config.enabled());
-        assertEquals(0, cluster.getAllComponents().stream().map(c -> c.getClassId().getName()).filter(c -> c.equals("com.yahoo.jdisc.http.filter.security.RoutingConfigProvider")).count());
     }
 
     private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {

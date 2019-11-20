@@ -1,5 +1,4 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -77,21 +76,21 @@ public class AttributeSync {
                 context,
                 "owner",
                 owner,
-                () -> currentAttributes.get().owner(),
+                () -> currentAttributes.getOrThrow().owner(),
                 path::setOwner);
 
         systemModified |= updateAttribute(
                 context,
                 "group",
                 group,
-                () -> currentAttributes.get().group(),
+                () -> currentAttributes.getOrThrow().group(),
                 path::setGroup);
 
         systemModified |= updateAttribute(
                 context,
                 "permissions",
                 permissions,
-                () -> currentAttributes.get().permissions(),
+                () -> currentAttributes.getOrThrow().permissions(),
                 path::setPermissions);
 
         return systemModified;

@@ -3,6 +3,7 @@ package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.test.TestTimer;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -20,10 +21,10 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.ServiceMonitorInstanceLookupService;
-import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
-import com.yahoo.vespa.orchestrator.config.OrchestratorConfig.Builder;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
+import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.MutableStatusRegistry;
 import com.yahoo.vespa.orchestrator.status.StatusService;
@@ -40,16 +41,28 @@ import java.util.Set;
 
 import static org.mockito.Mockito.mock;
 
+/**
+ * @author hakonhall
+ */
 class ModelTestUtils {
+
+    public static final int NUMBER_OF_CONFIG_SERVERS = 3;
 
     private final Map<ApplicationInstanceReference, ApplicationInstance> applications = new HashMap<>();
     private final ClusterControllerClientFactory clusterControllerClientFactory = new ClusterControllerClientFactoryMock();
     private final Map<HostName, HostStatus> hostStatusMap = new HashMap<>();
     private final StatusService statusService = new ZookeeperStatusService(new MockCurator(), mock(Metric.class), new TestTimer());
-    private final Orchestrator orchestrator = new OrchestratorImpl(clusterControllerClientFactory,
+    private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(), clusterControllerClientFactory, applicationApiFactory()),
+                                                                   clusterControllerClientFactory,
                                                                    statusService,
-                                                                   new OrchestratorConfig(new Builder()),
-                                                                   new ServiceMonitorInstanceLookupService(() -> new ServiceModel(applications)));
+                                                                   new ServiceMonitorInstanceLookupService(() -> new ServiceModel(applications)),
+                                                                   0,
+                                                                   new ManualClock(),
+                                                                   applicationApiFactory());
+
+    ApplicationApiFactory applicationApiFactory() {
+        return new ApplicationApiFactory(NUMBER_OF_CONFIG_SERVERS);
+    }
 
     Map<HostName, HostStatus> getHostStatusMap() {
         return hostStatusMap;
@@ -71,14 +84,14 @@ class ModelTestUtils {
         return hostName;
     }
 
-    ApplicationApiImpl createApplicationApiImpl(
+    ApplicationApi createApplicationApiImpl(
             ApplicationInstance applicationInstance,
             HostName... hostnames) {
         NodeGroup nodeGroup = new NodeGroup(applicationInstance, hostnames);
         MutableStatusRegistry registry = statusService.lockApplicationInstance_forCurrentThreadOnly(
                 OrchestratorContext.createContextForSingleAppOp(Clock.systemUTC()),
                 applicationInstance.reference());
-        return new ApplicationApiImpl(nodeGroup, registry, clusterControllerClientFactory);
+        return applicationApiFactory().create(nodeGroup, registry, clusterControllerClientFactory);
     }
 
     ApplicationInstance createApplicationInstance(

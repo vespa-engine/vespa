@@ -2,6 +2,7 @@
 
 #include <vespa/fnet/fnet.h>
 #include <vespa/fastos/app.h>
+#include <chrono>
 
 #include <vespa/log/log.h>
 LOG_SETUP("timeout");
@@ -42,8 +43,11 @@ public:
 int
 MyApp::Main()
 {
-  double                     ms;
-  FastOS_Time                t;
+  using clock = std::chrono::steady_clock;
+  using ms_double = std::chrono::duration<double,std::milli>;
+
+  ms_double                  ms;
+  clock::time_point          t;
   FNET_PacketQueue           queue;
   FastOS_ThreadPool          pool(65000);
   FNET_Transport             transport;
@@ -57,28 +61,28 @@ MyApp::Main()
   FNET_Context  context;
 
   fprintf(stderr, "scheduling timeout in 2 seconds...\n");
-  t.SetNow();
+  t = clock::now();
   timeout.Schedule(2.0); // timeout in 2 seconds
 
   FastOS_Thread::Sleep(1000);
 
   timeout.Unschedule(); // cancel timeout
-  ms = t.MilliSecsToNow();
+  ms = (clock::now() - t);
 
   if (queue.GetPacketCnt_NoLock() == 0)
     fprintf(stderr, "timeout canceled; no timeout packet delivered\n");
-  fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms);
+  fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms.count());
 
   fprintf(stderr, "scheduling timeout in 2 seconds...\n");
-  t.SetNow();
+  t = clock::now();
   timeout.Schedule(2.0); // timeout in 2 seconds
 
   packet = queue.DequeuePacket(&context); // wait for timeout
-  ms = t.MilliSecsToNow();
+  ms = (clock::now() - t);
 
   if (packet->IsTimeoutCMD())
     fprintf(stderr, "got timeout packet\n");
-  fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms);
+  fprintf(stderr, "time since timeout was scheduled: %f ms\n", ms.count());
 
   transport.ShutDown(true);
   pool.Close();

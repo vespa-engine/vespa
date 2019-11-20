@@ -49,6 +49,7 @@ public:
     virtual void visit(typename NodeTypes::WandTerm &) = 0;
     virtual void visit(typename NodeTypes::PredicateQuery &) = 0;
     virtual void visit(typename NodeTypes::RegExpTerm &) = 0;
+    virtual void visit(typename NodeTypes::NearestNeighborTerm &) = 0;
 
 private:
     // Route QueryVisit requests to the correct custom type.
@@ -75,6 +76,7 @@ private:
     typedef typename NodeTypes::WandTerm TWandTerm;
     typedef typename NodeTypes::PredicateQuery TPredicateQuery;
     typedef typename NodeTypes::RegExpTerm TRegExpTerm;
+    typedef typename NodeTypes::NearestNeighborTerm TNearestNeighborTerm;
 
     void visit(And &n) override { visit(static_cast<TAnd&>(n)); }
     void visit(AndNot &n) override { visit(static_cast<TAndNot&>(n)); }
@@ -98,6 +100,7 @@ private:
     void visit(WandTerm &n) override { visit(static_cast<TWandTerm&>(n)); }
     void visit(PredicateQuery &n) override { visit(static_cast<TPredicateQuery&>(n)); }
     void visit(RegExpTerm &n) override { visit(static_cast<TRegExpTerm&>(n)); }
+    void visit(NearestNeighborTerm &n) override { visit(static_cast<TNearestNeighborTerm&>(n)); }
 };
 
 }

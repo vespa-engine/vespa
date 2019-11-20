@@ -270,6 +270,17 @@ SimpleQueryStackDumpIterator::next()
         }
         break;
 
+    case ParseItem::ITEM_NEAREST_NEIGHBOR:
+        try {
+            _curr_index_name = read_stringref(p);
+            _curr_term = read_stringref(p); // query_tensor_name
+            _currArg1 = readCompressedPositiveInt(p); // target_num_hits;
+            _currArity = 0;
+        } catch (...) {
+            return false;
+        }
+        break;
+
     default:
         // Unknown item, so report that no more are available
         return false;

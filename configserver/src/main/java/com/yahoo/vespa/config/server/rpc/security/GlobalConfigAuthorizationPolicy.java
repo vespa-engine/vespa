@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.rpc.security;
 
 import com.yahoo.cloud.config.LbServicesConfig;
-import com.yahoo.cloud.config.RoutingConfig;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.config.ConfigKey;
@@ -18,8 +17,7 @@ import java.util.List;
  */
 enum GlobalConfigAuthorizationPolicy {
 
-    LB_SERVICES(new LbServicesConfig.Builder(), NodeType.proxy),
-    ROUTING(new RoutingConfig.Builder(), NodeType.tenant); // TODO Remove handling of RoutingConfig when YCA filter is removed
+    LB_SERVICES(new LbServicesConfig.Builder(), NodeType.proxy);
 
     final String namespace;
     final String name;
