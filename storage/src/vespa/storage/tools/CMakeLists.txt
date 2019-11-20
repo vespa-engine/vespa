@@ -31,13 +31,6 @@ vespa_add_executable(storage_storage-cmd_app
     AFTER
     storage_storageconfig
 )
-vespa_add_executable(storage_throttlingsim_app
-    SOURCES
-    throttlingsim.cpp
-    DEPENDS
-    AFTER
-    storage_storageconfig
-)
 vespa_add_executable(storage_statfs_app
     SOURCES
     statfs.cpp
