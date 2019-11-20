@@ -2,9 +2,6 @@
 
 #include "tests.h"
 #include <vespa/fastos/file.h>
-#include <vespa/fastos/time.h>
-
-#include <cstdlib>
 
 class TypeTest : public BaseTest
 {
@@ -21,7 +18,6 @@ private:
       Progress(true, "FastOS_StatInfo      %d", sizeof(FastOS_StatInfo));
       Progress(true, "FastOS_Thread:       %d", sizeof(FastOS_Thread));
       Progress(true, "FastOS_ThreadPool:   %d", sizeof(FastOS_ThreadPool));
-      Progress(true, "FastOS_Time          %d", sizeof(FastOS_Time));
 
       PrintSeparator();
    }

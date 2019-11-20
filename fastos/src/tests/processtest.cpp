@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "tests.h"
 #include <vespa/fastos/process.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <vespa/fastos/file.h>
 
 class MyListener : public FastOS_ProcessRedirectListener
@@ -78,27 +78,19 @@ public:
    {
    }
 
-   void Run (FastOS_ThreadInterface *thisThread, void *arg) override
+   void Run (FastOS_ThreadInterface *, void *) override
    {
-      (void)thisThread;
-      (void)arg;
 
-      FastOS_Time startTime, endTime;
-      startTime.SetNow();
+      fastos::StopWatch timer;
 
       FastOS_Process xproc(_processCmdLine);
       int returnCode = -1;
 
-      if(xproc.Create())
-      {
+      if (xproc.Create()) {
          xproc.Wait(&returnCode);
       }
 
-      endTime.SetNow();
-
-      endTime -= startTime;
-
-      _timeSpent = int(endTime.MilliSecs());
+      _timeSpent = int(timer.elapsed().ms());
    }
 
    int GetTimeSpent ()
@@ -135,8 +127,7 @@ public:
    {
       //      printf("Data: [%s]\n", static_cast<const char *>(data));
 
-      if(length == 5)
-      {
+      if(length == 5) {
          const char *dataMatch = "IPCM";
          if(!_isChild)
             dataMatch = "IPCR";
@@ -289,8 +280,7 @@ public:
             if(waitKill)
                timeOut = 1;
 
-            FastOS_Time timeBeforeWait;
-            timeBeforeWait.SetNow();
+            fastos::StopWatch timer;
 
             int returnCode;
             if(!xproc->Wait(&returnCode, timeOut))
@@ -304,13 +294,8 @@ public:
                   Progress(false, "returnCode = %d", returnCode);
             }
 
-            if(waitKill)
-            {
-               FastOS_Time waitTime;
-               waitTime.SetNow();
-
-               waitTime -= timeBeforeWait;
-               double milliSecs = waitTime.MilliSecs();
+            if (waitKill) {
+               double milliSecs = timer.elapsed().ms();
                if((milliSecs < 900) ||
                   (milliSecs > 3500))
                {
@@ -334,8 +319,7 @@ public:
       Progress(MyListener::_allocCount == 0, "MyListener alloc count = %d",
                MyListener::_allocCount);
 
-      if(!doKill && !waitKill)
-      {
+      if (!doKill && !waitKill) {
          Progress(MyListener::_successCount == (2 * numLoops * numEachTime),
                   "MyListener _successCount = %d", MyListener::_successCount);
 
@@ -349,12 +333,10 @@ public:
       PrintSeparator();
    }
 
-   int DoChildRole ()
-   {
+   int DoChildRole () {
       int rc = 124;
       int i;
-      for(i=0; i<(20*10); i++)
-      {
+      for(i=0; i<(20*10); i++) {
          if(_gotMessage)
             break;
 
@@ -373,8 +355,7 @@ public:
       return rc;
    }
 
-   void IPCTest ()
-   {
+   void IPCTest () {
       TestHeader ("IPC Test");
       const char *childProgram = _argv[1];
 

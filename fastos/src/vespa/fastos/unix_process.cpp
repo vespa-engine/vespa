@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "process.h"
 #include "unix_ipc.h"
-#include "time.h"
+#include "timestamp.h"
 #include "ringbuffer.h"
 #include <vector>
 #include <cstring>
@@ -1909,8 +1909,7 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
 
     bool timeOutKillAttempted = false;
 
-    FastOS_Time startTime;
-    startTime.SetNow();
+    fastos::StopWatch timer;
 
     if (pollStillRunning != nullptr)
         *pollStillRunning = true;
@@ -1937,19 +1936,13 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
             break;
 
         if ((timeOutSeconds != -1) && !timeOutKillAttempted) {
-            FastOS_Time waitTime;
-            waitTime.SetNow();
 
-            waitTime -= startTime;
-
-            if (waitTime.MilliSecs() >= (timeOutSeconds * 1000)) {
+            if (timer.elapsed().ms() >= (timeOutSeconds * 1000)) {
                 process->Kill();
                 timeOutKillAttempted = true;
             }
         }
 
-
-        // Sleep 100 ms
         FastOS_Thread::Sleep(100);
     }
 

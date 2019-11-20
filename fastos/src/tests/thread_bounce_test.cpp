@@ -3,7 +3,7 @@
 #include "tests.h"
 #include "job.h"
 #include "thread_test_base.hpp"
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 
 class Thread_Bounce_Test : public ThreadTestBase
 {
@@ -20,7 +20,6 @@ class Thread_Bounce_Test : public ThreadTestBase
      std::condition_variable cond2;
      Job job1;
      Job job2;
-     FastOS_Time checkTime;
      int cnt1;
      int cnt2;
      int cntsum;
@@ -40,12 +39,12 @@ class Thread_Bounce_Test : public ThreadTestBase
 
      lastcntsum = -1;
      for (int iter = 0; iter < 8; iter++) {
-       checkTime.SetNow();
+       fastos::StopWatch checkTime;
 
-       int left = static_cast<int>(checkTime.MilliSecsToNow());
+       int left = static_cast<int>(checkTime.elapsed().ms());
        while (left < 1000) {
          FastOS_Thread::Sleep(1000 - left);
-         left = static_cast<int>(checkTime.MilliSecsToNow());
+         left = static_cast<int>(checkTime.elapsed().ms());
        }
 
        mutex1.lock();
