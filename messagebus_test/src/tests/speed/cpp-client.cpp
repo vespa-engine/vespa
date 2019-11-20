@@ -7,6 +7,7 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/fastos/timestamp.h>
 #include <vespa/fastos/app.h>
 
 using namespace mbus;
