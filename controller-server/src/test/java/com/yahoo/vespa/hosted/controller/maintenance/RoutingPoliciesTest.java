@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -19,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
 import java.net.URI;
@@ -226,6 +228,27 @@ public class RoutingPoliciesTest {
         assertEquals(expectedRecords, tester.recordNames());
         assertTrue("Removes stale routing policies " + context2.application(), tester.controllerTester().controller().applications().routingPolicies().get(context2.instanceId()).isEmpty());
         assertEquals("Keeps routing policies for " + context1.application(), 4, tester.controllerTester().controller().applications().routingPolicies().get(context1.instanceId()).size());
+    }
+
+    @Test
+    public void global_routing_policies_in_rotationless_system() {
+        var tester = new RoutingPoliciesTester(new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build())));
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
+
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region().value())
+                .endpoint("r0", "c0")
+                .build();
+        context.submit(applicationPackage).deploy();
+
+        var endpoint = "r0.app1.tenant1.global.vespa.oath.cloud";
+        assertEquals(endpoint + " points to c0 in all regions",
+                     List.of("lb-0--tenant1:app1:default--prod.us-west-1/dns-zone-1/prod.us-west-1"),
+                     tester.aliasDataOf(endpoint));
+        assertTrue("No rotations assigned", context.application().instances().values().stream()
+                                                   .map(Instance::rotations)
+                                                   .allMatch(List::isEmpty));
     }
 
     @Test

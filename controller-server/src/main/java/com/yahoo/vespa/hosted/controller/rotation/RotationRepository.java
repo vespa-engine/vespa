@@ -105,6 +105,12 @@ public class RotationRepository {
      * @return List of rotation assignments - either new or existing
      */
     public List<AssignedRotation> getOrAssignRotations(DeploymentSpec deploymentSpec, Instance instance, RotationLock lock) {
+        // Skip assignment if no rotations are configured in this system
+        if (allRotations.isEmpty()) {
+            return List.of();
+        }
+
+        // Only allow one kind of configuration syntax
         if (deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent()
             && ! deploymentSpec.requireInstance(instance.name()).endpoints().isEmpty()) {
             throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
