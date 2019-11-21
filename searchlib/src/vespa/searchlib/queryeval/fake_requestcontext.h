@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/queryeval/irequestcontext.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <limits>
 
 namespace search::queryeval {
@@ -24,6 +25,11 @@ public:
                    ? _attributeContext->getAttribute(name)
                    : nullptr;
     }
+    vespalib::eval::Value::UP get_query_tensor(const vespalib::string& tensor_name) const override {
+        (void) tensor_name;
+        return vespalib::eval::Value::UP();
+    }
+
 private:
     vespalib::Clock _clock;
     const vespalib::Doom _doom;
