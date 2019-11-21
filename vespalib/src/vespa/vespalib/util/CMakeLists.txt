@@ -11,8 +11,8 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     barrier.cpp
     benchmark_timer.cpp
     blockingthreadstackexecutor.cpp
-    bufferwriter.cpp
     box.cpp
+    bufferwriter.cpp
     classname.cpp
     closuretask.cpp
     compress.cpp
@@ -52,7 +52,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     thread_bundle.cpp
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
-    time_tracker.cpp
+    time.cpp
     valgrind.cpp
     zstdcompressor.cpp
     DEPENDS
