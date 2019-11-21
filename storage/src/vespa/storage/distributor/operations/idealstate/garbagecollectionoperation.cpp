@@ -7,7 +7,6 @@
 #include <vespa/storageapi/message/removelocation.h>
 
 #include <vespa/log/log.h>
-
 LOG_SETUP(".distributor.operation.idealstate.remove");
 
 using namespace storage::distributor;
@@ -17,7 +16,7 @@ GarbageCollectionOperation::GarbageCollectionOperation(const std::string& cluste
       _tracker(clusterName)
 {}
 
-GarbageCollectionOperation::~GarbageCollectionOperation() { }
+GarbageCollectionOperation::~GarbageCollectionOperation() = default;
 
 void
 GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
@@ -25,14 +24,13 @@ GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     std::vector<uint16_t> nodes = entry->getNodes();
 
-    for (uint32_t i = 0; i < nodes.size(); i++) {
-        std::shared_ptr<api::RemoveLocationCommand> command(
-                new api::RemoveLocationCommand(
-                        _manager->getDistributorComponent().getDistributor().getConfig().getGarbageCollectionSelection(),
-                        getBucket()));
+    for (uint32_t node : nodes) {
+        auto command = std::make_shared<api::RemoveLocationCommand>(
+                _manager->getDistributorComponent().getDistributor().getConfig().getGarbageCollectionSelection(),
+                getBucket());
 
         command->setPriority(_priority);
-        _tracker.queueCommand(command, nodes[i]);
+        _tracker.queueCommand(command, node);
     }
 
     _tracker.flushQueue(sender);
@@ -46,32 +44,34 @@ void
 GarbageCollectionOperation::onReceive(DistributorMessageSender&,
                            const std::shared_ptr<api::StorageReply>& reply)
 {
-    api::RemoveLocationReply* rep =
-        dynamic_cast<api::RemoveLocationReply*>(reply.get());
+    auto* rep = dynamic_cast<api::RemoveLocationReply*>(reply.get());
+    assert(rep != nullptr);
 
     uint16_t node = _tracker.handleReply(*rep);
 
     if (!rep->getResult().failed()) {
-        _manager->getDistributorComponent().updateBucketDatabase(
-                getBucket(),
-                BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
-                           node,
-                           rep->getBucketInfo()));
+        _replica_info.emplace_back(_manager->getDistributorComponent().getUniqueTimestamp(),
+                                   node, rep->getBucketInfo());
     } else {
         _ok = false;
     }
 
     if (_tracker.finished()) {
         if (_ok) {
-            BucketDatabase::Entry dbentry = _bucketSpace->getBucketDatabase().get(getBucketId());
-            if (dbentry.valid()) {
-                dbentry->setLastGarbageCollectionTime(
-                        _manager->getDistributorComponent().getClock().getTimeInSeconds().getTime());
-                _bucketSpace->getBucketDatabase().update(dbentry);
-            }
+            merge_received_bucket_info_into_db();
         }
-
         done();
+    }
+}
+
+void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
+    // TODO avoid two separate DB ops for this. Current API currently does not make this elegant.
+    _manager->getDistributorComponent().updateBucketDatabase(getBucket(), _replica_info);
+    BucketDatabase::Entry dbentry = _bucketSpace->getBucketDatabase().get(getBucketId());
+    if (dbentry.valid()) {
+        dbentry->setLastGarbageCollectionTime(
+                _manager->getDistributorComponent().getClock().getTimeInSeconds().getTime());
+        _bucketSpace->getBucketDatabase().update(dbentry);
     }
 }
 
