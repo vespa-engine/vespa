@@ -363,7 +363,7 @@ FBench::Main(int argc, char *argv[])
 
     idx = 1;
     optError = false;
-    while((opt = GetOpt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kxyzP", arg, idx)) != -1) {
+    while((opt = GetOpt(argc, argv, "H:A:T:C:K:Da:n:c:l:i:s:q:o:r:m:p:kdxyzP", arg, idx)) != -1) {
         switch(opt) {
         case 'A':
             authority = arg;
