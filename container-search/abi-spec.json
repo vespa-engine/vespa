@@ -696,6 +696,7 @@
       "public static final enum com.yahoo.prelude.query.Item$ItemType PREDICATE_QUERY",
       "public static final enum com.yahoo.prelude.query.Item$ItemType REGEXP",
       "public static final enum com.yahoo.prelude.query.Item$ItemType WORD_ALTERNATIVES",
+      "public static final enum com.yahoo.prelude.query.Item$ItemType NEAREST_NEIGHBOR",
       "public final int code"
     ]
   },
@@ -846,6 +847,27 @@
       "protected int distance",
       "public static final int defaultDistance"
     ]
+  },
+  "com.yahoo.prelude.query.NearestNeighborItem": {
+    "superClass": "com.yahoo.prelude.query.SimpleTaggableItem",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public int getTargetNumHits()",
+      "public java.lang.String getIndexName()",
+      "public java.lang.String getQueryTensorName()",
+      "public void setTargetNumHits(int)",
+      "public void setIndexName(java.lang.String)",
+      "public com.yahoo.prelude.query.Item$ItemType getItemType()",
+      "public java.lang.String getName()",
+      "public int getTermCount()",
+      "public int encode(java.nio.ByteBuffer)",
+      "protected void appendBodyString(java.lang.StringBuilder)"
+    ],
+    "fields": []
   },
   "com.yahoo.prelude.query.NonReducibleCompositeItem": {
     "superClass": "com.yahoo.prelude.query.CompositeItem",
@@ -7911,6 +7933,18 @@
     ]
   },
   "com.yahoo.search.searchers.ValidateMatchPhaseSearcher": {
+    "superClass": "com.yahoo.search.Searcher",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.vespa.config.search.AttributesConfig)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.searchers.ValidateNearestNeighborSearcher": {
     "superClass": "com.yahoo.search.Searcher",
     "interfaces": [],
     "attributes": [
