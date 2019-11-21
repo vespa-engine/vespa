@@ -3,14 +3,15 @@ package com.yahoo.vespa.config.server.http;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.yolean.Exceptions;
 import org.apache.http.Header;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * @author olaaun
@@ -18,13 +19,15 @@ import java.util.Optional;
 public class LogRetriever {
 
     private final HttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private static final Logger logger = Logger.getLogger(LogRetriever.class.getName());
 
     public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
         try {
             return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            logger.warning("Failed to get logs: " + Exceptions.toMessageString(e));
+            return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
     }
 
