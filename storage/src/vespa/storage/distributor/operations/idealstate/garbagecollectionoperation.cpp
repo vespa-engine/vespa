@@ -24,7 +24,7 @@ GarbageCollectionOperation::onStart(DistributorMessageSender& sender)
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     std::vector<uint16_t> nodes = entry->getNodes();
 
-    for (uint32_t node : nodes) {
+    for (auto node : nodes) {
         auto command = std::make_shared<api::RemoveLocationCommand>(
                 _manager->getDistributorComponent().getDistributor().getConfig().getGarbageCollectionSelection(),
                 getBucket());
