@@ -94,6 +94,11 @@ struct ClientArguments
      * client.
      **/
     bool        _keepAlive;
+    
+    /**
+     * Indicate wether to base64 decode the request before sending it
+     **/
+    bool        _base64Decode;
 
     /** Whether we should use POST in requests */
     bool        _usePostMode;
@@ -117,7 +122,8 @@ struct ClientArguments
                     long cycle, long delay,
                     int ignoreCount, int byteLimit,
                     int restartLimit, int maxLineSize,
-                    bool keepAlive, bool headerBenchmarkdataCoverage,
+                    bool keepAlive, bool base64Decode,
+                    bool headerBenchmarkdataCoverage,
                     uint64_t queryfileOffset, uint64_t queryfileEndOffset, bool singleQueryFile,
                     const std::string & queryStringToAppend, const std::string & extraHeaders,
                     const std::string &authority, bool postMode)
@@ -134,6 +140,7 @@ struct ClientArguments
           _restartLimit(restartLimit),
           _maxLineSize(maxLineSize),
           _keepAlive(keepAlive),
+          _base64Decode(base64Decode),
           _usePostMode(postMode),
           _headerBenchmarkdataCoverage(headerBenchmarkdataCoverage),
           _queryfileOffset(queryfileOffset),

@@ -102,7 +102,8 @@ void
 FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
                       const char *filenamePattern, const char *outputPattern,
                       int byteLimit, int restartLimit, int maxLineSize,
-                      bool keepAlive, bool headerBenchmarkdataCoverage, int seconds,
+                      bool keepAlive, bool base64Decode,
+                      bool headerBenchmarkdataCoverage, int seconds,
                       bool singleQueryFile, const std::string & queryStringToAppend, const std::string & extraHeaders,
                       const std::string &authority, bool postMode)
 {
@@ -122,6 +123,7 @@ FBench::InitBenchmark(int numClients, int ignoreCount, int cycle,
     _restartLimit    = restartLimit;
     _maxLineSize     = maxLineSize;
     _keepAlive       = keepAlive;
+    _base64Decode    = base64Decode;
     _usePostMode     = postMode;
     _headerBenchmarkdataCoverage = headerBenchmarkdataCoverage;
     _seconds = seconds;
@@ -147,7 +149,8 @@ FBench::CreateClients()
                                 _ports[i % _ports.size()], _cycle,
                                 random() % spread, _ignoreCount,
                                 _byteLimit, _restartLimit, _maxLineSize,
-                                _keepAlive, _headerBenchmarkdataCoverage,
+                                _keepAlive, _base64Decode,
+                                _headerBenchmarkdataCoverage,
                                 off_beg, off_end,
                                 _singleQueryFile, _queryStringToAppend, _extraHeaders, _authority, _usePostMode));
         ++i;
@@ -293,6 +296,7 @@ FBench::Usage()
     printf("            Can not be less than the minimum [1024].\n");
     printf(" -p <num> : print summary every <num> seconds.\n");
     printf(" -k       : disable HTTP keep-alive.\n");
+    printf(" -d       : Base64 decode POST request content.\n");
     printf(" -y       : write data on coverage to output file.\n");
     printf(" -z       : use single query file to be distributed between clients.\n");
     printf(" -T <str> : CA certificate file to verify peer against.\n");
@@ -335,6 +339,7 @@ FBench::Main(int argc, char *argv[])
 
     int  restartLimit = -1;
     bool keepAlive    = true;
+    bool base64Decode = false;
     bool headerBenchmarkdataCoverage = false;
     bool usePostMode = false;
 
@@ -415,6 +420,9 @@ FBench::Main(int argc, char *argv[])
             break;
         case 'k':
             keepAlive = false;
+            break;
+        case 'd':
+            base64Decode = false;
             break;
         case 'x': 
             // consuming x for backwards compability. This turned on header benchmark data
@@ -503,7 +511,7 @@ FBench::Main(int argc, char *argv[])
     InitBenchmark(numClients, ignoreCount, cycleTime,
                   queryFilePattern, outputFilePattern,
                   byteLimit, restartLimit, maxLineSize,
-                  keepAlive,
+                  keepAlive, base64Decode,
                   headerBenchmarkdataCoverage, seconds,
                   singleQueryFile, queryStringToAppend, extraHeaders,
                   authority, usePostMode);

@@ -23,6 +23,7 @@ private:
     int                 _restartLimit;
     int                 _maxLineSize;
     bool                _keepAlive;
+    bool                _base64Decode;
     bool                _usePostMode;
     bool                _headerBenchmarkdataCoverage;
     int                 _seconds;
@@ -40,7 +41,8 @@ private:
     void InitBenchmark(int numClients, int ignoreCount, int cycle,
                        const char *filenamePattern, const char *outputPattern,
                        int byteLimit, int restartLimit, int maxLineSize,
-                       bool keepAlive, bool headerBenchmarkdataCoverage, int seconds,
+                       bool keepAlive, bool base64Decode,
+                       bool headerBenchmarkdataCoverage, int seconds,
                        bool singleQueryFile, const std::string & queryStringToAppend, const std::string & extraHeaders,
                        const std::string &authority, bool postMode);
 
