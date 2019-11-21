@@ -2,7 +2,9 @@
 
 #pragma once
 
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/eval/tensor/default_tensor_engine.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
@@ -14,6 +16,7 @@ class FakeRequestContext : public IRequestContext
 {
 public:
     FakeRequestContext(attribute::IAttributeContext * context = nullptr, fastos::SteadyTimeStamp doom=fastos::SteadyTimeStamp(fastos::TimeStamp::FUTURE));
+    ~FakeRequestContext();
     const vespalib::Doom & getSoftDoom() const override { return _doom; }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
         return _attributeContext
@@ -26,14 +29,22 @@ public:
                    : nullptr;
     }
     vespalib::eval::Value::UP get_query_tensor(const vespalib::string& tensor_name) const override {
-        (void) tensor_name;
+        if (_query_tensor && (tensor_name == _query_tensor_name)) {
+            return vespalib::tensor::DefaultTensorEngine::ref().from_spec(*_query_tensor);
+        }
         return vespalib::eval::Value::UP();
+    }
+    void set_query_tensor(const vespalib::string& name, const vespalib::eval::TensorSpec& tensor_spec) {
+        _query_tensor_name = name;
+        _query_tensor = std::make_unique<vespalib::eval::TensorSpec>(tensor_spec);
     }
 
 private:
     vespalib::Clock _clock;
     const vespalib::Doom _doom;
     attribute::IAttributeContext *_attributeContext;
+    vespalib::string _query_tensor_name;
+    std::unique_ptr<vespalib::eval::TensorSpec> _query_tensor;
 };
 
 }

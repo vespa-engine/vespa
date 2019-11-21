@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/tensor/default_tensor_engine.h>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_factory.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.hpp>
@@ -13,6 +16,9 @@
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
+#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
@@ -33,11 +39,16 @@ using search::query::SimplePrefixTerm;
 using search::query::SimpleStringTerm;
 using search::query::Weight;
 using search::queryeval::Blueprint;
+using search::queryeval::EmptyBlueprint;
 using search::queryeval::FieldSpec;
+using search::queryeval::NearestNeighborBlueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::FakeRequestContext;
 using std::string;
 using std::vector;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::ValueType;
+using vespalib::tensor::DefaultTensorEngine;
 using namespace search::attribute;
 using namespace search;
 
@@ -56,7 +67,14 @@ public:
     {
     }
     MyAttributeManager(AttributeVector *attr)
-        : _attribute_vector(attr) {}
+        : _attribute_vector(attr)
+    {
+    }
+
+    MyAttributeManager(AttributeVector::SP attr)
+        : _attribute_vector(std::move(attr))
+    {
+    }
 
     AttributeGuard::UP getAttribute(const string &) const override {
         return AttributeGuard::UP(new AttributeGuard(_attribute_vector));
@@ -209,6 +227,99 @@ TEST("requireThatFastSearchLocationTermsWork") {
     node = SimpleLocationTerm(Location(Point(10, 13), 3, 0),field, 0, Weight(0));
     EXPECT_TRUE(search(node, attribute_manager));
 #endif
+}
+
+AttributeVector::SP
+make_tensor_attribute(const vespalib::string& name, const vespalib::string& tensor_spec)
+{
+    Config cfg(BasicType::TENSOR, CollectionType::SINGLE);
+    cfg.setTensorType(ValueType::from_spec(tensor_spec));
+    return AttributeFactory::createAttribute(name, cfg);
+}
+
+AttributeVector::SP
+make_int_attribute(const vespalib::string& name)
+{
+    Config cfg(BasicType::INT32, CollectionType::SINGLE);
+    return AttributeFactory::createAttribute(name, cfg);
+}
+
+template <typename BlueprintType>
+const BlueprintType&
+as_type(const Blueprint& blueprint)
+{
+    const auto* result = dynamic_cast<const BlueprintType*>(&blueprint);
+    ASSERT_TRUE(result != nullptr);
+    return *result;
+}
+
+class NearestNeighborFixture {
+public:
+    MyAttributeManager mgr;
+    vespalib::string attr_name;
+    AttributeContext attr_ctx;
+    FakeRequestContext request_ctx;
+    AttributeBlueprintFactory source;
+
+    NearestNeighborFixture(AttributeVector::SP attr)
+        : mgr(attr),
+          attr_name(attr->getName()),
+          attr_ctx(mgr),
+          request_ctx(&attr_ctx),
+          source()
+    {
+    }
+    void set_query_tensor(const TensorSpec& tensor_spec) {
+        request_ctx.set_query_tensor("query_tensor", tensor_spec);
+    }
+    Blueprint::UP create_blueprint() {
+        query::NearestNeighborTerm term("query_tensor", attr_name, 0, Weight(0), 7);
+        return source.createBlueprint(request_ctx, FieldSpec(attr_name, 0, 0), term);
+    }
+};
+
+TEST_F("nearest neighbor blueprint is created by attribute blueprint factory",
+       NearestNeighborFixture(make_tensor_attribute(field, "tensor(x[2])")))
+{
+    TensorSpec dense_x_2 = TensorSpec("tensor(x[2])").add({{"x", 0}}, 3).add({{"x", 1}}, 5);
+    f.set_query_tensor(dense_x_2);
+
+    auto result = f.create_blueprint();
+    const auto& nearest = as_type<NearestNeighborBlueprint>(*result);
+    EXPECT_EQUAL("tensor(x[2])", nearest.get_attribute_tensor().getTensorType().to_spec());
+    EXPECT_EQUAL(dense_x_2, DefaultTensorEngine::ref().to_spec(nearest.get_query_tensor()));
+    EXPECT_EQUAL(7u, nearest.get_target_num_hits());
+}
+
+void
+expect_empty_blueprint(AttributeVector::SP attr, const TensorSpec& query_tensor, bool insert_query_tensor = true)
+{
+    NearestNeighborFixture f(attr);
+    if (insert_query_tensor) {
+        f.set_query_tensor(query_tensor);
+    }
+    auto result = f.create_blueprint();
+    EXPECT_TRUE(dynamic_cast<EmptyBlueprint*>(result.get()) != nullptr);
+}
+
+void
+expect_empty_blueprint(AttributeVector::SP attr)
+{
+    expect_empty_blueprint(std::move(attr), TensorSpec("double"), false);
+}
+
+TEST("empty blueprint is created when nearest neighbor term is invalid")
+{
+    TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", 0}}, 3);
+    TensorSpec dense_y_2 = TensorSpec("tensor(y[2])").add({{"y", 0}}, 3).add({{"y", 1}}, 5);
+    TensorSpec dense_x_3 = TensorSpec("tensor(x[3])").add({{"x", 0}}, 3).add({{"x", 1}}, 5).add({{"x", 2}}, 7);
+    TEST_DO(expect_empty_blueprint(make_int_attribute(field))); // attribute is not a tensor
+    TEST_DO(expect_empty_blueprint(make_tensor_attribute(field, "tensor(x{})"))); // attribute is not a dense tensor
+    TEST_DO(expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2],y[2])"))); // tensor type is not of order 1
+    TEST_DO(expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"))); // query tensor not found
+    TEST_DO(expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), sparse_x)); // query tensor is not dense
+    TEST_DO(expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), dense_y_2)); // tensor types are not equal
+    TEST_DO(expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), dense_x_3)); // tensor types are not same size
 }
     
 TEST_MAIN() { TEST_RUN_ALL(); }
