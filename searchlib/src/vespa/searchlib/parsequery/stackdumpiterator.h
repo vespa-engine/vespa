@@ -110,13 +110,6 @@ public:
     uint32_t getUniqueId() const { return _currUniqueId; }
 
     /**
-     * Get the term index of the current item.
-     *
-     * @return term index of current item
-     **/
-    uint32_t getTermIndex() const { return -1; }
-
-    /**
      * Get the flags of the current item.
      *
      * @return flags of current item

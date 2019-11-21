@@ -13,9 +13,8 @@ namespace {
 struct Term {
     fef::TermFieldHandle handle;
     int                          weight;
-    int                          index;
-    Term(fef::TermFieldHandle handle_in, int weight_in, int index_in)
-        : handle(handle_in), weight(weight_in), index(index_in) {}
+    Term(fef::TermFieldHandle handle_in, int weight_in)
+        : handle(handle_in), weight(weight_in) {}
 };
 
 struct State {
@@ -92,13 +91,11 @@ TextSimilarityExecutor::TextSimilarityExecutor(const fef::IQueryEnvironment &env
                 if (tfd.getFieldId() == field_id) {
                     int term_weight = termData->getWeight().percent();
                     _total_term_weight += term_weight;
-                    terms.push_back(Term(tfd.getHandle(), term_weight,
-                                    termData->getTermIndex()));
+                    terms.push_back(Term(tfd.getHandle(), term_weight));
                 }
             }
         }
     }
-    std::sort(terms.begin(), terms.end(), [](const Term &a, const Term &b){ return (a.index < b.index); });
     _handles.reserve(terms.size());
     _weights.reserve(terms.size());
     for (size_t i = 0; i < terms.size(); ++i) {

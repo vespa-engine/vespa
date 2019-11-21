@@ -17,7 +17,6 @@ SimpleTermData::SimpleTermData()
 SimpleTermData::SimpleTermData(const ITermData &rhs)
     : _weight(rhs.getWeight()),
       _numTerms(rhs.getPhraseLength()),
-      _termIndex(rhs.getTermIndex()),
       _uniqueId(rhs.getUniqueId()),
       _fields()
 {
