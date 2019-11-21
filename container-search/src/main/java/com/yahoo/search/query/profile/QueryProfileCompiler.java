@@ -82,7 +82,6 @@ public class QueryProfileCompiler {
             variants.addAll(parentVariants);
             variants.addAll(combined(variants, parentVariants)); // parents and children may have different variant dimensions
         }
-
         variants.addAll(wildcardExpanded(variants));
         return variants;
     }
@@ -152,8 +151,10 @@ public class QueryProfileCompiler {
         Set<DimensionBindingForPath> variants = new HashSet<>();
         if (profileVariants != null) {
             for (QueryProfileVariant variant : profile.getVariants().getVariants()) {
+                // Allow switching order since we're entering another profile
                 DimensionBinding combinedVariant =
                         DimensionBinding.createFrom(profile.getDimensions(), variant.getDimensionValues()).combineWith(currentVariant);
+
                 if (combinedVariant.isInvalid()) continue; // values at this point in the graph are unreachable
 
                 variants.addAll(collectVariantsFromValues(path, variant.values(), combinedVariant));

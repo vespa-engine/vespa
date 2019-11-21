@@ -14,6 +14,7 @@ import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.yolean.trace.TraceNode;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -86,15 +87,15 @@ public class QueryProfileVariantsTestCase {
         registry.register(parent);
         registry.register(profile);
         registry.register(referenced);
-        profile.set("feed.main", referenced, registry);
-        referenced.set("streams", "default_value", registry);
-        referenced.set("streams", "variant_value", new String[] { "x1", null, "z1" }, registry);
+        profile.set("a.b", referenced, registry);
+        referenced.set("c", "default_value", registry);
+        referenced.set("c", "variant_value", new String[] { "x1", null, "z1" }, registry);
 
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
 
-        assertEquals("default_value", new Query("?", cTest).properties().get("feed.main.streams"));
-        assertEquals("variant_value", new Query("?x=x1&y=y1&z=z1", cTest).properties().get("feed.main.streams"));
+        assertEquals("default_value", new Query("?", cTest).properties().get("a.b.c"));
+        assertEquals("variant_value", new Query("?x=x1&y=y1&z=z1", cTest).properties().get("a.b.c"));
 
         {
             Map<String, ValueWithSource> values = cRegistry.findQueryProfile("test")
@@ -102,9 +103,9 @@ public class QueryProfileVariantsTestCase {
                                                                                   new HashMap<>(),
                                                                                   null);
             assertEquals(1, values.size());
-            assertEquals("default_value", values.get("feed.main.streams").value());
-            assertEquals("referenced", values.get("feed.main.streams").source());
-            assertTrue(values.get("feed.main.streams").variant().isEmpty());
+            assertEquals("default_value", values.get("a.b.c").value());
+            assertEquals("referenced", values.get("a.b.c").source());
+            assertTrue(values.get("a.b.c").variant().isEmpty());
         }
 
         {
@@ -113,14 +114,69 @@ public class QueryProfileVariantsTestCase {
                                                                                   toMap("x=x1", "y=y1", "z=z1"),
                                                                                   null);
             assertEquals(2, values.size());
-            assertEquals("variant_value", values.get("feed.main.streams").value());
-            assertEquals("referenced", values.get("feed.main.streams").source());
-            assertEquals("[x1, *, z1]", values.get("feed.main.streams").variant().get().toString());
+            assertEquals("variant_value", values.get("a.b.c").value());
+            assertEquals("referenced", values.get("a.b.c").source());
+            assertEquals("[x1, *, z1]", values.get("a.b.c").variant().get().toString());
 
             assertEquals("otherValue", values.get("other").value());
             assertEquals("parent", values.get("other").source());
             assertEquals("[x1, y1]", values.get("other").variant().get().toString());
         }
+    }
+
+    @Test
+    public void testSwitchingDimensionOrderInReferencedVariantWithFullOverlap() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "x", "i", "j", "y" });
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.setDimensions(new String[] { "y", "x" });
+        registry.register(profile);
+        registry.register(referenced);
+        profile.set("a.b", referenced, new String[] { "x1", "i1", "j1", "y1" }, registry);
+        referenced.set("c", "variant_value", new String[] { "y1" }, registry);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertEquals("variant_value", new Query("?x=x1&i=i1&j=j1&y=y1", cTest).properties().get("a.b.c"));
+    }
+
+    @Test
+    public void testSameDimensionOrderInReferencedVariantWithPartialOverlap() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "x", "i", "j", "y" });
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.setDimensions(new String[] { "x", "y" });
+        registry.register(profile);
+        registry.register(referenced);
+        profile.set("a.b", referenced, new String[] { "x1", "i1", "j1" }, registry);
+        referenced.set("c", "variant_value", new String[] { null, "y1" }, registry);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertEquals("variant_value", new Query("?x=x1&i=i1&j=j1&y=y1", cTest).properties().get("a.b.c"));
+    }
+
+    @Test
+    @Ignore // Switching order is not supported
+    public void testSwitchingDimensionOrderInReferencedVariantWithPartialOverlap() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "x", "i", "j", "y" });
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.setDimensions(new String[] { "y", "x" });
+        registry.register(profile);
+        registry.register(referenced);
+        profile.set("a.b", referenced, new String[] { "x1", "i1", "j1" }, registry);
+        referenced.set("c", "variant_value", new String[] { "y1" }, registry);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertEquals("variant_value", new Query("?x=x1&i=i1&j=j1&y=y1", cTest).properties().get("a.b.c"));
     }
 
     @Test

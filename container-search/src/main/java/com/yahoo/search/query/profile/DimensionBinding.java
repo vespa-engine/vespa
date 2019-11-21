@@ -4,6 +4,7 @@ package com.yahoo.search.query.profile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ public class DimensionBinding {
     private DimensionValues values;
 
     /** The binding from those dimensions to values, and possibly other values */
-    private Map<String, String> context;
+    private Map<String, String> context; // TODO: This is not needed any more
 
     public static final DimensionBinding nullBinding =
         new DimensionBinding(Collections.unmodifiableList(Collections.emptyList()), DimensionValues.empty, null);
@@ -32,7 +33,13 @@ public class DimensionBinding {
     /** Whether the value array contains only nulls */
     private boolean containsAllNulls;
 
+    // NOTE: Map must be ordered
+    public static DimensionBinding createFrom(Map<String,String> values) {
+        return createFrom(new ArrayList<>(values.keySet()), values);
+    }
+
     /** Creates a binding from a variant and a context. Any of the arguments may be null. */
+    // NOTE: Map must be ordered
     public static DimensionBinding createFrom(List<String> dimensions, Map<String,String> context) {
         if (dimensions == null || dimensions.size() == 0) {
             if (context == null) return nullBinding;
@@ -102,7 +109,7 @@ public class DimensionBinding {
      * in the corresponding order. The array is always of the same length as the number of dimensions.
      * Dimensions which are not set in this context get a null value.
      */
-    private static DimensionValues extractDimensionValues(List<String> dimensions,Map<String,String> context) {
+    private static DimensionValues extractDimensionValues(List<String> dimensions, Map<String,String> context) {
         String[] dimensionValues=new String[dimensions.size()];
         if (context==null || context.size()==0) return DimensionValues.createFrom(dimensionValues);
         for (int i=0; i<dimensions.size(); i++)
@@ -129,6 +136,16 @@ public class DimensionBinding {
         if (combinedValues == null) return invalidBinding;
 
         return DimensionBinding.createFrom(combinedDimensions, combinedValues);
+    }
+
+    /** Returns the binding of this (dimension->value) as a map */
+    private Map<String, String> asMap() {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (int i = 0; i < Math.min(dimensions.size(), values.size()); i++) {
+            if (values.getValues()[i] != null)
+                map.put(dimensions.get(i), values.getValues()[i]);
+        }
+        return map;
     }
 
     /**
@@ -169,7 +186,7 @@ public class DimensionBinding {
      * or null if they are incompatible.
      */
     private Map<String, String> combineValues(Map<String, String> m1, Map<String, String> m2) {
-        Map<String, String> combinedValues = new HashMap<>(m1);
+        Map<String, String> combinedValues = new LinkedHashMap<>(m1);
         for (Map.Entry<String, String> m2Entry : m2.entrySet()) {
             if (m2Entry.getValue() == null) continue;
             String m1Value = m1.get(m2Entry.getKey());

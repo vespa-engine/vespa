@@ -41,6 +41,7 @@ import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.Containe
  * @author bakksjo
  */
 public class NodeAgentImpl implements NodeAgent {
+
     // This is used as a definition of 1 GB when comparing flavor specs in node-repo
     private static final long BYTES_IN_GB = 1_000_000_000L;
 
