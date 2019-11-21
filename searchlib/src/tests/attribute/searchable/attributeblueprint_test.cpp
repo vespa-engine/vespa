@@ -245,12 +245,12 @@ make_int_attribute(const vespalib::string& name)
 }
 
 template <typename BlueprintType>
-const BlueprintType*
+const BlueprintType&
 as_type(const Blueprint& blueprint)
 {
     const auto* result = dynamic_cast<const BlueprintType*>(&blueprint);
     ASSERT_TRUE(result != nullptr);
-    return result;
+    return *result;
 }
 
 class NearestNeighborFixture {
@@ -285,10 +285,10 @@ TEST_F("nearest neighbor blueprint is created by attribute blueprint factory",
     f.set_query_tensor(dense_x_2);
 
     auto result = f.create_blueprint();
-    const auto* nearest = as_type<NearestNeighborBlueprint>(*result);
-    EXPECT_EQUAL("tensor(x[2])", nearest->get_attribute_tensor().getTensorType().to_spec());
-    EXPECT_EQUAL(dense_x_2, DefaultTensorEngine::ref().to_spec(nearest->get_query_tensor()));
-    EXPECT_EQUAL(7u, nearest->get_target_num_hits());
+    const auto& nearest = as_type<NearestNeighborBlueprint>(*result);
+    EXPECT_EQUAL("tensor(x[2])", nearest.get_attribute_tensor().getTensorType().to_spec());
+    EXPECT_EQUAL(dense_x_2, DefaultTensorEngine::ref().to_spec(nearest.get_query_tensor()));
+    EXPECT_EQUAL(7u, nearest.get_target_num_hits());
 }
 
 void
@@ -299,7 +299,7 @@ expect_empty_blueprint(AttributeVector::SP attr, const TensorSpec& query_tensor,
         f.set_query_tensor(query_tensor);
     }
     auto result = f.create_blueprint();
-    as_type<EmptyBlueprint>(*result);
+    EXPECT_TRUE(dynamic_cast<EmptyBlueprint*>(result.get()) != nullptr);
 }
 
 void
@@ -312,12 +312,14 @@ TEST("empty blueprint is created when nearest neighbor term is invalid")
 {
     TensorSpec sparse_x = TensorSpec("tensor(x{})").add({{"x", 0}}, 3);
     TensorSpec dense_y_2 = TensorSpec("tensor(y[2])").add({{"y", 0}}, 3).add({{"y", 1}}, 5);
+    TensorSpec dense_x_3 = TensorSpec("tensor(x[3])").add({{"x", 0}}, 3).add({{"x", 1}}, 5).add({{"x", 2}}, 7);
     expect_empty_blueprint(make_int_attribute(field)); // attribute is not a tensor
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x{})")); // attribute is not a dense tensor
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2],y[2])")); // tensor type is not of order 1
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])")); // query tensor not found
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), sparse_x); // query tensor is not dense
     expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), dense_y_2); // tensor types are not equal
+    expect_empty_blueprint(make_tensor_attribute(field, "tensor(x[2])"), dense_x_3); // tensor types are not same size
 }
     
 TEST_MAIN() { TEST_RUN_ALL(); }
