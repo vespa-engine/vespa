@@ -634,9 +634,10 @@ public:
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not equal",
                                                              dense_attr_tensor->getTensorType().to_spec().c_str(), dense_query_tensor->type().to_spec().c_str()));
         }
+        std::unique_ptr<DenseTensorView> dense_query_tensor_up(dense_query_tensor);
         query_tensor.release();
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
-                                                                        std::unique_ptr<DenseTensorView>(dense_query_tensor),
+                                                                        std::move(dense_query_tensor_up),
                                                                         n.get_target_num_hits()));
     }
 };
