@@ -273,7 +273,7 @@ Client::run()
                 auto base64_content = std::string(urlSource.content(), cLen);
                 auto decoded = base64_decode(base64_content);
                 content = decoded.c_str();
-                cLen = content.size();
+                cLen = decoded.size();
             }
                         
             _reqTimer->Start();
