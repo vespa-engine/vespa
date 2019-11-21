@@ -62,11 +62,6 @@ Message::setTimeReceivedNow()
     return *this;
 }
 
-steady_clock::time_point
-Message::getTimeReceived() const {
-    return _timeReceived;
-}
-
 milliseconds
 Message::getTimeRemainingNow() const
 {

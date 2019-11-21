@@ -37,7 +37,7 @@ public:
      *
      * @return The timestamp this was last seen.
      */
-    time_point getTimeReceived() const;
+    time_point getTimeReceived() const { return _timeReceived; }
 
     /**
      * This is a convenience method to call {@link #setTimeReceived(uint64_t)}
