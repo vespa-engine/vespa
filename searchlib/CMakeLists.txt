@@ -188,6 +188,7 @@ vespa_define_module(
     src/tests/queryeval/getnodeweight
     src/tests/queryeval/monitoring_search_iterator
     src/tests/queryeval/multibitvectoriterator
+    src/tests/queryeval/nearest_neighbor
     src/tests/queryeval/parallel_weak_and
     src/tests/queryeval/predicate
     src/tests/queryeval/same_element
