@@ -11,7 +11,6 @@ namespace storage {
 namespace api { class StorageMessage; }
 
 class MessageEnqueuer;
-class StorageServerInterface;
 
 class FNetListener :  public FRT_Invokable
 {

@@ -1,19 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("statebuf_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/util/statebuf.h>
-#include <string>
 
-namespace search
-{
+#include <vespa/log/log.h>
+LOG_SETUP("statebuf_test");
 
-namespace
-{
-
-
-}
+namespace search {
 
 class Fixture : public StateBuf
 {
@@ -39,12 +33,6 @@ TEST_F("strings can be appended to stream", Fixture)
     EXPECT_EQUAL("Hello world", f.str());
 }
 
-TEST_F("quoted strings can be appended to stream", Fixture)
-{
-    f.appendQuoted("This is a quoting test, \\ \" \n oops");
-    EXPECT_EQUAL("\"This is a quoting test, \\\\ \\\" \\n oops\"", f.str());
-}
-
 TEST_F("keys can be appended to stream", Fixture)
 {
     (f.appendKey("foo") << "fooval").appendKey("bar") << "barval";
@@ -66,18 +54,14 @@ TEST_F("negative integers can be appended to stream", Fixture)
 
 TEST_F("struct timespec can be appended to stream", Fixture)
 {
-    struct timespec ts;
-    ts.tv_sec = 15;
-    ts.tv_nsec = 256;
+    std::chrono::nanoseconds ts(15*1000000000l + 256);
     f << ts;
     EXPECT_EQUAL("15.000000256", f.str());
 }
 
 TEST_F("timestamp can be appended to stream", Fixture)
 {
-    struct timespec ts;
-    ts.tv_sec = 16;
-    ts.tv_nsec = 257;
+    std::chrono::nanoseconds ts(16*1000000000l + 257);
     f.appendTimestamp(ts);
     EXPECT_EQUAL("ts=16.000000257", f.str());
 }
