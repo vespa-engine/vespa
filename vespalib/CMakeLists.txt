@@ -116,7 +116,6 @@ vespa_define_module(
     src/tests/thread
     src/tests/time
     src/tests/time_tracer
-    src/tests/time_tracker
     src/tests/trace
     src/tests/traits
     src/tests/true

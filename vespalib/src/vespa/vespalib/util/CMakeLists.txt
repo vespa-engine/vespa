@@ -52,7 +52,6 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     thread_bundle.cpp
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
-    time_tracker.cpp
     valgrind.cpp
     zstdcompressor.cpp
     DEPENDS
