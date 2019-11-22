@@ -82,7 +82,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             throw new IllegalArgumentException("Requested " + requestedCapacity.nodeCount() + " nodes in " + wantedGroups + " groups, " +
                                                "which doesn't allow the nodes to be divided evenly into groups");
 
-        log.log(zone.system() == SystemName.cd ? Level.INFO : LogLevel.DEBUG,
+        log.log(zone.system().isCd() ? Level.INFO : LogLevel.DEBUG,
                 () -> "Received deploy prepare request for " + requestedCapacity + " in " +
                       wantedGroups + " groups for application " + application + ", cluster " + cluster);
 
