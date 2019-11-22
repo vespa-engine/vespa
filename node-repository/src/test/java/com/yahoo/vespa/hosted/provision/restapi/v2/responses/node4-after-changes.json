@@ -8,6 +8,7 @@
   "openStackId": "patched-openstackid",
   "flavor": "d-2-8-100",
   "canonicalFlavor": "d-2-8-100",
+  "resources":{"vcpu":2.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"storageType":"remote"},
   "minDiskAvailableGb": 100.0,
   "minMainMemoryAvailableGb": 8.0,
   "minCpuCores": 2.0,
