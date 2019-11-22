@@ -185,7 +185,7 @@ App::Main()
             bool stopOnIOErrors = protonConfig.stoponioerrors;
             vespalib::mkdir(basedir, true);
             // TODO: Test that we can write to new file in directory
-            stateFile.reset(new search::StateFile(basedir + "/state"));
+            stateFile = std::make_unique<search::StateFile>(basedir + "/state");
             int stateGen = stateFile->getGen();
             vespalib::string stateString = getStateString(*stateFile);
             std::unique_ptr<PersistenceProvider> downPersistence;
@@ -193,7 +193,7 @@ App::Main()
                 LOG(error, "proton state string is %s", stateString.c_str());
                 if (stopOnIOErrors) {
                     if ( !params.serviceidentity.empty()) {
-                        downPersistence.reset(new DownPersistence("proton state string is " + stateString));
+                        downPersistence = std::make_unique<DownPersistence>("proton state string is " + stateString);
                     } else {
                         LOG(info, "Sleeping 900 seconds due to proton state");
                         int sleepLeft = 900;
@@ -206,8 +206,8 @@ App::Main()
                     }
                 }
             }
-            sigBusHandler.reset(new search::SigBusHandler(stateFile.get()));
-            ioErrorHandler.reset(new search::IOErrorHandler(stateFile.get()));
+            sigBusHandler = std::make_unique<search::SigBusHandler>(stateFile.get());
+            ioErrorHandler = std::make_unique<search::IOErrorHandler>(stateFile.get());
             if ( ! params.serviceidentity.empty()) {
                 proton.getMetricManager().init(params.serviceidentity, proton.getThreadPool());
             } else {
@@ -219,7 +219,7 @@ App::Main()
             configSnapshot.reset();
             std::unique_ptr<ProtonServiceLayerProcess> spiProton;
             if ( ! params.serviceidentity.empty()) {
-                spiProton.reset(new ProtonServiceLayerProcess(params.serviceidentity, proton, downPersistence.get()));
+                spiProton = std::make_unique<ProtonServiceLayerProcess>(params.serviceidentity, proton, downPersistence.get());
                 spiProton->setupConfig(params.subscribeTimeout);
                 spiProton->createNode();
                 EV_STARTED("servicelayer");
