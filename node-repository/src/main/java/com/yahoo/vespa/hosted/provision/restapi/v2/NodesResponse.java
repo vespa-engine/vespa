@@ -147,16 +147,17 @@ class NodesResponse extends HttpResponse {
         }
         object.setString("openStackId", node.id());
         object.setString("flavor", node.flavor().name());
-        object.setString("canonicalFlavor", node.flavor().name());
-        object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb());
-        object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb());
+        object.setString("canonicalFlavor", node.flavor().name()); // TODO: Remove
+        toSlime(node.flavor().resources(), object.setObject("resources"));
+        object.setDouble("minDiskAvailableGb", node.flavor().getMinDiskAvailableGb()); // TODO: Remove
+        object.setDouble("minMainMemoryAvailableGb", node.flavor().getMinMainMemoryAvailableGb()); // TODO: Remove
         object.setDouble("minCpuCores", node.flavor().getMinCpuCores());
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
-        object.setBool("fastDisk", node.flavor().hasFastDisk());
-        if (node.flavor().resources().storageType() != NodeResources.StorageType.any)
+        object.setBool("fastDisk", node.flavor().hasFastDisk());  // TODO: Remove
+        if (node.flavor().resources().storageType() != NodeResources.StorageType.any)  // TODO: Remove
             object.setBool("remoteStorage", node.flavor().resources().storageType() == NodeResources.StorageType.remote);
-        object.setDouble("bandwidthGbps", node.flavor().getBandwidthGbps());
+        object.setDouble("bandwidthGbps", node.flavor().getBandwidthGbps()); // TODO: Remove
         object.setString("environment", node.flavor().getType().name());
         node.allocation().ifPresent(allocation -> {
             toSlime(allocation.owner(), object.setObject("owner"));

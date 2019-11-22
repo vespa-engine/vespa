@@ -7,6 +7,7 @@
   "openStackId": "node6",
   "flavor": "[vcpu: 2.0, memory: 8.0 Gb, disk 50.0 Gb, bandwidth: 1.0 Gbps]",
   "canonicalFlavor": "[vcpu: 2.0, memory: 8.0 Gb, disk 50.0 Gb, bandwidth: 1.0 Gbps]",
+  "resources":{"vcpu":2.0,"memoryGb":8.0,"diskGb":50.0,"bandwidthGbps":1.0},
   "minDiskAvailableGb": 50.0,
   "minMainMemoryAvailableGb": 8.0,
   "minCpuCores": 2.0,
