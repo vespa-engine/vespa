@@ -55,7 +55,7 @@ public abstract class IntermediateOperation {
     IntermediateOperation(String modelName, String name, List<IntermediateOperation> inputs) {
         this.name = name;
         this.modelName = modelName;
-        this.inputs = Collections.unmodifiableList(inputs);
+        this.inputs = new ArrayList<>(inputs);
         this.inputs.forEach(i -> i.outputs.add(this));
     }
 
