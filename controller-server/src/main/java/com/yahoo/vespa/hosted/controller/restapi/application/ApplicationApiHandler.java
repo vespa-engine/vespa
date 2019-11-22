@@ -109,6 +109,7 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -749,35 +750,42 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             }));
         }
 
-        // Rotation
-        Cursor globalRotationsArray = object.setArray("globalRotations");
+        // Global endpoints
+        var globalEndpointUrls = new LinkedHashSet<String>();
+
+        // Add default global endpoints. These are backed by rotations.
         instance.endpointsIn(controller.system())
                 .scope(Endpoint.Scope.global)
                 .legacy(false) // Hide legacy names
                 .asList().stream()
                 .map(Endpoint::url)
                 .map(URI::toString)
-                .forEach(globalRotationsArray::addString);
+                .forEach(globalEndpointUrls::add);
 
+        // Per-cluster endpoints. These are backed by load balancers.
+        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
+        for (var policy : routingPolicies) {
+            policy.rotationEndpointsIn(controller.system()).asList().stream()
+                  .map(Endpoint::url)
+                  .map(URI::toString)
+                  .forEach(globalEndpointUrls::add);
+        }
+
+        var globalRotationsArray = object.setArray("globalRotations");
+        globalEndpointUrls.forEach(globalRotationsArray::addString);
+
+        // Legacy field. Identifies the first assigned rotation, if any.
         instance.rotations().stream()
                 .map(AssignedRotation::rotationId)
                 .findFirst()
                 .ifPresent(rotation -> object.setString("rotationId", rotation.asString()));
 
-        // Per-cluster rotations
-        Set<RoutingPolicy> routingPolicies = controller.applications().routingPolicies().get(instance.id());
-        for (RoutingPolicy policy : routingPolicies) {
-            policy.rotationEndpointsIn(controller.system()).asList().stream()
-                  .map(Endpoint::url)
-                  .map(URI::toString)
-                  .forEach(globalRotationsArray::addString);
-        }
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = deploymentSpec.instance(instance.name())
-        .map(spec -> new DeploymentSteps(spec, controller::system))
-        .map(steps -> steps.sortedDeployments(instance.deployments().values()))
-        .orElse(List.copyOf(instance.deployments().values()));
+                                                     .map(spec -> new DeploymentSteps(spec, controller::system))
+                                                     .map(steps -> steps.sortedDeployments(instance.deployments().values()))
+                                                     .orElse(List.copyOf(instance.deployments().values()));
 
         Cursor deploymentsArray = object.setArray("deployments");
         for (Deployment deployment : deployments) {
