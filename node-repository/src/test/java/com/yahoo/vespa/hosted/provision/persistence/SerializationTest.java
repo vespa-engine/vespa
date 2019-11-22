@@ -250,12 +250,12 @@ public class SerializationTest {
         // Test round-trip with IP address pool
         node = node.with(node.ipConfig().with(IP.Pool.of(Set.of("::1", "::2", "::3"))));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipAddressPool(), copy.ipAddressPool());
+        assertEquals(node.ipAddressPool().asSet(), copy.ipAddressPool().asSet());
 
         // Test round-trip without IP address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipAddressPool(), copy.ipAddressPool());
+        assertEquals(node.ipAddressPool().asSet(), copy.ipAddressPool().asSet());
     }
 
     @Test
