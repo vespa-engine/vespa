@@ -198,11 +198,11 @@ class GraphImporter {
     }
 
     private static void verifyOutputTypes(Onnx.GraphProto onnxGraph, IntermediateGraph intermediateGraph) {
-        for (String outputName : intermediateGraph.outputs(intermediateGraph.defaultSignature()).values()) {
-            IntermediateOperation operation = intermediateGraph.get(outputName);
-            Onnx.ValueInfoProto onnxNode = getOutputNode(outputName, onnxGraph);
+        for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(intermediateGraph.defaultSignature()).entrySet()) {
+            IntermediateOperation operation = intermediateGraph.get(output.getValue());
+            Onnx.ValueInfoProto onnxNode = getOutputNode(output.getKey(), onnxGraph);
             OrderedTensorType type = operation.type().orElseThrow(
-                        () -> new IllegalArgumentException("Output of '" + outputName + "' has no type."));
+                        () -> new IllegalArgumentException("Output of '" + output.getValue() + "' has no type."));
             TypeConverter.verifyType(onnxNode.getType(), type);
         }
     }
