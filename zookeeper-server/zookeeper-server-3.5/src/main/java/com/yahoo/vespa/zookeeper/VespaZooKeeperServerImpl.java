@@ -165,8 +165,11 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
 
     private TreeSet<String> getCipherSuites() {
         Set<String> cipherSuites = new HashSet<>(TlsContext.ALLOWED_CIPHER_SUITES);
-        // Remove cipher suite not supported by Java
+        // Remove cipher suites not supported by Java 11
         cipherSuites.remove("TLS_CHACHA20_POLY1305_SHA256");
+        cipherSuites.remove("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
+        cipherSuites.remove("TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256");
+        cipherSuites.remove("TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
         return new TreeSet<>(cipherSuites);
     }
 

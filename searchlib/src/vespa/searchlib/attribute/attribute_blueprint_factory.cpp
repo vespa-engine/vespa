@@ -5,27 +5,32 @@
 #include "i_document_weight_attribute.h"
 #include "iterator_pack.h"
 #include "predicate_attribute.h"
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
-#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
+#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
+#include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/queryeval/get_weight_from_node.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/queryeval/orlikesearch.h>
-#include <vespa/searchlib/queryeval/dot_product_blueprint.h>
-#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/predicate_blueprint.h>
+#include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
-#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
-#include <vespa/searchlib/queryeval/get_weight_from_node.h>
+#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -51,6 +56,7 @@ using search::query::SuffixTerm;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
+using search::queryeval::ComplexLeafBlueprint;
 using search::queryeval::CreateBlueprintVisitorHelper;
 using search::queryeval::DotProductBlueprint;
 using search::queryeval::FieldSpec;
@@ -64,10 +70,12 @@ using search::queryeval::PredicateBlueprint;
 using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::SimpleLeafBlueprint;
-using search::queryeval::ComplexLeafBlueprint;
 using search::queryeval::WeightedSetTermBlueprint;
+using search::tensor::DenseTensorAttribute;
 using vespalib::geo::ZCurve;
+using vespalib::make_string;
 using vespalib::string;
+using vespalib::tensor::DenseTensorView;
 
 namespace search {
 namespace {
@@ -448,7 +456,9 @@ public:
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _attr(attr),
-          _dwa(attr.asDocumentWeightAttribute()) {}
+          _dwa(attr.asDocumentWeightAttribute())
+    {
+    }
 
     template <class TermNode>
     void visitTerm(TermNode &n, bool simple = false) {
@@ -592,10 +602,43 @@ public:
             createShallowWeightedSet(bp, n, _field, _attr.isIntegerType());
         }
     }
-    void visit(query::NearestNeighborTerm &n) override {
-        (void) n;
-        // TODO (geirst): implement
+    void fail_nearest_neighbor_term(query::NearestNeighborTerm&n, const vespalib::string& error_msg) {
+        LOG(warning, "NearestNeighborTerm(%s, %s): %s. Returning empty blueprint",
+            _field.getName().c_str(), n.get_query_tensor_name().c_str(), error_msg.c_str());
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
+    }
+    void visit(query::NearestNeighborTerm &n) override {
+        if (_attr.asTensorAttribute() == nullptr) {
+            return fail_nearest_neighbor_term(n, "Attribute is not a tensor");
+        }
+        const auto* dense_attr_tensor = dynamic_cast<const DenseTensorAttribute*>(_attr.asTensorAttribute());
+        if (dense_attr_tensor == nullptr) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute is not a dense tensor (type=%s)",
+                                                             _attr.asTensorAttribute()->getTensorType().to_spec().c_str()));
+        }
+        if (dense_attr_tensor->getTensorType().dimensions().size() != 1) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not of order 1",
+                                                             dense_attr_tensor->getTensorType().to_spec().c_str()));
+        }
+        auto query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
+        if (query_tensor.get() == nullptr) {
+            return fail_nearest_neighbor_term(n, "Query tensor was not found in request context");
+        }
+        auto* dense_query_tensor = dynamic_cast<DenseTensorView*>(query_tensor.get());
+        if (dense_query_tensor == nullptr) {
+            return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
+                                                             query_tensor->type().to_spec().c_str()));
+        }
+        if (dense_attr_tensor->getTensorType() != dense_query_tensor->type()) {
+            // TODO: consider allowing different data types (float vs double).
+            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not equal",
+                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), dense_query_tensor->type().to_spec().c_str()));
+        }
+        std::unique_ptr<DenseTensorView> dense_query_tensor_up(dense_query_tensor);
+        query_tensor.release();
+        setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
+                                                                        std::move(dense_query_tensor_up),
+                                                                        n.get_target_num_hits()));
     }
 };
 

@@ -59,7 +59,8 @@ public abstract class Item implements Cloneable {
         WAND(22),
         PREDICATE_QUERY(23),
         REGEXP(24),
-        WORD_ALTERNATIVES(25);
+        WORD_ALTERNATIVES(25),
+        NEAREST_NEIGHBOR(26);
 
         public final int code;
 

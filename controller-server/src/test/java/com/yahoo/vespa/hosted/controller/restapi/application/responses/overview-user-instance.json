@@ -1,0 +1,62 @@
+{
+  "devJobs": {
+    "dev-aws-us-east-2a": {
+      "runs": [
+        {
+          "wantedPlatform": "7.1",
+          "log": "https://some.url:43/root/dev-aws-us-east-2a/run/1",
+          "wantedApplication": {
+            "hash": "unknown"
+          },
+          "start": 102000,
+          "end": 102000,
+          "id": 1,
+          "steps": {
+            "deployReal": "succeeded",
+            "installReal": "succeeded",
+            "copyVespaLogs": "succeeded"
+          },
+          "tasks": {
+            "install": "succeeded",
+            "deploy": "succeeded"
+          },
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/root/dev-aws-us-east-2a"
+    }
+  },
+  "deployments": [],
+  "lastVersions": {
+    "application": {
+      "at": 1000,
+      "application": {
+        "build": 3,
+        "source": {
+          "gitRepository": "repository1",
+          "gitCommit": "commit1",
+          "gitBranch": "master"
+        },
+        "hash": "1.0.3-commit1"
+      },
+      "deploying": "0 of 0 complete"
+    },
+    "platform": {
+      "at": 0,
+      "completed": "0 of 0 complete",
+      "platform": "7.1"
+    }
+  },
+  "deploying": {
+    "application": {
+      "build": 3,
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.3-commit1"
+    }
+  },
+  "jobs": {}
+}

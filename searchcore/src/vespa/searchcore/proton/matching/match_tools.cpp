@@ -155,7 +155,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & rankProperties,
                   const Properties           & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _requestContext(softDoom, attributeContext),
+      _requestContext(softDoom, attributeContext, rankProperties),
       _hardDoom(hardDoom),
       _query(),
       _match_limiter(),

@@ -18,7 +18,6 @@ PhraseSplitter::considerTerm(uint32_t termIdx, const ITermData &term, std::vecto
                 SimpleTermData prototype;
                 prototype.setWeight(term.getWeight());
                 prototype.setPhraseLength(1);
-                prototype.setTermIndex(term.getTermIndex());
                 prototype.setUniqueId(term.getUniqueId());
                 prototype.addField(fieldId);
                 phraseTerms.push_back(PhraseTerm(term, _terms.size(), h));

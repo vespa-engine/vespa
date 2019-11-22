@@ -3,6 +3,7 @@
 #include "statebuf.h"
 
 #include <vespa/log/log.h>
+
 LOG_SETUP(".searchlib.util.statebuf");
 
 
@@ -32,30 +33,6 @@ StateBuf::operator<<(const char *s) noexcept
     for (const char *p = s; *p != '\0'; ++p) {
         *this << *p;
     }
-    return *this;
-}
-
-
-StateBuf &
-StateBuf::appendQuoted(const char *s) noexcept
-{
-    *this << '"';
-    for (const char *p = s; *p != '\0'; ++p) {
-        switch (*p) {
-        case '\\':
-            *this << '\\' << '\\';
-            break;
-        case '\n':
-            *this << '\\' << 'n';
-            break;
-        case '"':
-            *this << '\\' << '"';
-            break;
-        default:
-            *this << *p;
-        }
-    }
-    *this << '"';
     return *this;
 }
 
@@ -168,18 +145,20 @@ StateBuf::appendHex(unsigned long val) noexcept
 
 
 StateBuf &
-StateBuf::operator<<(const struct timespec &ts) noexcept
+StateBuf::operator<<(std::chrono::nanoseconds ns) noexcept
 {
-    (*this << static_cast<unsigned long>(ts.tv_sec) << '.').
-        appendDecFraction(static_cast<unsigned long>(ts.tv_nsec), 9);
+    std::chrono::seconds sec = std::chrono::duration_cast<std::chrono::seconds>(ns);
+    std::chrono::nanoseconds remainder = (ns - sec);
+    (*this << static_cast<unsigned long>(sec.count()) << '.').
+        appendDecFraction(static_cast<unsigned long>(remainder.count()), 9);
     return *this;
 }
 
 
 StateBuf &
-StateBuf::appendTimestamp(const struct timespec &ts) noexcept
+StateBuf::appendTimestamp(std::chrono::nanoseconds ns) noexcept
 {
-    appendKey("ts") << ts;
+    appendKey("ts") << ns;
     return *this;
 }
 
@@ -187,16 +166,7 @@ StateBuf::appendTimestamp(const struct timespec &ts) noexcept
 StateBuf &
 StateBuf::appendTimestamp() noexcept
 {
-    struct timespec ts;
-    /*
-     * clock_gettime() is supposed to be async signal safe.
-     * gettimeofday() is not documented to be async signal safe.
-     */
-    int gtres = clock_gettime(CLOCK_REALTIME, &ts);
-    if (gtres != 0) {
-        LOG_ABORT("should not be reached");
-    }
-    appendTimestamp(ts);
+    appendTimestamp(std::chrono::system_clock::now().time_since_epoch());
     return *this;
 }
 
@@ -207,20 +177,6 @@ StateBuf::appendAddr(void *addr) noexcept
     appendKey("addr");
     appendHex(reinterpret_cast<unsigned long>(addr));
     return *this;
-}
-
-
-size_t
-StateBuf::size() const noexcept
-{
-    return _cur - _start;
-};
-
-
-const char *
-StateBuf::base() const noexcept
-{
-    return _start;
 }
 
 

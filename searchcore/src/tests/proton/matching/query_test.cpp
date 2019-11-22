@@ -191,8 +191,7 @@ Node::UP buildQueryTree(const ViewResolver &resolver,
     query_builder.addNumberTerm(int_term, field, 1, Weight(0));
     query_builder.addPrefixTerm(prefix_term, field, 2, Weight(0));
     query_builder.addRangeTerm(range_term, field, 3, Weight(0));
-    query_builder.addStringTerm(string_term, field, string_id, string_weight)
-        .setTermIndex(term_index);
+    query_builder.addStringTerm(string_term, field, string_id, string_weight);
     query_builder.addSubstringTerm(substring_term, field, 5, Weight(0));
     query_builder.addSuffixTerm(suffix_term, field, 6, Weight(0));
     query_builder.addPhrase(2, field, 7, Weight(0));
@@ -402,7 +401,6 @@ public:
         EXPECT_EQUAL(string_weight.percent(),
                    term_data.getWeight().percent());
         EXPECT_EQUAL(1u, term_data.getPhraseLength());
-        EXPECT_EQUAL(-1u, term_data.getTermIndex());
         EXPECT_EQUAL(string_id, term_data.getUniqueId());
         EXPECT_EQUAL(term_data.numFields(), n.numFields());
         for (size_t i = 0; i < term_data.numFields(); ++i) {

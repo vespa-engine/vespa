@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -37,6 +39,8 @@ import java.util.stream.Collectors;
  * @author mpolden
  */
 public class RoutingPolicies {
+
+    private static final Logger LOGGER = Logger.getLogger(RoutingPolicies.class.getName());
 
     private final Controller controller;
     private final CuratorDb db;
@@ -78,8 +82,8 @@ public class RoutingPolicies {
                                              deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
             removeObsoleteEndpointsFromDns(lbs, lock);
-            storePoliciesOf(lbs, lock);
-            removeObsoletePolicies(lbs, lock);
+            var writtenPolicies = storePoliciesOf(lbs, lock);
+            removeObsoletePolicies(lbs, writtenPolicies, lock);
             registerEndpointsInDns(lbs, lock);
         }
     }
@@ -103,8 +107,8 @@ public class RoutingPolicies {
         }
     }
 
-    /** Store routing policies for given route */
-    private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    /** Store routing policies for given route. Returns the persisted policies. */
+    private Set<RoutingPolicy> storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var policies = new LinkedHashSet<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
             var endpointIds = loadBalancers.endpointIdsOf(loadBalancer);
@@ -116,6 +120,7 @@ public class RoutingPolicies {
             }
         }
         db.writeRoutingPolicies(loadBalancers.application, policies);
+        return policies;
     }
 
     /** Create a policy for given load balancer and register a CNAME for it */
@@ -130,8 +135,13 @@ public class RoutingPolicies {
     }
 
     /** Remove obsolete policies for given route and their CNAME records */
-    private void removeObsoletePolicies(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    private void removeObsoletePolicies(AllocatedLoadBalancers loadBalancers, Set<RoutingPolicy> writtenPolicies,
+                                        @SuppressWarnings("unused") Lock lock) {
         var allPolicies = new LinkedHashSet<>(get(loadBalancers.application));
+        if (!writtenPolicies.equals(allPolicies)) {
+            LOGGER.log(LogLevel.ERROR, String.format("Stale read! This should not happen. Wrote policies %s, but read %s",
+                                                     writtenPolicies, allPolicies));
+        }
         var removalCandidates = new HashSet<>(allPolicies);
         var activeLoadBalancers = loadBalancers.list.stream()
                                                     .map(LoadBalancer::hostname)

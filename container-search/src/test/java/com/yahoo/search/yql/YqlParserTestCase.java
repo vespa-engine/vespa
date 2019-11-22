@@ -548,6 +548,14 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testNearestNeighbor() {
+        assertParse("select foo from bar where nearestNeighbor(semantic_embedding, my_vector);",
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetNumHits=0}");
+        assertParse("select foo from bar where [{\"targetNumHits\": 37}]nearestNeighbor(semantic_embedding, my_vector);",
+                    "NEAREST_NEIGHBOR {field=semantic_embedding,queryTensorName=my_vector,targetNumHits=37}");
+    }
+
+    @Test
     public void testPredicate() {
         assertParse("select foo from bar where predicate(predicate_field, " +
                 "{\"gender\":\"male\", \"hobby\":[\"music\", \"hiking\"]}, {\"age\":23L});",

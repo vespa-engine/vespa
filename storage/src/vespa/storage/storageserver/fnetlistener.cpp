@@ -117,6 +117,7 @@ FNetListener::RPC_getCurrentTime(FRT_RPCRequest *req)
         req->SetError(RPCRequestWrapper::ERR_NODE_SHUTTING_DOWN, "Node shutting down");
         return;
     }
+    //TODO Should we unify on std::chrono here too ?
     struct timespec t;
     clock_gettime(CLOCK_REALTIME, &t);
     req->GetReturn()->AddInt64(t.tv_sec);

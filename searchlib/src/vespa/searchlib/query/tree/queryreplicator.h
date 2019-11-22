@@ -48,8 +48,7 @@ private:
     }
 
     void visit(Equiv &node) override {
-        _builder.addEquiv(node.getChildren().size(), node.getId(), node.getWeight())
-            .setTermIndex(node.getTermIndex());
+        _builder.addEquiv(node.getChildren().size(), node.getId(), node.getWeight());
         visitNodes(node.getChildren());
     }
 

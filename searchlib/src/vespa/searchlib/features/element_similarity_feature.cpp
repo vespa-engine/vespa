@@ -86,10 +86,9 @@ struct VectorizedQueryTerms {
     struct Term {
         fef::TermFieldHandle handle;
         int weight;
-        int index;
 
-        Term(fef::TermFieldHandle handle_in, int weight_in, int index_in)
-            : handle(handle_in), weight(weight_in), index(index_in)
+        Term(fef::TermFieldHandle handle_in, int weight_in)
+            : handle(handle_in), weight(weight_in)
         {}
     };
 
@@ -117,12 +116,11 @@ struct VectorizedQueryTerms {
                     if (tfd.getFieldId() == field_id) {
                         int term_weight = termData->getWeight().percent();
                         total_weight += term_weight;
-                        terms.push_back(Term(tfd.getHandle(), term_weight, termData->getTermIndex()));
+                        terms.push_back(Term(tfd.getHandle(), term_weight));
                     }
                 }
             }
         }
-        std::sort(terms.begin(), terms.end(), [](const Term &a, const Term &b) { return (a.index < b.index); });
         handles.reserve(terms.size());
         weights.reserve(terms.size());
         for (size_t i = 0; i < terms.size(); ++i) {

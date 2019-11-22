@@ -28,13 +28,6 @@ public:
     virtual uint32_t getPhraseLength() const = 0;
 
     /**
-     * Obtain the location of this term in the original user query.
-     *
-     * @return term index
-     **/
-    virtual uint32_t getTermIndex() const = 0;
-
-    /**
      * Obtain the unique id of this term. 0 means not set.
      *
      * @return unique id or 0
