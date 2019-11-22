@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Zone;
 
 import java.util.Arrays;
 import java.util.Locale;
-import java.util.Optional;
 
 /**
  * Defines the policies for assigning cluster capacity in various environments
@@ -27,23 +26,24 @@ public class CapacityPolicies {
         this.isUsingAdvertisedResources = zone.region().value().contains("aws-");
     }
 
-    public int decideSize(Capacity requestedCapacity, ClusterSpec.Type clusterType) {
-        int requestedNodes = ensureRedundancy(requestedCapacity.nodeCount(), clusterType, requestedCapacity.canFail());
-        if (requestedCapacity.isRequired()) return requestedNodes;
+    public int decideSize(Capacity capacity, ClusterSpec.Type clusterType) {
+        int requestedNodes = ensureRedundancy(capacity.nodeCount(), clusterType, capacity.canFail());
+        if (capacity.isRequired()) return requestedNodes;
 
         switch(zone.environment()) {
             case dev : case test : return 1;
-            case perf : return Math.min(requestedCapacity.nodeCount(), 3);
+            case perf : return Math.min(capacity.nodeCount(), 3);
             case staging: return requestedNodes <= 1 ? requestedNodes : Math.max(2, requestedNodes / 10);
             case prod : return requestedNodes;
             default : throw new IllegalArgumentException("Unsupported environment " + zone.environment());
         }
     }
 
-    public NodeResources decideNodeResources(Optional<NodeResources> requestedResources, ClusterSpec cluster) {
-        if (requestedResources.isPresent()) assertMinimumResources(requestedResources.get(), cluster);
+    public NodeResources decideNodeResources(Capacity capacity, ClusterSpec cluster) {
+        NodeResources resources = capacity.nodeResources().orElse(defaultNodeResources(cluster.type()));
+        ensureSufficientResources(resources, cluster);
 
-        NodeResources resources = requestedResources.orElse(defaultNodeResources(cluster.type()));
+        if (capacity.isRequired()) return resources;
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
@@ -57,7 +57,7 @@ public class CapacityPolicies {
         return resources;
     }
 
-    private void assertMinimumResources(NodeResources resources, ClusterSpec cluster) {
+    private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
         double minMemoryGb = cluster.type() == ClusterSpec.Type.admin ? 2 : 4;
         if (resources.memoryGb() >= minMemoryGb) return;
 
