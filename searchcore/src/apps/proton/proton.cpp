@@ -220,7 +220,7 @@ App::Main()
             std::unique_ptr<ProtonServiceLayerProcess> spiProton;
             if ( ! params.serviceidentity.empty()) {
                 spiProton = std::make_unique<ProtonServiceLayerProcess>(params.serviceidentity, proton, downPersistence.get());
-                spiProton->setupConfig(params.subscribeTimeout);
+                spiProton->setupConfig(std::chrono::milliseconds(params.subscribeTimeout));
                 spiProton->createNode();
                 EV_STARTED("servicelayer");
             }
