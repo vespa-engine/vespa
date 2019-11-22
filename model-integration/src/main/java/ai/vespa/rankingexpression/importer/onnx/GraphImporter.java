@@ -125,7 +125,7 @@ class GraphImporter {
             operation = new Argument(intermediateGraph.name(), valueInfoProto.getName(), type);
 
             intermediateGraph.inputs(intermediateGraph.defaultSignature())
-                    .put(IntermediateOperation.namePartOf(name), operation.name());
+                    .put(IntermediateOperation.namePartOf(name), operation.vespaName());
 
         } else if (isConstantTensor(name, onnxGraph)) {
             Onnx.TensorProto tensorProto = getConstantTensor(name, onnxGraph);
