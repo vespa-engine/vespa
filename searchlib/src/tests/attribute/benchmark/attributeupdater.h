@@ -98,7 +98,7 @@ protected:
     std::vector<BT> _getBuffer;
     RandomGenerator & _rndGen;
     AttributeCommit _expected;
-    FastOS_Time _timer;
+    fastos::StopWatch _timer;
     AttributeUpdaterStatus _status;
     AttributeValidator _validator;
 
@@ -267,7 +267,7 @@ template <typename Vector, typename T, typename BT>
 void
 AttributeUpdater<Vector, T, BT>::populate()
 {
-    _timer.SetNow();
+    _timer.restart();
     for (uint32_t doc = 0; doc < _attrPtr->getNumDocs(); ++doc) {
         updateValues(doc);
         if (doc % _commitFreq == (_commitFreq - 1)) {
@@ -275,7 +275,7 @@ AttributeUpdater<Vector, T, BT>::populate()
         }
     }
     commit();
-    _status._totalUpdateTime += _timer.MilliSecsToNow();
+    _status._totalUpdateTime += _timer.elapsed().ms();
 }
 
 
@@ -283,7 +283,7 @@ template <typename Vector, typename T, typename BT>
 void
 AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates)
 {
-    _timer.SetNow();
+    _timer.restart();
     for (uint32_t i = 0; i < numUpdates; ++i) {
         uint32_t doc = getRandomDoc();
         updateValues(doc);
@@ -292,7 +292,7 @@ AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates)
         }
     }
     commit();
-    _status._totalUpdateTime += _timer.MilliSecsToNow();
+    _status._totalUpdateTime += _timer.elapsed().ms();
 }
 
 
@@ -300,7 +300,7 @@ template <typename Vector, typename T, typename BT>
 void
 AttributeUpdaterThread<Vector, T, BT>::doRun()
 {
-    this->_timer.SetNow();
+    this->_timer.restart();
     while(!_done) {
         uint32_t doc = this->getRandomDoc();
         this->updateValues(doc);
@@ -309,7 +309,7 @@ AttributeUpdaterThread<Vector, T, BT>::doRun()
         }
     }
     this->commit();
-    this->_status._totalUpdateTime += this->_timer.MilliSecsToNow();
+    this->_status._totalUpdateTime += this->_timer.elapsed().ms();
 }
 
 

@@ -3,7 +3,7 @@
 #include "tests.h"
 #include "job.h"
 #include "thread_test_base.hpp"
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <cstdlib>
 #include <chrono>
 
@@ -190,9 +190,6 @@ class ThreadTest : public ThreadTestBase
     int j;
     bool rc;
     int threadsok;
-    FastOS_Time starttime;
-    FastOS_Time endtime;
-    FastOS_Time usedtime;
 
     if (!silent)
       TestHeader("Thread Create Performance");
@@ -205,7 +202,7 @@ class ThreadTest : public ThreadTestBase
       Job *jobs = new Job[count];
 
       threadsok = 0;
-      starttime.SetNow();
+      fastos::StopWatch timer;
       for (i = 0; i < count; i++) {
         jobs[i].code = SILENTNOP;
         jobs[i].ownThread = pool->NewThread(this, &jobs[i]);
@@ -228,19 +225,14 @@ class ThreadTest : public ThreadTestBase
         if (jobs[i].ownThread != nullptr)
           jobs[i].ownThread->Join();
       }
-      endtime.SetNow();
-      usedtime = endtime;
-      usedtime -= starttime;
+      fastos::TimeStamp used = timer.elapsed();
 
       if (!silent) {
-        Progress(true, "Used time: %d.%03d",
-                 usedtime.GetSeconds(), usedtime.GetMicroSeconds() / 1000);
+        Progress(true, "Used time: %2.3f", used.sec());
 
-        double timeused = usedtime.GetSeconds() +
-          static_cast<double>(usedtime.GetMicroSeconds()) / 1000000.0;
+        double timeused = used.sec();
         ProgressFloat(true, "Threads/s: %6.1f",
-                      static_cast<float>(static_cast<double>(threadsok) /
-                              timeused));
+                      static_cast<float>(static_cast<double>(threadsok) / timeused));
       }
       if (threadsok != ((outercount + 1) * count))
         Progress(false, "Only started %d of %d threads", threadsok,
@@ -495,12 +487,12 @@ class ThreadTest : public ThreadTestBase
 
       for(i=0; i<allocCount; i++)
       {
-          std::mutex *mtx = new std::mutex;
+         std::mutex *mtx = new std::mutex;
          mtx->lock();
          mtx->unlock();
          delete mtx;
 
-         if((i % progressIndex) == (progressIndex - 1))
+         if ((i % progressIndex) == (progressIndex - 1))
             Progress(true, "Tested %d std::mutex instances", i + 1);
       }
 
@@ -525,35 +517,26 @@ class ThreadTest : public ThreadTestBase
 
       std::mutex **mutexes = new std::mutex*[allocCount];
 
-      FastOS_Time startTime, nowTime;
-      startTime.SetNow();
+      fastos::StopWatch timer;
 
-      for(i=0; i<allocCount; i++)
+      for (i=0; i<allocCount; i++)
           mutexes[i] = new std::mutex;
 
-      nowTime.SetNow();
-      Progress(true, "Allocated %d mutexes at time: %d ms", allocCount,
-               static_cast<int>(nowTime.MilliSecs() - startTime.MilliSecs()));
+      Progress(true, "Allocated %d mutexes at time: %ld ms", allocCount, timer.elapsed().ms());
 
-      for(int e=0; e<4; e++)
-      {
+      for (int e=0; e<4; e++) {
          for(i=0; i<allocCount; i++)
             mutexes[i]->lock();
 
          for(i=0; i<allocCount; i++)
             mutexes[i]->unlock();
 
-         nowTime.SetNow();
-         Progress(true, "Tested %d mutexes at time: %d ms", allocCount,
-                  static_cast<int>(nowTime.MilliSecs() -
-                                   startTime.MilliSecs()));
+         Progress(true, "Tested %d mutexes at time: %d ms", allocCount, timer.elapsed().ms());
       }
-      for(i=0; i<allocCount; i++)
+      for (i=0; i<allocCount; i++)
          delete mutexes[i];
 
-      nowTime.SetNow();
-      Progress(true, "Deleted %d mutexes at time: %d ms", allocCount,
-               static_cast<int>(nowTime.MilliSecs() - startTime.MilliSecs()));
+      Progress(true, "Deleted %d mutexes at time: %d ms", allocCount, timer.elapsed().ms());
 
       delete [] mutexes;
 

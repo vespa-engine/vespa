@@ -107,7 +107,7 @@ public:
     }
 };
 
-MyHttpHandler::~MyHttpHandler() {}
+MyHttpHandler::~MyHttpHandler() = default;
 
 ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
     : _cfg(), _flags(flags), _generation(0)
@@ -120,7 +120,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
         config::ConfigSubscriber subscriber(uri.getContext());
         config::ConfigHandle<cloud::config::ModelConfig>::UP handle =
             subscriber.subscribe<cloud::config::ModelConfig>(uri.getConfigId());
-        subscriber.nextConfig(0);
+        subscriber.nextConfigNow();
         _cfg = handle->getConfig();
         _generation = subscriber.getGeneration();
     } catch(config::ConfigRuntimeException &e) {
@@ -133,7 +133,7 @@ ConfigStatus::ConfigStatus(Flags flags, const config::ConfigUri uri)
     }
 }
 
-ConfigStatus::~ConfigStatus() {}
+ConfigStatus::~ConfigStatus() = default;
 
 int
 ConfigStatus::action()

@@ -3,13 +3,13 @@
 #include "configsubscriptionset.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/misc.h>
-#include <vespa/fastos/time.h>
 #include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".config.subscription.configsubscriptionset");
 
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 namespace config {
 
@@ -27,7 +27,7 @@ ConfigSubscriptionSet::~ConfigSubscriptionSet()
 }
 
 bool
-ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChange)
+ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignoreChange)
 {
     if (_state == CLOSED) {
         return false;
@@ -35,14 +35,13 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
         _state = FROZEN;
     }
 
-    FastOS_Time timer;
-    timer.SetNow();
-    int timeLeft = timeoutInMillis;
+    steady_clock::time_point startTime = steady_clock::now();
+    milliseconds timeLeft = timeoutInMillis;
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
-    LOG(debug, "Going into nextConfig loop, time left is %d", timeLeft);
-    while (!isClosed() && (timeLeft >= 0) && !inSync) {
+    LOG(debug, "Going into nextConfig loop, time left is %ld", timeLeft.count());
+    while (!isClosed() && (timeLeft.count() >= 0) && !inSync) {
         size_t numChanged = 0;
         size_t numGenerationChanged = 0;
         bool generationsInSync = true;
@@ -74,13 +73,13 @@ ConfigSubscriptionSet::acquireSnapshot(uint64_t timeoutInMillis, bool ignoreChan
                 generationsInSync = false;
             }
             // Adjust timeout
-            timeLeft = timeoutInMillis - static_cast<uint64_t>(timer.MilliSecsToNow());
+            timeLeft = timeoutInMillis - duration_cast<milliseconds>(steady_clock::now() - startTime);
         }
         inSync = generationsInSync && (_subscriptionList.size() == numGenerationChanged) && (ignoreChange || numChanged > 0);
         lastGeneration = generation;
-        timeLeft = timeoutInMillis - static_cast<uint64_t>(timer.MilliSecsToNow());
-        if (!inSync && (timeLeft > 0)) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(std::min(10, timeLeft)));
+        timeLeft = timeoutInMillis - duration_cast<milliseconds>(steady_clock::now() - startTime);
+        if (!inSync && (timeLeft.count() > 0)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::min(10l, timeLeft.count())));
         } else {
             break;
         }
@@ -121,7 +120,7 @@ ConfigSubscriptionSet::isClosed() const
 }
 
 ConfigSubscription::SP
-ConfigSubscriptionSet::subscribe(const ConfigKey & key, uint64_t timeoutInMillis)
+ConfigSubscriptionSet::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
 {
     if (_state != OPEN) {
         throw ConfigRuntimeException("Adding subscription after calling nextConfig() is not allowed");

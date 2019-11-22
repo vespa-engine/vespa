@@ -3,12 +3,16 @@
 #include "configretriever.h"
 #include <vespa/config/common/exceptions.h>
 
+using std::chrono::milliseconds;
 
 namespace config {
 
+ const milliseconds ConfigRetriever::DEFAULT_SUBSCRIBE_TIMEOUT(60000);
+ const milliseconds ConfigRetriever::DEFAULT_NEXTGENERATION_TIMEOUT(60000);
+
 ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
                                  const IConfigContext::SP & context,
-                                 int64_t subscribeTimeout)
+                                 milliseconds subscribeTimeout)
     : _bootstrapSubscriber(bootstrapSet, context, subscribeTimeout),
       _configSubscriber(),
       _lock(),
@@ -25,7 +29,7 @@ ConfigRetriever::ConfigRetriever(const ConfigKeySet & bootstrapSet,
 ConfigRetriever::~ConfigRetriever() = default;
 
 ConfigSnapshot
-ConfigRetriever::getBootstrapConfigs(int timeoutInMillis)
+ConfigRetriever::getBootstrapConfigs(milliseconds timeoutInMillis)
 {
     bool ret = _bootstrapSubscriber.nextGeneration(timeoutInMillis);
     if (!ret) {
@@ -36,7 +40,7 @@ ConfigRetriever::getBootstrapConfigs(int timeoutInMillis)
 }
 
 ConfigSnapshot
-ConfigRetriever::getConfigs(const ConfigKeySet & keySet, int timeoutInMillis)
+ConfigRetriever::getConfigs(const ConfigKeySet & keySet, milliseconds timeoutInMillis)
 {
     if (_closed)
         return ConfigSnapshot();

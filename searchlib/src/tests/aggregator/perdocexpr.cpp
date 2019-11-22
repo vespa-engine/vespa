@@ -694,10 +694,9 @@ TEST("testDebugFunction") {
         DebugWaitFunctionNode n(std::move(add), 1.3, false);
         n.prepare(false);
 
-        FastOS_Time time;
-        time.SetNow();
+        fastos::StopWatch timer;
         n.execute();
-        EXPECT_TRUE(time.MilliSecsToNow() > 1000.0);
+        EXPECT_TRUE(timer.elapsed().ms() > 1000.0);
         EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
     }
     {
@@ -707,10 +706,9 @@ TEST("testDebugFunction") {
         DebugWaitFunctionNode n(std::move(add), 1.3, true);
         n.prepare(false);
 
-        FastOS_Time time;
-        time.SetNow();
+        fastos::StopWatch timer;
         n.execute();
-        EXPECT_TRUE(time.MilliSecsToNow() > 1000.0);
+        EXPECT_TRUE(timer.elapsed().ms() > 1000.0);
         EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
     }
 }

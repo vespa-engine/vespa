@@ -13,16 +13,15 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".cf-handler");
 
-CfHandler::CfHandler() : _subscriber() {}
 
-CfHandler::~CfHandler()
-{
-}
+CfHandler::CfHandler() = default;
+
+CfHandler::~CfHandler() = default;
 
 void
-CfHandler::subscribe(const std::string & configId, uint64_t timeoutMS)
+CfHandler::subscribe(const std::string & configId, std::chrono::milliseconds timeout)
 {
-    _handle = _subscriber.subscribe<LogforwarderConfig>(configId, timeoutMS);
+    _handle = _subscriber.subscribe<LogforwarderConfig>(configId, timeout);
 }
 
 namespace {
@@ -89,12 +88,12 @@ CfHandler::doConfigure()
 void
 CfHandler::check()
 {
-    if (_subscriber.nextConfig(0)) {
+    if (_subscriber.nextConfigNow()) {
         doConfigure();
     }
 }
 
-constexpr uint64_t CONFIG_TIMEOUT_MS = 30 * 1000;
+constexpr std::chrono::milliseconds CONFIG_TIMEOUT_MS(30 * 1000);
 
 void
 CfHandler::start(const char *configId)

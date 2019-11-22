@@ -105,11 +105,11 @@ public:
 
 private:
     search::fef::BlueprintFactory _factory;
-    FastOS_Time _timer;
-    double      _sample;
+    fastos::StopWatch _timer;
+    fastos::TimeStamp _sample;
 
-    void start() { _timer.SetNow(); }
-    void sample() { _sample = _timer.MilliSecsToNow(); }
+    void start() { _timer.restart(); }
+    void sample() { _sample = _timer.elapsed(); }
     void setupPropertyMap(Properties & props, const KeyValueVector & values);
     void runFieldMatch(Config & cfg);
     void runRankingExpression(Config & cfg);
@@ -648,8 +648,8 @@ Benchmark::Main()
         std::cout << "feature case '" << cfg.getCase() << "' is not known" << std::endl;
     }
 
-    std::cout << "TET:  " << _sample << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << _sample / cfg.getNumRuns() << " (ms)" << std::endl;
+    std::cout << "TET:  " << _sample.ms() << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << _sample.ms() / cfg.getNumRuns() << " (ms)" << std::endl;
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
 
     TEST_DONE();

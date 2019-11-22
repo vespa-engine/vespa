@@ -7,7 +7,7 @@
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fastos/app.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -199,7 +199,7 @@ private:
     Packet _packet;
     SerialNum _current;
     SerialNum _lastCommited;
-    FastOS_Time _timer;
+    fastos::StopWatch _timer;
 
     void commitPacket();
     bool addEntry(const Packet::Entry & e);
@@ -208,7 +208,7 @@ public:
     FeederThread(const std::string & tlsSpec, const std::string & domain,
                  const EntryGenerator & generator, uint32_t feedRate, size_t packetSize);
     ~FeederThread();
-    virtual void doRun() override;
+    void doRun() override;
     SerialNumRange getRange() const { return SerialNumRange(1, _lastCommited); }
 };
 
@@ -217,7 +217,7 @@ FeederThread::FeederThread(const std::string & tlsSpec, const std::string & doma
     : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec), _session(),
       _generator(generator), _feedRate(feedRate), _packet(packetSize), _current(1), _lastCommited(1), _timer()
 {}
-FeederThread::~FeederThread() {}
+FeederThread::~FeederThread() = default;
 
 void
 FeederThread::commitPacket()
@@ -251,7 +251,7 @@ FeederThread::doRun()
 
     while (!_done) {
         if (_feedRate != 0) {
-            _timer.SetNow();
+            _timer.restart();
             for (uint32_t i = 0; i < _feedRate; ++i) {
                 Packet::Entry entry = _generator.getRandomEntry(_current++);
                 if (!addEntry(entry)) {
@@ -264,7 +264,7 @@ FeederThread::doRun()
             }
             commitPacket();
 
-            uint64_t milliSecsUsed = static_cast<uint64_t>(_timer.MilliSecsToNow());
+            int64_t milliSecsUsed = _timer.elapsed().ms();
             if (milliSecsUsed < 1000) {
                 //LOG(info, "FeederThread: sleep %u ms", 1000 - milliSecsUsed);
                 FastOS_Thread::Sleep(1000 - milliSecsUsed);
@@ -395,7 +395,7 @@ VisitorAgent::start(SerialNum from, SerialNum to)
     _to = to;
     _next = from + 1;
     _visitor = _client.createVisitor(_domain, *this);
-    if (_visitor.get() == NULL) {
+    if ( ! _visitor) {
         throw std::runtime_error(vespalib::make_string
                                  ("VisitorAgent[%u]: Could not open visitor to %s", _id, _tlsSpec.c_str()));
     }
@@ -458,8 +458,8 @@ private:
     std::vector<std::shared_ptr<VisitorAgent> > _visitors;
     std::vector<std::shared_ptr<VisitorAgent> > _rndVisitors;
     uint64_t _visitorInterval; // in milliseconds
-    uint64_t _pruneInterval;   // in milliseconds
-    FastOS_Time _pruneTimer;
+    int64_t _pruneInterval;   // in milliseconds
+    fastos::StopWatch _pruneTimer;
     SerialNum _begin;
     SerialNum _end;
     size_t _count;
@@ -518,7 +518,7 @@ ControllerThread::doRun()
         throw std::runtime_error(vespalib::make_string("ControllerThread: Could not open session to %s", _tlsSpec.c_str()));
     }
 
-    _pruneTimer.SetNow();
+    _pruneTimer.restart();
     while (!_done) {
         // set finished visitors as idle
         for (size_t i = 0; i < _visitors.size(); ++i) {
@@ -538,7 +538,7 @@ ControllerThread::doRun()
             }
         }
         // prune transaction log server
-        if (_pruneTimer.MilliSecsToNow() > _pruneInterval) {
+        if (_pruneTimer.elapsed().ms() > _pruneInterval) {
             getStatus();
             SerialNum safePrune = _end;
             for (size_t i = 0; i < _visitors.size(); ++i) {
@@ -551,7 +551,7 @@ ControllerThread::doRun()
             if (!_session->erase(safePrune)) {
                 throw std::runtime_error(vespalib::make_string("ControllerThread: Could not erase up to %" PRIu64, safePrune));
             }
-            _pruneTimer.SetNow();
+            _pruneTimer.restart();
         }
         FastOS_Thread::Sleep(_visitorInterval);
     }

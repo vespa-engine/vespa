@@ -3,16 +3,10 @@
 #include "stress_runner.h"
 
 #include <vespa/fastos/thread.h>
-#include <vespa/fastos/time.h>
-#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/test/fakedata/fake_match_loop.h>
-#include <vespa/searchlib/test/fakedata/fakeegcompr64filterocc.h>
-#include <vespa/searchlib/test/fakedata/fakefilterocc.h>
 #include <vespa/searchlib/test/fakedata/fakeposting.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
-#include <vespa/searchlib/test/fakedata/fakezcbfilterocc.h>
-#include <vespa/searchlib/test/fakedata/fakezcfilterocc.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <condition_variable>
 #include <mutex>
@@ -236,12 +230,8 @@ StressMaster::makePostingsHelper(FPFactory *postingFactory,
                                  const std::string &postingFormat,
                                  bool validate, bool verbose)
 {
-    FastOS_Time tv;
-    double before;
-    double after;
+    fastos::StopWatch tv;
 
-    tv.SetNow();
-    before = tv.Secs();
     postingFactory->setup(_wordSet);
     for (size_t i = 0; i < _wordSet.words().size(); ++i)
         makeSomePostings(postingFactory,
@@ -249,11 +239,10 @@ StressMaster::makePostingsHelper(FPFactory *postingFactory,
                          _stride,
                          validate,
                          verbose);
-    tv.SetNow();
-    after = tv.Secs();
+
     LOG(info,
         "StressMaster::makePostingsHelper() elapsed %10.6f s for %s format",
-        after - before,
+        tv.elapsed().sec(),
         postingFormat.c_str());
 }
 
@@ -323,12 +312,8 @@ StressMaster::run()
 double
 StressMaster::runWorkers(const std::string &postingFormat)
 {
-    FastOS_Time tv;
-    double before;
-    double after;
+    fastos::StopWatch tv;
 
-    tv.SetNow();
-    before = tv.Secs();
     uint32_t numWorkers = 8;
     for (uint32_t i = 0; i < numWorkers; ++i) {
         if (_operatorType == StressRunner::OperatorType::Direct) {
@@ -350,15 +335,14 @@ StressMaster::runWorkers(const std::string &postingFormat)
             _taskCond.wait(taskGuard);
         }
     }
-    tv.SetNow();
-    after = tv.Secs();
+
     LOG(info,
         "StressMaster::run() elapsed %10.6f s for workers %s format",
-        after - before,
+       tv.elapsed().sec(),
         postingFormat.c_str());
     _workers.clear();
     _workersDone = 0;
-    return after - before;
+    return tv.elapsed().sec();
 }
 
 StressWorker::StressWorker(StressMaster& master, uint32_t id)

@@ -3,7 +3,6 @@
 #include "random_normal_stable_feature.h"
 #include "utils.h"
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/fastos/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.randomnormalstablefeature");

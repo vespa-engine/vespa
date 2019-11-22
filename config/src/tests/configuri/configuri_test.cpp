@@ -38,9 +38,8 @@ TEST("Require that URI can be created from  instance") {
     b.myField = "rabarbra";
     ConfigUri uri(ConfigUri::createFromInstance(b));
     ConfigSubscriber subscriber(uri.getContext());
-    ConfigHandle<MyConfig>::UP handle =
-        subscriber.subscribe<MyConfig>(uri.getConfigId());
-    ASSERT_TRUE(subscriber.nextConfig(0));
+    ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>(uri.getConfigId());
+    ASSERT_TRUE(subscriber.nextConfigNow());
     ASSERT_TRUE(handle->isChanged());
     std::unique_ptr<MyConfig> cfg = handle->getConfig();
     ASSERT_EQUAL(b.myField, cfg->myField);

@@ -19,7 +19,7 @@ Process::Process(const config::ConfigUri & configUri)
 { }
 
 void
-Process::setupConfig(uint64_t subscribeTimeout)
+Process::setupConfig(milliseconds subscribeTimeout)
 {
     _documentHandler = _configSubscriber.subscribe<document::DocumenttypesConfig>(_configUri.getConfigId(), subscribeTimeout);
     if (!_configSubscriber.nextConfig()) {
@@ -32,7 +32,7 @@ Process::setupConfig(uint64_t subscribeTimeout)
 bool
 Process::configUpdated()
 {
-    _configSubscriber.nextGeneration(0);
+    _configSubscriber.nextGenerationNow();
     if (_documentHandler->isChanged()) {
         LOG(info, "Document config detected changed");
         return true;

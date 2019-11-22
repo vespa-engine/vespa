@@ -7,7 +7,6 @@ vespa_add_library(fastos_objects OBJECT
     linux_file.cpp
     process.cpp
     thread.cpp
-    time.cpp
     timestamp.cpp
     unix_app.cpp
     unix_dynamiclibrary.cpp
@@ -15,7 +14,6 @@ vespa_add_library(fastos_objects OBJECT
     unix_ipc.cpp
     unix_process.cpp
     unix_thread.cpp
-    unix_time.cpp
 )
   
 vespa_add_library(fastos

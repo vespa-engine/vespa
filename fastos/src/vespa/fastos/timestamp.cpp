@@ -104,9 +104,7 @@ StopWatch::waitAtLeast(std::chrono::microseconds us, bool busyWait) {
     if (busyWait) {
         steady_clock::time_point deadline = steady_clock::now() + us;
         while (steady_clock::now() < deadline) {
-            if (busyWait) {
-                for (int i = 0; i < 1000; i++) { }
-            }
+            for (int i = 0; i < 1000; i++) { }
         }
     } else {
         std::this_thread::sleep_for(us);

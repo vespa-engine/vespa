@@ -1,14 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configholder.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 
 using namespace config;
+using namespace std::chrono_literals;
 
 namespace {
 
-constexpr double ONE_SEC = 1000.0;
-constexpr double ONE_MINUTE = 60 * ONE_SEC;
+constexpr long ONE_SEC = 1000;
+constexpr long ONE_MINUTE = 60 * ONE_SEC;
 
 }
 
@@ -33,14 +34,13 @@ TEST("Require that waiting is done")
     ConfigValue value;
 
     ConfigHolder holder;
-    FastOS_Time timer;
-    timer.SetNow();
-    holder.wait(1000);
-    EXPECT_GREATER_EQUAL(timer.MilliSecsToNow(), ONE_SEC);
-    EXPECT_LESS(timer.MilliSecsToNow(), ONE_MINUTE);
+    fastos::StopWatch timer;
+    holder.wait(1000ms);
+    EXPECT_GREATER_EQUAL(timer.elapsed().ms(), ONE_SEC);
+    EXPECT_LESS(timer.elapsed().ms(), ONE_MINUTE);
 
     holder.handle(std::make_unique<ConfigUpdate>(value, true, 0));
-    ASSERT_TRUE(holder.wait(100));
+    ASSERT_TRUE(holder.wait(100ms));
 }
 
 TEST("Require that polling for elements work")
@@ -57,29 +57,27 @@ TEST("Require that polling for elements work")
 
 TEST("Require that negative time does not mean forever.") {
     ConfigHolder holder;
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch timer;
     ASSERT_FALSE(holder.poll());
-    ASSERT_FALSE(holder.wait(10));
-    ASSERT_FALSE(holder.wait(0));
-    ASSERT_FALSE(holder.wait(-1));
-    ASSERT_FALSE(holder.wait(-7));
-    EXPECT_LESS(timer.MilliSecsToNow(), ONE_MINUTE);
+    ASSERT_FALSE(holder.wait(10ms));
+    ASSERT_FALSE(holder.wait(0ms));
+    ASSERT_FALSE(holder.wait(-1ms));
+    ASSERT_FALSE(holder.wait(-7ms));
+    EXPECT_LESS(timer.elapsed().ms(), ONE_MINUTE);
 }
 
 TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)
 {
     if (thread_id == 0) {
-        FastOS_Time timer;
-        timer.SetNow();
+        fastos::StopWatch timer;
         TEST_BARRIER();
-        f.wait(1000);
-        EXPECT_LESS(timer.MilliSecsToNow(), ONE_MINUTE);
-        EXPECT_GREATER(timer.MilliSecsToNow(), 400.0);
+        f.wait(1000ms);
+        EXPECT_LESS(timer.elapsed().ms(), ONE_MINUTE);
+        EXPECT_GREATER(timer.elapsed().ms(), 400.0);
         TEST_BARRIER();
     } else {
         TEST_BARRIER();
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(500ms);
         f.interrupt();
         TEST_BARRIER();
     }

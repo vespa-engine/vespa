@@ -13,11 +13,11 @@ class ConfigHolder : public IConfigHolder
 {
 public:
     ConfigHolder();
-    ~ConfigHolder();
+    ~ConfigHolder() override;
 
     ConfigUpdate::UP provide() override;
     void handle(ConfigUpdate::UP update) override;
-    bool wait(uint64_t timeoutInMillis) override;
+    bool wait(milliseconds timeoutInMillis) override;
     bool poll() override;
     void interrupt() override;
 public:

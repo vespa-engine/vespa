@@ -1,10 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
-#include <memory>
-#include <map>
-#include <vespa/config/common/iconfigholder.h>
-#include <vespa/config/common/configcontext.h>
-#include <vespa/config/common/timingvalues.h>
+
 #include "confighandle.h"
 #include "subscriptionid.h"
 #include "configsubscription.h"
@@ -30,6 +26,7 @@ namespace config {
 class ConfigSubscriber
 {
 public:
+    using milliseconds = std::chrono::milliseconds;
     typedef std::unique_ptr<ConfigSubscriber> UP;
 
     /**
@@ -56,7 +53,8 @@ public:
      * @return true if new configs are available, false if timeout was reached
      *              or subscriber has been closed.
      */
-    bool nextConfig(uint64_t timeoutInMillis = DEFAULT_NEXTCONFIG_TIMEOUT);
+    bool nextConfig(milliseconds timeoutInMillis = DEFAULT_NEXTCONFIG_TIMEOUT);
+    bool nextConfigNow() { return nextConfig(milliseconds(0)); }
 
     /**
      * Checks if the generation of this config set is updated.
@@ -65,8 +63,8 @@ public:
      * @return true if a new generation are available, false if timeout was reached
      *              or subscriber has been closed.
      */
-    bool nextGeneration(uint64_t timeoutInMillis = DEFAULT_NEXTCONFIG_TIMEOUT);
-
+    bool nextGeneration(milliseconds timeoutInMillis = DEFAULT_NEXTCONFIG_TIMEOUT);
+    bool nextGenerationNow() { return nextGeneration(milliseconds(0)); }
     /**
      * Subscribe to a config fetched from the default source specification.
      *
@@ -80,7 +78,7 @@ public:
      */
     template <typename ConfigType>
     std::unique_ptr<ConfigHandle<ConfigType> >
-    subscribe(const std::string & configId, uint64_t timeoutInMillis = DEFAULT_SUBSCRIBE_TIMEOUT);
+    subscribe(const std::string & configId, milliseconds timeoutInMillis = DEFAULT_SUBSCRIBE_TIMEOUT);
 
     /**
      * Return the current generation number for configs.

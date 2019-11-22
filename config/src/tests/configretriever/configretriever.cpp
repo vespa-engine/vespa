@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/config/config.h>
 #include <vespa/config/print.h>
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/retriever/simpleconfigretriever.h>
@@ -10,7 +9,7 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include "config-bootstrap.h"
 #include "config-foo.h"
 #include "config-bar.h"
@@ -20,6 +19,7 @@ using namespace config;
 using namespace std;
 using namespace vespalib::slime;
 using namespace vespalib;
+using namespace std::chrono_literals;
 
 struct ComponentFixture {
     typedef std::shared_ptr<ComponentFixture> SP;
@@ -119,8 +119,8 @@ struct SubscriptionFixture
         : holder(new ConfigHolder()),
           sub(new ConfigSubscription(0, key, holder, Source::UP(new MySource())))
     {
-        holder->handle(ConfigUpdate::UP(new ConfigUpdate(value, 3, 3)));
-        ASSERT_TRUE(sub->nextUpdate(0, 0));
+        holder->handle(std::make_unique<ConfigUpdate>(value, 3, 3));
+        ASSERT_TRUE(sub->nextUpdate(0, 0ms));
         sub->flip();
     }
 };
@@ -246,9 +246,8 @@ public:
         configured = true;
     }
     bool waitUntilConfigured(int64_t timeoutInMillis) {
-        FastOS_Time timer;
-        timer.SetNow();
-        while (timer.MilliSecsToNow() < timeoutInMillis) {
+        fastos::StopWatch timer;
+        while (timer.elapsed().ms() < timeoutInMillis) {
             if (configured) {
                 return true;
             }
@@ -386,14 +385,14 @@ TEST_FFF("require that snapshots can produce subsets", SubscriptionFixture(Confi
     ASSERT_EQUAL(3, subset1.getGeneration());
     ASSERT_EQUAL(1u, subset1.size());
     std::unique_ptr<FooConfig> cfg1(subset1.getConfig<FooConfig>("id"));
-    ASSERT_TRUE(cfg1.get() != NULL);
+    ASSERT_TRUE(cfg1);
 
     ConfigSnapshot subset2(parent.subset(ConfigKeySet().add<BarConfig>("id")));
     ASSERT_FALSE(subset2.empty());
     ASSERT_EQUAL(3, subset2.getGeneration());
     ASSERT_EQUAL(1u, subset2.size());
     std::unique_ptr<BarConfig> cfg2(subset2.getConfig<BarConfig>("id"));
-    ASSERT_TRUE(cfg2.get() != NULL);
+    ASSERT_TRUE(cfg2);
 
     ConfigSnapshot subset3(parent.subset(ConfigKeySet().add<BarConfig>("doesnotexist")));
     ASSERT_TRUE(subset3.empty());
@@ -405,9 +404,9 @@ TEST_FFF("require that snapshots can produce subsets", SubscriptionFixture(Confi
     ASSERT_EQUAL(3, subset4.getGeneration());
     ASSERT_EQUAL(2u, subset4.size());
     cfg1 = subset4.getConfig<FooConfig>("id");
-    ASSERT_TRUE(cfg1.get() != NULL);
+    ASSERT_TRUE(cfg1);
     cfg2 = subset4.getConfig<BarConfig>("id");
-    ASSERT_TRUE(cfg2.get() != NULL);
+    ASSERT_TRUE(cfg2);
 }
 
 TEST_FFF("require that snapshots can be serialized", SubscriptionFixture(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar")),

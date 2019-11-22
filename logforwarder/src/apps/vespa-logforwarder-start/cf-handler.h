@@ -12,7 +12,7 @@ private:
     ChildHandler childHandler;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<LogforwarderConfig>::UP _handle;
-    void subscribe(const std::string & configId, uint64_t timeoutMS);
+    void subscribe(const std::string & configId, std::chrono::milliseconds timeout);
     void doConfigure();
 public:
     CfHandler();

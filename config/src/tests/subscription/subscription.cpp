@@ -3,10 +3,11 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <config-my.h>
 
 using namespace config;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -55,33 +56,31 @@ TEST_FF("requireThatKeyIsReturned", ConfigKey("foo", "bar", "bim", "boo"), Subsc
 
 TEST_F("requireThatUpdateReturns", SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), 1, 1)));
-    ASSERT_TRUE(f1.sub.nextUpdate(0, 0));
+    f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
+    ASSERT_TRUE(f1.sub.nextUpdate(0, 0ms));
     ASSERT_TRUE(f1.sub.hasChanged());
     ASSERT_EQUAL(1, f1.sub.getGeneration());
 }
 
 TEST_F("requireThatNextUpdateBlocks", SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
-    ASSERT_FALSE(f1.sub.nextUpdate(0, 0));
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), 1, 1)));
-    FastOS_Time timer;
-    timer.SetNow();
-    ASSERT_FALSE(f1.sub.nextUpdate(1, 500));
-    ASSERT_TRUE(timer.MilliSecsToNow() > 400.0);
+    ASSERT_FALSE(f1.sub.nextUpdate(0, 0ms));
+    f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
+    fastos::StopWatch timer;
+    ASSERT_FALSE(f1.sub.nextUpdate(1, 500ms));
+    ASSERT_TRUE(timer.elapsed().ms() > 400.0);
 }
 
 TEST_MT_F("requireThatNextUpdateReturnsWhenNotified", 2, SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
     if (thread_id == 0) {
-        FastOS_Time timer;
-        timer.SetNow();
-        f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), 1, 1)));
-        ASSERT_TRUE(f1.sub.nextUpdate(2, 5000));
-        ASSERT_TRUE(timer.MilliSecsToNow() > 200.0);
+        fastos::StopWatch timer;
+        f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
+        ASSERT_TRUE(f1.sub.nextUpdate(2, 5000ms));
+        ASSERT_TRUE(timer.elapsed().ms() > 200.0);
     } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), 1, 1)));
+        f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
     }
 }
 
@@ -89,11 +88,10 @@ TEST_MT_F("requireThatNextUpdateReturnsWhenNotified", 2, SubscriptionFixture(Con
 TEST_MT_F("requireThatNextUpdateReturnsInterrupted", 2, SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
     if (thread_id == 0) {
-        FastOS_Time timer;
-        timer.SetNow();
-        f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), 1, 1)));
-        ASSERT_TRUE(f1.sub.nextUpdate(1, 5000));
-        ASSERT_TRUE(timer.MilliSecsToNow() > 300.0);
+        fastos::StopWatch timer;
+        f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
+        ASSERT_TRUE(f1.sub.nextUpdate(1, 5000ms));
+        ASSERT_TRUE(timer.elapsed().ms() > 300.0);
     } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         f1.sub.close();
@@ -102,16 +100,16 @@ TEST_MT_F("requireThatNextUpdateReturnsInterrupted", 2, SubscriptionFixture(Conf
 
 TEST_F("Require that isChanged takes generation into account", SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(std::vector<vespalib::string>(), "a"), true, 1)));
-    ASSERT_TRUE(f1.sub.nextUpdate(0, 0));
+    f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(std::vector<vespalib::string>(), "a"), true, 1));
+    ASSERT_TRUE(f1.sub.nextUpdate(0, 0ms));
     f1.sub.flip();
     ASSERT_EQUAL(1, f1.sub.getLastGenerationChanged());
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(std::vector<vespalib::string>(), "b"), true, 2)));
-    ASSERT_TRUE(f1.sub.nextUpdate(1, 0));
+    f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(std::vector<vespalib::string>(), "b"), true, 2));
+    ASSERT_TRUE(f1.sub.nextUpdate(1, 0ms));
     f1.sub.flip();
     ASSERT_EQUAL(2, f1.sub.getLastGenerationChanged());
-    f1.holder->handle(ConfigUpdate::UP(new ConfigUpdate(ConfigValue(), false, 3)));
-    ASSERT_TRUE(f1.sub.nextUpdate(2, 0));
+    f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), false, 3));
+    ASSERT_TRUE(f1.sub.nextUpdate(2, 0ms));
     f1.sub.flip();
     ASSERT_EQUAL(2, f1.sub.getLastGenerationChanged());
 }

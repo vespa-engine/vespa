@@ -3,20 +3,22 @@
 #pragma once
 
 #include <cstdint>
+#include <chrono>
 
 namespace config {
 
-static const uint64_t DEFAULT_NEXTCONFIG_TIMEOUT = 55000;
-static const uint64_t DEFAULT_SUBSCRIBE_TIMEOUT = 55000;
-static const uint64_t DEFAULT_GETCONFIGS_TIMEOUT = 55000;
+extern const std::chrono::milliseconds DEFAULT_NEXTCONFIG_TIMEOUT;
+extern const std::chrono::milliseconds DEFAULT_SUBSCRIBE_TIMEOUT;
+extern const std::chrono::milliseconds DEFAULT_GETCONFIGS_TIMEOUT;
 
 
 struct TimingValues
 {
+    using milliseconds = std::chrono::milliseconds;
     uint64_t successTimeout;        // Timeout when previous config request was a success.
     uint64_t errorTimeout;          // Timeout when previous config request was an error.
     uint64_t initialTimeout;        // Timeout used when requesting config for the first time.
-    uint64_t subscribeTimeout;    // Timeout used to find out when to give up unsubscribe.
+    milliseconds subscribeTimeout;    // Timeout used to find out when to give up unsubscribe.
 
     uint64_t fixedDelay;            // Fixed delay between config requests.
     uint64_t successDelay;          // Delay if until next request after successful getConfig.
@@ -31,7 +33,7 @@ struct TimingValues
     TimingValues(uint64_t initSuccessTimeout,
                  uint64_t initerrorTimeout,
                  uint64_t initInitialTimeout,
-                 uint64_t initSubscribeTimeout,
+                 milliseconds initSubscribeTimeout,
                  uint64_t initFixedDelay,
                  uint64_t initSuccessDelay,
                  uint64_t initUnconfiguredDelay,

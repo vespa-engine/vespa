@@ -195,13 +195,12 @@ struct Setup {
     void perform() {
         SearchIterator::UP search = create();
         SearchIterator &sb = *search;
-        FastOS_Time timer;
-        timer.SetNow();
+        fastos::StopWatch timer;
         for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
             stats.hit();
             sb.unpack(sb.getDocId());
         }
-        double ms = timer.MilliSecsToNow();
+        double ms = timer.elapsed().ms();
         if (ms < minTimeMs) {
             minTimeMs = ms;
         }

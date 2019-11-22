@@ -4,7 +4,7 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 
 using namespace vespalib;
 using namespace std::literals;
@@ -60,29 +60,28 @@ uint32_t
 Test::calibrate(double wanted_ms)
 {
     uint32_t n = 0;
-    FastOS_Time t0;
-    FastOS_Time t1;
+    fastos::StopWatch t0;
+    fastos::StopWatch t1;
     { // calibration of calibration loop
         uint32_t result = 0;
-        t0.SetNow();
         double ms;
         do {
             result += doStuff(++n);
-            t1.SetNow();
-            ms = (t1.MilliSecs() - t0.MilliSecs());
+            t1.restart();
+            ms = (t1.elapsed().ms() - t0.elapsed().ms());
         } while (ms < 1000.0);
         _result += result;
     }
     { // calibrate loop
-        t0.SetNow();
+        t0.restart();
         uint32_t result = 0;
         for (uint32_t i = 0; i < n; ++i) {
             result += doStuff(i);
         }
         _result += result;
-        t1.SetNow();
+        t1.restart();
     }
-    double ms = (t1.MilliSecs() - t0.MilliSecs());
+    double ms = (t1.elapsed().ms() - t0.elapsed().ms());
     double size = (((double)n) / ms) * wanted_ms;
     return (uint32_t) std::round(size);
 }
@@ -122,22 +121,19 @@ Test::Main()
             fprintf(stderr, "all threads have been accounted for...\n");
         }
         {
-            FastOS_Time t0;
-            FastOS_Time t1;
+            fastos::StopWatch t0;
             fprintf(stderr, "starting task submission...\n");
-            t0.SetNow();
             uint32_t result = 0;
             for (uint32_t i = 0; i < tasks; ++i) {
                 Executor::Task::UP t(new CPUTask(taskSize, result));
                 t = executor.execute(std::move(t));
-                while (t.get() != 0) {
+                while (t) {
                     std::this_thread::sleep_for(10ms);
                     t = executor.execute(std::move(t));
                 }
             }
             executor.sync();
-            t1.SetNow();
-            double ms = (t1.MilliSecs() - t0.MilliSecs());
+            double ms = t0.elapsed().ms();
             fprintf(stderr, "total execution wall time: %g ms\n", ms);
             _result += result;
         }

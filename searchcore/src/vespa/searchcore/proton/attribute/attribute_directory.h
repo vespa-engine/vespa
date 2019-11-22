@@ -5,10 +5,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <memory>
+#include <vespa/fastos/timestamp.h>
 #include <mutex>
 #include <condition_variable>
-#include <vespa/fastos/time.h>
 
 namespace proton {
 

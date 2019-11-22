@@ -2,7 +2,7 @@
 
 #include "fakewordset.h"
 #include "fakeword.h"
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
 #include <sstream>
 
@@ -96,15 +96,11 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
     std::string common = "common";
     std::string medium = "medium";
     std::string rare = "rare";
-    FastOS_Time tv;
-    double before;
-    double after;
-
     _numDocs = numDocs;
 
     LOG(info, "enter setupWords");
-    tv.SetNow();
-    before = tv.Secs();
+    fastos::StopWatch tv;
+
     uint32_t packedIndex = _fieldsParams.size() - 1;
     for (uint32_t i = 0; i < numWordsPerWordClass; ++i) {
         std::ostringstream vi;
@@ -125,9 +121,8 @@ FakeWordSet::setupWords(search::Rand48 &rnd,
                                                                _fieldsParams[packedIndex],
                                                                packedIndex));
     }
-    tv.SetNow();
-    after = tv.Secs();
-    LOG(info, "leave setupWords, elapsed %10.6f s", after - before);
+
+    LOG(info, "leave setupWords, elapsed %10.6f s", tv.elapsed().sec());
 }
 
 int

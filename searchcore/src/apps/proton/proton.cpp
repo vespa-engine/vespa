@@ -27,7 +27,7 @@ struct Params
     ~Params();
 };
 
-Params::~Params() {}
+Params::~Params() = default;
 
 class App : public FastOS_Application
 {
@@ -174,7 +174,7 @@ App::Main()
         std::unique_ptr<search::StateFile> stateFile;
         std::unique_ptr<search::SigBusHandler> sigBusHandler;
         std::unique_ptr<search::IOErrorHandler> ioErrorHandler;
-        protonUP = std::make_unique<proton::Proton>(params.identity, _argc > 0 ? _argv[0] : "proton", params.subscribeTimeout);
+        protonUP = std::make_unique<proton::Proton>(params.identity, _argc > 0 ? _argv[0] : "proton", std::chrono::milliseconds(params.subscribeTimeout));
         proton::Proton & proton = *protonUP;
         proton::BootstrapConfig::SP configSnapshot = proton.init();
         if (proton.hasAbortedInit()) {

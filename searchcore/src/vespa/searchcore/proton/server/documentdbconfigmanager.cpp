@@ -10,7 +10,6 @@
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/config/helper/legacy.h>
 #include <vespa/config-attributes.h>
-#include <vespa/config-imported-fields.h>
 #include <vespa/config-indexschema.h>
 #include <vespa/config-summary.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
@@ -378,7 +377,7 @@ DocumentDBConfigHelper::DocumentDBConfigHelper(const DirSpec &spec, const vespal
 DocumentDBConfigHelper::~DocumentDBConfigHelper() = default;
 
 bool
-DocumentDBConfigHelper::nextGeneration(int timeoutInMillis)
+DocumentDBConfigHelper::nextGeneration(std::chrono::milliseconds timeoutInMillis)
 {
     ConfigSnapshot snapshot(_retriever->getBootstrapConfigs(timeoutInMillis));
     if (snapshot.empty())

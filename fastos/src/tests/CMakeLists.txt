@@ -61,13 +61,6 @@ vespa_add_executable(fastos_backtracetest_app TEST
     fastos
 )
 vespa_add_test(NAME fastos_backtracetest_app NO_VALGRIND COMMAND fastos_backtracetest_app)
-vespa_add_executable(fastos_timetest_app TEST
-    SOURCES
-    timetest.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_timetest_app NO_VALGRIND COMMAND fastos_timetest_app)
 vespa_add_executable(fastos_typetest_app TEST
     SOURCES
     typetest.cpp
@@ -75,10 +68,3 @@ vespa_add_executable(fastos_typetest_app TEST
     fastos
 )
 vespa_add_test(NAME fastos_typetest_app NO_VALGRIND COMMAND fastos_typetest_app)
-vespa_add_executable(fastos_usecputest_app TEST
-    SOURCES
-    usecputest.cpp
-    DEPENDS
-    fastos
-)
-vespa_add_test(NAME fastos_usecputest_app NO_VALGRIND COMMAND fastos_usecputest_app)

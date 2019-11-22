@@ -376,7 +376,10 @@ public:
      * @return true if a signal was received, false if the wait timed out.
      **/
     bool wait(int msTimeout) {
-        return _cond->wait_for(_guard, std::chrono::milliseconds(msTimeout)) == std::cv_status::no_timeout;
+        return wait(std::chrono::milliseconds(msTimeout));
+    }
+    bool wait(std::chrono::milliseconds timeout) {
+        return _cond->wait_for(_guard, timeout) == std::cv_status::no_timeout;
     }
     /**
      * @brief Send a signal to a single waiter on the underlying
@@ -404,19 +407,7 @@ public:
         _cond->notify_one();
         _cond = nullptr;
     }
-    /**
-     * @brief Send a signal to all waiters on the underlying Monitor,
-     * but unlock the monitor right before doing so.
-     *
-     * This is inherently unsafe and the caller needs external
-     * synchronization to ensure that the underlying Monitor object
-     * will live long enough to be signaled.
-     **/
-    void unsafeBroadcastUnlock() {
-        _guard.unlock();
-        _cond->notify_all();
-        _cond = nullptr;
-    }
+
     /**
      * @brief Release the lock held by this object if unlock has not
      * been called.

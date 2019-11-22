@@ -63,7 +63,7 @@ protected:
     typedef AttributeVector::SP AttributePtr;
 
     const AttributePtr & _attrPtr;
-    FastOS_Time _timer;
+    fastos::StopWatch _timer;
     AttributeSearcherStatus _status;
 
 public:
@@ -114,14 +114,14 @@ public:
     {
         _status._numQueries = numQueries;
     }
-    virtual void doRun() override;
+    void doRun() override;
 };
 
 template <typename T>
 void
 AttributeFindSearcher<T>::doRun()
 {
-    _timer.SetNow();
+    _timer.restart();
     for (uint32_t i = 0; i < _status._numQueries; ++i) {
         // build simple term query
         vespalib::asciistream ss;
@@ -134,12 +134,12 @@ AttributeFindSearcher<T>::doRun()
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(true);
-        std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(NULL, true);
+        std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
         _status._totalHitCount += results->getNumHits();
     }
-    _status._totalSearchTime += _timer.MilliSecsToNow();
+    _status._totalSearchTime += _timer.elapsed().ms();
 }
 
 
@@ -192,13 +192,13 @@ public:
     {
         _status._numQueries = numQueries;
     }
-    virtual void doRun() override;
+    void doRun() override;
 };
 
 void
 AttributeRangeSearcher::doRun()
 {
-    _timer.SetNow();
+    _timer.restart();
     RangeIterator iter(_spec);
     for (uint32_t i = 0; i < _status._numQueries; ++i, ++iter) {
         // build simple range term query
@@ -212,12 +212,12 @@ AttributeRangeSearcher::doRun()
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(true);
-        std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(NULL, true);
+        std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
         _status._totalHitCount += results->getNumHits();
     }
-    _status._totalSearchTime += _timer.MilliSecsToNow();
+    _status._totalSearchTime += _timer.elapsed().ms();
 }
 
 
@@ -234,13 +234,13 @@ public:
     {
         _status._numQueries = numQueries;
     }
-    virtual void doRun() override;
+    void doRun() override;
 };
 
 void
 AttributePrefixSearcher::doRun()
 {
-    _timer.SetNow();
+    _timer.restart();
     for (uint32_t i = 0; i < _status._numQueries; ++i) {
         // build simple prefix term query
         buildTermQuery(_query, _attrPtr->getName(), _values[i % _values.size()].c_str(), true);
@@ -251,15 +251,12 @@ AttributePrefixSearcher::doRun()
                                 attribute::SearchContextParams());
 
         searchContext->fetchPostings(true);
-        std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(NULL, true);
+        std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
         _status._totalHitCount += results->getNumHits();
     }
-    _status._totalSearchTime += _timer.MilliSecsToNow();
+    _status._totalSearchTime += _timer.elapsed().ms();
 }
 
-
-
 } // search
-

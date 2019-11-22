@@ -3,10 +3,9 @@
 #include "config-handler.h"
 #include "output-connection.h"
 
-#include <vespa/vespalib/net/simple_metric_snapshot.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <string>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -121,9 +120,9 @@ ConfigHandler::terminate()
 }
 
 void
-ConfigHandler::subscribe(const std::string & configId, uint64_t timeoutMS)
+ConfigHandler::subscribe(const std::string & configId, std::chrono::milliseconds timeout)
 {
-    _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeoutMS);
+    _sentinelHandle = _subscriber.subscribe<SentinelConfig>(configId, timeout);
 }
 
 void
@@ -173,7 +172,7 @@ ConfigHandler::doWork()
 {
     // Return true if there are any running services, false if not.
 
-    if (_subscriber.nextGeneration(0)) {
+    if (_subscriber.nextGenerationNow()) {
         doConfigure();
     }
     handleRestarts();

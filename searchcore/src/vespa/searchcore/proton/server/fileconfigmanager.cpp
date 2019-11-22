@@ -42,6 +42,7 @@ using vespa::config::content::core::BucketspacesConfig;
 using vespalib::nbostream;
 
 typedef IndexMetaInfo::SnapshotList SnapshotList;
+using namespace std::chrono_literals;
 
 namespace proton {
 
@@ -381,7 +382,7 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
                                                        bucketspaces,currentSnapshot.getTuneFileDocumentDBSP(),
                                                        sampler.hwInfo());
     dbc.forwardConfig(bootstrap);
-    dbc.nextGeneration(0);
+    dbc.nextGeneration(0ms);
 
     loadedSnapshot = dbc.getConfig();
     loadedSnapshot->setConfigId(_configId);

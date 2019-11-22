@@ -2,6 +2,7 @@
 
 #include "configgetter.h"
 #include <vespa/config/subscription/configsubscriber.h>
+
 namespace config {
 
 template <typename ConfigType>
@@ -10,18 +11,18 @@ ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & con
 {
     ConfigSubscriber s(spec);
     std::unique_ptr< ConfigHandle<ConfigType> > h = s.subscribe<ConfigType>(configId);
-    s.nextConfig(0);
+    s.nextConfigNow();
     generation = s.getGeneration();
     return h->getConfig();
 }
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & configId, const IConfigContext::SP & context, uint64_t subscribeTimeout)
+ConfigGetter<ConfigType>::getConfig(int64_t &generation, const std::string & configId, const IConfigContext::SP & context, milliseconds subscribeTimeout)
 {
     ConfigSubscriber s(context);
     std::unique_ptr< ConfigHandle<ConfigType> > h = s.subscribe<ConfigType>(configId, subscribeTimeout);
-    s.nextConfig(0);
+    s.nextConfigNow();
     generation = s.getGeneration();
     return h->getConfig();
 }
@@ -36,7 +37,7 @@ ConfigGetter<ConfigType>::getConfig(const std::string & configId, const SourceSp
 
 template <typename ConfigType>
 std::unique_ptr<ConfigType>
-ConfigGetter<ConfigType>::getConfig(const std::string & configId, const IConfigContext::SP & context, uint64_t subscribeTimeout)
+ConfigGetter<ConfigType>::getConfig(const std::string & configId, const IConfigContext::SP & context, milliseconds subscribeTimeout)
 {
     int64_t ignoreGeneration;
     return getConfig(ignoreGeneration, configId, context, subscribeTimeout);

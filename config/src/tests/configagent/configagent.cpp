@@ -10,6 +10,7 @@
 #include <config-my.h>
 
 using namespace config;
+using namespace std::chrono_literals;
 
 class MyConfigRequest : public ConfigRequest
 {
@@ -65,17 +66,17 @@ public:
 
     static ConfigResponse::UP createOKResponse(const ConfigKey & key, const ConfigValue & value, uint64_t timestamp = 10, const vespalib::string & md5 = "a")
     {
-        return ConfigResponse::UP(new MyConfigResponse(key, value, true, timestamp, md5, "", 0, false));
+        return std::make_unique<MyConfigResponse>(key, value, true, timestamp, md5, "", 0, false);
     }
 
     static ConfigResponse::UP createServerErrorResponse(const ConfigKey & key, const ConfigValue & value)
     {
-        return ConfigResponse::UP(new MyConfigResponse(key, value, true, 10, "a", "whinewhine", 2, true));
+        return std::make_unique<MyConfigResponse>(key, value, true, 10, "a", "whinewhine", 2, true);
     }
 
     static ConfigResponse::UP createConfigErrorResponse(const ConfigKey & key, const ConfigValue & value)
     {
-        return ConfigResponse::UP(new MyConfigResponse(key, value, false, 10, "a", "", 0, false));
+        return std::make_unique<MyConfigResponse>(key, value, false, 10, "a", "", 0, false);
     }
 };
 
@@ -92,7 +93,7 @@ public:
         return std::move(_update);
     }
 
-    bool wait(uint64_t timeout) override
+    bool wait(milliseconds timeout) override
     {
         (void) timeout;
         return true;
@@ -124,7 +125,7 @@ static TimingValues testTimingValues(
         2000,  // successTimeout
         500,  // errorTimeout
         500,   // initialTimeout
-        4000,  // subscribeTimeout
+        4000ms,  // subscribeTimeout
         0,     // fixedDelay
         250,   // successDelay
         250,   // unconfiguredDelay

@@ -53,7 +53,7 @@ public:
     DocumentDBConfigHelper(const config::DirSpec &spec, const vespalib::string &docTypeName);
     ~DocumentDBConfigHelper();
 
-    bool nextGeneration(int timeoutInMillis);
+    bool nextGeneration(std::chrono::milliseconds timeoutInMillis);
     DocumentDBConfig::SP getConfig() const;
     void forwardConfig(const std::shared_ptr<BootstrapConfig> & config);
 private:

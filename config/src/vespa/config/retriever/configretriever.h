@@ -24,9 +24,10 @@ namespace config {
 class ConfigRetriever
 {
 public:
+    using milliseconds = std::chrono::milliseconds;
     ConfigRetriever(const ConfigKeySet & bootstrapSet,
                     const IConfigContext::SP & context,
-                    int64_t subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
+                    milliseconds subscribeTimeout = DEFAULT_SUBSCRIBE_TIMEOUT);
     ~ConfigRetriever();
 
     /**
@@ -39,7 +40,7 @@ public:
      *         retriever has been closed.
      * @throws ConfigTimeoutException if initial subscribe timed out.
      */
-    ConfigSnapshot getBootstrapConfigs(int timeoutInMillis = DEFAULT_NEXTGENERATION_TIMEOUT);
+    ConfigSnapshot getBootstrapConfigs(milliseconds timeoutInMillis = DEFAULT_NEXTGENERATION_TIMEOUT);
 
     /**
      * Return the configs represented by a ConfigKeySet in a snapshot, and makes
@@ -60,7 +61,7 @@ public:
      *                 method can be used to check for this condition.
      * @throws ConfigTimeoutException if resubscribe timed out.
      */
-    ConfigSnapshot getConfigs(const ConfigKeySet & keySet, int timeoutInMillis = DEFAULT_NEXTGENERATION_TIMEOUT);
+    ConfigSnapshot getConfigs(const ConfigKeySet & keySet, milliseconds timeoutInMillis = DEFAULT_NEXTGENERATION_TIMEOUT);
 
     /**
      * Close this retriever in order to shut down.
@@ -88,20 +89,20 @@ public:
      */
     int64_t getGeneration() const { return _generation; }
 
-    static const int DEFAULT_SUBSCRIBE_TIMEOUT = 60000;
-    static const int DEFAULT_NEXTGENERATION_TIMEOUT = 60000;
+    static const milliseconds DEFAULT_SUBSCRIBE_TIMEOUT;
+    static const milliseconds DEFAULT_NEXTGENERATION_TIMEOUT;
 private:
-    FixedConfigSubscriber _bootstrapSubscriber;
+    FixedConfigSubscriber                    _bootstrapSubscriber;
     std::unique_ptr<GenericConfigSubscriber> _configSubscriber;
-    vespalib::Lock _lock;
-    std::vector<ConfigSubscription::SP> _subscriptionList;
-    ConfigKeySet _lastKeySet;
-    IConfigContext::SP _context;
+    vespalib::Lock                           _lock;
+    std::vector<ConfigSubscription::SP>      _subscriptionList;
+    ConfigKeySet                _lastKeySet;
+    IConfigContext::SP          _context;
     std::unique_ptr<SourceSpec> _spec;
-    bool _closed;
-    int64_t _generation;
-    int64_t _subscribeTimeout;
-    bool _bootstrapRequired;
+    bool                        _closed;
+    int64_t                     _generation;
+    milliseconds                _subscribeTimeout;
+    bool                        _bootstrapRequired;
 };
 
 } // namespace config

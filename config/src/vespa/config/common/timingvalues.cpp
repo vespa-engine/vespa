@@ -4,6 +4,12 @@
 
 namespace config {
 
+using std::chrono::milliseconds;
+
+const milliseconds DEFAULT_NEXTCONFIG_TIMEOUT(55000);
+const milliseconds DEFAULT_SUBSCRIBE_TIMEOUT(55000);
+const milliseconds DEFAULT_GETCONFIGS_TIMEOUT(55000);
+
 TimingValues::TimingValues()
     : successTimeout(600000),
       errorTimeout(25000),
@@ -22,7 +28,7 @@ TimingValues::TimingValues()
 TimingValues::TimingValues(uint64_t initSuccessTimeout,
                            uint64_t initErrorTimeout,
                            uint64_t initInitialTimeout,
-                           uint64_t initSubscribeTimeout,
+                           milliseconds initSubscribeTimeout,
                            uint64_t initFixedDelay,
                            uint64_t initSuccessDelay,
                            uint64_t initUnconfiguredDelay,

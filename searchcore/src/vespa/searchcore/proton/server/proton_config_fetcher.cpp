@@ -17,7 +17,7 @@ using namespace std::chrono_literals;
 
 namespace proton {
 
-ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout)
+ProtonConfigFetcher::ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, std::chrono::milliseconds subscribeTimeout)
     : _bootstrapConfigManager(configUri.getConfigId()),
       _retriever(_bootstrapConfigManager.createConfigKeySet(), configUri.getContext(), subscribeTimeout),
       _owner(owner),
@@ -111,7 +111,7 @@ ProtonConfigFetcher::fetchConfigs()
     LOG(debug, "Waiting for new config generation");
     bool configured = false;
     while (!configured) {
-        ConfigSnapshot bootstrapSnapshot = _retriever.getBootstrapConfigs(5000);
+        ConfigSnapshot bootstrapSnapshot = _retriever.getBootstrapConfigs(5000ms);
         if (_retriever.isClosed())
             return;
         LOG(debug, "Fetching snapshot");
@@ -162,7 +162,7 @@ void
 ProtonConfigFetcher::start()
 {
     fetchConfigs();
-    if (_threadPool.NewThread(this, NULL) == NULL) {
+    if (_threadPool.NewThread(this, nullptr) == nullptr) {
         throw vespalib::IllegalStateException(
                 "Failed starting thread for proton config fetcher");
     }
@@ -182,7 +182,6 @@ ProtonConfigFetcher::rememberDocumentTypeRepo(std::shared_ptr<const document::Do
 {
     // Ensure that previous document type repo is kept alive, and also
     // any document type repo that was current within last 10 minutes.
-    using namespace std::chrono_literals;
     if (repo == _currentDocumentTypeRepo) {
         return; // no change
     }

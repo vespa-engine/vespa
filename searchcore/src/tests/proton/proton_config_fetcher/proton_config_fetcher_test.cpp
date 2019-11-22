@@ -13,7 +13,7 @@
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fastos/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
@@ -29,6 +29,7 @@ using namespace vespa::config::search::core;
 using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace cloud::config::filedistribution;
+using namespace std::chrono_literals;
 using vespa::config::content::core::BucketspacesConfig;
 using vespa::config::content::core::BucketspacesConfigBuilder;
 
@@ -169,10 +170,9 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
     VarHolder<std::shared_ptr<ProtonConfigSnapshot>> _config;
 
     ProtonConfigOwner() : _configured(false), _config() { }
-    bool waitUntilConfigured(int timeout) {
-        FastOS_Time timer;
-        timer.SetNow();
-        while (timer.MilliSecsToNow() < timeout) {
+    bool waitUntilConfigured(int64_t timeout) {
+        fastos::StopWatch timer;
+        while (timer.elapsed().ms() < timeout) {
             if (getConfigured())
                 return true;
             FastOS_Thread::Sleep(100);
@@ -290,7 +290,7 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
     f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
@@ -305,7 +305,7 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
     f3.start();
 
     f2._configured = false;
@@ -325,7 +325,7 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
     f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 

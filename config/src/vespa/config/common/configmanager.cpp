@@ -2,7 +2,6 @@
 #include "configmanager.h"
 #include "exceptions.h"
 #include "configholder.h"
-#include <vespa/fastos/time.h>
 #include <thread>
 #include <sstream>
 
@@ -10,6 +9,7 @@
 LOG_SETUP(".config.common.configmanager");
 
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 namespace config {
 
@@ -22,25 +22,24 @@ ConfigManager::ConfigManager(SourceFactory::UP sourceFactory, int64_t initialGen
       _firstLock()
 { }
 
-ConfigManager::~ConfigManager() { }
+ConfigManager::~ConfigManager() = default;
 
 ConfigSubscription::SP
-ConfigManager::subscribe(const ConfigKey & key, uint64_t timeoutInMillis)
+ConfigManager::subscribe(const ConfigKey & key, milliseconds timeoutInMillis)
 {
     LOG(debug, "subscribing on def %s, configid %s", key.getDefName().c_str(), key.getConfigId().c_str());
 
     SubscriptionId id(_idGenerator.fetch_add(1));
 
-    IConfigHolder::SP holder(new ConfigHolder());
+    auto holder = std::make_shared<ConfigHolder>();
     Source::UP source = _sourceFactory->createSource(holder, key);
     source->reload(_generation);
 
     source->getConfig();
     ConfigSubscription::SP subscription(new ConfigSubscription(id, key, holder, std::move(source)));
 
-    FastOS_Time timer;
-    timer.SetNow();
-    while (timer.MilliSecsToNow() < timeoutInMillis) {
+    steady_clock::time_point endTime = steady_clock::now() + timeoutInMillis;
+    while (steady_clock::now() < endTime) {
         if (holder->poll())
             break;
         std::this_thread::sleep_for(10ms);

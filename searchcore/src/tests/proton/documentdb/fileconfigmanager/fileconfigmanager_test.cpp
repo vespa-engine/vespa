@@ -25,6 +25,7 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search::core;
 using namespace vespa::config::search;
+using namespace std::chrono_literals;
 using vespa::config::content::core::BucketspacesConfig;
 using proton::matching::RankingConstants;
 
@@ -48,10 +49,10 @@ makeBaseConfigSnapshot()
                                               std::make_shared<BucketspacesConfig>(),
                                               std::make_shared<TuneFileDocumentDB>(), HwInfo()));
     dbcm.forwardConfig(b);
-    dbcm.nextGeneration(0);
+    dbcm.nextGeneration(0ms);
     DocumentDBConfig::SP snap = dbcm.getConfig();
     snap->setConfigId(myId);
-    ASSERT_TRUE(snap.get() != NULL);
+    ASSERT_TRUE(snap);
     return snap;
 }
 

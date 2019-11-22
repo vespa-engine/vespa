@@ -26,7 +26,7 @@ ConfigSubscription::~ConfigSubscription()
 
 
 bool
-ConfigSubscription::nextUpdate(int64_t generation, uint64_t timeoutInMillis)
+ConfigSubscription::nextUpdate(int64_t generation, std::chrono::milliseconds timeout)
 {
     if (_closed || !_holder->poll()) {
         return false;
@@ -35,7 +35,7 @@ ConfigSubscription::nextUpdate(int64_t generation, uint64_t timeoutInMillis)
     if (isGenerationNewer(_next->getGeneration(), generation)) {
         return true;
     }
-    return (!_closed && _holder->wait(timeoutInMillis));
+    return (!_closed && _holder->wait(timeout));
 }
 
 bool

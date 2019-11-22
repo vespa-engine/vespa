@@ -11,21 +11,21 @@
  * application, but as little as possible else.
  */
 
-#include <csignal>
-#include <vespa/persistence/spi/exceptions.h>
-#include <vespa/storage/storageutil/utils.h>
-#include <vespa/storageserver/app/distributorprocess.h>
 #include "forcelink.h"
+#include <vespa/persistence/spi/exceptions.h>
+#include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/dummyservicelayerprocess.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/shutdownguard.h>
-#include <iostream>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
+#include <iostream>
+#include <csignal>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vds.application");
 
+using namespace std::chrono_literals;
 namespace storage {
 
 namespace {
@@ -39,7 +39,7 @@ Process::UP createProcess(vespalib::stringref configId) {
     } else switch (serverConfig->persistenceProvider.type) {
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::STORAGE:
         case vespa::config::content::core::StorServerConfig::PersistenceProvider::Type::DUMMY:
-            return Process::UP(new DummyServiceLayerProcess(configId));
+            return std::make_unique<DummyServiceLayerProcess>(configId);
         default:
             throw vespalib::IllegalStateException("Unknown persistence provider.", VESPA_STRLOC);
     }
@@ -59,7 +59,7 @@ class StorageApp : public FastOS_Application,
 
 public:
     StorageApp();
-    ~StorageApp();
+    ~StorageApp() override;
 
     void handleSignal(int signal) {
         LOG(info, "Got signal %d, waiting for lock", signal);
@@ -96,7 +96,7 @@ StorageApp::StorageApp()
         "abruptly killing the process.");
 }
 
-StorageApp::~StorageApp() {}
+StorageApp::~StorageApp() = default;
 
 bool StorageApp::Init()
 {
@@ -118,13 +118,13 @@ bool StorageApp::Init()
 }
 
 namespace {
-    storage::StorageApp *sigtramp = 0;
+    storage::StorageApp *sigtramp = nullptr;
     uint32_t _G_signalCount = 0;
 
     void killHandler(int sig) {
         if (_G_signalCount == 0) {
             _G_signalCount++;
-            if (sigtramp == 0) _exit(EXIT_FAILURE);
+            if (sigtramp == nullptr) _exit(EXIT_FAILURE);
             // note: this is not totally safe, sigtramp is not protected by a lock
             sigtramp->handleSignal(sig);
         } else if (_G_signalCount > 2) {
@@ -143,8 +143,8 @@ namespace {
         usr_action.sa_handler = killHandler;
         usr_action.sa_mask = block_mask;
         usr_action.sa_flags = 0;
-        sigaction (SIGTERM, &usr_action, NULL);
-        sigaction (SIGINT, &usr_action, NULL);
+        sigaction (SIGTERM, &usr_action, nullptr);
+        sigaction (SIGINT, &usr_action, nullptr);
     }
 }
 
@@ -162,7 +162,7 @@ int StorageApp::Main()
 {
     try{
         _process = createProcess(_configId);
-        _process->setupConfig(600000);
+        _process->setupConfig(600000ms);
         _process->createNode();
     } catch (const spi::HandledException & e) {
         LOG(warning, "Died due to known cause: %s", e.what());
@@ -192,7 +192,7 @@ int StorageApp::Main()
         }
             // Wait until we get a kill signal.
         vespalib::MonitorGuard lock(_signalLock);
-        lock.wait(1000);
+        lock.wait(1000ms);
         handleSignals();
     }
     LOG(debug, "Server was attempted stopped, shutting down");
@@ -200,7 +200,7 @@ int StorageApp::Main()
     // time than given timeout.
     vespalib::ShutdownGuard shutdownGuard(_maxShutdownTime);
     LOG(debug, "Attempting proper shutdown");
-    _process.reset(0);
+    _process.reset();
     LOG(debug, "Completed controlled shutdown.");
     return 0;
 }
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
     storage::StorageApp app;
     storage::sigtramp = &app;
     int retval = app.Entry(argc,argv);
-    storage::sigtramp = NULL;
+    storage::sigtramp = nullptr;
     LOG(debug, "Exiting");
     return retval;
 }

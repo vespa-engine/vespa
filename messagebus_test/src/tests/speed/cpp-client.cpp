@@ -23,7 +23,7 @@ private:
     static uint64_t   _seq;
 public:
     Client(MessageBus &bus, const SourceSessionParams &params);
-    ~Client();
+    ~Client() override;
     void send();
     void send(uint64_t seq);
     void sample(uint32_t &okCnt, uint32_t &failCnt);

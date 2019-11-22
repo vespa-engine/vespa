@@ -13,9 +13,10 @@ namespace config {
 class GenericConfigSubscriber
 {
 public:
+    using milliseconds = std::chrono::milliseconds;
     GenericConfigSubscriber(const IConfigContext::SP & context);
-    bool nextGeneration(int timeoutInMillis);
-    ConfigSubscription::SP subscribe(const ConfigKey & key, int timeoutInMillis);
+    bool nextGeneration(milliseconds timeoutInMillis);
+    ConfigSubscription::SP subscribe(const ConfigKey & key, milliseconds timeoutInMillis);
     void close();
     int64_t getGeneration() const;
 private:

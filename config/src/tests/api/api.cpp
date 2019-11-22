@@ -13,9 +13,9 @@ TEST("require that can subscribe with empty config id") {
     set.addBuilder("", &builder);
     ConfigSubscriber subscriber(ctx);
     ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>("");
-    ASSERT_TRUE(subscriber.nextConfig(0));
+    ASSERT_TRUE(subscriber.nextConfigNow());
     std::unique_ptr<MyConfig> cfg(handle->getConfig());
-    ASSERT_TRUE(cfg.get() != NULL);
+    ASSERT_TRUE(cfg);
     ASSERT_EQUAL("myfoo", cfg->myField);
 }
 

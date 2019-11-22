@@ -27,8 +27,8 @@ class ProtonConfigFetcher : public FastOS_Runnable
 public:
     using BootstrapConfigSP = std::shared_ptr<BootstrapConfig>;
 
-    ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, uint64_t subscribeTimeout);
-    ~ProtonConfigFetcher();
+    ProtonConfigFetcher(const config::ConfigUri & configUri, IProtonConfigurer &owner, std::chrono::milliseconds subscribeTimeout);
+    ~ProtonConfigFetcher() override;
     /**
      * Get the current config generation.
      */

@@ -27,7 +27,7 @@ public:
     ~DistributorProcess() override;
 
     void shutdown() override;
-    void setupConfig(uint64_t subscribeTimeout) override;
+    void setupConfig(milliseconds subscribeTimeout) override;
     void createNode() override;
     bool configUpdated() override;
     void updateConfig() override;

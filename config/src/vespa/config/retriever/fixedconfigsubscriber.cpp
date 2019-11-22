@@ -4,17 +4,17 @@
 namespace config {
 FixedConfigSubscriber::FixedConfigSubscriber(const ConfigKeySet & keySet,
                                              const IConfigContext::SP & context,
-                                             int64_t subscribeTimeout)
+                                             milliseconds subscribeTimeout)
     : _set(context),
       _subscriptionList()
 {
-    for (ConfigKeySet::const_iterator it(keySet.begin()), mt(keySet.end()); it != mt; it++) {
-        _subscriptionList.push_back(_set.subscribe(*it, subscribeTimeout));
+    for (const ConfigKey & key : keySet) {
+        _subscriptionList.push_back(_set.subscribe(key, subscribeTimeout));
     }
 }
 
 bool
-FixedConfigSubscriber::nextGeneration(int timeoutInMillis)
+FixedConfigSubscriber::nextGeneration(milliseconds timeoutInMillis)
 {
     return _set.acquireSnapshot(timeoutInMillis, true);
 }

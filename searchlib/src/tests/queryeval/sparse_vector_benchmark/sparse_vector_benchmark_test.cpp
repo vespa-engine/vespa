@@ -9,7 +9,6 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
-#include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/util/rand48.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -334,13 +333,12 @@ Result run_single_benchmark(FilterStrategy &filterStrategy, SparseVectorFactory 
     SearchIterator::UP search(filterStrategy.createRoot(vectorFactory, childFactory, childCnt, limit));
     SearchIterator &sb = *search;
     uint32_t num_hits = 0;
-    FastOS_Time timer;
-    timer.SetNow();
+    fastos::StopWatch timer;
     for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
         ++num_hits;
         sb.unpack(sb.getDocId());
     }
-    return Result(timer.MilliSecsToNow(), num_hits);
+    return Result(timer.elapsed().ms(), num_hits);
 }
 
 //-----------------------------------------------------------------------------
