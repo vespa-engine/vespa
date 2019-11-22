@@ -125,6 +125,11 @@ class GraphImporter {
             List<IntermediateOperation> inputs = importOperationInputs(node, onnxGraph, intermediateGraph);
             operation = mapOperation(node, inputs, intermediateGraph);
 
+            // propagate constant values if all inputs are constant
+            if (operation.isConstant()) {
+                operation.setConstantValueFunction(operation::evaluateAsConstant);
+            }
+
             if (isOutputNode(name, onnxGraph)) {
                 intermediateGraph.outputs(intermediateGraph.defaultSignature())
                         .put(IntermediateOperation.namePartOf(name), operation.vespaName());

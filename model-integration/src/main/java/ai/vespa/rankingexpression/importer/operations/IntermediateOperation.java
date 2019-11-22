@@ -5,6 +5,10 @@ package ai.vespa.rankingexpression.importer.operations;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchlib.rankingexpression.evaluation.Context;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -176,6 +180,37 @@ public abstract class IntermediateOperation {
 
     boolean allInputFunctionsPresent(int expected) {
         return verifyInputs(expected, IntermediateOperation::function);
+    }
+
+    /** Recursively evaluates this operation's constant value to avoid doing it run-time. */
+    public Value evaluateAsConstant(OrderedTensorType type) {
+        if ( ! isConstant() ) {
+            throw new IllegalArgumentException("Attempted to evaluate non-constant operation as a constant.");
+        }
+        Value val = evaluateAsConstant(new MapContext(DoubleValue.NaN));
+        if ( ! val.asTensor().type().equals(type.type()) ) {
+            throw new IllegalArgumentException("Constant evaluation in " + name + " resulted in wrong type. " +
+                    "Expected: " + type.type() + " Got: " + val.asTensor().type());
+        }
+        return val;
+    }
+
+    private Value evaluateAsConstant(Context context) {
+        String constantName = "constant(" + vespaName() + ")";
+        Value result = context.get(constantName);
+        if (result == DoubleValue.NaN) {
+            if (inputs.size() == 0) {
+                if (getConstantValue().isEmpty()) {
+                    throw new IllegalArgumentException("Error in evaluating constant for " + name);
+                }
+                result = getConstantValue().get();
+            } else {
+                inputs.forEach(i -> i.evaluateAsConstant(context));
+                result = new TensorValue(lazyGetFunction().evaluate(context));
+            }
+            context.put(constantName, result);
+        }
+        return result;
     }
 
     /**
