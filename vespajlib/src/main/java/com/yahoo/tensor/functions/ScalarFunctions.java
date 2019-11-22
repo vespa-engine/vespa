@@ -47,6 +47,7 @@ public class ScalarFunctions {
     public static DoubleUnaryOperator relu() { return new Relu(); }
     public static DoubleUnaryOperator rsqrt() { return new Rsqrt(); }
     public static DoubleUnaryOperator selu() { return new Selu(); }
+    public static DoubleUnaryOperator leakyrelu() { return new LeakyRelu(); }
     public static DoubleUnaryOperator sin() { return new Sin(); }
     public static DoubleUnaryOperator sigmoid() { return new Sigmoid(); }
     public static DoubleUnaryOperator sqrt() { return new Sqrt(); }
@@ -246,6 +247,13 @@ public class ScalarFunctions {
         public double applyAsDouble(double operand) { return scale * (operand >= 0.0 ? operand : alpha * (Math.exp(operand)-1)); }
         @Override
         public String toString() { return "f(a)(" + scale + " * if(a >= 0, a, " + alpha + " * (exp(a) - 1)))"; }
+    }
+
+    public static class LeakyRelu implements DoubleUnaryOperator {
+        @Override
+        public double applyAsDouble(double operand) { return Math.max(0.01 * operand, operand); }
+        @Override
+        public String toString() { return "f(a)(max(0.01*a, a))"; }
     }
 
     public static class Sin implements DoubleUnaryOperator {

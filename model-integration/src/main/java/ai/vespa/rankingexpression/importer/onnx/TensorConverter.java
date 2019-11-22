@@ -10,7 +10,10 @@ import onnx.Onnx;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
 
 /**
  * Converts Onnx tensors into Vespa tensors.
@@ -31,11 +34,16 @@ class TensorConverter {
     private static Values readValuesOf(Onnx.TensorProto tensorProto) {
         if (tensorProto.hasRawData()) {
             switch (tensorProto.getDataType()) {
+                case BOOL: return new RawBoolValues(tensorProto);
                 case FLOAT: return new RawFloatValues(tensorProto);
+                case DOUBLE: return new RawDoubleValues(tensorProto);
+                case INT64: return new RawLongValues(tensorProto);
             }
         } else {
             switch (tensorProto.getDataType()) {
                 case FLOAT: return new FloatValues(tensorProto);
+                case DOUBLE: return new DoubleValues(tensorProto);
+                case INT64: return new LongValues(tensorProto);
             }
         }
         throw new IllegalArgumentException("Cannot convert a tensor with elements of type " +
@@ -55,11 +63,44 @@ class TensorConverter {
         }
     }
 
+    private static class RawBoolValues extends RawValues {
+        private final IntBuffer values;
+        private final int size;
+        RawBoolValues(Onnx.TensorProto tensorProto) {
+            values = bytes(tensorProto).asIntBuffer();
+            size = values.remaining();
+        }
+        @Override double get(int i) { return values.get(i); }
+        @Override int size() { return size; }
+    }
+
     private static class RawFloatValues extends RawValues {
         private final FloatBuffer values;
         private final int size;
         RawFloatValues(Onnx.TensorProto tensorProto) {
             values = bytes(tensorProto).asFloatBuffer();
+            size = values.remaining();
+        }
+        @Override double get(int i) { return values.get(i); }
+        @Override int size() { return size; }
+    }
+
+    private static class RawDoubleValues extends RawValues {
+        private final DoubleBuffer values;
+        private final int size;
+        RawDoubleValues(Onnx.TensorProto tensorProto) {
+            values = bytes(tensorProto).asDoubleBuffer();
+            size = values.remaining();
+        }
+        @Override double get(int i) { return values.get(i); }
+        @Override int size() { return size; }
+    }
+
+    private static class RawLongValues extends RawValues {
+        private final LongBuffer values;
+        private final int size;
+        RawLongValues(Onnx.TensorProto tensorProto) {
+            values = bytes(tensorProto).asLongBuffer();
             size = values.remaining();
         }
         @Override double get(int i) { return values.get(i); }
@@ -75,5 +116,22 @@ class TensorConverter {
         @Override int size() { return tensorProto.getFloatDataCount(); }
     }
 
+    private static class DoubleValues extends Values {
+        private final Onnx.TensorProto tensorProto;
+        DoubleValues(Onnx.TensorProto tensorProto) {
+            this.tensorProto = tensorProto;
+        }
+        @Override double get(int i) { return tensorProto.getDoubleData(i); }
+        @Override int size() { return tensorProto.getDoubleDataCount(); }
+    }
+
+    private static class LongValues extends Values {
+        private final Onnx.TensorProto tensorProto;
+        LongValues(Onnx.TensorProto tensorProto) {
+            this.tensorProto = tensorProto;
+        }
+        @Override double get(int i) { return tensorProto.getInt64Data(i); }
+        @Override int size() { return tensorProto.getInt64DataCount(); }
+    }
 
 }

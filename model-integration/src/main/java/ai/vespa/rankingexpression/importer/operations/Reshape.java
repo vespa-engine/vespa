@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.rule.ArithmeticNode;
 import com.yahoo.searchlib.rankingexpression.rule.ArithmeticOperator;
 import com.yahoo.searchlib.rankingexpression.rule.ComparisonNode;
 import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
+import com.yahoo.searchlib.rankingexpression.rule.EmbracedNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
@@ -16,6 +17,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.Generate;
 import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import com.yahoo.tensor.functions.TensorFunction;
 
@@ -35,7 +37,7 @@ public class Reshape extends IntermediateOperation {
         if ( ! allInputTypesPresent(2)) return null;
 
         IntermediateOperation newShape = inputs.get(1);
-        if ( ! newShape.getConstantValue().isPresent())
+        if (newShape.getConstantValue().isEmpty())
             throw new IllegalArgumentException("Reshape in " + name + ": Shape input must be a constant.");
 
         Tensor shape = newShape.getConstantValue().get().asTensor();
@@ -69,9 +71,7 @@ public class Reshape extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        for (TensorType.Dimension dimension : type.type().dimensions()) {
-            renamer.addDimension(dimension.name());
-        }
+        addConstraintsFrom(type, renamer);
     }
 
     @Override
@@ -89,17 +89,40 @@ public class Reshape extends IntermediateOperation {
         // the new shape. We have to introduce temporary dimension names and rename back if dimension names
         // in the new and old tensor type overlap.
 
+        List<String> from = new ArrayList<>();
+        List<String> to = new ArrayList<>();
+        boolean dimensionNamesOverlap = dimensionNamesOverlap(inputType, outputType);
+        if (dimensionNamesOverlap) {
+            TensorType.Builder builder = new TensorType.Builder(outputType.valueType());
+            for (int i = 0; i < outputType.rank(); ++i) {
+                TensorType.Dimension dim = outputType.dimensions().get(i);
+                from.add(dim.name());
+                to.add("temp_" + dim.name());
+                builder.dimension(dim.withName("temp_" + dim.name()));
+            }
+            outputType = builder.build();
+        }
+
         ExpressionNode unrollFrom = unrollTensorExpression(inputType);
         ExpressionNode unrollTo = unrollTensorExpression(outputType);
-        ExpressionNode transformExpression = new ComparisonNode(unrollFrom, TruthOperator.EQUAL, unrollTo);
+        ExpressionNode transformExpression = new ComparisonNode(unrollFrom, TruthOperator.EQUAL, new EmbracedNode(unrollTo));
 
         TensorType transformationType = new TensorType.Builder(inputType, outputType).build();
         Generate transformTensor = new Generate(transformationType,
                                                 new GeneratorLambdaFunctionNode(transformationType, transformExpression).asLongListToDoubleOperator());
 
-        return new Reduce(new com.yahoo.tensor.functions.Join(inputFunction, transformTensor, ScalarFunctions.multiply()),
+        TensorFunction result = new Reduce(new com.yahoo.tensor.functions.Join(inputFunction, transformTensor, ScalarFunctions.multiply()),
                           Reduce.Aggregator.sum,
                           inputType.dimensions().stream().map(TensorType.Dimension::name).collect(Collectors.toList()));
+
+        if (dimensionNamesOverlap) {
+            result = new Rename(result, to, from);
+        }
+        return result;
+    }
+
+    private static boolean dimensionNamesOverlap(TensorType a, TensorType b) {
+        return a.dimensionNames().stream().anyMatch(d -> b.dimension(d).isPresent());
     }
 
     private static ExpressionNode unrollTensorExpression(TensorType type) {

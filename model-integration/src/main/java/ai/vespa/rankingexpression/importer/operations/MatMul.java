@@ -73,8 +73,6 @@ public class MatMul extends IntermediateOperation {
 
     private void assertTwoDimensions(List<TensorType.Dimension> dimensions, IntermediateOperation supplier, String inputDescription) {
         if (dimensions.size() >= 2) return;
-
-
         throw new IllegalArgumentException("Expected 2 dimensions in the " + inputDescription + " to " + this +
                                            " but got just " + dimensions + " from\n" +
                                            ExpressionFormatter.inTwoColumnMode(70, 50).format(supplier.toFullString()));

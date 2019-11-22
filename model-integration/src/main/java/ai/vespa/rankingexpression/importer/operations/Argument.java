@@ -3,7 +3,6 @@ package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.TensorFunction;
@@ -39,7 +38,16 @@ public class Argument extends IntermediateOperation {
 
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
-        addConstraintsFrom(type, renamer);
+        for (int i = 0; i < type.dimensions().size(); i++) {
+            renamer.addDimension(type.dimensions().get(i).name());
+
+            //  Each dimension is distinct and ordered correctly:
+            for (int j = i + 1; j < type.dimensions().size(); j++) {
+                renamer.addConstraint(type.dimensions().get(i).name(), type.dimensions().get(j).name(),
+                        DimensionRenamer.Constraint.lessThan(false),
+                        this);
+            }
+        }
     }
 
     @Override

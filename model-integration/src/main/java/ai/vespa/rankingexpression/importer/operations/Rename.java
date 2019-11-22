@@ -6,6 +6,7 @@ import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.functions.TensorFunction;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -15,10 +16,10 @@ import java.util.List;
  */
 public class Rename extends IntermediateOperation {
 
-    private final String from, to;
+    private String from, to;
 
     public Rename(String modelName, String from, String to, IntermediateOperation input) {
-        super(modelName, "rename", List.of(input));
+        super(modelName, "rename", input != null ? List.of(input) : Collections.emptyList());
         this.from = from;
         this.to = to;
     }
@@ -50,6 +51,12 @@ public class Rename extends IntermediateOperation {
     @Override
     public void addDimensionNameConstraints(DimensionRenamer renamer) {
         renamer.addDimension(to);
+    }
+
+    public void renameDimensions(DimensionRenamer renamer) {
+        type = type.rename(renamer);
+        from = renamer.dimensionNameOf(from).orElse(from);
+        to = renamer.dimensionNameOf(to).orElse(to);
     }
 
     @Override

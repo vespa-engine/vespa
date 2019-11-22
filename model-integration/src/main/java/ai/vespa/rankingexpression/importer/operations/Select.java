@@ -51,6 +51,9 @@ public class Select extends IntermediateOperation {
             if (condition.type().rank() == 1 && dimensionSize(condition.type().dimensions().get(0)) == 1) {
                 return condition.cellIterator().next().getValue().intValue() == 0 ? b : a;
             }
+            if (condition.type().rank() == 2 && dimensionSize(condition.type().dimensions().get(0)) == 1 && dimensionSize(condition.type().dimensions().get(1)) == 1) {
+                return condition.cellIterator().next().getValue().intValue() == 0 ? b : a;
+            }
         }
 
         // The task is to select cells from 'x' or 'y' based on 'condition'.

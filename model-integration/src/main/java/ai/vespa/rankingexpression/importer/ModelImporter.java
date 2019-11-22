@@ -96,7 +96,7 @@ public abstract class ModelImporter implements MlModelImporter {
             for (String outputName : signature.outputs().values()) {
                 try {
                     Optional<TensorFunction> function = importExpression(graph.get(outputName), model);
-                    if (!function.isPresent()) {
+                    if (function.isEmpty()) {
                         signature.skippedOutput(outputName, "No valid output function could be found.");
                     }
                 }
@@ -108,7 +108,7 @@ public abstract class ModelImporter implements MlModelImporter {
     }
 
     private static Optional<TensorFunction> importExpression(IntermediateOperation operation, ImportedModel model) {
-        if (!operation.type().isPresent()) {
+        if (operation.type().isEmpty()) {
             return Optional.empty();
         }
         if (operation.isConstant()) {

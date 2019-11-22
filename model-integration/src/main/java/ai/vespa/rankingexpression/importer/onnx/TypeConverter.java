@@ -23,7 +23,8 @@ class TypeConverter {
                 int vespaIndex = type.dimensionMap(onnxIndex);
                 Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(onnxIndex);
                 TensorType.Dimension vespaDimension = type.type().dimensions().get(vespaIndex);
-                if (onnxDimension.getDimValue() != vespaDimension.size().orElse(-1L)) {
+                long onnxDimensionSize = onnxDimension.getDimValue() == 0 ? 1 : onnxDimension.getDimValue();
+                if (onnxDimensionSize != vespaDimension.size().orElse(-1L)) {
                     throw new IllegalArgumentException("Onnx dimensions of does not match Vespa dimensions");
                 }
             }
@@ -37,8 +38,9 @@ class TypeConverter {
         for (int i = 0; i < shape.getDimCount(); ++ i) {
             String dimensionName = dimensionPrefix + i;
             Onnx.TensorShapeProto.Dimension onnxDimension = shape.getDim(i);
-            if (onnxDimension.getDimValue() >= 0) {
-                builder.add(TensorType.Dimension.indexed(dimensionName, onnxDimension.getDimValue()));
+            long onnxDimensionSize = onnxDimension.getDimValue() == 0 ? 1 : onnxDimension.getDimValue();
+            if (onnxDimensionSize >= 0) {
+                builder.add(TensorType.Dimension.indexed(dimensionName, onnxDimensionSize));
             } else {
                 builder.add(TensorType.Dimension.indexed(dimensionName));
             }
