@@ -213,6 +213,42 @@ public abstract class IntermediateOperation {
         return result;
     }
 
+    /** Insert an operation between an input and this one */
+    public void insert(IntermediateOperation operationToInsert, int inputNumber) {
+        if ( operationToInsert.inputs.size() > 0 ) {
+            throw new IllegalArgumentException("Operation to insert to '" + name + "' has " +
+                    "existing inputs which is not supported.");
+        }
+        IntermediateOperation previousInputOperation = inputs.get(inputNumber);
+        int outputNumber = findOutputNumber(previousInputOperation, this);
+        if (outputNumber == -1) {
+            throw new IllegalArgumentException("Input '" + previousInputOperation.name + "' to '" +
+                    name + "' does not have '" + name + "' as output.");
+        }
+        previousInputOperation.outputs.set(outputNumber, operationToInsert);
+        operationToInsert.inputs.add(previousInputOperation);
+        operationToInsert.outputs.add(this);
+        inputs.set(inputNumber, operationToInsert);
+    }
+
+    /** Remove an operation between an input and this one */
+    public void uninsert(int inputNumber) {
+        IntermediateOperation operationToRemove = inputs.get(inputNumber);
+        IntermediateOperation newInputOperation = operationToRemove.inputs.get(0);
+        int outputNumber = findOutputNumber(newInputOperation, operationToRemove);
+        newInputOperation.outputs.set(outputNumber, this);
+        inputs.set(inputNumber, newInputOperation);
+    }
+
+    private int findOutputNumber(IntermediateOperation output, IntermediateOperation op) {
+        for (int i = 0; i < output.outputs.size(); ++i) {
+            if (output.outputs.get(i).equals(op)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     /**
      * Returns the largest value type among the input value types.
      * This should only be called after it has been verified that input types are available.

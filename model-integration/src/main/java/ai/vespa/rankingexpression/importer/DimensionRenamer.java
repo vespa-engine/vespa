@@ -121,7 +121,7 @@ public class DimensionRenamer {
         List<IntermediateOperation> prioritizedOperations =
                 constraintsPerOperation.entrySet().stream()
                                                   .sorted(Comparator.comparingInt(entry -> - entry.getValue()))
-                                                  .map(entry -> entry.getKey())
+                                                  .map(Map.Entry::getKey)
                                                   .collect(Collectors.toList());
 
         List<RenameTarget> targets = new ArrayList<>();
@@ -131,8 +131,7 @@ public class DimensionRenamer {
                 if (inputType.isEmpty()) continue;
                 for (String dimensionName : inputType.get().dimensionNames()) {
                     RenameTarget target = new RenameTarget(operation, i, dimensionName, graph);
-                    if (target.rootKey != null) // TODO: Inserting renames under non-roots is not implemented
-                        targets.add(target);
+                    targets.add(target);
                 }
             }
         }
@@ -313,30 +312,15 @@ public class DimensionRenamer {
         final String dimensionName;
         final IntermediateGraph graph;
 
-        /**
-         * Returns the key of this operation in the root operations of the graph,
-         * or null if it is not a root operation
-         */
-        final String rootKey;
-
         public RenameTarget(IntermediateOperation operation, int inputNumber, String dimensionName, IntermediateGraph graph) {
             this.operation = operation;
             this.inputNumber = inputNumber;
             this.dimensionName = dimensionName;
-            this.rootKey = findRootKey(operation, graph);
             this.graph = graph;
         }
 
         public IntermediateOperation input() {
             return operation.inputs().get(inputNumber);
-        }
-
-        private static String findRootKey(IntermediateOperation operation, IntermediateGraph graph) {
-            for (var entry : graph.operations().entrySet()) {
-                if (entry.getValue() == operation)
-                    return entry.getKey();
-            }
-            return null;
         }
 
         /** Inserts a rename operation if possible. Returns whether an operation was inserted. */
@@ -345,28 +329,19 @@ public class DimensionRenamer {
                                        dimensionName,
                                        renamer.dimensionPrefix + renamer.dimensions.size(),
                                        input());
-
-            List<IntermediateOperation> newInputs = new ArrayList<>(operation.inputs());
-            newInputs.set(inputNumber, rename);
-            IntermediateOperation newOperation = operation.withInputs(newInputs);
-            if (rootKey == null)
-                throw new IllegalStateException("Renaming non-roots is not implemented");
-            graph.put(rootKey, newOperation);
-
+            operation.insert(rename, inputNumber);
             removeConstraintsOf(operation, renamer);
             rename.addDimensionNameConstraints(renamer);
-            newOperation.addDimensionNameConstraints(renamer);
+            operation.addDimensionNameConstraints(renamer);
             return true;
         }
 
         /** Undo what insertRenameOperation has done: Set back the original operation and remove+add constraints */
         private void uninsertRename(DimensionRenamer renamer) {
-            IntermediateOperation newOperation = graph.operations().get(rootKey);
-            Rename rename = (Rename)newOperation.inputs().get(inputNumber);
-            graph.put(rootKey, operation);
-
+            Rename rename = (Rename)operation.inputs().get(inputNumber);
+            operation.uninsert(inputNumber);
             removeConstraintsOf(rename, renamer);
-            removeConstraintsOf(newOperation, renamer);
+            removeConstraintsOf(operation, renamer);
             operation.addDimensionNameConstraints(renamer);
         }
 
