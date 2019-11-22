@@ -328,7 +328,7 @@ public class DimensionRenamer {
             Rename rename = new Rename(operation.modelName(),
                                        dimensionName,
                                        renamer.dimensionPrefix + renamer.dimensions.size(),
-                                       input());
+                                       null);
             operation.insert(rename, inputNumber);
             removeConstraintsOf(operation, renamer);
             rename.addDimensionNameConstraints(renamer);
