@@ -1,0 +1,8622 @@
+saved_model_schema_version: 1
+meta_graphs {
+  meta_info_def {
+    stripped_op_list {
+      op {
+        name: "Abs"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Add"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+              type: DT_STRING
+            }
+          }
+        }
+      }
+      op {
+        name: "Assert"
+        input_arg {
+          name: "condition"
+          type: DT_BOOL
+        }
+        input_arg {
+          name: "data"
+          type_list_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "list(type)"
+          has_minimum: true
+          minimum: 1
+        }
+        attr {
+          name: "summarize"
+          type: "int"
+          default_value {
+            i: 3
+          }
+        }
+        is_stateful: true
+      }
+      op {
+        name: "AssignAddVariableOp"
+        input_arg {
+          name: "resource"
+          type: DT_RESOURCE
+        }
+        input_arg {
+          name: "value"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        is_stateful: true
+      }
+      op {
+        name: "AssignVariableOp"
+        input_arg {
+          name: "resource"
+          type: DT_RESOURCE
+        }
+        input_arg {
+          name: "value"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        is_stateful: true
+      }
+      op {
+        name: "Cast"
+        input_arg {
+          name: "x"
+          type_attr: "SrcT"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "DstT"
+        }
+        attr {
+          name: "SrcT"
+          type: "type"
+        }
+        attr {
+          name: "DstT"
+          type: "type"
+        }
+        attr {
+          name: "Truncate"
+          type: "bool"
+          default_value {
+            b: false
+          }
+        }
+      }
+      op {
+        name: "ConcatV2"
+        input_arg {
+          name: "values"
+          type_attr: "T"
+          number_attr: "N"
+        }
+        input_arg {
+          name: "axis"
+          type_attr: "Tidx"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "N"
+          type: "int"
+          has_minimum: true
+          minimum: 2
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "Tidx"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Const"
+        output_arg {
+          name: "output"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "value"
+          type: "tensor"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+      }
+      op {
+        name: "DenseToDenseSetOperation"
+        input_arg {
+          name: "set1"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "set2"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "result_indices"
+          type: DT_INT64
+        }
+        output_arg {
+          name: "result_values"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "result_shape"
+          type: DT_INT64
+        }
+        attr {
+          name: "set_operation"
+          type: "string"
+        }
+        attr {
+          name: "validate_indices"
+          type: "bool"
+          default_value {
+            b: true
+          }
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_INT8
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_UINT8
+              type: DT_UINT16
+              type: DT_STRING
+            }
+          }
+        }
+      }
+      op {
+        name: "DivNoNan"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+            }
+          }
+        }
+      }
+      op {
+        name: "Equal"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type: DT_BOOL
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_QUINT8
+              type: DT_QINT8
+              type: DT_QINT32
+              type: DT_STRING
+              type: DT_BOOL
+              type: DT_COMPLEX128
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
+        name: "Exp"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "ExpandDims"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "dim"
+          type_attr: "Tdim"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "Tdim"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Fill"
+        input_arg {
+          name: "dims"
+          type_attr: "index_type"
+        }
+        input_arg {
+          name: "value"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "index_type"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Greater"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type: DT_BOOL
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_UINT8
+              type: DT_INT16
+              type: DT_INT8
+              type: DT_INT64
+              type: DT_BFLOAT16
+              type: DT_UINT16
+              type: DT_HALF
+              type: DT_UINT32
+              type: DT_UINT64
+            }
+          }
+        }
+      }
+      op {
+        name: "GreaterEqual"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type: DT_BOOL
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_UINT8
+              type: DT_INT16
+              type: DT_INT8
+              type: DT_INT64
+              type: DT_BFLOAT16
+              type: DT_UINT16
+              type: DT_HALF
+              type: DT_UINT32
+              type: DT_UINT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Identity"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+      }
+      op {
+        name: "Log"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Log1p"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Maximum"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
+        name: "Mean"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "reduction_indices"
+          type_attr: "Tidx"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "keep_dims"
+          type: "bool"
+          default_value {
+            b: false
+          }
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_UINT8
+              type: DT_INT16
+              type: DT_INT8
+              type: DT_COMPLEX64
+              type: DT_INT64
+              type: DT_QINT8
+              type: DT_QUINT8
+              type: DT_QINT32
+              type: DT_BFLOAT16
+              type: DT_UINT16
+              type: DT_COMPLEX128
+              type: DT_HALF
+              type: DT_UINT32
+              type: DT_UINT64
+            }
+          }
+        }
+        attr {
+          name: "Tidx"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Merge"
+        input_arg {
+          name: "inputs"
+          type_attr: "T"
+          number_attr: "N"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "value_index"
+          type: DT_INT32
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "N"
+          type: "int"
+          has_minimum: true
+          minimum: 1
+        }
+      }
+      op {
+        name: "MergeV2Checkpoints"
+        input_arg {
+          name: "checkpoint_prefixes"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "destination_prefix"
+          type: DT_STRING
+        }
+        attr {
+          name: "delete_old_dirs"
+          type: "bool"
+          default_value {
+            b: true
+          }
+        }
+        is_stateful: true
+      }
+      op {
+        name: "Minimum"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
+        name: "Mul"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
+        name: "Neg"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "NoOp"
+      }
+      op {
+        name: "Pack"
+        input_arg {
+          name: "values"
+          type_attr: "T"
+          number_attr: "N"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "N"
+          type: "int"
+          has_minimum: true
+          minimum: 1
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "axis"
+          type: "int"
+          default_value {
+            i: 0
+          }
+        }
+      }
+      op {
+        name: "Placeholder"
+        output_arg {
+          name: "output"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        attr {
+          name: "shape"
+          type: "shape"
+          default_value {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      op {
+        name: "PlaceholderWithDefault"
+        input_arg {
+          name: "input"
+          type_attr: "dtype"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        attr {
+          name: "shape"
+          type: "shape"
+        }
+      }
+      op {
+        name: "ReadVariableOp"
+        input_arg {
+          name: "resource"
+          type: DT_RESOURCE
+        }
+        output_arg {
+          name: "value"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        is_stateful: true
+      }
+      op {
+        name: "RealDiv"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "RestoreV2"
+        input_arg {
+          name: "prefix"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "tensor_names"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "shape_and_slices"
+          type: DT_STRING
+        }
+        output_arg {
+          name: "tensors"
+          type_list_attr: "dtypes"
+        }
+        attr {
+          name: "dtypes"
+          type: "list(type)"
+          has_minimum: true
+          minimum: 1
+        }
+        is_stateful: true
+      }
+      op {
+        name: "Rsqrt"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "SaveV2"
+        input_arg {
+          name: "prefix"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "tensor_names"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "shape_and_slices"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "tensors"
+          type_list_attr: "dtypes"
+        }
+        attr {
+          name: "dtypes"
+          type: "list(type)"
+          has_minimum: true
+          minimum: 1
+        }
+        is_stateful: true
+      }
+      op {
+        name: "Select"
+        input_arg {
+          name: "condition"
+          type: DT_BOOL
+        }
+        input_arg {
+          name: "t"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "e"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+      }
+      op {
+        name: "Shape"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "out_type"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "out_type"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "ShardedFilename"
+        input_arg {
+          name: "basename"
+          type: DT_STRING
+        }
+        input_arg {
+          name: "shard"
+          type: DT_INT32
+        }
+        input_arg {
+          name: "num_shards"
+          type: DT_INT32
+        }
+        output_arg {
+          name: "filename"
+          type: DT_STRING
+        }
+      }
+      op {
+        name: "Sigmoid"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Size"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "out_type"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "out_type"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Square"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "StringJoin"
+        input_arg {
+          name: "inputs"
+          type: DT_STRING
+          number_attr: "N"
+        }
+        output_arg {
+          name: "output"
+          type: DT_STRING
+        }
+        attr {
+          name: "N"
+          type: "int"
+          has_minimum: true
+          minimum: 1
+        }
+        attr {
+          name: "separator"
+          type: "string"
+          default_value {
+            s: ""
+          }
+        }
+      }
+      op {
+        name: "Sub"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Sum"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "reduction_indices"
+          type_attr: "Tidx"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "keep_dims"
+          type: "bool"
+          default_value {
+            b: false
+          }
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_UINT8
+              type: DT_INT16
+              type: DT_INT8
+              type: DT_COMPLEX64
+              type: DT_INT64
+              type: DT_QINT8
+              type: DT_QUINT8
+              type: DT_QINT32
+              type: DT_BFLOAT16
+              type: DT_UINT16
+              type: DT_COMPLEX128
+              type: DT_HALF
+              type: DT_UINT32
+              type: DT_UINT64
+            }
+          }
+        }
+        attr {
+          name: "Tidx"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Switch"
+        input_arg {
+          name: "data"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "pred"
+          type: DT_BOOL
+        }
+        output_arg {
+          name: "output_false"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "output_true"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+      }
+      op {
+        name: "VarHandleOp"
+        output_arg {
+          name: "resource"
+          type: DT_RESOURCE
+        }
+        attr {
+          name: "container"
+          type: "string"
+          default_value {
+            s: ""
+          }
+        }
+        attr {
+          name: "shared_name"
+          type: "string"
+          default_value {
+            s: ""
+          }
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        attr {
+          name: "shape"
+          type: "shape"
+        }
+        is_stateful: true
+      }
+      op {
+        name: "VarIsInitializedOp"
+        input_arg {
+          name: "resource"
+          type: DT_RESOURCE
+        }
+        output_arg {
+          name: "is_initialized"
+          type: DT_BOOL
+        }
+        is_stateful: true
+      }
+      op {
+        name: "ZerosLike"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+      }
+    }
+    tags: "serve"
+    tensorflow_version: "1.13.1"
+    tensorflow_git_version: "b\'v1.13.1-0-g6612da8951\'"
+  }
+  graph_def {
+    node {
+      name: "keras_learning_phase/input"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_BOOL
+            tensor_shape {
+            }
+            bool_val: false
+          }
+        }
+      }
+    }
+    node {
+      name: "keras_learning_phase"
+      op: "PlaceholderWithDefault"
+      input: "keras_learning_phase/input"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+    }
+    node {
+      name: "input_embedding_user_guid"
+      op: "Placeholder"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "input_embedding_product_slug"
+      op: "Placeholder"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Square"
+      op: "Square"
+      input: "input_embedding_user_guid"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Sum/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Sum"
+      op: "Sum"
+      input: "dot_0/l2_normalize/Square"
+      input: "dot_0/l2_normalize/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Maximum/y"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 9.999999960041972e-13
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Maximum"
+      op: "Maximum"
+      input: "dot_0/l2_normalize/Sum"
+      input: "dot_0/l2_normalize/Maximum/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Rsqrt"
+      op: "Rsqrt"
+      input: "dot_0/l2_normalize/Maximum"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize"
+      op: "Mul"
+      input: "input_embedding_user_guid"
+      input: "dot_0/l2_normalize/Rsqrt"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Square"
+      op: "Square"
+      input: "input_embedding_product_slug"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Sum/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Sum"
+      op: "Sum"
+      input: "dot_0/l2_normalize_1/Square"
+      input: "dot_0/l2_normalize_1/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Maximum/y"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 9.999999960041972e-13
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Maximum"
+      op: "Maximum"
+      input: "dot_0/l2_normalize_1/Sum"
+      input: "dot_0/l2_normalize_1/Maximum/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Rsqrt"
+      op: "Rsqrt"
+      input: "dot_0/l2_normalize_1/Maximum"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1"
+      op: "Mul"
+      input: "input_embedding_product_slug"
+      input: "dot_0/l2_normalize_1/Rsqrt"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/Mul"
+      op: "Mul"
+      input: "dot_0/l2_normalize"
+      input: "dot_0/l2_normalize_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/Sum/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/Sum"
+      op: "Sum"
+      input: "dot_0/Mul"
+      input: "dot_0/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "dot_0/ExpandDims/dim"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/ExpandDims"
+      op: "ExpandDims"
+      input: "dot_0/Sum"
+      input: "dot_0/ExpandDims/dim"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tdim"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "sigmoid_out/Sigmoid"
+      op: "Sigmoid"
+      input: "dot_0/ExpandDims"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/iterations/Initializer/initial_value"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/iterations"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT64
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT64
+            tensor_shape {
+            }
+            int64_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/iterations"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/iterations"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT64
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "Adam/iterations"
+        }
+      }
+    }
+    node {
+      name: "Adam/iterations/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "Adam/iterations"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/iterations/Assign"
+      op: "AssignVariableOp"
+      input: "Adam/iterations"
+      input: "Adam/iterations/Initializer/initial_value"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/iterations"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT64
+        }
+      }
+    }
+    node {
+      name: "Adam/iterations/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "Adam/iterations"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/iterations"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT64
+        }
+      }
+    }
+    node {
+      name: "Adam/lr/Initializer/initial_value"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/lr"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0010000000474974513
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/lr"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/lr"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "Adam/lr"
+        }
+      }
+    }
+    node {
+      name: "Adam/lr/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "Adam/lr"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/lr/Assign"
+      op: "AssignVariableOp"
+      input: "Adam/lr"
+      input: "Adam/lr/Initializer/initial_value"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/lr"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/lr/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "Adam/lr"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/lr"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_1/Initializer/initial_value"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.8999999761581421
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_1"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "Adam/beta_1"
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_1/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "Adam/beta_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_1/Assign"
+      op: "AssignVariableOp"
+      input: "Adam/beta_1"
+      input: "Adam/beta_1/Initializer/initial_value"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_1"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_1/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "Adam/beta_1"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_2/Initializer/initial_value"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_2"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.9990000128746033
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_2"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_2"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "Adam/beta_2"
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_2/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "Adam/beta_2"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_2/Assign"
+      op: "AssignVariableOp"
+      input: "Adam/beta_2"
+      input: "Adam/beta_2/Initializer/initial_value"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_2"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/beta_2/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "Adam/beta_2"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/beta_2"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/decay/Initializer/initial_value"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/decay"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/decay"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/decay"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "Adam/decay"
+        }
+      }
+    }
+    node {
+      name: "Adam/decay/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "Adam/decay"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Adam/decay/Assign"
+      op: "AssignVariableOp"
+      input: "Adam/decay"
+      input: "Adam/decay/Initializer/initial_value"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/decay"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "Adam/decay/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "Adam/decay"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@Adam/decay"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "sigmoid_out_target"
+      op: "Placeholder"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: -1
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            float_val: 1.0
+          }
+        }
+      }
+    }
+    node {
+      name: "sigmoid_out_sample_weights"
+      op: "PlaceholderWithDefault"
+      input: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "total/Initializer/zeros"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "total"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "total"
+        }
+      }
+    }
+    node {
+      name: "total/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "total"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "total/Assign"
+      op: "AssignVariableOp"
+      input: "total"
+      input: "total/Initializer/zeros"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "total/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "total"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "count/Initializer/zeros"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "count"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "count"
+        }
+      }
+    }
+    node {
+      name: "count/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "count"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "count/Assign"
+      op: "AssignVariableOp"
+      input: "count"
+      input: "count/Initializer/zeros"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "count/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "count"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "total_1/Initializer/zeros"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "total_1"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "total_1"
+        }
+      }
+    }
+    node {
+      name: "total_1/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "total_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "total_1/Assign"
+      op: "AssignVariableOp"
+      input: "total_1"
+      input: "total_1/Initializer/zeros"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total_1"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "total_1/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "total_1"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@total_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "count_1/Initializer/zeros"
+      op: "Const"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.0
+          }
+        }
+      }
+    }
+    node {
+      name: "count_1"
+      op: "VarHandleOp"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "container"
+        value {
+          s: ""
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+      attr {
+        key: "shared_name"
+        value {
+          s: "count_1"
+        }
+      }
+    }
+    node {
+      name: "count_1/IsInitialized/VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "count_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "count_1/Assign"
+      op: "AssignVariableOp"
+      input: "count_1"
+      input: "count_1/Initializer/zeros"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count_1"
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "count_1/Read/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "count_1"
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@count_1"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 1.0000000116860974e-07
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/sub/x"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 1.0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/sub"
+      op: "Sub"
+      input: "loss/sigmoid_out_loss/sub/x"
+      input: "loss/sigmoid_out_loss/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/clip_by_value/Minimum"
+      op: "Minimum"
+      input: "sigmoid_out/Sigmoid"
+      input: "loss/sigmoid_out_loss/sub"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/clip_by_value"
+      op: "Maximum"
+      input: "loss/sigmoid_out_loss/clip_by_value/Minimum"
+      input: "loss/sigmoid_out_loss/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/sub_1/x"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 1.0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/sub_1"
+      op: "Sub"
+      input: "loss/sigmoid_out_loss/sub_1/x"
+      input: "loss/sigmoid_out_loss/clip_by_value"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/truediv"
+      op: "RealDiv"
+      input: "loss/sigmoid_out_loss/clip_by_value"
+      input: "loss/sigmoid_out_loss/sub_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Log"
+      op: "Log"
+      input: "loss/sigmoid_out_loss/truediv"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/zeros_like"
+      op: "ZerosLike"
+      input: "loss/sigmoid_out_loss/Log"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/GreaterEqual"
+      op: "GreaterEqual"
+      input: "loss/sigmoid_out_loss/Log"
+      input: "loss/sigmoid_out_loss/logistic_loss/zeros_like"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/Select"
+      op: "Select"
+      input: "loss/sigmoid_out_loss/logistic_loss/GreaterEqual"
+      input: "loss/sigmoid_out_loss/Log"
+      input: "loss/sigmoid_out_loss/logistic_loss/zeros_like"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/Neg"
+      op: "Neg"
+      input: "loss/sigmoid_out_loss/Log"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/Select_1"
+      op: "Select"
+      input: "loss/sigmoid_out_loss/logistic_loss/GreaterEqual"
+      input: "loss/sigmoid_out_loss/logistic_loss/Neg"
+      input: "loss/sigmoid_out_loss/Log"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/mul"
+      op: "Mul"
+      input: "loss/sigmoid_out_loss/Log"
+      input: "sigmoid_out_target"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/sub"
+      op: "Sub"
+      input: "loss/sigmoid_out_loss/logistic_loss/Select"
+      input: "loss/sigmoid_out_loss/logistic_loss/mul"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/Exp"
+      op: "Exp"
+      input: "loss/sigmoid_out_loss/logistic_loss/Select_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss/Log1p"
+      op: "Log1p"
+      input: "loss/sigmoid_out_loss/logistic_loss/Exp"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/logistic_loss"
+      op: "Add"
+      input: "loss/sigmoid_out_loss/logistic_loss/sub"
+      input: "loss/sigmoid_out_loss/logistic_loss/Log1p"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Mean/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Mean"
+      op: "Mean"
+      input: "loss/sigmoid_out_loss/logistic_loss"
+      input: "loss/sigmoid_out_loss/Mean/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape"
+      op: "Shape"
+      input: "sigmoid_out_sample_weights"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/rank"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape"
+      op: "Shape"
+      input: "loss/sigmoid_out_loss/Mean"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/rank"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar/x"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+      op: "Equal"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar/x"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/rank"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/switch_t"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/switch_f"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch_1"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank"
+      op: "Equal"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/rank"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/rank"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch_1"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/rank"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/rank"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_f"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/dim"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims"
+      op: "ExpandDims"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch_1:1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/dim"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tdim"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch_1"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Shape"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 2
+              }
+            }
+            tensor_content: "\001\000\000\000\001\000\000\000"
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Const"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like"
+      op: "Fill"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Shape"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "index_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat/axis"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat"
+      op: "ConcatV2"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat/axis"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/dim"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1"
+      op: "ExpandDims"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch_1:1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/dim"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Tdim"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch_1"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation"
+      op: "DenseToDenseSetOperation"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 2
+              }
+            }
+            shape {
+              dim {
+                size: -1
+              }
+            }
+            shape {
+              dim {
+                size: 2
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "set_operation"
+        value {
+          s: "a-b"
+        }
+      }
+      attr {
+        key: "validate_indices"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/num_invalid_dims"
+      op: "Size"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/x"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims"
+      op: "Equal"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/x"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/num_invalid_dims"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Merge"
+      op: "Merge"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge"
+      op: "Merge"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Merge"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch_1:1"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "weights can not be broadcast to values."
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/Const_1"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "weights.shape="
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/Const_2"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "sigmoid_out_sample_weights:0"
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/Const_3"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "values.shape="
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/Const_4"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "loss/sigmoid_out_loss/Mean:0"
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/Const_5"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "is_scalar="
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_t"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Switch:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Switch"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/NoOp"
+      op: "NoOp"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_t"
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/control_dependency"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_t"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/NoOp"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_t"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_0"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "weights can not be broadcast to values."
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_1"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "weights.shape="
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_2"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "sigmoid_out_sample_weights:0"
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_4"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "values.shape="
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_5"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "loss/sigmoid_out_loss/Mean:0"
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_7"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "is_scalar="
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert"
+      op: "Assert"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_0"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_2"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_4"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_5"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_2"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_7"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_3"
+      attr {
+        key: "T"
+        value {
+          list {
+            type: DT_STRING
+            type: DT_STRING
+            type: DT_STRING
+            type: DT_INT32
+            type: DT_STRING
+            type: DT_STRING
+            type: DT_INT32
+            type: DT_STRING
+            type: DT_BOOL
+          }
+        }
+      }
+      attr {
+        key: "summarize"
+        value {
+          i: 3
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_1"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_2"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_3"
+      op: "Switch"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/control_dependency_1"
+      op: "Identity"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert"
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Merge"
+      op: "Merge"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/control_dependency_1"
+      input: "loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/control_dependency"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/ones_like/Shape"
+      op: "Shape"
+      input: "loss/sigmoid_out_loss/Mean"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Merge"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/ones_like/Const"
+      op: "Const"
+      input: "^loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Merge"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 1.0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights/ones_like"
+      op: "Fill"
+      input: "loss/sigmoid_out_loss/broadcast_weights/ones_like/Shape"
+      input: "loss/sigmoid_out_loss/broadcast_weights/ones_like/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "index_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/broadcast_weights"
+      op: "Mul"
+      input: "sigmoid_out_sample_weights"
+      input: "loss/sigmoid_out_loss/broadcast_weights/ones_like"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Mul"
+      op: "Mul"
+      input: "loss/sigmoid_out_loss/Mean"
+      input: "loss/sigmoid_out_loss/broadcast_weights"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Const_1"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Sum"
+      op: "Sum"
+      input: "loss/sigmoid_out_loss/Mul"
+      input: "loss/sigmoid_out_loss/Const_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Const_2"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Sum_1"
+      op: "Sum"
+      input: "loss/sigmoid_out_loss/broadcast_weights"
+      input: "loss/sigmoid_out_loss/Const_2"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/div_no_nan"
+      op: "DivNoNan"
+      input: "loss/sigmoid_out_loss/Sum"
+      input: "loss/sigmoid_out_loss/Sum_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Const_3"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/sigmoid_out_loss/Mean_1"
+      op: "Mean"
+      input: "loss/sigmoid_out_loss/div_no_nan"
+      input: "loss/sigmoid_out_loss/Const_3"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "loss/mul/x"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 1.0
+          }
+        }
+      }
+    }
+    node {
+      name: "loss/mul"
+      op: "Mul"
+      input: "loss/mul/x"
+      input: "loss/sigmoid_out_loss/Mean_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast/x"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.5
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Greater"
+      op: "Greater"
+      input: "sigmoid_out/Sigmoid"
+      input: "metrics/acc/Cast/x"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast_1"
+      op: "Cast"
+      input: "metrics/acc/Greater"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "Truncate"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Equal"
+      op: "Equal"
+      input: "sigmoid_out_target"
+      input: "metrics/acc/Cast_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast_2"
+      op: "Cast"
+      input: "metrics/acc/Equal"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "Truncate"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Mean/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Mean"
+      op: "Mean"
+      input: "metrics/acc/Cast_2"
+      input: "metrics/acc/Mean/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Size"
+      op: "Size"
+      input: "metrics/acc/Mean"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast_3"
+      op: "Cast"
+      input: "metrics/acc/Size"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Truncate"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Sum"
+      op: "Sum"
+      input: "metrics/acc/Mean"
+      input: "metrics/acc/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/AssignAddVariableOp"
+      op: "AssignAddVariableOp"
+      input: "total"
+      input: "metrics/acc/Sum"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "total"
+      input: "^metrics/acc/AssignAddVariableOp"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/AssignAddVariableOp_1"
+      op: "AssignAddVariableOp"
+      input: "count"
+      input: "metrics/acc/Cast_3"
+      input: "^metrics/acc/ReadVariableOp"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/ReadVariableOp_1"
+      op: "ReadVariableOp"
+      input: "count"
+      input: "^metrics/acc/AssignAddVariableOp_1"
+      input: "^metrics/acc/ReadVariableOp"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/div_no_nan/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "total"
+      input: "^metrics/acc/ReadVariableOp_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/div_no_nan/ReadVariableOp_1"
+      op: "ReadVariableOp"
+      input: "count"
+      input: "^metrics/acc/ReadVariableOp_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/div_no_nan"
+      op: "DivNoNan"
+      input: "metrics/acc/div_no_nan/ReadVariableOp"
+      input: "metrics/acc/div_no_nan/ReadVariableOp_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast_4/x"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 0.5
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Greater_1"
+      op: "Greater"
+      input: "sigmoid_out/Sigmoid"
+      input: "metrics/acc/Cast_4/x"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast_5"
+      op: "Cast"
+      input: "metrics/acc/Greater_1"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "Truncate"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Equal_1"
+      op: "Equal"
+      input: "sigmoid_out_target"
+      input: "metrics/acc/Cast_5"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Cast_6"
+      op: "Cast"
+      input: "metrics/acc/Equal_1"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "Truncate"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Mean_1/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Mean_1"
+      op: "Mean"
+      input: "metrics/acc/Cast_6"
+      input: "metrics/acc/Mean_1/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Const_1"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/acc/Mean_2"
+      op: "Mean"
+      input: "metrics/acc/Mean_1"
+      input: "metrics/acc/Const_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/sub"
+      op: "Sub"
+      input: "sigmoid_out/Sigmoid"
+      input: "sigmoid_out_target"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Abs"
+      op: "Abs"
+      input: "metrics/mean_absolute_error/sub"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Mean/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Mean"
+      op: "Mean"
+      input: "metrics/mean_absolute_error/Abs"
+      input: "metrics/mean_absolute_error/Mean/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Size"
+      op: "Size"
+      input: "metrics/mean_absolute_error/Mean"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "out_type"
+        value {
+          type: DT_INT32
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Cast"
+      op: "Cast"
+      input: "metrics/mean_absolute_error/Size"
+      attr {
+        key: "DstT"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "SrcT"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "Truncate"
+        value {
+          b: false
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Const"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Sum"
+      op: "Sum"
+      input: "metrics/mean_absolute_error/Mean"
+      input: "metrics/mean_absolute_error/Const"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/AssignAddVariableOp"
+      op: "AssignAddVariableOp"
+      input: "total_1"
+      input: "metrics/mean_absolute_error/Sum"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "total_1"
+      input: "^metrics/mean_absolute_error/AssignAddVariableOp"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/AssignAddVariableOp_1"
+      op: "AssignAddVariableOp"
+      input: "count_1"
+      input: "metrics/mean_absolute_error/Cast"
+      input: "^metrics/mean_absolute_error/ReadVariableOp"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/ReadVariableOp_1"
+      op: "ReadVariableOp"
+      input: "count_1"
+      input: "^metrics/mean_absolute_error/AssignAddVariableOp_1"
+      input: "^metrics/mean_absolute_error/ReadVariableOp"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/div_no_nan/ReadVariableOp"
+      op: "ReadVariableOp"
+      input: "total_1"
+      input: "^metrics/mean_absolute_error/ReadVariableOp_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/div_no_nan/ReadVariableOp_1"
+      op: "ReadVariableOp"
+      input: "count_1"
+      input: "^metrics/mean_absolute_error/ReadVariableOp_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/div_no_nan"
+      op: "DivNoNan"
+      input: "metrics/mean_absolute_error/div_no_nan/ReadVariableOp"
+      input: "metrics/mean_absolute_error/div_no_nan/ReadVariableOp_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/sub_1"
+      op: "Sub"
+      input: "sigmoid_out/Sigmoid"
+      input: "sigmoid_out_target"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Abs_1"
+      op: "Abs"
+      input: "metrics/mean_absolute_error/sub_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Mean_1/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: -1
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Mean_1"
+      op: "Mean"
+      input: "metrics/mean_absolute_error/Abs_1"
+      input: "metrics/mean_absolute_error/Mean_1/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Const_1"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+              dim {
+                size: 1
+              }
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "metrics/mean_absolute_error/Mean_2"
+      op: "Mean"
+      input: "metrics/mean_absolute_error/Mean_1"
+      input: "metrics/mean_absolute_error/Const_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp"
+      op: "VarIsInitializedOp"
+      input: "Adam/beta_2"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_1"
+      op: "VarIsInitializedOp"
+      input: "count_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_2"
+      op: "VarIsInitializedOp"
+      input: "Adam/decay"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_3"
+      op: "VarIsInitializedOp"
+      input: "total"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_4"
+      op: "VarIsInitializedOp"
+      input: "Adam/lr"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_5"
+      op: "VarIsInitializedOp"
+      input: "total_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_6"
+      op: "VarIsInitializedOp"
+      input: "count"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_7"
+      op: "VarIsInitializedOp"
+      input: "Adam/iterations"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "VarIsInitializedOp_8"
+      op: "VarIsInitializedOp"
+      input: "Adam/beta_1"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "init"
+      op: "NoOp"
+      input: "^Adam/beta_1/Assign"
+      input: "^Adam/beta_2/Assign"
+      input: "^Adam/decay/Assign"
+      input: "^Adam/iterations/Assign"
+      input: "^Adam/lr/Assign"
+      input: "^count/Assign"
+      input: "^count_1/Assign"
+      input: "^total/Assign"
+      input: "^total_1/Assign"
+    }
+    node {
+      name: "init_1"
+      op: "NoOp"
+      input: "^Adam/beta_1/Assign"
+      input: "^Adam/beta_2/Assign"
+      input: "^Adam/decay/Assign"
+      input: "^Adam/iterations/Assign"
+      input: "^Adam/lr/Assign"
+    }
+    node {
+      name: "init_2"
+      op: "NoOp"
+    }
+    node {
+      name: "group_deps"
+      op: "NoOp"
+      input: "^init_1"
+      input: "^init_2"
+    }
+    node {
+      name: "save/filename/input"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "model"
+          }
+        }
+      }
+    }
+    node {
+      name: "save/filename"
+      op: "PlaceholderWithDefault"
+      input: "save/filename/input"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+    }
+    node {
+      name: "save/Const"
+      op: "PlaceholderWithDefault"
+      input: "save/filename"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+    }
+    node {
+      name: "save/StringJoin/inputs_1"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+            }
+            string_val: "_temp_f9ee0bde57514bd8b273ce01b6ff32fd/part"
+          }
+        }
+      }
+    }
+    node {
+      name: "save/StringJoin"
+      op: "StringJoin"
+      input: "save/Const"
+      input: "save/StringJoin/inputs_1"
+      attr {
+        key: "N"
+        value {
+          i: 2
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "separator"
+        value {
+          s: ""
+        }
+      }
+    }
+    node {
+      name: "save/num_shards"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "save/ShardedFilename/shard"
+      op: "Const"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 0
+          }
+        }
+      }
+    }
+    node {
+      name: "save/ShardedFilename"
+      op: "ShardedFilename"
+      input: "save/StringJoin"
+      input: "save/ShardedFilename/shard"
+      input: "save/num_shards"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/SaveV2/tensor_names"
+      op: "Const"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 5
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+              dim {
+                size: 5
+              }
+            }
+            string_val: "Adam/beta_1"
+            string_val: "Adam/beta_2"
+            string_val: "Adam/decay"
+            string_val: "Adam/iterations"
+            string_val: "Adam/lr"
+          }
+        }
+      }
+    }
+    node {
+      name: "save/SaveV2/shape_and_slices"
+      op: "Const"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 5
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+              dim {
+                size: 5
+              }
+            }
+            string_val: ""
+            string_val: ""
+            string_val: ""
+            string_val: ""
+            string_val: ""
+          }
+        }
+      }
+    }
+    node {
+      name: "save/SaveV2"
+      op: "SaveV2"
+      input: "save/ShardedFilename"
+      input: "save/SaveV2/tensor_names"
+      input: "save/SaveV2/shape_and_slices"
+      input: "Adam/beta_1/Read/ReadVariableOp"
+      input: "Adam/beta_2/Read/ReadVariableOp"
+      input: "Adam/decay/Read/ReadVariableOp"
+      input: "Adam/iterations/Read/ReadVariableOp"
+      input: "Adam/lr/Read/ReadVariableOp"
+      device: "/device:CPU:0"
+      attr {
+        key: "dtypes"
+        value {
+          list {
+            type: DT_FLOAT
+            type: DT_FLOAT
+            type: DT_FLOAT
+            type: DT_INT64
+            type: DT_FLOAT
+          }
+        }
+      }
+    }
+    node {
+      name: "save/control_dependency"
+      op: "Identity"
+      input: "save/ShardedFilename"
+      input: "^save/SaveV2"
+      device: "/device:CPU:0"
+      attr {
+        key: "T"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "_class"
+        value {
+          list {
+            s: "loc:@save/ShardedFilename"
+          }
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/MergeV2Checkpoints/checkpoint_prefixes"
+      op: "Pack"
+      input: "save/ShardedFilename"
+      input: "^save/control_dependency"
+      device: "/device:CPU:0"
+      attr {
+        key: "N"
+        value {
+          i: 1
+        }
+      }
+      attr {
+        key: "T"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "axis"
+        value {
+          i: 0
+        }
+      }
+    }
+    node {
+      name: "save/MergeV2Checkpoints"
+      op: "MergeV2Checkpoints"
+      input: "save/MergeV2Checkpoints/checkpoint_prefixes"
+      input: "save/Const"
+      device: "/device:CPU:0"
+      attr {
+        key: "delete_old_dirs"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "save/Identity"
+      op: "Identity"
+      input: "save/Const"
+      input: "^save/MergeV2Checkpoints"
+      input: "^save/control_dependency"
+      device: "/device:CPU:0"
+      attr {
+        key: "T"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/RestoreV2/tensor_names"
+      op: "Const"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 5
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+              dim {
+                size: 5
+              }
+            }
+            string_val: "Adam/beta_1"
+            string_val: "Adam/beta_2"
+            string_val: "Adam/decay"
+            string_val: "Adam/iterations"
+            string_val: "Adam/lr"
+          }
+        }
+      }
+    }
+    node {
+      name: "save/RestoreV2/shape_and_slices"
+      op: "Const"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: 5
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_STRING
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_STRING
+            tensor_shape {
+              dim {
+                size: 5
+              }
+            }
+            string_val: ""
+            string_val: ""
+            string_val: ""
+            string_val: ""
+            string_val: ""
+          }
+        }
+      }
+    }
+    node {
+      name: "save/RestoreV2"
+      op: "RestoreV2"
+      input: "save/Const"
+      input: "save/RestoreV2/tensor_names"
+      input: "save/RestoreV2/shape_and_slices"
+      device: "/device:CPU:0"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+            shape {
+              unknown_rank: true
+            }
+            shape {
+              unknown_rank: true
+            }
+            shape {
+              unknown_rank: true
+            }
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtypes"
+        value {
+          list {
+            type: DT_FLOAT
+            type: DT_FLOAT
+            type: DT_FLOAT
+            type: DT_INT64
+            type: DT_FLOAT
+          }
+        }
+      }
+    }
+    node {
+      name: "save/Identity_1"
+      op: "Identity"
+      input: "save/RestoreV2"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/AssignVariableOp"
+      op: "AssignVariableOp"
+      input: "Adam/beta_1"
+      input: "save/Identity_1"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "save/Identity_2"
+      op: "Identity"
+      input: "save/RestoreV2:1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/AssignVariableOp_1"
+      op: "AssignVariableOp"
+      input: "Adam/beta_2"
+      input: "save/Identity_2"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "save/Identity_3"
+      op: "Identity"
+      input: "save/RestoreV2:2"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/AssignVariableOp_2"
+      op: "AssignVariableOp"
+      input: "Adam/decay"
+      input: "save/Identity_3"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "save/Identity_4"
+      op: "Identity"
+      input: "save/RestoreV2:3"
+      attr {
+        key: "T"
+        value {
+          type: DT_INT64
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/AssignVariableOp_3"
+      op: "AssignVariableOp"
+      input: "Adam/iterations"
+      input: "save/Identity_4"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT64
+        }
+      }
+    }
+    node {
+      name: "save/Identity_5"
+      op: "Identity"
+      input: "save/RestoreV2:4"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "save/AssignVariableOp_4"
+      op: "AssignVariableOp"
+      input: "Adam/lr"
+      input: "save/Identity_5"
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+    }
+    node {
+      name: "save/restore_shard"
+      op: "NoOp"
+      input: "^save/AssignVariableOp"
+      input: "^save/AssignVariableOp_1"
+      input: "^save/AssignVariableOp_2"
+      input: "^save/AssignVariableOp_3"
+      input: "^save/AssignVariableOp_4"
+    }
+    node {
+      name: "save/restore_all"
+      op: "NoOp"
+      input: "^save/restore_shard"
+    }
+    versions {
+      producer: 27
+    }
+  }
+  saver_def {
+    filename_tensor_name: "save/Const:0"
+    save_tensor_name: "save/Identity:0"
+    restore_op_name: "save/restore_all"
+    max_to_keep: 5
+    sharded: true
+    keep_checkpoint_every_n_hours: 10000.0
+    version: V2
+  }
+  collection_def {
+    key: "cond_context"
+    value {
+      bytes_list {
+        value: "\nUloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/cond_text\022Uloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\032Vloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/switch_t:0 \001*\377\005\nHloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar:0\nVloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch_1:0\nVloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch_1:1\nUloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\nVloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/switch_t:0\022\242\001\nHloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar:0\022Vloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Switch_1:1\022\256\001\nUloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\022Uloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0"
+        value: "\nWloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/cond_text_1\022Uloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\032Vloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/switch_f:0*\226+\nmloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Merge:0\nmloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Merge:1\nnloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch:0\nnloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch:1\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1:0\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1:1\n\221\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:0\n\221\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:1\n\221\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:2\n\212\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch:0\n\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch_1:1\n\207\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/dim:0\n\203\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims:0\n\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch:0\n\216\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch_1:1\n\211\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/dim:0\n\205\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1:0\n\204\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat/axis:0\n\177loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat:0\n\211\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/num_invalid_dims:0\n\210\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Const:0\n\210\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Shape:0\n\202\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like:0\nzloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/x:0\nxloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims:0\n{loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch:0\n}loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch_1:0\ntloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank:0\noloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_f:0\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t:0\nUloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\nVloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/switch_f:0\nJloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/rank:0\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape:0\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/rank:0\nLloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape:0\022\256\001\nUloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\022Uloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/pred_id:0\022\332\001\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape:0\022\212\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch:0\022\314\001\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/rank:0\022}loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch_1:0\022\335\001\nLloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape:0\022\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch:0\022\311\001\nJloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/rank:0\022{loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank/Switch:02\377#\n\374#\noloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/cond_text\022oloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\032ploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t:0 \001*\243!\n\221\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:0\n\221\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:1\n\221\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/DenseToDenseSetOperation:2\n\212\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch:0\n\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch_1:1\n\207\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/dim:0\n\203\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims:0\n\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch:0\n\216\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch_1:1\n\211\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/dim:0\n\205\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1:0\n\204\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat/axis:0\n\177loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/concat:0\n\211\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/num_invalid_dims:0\n\210\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Const:0\n\210\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like/Shape:0\n\202\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ones_like:0\nzloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/x:0\nxloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims:0\noloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_t:0\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape:0\nLloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape:0\022\232\002\n\212\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch:0\022\212\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch:0\022\334\001\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape:0\022\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims/Switch_1:1\022\342\001\noloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\022oloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\022\236\002\n\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch:0\022\214\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch:0\022\337\001\nLloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape:0\022\216\001loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/has_invalid_dims/ExpandDims_1/Switch_1:12\351\n\n\346\n\nqloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/cond_text_1\022oloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\032ploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_f:0*\215\010\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1:0\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1:1\ntloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank:0\noloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\nploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/switch_f:0\022\350\001\ntloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/is_same_rank:0\022ploss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/Switch_1:0\022\342\001\noloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0\022oloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/has_valid_nonscalar_shape/pred_id:0"
+        value: "\nRloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/cond_text\022Rloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\032Sloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_t:0 \001*\263\003\n]loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/control_dependency:0\nRloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\nSloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_t:0\022\250\001\nRloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\022Rloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0"
+        value: "\nTloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/cond_text_1\022Rloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\032Sloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f:0*\255\022\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch:0\nZloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_1:0\nZloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_2:0\nZloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_3:0\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_0:0\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_1:0\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_2:0\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_4:0\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_5:0\nXloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/data_7:0\n_loss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/control_dependency_1:0\nRloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\nSloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/switch_f:0\nHloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar:0\nSloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge:0\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape:0\nLloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape:0\022\246\001\nHloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_scalar:0\022Zloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_3:0\022\251\001\nKloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/values/shape:0\022Zloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_2:0\022\257\001\nSloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/is_valid_shape/Merge:0\022Xloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch:0\022\250\001\nRloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\022Rloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/pred_id:0\022\252\001\nLloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/weights/shape:0\022Zloss/sigmoid_out_loss/broadcast_weights/assert_broadcastable/AssertGuard/Assert/Switch_1:0"
+      }
+    }
+  }
+  collection_def {
+    key: "trainable_variables"
+    value {
+      bytes_list {
+        value: "\n\021Adam/iterations:0\022\026Adam/iterations/Assign\032%Adam/iterations/Read/ReadVariableOp:0(\0012+Adam/iterations/Initializer/initial_value:08\001"
+        value: "\n\tAdam/lr:0\022\016Adam/lr/Assign\032\035Adam/lr/Read/ReadVariableOp:0(\0012#Adam/lr/Initializer/initial_value:08\001"
+        value: "\n\rAdam/beta_1:0\022\022Adam/beta_1/Assign\032!Adam/beta_1/Read/ReadVariableOp:0(\0012\'Adam/beta_1/Initializer/initial_value:08\001"
+        value: "\n\rAdam/beta_2:0\022\022Adam/beta_2/Assign\032!Adam/beta_2/Read/ReadVariableOp:0(\0012\'Adam/beta_2/Initializer/initial_value:08\001"
+        value: "\n\014Adam/decay:0\022\021Adam/decay/Assign\032 Adam/decay/Read/ReadVariableOp:0(\0012&Adam/decay/Initializer/initial_value:08\001"
+      }
+    }
+  }
+  collection_def {
+    key: "variables"
+    value {
+      bytes_list {
+        value: "\n\021Adam/iterations:0\022\026Adam/iterations/Assign\032%Adam/iterations/Read/ReadVariableOp:0(\0012+Adam/iterations/Initializer/initial_value:08\001"
+        value: "\n\tAdam/lr:0\022\016Adam/lr/Assign\032\035Adam/lr/Read/ReadVariableOp:0(\0012#Adam/lr/Initializer/initial_value:08\001"
+        value: "\n\rAdam/beta_1:0\022\022Adam/beta_1/Assign\032!Adam/beta_1/Read/ReadVariableOp:0(\0012\'Adam/beta_1/Initializer/initial_value:08\001"
+        value: "\n\rAdam/beta_2:0\022\022Adam/beta_2/Assign\032!Adam/beta_2/Read/ReadVariableOp:0(\0012\'Adam/beta_2/Initializer/initial_value:08\001"
+        value: "\n\014Adam/decay:0\022\021Adam/decay/Assign\032 Adam/decay/Read/ReadVariableOp:0(\0012&Adam/decay/Initializer/initial_value:08\001"
+      }
+    }
+  }
+  signature_def {
+    key: "serving_default"
+    value {
+      inputs {
+        key: "input_embedding_product_slug"
+        value {
+          name: "input_embedding_user_guid:0"
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+      inputs {
+        key: "input_embedding_user_guid"
+        value {
+          name: "input_embedding_product_slug:0"
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+      outputs {
+        key: "output"
+        value {
+          name: "sigmoid_out/Sigmoid:0"
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+      method_name: "tensorflow/serving/predict"
+    }
+  }
+}

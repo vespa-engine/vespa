@@ -1,0 +1,959 @@
+saved_model_schema_version: 1
+meta_graphs {
+  meta_info_def {
+    stripped_op_list {
+      op {
+        name: "Const"
+        output_arg {
+          name: "output"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "value"
+          type: "tensor"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+      }
+      op {
+        name: "ExpandDims"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "dim"
+          type_attr: "Tdim"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+        }
+        attr {
+          name: "Tdim"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+      op {
+        name: "Maximum"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
+        name: "Mul"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "z"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_UINT8
+              type: DT_INT8
+              type: DT_UINT16
+              type: DT_INT16
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+        is_commutative: true
+      }
+      op {
+        name: "Placeholder"
+        output_arg {
+          name: "output"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        attr {
+          name: "shape"
+          type: "shape"
+          default_value {
+            shape {
+              unknown_rank: true
+            }
+          }
+        }
+      }
+      op {
+        name: "PlaceholderWithDefault"
+        input_arg {
+          name: "input"
+          type_attr: "dtype"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "dtype"
+        }
+        attr {
+          name: "dtype"
+          type: "type"
+        }
+        attr {
+          name: "shape"
+          type: "shape"
+        }
+      }
+      op {
+        name: "Rsqrt"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Sigmoid"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Square"
+        input_arg {
+          name: "x"
+          type_attr: "T"
+        }
+        output_arg {
+          name: "y"
+          type_attr: "T"
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_BFLOAT16
+              type: DT_HALF
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_INT64
+              type: DT_COMPLEX64
+              type: DT_COMPLEX128
+            }
+          }
+        }
+      }
+      op {
+        name: "Sum"
+        input_arg {
+          name: "input"
+          type_attr: "T"
+        }
+        input_arg {
+          name: "reduction_indices"
+          type_attr: "Tidx"
+        }
+        output_arg {
+          name: "output"
+          type_attr: "T"
+        }
+        attr {
+          name: "keep_dims"
+          type: "bool"
+          default_value {
+            b: false
+          }
+        }
+        attr {
+          name: "T"
+          type: "type"
+          allowed_values {
+            list {
+              type: DT_FLOAT
+              type: DT_DOUBLE
+              type: DT_INT32
+              type: DT_UINT8
+              type: DT_INT16
+              type: DT_INT8
+              type: DT_COMPLEX64
+              type: DT_INT64
+              type: DT_QINT8
+              type: DT_QUINT8
+              type: DT_QINT32
+              type: DT_BFLOAT16
+              type: DT_UINT16
+              type: DT_COMPLEX128
+              type: DT_HALF
+              type: DT_UINT32
+              type: DT_UINT64
+            }
+          }
+        }
+        attr {
+          name: "Tidx"
+          type: "type"
+          default_value {
+            type: DT_INT32
+          }
+          allowed_values {
+            list {
+              type: DT_INT32
+              type: DT_INT64
+            }
+          }
+        }
+      }
+    }
+    tags: "serve"
+    tensorflow_version: "1.13.1"
+    tensorflow_git_version: "b\'v1.13.1-0-g6612da8951\'"
+  }
+  graph_def {
+    node {
+      name: "keras_learning_phase/input"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_BOOL
+            tensor_shape {
+            }
+            bool_val: false
+          }
+        }
+      }
+    }
+    node {
+      name: "keras_learning_phase"
+      op: "PlaceholderWithDefault"
+      input: "keras_learning_phase/input"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_BOOL
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Maximum/y"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_FLOAT
+            tensor_shape {
+            }
+            float_val: 9.999999960041972e-13
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Sum/reduction_indices"
+      op: "Const"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "value"
+        value {
+          tensor {
+            dtype: DT_INT32
+            tensor_shape {
+            }
+            int_val: 1
+          }
+        }
+      }
+    }
+    node {
+      name: "input_embedding_user_guid"
+      op: "Placeholder"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Square"
+      op: "Square"
+      input: "input_embedding_user_guid"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Sum"
+      op: "Sum"
+      input: "dot_0/l2_normalize/Square"
+      input: "dot_0/l2_normalize/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Maximum"
+      op: "Maximum"
+      input: "dot_0/l2_normalize/Sum"
+      input: "dot_0/l2_normalize/Maximum/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize/Rsqrt"
+      op: "Rsqrt"
+      input: "dot_0/l2_normalize/Maximum"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize"
+      op: "Mul"
+      input: "input_embedding_user_guid"
+      input: "dot_0/l2_normalize/Rsqrt"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "input_embedding_product_slug"
+      op: "Placeholder"
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "dtype"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "shape"
+        value {
+          shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Square"
+      op: "Square"
+      input: "input_embedding_product_slug"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Sum"
+      op: "Sum"
+      input: "dot_0/l2_normalize_1/Square"
+      input: "dot_0/l2_normalize/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: true
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Maximum"
+      op: "Maximum"
+      input: "dot_0/l2_normalize_1/Sum"
+      input: "dot_0/l2_normalize/Maximum/y"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1/Rsqrt"
+      op: "Rsqrt"
+      input: "dot_0/l2_normalize_1/Maximum"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/l2_normalize_1"
+      op: "Mul"
+      input: "input_embedding_product_slug"
+      input: "dot_0/l2_normalize_1/Rsqrt"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/Mul"
+      op: "Mul"
+      input: "dot_0/l2_normalize"
+      input: "dot_0/l2_normalize_1"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 32
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "dot_0/Sum"
+      op: "Sum"
+      input: "dot_0/Mul"
+      input: "dot_0/l2_normalize/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tidx"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+            }
+          }
+        }
+      }
+      attr {
+        key: "keep_dims"
+        value {
+          b: false
+        }
+      }
+    }
+    node {
+      name: "dot_0/ExpandDims"
+      op: "ExpandDims"
+      input: "dot_0/Sum"
+      input: "dot_0/l2_normalize/Sum/reduction_indices"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "Tdim"
+        value {
+          type: DT_INT32
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    node {
+      name: "sigmoid_out/Sigmoid"
+      op: "Sigmoid"
+      input: "dot_0/ExpandDims"
+      attr {
+        key: "T"
+        value {
+          type: DT_FLOAT
+        }
+      }
+      attr {
+        key: "_output_shapes"
+        value {
+          list {
+            shape {
+              dim {
+                size: -1
+              }
+              dim {
+                size: 1
+              }
+            }
+          }
+        }
+      }
+    }
+    versions {
+    }
+  }
+  signature_def {
+    key: "serving_default"
+    value {
+      inputs {
+        key: "input_embedding_product_slug"
+        value {
+          name: "input_embedding_product_slug:0"
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+      inputs {
+        key: "input_embedding_user_guid"
+        value {
+          name: "input_embedding_user_guid:0"
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 32
+            }
+          }
+        }
+      }
+      outputs {
+        key: "output"
+        value {
+          name: "sigmoid_out/Sigmoid:0"
+          dtype: DT_FLOAT
+          tensor_shape {
+            dim {
+              size: -1
+            }
+            dim {
+              size: 1
+            }
+          }
+        }
+      }
+      method_name: "tensorflow/serving/predict"
+    }
+  }
+}
