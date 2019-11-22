@@ -5599,6 +5599,7 @@
       "public"
     ],
     "methods": [
+      "public static com.yahoo.search.query.profile.DimensionBinding createFrom(java.util.Map)",
       "public static com.yahoo.search.query.profile.DimensionBinding createFrom(java.util.List, java.util.Map)",
       "public static com.yahoo.search.query.profile.DimensionBinding createFrom(java.util.List, com.yahoo.search.query.profile.DimensionValues)",
       "public com.yahoo.search.query.profile.DimensionBinding createFor(java.util.List)",
