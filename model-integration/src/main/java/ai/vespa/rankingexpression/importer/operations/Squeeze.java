@@ -31,7 +31,10 @@ public class Squeeze extends IntermediateOperation {
         squeezeDimensions = new ArrayList<>();
 
         Optional<List<Value>> squeezeDimsAttr = attributeMap.getList("squeeze_dims");
-        if ( ! squeezeDimsAttr.isPresent()) {
+        if (squeezeDimsAttr.isEmpty()) {
+            squeezeDimsAttr = attributeMap.getList("axes");  // ONNX
+        }
+        if (squeezeDimsAttr.isEmpty()) {
             squeezeDimensions = inputType.type().dimensions().stream().
                     filter(dim -> OrderedTensorType.dimensionSize(dim) == 1).
                     map(TensorType.Dimension::name).
@@ -62,7 +65,7 @@ public class Squeeze extends IntermediateOperation {
         List<String> renamedDimensions = new ArrayList<>(squeezeDimensions.size());
         for (String name : squeezeDimensions) {
             Optional<String> newName = renamer.dimensionNameOf(name);
-            if (!newName.isPresent()) {
+            if (newName.isEmpty()) {
                 return;  // presumably, already renamed
             }
             renamedDimensions.add(newName.get());

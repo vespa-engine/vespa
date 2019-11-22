@@ -39,7 +39,7 @@ public abstract class TensorFunction {
     /**
      * Evaluates this tensor.
      *
-     * @param context a context which must be passed to all nexted functions when evaluating
+     * @param context a context which must be passed to all nested functions when evaluating
      */
     public abstract <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE>  context);
 

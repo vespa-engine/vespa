@@ -2,11 +2,16 @@
 
 package ai.vespa.rankingexpression.importer.onnx;
 
+import ai.vespa.rankingexpression.importer.operations.Gemm;
+import ai.vespa.rankingexpression.importer.operations.OnnxConcat;
+import ai.vespa.rankingexpression.importer.operations.Reduce;
+import ai.vespa.rankingexpression.importer.operations.Select;
+import ai.vespa.rankingexpression.importer.operations.Softmax;
+import ai.vespa.rankingexpression.importer.operations.Squeeze;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
 import ai.vespa.rankingexpression.importer.operations.Argument;
-import ai.vespa.rankingexpression.importer.operations.ConcatV2;
 import ai.vespa.rankingexpression.importer.operations.Constant;
 import ai.vespa.rankingexpression.importer.operations.Identity;
 import ai.vespa.rankingexpression.importer.operations.IntermediateOperation;
@@ -36,6 +41,7 @@ class GraphImporter {
                                                      IntermediateGraph graph) {
         String modelName = graph.name();
         String nodeName = getNodeName(node);
+        AttributeConverter attributes = AttributeConverter.convert(node);
 
         switch (node.getOpType().toLowerCase()) {
             case "abs":         return new Map(modelName, nodeName, inputs, ScalarFunctions.abs());
@@ -44,13 +50,14 @@ class GraphImporter {
             case "asin":        return new Map(modelName, nodeName, inputs, ScalarFunctions.asin());
             case "atan":        return new Map(modelName, nodeName, inputs, ScalarFunctions.atan());
             case "ceil":        return new Map(modelName, nodeName, inputs, ScalarFunctions.ceil());
-            case "concat":      return new ConcatV2(modelName, nodeName, inputs);
+            case "concat":      return new OnnxConcat(modelName, nodeName, inputs, attributes);
             case "cos":         return new Map(modelName, nodeName, inputs, ScalarFunctions.cos());
             case "div":         return new Join(modelName, nodeName, inputs, ScalarFunctions.divide());
             case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu());
             case "equal":       return new Join(modelName, nodeName, inputs, ScalarFunctions.equal());
             case "exp":         return new Map(modelName, nodeName, inputs, ScalarFunctions.exp());
             case "floor":       return new Map(modelName, nodeName, inputs, ScalarFunctions.floor());
+            case "gemm":        return new Gemm(modelName, nodeName, inputs, attributes);
             case "greater":     return new Join(modelName, nodeName, inputs, ScalarFunctions.greater());
             case "identity":    return new Identity(modelName, nodeName, inputs);
             case "less":        return new Join(modelName, nodeName, inputs, ScalarFunctions.less());
@@ -63,15 +70,21 @@ class GraphImporter {
             case "neg":         return new Map(modelName, nodeName, inputs, ScalarFunctions.neg());
             case "pow":         return new Join(modelName, nodeName, inputs, ScalarFunctions.pow());
             case "reshape":     return new Reshape(modelName, nodeName, inputs);
+            case "reducesum":   return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum);
+            case "reducemean":  return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.avg);
             case "reciprocal":  return new Map(modelName, nodeName, inputs, ScalarFunctions.reciprocal());
             case "relu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.relu());
             case "selu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.selu());
+            case "leakyrelu":   return new Map(modelName, nodeName, inputs, ScalarFunctions.leakyrelu());
             case "shape":       return new Shape(modelName, nodeName, inputs);
-            case "sin":         return new Map(modelName, nodeName, inputs, ScalarFunctions.sin());
-            case "sqrt":        return new Map(modelName, nodeName, inputs, ScalarFunctions.sqrt());
             case "sigmoid":     return new Map(modelName, nodeName, inputs, ScalarFunctions.sigmoid());
+            case "sin":         return new Map(modelName, nodeName, inputs, ScalarFunctions.sin());
+            case "softmax":     return new Softmax(modelName, nodeName, inputs);
             case "sub":         return new Join(modelName, nodeName, inputs, ScalarFunctions.subtract());
+            case "squeeze":     return new Squeeze(modelName, nodeName, inputs, attributes);
+            case "sqrt":        return new Map(modelName, nodeName, inputs, ScalarFunctions.sqrt());
             case "square":      return new Map(modelName, nodeName, inputs, ScalarFunctions.square());
+            case "where":       return new Select(modelName, nodeName, inputs);
             case "tan":         return new Map(modelName, nodeName, inputs, ScalarFunctions.tan());
             case "tanh":        return new Map(modelName, nodeName, inputs, ScalarFunctions.tanh());
         }

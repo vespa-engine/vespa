@@ -2063,6 +2063,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ScalarFunctions$LeakyRelu": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.util.function.DoubleUnaryOperator"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public double applyAsDouble(double)",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ScalarFunctions$Less": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -2429,6 +2444,7 @@
       "public static java.util.function.DoubleUnaryOperator relu()",
       "public static java.util.function.DoubleUnaryOperator rsqrt()",
       "public static java.util.function.DoubleUnaryOperator selu()",
+      "public static java.util.function.DoubleUnaryOperator leakyrelu()",
       "public static java.util.function.DoubleUnaryOperator sin()",
       "public static java.util.function.DoubleUnaryOperator sigmoid()",
       "public static java.util.function.DoubleUnaryOperator sqrt()",
