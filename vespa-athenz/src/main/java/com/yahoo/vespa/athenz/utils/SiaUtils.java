@@ -97,7 +97,7 @@ public class SiaUtils {
             Files.createDirectories(privateKeyFile.getParent());
             Path tempFile = toTempFile(privateKeyFile);
             Files.write(tempFile, KeyUtils.toPem(privateKey).getBytes());
-            Files.move(tempFile, privateKeyFile, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tempFile, privateKeyFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -113,7 +113,7 @@ public class SiaUtils {
             Files.createDirectories(certificateFile.getParent());
             Path tempFile = toTempFile(certificateFile);
             Files.write(tempFile, X509CertificateUtils.toPem(certificate).getBytes());
-            Files.move(tempFile, certificateFile, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tempFile, certificateFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -142,7 +142,6 @@ public class SiaUtils {
     }
 
     private static Path toTempFile(Path file) {
-        return Paths.get(file.toAbsolutePath().toString() + ".tmp");
+        return file.getParent().resolve(file.getFileName().toString() + ".tmp");
     }
-
 }
