@@ -30,6 +30,7 @@ public class OnnxImporter extends ModelImporter {
     public ImportedModel importModel(String modelName, String modelPath) {
         try (FileInputStream inputStream = new FileInputStream(modelPath)) {
             Onnx.ModelProto model = Onnx.ModelProto.parseFrom(inputStream);
+            // long version = model.getOpsetImport(0).getVersion();  // opset version
             IntermediateGraph graph = GraphImporter.importGraph(modelName, model);
             return convertIntermediateGraphToModel(graph, modelPath);
         } catch (IOException e) {
