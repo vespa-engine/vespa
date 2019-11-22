@@ -47,7 +47,7 @@ public class LoadBalancer {
      * {@link #releaseGroup} symmetrically for each taken allocation.
      *
      * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
-     * @return The node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
+     * @return the node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
      */
     public Optional<Group> takeGroup(Set<Integer> rejectedGroups) {
         synchronized (this) {
@@ -68,12 +68,9 @@ public class LoadBalancer {
     /**
      * Release an allocation given by {@link #takeGroup}. The release must be done exactly once for each allocation.
      *
-     * @param group
-     *            previously allocated group
-     * @param success
-     *            was the query successful
-     * @param searchTimeMs
-     *            query execution time in milliseconds, used for adaptive load balancing
+     * @param group previously allocated group
+     * @param success was the query successful
+     * @param searchTimeMs query execution time in milliseconds, used for adaptive load balancing
      */
     public void releaseGroup(Group group, boolean success, double searchTimeMs) {
         synchronized (this) {

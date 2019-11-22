@@ -27,7 +27,7 @@ maxHitsPerNode int default=2147483647
 # Deprecated, will go away soon, NOOP
 useMultilevelDispatch bool default=false
 
-# Dispatch only to local nodes
+# Dispatch only to local nodes. DEPRECATED: The container will automatically do this when it is appropriate.
 useLocalNode bool default=false
 
 # Number of document copies
