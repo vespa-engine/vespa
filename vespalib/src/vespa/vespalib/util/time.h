@@ -4,6 +4,25 @@
 
 #include <chrono>
 
+// Guidelines:
+//
+// If you want to store a time duration or take it as a parameter,
+// prefer using vespalib::duration. This will allow automatic
+// conversion for most input duration types while avoiding templates.
+//
+// When passing a verbatim time duration to a function, assigning it
+// to a variable or comparing it to another time duration, prefer
+// using chrono literals. This will greatly improve code readability.
+//
+// Avoid code that depends on the resolution of time
+// durations. Specifically, do not use the count() function
+// directly. Using the utility functions supplied below will both make
+// your code safer (resolution independent) and simpler (avoiding
+// duration_cast).
+//
+// Prefer using steady_clock, only use system_clock if you absolutely
+// must have the system time.
+
 using namespace std::literals::chrono_literals;
 
 namespace vespalib {
