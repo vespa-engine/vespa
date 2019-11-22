@@ -70,7 +70,7 @@ public enum JobType {
                             Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
 
     devAwsUsEast2a         ("dev-aws-us-east-2a",
-                            Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
+                            Map.of(main, ZoneId.from("dev"    , "aws-us-east-2a"))),
 
     productionCdAwsUsEast1a("production-cd-aws-us-east-1a",
                             Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a"))),
