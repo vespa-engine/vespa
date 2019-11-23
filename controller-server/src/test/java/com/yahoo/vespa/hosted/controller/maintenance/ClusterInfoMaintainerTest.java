@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 
@@ -53,52 +52,36 @@ public class ClusterInfoMaintainerTest {
     }
 
     private void addNodes(ZoneId zone) {
-        var nodeA = new Node(HostName.from("hostA"),
-                             Optional.empty(),
-                             Node.State.active,
-                             NodeType.tenant,
-                             Optional.of(ApplicationId.from("tenant1", "app1", "default")),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.6"),
-                             Version.fromString("7.6"),
-                             Node.ServiceState.expectedUp,
-                             0,
-                             0,
-                             0,
-                             0,
-                             24,
-                             24,
-                             500,
-                             1000,
-                             false,
-                             10,
-                             "C-2B/24/500",
-                             "clusterA",
-                             Node.ClusterType.container);
-        var nodeB = new Node(HostName.from("hostB"),
-                             Optional.empty(),
-                             Node.State.active,
-                             NodeType.tenant,
-                             Optional.of(ApplicationId.from("tenant1", "app1", "default")),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.6"),
-                             Version.fromString("7.6"),
-                             Node.ServiceState.expectedUp,
-                             0,
-                             0,
-                             0,
-                             0,
-                             40,
-                             24,
-                             500,
-                             1000,
-                             false,
-                             20,
-                             "C-2C/24/500",
-                             "clusterB",
-                             Node.ClusterType.container);
+        var nodeA = new Node.Builder()
+                .hostname(HostName.from("hostA"))
+                .parentHostname(HostName.from("parentHostA"))
+                .state(Node.State.active)
+                .type(NodeType.tenant)
+                .owner(ApplicationId.from("tenant1", "app1", "default"))
+                .currentVersion(Version.fromString("7.42"))
+                .wantedVersion(Version.fromString("7.42"))
+                .currentOsVersion(Version.fromString("7.6"))
+                .wantedOsVersion(Version.fromString("7.6"))
+                .serviceState(Node.ServiceState.expectedUp)
+                .cost(10)
+                .clusterId("clusterA")
+                .clusterType(Node.ClusterType.container)
+                .build();
+        var nodeB = new Node.Builder()
+                .hostname(HostName.from("hostB"))
+                .parentHostname(HostName.from("parentHostB"))
+                .state(Node.State.active)
+                .type(NodeType.tenant)
+                .owner(ApplicationId.from("tenant1", "app1", "default"))
+                .currentVersion(Version.fromString("7.42"))
+                .wantedVersion(Version.fromString("7.42"))
+                .currentOsVersion(Version.fromString("7.6"))
+                .wantedOsVersion(Version.fromString("7.6"))
+                .serviceState(Node.ServiceState.expectedUp)
+                .cost(20)
+                .clusterId("clusterB")
+                .clusterType(Node.ClusterType.container)
+                .build();
         tester.configServer().nodeRepository().addNodes(zone, List.of(nodeA, nodeB));
     }
 

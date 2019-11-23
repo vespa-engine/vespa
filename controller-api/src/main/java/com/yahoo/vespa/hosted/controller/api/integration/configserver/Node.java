@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
-import org.jetbrains.annotations.TestOnly;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -65,18 +64,11 @@ public class Node {
         this.diskGb = diskGb;
         this.bandwidthGbps = bandwidthGbps;
         this.fastDisk = fastDisk;
+        this.remoteStorage = remoteStorage;
         this.cost = cost;
         this.canonicalFlavor = canonicalFlavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
-    }
-
-    @TestOnly
-    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, Optional<ApplicationId> owner,
-                Version currentVersion, Version wantedVersion) {
-        this(hostname, parentHostname, state, type, owner, currentVersion, wantedVersion,
-             Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0,
-             2, 8, 50, 1, true, 0, "d-2-8-50", "cluster", ClusterType.container);
     }
 
     public HostName hostname() {
@@ -210,4 +202,178 @@ public class Node {
         unknown
     }
 
+    public static class Builder {
+        private HostName hostname;
+        private Optional<HostName> parentHostname = Optional.empty();
+        private State state;
+        private NodeType type;
+        private Optional<ApplicationId> owner = Optional.empty();
+        private Version currentVersion;
+        private Version wantedVersion;
+        private Version currentOsVersion;
+        private Version wantedOsVersion;
+        private ServiceState serviceState;
+        private long restartGeneration;
+        private long wantedRestartGeneration;
+        private long rebootGeneration;
+        private long wantedRebootGeneration;
+        private double vcpu;
+        private double memoryGb;
+        private double diskGb;
+        private double bandwidthGbps;
+        private boolean fastDisk;
+        private int cost;
+        private String canonicalFlavor;
+        private String clusterId;
+        private ClusterType clusterType;
+        
+        public Builder() { }
+
+        public Builder(Node node) {
+            this.hostname = node.hostname;
+            this.parentHostname = node.parentHostname;
+            this.state = node.state;
+            this.type = node.type;
+            this.owner = node.owner;
+            this.currentVersion = node.currentVersion;
+            this.wantedVersion = node.wantedVersion;
+            this.currentOsVersion = node.currentOsVersion;
+            this.wantedOsVersion = node.wantedOsVersion;
+            this.serviceState = node.serviceState;
+            this.restartGeneration = node.restartGeneration;
+            this.wantedRestartGeneration = node.wantedRestartGeneration;
+            this.rebootGeneration = node.rebootGeneration;
+            this.wantedRebootGeneration = node.wantedRebootGeneration;
+            this.vcpu = node.vcpu;
+            this.memoryGb = node.memoryGb;
+            this.diskGb = node.diskGb;
+            this.bandwidthGbps = node.bandwidthGbps;
+            this.fastDisk = node.fastDisk;
+            this.cost = node.cost;
+            this.canonicalFlavor = node.canonicalFlavor;
+            this.clusterId = node.clusterId;
+            this.clusterType = node.clusterType;
+        }
+
+        public Builder hostname(HostName hostname) {
+            this.hostname = hostname;
+            return this;
+        }
+
+        public Builder parentHostname(HostName parentHostname) {
+            this.parentHostname = Optional.ofNullable(parentHostname);
+            return this;
+        }
+
+        public Builder state(State state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder type(NodeType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder owner(ApplicationId owner) {
+            this.owner = Optional.ofNullable(owner);
+            return this;
+        }
+
+        public Builder currentVersion(Version currentVersion) {
+            this.currentVersion = currentVersion;
+            return this;
+        }
+
+        public Builder wantedVersion(Version wantedVersion) {
+            this.wantedVersion = wantedVersion;
+            return this;
+        }
+
+        public Builder currentOsVersion(Version currentOsVersion) {
+            this.currentOsVersion = currentOsVersion;
+            return this;
+        }
+
+        public Builder wantedOsVersion(Version wantedOsVersion) {
+            this.wantedOsVersion = wantedOsVersion;
+            return this;
+        }
+
+        public Builder serviceState(ServiceState serviceState) {
+            this.serviceState = serviceState;
+            return this;
+        }
+
+        public Builder restartGeneration(long restartGeneration) {
+            this.restartGeneration = restartGeneration;
+            return this;
+        }
+
+        public Builder wantedRestartGeneration(long wantedRestartGeneration) {
+            this.wantedRestartGeneration = wantedRestartGeneration;
+            return this;
+        }
+
+        public Builder rebootGeneration(long rebootGeneration) {
+            this.rebootGeneration = rebootGeneration;
+            return this;
+        }
+
+        public Builder wantedRebootGeneration(long wantedRebootGeneration) {
+            this.wantedRebootGeneration = wantedRebootGeneration;
+            return this;
+        }
+
+        public Builder vcpu(double vcpu) {
+            this.vcpu = vcpu;
+            return this;
+        }
+
+        public Builder memoryGb(double memoryGb) {
+            this.memoryGb = memoryGb;
+            return this;
+        }
+
+        public Builder diskGb(double diskGb) {
+            this.diskGb = diskGb;
+            return this;
+        }
+
+        public Builder bandwidthGbps(double bandwidthGbps) {
+            this.bandwidthGbps = bandwidthGbps;
+            return this;
+        }
+
+        public Builder fastDisk(boolean fastDisk) {
+            this.fastDisk = fastDisk;
+            return this;
+        }
+
+        public Builder cost(int cost) {
+            this.cost = cost;
+            return this;
+        }
+
+        public Builder canonicalFlavor(String canonicalFlavor) {
+            this.canonicalFlavor = canonicalFlavor;
+            return this;
+        }
+
+        public Builder clusterId(String clusterId) {
+            this.clusterId = clusterId;
+            return this;
+        }
+
+        public Builder clusterType(ClusterType clusterType) {
+            this.clusterType = clusterType;
+            return this;
+        }
+
+        public Node build() {
+            return new Node(hostname, parentHostname, state, type, owner, currentVersion, wantedVersion, currentOsVersion,
+                    wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
+                    vcpu, memoryGb, diskGb, bandwidthGbps, fastDisk, cost, canonicalFlavor, clusterId, clusterType);
+        }
+    }
 }

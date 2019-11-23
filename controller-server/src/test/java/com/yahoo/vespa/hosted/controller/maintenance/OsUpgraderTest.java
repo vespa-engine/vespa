@@ -154,8 +154,7 @@ public class OsUpgraderTest {
             throw new IllegalArgumentException("No nodes allocated to " + application.id());
         }
         Node node = nodes.get(0);
-        nodeRepository().putByHostname(zone, new Node(node.hostname(), node.parentHostname(), Node.State.failed, node.type(), node.owner(),
-                                                      node.currentVersion(), node.wantedVersion()));
+        nodeRepository().putByHostname(zone, new Node.Builder(node).state(Node.State.failed).build());
     }
 
     /** Simulate OS upgrade of nodes allocated to application. In a real system this is done by the node itself */
@@ -163,13 +162,7 @@ public class OsUpgraderTest {
         assertWanted(version, application, zones);
         for (ZoneId zone : zones) {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
-                nodeRepository().putByHostname(zone, new Node(
-                        node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(), node.currentVersion(),
-                        node.wantedVersion(), version, version, node.serviceState(),
-                        node.restartGeneration(), node.wantedRestartGeneration(), node.rebootGeneration(),
-                        node.wantedRebootGeneration(), node.vcpu(), node.memoryGb(), node.diskGb(),
-                        node.bandwidthGbps(), node.fastDisk(), node.cost(), node.canonicalFlavor(),
-                        node.clusterId(), node.clusterType()));
+                nodeRepository().putByHostname(zone, new Node.Builder(node).wantedOsVersion(version).currentOsVersion(version).build());
             }
             assertCurrent(version, application, zone);
         }

@@ -66,52 +66,38 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     public void addFixedNodes(ZoneId zone) {
-        var nodeA = new Node(HostName.from("hostA"),
-                             Optional.of(HostName.from("parentHostA")),
-                             Node.State.active,
-                             NodeType.tenant,
-                             Optional.of(ApplicationId.from("tenant1", "app1", "default")),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.6"),
-                             Version.fromString("7.6"),
-                             Node.ServiceState.expectedUp,
-                             0,
-                             0,
-                             0,
-                             0,
-                             24,
-                             24,
-                             500,
-                             1000,
-                             false,
-                             10,
-                             "C-2B/24/500",
-                             "clusterA",
-                             Node.ClusterType.container);
-        var nodeB = new Node(HostName.from("hostB"),
-                             Optional.of(HostName.from("parentHostB")),
-                             Node.State.active,
-                             NodeType.tenant,
-                             Optional.of(ApplicationId.from("tenant2", "app2", "default")),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.42"),
-                             Version.fromString("7.6"),
-                             Version.fromString("7.6"),
-                             Node.ServiceState.expectedUp,
-                             0,
-                             0,
-                             0,
-                             0,
-                             40,
-                             24,
-                             500,
-                             1000,
-                             false,
-                             20,
-                             "C-2C/24/500",
-                             "clusterB",
-                             Node.ClusterType.container);
+        var nodeA = new Node.Builder()
+                .hostname(HostName.from("hostA"))
+                .parentHostname(HostName.from("parentHostA"))
+                .state(Node.State.active)
+                .type(NodeType.tenant)
+                .owner(ApplicationId.from("tenant1", "app1", "default"))
+                .currentVersion(Version.fromString("7.42"))
+                .wantedVersion(Version.fromString("7.42"))
+                .currentOsVersion(Version.fromString("7.6"))
+                .wantedOsVersion(Version.fromString("7.6"))
+                .serviceState(Node.ServiceState.expectedUp)
+                .vcpu(24).memoryGb(24).diskGb(500)
+                .cost(10)
+                .clusterId("clusterA")
+                .clusterType(Node.ClusterType.container)
+                .build();
+        var nodeB = new Node.Builder()
+                .hostname(HostName.from("hostB"))
+                .parentHostname(HostName.from("parentHostB"))
+                .state(Node.State.active)
+                .type(NodeType.tenant)
+                .owner(ApplicationId.from("tenant2", "app2", "default"))
+                .currentVersion(Version.fromString("7.42"))
+                .wantedVersion(Version.fromString("7.42"))
+                .currentOsVersion(Version.fromString("7.6"))
+                .wantedOsVersion(Version.fromString("7.6"))
+                .serviceState(Node.ServiceState.expectedUp)
+                .vcpu(40).memoryGb(24).diskGb(500)
+                .cost(20)
+                .clusterId("clusterB")
+                .clusterType(Node.ClusterType.container)
+                .build();
         addNodes(zone, List.of(nodeA, nodeB));
     }
 
@@ -162,8 +148,7 @@ public class NodeRepositoryMock implements NodeRepository {
         nodeRepository.getOrDefault(zone, Collections.emptyMap()).values()
                       .stream()
                       .filter(node -> node.type() == type)
-                      .map(node -> new Node(node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(),
-                                            node.currentVersion(), version))
+                      .map(node -> new Node.Builder(node).wantedVersion(version).build())
                       .forEach(node -> putByHostname(zone, node));
     }
 
@@ -193,7 +178,7 @@ public class NodeRepositoryMock implements NodeRepository {
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
         modifyNodes(deployment, hostName, node -> {
             assert node.wantedVersion().equals(version);
-            return new Node(node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(), version, version);
+            return new Node.Builder(node).currentVersion(version).build();
         });
     }
 
@@ -206,107 +191,19 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     public void requestRestart(DeploymentId deployment, Optional<HostName> hostname) {
-        modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
-                                                           node.parentHostname(),
-                                                           node.state(),
-                                                           node.type(),
-                                                           node.owner(),
-                                                           node.currentVersion(),
-                                                           node.wantedVersion(),
-                                                           node.currentOsVersion(),
-                                                           node.wantedOsVersion(),
-                                                           node.serviceState(),
-                                                           node.restartGeneration(),
-                                                           node.wantedRestartGeneration() + 1,
-                                                           node.rebootGeneration(),
-                                                           node.wantedRebootGeneration(),
-                                                           node.vcpu(),
-                                                           node.memoryGb(),
-                                                           node.diskGb(),
-                                                           node.bandwidthGbps(),
-                                                           node.fastDisk(),
-                                                           node.cost(),
-                                                           node.canonicalFlavor(),
-                                                           node.clusterId(),
-                                                           node.clusterType()));
+        modifyNodes(deployment, hostname, node -> new Node.Builder(node).wantedRestartGeneration(node.wantedRestartGeneration() + 1).build());
     }
 
     public void doRestart(DeploymentId deployment, Optional<HostName> hostname) {
-        modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
-                                                           node.parentHostname(),
-                                                           node.state(),
-                                                           node.type(),
-                                                           node.owner(),
-                                                           node.currentVersion(),
-                                                           node.wantedVersion(),
-                                                           node.currentOsVersion(),
-                                                           node.wantedOsVersion(),
-                                                           node.serviceState(),
-                                                           node.restartGeneration() + 1,
-                                                           node.wantedRestartGeneration(),
-                                                           node.rebootGeneration(),
-                                                           node.wantedRebootGeneration(),
-                                                           node.vcpu(),
-                                                           node.memoryGb(),
-                                                           node.diskGb(),
-                                                           node.bandwidthGbps(),
-                                                           node.fastDisk(),
-                                                           node.cost(),
-                                                           node.canonicalFlavor(),
-                                                           node.clusterId(),
-                                                           node.clusterType()));
+        modifyNodes(deployment, hostname, node -> new Node.Builder(node).restartGeneration(node.restartGeneration() + 1).build());
     }
 
     public void requestReboot(DeploymentId deployment, Optional<HostName> hostname) {
-        modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
-                                                           node.parentHostname(),
-                                                           node.state(),
-                                                           node.type(),
-                                                           node.owner(),
-                                                           node.currentVersion(),
-                                                           node.wantedVersion(),
-                                                           node.currentOsVersion(),
-                                                           node.wantedOsVersion(),
-                                                           node.serviceState(),
-                                                           node.restartGeneration(),
-                                                           node.wantedRestartGeneration(),
-                                                           node.rebootGeneration(),
-                                                           node.wantedRebootGeneration() + 1,
-                                                           node.vcpu(),
-                                                           node.memoryGb(),
-                                                           node.diskGb(),
-                                                           node.bandwidthGbps(),
-                                                           node.fastDisk(),
-                                                           node.cost(),
-                                                           node.canonicalFlavor(),
-                                                           node.clusterId(),
-                                                           node.clusterType()));
+        modifyNodes(deployment, hostname, node -> new Node.Builder(node).wantedRebootGeneration(node.wantedRebootGeneration() + 1).build());
     }
 
     public void doReboot(DeploymentId deployment, Optional<HostName> hostname) {
-        modifyNodes(deployment, hostname, node -> new Node(node.hostname(),
-                                                           node.parentHostname(),
-                                                           node.state(),
-                                                           node.type(),
-                                                           node.owner(),
-                                                           node.currentVersion(),
-                                                           node.wantedVersion(),
-                                                           node.currentOsVersion(),
-                                                           node.wantedOsVersion(),
-                                                           node.serviceState(),
-                                                           node.restartGeneration(),
-                                                           node.wantedRestartGeneration(),
-                                                           node.rebootGeneration() + 1,
-                                                           node.wantedRebootGeneration(),
-                                                           node.vcpu(),
-                                                           node.memoryGb(),
-                                                           node.diskGb(),
-                                                           node.bandwidthGbps(),
-                                                           node.fastDisk(),
-                                                           node.cost(),
-                                                           node.canonicalFlavor(),
-                                                           node.clusterId(),
-                                                           node.clusterType()));
+        modifyNodes(deployment, hostname, node -> new Node.Builder(node).rebootGeneration(node.rebootGeneration() + 1).build());
     }
 
 }
