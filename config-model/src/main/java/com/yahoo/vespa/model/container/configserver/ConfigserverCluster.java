@@ -99,9 +99,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         if (options.multiTenant().isPresent()) {
             builder.multitenant(options.multiTenant().get());
         }
-        if (options.payloadCompressionType().isPresent()) {
-            builder.payloadCompressionType(ConfigserverConfig.PayloadCompressionType.Enum.valueOf(options.payloadCompressionType().get()));
-        }
         for (ConfigServer server : getConfigServers()) {
             ConfigserverConfig.Zookeeperserver.Builder zkBuilder = new ConfigserverConfig.Zookeeperserver.Builder();
             zkBuilder.hostname(server.hostName);
@@ -131,9 +128,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         }
         if (options.hostedVespa().isPresent()) {
             builder.hostedVespa(options.hostedVespa().get());
-        }
-        if (options.numParallelTenantLoaders().isPresent()) {
-            builder.numParallelTenantLoaders(options.numParallelTenantLoaders().get());
         }
         if (options.loadBalancerAddress().isPresent()) {
             builder.loadBalancerAddress(options.loadBalancerAddress().get());

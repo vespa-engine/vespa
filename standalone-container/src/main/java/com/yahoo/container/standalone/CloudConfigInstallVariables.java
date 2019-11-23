@@ -72,6 +72,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
         return getInstallVariable("zookeeper_electionPort", Integer::parseInt);
     }
 
+    // TODO: Remove when 7.146 is the oldest version in use
     @Override
     public Optional<String> payloadCompressionType() {
         return getInstallVariable("payload_compression_type", Function.identity());
@@ -105,6 +106,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
         return getInstallVariable("hosted_vespa", Boolean::parseBoolean);
     }
 
+    // TODO: Remove when 7.146 is the oldest version in use
     @Override
     public Optional<Integer> numParallelTenantLoaders() {
         return getInstallVariable("num_parallel_tenant_loaders", Integer::parseInt);
