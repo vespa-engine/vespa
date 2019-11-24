@@ -596,7 +596,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setString("state", valueOf(node.state()));
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
-            nodeObject.setString("flavor", node.canonicalFlavor());
+            nodeObject.setString("flavor", node.flavor());
             nodeObject.setDouble("vcpu", node.resources().vcpu());
             nodeObject.setDouble("memoryGb", node.resources().memoryGb());
             nodeObject.setDouble("diskGb", node.resources().diskGb());

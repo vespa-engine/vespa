@@ -93,7 +93,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                .wantedVersion(initialVersion)
                                                                .resources(new NodeResources(2, 8, 50, 1))
                                                                .serviceState(Node.ServiceState.unorchestrated)
-                                                               .canonicalFlavor("d-2-8-50")
+                                                               .flavor("d-2-8-50")
                                                                .clusterId("cluster")
                                                                .clusterType(Node.ClusterType.container)
                                                                .build());

@@ -34,14 +34,14 @@ public class Node {
     private final long rebootGeneration;
     private final long wantedRebootGeneration;
     private final int cost;
-    private final String canonicalFlavor;
+    private final String flavor;
     private final String clusterId;
     private final ClusterType clusterType;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                int cost, String canonicalFlavor, String clusterId, ClusterType clusterType) {
+                int cost, String flavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -58,7 +58,7 @@ public class Node {
         this.rebootGeneration = rebootGeneration;
         this.wantedRebootGeneration = wantedRebootGeneration;
         this.cost = cost;
-        this.canonicalFlavor = canonicalFlavor;
+        this.flavor = flavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
     }
@@ -125,8 +125,8 @@ public class Node {
         return cost;
     }
 
-    public String canonicalFlavor() {
-        return canonicalFlavor;
+    public String flavor() {
+        return flavor;
     }
 
     public String clusterId() {
@@ -195,7 +195,7 @@ public class Node {
         private long rebootGeneration;
         private long wantedRebootGeneration;
         private int cost;
-        private String canonicalFlavor;
+        private String flavor;
         private String clusterId;
         private ClusterType clusterType;
         
@@ -218,7 +218,7 @@ public class Node {
             this.rebootGeneration = node.rebootGeneration;
             this.wantedRebootGeneration = node.wantedRebootGeneration;
             this.cost = node.cost;
-            this.canonicalFlavor = node.canonicalFlavor;
+            this.flavor = node.flavor;
             this.clusterId = node.clusterId;
             this.clusterType = node.clusterType;
         }
@@ -303,8 +303,8 @@ public class Node {
             return this;
         }
 
-        public Builder canonicalFlavor(String canonicalFlavor) {
-            this.canonicalFlavor = canonicalFlavor;
+        public Builder flavor(String flavor) {
+            this.flavor = flavor;
             return this;
         }
 
@@ -321,7 +321,7 @@ public class Node {
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
                     wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                    cost, canonicalFlavor, clusterId, clusterType);
+                    cost, flavor, clusterId, clusterType);
         }
     }
 }

@@ -101,7 +101,7 @@ public interface NodeRepository {
                         toInt(node.getCurrentRebootGeneration()),
                         toInt(node.getRebootGeneration()),
                         toInt(node.getCost()),
-                        node.getCanonicalFlavor(),
+                        node.getFlavor(),
                         clusterIdOf(node.getMembership()),
                         clusterTypeOf(node.getMembership()));
     }

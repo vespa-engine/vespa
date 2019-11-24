@@ -63,7 +63,7 @@ public class ClusterInfoMaintainer extends Maintainer {
                                                  .map(Node::hostname)
                                                  .map(HostName::value)
                                                  .collect(Collectors.toList());
-            ClusterInfo info = new ClusterInfo(node.canonicalFlavor(), node.cost(),
+            ClusterInfo info = new ClusterInfo(node.flavor(), node.cost(),
                                                node.resources().vcpu(), node.resources().memoryGb(), node.resources().diskGb(),
                                                ClusterSpec.Type.from(node.clusterType().name()), hostnames);
             infoMap.put(new ClusterSpec.Id(id), info);
