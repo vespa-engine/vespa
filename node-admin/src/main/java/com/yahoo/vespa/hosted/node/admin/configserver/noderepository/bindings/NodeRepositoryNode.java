@@ -28,6 +28,8 @@ public class NodeRepositoryNode {
     public String openStackId;
     @JsonProperty("flavor")
     public String flavor;
+    @JsonProperty("resources")
+    public NodeResources resources;
     @JsonProperty("membership")
     public Membership membership;
     @JsonProperty("owner")
@@ -56,12 +58,6 @@ public class NodeRepositoryNode {
     public String modelName;
     @JsonProperty("failCount")
     public Integer failCount;
-    @JsonProperty("fastDisk")
-    public Boolean fastDisk;
-    @JsonProperty("remoteStorage")
-    public Boolean remoteStorage;
-    @JsonProperty("bandwidthGbps")
-    public Double bandwidthGbps;
     @JsonProperty("environment")
     public String environment;
     @JsonProperty("type")
@@ -76,12 +72,6 @@ public class NodeRepositoryNode {
     public Boolean wantToRetire;
     @JsonProperty("wantToDeprovision")
     public Boolean wantToDeprovision;
-    @JsonProperty("minDiskAvailableGb")
-    public Double minDiskAvailableGb;
-    @JsonProperty("minMainMemoryAvailableGb")
-    public Double minMainMemoryAvailableGb;
-    @JsonProperty("minCpuCores")
-    public Double minCpuCores;
     @JsonProperty("allowedToBeDown")
     public Boolean allowedToBeDown;
 
@@ -98,6 +88,7 @@ public class NodeRepositoryNode {
                 ", openStackId='" + openStackId + '\'' +
                 ", modelName='" + modelName + '\'' +
                 ", flavor='" + flavor + '\'' +
+                ", resources=" + resources +
                 ", membership=" + membership +
                 ", owner=" + owner +
                 ", restartGeneration=" + restartGeneration +
@@ -111,9 +102,6 @@ public class NodeRepositoryNode {
                 ", currentFirmwareCheck=" + currentFirmwareCheck +
                 ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                 ", failCount=" + failCount +
-                ", fastDisk=" + fastDisk +
-                ", remoteStorage=" + remoteStorage +
-                ", bandwidthGbps=" + bandwidthGbps +
                 ", environment='" + environment + '\'' +
                 ", type='" + type + '\'' +
                 ", wantedDockerImage='" + wantedDockerImage + '\'' +
@@ -121,9 +109,6 @@ public class NodeRepositoryNode {
                 ", parentHostname='" + parentHostname + '\'' +
                 ", wantToRetire=" + wantToRetire +
                 ", wantToDeprovision=" + wantToDeprovision +
-                ", minDiskAvailableGb=" + minDiskAvailableGb +
-                ", minMainMemoryAvailableGb=" + minMainMemoryAvailableGb +
-                ", minCpuCores=" + minCpuCores +
                 ", allowedToBeDown=" + allowedToBeDown +
                 ", reports=" + reports +
                 '}';
@@ -169,6 +154,35 @@ public class NodeRepositoryNode {
                     " index = " + index +
                     " retired = " + retired +
                     " }";
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public static class NodeResources {
+        @JsonProperty
+        public Double vcpu;
+        @JsonProperty
+        public Double memoryGb;
+        @JsonProperty
+        public Double diskGb;
+        @JsonProperty
+        public Double bandwidthGbps;
+        @JsonProperty
+        public String diskSpeed;
+        @JsonProperty
+        public String storageType;
+
+        @Override
+        public String toString() {
+            return "NodeResources{" +
+                    "vcpu=" + vcpu +
+                    ", memoryGb=" + memoryGb +
+                    ", diskGb=" + diskGb +
+                    ", bandwidthGbps=" + bandwidthGbps +
+                    ", diskSpeed='" + diskSpeed + '\'' +
+                    ", storageType='" + storageType + '\'' +
+                    '}';
         }
     }
 }
