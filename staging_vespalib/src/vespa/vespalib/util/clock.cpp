@@ -6,7 +6,6 @@
 
 namespace vespalib {
 
-
 Clock::Clock(double timePeriod) :
      _timeNS(0u),
      _timePeriodMS(static_cast<uint32_t>(timePeriod*1000)),
