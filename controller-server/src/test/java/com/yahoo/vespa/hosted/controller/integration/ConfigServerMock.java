@@ -6,6 +6,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
@@ -90,8 +91,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                .owner(application)
                                                                .currentVersion(initialVersion)
                                                                .wantedVersion(initialVersion)
-                                                               .vcpu(2).memoryGb(8).diskGb(50).bandwidthGbps(1)
-                                                               .fastDisk(true)
+                                                               .resources(new NodeResources(2, 8, 50, 1))
                                                                .serviceState(Node.ServiceState.unorchestrated)
                                                                .canonicalFlavor("d-2-8-50")
                                                                .clusterId("cluster")

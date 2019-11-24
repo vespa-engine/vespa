@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -63,6 +64,7 @@ public class ClusterInfoMaintainerTest {
                 .currentOsVersion(Version.fromString("7.6"))
                 .wantedOsVersion(Version.fromString("7.6"))
                 .serviceState(Node.ServiceState.expectedUp)
+                .resources(new NodeResources(1, 1, 1, 1))
                 .cost(10)
                 .clusterId("clusterA")
                 .clusterType(Node.ClusterType.container)
@@ -78,6 +80,7 @@ public class ClusterInfoMaintainerTest {
                 .currentOsVersion(Version.fromString("7.6"))
                 .wantedOsVersion(Version.fromString("7.6"))
                 .serviceState(Node.ServiceState.expectedUp)
+                .resources(new NodeResources(1, 1, 1, 1))
                 .cost(20)
                 .clusterId("clusterB")
                 .clusterType(Node.ClusterType.container)

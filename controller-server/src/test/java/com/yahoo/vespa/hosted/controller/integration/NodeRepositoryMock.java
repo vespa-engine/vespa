@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -77,8 +78,7 @@ public class NodeRepositoryMock implements NodeRepository {
                 .currentOsVersion(Version.fromString("7.6"))
                 .wantedOsVersion(Version.fromString("7.6"))
                 .serviceState(Node.ServiceState.expectedUp)
-                .vcpu(24).memoryGb(24).diskGb(500)
-                .cost(10)
+                .resources(new NodeResources(24, 24, 500, 1))
                 .clusterId("clusterA")
                 .clusterType(Node.ClusterType.container)
                 .build();
@@ -93,7 +93,7 @@ public class NodeRepositoryMock implements NodeRepository {
                 .currentOsVersion(Version.fromString("7.6"))
                 .wantedOsVersion(Version.fromString("7.6"))
                 .serviceState(Node.ServiceState.expectedUp)
-                .vcpu(40).memoryGb(24).diskGb(500)
+                .resources(new NodeResources(40, 24, 500, 1))
                 .cost(20)
                 .clusterId("clusterB")
                 .clusterType(Node.ClusterType.container)

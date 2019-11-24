@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
@@ -77,10 +78,18 @@ public interface NodeRepository {
                                   .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
                                                                    owner.getInstance()));
         var parentHostname = Optional.ofNullable(node.getParentHostname()).map(HostName::from);
+        var resources = new NodeResources(
+                toDouble(node.getResources().getVcpu()),
+                toDouble(node.getResources().getMemoryGb()),
+                toDouble(node.getResources().getDiskGb()),
+                toDouble(node.getResources().getBandwidthGbps()),
+                diskSpeedFromString(node.getResources().getDiskSpeed()),
+                storageTypeFromString(node.getResources().getStorageType()));
         return new Node(HostName.from(node.getHostname()),
                         parentHostname,
                         fromJacksonState(node.getState()),
                         fromJacksonType(node.getType()),
+                        resources,
                         application,
                         versionFrom(node.getVespaVersion()),
                         versionFrom(node.getWantedVespaVersion()),
@@ -91,11 +100,6 @@ public interface NodeRepository {
                         toInt(node.getRestartGeneration()),
                         toInt(node.getCurrentRebootGeneration()),
                         toInt(node.getRebootGeneration()),
-                        toDouble(node.getMinCpuCores()),
-                        toDouble(node.getMinMainMemoryAvailableGb()),
-                        toDouble(node.getMinDiskAvailableGb()),
-                        toDouble(node.getBandwidthGbps()),
-                        toBoolean(node.getFastDisk()),
                         toInt(node.getCost()),
                         node.getCanonicalFlavor(),
                         clusterIdOf(node.getMembership()),
@@ -141,6 +145,26 @@ public interface NodeRepository {
             case parked: return Node.State.parked;
         }
         return Node.State.unknown;
+    }
+
+    private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
+        if (diskSpeed == null) return NodeResources.DiskSpeed.getDefault();
+        switch (diskSpeed) {
+            case "fast": return NodeResources.DiskSpeed.fast;
+            case "slow": return NodeResources.DiskSpeed.slow;
+            case "any": return NodeResources.DiskSpeed.any;
+            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
+        }
+    }
+
+    private static NodeResources.StorageType storageTypeFromString(String storageType) {
+        if (storageType == null) return NodeResources.StorageType.getDefault();
+        switch (storageType) {
+            case "remote": return NodeResources.StorageType.remote;
+            case "local": return NodeResources.StorageType.local;
+            case "any": return NodeResources.StorageType.any;
+            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
+        }
     }
 
     private static Node.ServiceState fromBoolean(Boolean allowedDown) {

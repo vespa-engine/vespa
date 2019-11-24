@@ -11,6 +11,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -596,11 +597,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setString("orchestration", valueOf(node.serviceState()));
             nodeObject.setString("version", node.currentVersion().toString());
             nodeObject.setString("flavor", node.canonicalFlavor());
-            nodeObject.setDouble("vcpu", node.vcpu());
-            nodeObject.setDouble("memoryGb", node.memoryGb());
-            nodeObject.setDouble("diskGb", node.diskGb());
-            nodeObject.setDouble("bandwidthGbps", node.bandwidthGbps());
-            nodeObject.setBool("fastDisk", node.fastDisk());
+            nodeObject.setDouble("vcpu", node.resources().vcpu());
+            nodeObject.setDouble("memoryGb", node.resources().memoryGb());
+            nodeObject.setDouble("diskGb", node.resources().diskGb());
+            nodeObject.setDouble("bandwidthGbps", node.resources().bandwidthGbps());
+            nodeObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast);
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
         }

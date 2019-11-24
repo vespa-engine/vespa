@@ -32,6 +32,10 @@ public class NodeRepositoryNode {
     private String flavor;
     @JsonProperty("canonicalFlavor")
     private String canonicalFlavor;
+    @JsonProperty("resources")
+    private NodeResources resources;
+    @JsonProperty("requestedResources")
+    private NodeResources requestedResources;
     @JsonProperty("membership")
     private NodeMembership membership;
     @JsonProperty("owner")
@@ -68,18 +72,8 @@ public class NodeRepositoryNode {
     private Boolean wantToRetire;
     @JsonProperty("wantToDeprovision")
     private Boolean wantToDeprovision;
-    @JsonProperty("minDiskAvailableGb")
-    private Double minDiskAvailableGb;
-    @JsonProperty("minMainMemoryAvailableGb")
-    private Double minMainMemoryAvailableGb;
     @JsonProperty("cost")
     private Integer cost;
-    @JsonProperty("minCpuCores")
-    private Double minCpuCores;
-    @JsonProperty("bandwidthGbps")
-    private Double bandwidthGbps;
-    @JsonProperty("fastDisk")
-    private Boolean fastDisk;
     @JsonProperty("description")
     private String description;
     @JsonProperty("history")
@@ -161,6 +155,22 @@ public class NodeRepositoryNode {
 
     public void setCanonicalFlavor(String canonicalFlavor) {
         this.canonicalFlavor = canonicalFlavor;
+    }
+
+    public NodeResources getResources() {
+        return resources;
+    }
+
+    public void setResources(NodeResources resources) {
+        this.resources = resources;
+    }
+
+    public NodeResources getRequestedResources() {
+        return requestedResources;
+    }
+
+    public void setRequestedResources(NodeResources requestedResources) {
+        this.requestedResources = requestedResources;
     }
 
     public NodeMembership getMembership() {
@@ -289,52 +299,12 @@ public class NodeRepositoryNode {
         this.wantToDeprovision = wantToDeprovision;
     }
 
-    public Double getMinDiskAvailableGb() {
-        return minDiskAvailableGb;
-    }
-
-    public void setMinDiskAvailableGb(Double minDiskAvailableGb) {
-        this.minDiskAvailableGb = minDiskAvailableGb;
-    }
-
-    public Double getMinMainMemoryAvailableGb() {
-        return minMainMemoryAvailableGb;
-    }
-
-    public void setMinMainMemoryAvailableGb(Double minMainMemoryAvailableGb) {
-        this.minMainMemoryAvailableGb = minMainMemoryAvailableGb;
-    }
-
     public Integer getCost() {
         return cost;
     }
 
     public void setCost(Integer cost) {
         this.cost = cost;
-    }
-
-    public Double getMinCpuCores() {
-        return minCpuCores;
-    }
-
-    public void setMinCpuCores(Double minCpuCores) {
-        this.minCpuCores = minCpuCores;
-    }
-
-    public Double getBandwidthGbps() {
-        return bandwidthGbps;
-    }
-
-    public void setBandwidthGbps(Double bandwidthGbps) {
-        this.bandwidthGbps = bandwidthGbps;
-    }
-
-    public Boolean getFastDisk() {
-        return fastDisk;
-    }
-
-    public void setFastDisk(Boolean fastDisk) {
-        this.fastDisk = fastDisk;
     }
 
     public String getDescription() {
@@ -401,6 +371,8 @@ public class NodeRepositoryNode {
                ", openStackId='" + openStackId + '\'' +
                ", flavor='" + flavor + '\'' +
                ", canonicalFlavor='" + canonicalFlavor + '\'' +
+               ", resources=" + resources +
+               ", requestedResources=" + requestedResources +
                ", membership=" + membership +
                ", owner=" + owner +
                ", restartGeneration=" + restartGeneration +
@@ -419,12 +391,7 @@ public class NodeRepositoryNode {
                ", parentHostname='" + parentHostname + '\'' +
                ", wantToRetire=" + wantToRetire +
                ", wantToDeprovision=" + wantToDeprovision +
-               ", minDiskAvailableGb=" + minDiskAvailableGb +
-               ", minMainMemoryAvailableGb=" + minMainMemoryAvailableGb +
                ", cost=" + cost +
-               ", minCpuCores=" + minCpuCores +
-               ", bandwidthGbps=" + bandwidthGbps +
-               ", fastDisk=" + fastDisk +
                ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +

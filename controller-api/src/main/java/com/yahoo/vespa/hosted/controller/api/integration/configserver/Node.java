@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 
 import java.util.Objects;
@@ -21,6 +22,7 @@ public class Node {
     private final Optional<HostName> parentHostname;
     private final State state;
     private final NodeType type;
+    private final NodeResources resources;
     private final Optional<ApplicationId> owner;
     private final Version currentVersion;
     private final Version wantedVersion;
@@ -31,24 +33,20 @@ public class Node {
     private final long wantedRestartGeneration;
     private final long rebootGeneration;
     private final long wantedRebootGeneration;
-    private final double vcpu;
-    private final double memoryGb;
-    private final double diskGb;
-    private final double bandwidthGbps;
-    private final boolean fastDisk;
     private final int cost;
     private final String canonicalFlavor;
     private final String clusterId;
     private final ClusterType clusterType;
 
-    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, Optional<ApplicationId> owner,
+    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                double vcpu, double memoryGb, double diskGb, double bandwidthGbps, boolean fastDisk, int cost, String canonicalFlavor, String clusterId, ClusterType clusterType) {
+                int cost, String canonicalFlavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
         this.type = type;
+        this.resources = resources;
         this.owner = owner;
         this.currentVersion = currentVersion;
         this.wantedVersion = wantedVersion;
@@ -59,12 +57,6 @@ public class Node {
         this.wantedRestartGeneration = wantedRestartGeneration;
         this.rebootGeneration = rebootGeneration;
         this.wantedRebootGeneration = wantedRebootGeneration;
-        this.vcpu = vcpu;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.bandwidthGbps = bandwidthGbps;
-        this.fastDisk = fastDisk;
-        this.remoteStorage = remoteStorage;
         this.cost = cost;
         this.canonicalFlavor = canonicalFlavor;
         this.clusterId = clusterId;
@@ -83,6 +75,10 @@ public class Node {
 
     public NodeType type() {
         return type;
+    }
+
+    public NodeResources resources() {
+        return resources;
     }
 
     public Optional<ApplicationId> owner() {
@@ -123,26 +119,6 @@ public class Node {
 
     public long wantedRebootGeneration() {
         return wantedRebootGeneration;
-    }
-
-    public double vcpu() {
-        return vcpu;
-    }
-
-    public double memoryGb() {
-        return memoryGb;
-    }
-
-    public double diskGb() {
-        return diskGb;
-    }
-
-    public double bandwidthGbps() {
-        return bandwidthGbps;
-    }
-
-    public boolean fastDisk() {
-        return fastDisk;
     }
 
     public int cost() {
@@ -207,6 +183,7 @@ public class Node {
         private Optional<HostName> parentHostname = Optional.empty();
         private State state;
         private NodeType type;
+        private NodeResources resources;
         private Optional<ApplicationId> owner = Optional.empty();
         private Version currentVersion;
         private Version wantedVersion;
@@ -217,11 +194,6 @@ public class Node {
         private long wantedRestartGeneration;
         private long rebootGeneration;
         private long wantedRebootGeneration;
-        private double vcpu;
-        private double memoryGb;
-        private double diskGb;
-        private double bandwidthGbps;
-        private boolean fastDisk;
         private int cost;
         private String canonicalFlavor;
         private String clusterId;
@@ -234,6 +206,7 @@ public class Node {
             this.parentHostname = node.parentHostname;
             this.state = node.state;
             this.type = node.type;
+            this.resources = node.resources;
             this.owner = node.owner;
             this.currentVersion = node.currentVersion;
             this.wantedVersion = node.wantedVersion;
@@ -244,11 +217,6 @@ public class Node {
             this.wantedRestartGeneration = node.wantedRestartGeneration;
             this.rebootGeneration = node.rebootGeneration;
             this.wantedRebootGeneration = node.wantedRebootGeneration;
-            this.vcpu = node.vcpu;
-            this.memoryGb = node.memoryGb;
-            this.diskGb = node.diskGb;
-            this.bandwidthGbps = node.bandwidthGbps;
-            this.fastDisk = node.fastDisk;
             this.cost = node.cost;
             this.canonicalFlavor = node.canonicalFlavor;
             this.clusterId = node.clusterId;
@@ -272,6 +240,11 @@ public class Node {
 
         public Builder type(NodeType type) {
             this.type = type;
+            return this;
+        }
+
+        public Builder resources(NodeResources resources) {
+            this.resources = resources;
             return this;
         }
 
@@ -325,31 +298,6 @@ public class Node {
             return this;
         }
 
-        public Builder vcpu(double vcpu) {
-            this.vcpu = vcpu;
-            return this;
-        }
-
-        public Builder memoryGb(double memoryGb) {
-            this.memoryGb = memoryGb;
-            return this;
-        }
-
-        public Builder diskGb(double diskGb) {
-            this.diskGb = diskGb;
-            return this;
-        }
-
-        public Builder bandwidthGbps(double bandwidthGbps) {
-            this.bandwidthGbps = bandwidthGbps;
-            return this;
-        }
-
-        public Builder fastDisk(boolean fastDisk) {
-            this.fastDisk = fastDisk;
-            return this;
-        }
-
         public Builder cost(int cost) {
             this.cost = cost;
             return this;
@@ -371,9 +319,9 @@ public class Node {
         }
 
         public Node build() {
-            return new Node(hostname, parentHostname, state, type, owner, currentVersion, wantedVersion, currentOsVersion,
+            return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
                     wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                    vcpu, memoryGb, diskGb, bandwidthGbps, fastDisk, cost, canonicalFlavor, clusterId, clusterType);
+                    cost, canonicalFlavor, clusterId, clusterType);
         }
     }
 }
