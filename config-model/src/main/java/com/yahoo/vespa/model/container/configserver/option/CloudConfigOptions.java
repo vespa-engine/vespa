@@ -18,7 +18,6 @@ public interface CloudConfigOptions {
         }
     }
 
-
     Optional<Integer> rpcPort();
     Optional<Boolean> multiTenant();
     Optional<Boolean> hostedVespa();
