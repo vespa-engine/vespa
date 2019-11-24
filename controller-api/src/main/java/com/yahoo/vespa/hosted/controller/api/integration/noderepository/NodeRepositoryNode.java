@@ -30,8 +30,6 @@ public class NodeRepositoryNode {
     private String openStackId;
     @JsonProperty("flavor")
     private String flavor;
-    @JsonProperty("canonicalFlavor")
-    private String canonicalFlavor;
     @JsonProperty("resources")
     private NodeResources resources;
     @JsonProperty("requestedResources")
@@ -74,8 +72,6 @@ public class NodeRepositoryNode {
     private Boolean wantToDeprovision;
     @JsonProperty("cost")
     private Integer cost;
-    @JsonProperty("description")
-    private String description;
     @JsonProperty("history")
     private NodeHistory[] history;
     @JsonProperty("allowedToBeDown")
@@ -147,14 +143,6 @@ public class NodeRepositoryNode {
 
     public void setFlavor(String flavor) {
         this.flavor = flavor;
-    }
-
-    public String getCanonicalFlavor() {
-        return canonicalFlavor;
-    }
-
-    public void setCanonicalFlavor(String canonicalFlavor) {
-        this.canonicalFlavor = canonicalFlavor;
     }
 
     public NodeResources getResources() {
@@ -307,14 +295,6 @@ public class NodeRepositoryNode {
         this.cost = cost;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public NodeHistory[] getHistory() {
         return history;
     }
@@ -370,7 +350,6 @@ public class NodeRepositoryNode {
                ", additionalIpAddresses=" + additionalIpAddresses +
                ", openStackId='" + openStackId + '\'' +
                ", flavor='" + flavor + '\'' +
-               ", canonicalFlavor='" + canonicalFlavor + '\'' +
                ", resources=" + resources +
                ", requestedResources=" + requestedResources +
                ", membership=" + membership +
@@ -392,7 +371,6 @@ public class NodeRepositoryNode {
                ", wantToRetire=" + wantToRetire +
                ", wantToDeprovision=" + wantToDeprovision +
                ", cost=" + cost +
-               ", description='" + description + '\'' +
                ", history=" + Arrays.toString(history) +
                ", allowedToBeDown=" + allowedToBeDown +
                ", reports=" + reports +
