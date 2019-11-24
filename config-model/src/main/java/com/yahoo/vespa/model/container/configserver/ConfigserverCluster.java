@@ -10,7 +10,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.jdisc.metrics.yamasconsumer.cloud.ScoreBoardConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -29,7 +28,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         implements
         ZookeeperServerConfig.Producer,
         ConfigserverConfig.Producer,
-        ScoreBoardConfig.Producer,
         StatisticsConfig.Producer,
         HealthMonitorConfig.Producer {
     private final CloudConfigOptions options;
@@ -173,13 +171,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         builder.hostname(server.hostName);
         builder.id(id);
         return builder;
-    }
-
-    @Override
-    public void getConfig(ScoreBoardConfig.Builder builder) {
-        builder.applicationName("configserver");
-        builder.flushTime(60);
-        builder.step(60);
     }
 
     @Override

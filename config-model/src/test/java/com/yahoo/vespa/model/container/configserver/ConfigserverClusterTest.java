@@ -9,7 +9,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
-import com.yahoo.jdisc.metrics.yamasconsumer.cloud.ScoreBoardConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -88,14 +87,6 @@ public class ConfigserverClusterTest {
         StatisticsConfig config = getConfig(StatisticsConfig.class);
         assertThat((int) config.collectionintervalsec(), is(60));
         assertThat((int) config.loggingintervalsec(), is(60));
-    }
-
-    @Test
-    public void testScoreBoardConfig() {
-        ScoreBoardConfig config = getConfig(ScoreBoardConfig.class);
-        assertThat(config.applicationName(), is("configserver"));
-        assertThat(config.flushTime(), is(60));
-        assertThat(config.step(), is(60));
     }
 
     @Test
