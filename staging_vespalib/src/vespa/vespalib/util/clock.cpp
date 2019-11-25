@@ -25,7 +25,7 @@ Clock::~Clock()
 
 void Clock::setTime() const
 {
-    _timeNS.store(fastos::ClockSteady::now() - fastos::SteadyTimeStamp::ZERO);
+    _timeNS.store(fastos::ClockSteady::now() - fastos::SteadyTimeStamp::ZERO, std::memory_order_relaxed);
 }
 
 void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
