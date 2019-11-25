@@ -8,7 +8,6 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
 import com.yahoo.vespa.hosted.provision.testutils.ContainerConfig;
@@ -829,7 +828,7 @@ public class RestApiTest {
     }
 
     @Test
-    public void test_flavor_overrides() throws Exception {
+    public void test_flavor_overrides_old_format() throws Exception {
         String hostname = "parent2.yahoo.com";
         // Test adding with overrides
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -847,20 +846,53 @@ public class RestApiTest {
                         Request.Method.POST),
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
+                "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"storageType\":\"remote\"}");
+    }
+
+    @Test
+    public void test_flavor_overrides() throws Exception {
+        String host = "parent2.yahoo.com";
+        // Test adding with overrides
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                ("[{\"hostname\":\"" + host + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                        "\"flavor\":\"large-variant\",\"resources\":{\"diskGb\":1234,\"memoryGb\":4321}}]").
+                        getBytes(StandardCharsets.UTF_8),
+                Request.Method.POST),
+                400,
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can only override disk GB for configured flavor\"}");
+
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[{\"hostname\":\"" + host + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
+                                "\"flavor\":\"large-variant\",\"type\":\"host\",\"resources\":{\"diskGb\":1234}}]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + host),
                 "\"minDiskAvailableGb\":1234.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"remoteStorage\":true,\"bandwidthGbps\":15.0,");
 
+        // Test adding tenant node
+        String tenant = "node-1-3.yahoo.com";
+        String resources = "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"slow\",\"storageType\":\"remote\"}";
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
+                        ("[{\"hostname\":\"" + tenant + "\"," + createIpAddresses("::2") + "\"openStackId\":\"osid-124\"," +
+                                "\"type\":\"tenant\"," + resources + "}]").
+                                getBytes(StandardCharsets.UTF_8),
+                        Request.Method.POST),
+                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + tenant), resources);
+
         // Test patching with overrides
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + host,
                         "{\"minDiskAvailableGb\":5432,\"minMainMemoryAvailableGb\":2345}".getBytes(StandardCharsets.UTF_8),
                         Request.Method.PATCH),
                 400,
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'minMainMemoryAvailableGb': Can only override disk GB for configured flavor\"}");
 
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + hostname,
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/" + host,
                         "{\"minDiskAvailableGb\":5432}".getBytes(StandardCharsets.UTF_8),
                         Request.Method.PATCH),
-                "{\"message\":\"Updated " + hostname + "\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
+                "{\"message\":\"Updated " + host + "\"}");
+        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + host),
                 "\"minDiskAvailableGb\":5432.0,\"minMainMemoryAvailableGb\":128.0,\"minCpuCores\":64.0,\"fastDisk\":true,\"remoteStorage\":true,\"bandwidthGbps\":15.0,");
     }
 
