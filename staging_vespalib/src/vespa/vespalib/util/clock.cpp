@@ -25,7 +25,7 @@ Clock::~Clock()
 
 void Clock::setTime() const
 {
-    _timeNS = fastos::ClockSteady::now();
+    _timeNS = (fastos::ClockSteady::now() - fastos::SteadyTimeStamp::ZERO);
 }
 
 void Clock::Run(FastOS_ThreadInterface *thread, void *arguments)
