@@ -4,7 +4,6 @@
 #include <iostream>
 #include <lib/modelinspect.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/app.h>
 
 #include <vespa/log/log.h>
@@ -17,6 +16,7 @@ class Application : public FastOS_Application
     vespalib::string _specString;
     int parseOpts();
     vespalib::string getSources();
+    config::ConfigUri getConfigUri();
 public:
     void usage();
     int Main() override;
@@ -66,7 +66,7 @@ Application::parseOpts()
 }
 
 vespalib::string
-Application::getSources(void)
+Application::getSources()
 {
     vespalib::string specs;
     for (std::string v : vespa::Defaults::vespaConfigSourcesRpcAddrs()) {
@@ -76,8 +76,20 @@ Application::getSources(void)
     return specs;
 }
 
+config::ConfigUri
+Application::getConfigUri()
+{
+    try {
+        return config::ConfigUri::createFromSpec(_cfgId, config::ServerSpec(_specString));
+    }
+    catch (std::exception &e) {
+        std::cerr << "FATAL ERROR: failed to set up model configuration: " << e.what() << "\n";
+        exit(1);
+    }
+}
+
 void
-Application::usage(void)
+Application::usage()
 {
     std::cerr <<
         "vespa-model-inspect version 2.0"                                  << std::endl <<
@@ -104,7 +116,7 @@ Application::usage(void)
 }
 
 int
-Application::Main(void)
+Application::Main()
 {
     int cnt = parseOpts();
     if (_argc == cnt) {
@@ -112,8 +124,7 @@ Application::Main(void)
         return 0;
     }
 
-    config::ServerSpec spec(_specString);
-    config::ConfigUri uri = config::ConfigUri::createFromSpec(_cfgId, spec);
+    config::ConfigUri uri = getConfigUri();
     ModelInspect model(_flags, uri, std::cout);
     return model.action(_argc - cnt, &_argv[cnt]);
 }
