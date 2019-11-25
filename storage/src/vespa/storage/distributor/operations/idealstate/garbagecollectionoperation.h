@@ -2,7 +2,9 @@
 #pragma once
 
 #include "idealstateoperation.h"
+#include <vespa/storage/bucketdb/bucketcopy.h>
 #include <vespa/storage/distributor/messagetracker.h>
+#include <vector>
 
 namespace storage::distributor {
 
@@ -22,6 +24,10 @@ public:
 
 protected:
     MessageTracker _tracker;
+private:
+    std::vector<BucketCopy> _replica_info;
+
+    void merge_received_bucket_info_into_db();
 };
 
 }
