@@ -13,7 +13,8 @@ using namespace storage::distributor;
 
 GarbageCollectionOperation::GarbageCollectionOperation(const std::string& clusterName, const BucketAndNodes& nodes)
     : IdealStateOperation(nodes),
-      _tracker(clusterName)
+      _tracker(clusterName),
+      _replica_info()
 {}
 
 GarbageCollectionOperation::~GarbageCollectionOperation() = default;
