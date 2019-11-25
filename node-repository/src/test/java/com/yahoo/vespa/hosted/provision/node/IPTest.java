@@ -9,17 +9,17 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -30,16 +30,11 @@ public class IPTest {
     private static final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default");
     private static final LockedNodeList emptyList = new LockedNodeList(List.of(), () -> {});
 
-    private MockNameResolver resolver;
-
-    @Before
-    public void before() {
-        resolver = new MockNameResolver().explicitReverseRecords();
-    }
+    private final MockNameResolver resolver = new MockNameResolver().explicitReverseRecords();
 
     @Test
     public void test_natural_order() {
-        Set<String> ipAddresses = ImmutableSet.of(
+        Set<String> ipAddresses = Set.of(
                 "192.168.254.1",
                 "192.168.254.254",
                 "127.7.3.1",
@@ -54,7 +49,7 @@ public class IPTest {
                 "::20");
 
         assertEquals(
-                Arrays.asList(
+                List.of(
                         "127.5.254.1",
                         "127.7.3.1",
                         "172.16.100.1",
@@ -72,7 +67,7 @@ public class IPTest {
     }
 
     @Test
-    public void test_find_allocation_single_stack() {
+    public void test_find_allocation_ipv6_only() {
         IP.Pool pool = createNode(ImmutableSet.of(
                 "::1",
                 "::2",
@@ -87,8 +82,8 @@ public class IPTest {
         resolver.addReverseRecord("::2", "host1");
 
         Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
-        assertEquals("::1", allocation.get().ipv6Address());
-        Assert.assertFalse(allocation.get().ipv4Address().isPresent());
+        assertEquals("::1", allocation.get().primary());
+        assertFalse(allocation.get().secondary().isPresent());
         assertEquals("host3", allocation.get().hostname());
 
         // Allocation fails if DNS record is missing
@@ -102,17 +97,27 @@ public class IPTest {
     }
 
     @Test
+    public void test_find_allocation_ipv4_only() {
+        var pool = testPool(false);
+        assertTrue(pool instanceof IP.Ipv4Pool);
+        var allocation = pool.findAllocation(emptyList, resolver);
+        assertFalse("Found allocation", allocation.isEmpty());
+        assertEquals("127.0.0.1", allocation.get().primary());
+        assertTrue("No secondary address", allocation.get().secondary().isEmpty());
+    }
+
+    @Test
     public void test_find_allocation_dual_stack() {
-        IP.Pool pool = dualStackPool();
+        IP.Pool pool = testPool(true);
         Optional<IP.Allocation> allocation = pool.findAllocation(emptyList, resolver);
-        assertEquals("::1", allocation.get().ipv6Address());
-        assertEquals("127.0.0.2", allocation.get().ipv4Address().get());
+        assertEquals("::1", allocation.get().primary());
+        assertEquals("127.0.0.2", allocation.get().secondary().get());
         assertEquals("host3", allocation.get().hostname());
     }
 
     @Test
     public void test_find_allocation_multiple_ipv4_addresses() {
-        IP.Pool pool = dualStackPool();
+        IP.Pool pool = testPool(true);
         resolver.addRecord("host3", "127.0.0.127");
         try {
             pool.findAllocation(emptyList, resolver);
@@ -125,7 +130,7 @@ public class IPTest {
 
     @Test
     public void test_find_allocation_invalid_ipv4_reverse_record() {
-        IP.Pool pool = dualStackPool();
+        var pool = testPool(true);
         resolver.removeRecord("127.0.0.2")
                 .addReverseRecord("127.0.0.2", "host5");
         try {
@@ -137,15 +142,18 @@ public class IPTest {
         }
     }
 
-    private IP.Pool dualStackPool() {
-        Node node = createNode(ImmutableSet.of(
-                "127.0.0.1",
-                "127.0.0.2",
-                "127.0.0.3",
-                "::1",
-                "::2",
-                "::3"
-        ));
+    private IP.Pool testPool(boolean dualStack) {
+        var addresses = new LinkedHashSet<String>();
+        addresses.add("127.0.0.1");
+        addresses.add("127.0.0.2");
+        addresses.add("127.0.0.3");
+        if (dualStack) {
+            addresses.add("::1");
+            addresses.add("::2");
+            addresses.add("::3");
+        }
+
+        Node node = createNode(addresses);
 
         // IPv4 addresses
         resolver.addRecord("host1", "127.0.0.3")
@@ -156,12 +164,14 @@ public class IPTest {
                 .addReverseRecord("127.0.0.3", "host1");
 
         // IPv6 addresses
-        resolver.addRecord("host1", "::2")
-                .addRecord("host2", "::3")
-                .addRecord("host3", "::1")
-                .addReverseRecord("::3", "host2")
-                .addReverseRecord("::1", "host3")
-                .addReverseRecord("::2", "host1");
+        if (dualStack) {
+            resolver.addRecord("host1", "::2")
+                    .addRecord("host2", "::3")
+                    .addRecord("host3", "::1")
+                    .addReverseRecord("::3", "host2")
+                    .addReverseRecord("::1", "host3")
+                    .addReverseRecord("::2", "host1");
+        }
 
         return node.ipConfig().pool();
     }
