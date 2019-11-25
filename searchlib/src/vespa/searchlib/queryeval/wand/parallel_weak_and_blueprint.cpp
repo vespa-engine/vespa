@@ -110,6 +110,12 @@ ParallelWeakAndBlueprint::fetchPostings(bool)
     }
 }
 
+bool
+ParallelWeakAndBlueprint::always_needs_unpack() const
+{
+    return true;
+}
+
 void
 ParallelWeakAndBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

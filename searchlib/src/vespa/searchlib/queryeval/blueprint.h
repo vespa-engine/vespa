@@ -179,6 +179,7 @@ public:
     virtual bool should_optimize_children() const { return true; }
 
     virtual bool supports_termwise_children() const { return false; }
+    virtual bool always_needs_unpack() const { return false; }
 
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
