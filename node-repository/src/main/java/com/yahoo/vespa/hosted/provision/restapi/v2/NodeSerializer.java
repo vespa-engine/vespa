@@ -70,12 +70,30 @@ public class NodeSerializer {
         }
     }
 
+    public NodeResources.DiskSpeed diskSpeedFrom(String diskSpeed) {
+        switch (diskSpeed) {
+            case "fast": return NodeResources.DiskSpeed.fast;
+            case "slow": return NodeResources.DiskSpeed.slow;
+            case "any" : return NodeResources.DiskSpeed.any;
+            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
+        }
+    }
+
     public String toString(NodeResources.DiskSpeed diskSpeed) {
         switch (diskSpeed) {
             case fast : return "fast";
             case slow : return "slow";
             case any  : return "any";
             default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
+        }
+    }
+
+    public NodeResources.StorageType storageTypeFrom(String storageType) {
+        switch (storageType) {
+            case "local" : return NodeResources.StorageType.local;
+            case "remote": return NodeResources.StorageType.remote;
+            case "any"   : return NodeResources.StorageType.any;
+            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
         }
     }
 

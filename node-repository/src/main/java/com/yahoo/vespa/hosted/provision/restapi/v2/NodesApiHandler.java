@@ -51,8 +51,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
-import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
 import static com.yahoo.vespa.config.SlimeUtils.optionalString;
 
 /**
@@ -241,29 +241,55 @@ public class NodesApiHandler extends LoggingRequestHandler {
 
     private Flavor flavorFromSlime(Inspector inspector) {
         Inspector flavorInspector = inspector.field("flavor");
+        Inspector resourcesInspector = inspector.field("resources");
         if ( ! flavorInspector.valid()) {
-            return new Flavor(new NodeResources(
-                    requiredField(inspector, "minCpuCores", Inspector::asDouble),
-                    requiredField(inspector, "minMainMemoryAvailableGb", Inspector::asDouble),
-                    requiredField(inspector, "minDiskAvailableGb", Inspector::asDouble),
-                    requiredField(inspector, "bandwidthGbps", Inspector::asDouble),
-                    requiredField(inspector, "fastDisk", Inspector::asBool) ? fast : slow,
-                    requiredField(inspector, "remoteStorage", Inspector::asBool) ? remote : local));
+            return new Flavor(resourcesInspector.valid() ?
+                    new NodeResources(
+                            requiredField(resourcesInspector, "vcpu", Inspector::asDouble),
+                            requiredField(resourcesInspector, "memoryGb", Inspector::asDouble),
+                            requiredField(resourcesInspector, "diskGb", Inspector::asDouble),
+                            requiredField(resourcesInspector, "bandwidthGbps", Inspector::asDouble),
+                            optionalString(resourcesInspector.field("diskSpeed")).map(serializer::diskSpeedFrom).orElse(NodeResources.DiskSpeed.getDefault()),
+                            optionalString(resourcesInspector.field("storageType")).map(serializer::storageTypeFrom).orElse(NodeResources.StorageType.getDefault())) :
+                    // TODO: Remove when all clients have migrated to the above format
+                    new NodeResources(
+                            requiredField(inspector, "minCpuCores", Inspector::asDouble),
+                            requiredField(inspector, "minMainMemoryAvailableGb", Inspector::asDouble),
+                            requiredField(inspector, "minDiskAvailableGb", Inspector::asDouble),
+                            requiredField(inspector, "bandwidthGbps", Inspector::asDouble),
+                            requiredField(inspector, "fastDisk", Inspector::asBool) ? fast : slow,
+                            requiredField(inspector, "remoteStorage", Inspector::asBool) ? remote : local));
         }
 
         Flavor flavor = nodeFlavors.getFlavorOrThrow(flavorInspector.asString());
-        if (inspector.field("minCpuCores").valid())
-            flavor = flavor.with(flavor.resources().withVcpu(inspector.field("minCpuCores").asDouble()));
-        if (inspector.field("minMainMemoryAvailableGb").valid())
-            flavor = flavor.with(flavor.resources().withMemoryGb(inspector.field("minMainMemoryAvailableGb").asDouble()));
-        if (inspector.field("minDiskAvailableGb").valid())
-            flavor = flavor.with(flavor.resources().withDiskGb(inspector.field("minDiskAvailableGb").asDouble()));
-        if (inspector.field("bandwidthGbps").valid())
-            flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidthGbps").asDouble()));
-        if (inspector.field("fastDisk").valid())
-            flavor = flavor.with(flavor.resources().with(inspector.field("fastDisk").asBool() ? fast : slow));
-        if (inspector.field("remoteStorage").valid())
-            flavor = flavor.with(flavor.resources().with(inspector.field("remoteStorage").asBool() ? remote : local));
+        if (resourcesInspector.valid()) {
+            if (resourcesInspector.field("vcpu").valid())
+                flavor = flavor.with(flavor.resources().withVcpu(resourcesInspector.field("vcpu").asDouble()));
+            if (resourcesInspector.field("memoryGb").valid())
+                flavor = flavor.with(flavor.resources().withMemoryGb(resourcesInspector.field("memoryGb").asDouble()));
+            if (resourcesInspector.field("diskGb").valid())
+                flavor = flavor.with(flavor.resources().withDiskGb(resourcesInspector.field("diskGb").asDouble()));
+            if (resourcesInspector.field("bandwidthGbps").valid())
+                flavor = flavor.with(flavor.resources().withBandwidthGbps(resourcesInspector.field("bandwidthGbps").asDouble()));
+            if (resourcesInspector.field("diskSpeed").valid())
+                flavor = flavor.with(flavor.resources().with(serializer.diskSpeedFrom(resourcesInspector.field("diskSpeed").asString())));
+            if (resourcesInspector.field("storageType").valid())
+                flavor = flavor.with(flavor.resources().with(serializer.storageTypeFrom(resourcesInspector.field("storageType").asString())));
+        } else {
+            // TODO: Remove when all clients have migrated to the above format
+            if (inspector.field("minCpuCores").valid())
+                flavor = flavor.with(flavor.resources().withVcpu(inspector.field("minCpuCores").asDouble()));
+            if (inspector.field("minMainMemoryAvailableGb").valid())
+                flavor = flavor.with(flavor.resources().withMemoryGb(inspector.field("minMainMemoryAvailableGb").asDouble()));
+            if (inspector.field("minDiskAvailableGb").valid())
+                flavor = flavor.with(flavor.resources().withDiskGb(inspector.field("minDiskAvailableGb").asDouble()));
+            if (inspector.field("bandwidthGbps").valid())
+                flavor = flavor.with(flavor.resources().withBandwidthGbps(inspector.field("bandwidthGbps").asDouble()));
+            if (inspector.field("fastDisk").valid())
+                flavor = flavor.with(flavor.resources().with(inspector.field("fastDisk").asBool() ? fast : slow));
+            if (inspector.field("remoteStorage").valid())
+                flavor = flavor.with(flavor.resources().with(inspector.field("remoteStorage").asBool() ? remote : local));
+        }
         return flavor;
     }
 
