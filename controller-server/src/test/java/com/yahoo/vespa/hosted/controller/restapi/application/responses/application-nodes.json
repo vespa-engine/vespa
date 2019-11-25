@@ -10,7 +10,9 @@
       "memoryGb": 8.0,
       "diskGb": 50.0,
       "bandwidthGbps": 1.0,
-      "fastDisk": true,
+      "diskSpeed": "slow",
+      "storageType": "remote",
+      "fastDisk": false,
       "clusterId": "cluster",
       "clusterType": "container"
     }

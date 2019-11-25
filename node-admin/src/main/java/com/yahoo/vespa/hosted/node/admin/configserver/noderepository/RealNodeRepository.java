@@ -173,28 +173,54 @@ public class RealNodeRepository implements NodeRepository {
                 Optional.ofNullable(node.currentFirmwareCheck).map(Instant::ofEpochMilli),
                 Optional.ofNullable(node.modelName),
                 new NodeResources(
-                        node.minCpuCores,
-                        node.minMainMemoryAvailableGb,
-                        node.minDiskAvailableGb,
-                        node.bandwidthGbps,
-                        toDiskSpeed(node.fastDisk),
-                        toStorageType(node.remoteStorage)),
+                        node.resources.vcpu,
+                        node.resources.memoryGb,
+                        node.resources.diskGb,
+                        node.resources.bandwidthGbps,
+                        diskSpeedFromString(node.resources.diskSpeed),
+                        storageTypeFromString(node.resources.storageType)),
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
                 Optional.ofNullable(node.parentHostname));
     }
 
-    private static NodeResources.DiskSpeed toDiskSpeed(Boolean fastDisk) {
-        if (fastDisk == null) return NodeResources.DiskSpeed.any;
-        if (fastDisk) return NodeResources.DiskSpeed.fast;
-        else return NodeResources.DiskSpeed.slow;
+    private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {
+        if (diskSpeed == null) return NodeResources.DiskSpeed.getDefault();
+        switch (diskSpeed) {
+            case "fast": return NodeResources.DiskSpeed.fast;
+            case "slow": return NodeResources.DiskSpeed.slow;
+            case "any": return NodeResources.DiskSpeed.any;
+            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed + "'");
+        }
     }
 
-    private static NodeResources.StorageType toStorageType(Boolean remoteStorage) {
-        if (remoteStorage == null) return NodeResources.StorageType.any;
-        if (remoteStorage) return NodeResources.StorageType.remote;
-        else return NodeResources.StorageType.local;
+    private static NodeResources.StorageType storageTypeFromString(String storageType) {
+        if (storageType == null) return NodeResources.StorageType.getDefault();
+        switch (storageType) {
+            case "remote": return NodeResources.StorageType.remote;
+            case "local": return NodeResources.StorageType.local;
+            case "any": return NodeResources.StorageType.any;
+            default: throw new IllegalArgumentException("Unknown storage type '" + storageType + "'");
+        }
+    }
+
+    private static String toString(NodeResources.DiskSpeed diskSpeed) {
+        switch (diskSpeed) {
+            case fast : return "fast";
+            case slow : return "slow";
+            case any  : return "any";
+            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
+        }
+    }
+
+    private static String toString(NodeResources.StorageType storageType) {
+        switch (storageType) {
+            case remote : return "remote";
+            case local  : return "local";
+            case any    : return "any";
+            default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
+        }
     }
 
     private static NodeRepositoryNode nodeRepositoryNodeFromAddNode(AddNode addNode) {
@@ -203,14 +229,18 @@ public class RealNodeRepository implements NodeRepository {
         node.hostname = addNode.hostname;
         node.parentHostname = addNode.parentHostname.orElse(null);
         addNode.nodeFlavor.ifPresent(f -> node.flavor = f);
-        addNode.flavorOverrides.flatMap(FlavorOverrides::diskGb).ifPresent(d -> node.minDiskAvailableGb = d);
+        addNode.flavorOverrides.flatMap(FlavorOverrides::diskGb).ifPresent(d -> {
+            node.resources = new NodeRepositoryNode.NodeResources();
+            node.resources.diskGb = d;
+        });
         addNode.nodeResources.ifPresent(resources -> {
-            node.minCpuCores = resources.vcpu();
-            node.minMainMemoryAvailableGb = resources.memoryGb();
-            node.minDiskAvailableGb = resources.diskGb();
-            node.bandwidthGbps = resources.bandwidthGbps();
-            node.fastDisk = resources.diskSpeed() == NodeResources.DiskSpeed.fast;
-            node.remoteStorage = resources.storageType() == NodeResources.StorageType.remote;
+            node.resources = new NodeRepositoryNode.NodeResources();
+            node.resources.vcpu = resources.vcpu();
+            node.resources.memoryGb = resources.memoryGb();
+            node.resources.diskGb = resources.diskGb();
+            node.resources.bandwidthGbps = resources.bandwidthGbps();
+            node.resources.diskSpeed = toString(resources.diskSpeed());
+            node.resources.storageType = toString(resources.storageType());
         });
         node.type = addNode.nodeType.name();
         node.ipAddresses = addNode.ipAddresses;

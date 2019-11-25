@@ -4,8 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import org.jetbrains.annotations.TestOnly;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -22,6 +22,7 @@ public class Node {
     private final Optional<HostName> parentHostname;
     private final State state;
     private final NodeType type;
+    private final NodeResources resources;
     private final Optional<ApplicationId> owner;
     private final Version currentVersion;
     private final Version wantedVersion;
@@ -32,24 +33,20 @@ public class Node {
     private final long wantedRestartGeneration;
     private final long rebootGeneration;
     private final long wantedRebootGeneration;
-    private final double vcpu;
-    private final double memoryGb;
-    private final double diskGb;
-    private final double bandwidthGbps;
-    private final boolean fastDisk;
     private final int cost;
-    private final String canonicalFlavor;
+    private final String flavor;
     private final String clusterId;
     private final ClusterType clusterType;
 
-    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, Optional<ApplicationId> owner,
+    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                double vcpu, double memoryGb, double diskGb, double bandwidthGbps, boolean fastDisk, int cost, String canonicalFlavor, String clusterId, ClusterType clusterType) {
+                int cost, String flavor, String clusterId, ClusterType clusterType) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
         this.type = type;
+        this.resources = resources;
         this.owner = owner;
         this.currentVersion = currentVersion;
         this.wantedVersion = wantedVersion;
@@ -60,23 +57,10 @@ public class Node {
         this.wantedRestartGeneration = wantedRestartGeneration;
         this.rebootGeneration = rebootGeneration;
         this.wantedRebootGeneration = wantedRebootGeneration;
-        this.vcpu = vcpu;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.bandwidthGbps = bandwidthGbps;
-        this.fastDisk = fastDisk;
         this.cost = cost;
-        this.canonicalFlavor = canonicalFlavor;
+        this.flavor = flavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
-    }
-
-    @TestOnly
-    public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, Optional<ApplicationId> owner,
-                Version currentVersion, Version wantedVersion) {
-        this(hostname, parentHostname, state, type, owner, currentVersion, wantedVersion,
-             Version.emptyVersion, Version.emptyVersion, ServiceState.unorchestrated, 0, 0, 0, 0,
-             2, 8, 50, 1, true, 0, "d-2-8-50", "cluster", ClusterType.container);
     }
 
     public HostName hostname() {
@@ -91,6 +75,10 @@ public class Node {
 
     public NodeType type() {
         return type;
+    }
+
+    public NodeResources resources() {
+        return resources;
     }
 
     public Optional<ApplicationId> owner() {
@@ -133,32 +121,12 @@ public class Node {
         return wantedRebootGeneration;
     }
 
-    public double vcpu() {
-        return vcpu;
-    }
-
-    public double memoryGb() {
-        return memoryGb;
-    }
-
-    public double diskGb() {
-        return diskGb;
-    }
-
-    public double bandwidthGbps() {
-        return bandwidthGbps;
-    }
-
-    public boolean fastDisk() {
-        return fastDisk;
-    }
-
     public int cost() {
         return cost;
     }
 
-    public String canonicalFlavor() {
-        return canonicalFlavor;
+    public String flavor() {
+        return flavor;
     }
 
     public String clusterId() {
@@ -210,4 +178,150 @@ public class Node {
         unknown
     }
 
+    public static class Builder {
+        private HostName hostname;
+        private Optional<HostName> parentHostname = Optional.empty();
+        private State state;
+        private NodeType type;
+        private NodeResources resources;
+        private Optional<ApplicationId> owner = Optional.empty();
+        private Version currentVersion;
+        private Version wantedVersion;
+        private Version currentOsVersion;
+        private Version wantedOsVersion;
+        private ServiceState serviceState;
+        private long restartGeneration;
+        private long wantedRestartGeneration;
+        private long rebootGeneration;
+        private long wantedRebootGeneration;
+        private int cost;
+        private String flavor;
+        private String clusterId;
+        private ClusterType clusterType;
+        
+        public Builder() { }
+
+        public Builder(Node node) {
+            this.hostname = node.hostname;
+            this.parentHostname = node.parentHostname;
+            this.state = node.state;
+            this.type = node.type;
+            this.resources = node.resources;
+            this.owner = node.owner;
+            this.currentVersion = node.currentVersion;
+            this.wantedVersion = node.wantedVersion;
+            this.currentOsVersion = node.currentOsVersion;
+            this.wantedOsVersion = node.wantedOsVersion;
+            this.serviceState = node.serviceState;
+            this.restartGeneration = node.restartGeneration;
+            this.wantedRestartGeneration = node.wantedRestartGeneration;
+            this.rebootGeneration = node.rebootGeneration;
+            this.wantedRebootGeneration = node.wantedRebootGeneration;
+            this.cost = node.cost;
+            this.flavor = node.flavor;
+            this.clusterId = node.clusterId;
+            this.clusterType = node.clusterType;
+        }
+
+        public Builder hostname(HostName hostname) {
+            this.hostname = hostname;
+            return this;
+        }
+
+        public Builder parentHostname(HostName parentHostname) {
+            this.parentHostname = Optional.ofNullable(parentHostname);
+            return this;
+        }
+
+        public Builder state(State state) {
+            this.state = state;
+            return this;
+        }
+
+        public Builder type(NodeType type) {
+            this.type = type;
+            return this;
+        }
+
+        public Builder resources(NodeResources resources) {
+            this.resources = resources;
+            return this;
+        }
+
+        public Builder owner(ApplicationId owner) {
+            this.owner = Optional.ofNullable(owner);
+            return this;
+        }
+
+        public Builder currentVersion(Version currentVersion) {
+            this.currentVersion = currentVersion;
+            return this;
+        }
+
+        public Builder wantedVersion(Version wantedVersion) {
+            this.wantedVersion = wantedVersion;
+            return this;
+        }
+
+        public Builder currentOsVersion(Version currentOsVersion) {
+            this.currentOsVersion = currentOsVersion;
+            return this;
+        }
+
+        public Builder wantedOsVersion(Version wantedOsVersion) {
+            this.wantedOsVersion = wantedOsVersion;
+            return this;
+        }
+
+        public Builder serviceState(ServiceState serviceState) {
+            this.serviceState = serviceState;
+            return this;
+        }
+
+        public Builder restartGeneration(long restartGeneration) {
+            this.restartGeneration = restartGeneration;
+            return this;
+        }
+
+        public Builder wantedRestartGeneration(long wantedRestartGeneration) {
+            this.wantedRestartGeneration = wantedRestartGeneration;
+            return this;
+        }
+
+        public Builder rebootGeneration(long rebootGeneration) {
+            this.rebootGeneration = rebootGeneration;
+            return this;
+        }
+
+        public Builder wantedRebootGeneration(long wantedRebootGeneration) {
+            this.wantedRebootGeneration = wantedRebootGeneration;
+            return this;
+        }
+
+        public Builder cost(int cost) {
+            this.cost = cost;
+            return this;
+        }
+
+        public Builder flavor(String flavor) {
+            this.flavor = flavor;
+            return this;
+        }
+
+        public Builder clusterId(String clusterId) {
+            this.clusterId = clusterId;
+            return this;
+        }
+
+        public Builder clusterType(ClusterType clusterType) {
+            this.clusterType = clusterType;
+            return this;
+        }
+
+        public Node build() {
+            return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
+                    wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
+                    cost, flavor, clusterId, clusterType);
+        }
+    }
 }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
@@ -37,9 +38,9 @@ public class ResourceSnapshot {
 
         return new ResourceSnapshot(
                 applicationIds.iterator().next(),
-                nodes.stream().mapToDouble(Node::vcpu).sum(),
-                nodes.stream().mapToDouble(Node::memoryGb).sum(),
-                nodes.stream().mapToDouble(Node::diskGb).sum(),
+                nodes.stream().map(Node::resources).mapToDouble(NodeResources::vcpu).sum(),
+                nodes.stream().map(Node::resources).mapToDouble(NodeResources::memoryGb).sum(),
+                nodes.stream().map(Node::resources).mapToDouble(NodeResources::diskGb).sum(),
                 timestamp,
                 zoneId
         );

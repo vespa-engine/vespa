@@ -301,7 +301,7 @@ public class SystemUpgraderTest {
             for (Node node : listNodes(zone, application)) {
                 nodeRepository().putByHostname(
                         zone.getId(),
-                        new Node(node.hostname(), node.parentHostname(), node.state(), node.type(), node.owner(), node.wantedVersion(), node.wantedVersion()));
+                        new Node.Builder(node).currentVersion(node.wantedVersion()).build());
             }
 
             assertCurrentVersion(application, version, zone);
@@ -326,7 +326,7 @@ public class SystemUpgraderTest {
         Node node = nodes.get(0);
         nodeRepository().putByHostname(
                 zone.getId(),
-                new Node(node.hostname(), node.parentHostname(), Node.State.failed, node.type(), node.owner(), node.currentVersion(), node.wantedVersion()));
+                new Node.Builder(node).state(Node.State.failed).build());
     }
 
     private void assertSystemVersion(Version version) {
