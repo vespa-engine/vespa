@@ -83,7 +83,7 @@ Application::getConfigUri()
         return config::ConfigUri::createFromSpec(_cfgId, config::ServerSpec(_specString));
     }
     catch (std::exception &e) {
-        LOG(fatal, "Failed to set up model configuration source, will exit: %s", e.what());
+        std::cerr << "FATAL ERROR: failed to set up model configuration: " << e.what() << "\n";
         exit(1);
     }
 }
