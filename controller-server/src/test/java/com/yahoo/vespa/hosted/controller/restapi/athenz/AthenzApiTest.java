@@ -28,8 +28,16 @@ public class AthenzApiTest extends ControllerContainerTest {
 
         TenantName sandbox = controllerTester.createTenant("sandbox", AthenzApiHandler.sandboxDomainIn(tester.controller().system()), 123L);
         controllerTester.createApplication(sandbox, "app", "default");
+        tester.controller().applications().createInstance(ApplicationId.from("sandbox", "app", hostedOperator.getName()));
+        tester.controller().applications().createInstance(ApplicationId.from("sandbox", "app", defaultUser.getName()));
+        controllerTester.createApplication(sandbox, "opp", "default");
 
         TenantName tenant1 = controllerTester.createTenant("tenant1", "domain1", 123L);
+        controllerTester.createApplication(tenant1, "app", "default");
+        tester.athenzClientFactory().getSetup().getOrCreateDomain(new AthenzDomain("domain1")).admin(defaultUser);
+
+        TenantName tenant2 = controllerTester.createTenant("tenant2", "domain2", 123L);
+        controllerTester.createApplication(tenant2, "app", "default");
 
         // GET root
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/"),
@@ -46,6 +54,11 @@ public class AthenzApiTest extends ControllerContainerTest {
         // POST user signup
         tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/user", "", Request.Method.POST),
                               "{\"message\":\"User 'bob' added to admin role of 'vespa.vespa.tenants.sandbox'\"}");
+
+        // GET accessible instances
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/user"),
+                              new File("accessible-instances.json"));
+
     }
 
 }

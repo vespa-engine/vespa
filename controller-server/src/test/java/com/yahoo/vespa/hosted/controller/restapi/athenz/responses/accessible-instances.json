@@ -1,0 +1,31 @@
+{
+  "tenants": {
+    "sandbox": {
+      "roles": [
+        "administrator",
+        "developer"
+      ],
+      "applications": {
+        "app": {
+          "instances": [
+            "bob"
+          ]
+        }
+      }
+    },
+    "tenant1": {
+      "roles": [
+        "administrator",
+        "developer"
+      ],
+      "applications": {
+        "app": {
+          "instances": [
+            "default"
+          ]
+        }
+      }
+    }
+  }
+}
+

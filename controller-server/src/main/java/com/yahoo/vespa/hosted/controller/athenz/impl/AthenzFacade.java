@@ -191,6 +191,10 @@ public class AthenzFacade implements AccessControl {
                       .collect(Collectors.toUnmodifiableList());
     }
 
+    public List<AthenzDomain> userDomains(AthenzIdentity identity) {
+        return ztsClient.getTenantDomains(service, identity, "admin");
+    }
+
     public void addTenantAdmin(AthenzDomain tenantDomain, AthenzUser user) {
         zmsClient.addRoleMember(user, new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"));
     }

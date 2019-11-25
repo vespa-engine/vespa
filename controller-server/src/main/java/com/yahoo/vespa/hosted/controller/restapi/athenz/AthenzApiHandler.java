@@ -93,6 +93,7 @@ public class AthenzApiHandler extends LoggingRequestHandler {
         if (path.matches("/athenz/v1")) return root(request);
         if (path.matches("/athenz/v1/domains")) return domainList(request);
         if (path.matches("/athenz/v1/properties")) return properties();
+        if (path.matches("/athenz/v1/user")) return accessibleInstances(request);
 
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
@@ -135,6 +136,54 @@ public class AthenzApiHandler extends LoggingRequestHandler {
         AthenzUser user = athenzUser(request);
         athenz.addTenantAdmin(sandboxDomain, user);
         return new MessageResponse("User '" + user.getName() + "' added to admin role of '" + sandboxDomain.getName() + "'");
+    }
+
+    private HttpResponse accessibleInstances(HttpRequest request) {
+        Slime slime = new Slime();
+        Cursor tenantsObject = slime.setObject().setObject("tenants");
+        var instances = accessibleInstances(athenzUser(request));
+        instances.keySet().stream().sorted().forEach(tenant -> {
+            Cursor tenantObject = tenantsObject.setObject(tenant.value());
+
+            List.of(RoleDefinition.administrator, RoleDefinition.developer).stream().map(Enum::name)
+                .forEach(tenantObject.setArray("roles")::addString); // Make roles comply with console.
+
+            Cursor applicationsObject = tenantObject.setObject("applications");
+            instances.get(tenant).keySet().stream().sorted()
+                     .forEach(application -> instances.get(tenant).get(application).stream().sorted().map(InstanceName::value)
+                                                      .forEach(applicationsObject.setObject(application.value()).setArray("instances")::addString));
+        });
+        return new SlimeJsonResponse(slime);
+    }
+
+    /**
+     * Returns the list of accessible instances for the given user, under all existing Athenz tenants.
+     *
+     * For regular tenants, all applications are included, with all existing instances.
+     * For the sandbox tenant, only applications where the user has a dev instance are included, with that instance.
+     */
+    private Map<TenantName, Map<ApplicationName, Set<InstanceName>>> accessibleInstances(AthenzUser user) {
+        List<AthenzDomain> userDomains = athenz.userDomains(user);
+        return tenants.asList()
+                      .stream()
+                      .filter(AthenzTenant.class::isInstance)
+                      .map(AthenzTenant.class::cast)
+                      .filter(tenant -> userDomains.contains(tenant.domain()))
+                      .collect(toUnmodifiableMap(tenant -> tenant.name(),
+                                                 tenant -> accessibleInstances(tenant, user)));
+    }
+
+    private Map<ApplicationName, Set<InstanceName>> accessibleInstances(AthenzTenant tenant, AthenzUser user) {
+        InstanceName userInstance = InstanceName.from(user.getName());
+        return applications.asList(tenant.name()).stream()
+                           .filter(application ->    ! sandboxDomain.equals(tenant.domain())
+                                                  ||   application.instances().containsKey(userInstance))
+                           .collect(toUnmodifiableMap(application -> application.id().application(),
+                                                      application -> application.instances().values().stream()
+                                                                                .filter(instance ->    ! sandboxDomain.equals(tenant.domain())
+                                                                                                    ||   userInstance.equals(instance.name()))
+                                                                                .map(Instance::name)
+                                                                                .collect(toUnmodifiableSet())));
     }
 
     private static AthenzUser athenzUser(HttpRequest request) {
