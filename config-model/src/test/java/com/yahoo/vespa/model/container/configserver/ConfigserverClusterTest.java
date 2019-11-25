@@ -113,7 +113,7 @@ public class ConfigserverClusterTest {
         assertThat(config.httpport(), is(1337));
         assertThat(config.serverId(), is(HostName.getLocalhost()));
         assertTrue(config.useVespaVersionInRequest());
-        assertThat(config.numParallelTenantLoaders(), is(99));
+        assertThat(config.numParallelTenantLoaders(), is(4));
         assertFalse(config.multitenant());
         assertTrue(config.hostedVespa());
         assertThat(config.environment(), is("test"));
@@ -138,8 +138,7 @@ public class ConfigserverClusterTest {
                 .useVespaVersionInRequest(true)
                 .hostedVespa(hostedVespa)
                 .environment("test")
-                .region("bar")
-                .numParallelTenantLoaders(99);
+                .region("bar");
 
         Optional.of(configServerHostnames)
                 .filter(hostnames -> !hostnames.isEmpty())

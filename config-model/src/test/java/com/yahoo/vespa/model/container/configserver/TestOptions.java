@@ -17,7 +17,6 @@ public class TestOptions implements CloudConfigOptions {
     private Optional<String> region = Optional.empty();
     private Optional<Boolean> useVespaVersionInRequest = Optional.empty();
     private Optional<Boolean> hostedVespa = Optional.empty();
-    private Optional<Integer> numParallelTenantLoaders = Optional.empty();
 
     @Override
     public Optional<Integer> rpcPort() {
@@ -98,7 +97,7 @@ public class TestOptions implements CloudConfigOptions {
     public Optional<Boolean> useVespaVersionInRequest() { return useVespaVersionInRequest; }
 
     @Override
-    public Optional<Integer> numParallelTenantLoaders() { return numParallelTenantLoaders; }
+    public Optional<Integer> numParallelTenantLoaders() { return Optional.of(4); }
 
     @Override
     public Optional<String> loadBalancerAddress() { return Optional.empty(); }
@@ -120,11 +119,6 @@ public class TestOptions implements CloudConfigOptions {
 
     public TestOptions configServerZookeeperIds(int[] configServerZookeeperIds) {
         this.configServerZookeeperIds = configServerZookeeperIds;
-        return this;
-    }
-
-    public TestOptions numParallelTenantLoaders(int numLoaders) {
-        this.numParallelTenantLoaders = Optional.of(numLoaders);
         return this;
     }
 
