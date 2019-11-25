@@ -4,6 +4,7 @@
 #include <cassert>
 #include <vector>
 #include <atomic>
+#include <cstring>
 
 using vespalib::Clock;
 using fastos::TimeStamp;
@@ -71,16 +72,18 @@ template<typename Func>
 struct Sampler : public SamplerBase {
     Sampler(Func func) :
        _func(func)
-   { }
+    { }
     void Run(FastOS_ThreadInterface *, void *) override {
         fastos::SteadyTimeStamp start = fastos::ClockSteady::now();
         printf("Starting at %s \n", fastos::ClockSystem::now().toString().c_str());
         uint64_t samples;
-        uint64_t countFalse(0);
+        uint64_t count[3];
+        memset(count, 0, sizeof(count));
         for (samples = 0; (samples < _samples); samples++) {
-            if ( ! _func(samples)) countFalse++;
+            count[1 + _func()]++;
         }
-        printf("Took %ld clock samples in %2.3f with %ld keeping up\n", samples, (fastos::ClockSteady::now() - start).sec(), countFalse);
+        printf("Took %ld clock samples in %2.3f with [%ld, %ld, %ld] counts\n", samples, (fastos::ClockSteady::now() - start).sec(), count[0], count[1], count[2]);
+
     }
     Func _func;
 };
@@ -118,24 +121,64 @@ main(int , char *argv[])
     assert(pool.NewThread(&nsClock, nullptr) != nullptr);
     assert(pool.NewThread(&nsVolatileClock, nullptr) != nullptr);
     assert(pool.NewThread(&nsAtomicClock, nullptr) != nullptr);
-    fastos::SteadyTimeStamp now = clock.getTimeNSAssumeRunning();
-    FastOS_Thread::Sleep(100);
 
-    benchmark(pool, samples, numThreads, [&clock, &now](int64_t i){ return (now+i < clock.getTimeNSAssumeRunning());});
-    now = clock.getTimeNSAssumeRunning();
-    benchmark(pool, samples, numThreads, [&nsValue, &now](int64_t i){ return (now+i < fastos::SteadyTimeStamp(nsValue._value));});
-    now = clock.getTimeNSAssumeRunning();
-    benchmark(pool, samples, numThreads, [&nsVolatile, &now](int64_t i){ return (now+i < fastos::SteadyTimeStamp(nsVolatile._value));});
-    now = clock.getTimeNSAssumeRunning();
-    benchmark(pool, samples, numThreads, [&nsAtomic, &now](int64_t i){ return (now+i < fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_relaxed)));});
-    now = clock.getTimeNSAssumeRunning();
-    benchmark(pool, samples, numThreads, [&nsAtomic, &now](int64_t i){ return (now+i < fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_consume)));});
-    now = clock.getTimeNSAssumeRunning();
-    benchmark(pool, samples, numThreads, [&nsAtomic, &now](int64_t i){ return (now+i < fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_acquire)));});
-    now = clock.getTimeNSAssumeRunning();
-    benchmark(pool, samples, numThreads, [&nsAtomic, &now](int64_t i){ return (now+i < fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_seq_cst)));});
+    fastos::SteadyTimeStamp prev;
+    prev = clock.getTimeNSAssumeRunning();
+    benchmark(pool, samples, numThreads, [&clock, &prev]() {
+        fastos::SteadyTimeStamp now = clock.getTimeNSAssumeRunning();
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
+    prev = fastos::SteadyTimeStamp(nsValue._value);
+    benchmark(pool, samples, numThreads, [&nsValue, &prev]() {
+        fastos::SteadyTimeStamp now = fastos::SteadyTimeStamp(nsValue._value) ;
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
+    prev = fastos::SteadyTimeStamp(nsVolatile._value);
+    benchmark(pool, samples, numThreads, [&nsVolatile, &prev]() {
+        fastos::SteadyTimeStamp now = fastos::SteadyTimeStamp(nsVolatile._value) ;
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
+    prev = fastos::SteadyTimeStamp(nsAtomic._value.load());
+    benchmark(pool, samples, numThreads, [&nsAtomic, &prev]() {
+        fastos::SteadyTimeStamp now = fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_relaxed)) ;
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
+    prev = fastos::SteadyTimeStamp(nsAtomic._value.load());
+    benchmark(pool, samples, numThreads, [&nsAtomic, &prev]() {
+        fastos::SteadyTimeStamp now = fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_consume)) ;
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
+    prev = fastos::SteadyTimeStamp(nsAtomic._value.load());
+    benchmark(pool, samples, numThreads, [&nsAtomic, &prev]() {
+        fastos::SteadyTimeStamp now = fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_acquire)) ;
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
+    prev = fastos::SteadyTimeStamp(nsAtomic._value.load());
+    benchmark(pool, samples, numThreads, [&nsAtomic, &prev]() {
+        fastos::SteadyTimeStamp now = fastos::SteadyTimeStamp(nsAtomic._value.load(std::memory_order_seq_cst)) ;
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
 
-    benchmark(pool, samples, numThreads, [&now](uint64_t i){ return (now+i < fastos::ClockSteady::now());});
+    benchmark(pool, samples, numThreads, [&prev]() {
+        fastos::SteadyTimeStamp now = fastos::ClockSteady::now();
+        auto diff = now - prev;
+        if (diff > 0) prev = now;
+        return (diff == 0) ? 0 : (diff > 0) ? 1 : -1;
+    });
 
     pool.Close();
     clock.stop();
