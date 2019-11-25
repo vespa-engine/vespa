@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireErrorRespon
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
@@ -24,6 +25,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
@@ -56,7 +58,7 @@ class FlagsClient {
     }
 
     List<FlagData> listFlagData(FlagsTarget target) throws FlagsException, UncheckedIOException {
-        HttpGet request = new HttpGet(createUri(target, "/data"));
+        HttpGet request = new HttpGet(createUri(target, "/data", List.of(new BasicNameValuePair("recursive", "true"))));
         return executeRequest(request, response -> {
             verifySuccess(response, target, null);
             return FlagData.deserializeList(EntityUtils.toByteArray(response.getEntity()));
@@ -64,7 +66,7 @@ class FlagsClient {
     }
 
     void putFlagData(FlagsTarget target, FlagData flagData) throws FlagsException, UncheckedIOException {
-        HttpPut request = new HttpPut(createUri(target, "/data/" + flagData.id().toString()));
+        HttpPut request = new HttpPut(createUri(target, "/data/" + flagData.id().toString(), List.of()));
         request.setEntity(jsonContent(flagData.serializeToJson()));
         executeRequest(request, response -> {
             verifySuccess(response, target, flagData.id());
@@ -73,7 +75,7 @@ class FlagsClient {
     }
 
     void deleteFlagData(FlagsTarget target, FlagId flagId) throws FlagsException, UncheckedIOException {
-        HttpDelete request = new HttpDelete(createUri(target, "/data/" + flagId.toString()));
+        HttpDelete request = new HttpDelete(createUri(target, "/data/" + flagId.toString(), List.of()));
         executeRequest(request, response -> {
             verifySuccess(response, target, flagId);
             return null;
@@ -105,9 +107,12 @@ class FlagsClient {
         }
     }
 
-    private static URI createUri(FlagsTarget target, String subPath) {
+    private static URI createUri(FlagsTarget target, String subPath, List<NameValuePair> queryParams) {
         try {
-            return new URIBuilder(target.endpoint()).setPath(FLAGS_V1_PATH + subPath).build();
+            return new URIBuilder(target.endpoint())
+                    .setPath(FLAGS_V1_PATH + subPath)
+                    .setParameters(queryParams)
+                    .build();
         } catch (URISyntaxException e) {
             throw new RuntimeException(e); // should never happen
         }
