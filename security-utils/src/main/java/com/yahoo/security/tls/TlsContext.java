@@ -4,7 +4,10 @@ package com.yahoo.security.tls;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
+import java.util.Arrays;
 import java.util.Set;
+
+import static java.util.stream.Collectors.toSet;
 
 /**
  * A simplified version of {@link SSLContext} modelled as an interface.
@@ -20,21 +23,51 @@ public interface TlsContext extends AutoCloseable {
      * For TLSv1.3 we allow the DEFAULT group ciphers.
      * Note that we _only_ allow AEAD ciphers for either TLS version.
      */
-    // TODO: Remove TLS_CHACHA20_POLY1305_SHA256, TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256,
-    // TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 and TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256?
-    // These cipher suites are not supported in Java 11, see https://github.com/AdoptOpenJDK/openjdk-jdk11/blob/master/src/java.base/share/classes/sun/security/ssl/CipherSuite.java
     Set<String> ALLOWED_CIPHER_SUITES = Set.of(
             "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
             "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+            "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", // Java 12
             "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
             "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
             "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
             "TLS_AES_128_GCM_SHA256", // TLSv1.3
             "TLS_AES_256_GCM_SHA384", // TLSv1.3
-            "TLS_CHACHA20_POLY1305_SHA256"); // TLSv1.3
+            "TLS_CHACHA20_POLY1305_SHA256"); // TLSv1.3, Java 12
 
     Set<String> ALLOWED_PROTOCOLS = Set.of("TLSv1.2"); // TODO Enable TLSv1.3
+
+    /**
+     * @return the allowed cipher suites supported by the provided context instance
+     */
+    static Set<String> getAllowedCipherSuites(SSLContext context) {
+        String[] supportedCiphers = context.getSupportedSSLParameters().getCipherSuites();
+        Set<String> enabledCiphers = Arrays.stream(supportedCiphers)
+                .filter(ALLOWED_CIPHER_SUITES::contains)
+                .collect(toSet());
+        if (enabledCiphers.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("Non of the allowed ciphers are supported (allowed=%s, supported=%s)",
+                                  ALLOWED_CIPHER_SUITES, Arrays.toString(supportedCiphers)));
+
+        }
+        return enabledCiphers;
+    }
+
+    /**
+     * @return the allowed protocols supported by the provided context instance
+     */
+    static Set<String> getAllowedProtocols(SSLContext context) {
+        String[] supportedProtocols = context.getSupportedSSLParameters().getProtocols();
+        Set<String> enabledProtocols = Arrays.stream(supportedProtocols)
+                .filter(ALLOWED_PROTOCOLS::contains)
+                .collect(toSet());
+        if (enabledProtocols.isEmpty()) {
+            throw new IllegalArgumentException(
+                    String.format("Non of the allowed protocols are supported (allowed=%s, supported=%s)",
+                                  ALLOWED_PROTOCOLS, Arrays.toString(supportedProtocols)));
+        }
+        return enabledProtocols;
+    }
 
     SSLContext context();
 
