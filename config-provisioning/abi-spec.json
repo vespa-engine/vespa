@@ -673,7 +673,8 @@
       "public boolean isDockerHost()",
       "public java.lang.String description()",
       "public com.yahoo.config.provision.NodeType childNodeType()",
-      "public java.util.List childNodeTypes()"
+      "public java.util.List childNodeTypes()",
+      "public boolean supportsChild(com.yahoo.config.provision.NodeType)"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.NodeType tenant",
