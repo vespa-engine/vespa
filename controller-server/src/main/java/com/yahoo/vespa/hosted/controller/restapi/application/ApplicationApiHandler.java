@@ -601,7 +601,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setDouble("memoryGb", node.resources().memoryGb());
             nodeObject.setDouble("diskGb", node.resources().diskGb());
             nodeObject.setDouble("bandwidthGbps", node.resources().bandwidthGbps());
-            nodeObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast);
+            nodeObject.setString("diskSpeed", valueOf(node.resources().diskSpeed()));
+            nodeObject.setString("storageType", valueOf(node.resources().storageType()));
+            nodeObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast); // TODO: Remove
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
         }
@@ -637,6 +639,24 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case content: return "content";
             case container: return "container";
             default: throw new IllegalArgumentException("Unexpected node cluster type '" + type + "'.");
+        }
+    }
+
+    private static String valueOf(NodeResources.DiskSpeed diskSpeed) {
+        switch (diskSpeed) {
+            case fast : return "fast";
+            case slow : return "slow";
+            case any  : return "any";
+            default: throw new IllegalArgumentException("Unknown disk speed '" + diskSpeed.name() + "'");
+        }
+    }
+
+    private static String valueOf(NodeResources.StorageType storageType) {
+        switch (storageType) {
+            case remote : return "remote";
+            case local  : return "local";
+            case any    : return "any";
+            default: throw new IllegalArgumentException("Unknown storage type '" + storageType.name() + "'");
         }
     }
 
@@ -1992,3 +2012,4 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
 }
+

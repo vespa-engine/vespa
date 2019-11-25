@@ -50,6 +50,9 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
+import static com.yahoo.config.provision.NodeResources.StorageType.remote;
+
 /**
  * @author mortent
  * @author jonmv
@@ -91,7 +94,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                                                .owner(application)
                                                                .currentVersion(initialVersion)
                                                                .wantedVersion(initialVersion)
-                                                               .resources(new NodeResources(2, 8, 50, 1))
+                                                               .resources(new NodeResources(2, 8, 50, 1, slow, remote))
                                                                .serviceState(Node.ServiceState.unorchestrated)
                                                                .flavor("d-2-8-50")
                                                                .clusterId("cluster")
