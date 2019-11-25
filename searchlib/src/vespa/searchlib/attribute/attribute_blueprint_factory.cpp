@@ -392,6 +392,7 @@ public:
                         .setDocIdLimit(get_docid_limit()),
                 _weights, _terms, _attr, strict);
     }
+    bool always_needs_unpack() const override { return true; }
 };
 
 //-----------------------------------------------------------------------------

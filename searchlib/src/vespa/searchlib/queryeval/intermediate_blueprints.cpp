@@ -347,6 +347,12 @@ WeakAndBlueprint::inheritStrict(size_t) const
     return true;
 }
 
+bool
+WeakAndBlueprint::always_needs_unpack() const
+{
+    return true;
+}
+
 SearchIterator::UP
 WeakAndBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
                                            bool strict, search::fef::MatchData &) const

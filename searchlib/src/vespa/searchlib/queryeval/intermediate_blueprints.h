@@ -75,6 +75,7 @@ public:
     FieldSpecBaseList exposeFields() const override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    bool always_needs_unpack() const override;
     SearchIterator::UP
     createIntermediateSearch(const MultiSearch::Children &subSearches,
                              bool strict, fef::MatchData &md) const override;
