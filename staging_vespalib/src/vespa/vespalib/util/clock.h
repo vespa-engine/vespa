@@ -20,12 +20,12 @@ private:
     Clock(const Clock &);
     Clock & operator = (const Clock &);
 
-    mutable fastos::SteadyTimeStamp _timeNS;
-    int                       _timePeriodMS;
-    std::mutex                _lock;
-    std::condition_variable   _cond;
-    bool                      _stop;
-    bool                      _running;
+    mutable std::atomic<int64_t>  _timeNS;
+    int                           _timePeriodMS;
+    std::mutex                    _lock;
+    std::condition_variable       _cond;
+    bool                          _stop;
+    bool                          _running;
 
     void setTime() const;
 
@@ -39,9 +39,9 @@ public:
         if (!_running) {
             setTime();
         }
-        return _timeNS;
+        return getTimeNSAssumeRunning();
     }
-    fastos::SteadyTimeStamp getTimeNSAssumeRunning() const { return _timeNS; }
+    fastos::SteadyTimeStamp getTimeNSAssumeRunning() const { return fastos::SteadyTimeStamp(_timeNS.load(std::memory_order_relaxed)); }
 
     void stop();
 };
