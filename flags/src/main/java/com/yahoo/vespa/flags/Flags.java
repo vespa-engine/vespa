@@ -154,12 +154,6 @@ public class Flags {
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
 
-    public static final UnboundBooleanFlag START_AND_STOP_VESPA_WITH_YINST = defineFeatureFlag(
-            "start-and-stop-vespa-with-yinst", false,
-            "Whether to start and stop Vespa with yinst commands or with start and stop scripts ",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, APPLICATION_ID, HOSTNAME);
-
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION = defineStringFlag(
             "tls-for-zookeeper-quorum-communication", "OFF",
             "How to setup TLS for ZooKeeper quorum communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
