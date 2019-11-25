@@ -128,7 +128,6 @@ public:
     }
     UTCTimeStamp toUTC() const;
     std::string toString() const { return _timeStamp.toString(); };
-    const TimeStamp & raw() const { return _timeStamp; }
 private:
     TimeStamp _timeStamp;
 };
