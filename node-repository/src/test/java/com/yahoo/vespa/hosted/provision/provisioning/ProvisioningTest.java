@@ -13,6 +13,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -635,6 +636,19 @@ public class ProvisioningTest {
             prepare(application, 1, 0, 1, 0, true, defaultResources, Version.fromString("6.42"), tester);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
+    }
+
+    @Test
+    public void devsystem_application_deployment_on_devhost() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(SystemName.dev, Environment.dev, RegionName.from("no-central"))).build();
+
+        tester.makeReadyNodes(4, defaultResources, NodeType.devhost, 1);
+        tester.prepareAndActivateInfraApplication(tester.makeApplicationId(), NodeType.devhost);
+
+        ApplicationId application = tester.makeApplicationId();
+        SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
+        assertEquals(4, state.allHosts.size());
+        tester.activate(application, state.allHosts);
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
