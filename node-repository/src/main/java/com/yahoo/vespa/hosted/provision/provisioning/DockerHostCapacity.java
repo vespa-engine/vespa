@@ -71,7 +71,7 @@ public class DockerHostCapacity {
 
     NodeResources freeCapacityOf(Node host, boolean excludeInactive) {
         // Only hosts have free capacity
-        if (!host.type().supportsChild(NodeType.tenant)) return new NodeResources(0, 0, 0, 0);
+        if (!host.type().canRun(NodeType.tenant)) return new NodeResources(0, 0, 0, 0);
         NodeResources hostResources = hostResourcesCalculator.availableCapacityOf(host.flavor().resources());
 
         return allNodes.childrenOf(host).asList().stream()

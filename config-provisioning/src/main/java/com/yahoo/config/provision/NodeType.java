@@ -75,7 +75,7 @@ public enum NodeType {
      * @param type Child {@link NodeType}
      * @return true if the {@link NodeType} can run on this host, false otherwise.
      */
-    public boolean supportsChild(NodeType type) {
-        return isDockerHost() && childNodeTypes.contains(type);
+    public boolean canRun(NodeType type) {
+        return childNodeTypes.contains(type);
     }
 }
