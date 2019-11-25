@@ -105,6 +105,26 @@ public class DockerHostCapacityTest {
                      capacity.freeCapacityOf(host3, false));
     }
 
+    @Test
+    public void devhostCapacityTest() {
+        // Dev host can assign both configserver and tenant containers.
+
+        var nodeFlavors = FlavorConfigBuilder.createDummies("devhost", "container");
+        var devHost = Node.create("devhost", new IP.Config(Set.of("::1"), generateIPs(2, 10)), "devhost", Optional.empty(), Optional.empty(), nodeFlavors.getFlavorOrThrow("devhost"), NodeType.devhost);
+
+        var cfg = Node.createDockerNode(Set.of("::2"), "cfg", "devhost", resources1, NodeType.config);
+
+        var nodes = new ArrayList<>(List.of(cfg));
+        var capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        assertTrue(capacity.hasCapacity(devHost, resources1));
+
+        var container1 = Node.createDockerNode(Set.of("::3"), "container1", "devhost", resources1, NodeType.tenant);
+        nodes = new ArrayList<>(List.of(cfg, container1));
+        capacity = new DockerHostCapacity(new LockedNodeList(nodes, () -> {}), hostResourcesCalculator);
+        assertFalse(capacity.hasCapacity(devHost, resources1));
+
+    }
+
     private Set<String> generateIPs(int start, int count) {
         // Allow 4 containers
         Set<String> ipAddressPool = new LinkedHashSet<>();

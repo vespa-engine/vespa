@@ -138,7 +138,7 @@ public class NodePrioritizer {
         NodeResources wantedResources = resources(requestedNodes);
 
         for (Node host : candidates) {
-            if (host.type() != NodeType.host) continue;
+            if (!host.type().canRun(requestedNodes.type())) continue;
             if (host.status().wantToRetire()) continue;
 
             boolean hostHasCapacityForWantedFlavor = capacity.hasCapacity(host, wantedResources);

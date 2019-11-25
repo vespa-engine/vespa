@@ -71,4 +71,11 @@ public enum NodeType {
         return childNodeTypes;
     }
 
+    /**
+     * @param type Child {@link NodeType}
+     * @return true if the {@link NodeType} can run on this host, false otherwise.
+     */
+    public boolean canRun(NodeType type) {
+        return childNodeTypes.contains(type);
+    }
 }
