@@ -73,11 +73,4 @@ public class CloudAccessControl implements AccessControl {
             userManagement.deleteRole(role);
     }
 
-    @Override
-    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
-        // TODO: Get credential things (token with roles or something) and check what it's good for.
-        // TODO  ... or ignore this here, and compute it somewhere else.
-        return Collections.emptyList();
-    }
-
 }
