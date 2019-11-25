@@ -96,7 +96,8 @@ struct ClientArguments
     bool        _keepAlive;
     
     /**
-     * Indicate wether to base64 decode the request before sending it
+     * Indicate wether POST content should be Base64 decoded before
+     * sending it
      **/
     bool        _base64Decode;
 

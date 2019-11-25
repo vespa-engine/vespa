@@ -226,7 +226,7 @@ Client::run()
             int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
             auto content = urlSource.content();
             if (_args->_usePostMode && _args->_base64Decode) {
-                auto base64_decoded = Base64::decode(std::string(urlSource.content(), cLen));
+                auto base64_decoded = Base64::decode(std::string(content, cLen));
                 content = base64_decoded.c_str();
                 cLen = base64_decoded.size();
             }
