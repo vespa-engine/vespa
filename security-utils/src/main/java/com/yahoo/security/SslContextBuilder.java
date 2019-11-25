@@ -2,6 +2,7 @@
 package com.yahoo.security;
 
 import com.yahoo.security.tls.KeyManagerUtils;
+import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TrustManagerUtils;
 
 import javax.net.ssl.KeyManager;
@@ -122,7 +123,7 @@ public class SslContextBuilder {
 
     public SSLContext build() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
+            SSLContext sslContext = SSLContext.getInstance(TlsContext.SSL_CONTEXT_VERSION);
             TrustManager[] trustManagers = new TrustManager[] { trustManagerFactory.createTrustManager(trustStoreSupplier.get()) };
             X509ExtendedKeyManager keyManager = this.keyManager != null
                     ? this.keyManager

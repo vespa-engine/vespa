@@ -35,6 +35,7 @@ public interface TlsContext extends AutoCloseable {
             "TLS_CHACHA20_POLY1305_SHA256"); // TLSv1.3, Java 12
 
     Set<String> ALLOWED_PROTOCOLS = Set.of("TLSv1.2"); // TODO Enable TLSv1.3
+    String SSL_CONTEXT_VERSION = "TLSv1.2"; // TODO Enable TLSv1.3
 
     /**
      * @return the allowed cipher suites supported by the provided context instance
