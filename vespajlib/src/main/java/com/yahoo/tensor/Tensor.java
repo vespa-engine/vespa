@@ -37,7 +37,7 @@ import java.util.function.Function;
  * Each cell is is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
  * the location of that cell. Both dimensions and labels are string on the form of an identifier or integer.
  * <p>
- * The size of the set of dimensions of a tensor is called its <i>order</i>.
+ * The size of the set of dimensions of a tensor is called its <i>rank</i>.
  * <p>
  * In contrast to regular mathematical formulations of tensors, this definition of a tensor allows <i>sparseness</i>
  * as there is no built-in notion of a contiguous space, and even in cases where a space is implied (such as when

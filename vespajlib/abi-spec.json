@@ -2506,6 +2506,42 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.Value$DimensionValue": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, int)",
+      "public void <init>(int)",
+      "public void <init>(java.lang.String)",
+      "public java.util.Optional dimension()",
+      "public java.lang.String label()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.Value": {
+    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.Value withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public java.lang.String toString()",
+      "public bridge synthetic com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.XwPlusB": {
     "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
     "interfaces": [],
