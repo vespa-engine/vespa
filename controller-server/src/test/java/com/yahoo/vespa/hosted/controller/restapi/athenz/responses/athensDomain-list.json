@@ -1,5 +1,6 @@
 {
   "data": [
-    "domain1"
+    "domain1",
+    "vespa.vespa.tenants.sandbox"
   ]
 }

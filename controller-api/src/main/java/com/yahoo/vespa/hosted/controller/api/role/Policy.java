@@ -34,7 +34,7 @@ enum Policy {
                                 .in(SystemName.all())),
 
     /** Access to create a user tenant in select systems. */
-    userCreate(Privilege.grant(Action.update)
+    userCreate(Privilege.grant(Action.create, Action.update)
                         .on(PathGroup.user)
                         .in(SystemName.main, SystemName.cd, SystemName.dev)),
 

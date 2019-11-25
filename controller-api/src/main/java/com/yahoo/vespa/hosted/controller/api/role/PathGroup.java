@@ -33,7 +33,8 @@ enum PathGroup {
              "/zone/v2/{*}"),
 
     /** Paths used for creating user tenants. */
-    user("/application/v4/user"),
+    user("/application/v4/user",
+         "/athenz/v1/user"),
 
     /** Paths used for creating tenants with proper access control. */
     tenant(Matcher.tenant,

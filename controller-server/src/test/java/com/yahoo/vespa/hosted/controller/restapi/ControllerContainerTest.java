@@ -34,8 +34,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class ControllerContainerTest {
 
-    private static final AthenzUser hostedOperator = AthenzUser.fromUserId("alice");
-    private static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
+    protected static final AthenzUser hostedOperator = AthenzUser.fromUserId("alice");
+    protected static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
 
     protected JDisc container;
 
