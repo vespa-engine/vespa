@@ -143,19 +143,11 @@ std::vector<feature_t> get_rawscores(Fixture &env, const DenseTensorView &qtv) {
     search->initRange(docid, limit);
     std::vector<feature_t> rv;
     while (docid < limit) {
-        if (strict) {
-            search->seek(docid);
-            if (search->isAtEnd()) break;
-            docid = search->getDocId();
+        if (search->seek(docid)) {
             search->unpack(docid);
             rv.push_back(tfmd.getRawScore());
-        } else {
-            if (search->seek(docid)) {
-                search->unpack(docid);
-                rv.push_back(tfmd.getRawScore());
-            }
         }
-        ++docid;
+        docid = std::max(search->getDocId(), docid + 1);
     }
     return rv;
 }
