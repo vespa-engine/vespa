@@ -58,6 +58,9 @@ std::vector<vespalib::string> unsupported = {
 };
 
 bool is_unsupported(const vespalib::string &expression) {
+    if (expression.find("{") != vespalib::string::npos) {
+        return true;
+    }
     for (const auto &prefix: unsupported) {
         if (starts_with(expression, prefix)) {
             return true;

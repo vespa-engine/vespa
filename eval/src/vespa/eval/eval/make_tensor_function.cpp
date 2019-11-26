@@ -107,6 +107,28 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.push_back(tensor_function::create(node.type(), spec, stash));
     }
 
+    void make_peek(const TensorPeek &node) {
+        assert(stack.size() >= node.num_children());
+        const tensor_function::Node &param = stack[stack.size()-node.num_children()];
+        std::map<vespalib::string, std::variant<TensorSpec::Label, tensor_function::Node::CREF>> spec;
+        for (auto pos = node.dim_list().rbegin(); pos != node.dim_list().rend(); ++pos) {
+            if (pos->second.is_expr()) {
+                spec.emplace(pos->first, stack.back());
+                stack.pop_back();
+            } else {
+                size_t dim_idx = param.result_type().dimension_index(pos->first);
+                assert(dim_idx != ValueType::Dimension::npos);
+                const auto &param_dim = param.result_type().dimensions()[dim_idx];
+                if (param_dim.is_mapped()) {
+                    spec.emplace(pos->first, pos->second.label);
+                } else {
+                    spec.emplace(pos->first, as_number(pos->second.label));
+                }
+            }
+        }
+        stack.back() = tensor_function::peek(param, spec, stash);
+    }
+
     void make_rename(const Node &, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
         assert(stack.size() >= 1);
         const auto &a = stack.back();
@@ -196,6 +218,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorCreate &node) override {
         make_create(node);
+    }
+    void visit(const TensorPeek &node) override {
+        make_peek(node);
     }
     void visit(const Add &node) override {
         make_join(node, operation::Add::f);

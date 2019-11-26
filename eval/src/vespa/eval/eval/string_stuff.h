@@ -38,6 +38,16 @@ struct CommaTracker {
 };
 
 /**
+ * Is this string a positive integer (dimension index)
+ **/
+bool is_number(const vespalib::string &str);
+
+/**
+ * Convert this string to a positive integer (dimension index)
+ **/
+size_t as_number(const vespalib::string &str);
+
+/**
  * Convert a tensor spec address into a string on the form:
  * '{dim1:label,dim2:index, ...}'
  **/

@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <vector>
+#include <variant>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
@@ -295,6 +296,38 @@ public:
 
 //-----------------------------------------------------------------------------
 
+class Peek : public Node
+{
+    using Super = Node;
+public:
+    using MyLabel = std::variant<TensorSpec::Label, Child>;
+private:
+    Child _param;
+    std::map<vespalib::string, MyLabel> _spec;
+public:
+    Peek(const ValueType &result_type_in, const Node &param,
+         const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec)
+        : Node(result_type_in), _param(param), _spec()
+    {
+        for (const auto &dim: spec) {
+            if (std::holds_alternative<TensorSpec::Label>(dim.second)) {
+                _spec.emplace(dim.first, std::get<TensorSpec::Label>(dim.second));
+            } else {
+                assert(std::holds_alternative<Node::CREF>(dim.second));
+                _spec.emplace(dim.first, std::get<Node::CREF>(dim.second).get());
+            }
+        }
+    }
+    const std::map<vespalib::string, MyLabel> &spec() const { return _spec; }
+    const ValueType &param_type() const { return _param.get().result_type(); }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(Stash &stash) const final override;
+    void push_children(std::vector<Child::CREF> &children) const final override;
+    void visit_children(vespalib::ObjectVisitor &visitor) const final override;
+};
+
+//-----------------------------------------------------------------------------
+
 class Rename : public Op1
 {
     using Super = Op1;
@@ -349,6 +382,7 @@ const Node &map(const Node &child, map_fun_t function, Stash &stash);
 const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
 const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
+const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash);
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash);
 const Node &if_node(const Node &cond, const Node &true_child, const Node &false_child, Stash &stash);
 

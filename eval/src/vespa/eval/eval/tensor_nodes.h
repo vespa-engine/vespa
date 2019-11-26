@@ -259,6 +259,80 @@ public:
     }
 };
 
+class TensorPeek : public Node {
+public:
+    struct MyLabel {
+        vespalib::string label;
+        Node_UP expr;
+        MyLabel(vespalib::string label_in)
+            : label(label_in), expr() {}
+        MyLabel(Node_UP node)
+            : label(""), expr(std::move(node)) {}
+        bool is_expr() const { return bool(expr); }
+    };
+    using Spec = std::map<vespalib::string, MyLabel>;
+    using Dim = std::pair<vespalib::string, MyLabel>;
+    using DimList = std::vector<Dim>;
+private:
+    using DimRefs = std::vector<size_t>;
+    Node_UP _param;
+    DimList _dim_list;
+    DimRefs _expr_dims;
+public:
+    TensorPeek(Node_UP param, Spec spec)
+        : _param(std::move(param)), _dim_list(), _expr_dims()
+    {
+        for (auto &dim: spec) {
+            if (dim.second.is_expr()) {
+                _expr_dims.push_back(_dim_list.size());
+            }
+            _dim_list.emplace_back(dim.first, std::move(dim.second));
+        }
+    }
+    const Node &param() const { return *_param; }
+    const DimList &dim_list() const { return _dim_list; }
+    vespalib::string dump(DumpContext &ctx) const override {
+        vespalib::string str = _param->dump(ctx);
+        str += "{";
+        CommaTracker dim_list;
+        for (const auto &dim: _dim_list) {
+            dim_list.maybe_add_comma(str);
+            str += dim.first;
+            str += ":";
+            if (dim.second.is_expr()) {
+                vespalib::string expr = dim.second.expr->dump(ctx);
+                if (starts_with(expr, "(")) {
+                    str += expr;
+                } else {
+                    str += "(";
+                    str += expr;
+                    str += ")";
+                }
+            } else {
+                str += dim.second.label;
+            }
+        }
+        str += "}";
+        return str;
+    }
+    void accept(NodeVisitor &visitor) const override ;
+    size_t num_children() const override { return (1 + _expr_dims.size()); }
+    const Node &get_child(size_t idx) const override {
+        assert(idx < num_children());
+        if (idx == 0) {
+            return *_param;
+        } else {
+            return *_dim_list[_expr_dims[idx-1]].second.expr;
+        }
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_param));
+        for (size_t idx: _expr_dims) {
+            handler.handle(std::move(_dim_list[idx].second.expr));
+        }
+    }
+};
+
 } // namespace vespalib::eval::nodes
 } // namespace vespalib::eval
 } // namespace vespalib

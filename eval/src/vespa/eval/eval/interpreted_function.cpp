@@ -6,6 +6,7 @@
 #include "check_type.h"
 #include "tensor_spec.h"
 #include "operation.h"
+#include "tensor_nodes.h"
 #include "tensor_engine.h"
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/eval/eval/llvm/compile_cache.h>
@@ -21,13 +22,13 @@ namespace eval {
 namespace {
 
 const Function *get_lambda(const nodes::Node &node) {
-    if (auto ptr = as<nodes::TensorMap>(node)) {
+    if (auto ptr = nodes::as<nodes::TensorMap>(node)) {
         return &ptr->lambda();
     }
-    if (auto ptr = as<nodes::TensorJoin>(node)) {
+    if (auto ptr = nodes::as<nodes::TensorJoin>(node)) {
         return &ptr->lambda();
     }
-    if (auto ptr = as<nodes::TensorLambda>(node)) {
+    if (auto ptr = nodes::as<nodes::TensorLambda>(node)) {
         return &ptr->lambda();
     }
     return nullptr;
