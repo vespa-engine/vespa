@@ -2,6 +2,7 @@
 #pragma once
 
 #include "blueprint.h"
+#include "nearest_neighbor_distance_heap.h"
 
 namespace vespalib::tensor { class DenseTensorView; }
 namespace search::tensor { class DenseTensorAttribute; }
@@ -19,6 +20,7 @@ private:
     const tensor::DenseTensorAttribute& _attr_tensor;
     std::unique_ptr<vespalib::tensor::DenseTensorView> _query_tensor;
     uint32_t _target_num_hits;
+    mutable NearestNeighborDistanceHeap _distance_heap;
 
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
@@ -35,6 +37,7 @@ public:
     std::unique_ptr<SearchIterator> createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda,
                                                      bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
+    bool always_needs_unpack() const override;
 };
 
 }

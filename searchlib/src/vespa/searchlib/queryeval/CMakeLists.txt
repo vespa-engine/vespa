@@ -29,6 +29,7 @@ vespa_add_library(searchlib_queryeval OBJECT
     multibitvectoriterator.cpp
     multisearch.cpp
     nearest_neighbor_blueprint.cpp
+    nearest_neighbor_iterator.cpp
     nearsearch.cpp
     orsearch.cpp
     predicate_blueprint.cpp
