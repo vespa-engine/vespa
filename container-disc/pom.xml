@@ -126,6 +126,18 @@
       <scope>provided</scope>
     </dependency>
     <!-- end WARNING -->
+
+    <!-- dependencies used by container-core -->
+    <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jdk8</artifactId>
+        <scope>provided</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
