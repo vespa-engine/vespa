@@ -79,7 +79,7 @@ MatchThread::Context::Context(double rankDropLimit, MatchTools &tools, HitCollec
       _ranking(tools.rank_program()),
       _rankDropLimit(rankDropLimit),
       _hits(hits),
-      _softDoom(tools.getSoftDoom())
+      _softDoom(tools.getDoom().soft())
 {
 }
 
@@ -307,7 +307,7 @@ MatchThread::findMatches(MatchTools &tools)
             auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
-            if (tools.getHardDoom().doom()) {
+            if (tools.getDoom().hard().doom()) {
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
@@ -432,19 +432,19 @@ MatchThread::run()
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time_s = match_time.elapsed().sec();
-    resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id, _distributionKey);
+    resultContext = resultProcessor.createThreadContext(matchTools->getDoom().hard(), thread_id, _distributionKey);
     {
         trace->addEvent(5, "Wait for result processing token");
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(
-                matchTools->getQueryLimiter().getToken(matchTools->getHardDoom(),
+                matchTools->getQueryLimiter().getToken(matchTools->getDoom().hard(),
                         scheduler.total_size(thread_id),
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),
                         resultContext->grouping.get() != 0));
         get_token_timer.done();
         trace->addEvent(5, "Start result processing");
-        processResult(matchTools->getHardDoom(), std::move(result), *resultContext);
+        processResult(matchTools->getDoom().hard(), std::move(result), *resultContext);
     }
     total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);

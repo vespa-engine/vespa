@@ -89,8 +89,7 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
 }
 
 MatchTools::MatchTools(QueryLimiter & queryLimiter,
-                       const vespalib::Doom & softDoom,
-                       const vespalib::Doom & hardDoom,
+                       const vespalib::CombinedDoom & doom,
                        const Query &query,
                        MaybeMatchPhaseLimiter & match_limiter_in,
                        const QueryEnvironment & queryEnv,
@@ -98,8 +97,7 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
                        const RankSetup & rankSetup,
                        const Properties & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _softDoom(softDoom),
-      _hardDoom(hardDoom),
+      _doom(doom),
       _query(query),
       _match_limiter(match_limiter_in),
       _queryEnv(queryEnv),
@@ -149,8 +147,7 @@ MatchTools::setup_dump()
 
 MatchToolsFactory::
 MatchToolsFactory(QueryLimiter               & queryLimiter,
-                  const vespalib::Doom       & softDoom,
-                  const vespalib::Doom       & hardDoom,
+                  const vespalib::CombinedDoom  & doom,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   vespalib::stringref          queryStack,
@@ -162,8 +159,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & rankProperties,
                   const Properties           & featureOverrides)
     : _queryLimiter(queryLimiter),
-      _requestContext(softDoom, attributeContext, rankProperties),
-      _hardDoom(hardDoom),
+      _requestContext(doom, attributeContext, rankProperties),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
@@ -204,7 +200,7 @@ MatchTools::UP
 MatchToolsFactory::createMatchTools() const
 {
     assert(_valid);
-    return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getSoftDoom(), _hardDoom, _query,
+    return std::make_unique<MatchTools>(_queryLimiter, _requestContext.getDoom(), _query,
                                         *_match_limiter, _queryEnv, _mdl, _rankSetup, _featureOverrides);
 }
 

@@ -40,7 +40,7 @@ lookupDouble(const Properties &props, const vespalib::string &name, double defau
 {
     Property p = props.lookup(name);
     if (p.found()) {
-        return vespalib::locale::c::strtod(p.get().c_str(), NULL);
+        return vespalib::locale::c::strtod(p.get().c_str(), nullptr);
     }
     return defaultValue;
 }
@@ -304,6 +304,10 @@ double Factor::lookup(const Properties &props) {
 }
 double Factor::lookup(const Properties &props, double defaultValue) {
     return lookupDouble(props, NAME, defaultValue);
+}
+
+bool Factor::isPresent(const Properties &props) {
+    return props.lookup(NAME).found();
 }
 
 }

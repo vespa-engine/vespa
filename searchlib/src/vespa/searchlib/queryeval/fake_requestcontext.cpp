@@ -4,9 +4,9 @@
 
 namespace search::queryeval {
 
-FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, fastos::SteadyTimeStamp doom_in)
+FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, fastos::SteadyTimeStamp softDoom, fastos::SteadyTimeStamp hardDoom)
     : _clock(),
-      _doom(_clock, doom_in),
+      _doom(_clock, softDoom, hardDoom, false),
       _attributeContext(context),
       _query_tensor_name(),
       _query_tensor()

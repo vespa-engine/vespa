@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/vespalib/util/doom.h>
 #include <memory>
 #include <vector>
 

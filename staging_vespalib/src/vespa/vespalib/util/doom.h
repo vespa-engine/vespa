@@ -20,5 +20,21 @@ public:
     fastos::TimeStamp left() const { return _timeOfDoom - _clock.getTimeNS(); }
 };
 
-} // namespace vespalib
+class CombinedDoom {
+public:
+    CombinedDoom(const vespalib::Clock &clock, fastos::SteadyTimeStamp softDoom,
+                 fastos::SteadyTimeStamp hardDoom, bool explicitSoftDoom)
+        : _soft(clock, softDoom),
+          _hard(clock, hardDoom),
+          _isExplicitSoftDoom(explicitSoftDoom)
+    { }
+    const Doom & soft() const { return _soft; }
+    const Doom & hard() const { return _hard; }
+    bool isExplicitSoftDoom() const { return _isExplicitSoftDoom; }
+private:
+    Doom _soft;
+    Doom _hard;
+    bool _isExplicitSoftDoom;
+};
 
+}

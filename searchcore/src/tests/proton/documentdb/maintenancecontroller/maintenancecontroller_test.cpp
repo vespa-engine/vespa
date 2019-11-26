@@ -34,6 +34,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fastos/thread.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -785,9 +786,7 @@ MyExecutor::MyExecutor()
 }
 
 
-MyExecutor::~MyExecutor()
-{
-}
+MyExecutor::~MyExecutor() = default;
 
 
 bool

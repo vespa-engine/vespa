@@ -24,6 +24,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/vespalib/util/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");
@@ -524,7 +525,7 @@ struct FixtureBase
     CommitTimeTracker     _commitTimeTracker;
     SerialNum             serial;
     std::shared_ptr<MyGidToLidChangeHandler> _gidToLidChangeHandler;
-    FixtureBase(TimeStamp visibilityDelay);
+    FixtureBase(vespalib::duration visibilityDelay);
 
     virtual ~FixtureBase();
 
@@ -689,7 +690,7 @@ struct FixtureBase
 };
 
 
-FixtureBase::FixtureBase(TimeStamp visibilityDelay)
+FixtureBase::FixtureBase(vespalib::duration visibilityDelay)
     : _tracer(),
       sc(),
       iw(new MyIndexWriter(_tracer)),
@@ -706,12 +707,12 @@ FixtureBase::FixtureBase(TimeStamp visibilityDelay)
       _writeServiceReal(_sharedExecutor),
       _writeService(_writeServiceReal),
       _lidReuseDelayer(_writeService, _dmsc->get()),
-      _commitTimeTracker(visibilityDelay),
+      _commitTimeTracker(vespalib::count_ns(visibilityDelay)),
       serial(0),
       _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
 {
     _dmsc->constructFreeList();
-    _lidReuseDelayer.setImmediateCommit(visibilityDelay == 0);
+    _lidReuseDelayer.setImmediateCommit(visibilityDelay == vespalib::duration::zero());
 }
 
 FixtureBase::~FixtureBase() {
@@ -728,7 +729,7 @@ FixtureBase::populateBeforeCompactLidSpace()
 struct SearchableFeedViewFixture : public FixtureBase
 {
     SearchableFeedView fv;
-    SearchableFeedViewFixture(TimeStamp visibilityDelay = 0) :
+    SearchableFeedViewFixture(vespalib::duration visibilityDelay = 0ms) :
         FixtureBase(visibilityDelay),
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
@@ -750,7 +751,7 @@ struct SearchableFeedViewFixture : public FixtureBase
 struct FastAccessFeedViewFixture : public FixtureBase
 {
     FastAccessFeedView fv;
-    FastAccessFeedViewFixture(TimeStamp visibilityDelay = 0) :
+    FastAccessFeedViewFixture(vespalib::duration  visibilityDelay = vespalib::duration::zero()) :
         FixtureBase(visibilityDelay),
         fv(StoreOnlyFeedView::Context(sa,
                 sc._schema,
@@ -1206,8 +1207,8 @@ TEST_F("require that commit is called if visibility delay is 0",
                   "ack(Result(0, ))");
 }
 
-const TimeStamp LONG_DELAY(TimeStamp::Seconds(60.0));
-const TimeStamp SHORT_DELAY(TimeStamp::Seconds(0.5));
+const vespalib::duration LONG_DELAY = 60s;
+const vespalib::duration SHORT_DELAY = 500ms;
 
 TEST_F("require that commit is not called when inside a commit interval",
        SearchableFeedViewFixture(LONG_DELAY))
@@ -1232,13 +1233,13 @@ TEST_F("require that commit is not called when inside a commit interval",
 TEST_F("require that commit is called when crossing a commit interval",
        SearchableFeedViewFixture(SHORT_DELAY))
 {
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
+    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     EXPECT_EQUAL(1u, f.miw._commitCount);
     EXPECT_EQUAL(1u, f.maw._commitCount);
     EXPECT_EQUAL(2u, f._docIdLimit.get());
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
+    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
     f.removeAndWait(dc);
     EXPECT_EQUAL(2u, f.miw._commitCount);
     EXPECT_EQUAL(2u, f.maw._commitCount);
@@ -1257,13 +1258,13 @@ TEST_F("require that commit is not implicitly called after handover to maintenan
        SearchableFeedViewFixture(SHORT_DELAY))
 {
     f._commitTimeTracker.setReplayDone();
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
+    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
     DocumentContext dc = f.doc1();
     f.putAndWait(dc);
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);
     EXPECT_EQUAL(0u, f._docIdLimit.get());
-    FastOS_Thread::Sleep(SHORT_DELAY.ms() + 100);
+    std::this_thread::sleep_for(SHORT_DELAY + 100ms);
     f.removeAndWait(dc);
     EXPECT_EQUAL(0u, f.miw._commitCount);
     EXPECT_EQUAL(0u, f.maw._commitCount);

@@ -237,6 +237,7 @@ namespace softtimeout {
         static const double DEFAULT_VALUE;
         static double lookup(const Properties &props);
         static double lookup(const Properties &props, double defaultValue);
+        static bool isPresent(const Properties &props);
     };
 }
 

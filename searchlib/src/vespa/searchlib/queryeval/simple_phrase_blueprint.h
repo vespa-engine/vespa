@@ -5,6 +5,7 @@
 #include "searchable.h"
 #include "irequestcontext.h"
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/vespalib/util/doom.h>
 
 namespace search::fef { class TermFieldMatchData; }
 

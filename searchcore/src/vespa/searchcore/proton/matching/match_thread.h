@@ -75,14 +75,14 @@ private:
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool   atSoftDoom() const { return _softDoom.doom(); }
         fastos::TimeStamp timeLeft() const { return _softDoom.left(); }
-        uint32_t                 matches;
+        uint32_t        matches;
     private:
-        uint32_t                 _matches_limit;
-        LazyValue                _score_feature;
-        RankProgram             &_ranking;
-        double                   _rankDropLimit;
-        HitCollector            &_hits;
-        const Doom              &_softDoom;
+        uint32_t        _matches_limit;
+        LazyValue       _score_feature;
+        RankProgram    &_ranking;
+        double          _rankDropLimit;
+        HitCollector   &_hits;
+        const Doom     &_softDoom;
     };
 
     double estimate_match_frequency(uint32_t matches, uint32_t searchedSoFar) __attribute__((noinline));
