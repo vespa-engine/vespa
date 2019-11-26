@@ -56,8 +56,15 @@ public class CertificateTester {
         return createCsr(dnsNames, List.of());
     }
 
+    public static Pkcs10Csr createCsr(String cn, List<String> dnsNames) {
+        return createCsr(cn, dnsNames, List.of());
+    }
+
     public static Pkcs10Csr createCsr(List<String> dnsNames, List<String> ipAddresses) {
-        X500Principal subject = new X500Principal("CN=subject");
+        return createCsr("subject", dnsNames, ipAddresses);
+    }
+    public static Pkcs10Csr createCsr(String cn, List<String> dnsNames, List<String> ipAddresses) {
+        X500Principal subject = new X500Principal("CN=" + cn);
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         var builder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA512_WITH_ECDSA);
         for (var dnsName : dnsNames) {
