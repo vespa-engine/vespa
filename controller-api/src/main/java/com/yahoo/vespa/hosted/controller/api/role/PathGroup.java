@@ -32,9 +32,9 @@ enum PathGroup {
              "/provision/v2/{*}",
              "/zone/v2/{*}"),
 
-    /** Paths used for creating user tenants. */
+    /** Paths used for creating and reading user resources. */
     user("/application/v4/user",
-         "/athenz/v1/user"),
+         "/athenz/v1/{*}"),
 
     /** Paths used for creating tenants with proper access control. */
     tenant(Matcher.tenant,
@@ -96,6 +96,7 @@ enum PathGroup {
                     "/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{ignored}/global-rotation/{*}",
                     "/application/v4/tenant/{tenant}/application/{application}/metering"),
 
+    // TODO jonmv: remove
     /** Path used to restart development nodes. */
     developmentRestart(Matcher.tenant,
                        Matcher.application,
@@ -106,6 +107,7 @@ enum PathGroup {
                        "/application/v4/tenant/{tenant}/application/{application}/environment/dev/region/{region}/instance/{instance}/restart",
                        "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}/restart"),
 
+    // TODO jonmv: remove
     /** Path used to restart production nodes. */
     productionRestart(Matcher.tenant,
                       Matcher.application,
@@ -132,6 +134,7 @@ enum PathGroup {
                           "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}",
                           "/application/v4/tenant/{tenant}/application/{application}/environment/perf/region/{region}/instance/{instance}/deploy"),
 
+    // TODO jonmv: remove
     /** Paths used for production deployments. */
     productionDeployment(Matcher.tenant,
                          Matcher.application,
@@ -169,8 +172,7 @@ enum PathGroup {
                          "/application/v4/tenant/"),
 
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
-    classifiedInfo("/athenz/v1/{*}",
-                   "/cost/v1/{*}",
+    classifiedInfo("/cost/v1/{*}",
                    "/deployment/v1/{*}",
                    "/",
                    "/d/{*}",

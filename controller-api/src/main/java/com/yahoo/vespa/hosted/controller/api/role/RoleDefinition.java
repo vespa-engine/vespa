@@ -23,7 +23,7 @@ public enum RoleDefinition {
     /** Base role which every user is part of. */
     everyone(Policy.classifiedRead,
              Policy.publicRead,
-             Policy.userCreate,
+             Policy.user,
              Policy.tenantCreate),
 
     /** Application reader which can see all information about an application, its tenant and deployments. */
