@@ -2,14 +2,11 @@
 
 #include "match_thread.h"
 #include "document_scorer.h"
-#include <vespa/searchlib/engine/trace.h>
-#include <vespa/searchlib/attribute/attribute_operation.h>
-#include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcore/grouping/groupingmanager.h>
 #include <vespa/searchcore/grouping/groupingcontext.h>
+#include <vespa/searchlib/engine/trace.h>
+#include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/vespalib/util/closure.h>

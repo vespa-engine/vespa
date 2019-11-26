@@ -143,6 +143,7 @@ MatchTools::setup_dump()
 MatchToolsFactory::
 MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const vespalib::Doom       & softDoom,
+                  bool                         isDoomExplicit_,
                   const vespalib::Doom       & hardDoom,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
@@ -164,7 +165,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
       _diversityParams(),
-      _valid(false)
+      _valid(false),
+      _isDoomExplicit(isDoomExplicit_)
 {
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,

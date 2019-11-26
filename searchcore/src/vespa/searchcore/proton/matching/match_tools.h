@@ -84,7 +84,7 @@ private:
     vespalib::string _operation;
 };
 
-class MatchToolsFactory : public vespalib::noncopyable
+class MatchToolsFactory
 {
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
@@ -99,6 +99,7 @@ private:
     const search::fef::Properties   & _featureOverrides;
     DiversityParams                   _diversityParams;
     bool                              _valid;
+    bool                              _isDoomExplicit;
 
     std::unique_ptr<AttributeOperationTask>
     createTask(vespalib::stringref attribute, vespalib::stringref operation) const;
@@ -108,6 +109,7 @@ public:
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
                       const vespalib::Doom & softDoom,
+                      bool isDoomExplicit,
                       const vespalib::Doom & hardDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
@@ -120,6 +122,7 @@ public:
                       const search::fef::Properties &rankProperties,
                       const search::fef::Properties &featureOverrides);
     ~MatchToolsFactory();
+    bool isDoomExplicit() const { return _isDoomExplicit; }
     bool valid() const { return _valid; }
     const MaybeMatchPhaseLimiter &match_limiter() const { return *_match_limiter; }
     MatchTools::UP createMatchTools() const;
