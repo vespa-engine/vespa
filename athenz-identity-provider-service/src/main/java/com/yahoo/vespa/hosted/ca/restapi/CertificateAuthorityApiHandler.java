@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 
 /**
  * REST API for issuing and refreshing node certificates in a hosted Vespa system.
@@ -113,7 +114,9 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
     private HttpResponse refreshInstance(HttpRequest request, String provider, String service, String instanceId) {
         var instanceRefresh = deserializeRequest(request, InstanceSerializer::refreshFromSlime);
         var instanceIdFromCsr = Certificates.instanceIdFrom(instanceRefresh.csr());
-        var athenzService = new AthenzService(request.getJDiscRequest().getUserPrincipal().getName());
+
+        var athenzService = getRequestAthenzService(request);
+
         if (!instanceIdFromCsr.equals(instanceId)) {
             throw new IllegalArgumentException("Mismatch between instance ID in URL path and instance ID in CSR " +
                                                "[instanceId=" + instanceId + ",instanceIdFromCsr=" + instanceIdFromCsr +
@@ -170,6 +173,16 @@ public class CertificateAuthorityApiHandler extends LoggingRequestHandler {
                 .map(X509Certificate[].class::cast)
                 .map(Arrays::asList)
                 .orElse(Collections.emptyList());
+    }
+
+    private AthenzService getRequestAthenzService(HttpRequest request) {
+        return getRequestCertificateChain(request).stream()
+                .findFirst()
+                .map(X509CertificateUtils::getSubjectCommonNames)
+                .map(List::stream)
+                .flatMap(Stream::findFirst)
+                .map(AthenzService::new)
+                .orElseThrow(() -> new RuntimeException("No certificate found"));
     }
 
     /** Returns CA private key from secret store */
