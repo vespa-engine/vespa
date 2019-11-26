@@ -74,6 +74,7 @@ public class RunSerializerTest {
         assertFalse(run.hasEnded());
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
+        assertEquals(345345345, run.sleepUntil().get().toEpochMilli());
         assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
         assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
                                                                 "master",
@@ -127,6 +128,7 @@ public class RunSerializerTest {
         assertEquals(run.end(), phoenix.end());
         assertEquals(run.status(), phoenix.status());
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
+        assertEquals(run.sleepUntil(), phoenix.sleepUntil());
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
         assertEquals(run.steps(), phoenix.steps());

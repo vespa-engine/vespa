@@ -351,7 +351,7 @@ public class InternalStepRunner implements StepRunner {
             boolean ready = id.instance().isTester() ? controller.jobController().cloud().testerReady(endpoint)
                                                      : controller.jobController().cloud().ready(endpoint);
 
-            if (!ready) {
+            if ( ! ready) {
                 logger.log("Failed to get 100 consecutive OKs from " + endpoint);
                 return false;
             }

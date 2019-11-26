@@ -15,7 +15,6 @@ import java.util.Optional;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static java.util.Objects.requireNonNull;
@@ -35,12 +34,13 @@ public class Run {
     private final RunStatus status;
     private final long lastTestRecord;
     private final Instant lastVespaLogTimestamp;
+    private final Optional<Instant> sleepUntil;
     private final Optional<X509Certificate> testerCertificate;
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, Step.Status> steps, Versions versions, Instant start,
                Optional<Instant> end, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
-               Optional<X509Certificate> testerCertificate) {
+               Optional<Instant> sleepUntil, Optional<X509Certificate> testerCertificate) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -49,6 +49,7 @@ public class Run {
         this.status = status;
         this.lastTestRecord = lastTestRecord;
         this.lastVespaLogTimestamp = lastVespaLogTimestamp;
+        this.sleepUntil = sleepUntil;
         this.testerCertificate = testerCertificate;
     }
 
@@ -56,7 +57,7 @@ public class Run {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
         JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
         return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running,
-                       -1, Instant.EPOCH, Optional.empty());
+                       -1, Instant.EPOCH, Optional.empty(), Optional.empty());
     }
 
     /** Returns a new Run with the new status, and with the status of the given, completed step set accordingly. */
@@ -69,37 +70,43 @@ public class Run {
         EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), Step.Status.of(status));
         return new Run(id, steps, versions, start, end, this.status == running ? status : this.status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, sleepUntil, testerCertificate);
     }
 
     public Run finished(Instant now) {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, sleepUntil, testerCertificate);
     }
 
     public Run aborted() {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, end, aborted,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, sleepUntil, testerCertificate);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, end, status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, sleepUntil, testerCertificate);
     }
 
     public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, end, status,
-                       lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+                       lastTestRecord, lastVespaLogTimestamp, sleepUntil, testerCertificate);
+    }
+
+    public Run sleep(Instant until) {
+        requireActive();
+        return new Run(id, new EnumMap<>(steps), versions, start, end, status,
+                       lastTestRecord, lastVespaLogTimestamp, Optional.of(until), testerCertificate);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, end, status,
-                       lastTestRecord, lastVespaLogTimestamp, Optional.of(testerCertificate));
+                       lastTestRecord, lastVespaLogTimestamp, sleepUntil, Optional.of(testerCertificate));
     }
 
     /** Returns the id of this run. */
@@ -149,6 +156,11 @@ public class Run {
     /** Returns the timestamp of the last Vespa log record fetched and stored for this run. */
     public Instant lastVespaLogTimestamp() {
         return lastVespaLogTimestamp;
+    }
+
+    /** Returns the time until which this run should sleep, i.e., not be advanced. */
+    public Optional<Instant> sleepUntil() {
+        return sleepUntil;
     }
 
     /** Returns the tester certificate for this run, or empty. */

@@ -50,6 +50,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static com.yahoo.vespa.hosted.controller.persistence.Serializers.optionalInstant;
 import static java.util.Comparator.comparing;
 
 /**
@@ -85,6 +86,7 @@ class RunSerializer {
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
+    private static final String sleepUntilField = "sleepUntil";
     private static final String testerCertificateField = "testerCertificate";
 
     Run runFromSlime(Slime slime) {
@@ -118,6 +120,7 @@ class RunSerializer {
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
+                       optionalInstant(runObject.field(sleepUntilField)),
                        Optional.of(runObject.field(testerCertificateField))
                                .filter(Inspector::valid)
                                .map(certificate -> X509CertificateUtils.fromPem(certificate.asString())));
@@ -179,6 +182,7 @@ class RunSerializer {
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
+        run.sleepUntil().ifPresent(until -> runObject.setLong(sleepUntilField, until.toEpochMilli()));
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);
