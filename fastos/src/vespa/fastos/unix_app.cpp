@@ -22,19 +22,12 @@ FastOS_UNIX_Application::FastOS_UNIX_Application ()
 {
 }
 
-FastOS_UNIX_Application::~FastOS_UNIX_Application()
-{
-}
+FastOS_UNIX_Application::~FastOS_UNIX_Application() = default;
 
 extern "C"
 {
 extern char **environ;
 };
-
-unsigned int FastOS_UNIX_Application::GetCurrentProcessId ()
-{
-    return static_cast<unsigned int>(getpid());
-}
 
 int
 FastOS_UNIX_Application::GetOpt (const char *optionsString,
@@ -68,25 +61,6 @@ FastOS_UNIX_Application::resetOptIndex(int optionIndex)
 {
     optind = optionIndex;
 }
-
-bool FastOS_UNIX_Application::
-SendIPCMessage (FastOS_UNIX_Process *xproc, const void *buffer,
-                int length)
-{
-    if(_ipcHelper == nullptr)
-        return false;
-    return _ipcHelper->SendMessage(xproc, buffer, length);
-}
-
-
-bool FastOS_UNIX_Application::
-SendParentIPCMessage (const void *data, size_t length)
-{
-    if(_ipcHelper == nullptr)
-        return false;
-    return _ipcHelper->SendMessage(nullptr, data, length);
-}
-
 
 bool FastOS_UNIX_Application::PreThreadInit ()
 {

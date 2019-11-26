@@ -25,8 +25,6 @@ private:
 
     unsigned int _pid;
     bool _died;
-    bool _directChild;
-    bool _keepOpenFilesIfDirectChild;
     int _returnCode;
 public:
     class DescriptorHandle
@@ -47,7 +45,6 @@ public:
         DescriptorHandle();
         ~DescriptorHandle();
         void CloseHandle();
-        void CloseHandleDirectChild();
     };
 private:
     DescriptorHandle _descriptor[4];
@@ -57,10 +54,8 @@ private:
     std::string _stderrRedirName;
     bool _killed;
 
-    FastOS_UNIX_ProcessStarter *GetProcessStarter ()
-    {
-        return static_cast<FastOS_UNIX_Application *>(_app)->
-            GetProcessStarter();
+    FastOS_UNIX_ProcessStarter *GetProcessStarter () {
+        return static_cast<FastOS_UNIX_Application *>(_app)->GetProcessStarter();
     }
 
     bool InternalWait (int *returnCode, int timeOutSeconds, bool *pollStillRunning);
@@ -120,15 +115,11 @@ public:
     bool WriteStdin (const void *data, size_t length) override;
     bool Signal(int sig);
     bool Kill () override;
-    bool WrapperKill () override;
     bool Wait (int *returnCode, int timeOutSeconds = -1) override;
     bool PollWait (int *returnCode, bool *stillRunning) override;
-    bool Detach() override;
     void SetProcessId (unsigned int pid) { _pid = pid; }
     unsigned int GetProcessId() override { return _pid; }
-    bool SendIPCMessage (const void *data, size_t length) override;
-    void DeathNotification (int returnCode)
-    {
+    void DeathNotification (int returnCode) {
         _returnCode = returnCode;
         _died = true;
     }
@@ -140,21 +131,7 @@ public:
         _descriptor[type].CloseHandle();
     }
 
-    void CloseDescriptorDirectChild(DescriptorType type)
-    {
-        _descriptor[type].CloseHandleDirectChild();
-    }
-
-    void CloseDescriptorsDirectChild(void)
-    {
-        CloseDescriptorDirectChild(TYPE_STDOUT);
-        CloseDescriptorDirectChild(TYPE_STDERR);
-        CloseDescriptorDirectChild(TYPE_IPC);
-        CloseDescriptorDirectChild(TYPE_STDIN);
-    }
-
-    void SetDescriptor (DescriptorType type,
-                        int descriptor)
+    void SetDescriptor (DescriptorType type, int descriptor)
     {
         _descriptor[type]._fd = descriptor;
     }
@@ -164,35 +141,11 @@ public:
         return _descriptor[type];
     }
 
-    FastOS_ProcessRedirectListener *GetStdoutListener ()
-    {
-        return _stdoutListener;
-    }
-    FastOS_ProcessRedirectListener *GetStderrListener ()
-    {
-        return _stderrListener;
-    }
     bool GetKillFlag () {return _killed; }
-    bool GetDirectChild() const override { return _directChild; }
 
-    bool SetDirectChild() override {
-        _directChild = true;
-        return true;
-    }
-
-    bool GetKeepOpenFilesIfDirectChild() const override { return _keepOpenFilesIfDirectChild; }
-
-    bool SetKeepOpenFilesIfDirectChild() override {
-        _keepOpenFilesIfDirectChild = true;
-        return true;
-    }
-
-    void SetRunDir(const char *runDir);
-    void SetStdoutRedirName(const char *stdoutRedirName);
-    void SetStderrRedirName(const char *stderrRedirName);
-    const char *GetRunDir(void) const { return _runDir.c_str(); }
-    const char *GetStdoutRedirName(void) const { return _stdoutRedirName.c_str(); }
-    const char *GetStderrRedirName(void) const { return _stderrRedirName.c_str(); }
+    const char *GetRunDir() const { return _runDir.c_str(); }
+    const char *GetStdoutRedirName() const { return _stdoutRedirName.c_str(); }
+    const char *GetStderrRedirName() const { return _stderrRedirName.c_str(); }
 };
 
 
@@ -210,7 +163,6 @@ public:
         CODE_EXIT,
         CODE_NEWPROCESS,
         CODE_WAIT,
-        CODE_DETACH,
 
         CODE_SUCCESS,
         CODE_FAILURE,
@@ -241,14 +193,11 @@ protected:
     bool _hasDirectChildren;
 
     void StarterDoWait ();
-    void StarterDoDetachProcess ();
     void StarterDoCreateProcess ();
 
     bool SendFileDescriptor (int fd);
-    int ReadFileDescriptor ();
 
     char **ReceiveEnvironmentVariables ();
-    void SendEnvironmentVariables ();
 
     bool CreateSocketPairs ();
     void Run ();
@@ -256,13 +205,10 @@ protected:
     void AddChildProcess (FastOS_UNIX_RealProcess *node);
     void RemoveChildProcess (FastOS_UNIX_RealProcess *node);
 
-    bool ReceiveFileDescriptor (bool use,
-                                FastOS_UNIX_Process::DescriptorType type,
-                                FastOS_UNIX_Process *xproc);
-    void PollReapProxiedChildren(void);
-    char **CopyEnvironmentVariables(void);
-    void FreeEnvironmentVariables(char **env);
-    void PollReapDirectChildren(void);
+    void PollReapProxiedChildren();
+    char **CopyEnvironmentVariables();
+    static void FreeEnvironmentVariables(char **env);
+    void PollReapDirectChildren();
 
 public:
     FastOS_UNIX_ProcessStarter (FastOS_ApplicationInterface *app);
@@ -270,19 +216,13 @@ public:
 
     bool Start ();
     void Stop ();
-    void CloseProxiedChildDescs(void);
-    void CloseProxyDescs(int stdinPipedDes,
-                         int stdoutPipedDes,
-                         int stderrPipedDes,
-                         int ipcDes,
-                         int handshakeDes0,
-                         int handshakeDes1);
+    void CloseProxiedChildDescs();
+    void CloseProxyDescs(int stdinPipedDes, int stdoutPipedDes, int stderrPipedDes,
+                         int ipcDes, int handshakeDes0, int handshakeDes1);
 
     bool CreateProcess (FastOS_UNIX_Process *process, bool useShell,
                         bool pipeStdin, bool pipeStdout, bool pipeStderr);
-    bool Wait (FastOS_UNIX_Process *process, int timeOutSeconds,
-               bool *pollStillRunning);
-    bool Detach(FastOS_UNIX_Process *process);
+    bool Wait (FastOS_UNIX_Process *process, int timeOutSeconds, bool *pollStillRunning);
 };
 
 
