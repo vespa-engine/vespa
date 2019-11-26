@@ -79,7 +79,7 @@ public class JobRunner extends Maintainer {
         }
         else if (run.readySteps().isEmpty())
             executors.execute(() -> finish(run.id()));
-        else
+        else if (run.sleepUntil().map(controller().clock().instant()::isAfter).orElse(true))
             run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
     }
 

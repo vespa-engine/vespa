@@ -97,7 +97,7 @@ public class Run {
                        lastTestRecord, lastVespaLogTimestamp, sleepUntil, testerCertificate);
     }
 
-    public Run sleep(Instant until) {
+    public Run sleepUntil(Instant until) {
         requireActive();
         return new Run(id, new EnumMap<>(steps), versions, start, end, status,
                        lastTestRecord, lastVespaLogTimestamp, Optional.of(until), testerCertificate);

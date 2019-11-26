@@ -331,6 +331,28 @@ public class JobRunnerTest {
         assertTrue(jobs.last(id, systemTest).get().status() == aborted);
     }
 
+    @Test
+    public void sleep() {
+        DeploymentTester tester = new DeploymentTester();
+        JobController jobs = tester.controller().jobController();
+        Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
+        JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
+                                         inThreadExecutor(), (step, id) -> Optional.of(running));
+
+        TenantAndApplicationId appId = tester.createApplication("tenant", "real", "default").id();
+        ApplicationId id = appId.defaultInstance();
+        jobs.submit(appId, versions.targetApplication().source().get(), "a@b", 3, applicationPackage, new byte[0]);
+
+        jobs.start(id, systemTest, versions);
+        RunId runId = jobs.last(id, systemTest).get().id();
+        jobs.locked(runId, run -> run.sleepUntil(run.start().plusSeconds(10)));
+        runner.run();
+        assertFalse(jobs.run(runId).get().hasEnded());
+        tester.clock().advance(Duration.ofSeconds(11));
+        runner.run();
+        assertTrue(jobs.run(runId).get().hasEnded());
+    }
+
     public static ExecutorService inThreadExecutor() {
         return new AbstractExecutorService() {
             AtomicBoolean shutDown = new AtomicBoolean(false);
