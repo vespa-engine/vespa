@@ -13,15 +13,43 @@
 
 namespace search::queryeval {
 
-class NearestNeighborIteratorFactory
+class NearestNeighborIterator : public SearchIterator
 {
 public:
-    static std::unique_ptr<SearchIterator> createIterator(
-        bool strict,
-        fef::TermFieldMatchData &tfmd,
-        const vespalib::tensor::DenseTensorView &queryTensor,
-        const search::tensor::DenseTensorAttribute &tensorAttribute,
-        NearestNeighborDistanceHeap &distanceHeap);
+    using DenseTensorAttribute = search::tensor::DenseTensorAttribute;
+    using DenseTensorView = vespalib::tensor::DenseTensorView;
+
+    struct Params {
+        fef::TermFieldMatchData &tfmd;
+        const DenseTensorView &queryTensor;
+        const DenseTensorAttribute &tensorAttribute;
+        NearestNeighborDistanceHeap &distanceHeap;
+        
+        Params(fef::TermFieldMatchData &tfmd_in,
+               const DenseTensorView &queryTensor_in,
+               const DenseTensorAttribute &tensorAttribute_in,
+               NearestNeighborDistanceHeap &distanceHeap_in)
+          : tfmd(tfmd_in),
+            queryTensor(queryTensor_in),
+            tensorAttribute(tensorAttribute_in),
+            distanceHeap(distanceHeap_in)
+        {}
+    };
+
+    NearestNeighborIterator(Params params_in)
+        : _params(params_in)
+    {}
+    
+    static std::unique_ptr<NearestNeighborIterator> create(
+            bool strict,
+            fef::TermFieldMatchData &tfmd,
+            const vespalib::tensor::DenseTensorView &queryTensor,
+            const search::tensor::DenseTensorAttribute &tensorAttribute,
+            NearestNeighborDistanceHeap &distanceHeap);
+
+    const Params& params() const { return _params; }
+private:
+    Params _params;
 };
 
-}
+} // namespace

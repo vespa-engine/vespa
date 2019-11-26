@@ -2,29 +2,13 @@
 
 #include "nearest_neighbor_iterator.h"
 
+using search::tensor::DenseTensorAttribute;
 using vespalib::ConstArrayRef;
+using vespalib::tensor::DenseTensorView;
+using vespalib::tensor::MutableDenseTensorView;
 using vespalib::tensor::TypedCells;
 
-namespace {
-
-struct SumSquaredDiff
-{
-    template <typename LCT, typename RCT>
-    static double
-    call(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs)
-    {
-        double sum = 0.0;
-        size_t sz = lhs.size();
-        assert(sz == rhs.size());
-        for (size_t i = 0; i < sz; ++i) {
-            double diff = lhs[i] - rhs[i];
-            sum += diff*diff;
-        }
-        return sum;
-    }
-};
-
-}
+using CellType = vespalib::eval::ValueType::CellType;
 
 namespace search::queryeval {
 
@@ -34,32 +18,24 @@ namespace search::queryeval {
  * Keeps a heap of the K best hit distances.
  * Currently always does brute-force scanning, which is very expensive.
  **/
-template <bool strict>
-class NearestNeighborIterator : public SearchIterator
+template <bool strict, typename LCT, typename RCT>
+class NearestNeighborImpl : public NearestNeighborIterator
 {
 public:
-    using DenseTensorView = vespalib::tensor::DenseTensorView;
-    using DenseTensorAttribute = search::tensor::DenseTensorAttribute;
-    using MutableDenseTensorView = vespalib::tensor::MutableDenseTensorView;
 
-    NearestNeighborIterator(fef::TermFieldMatchData &tfmd,
-                            const DenseTensorView &queryTensor,
-                            const DenseTensorAttribute &tensorAttribute,
-                            NearestNeighborDistanceHeap &distanceHeap)
-        : _tfmd(tfmd),
-          _queryTensor(queryTensor),
-          _tensorAttribute(tensorAttribute),
-          _fieldTensor(_tensorAttribute.getTensorType()),
-          _distanceHeap(distanceHeap),
+    NearestNeighborImpl(Params params_in)
+        : NearestNeighborIterator(params_in),
+          _lhs(params().queryTensor.cellsRef().typify<LCT>()),
+          _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
-        assert(_fieldTensor.fast_type() == _queryTensor.fast_type());
+        assert(params().queryTensor.fast_type() == params().queryTensor.fast_type());
     }
 
-    ~NearestNeighborIterator();
+    ~NearestNeighborImpl();
 
     void doSeek(uint32_t docId) override {
-        double distanceLimit = _distanceHeap.distanceLimit();
+        double distanceLimit = params().distanceHeap.distanceLimit();
         while (__builtin_expect((docId < getEndId()), true)) {
             double d = computeDistance(docId);
             if (d <= distanceLimit) {
@@ -77,53 +53,97 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        _tfmd.setRawScore(docId, sqrt(_lastScore));
-        _distanceHeap.used(_lastScore);
+        params().tfmd.setRawScore(docId, sqrt(_lastScore));
+        params().distanceHeap.used(_lastScore);
     }
 
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False ; }
 
 private:
-    double computeDistance(uint32_t docId);
+    static double computeSum(ConstArrayRef<LCT> lhs, ConstArrayRef<RCT> rhs) {
+        double sum = 0.0;
+        size_t sz = lhs.size();
+        assert(sz == rhs.size());
+        for (size_t i = 0; i < sz; ++i) {
+            double diff = lhs[i] - rhs[i];
+            sum += diff*diff;
+        }
+        return sum;
+    }
 
-    fef::TermFieldMatchData       &_tfmd;
-    const DenseTensorView         &_queryTensor;
-    const DenseTensorAttribute    &_tensorAttribute;
-    MutableDenseTensorView         _fieldTensor;
-    NearestNeighborDistanceHeap   &_distanceHeap;
-    double                         _lastScore;
+    double computeDistance(uint32_t docId) {
+        params().tensorAttribute.getTensor(docId, _fieldTensor);
+        return computeSum(_lhs, _fieldTensor.cellsRef().typify<RCT>());
+    }
+
+    ConstArrayRef<LCT>     _lhs;
+    MutableDenseTensorView _fieldTensor;
+    double                 _lastScore;
 };
 
-template <bool strict>
-NearestNeighborIterator<strict>::~NearestNeighborIterator() = default;
+template <bool strict, typename LCT, typename RCT>
+NearestNeighborImpl<strict, LCT, RCT>::~NearestNeighborImpl() = default;
 
-template <bool strict>
-double
-NearestNeighborIterator<strict>::computeDistance(uint32_t docId)
+namespace {
+
+template<bool strict, typename LCT, typename RCT>
+std::unique_ptr<NearestNeighborIterator>
+create_impl(const NearestNeighborIterator::Params &params)
 {
-    _tensorAttribute.getTensor(docId, _fieldTensor);
-    TypedCells lhsCells = _queryTensor.cellsRef();
-    TypedCells rhsCells = _fieldTensor.cellsRef();
-    return vespalib::tensor::dispatch_2<SumSquaredDiff>(lhsCells, rhsCells);
+    using NNI = NearestNeighborImpl<strict, LCT, RCT>;
+    return std::make_unique<NNI>(params);
 }
 
+template<bool strict, typename LCT>
+std::unique_ptr<NearestNeighborIterator>
+resolve_RCT(const NearestNeighborIterator::Params &params)
+{
+    CellType ct = params.tensorAttribute.getTensorType().cell_type();
+    if (ct == CellType::FLOAT) {
+        return create_impl<strict, LCT, float>(params);
+    }
+    if (ct == CellType::DOUBLE) {
+        return create_impl<strict, LCT, double>(params);
+    }
+    abort();
+}
 
-std::unique_ptr<SearchIterator>
-NearestNeighborIteratorFactory::createIterator(
+template<bool strict>
+std::unique_ptr<NearestNeighborIterator>
+resolve_LCT_RCT(const NearestNeighborIterator::Params &params)
+{
+    CellType ct = params.queryTensor.fast_type().cell_type();
+    if (ct == CellType::FLOAT) {
+        return resolve_RCT<strict, float>(params);
+    }
+    if (ct == CellType::DOUBLE) {
+        return resolve_RCT<strict, double>(params);
+    }
+    abort();
+}
+
+std::unique_ptr<NearestNeighborIterator>
+resolve_strict_LCT_RCT(bool strict, const NearestNeighborIterator::Params &params)
+{
+    if (strict) {
+        return resolve_LCT_RCT<true>(params);
+    } else {
+        return resolve_LCT_RCT<false>(params);
+    }
+}
+
+} // namespace <unnamed>
+
+std::unique_ptr<NearestNeighborIterator>
+NearestNeighborIterator::create(
         bool strict,
         fef::TermFieldMatchData &tfmd,
         const vespalib::tensor::DenseTensorView &queryTensor,
         const search::tensor::DenseTensorAttribute &tensorAttribute,
         NearestNeighborDistanceHeap &distanceHeap)
 {
-    using StrictNN = NearestNeighborIterator<true>;
-    using UnStrict = NearestNeighborIterator<false>;
-
-    if (strict) {
-        return std::make_unique<StrictNN>(tfmd, queryTensor, tensorAttribute, distanceHeap);
-    } else {
-        return std::make_unique<UnStrict>(tfmd, queryTensor, tensorAttribute, distanceHeap);
-    }
+    Params params(tfmd, queryTensor, tensorAttribute, distanceHeap);
+    return resolve_strict_LCT_RCT(strict, params);
 }
 
 } // namespace
