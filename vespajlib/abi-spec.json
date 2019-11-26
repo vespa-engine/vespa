@@ -1620,6 +1620,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.tensor.TensorType, java.util.function.Function)",
+      "public void <init>(com.yahoo.tensor.TensorType, com.yahoo.tensor.functions.ScalarFunction)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
