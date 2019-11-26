@@ -487,7 +487,7 @@ TensorFunctionNode tensorGenerateBody(TensorType type) :
 }
 {
     <LBRACE> generator = expression() <RBRACE>
-    { return new TensorFunctionNode(new Generate(type, new GeneratorLambdaFunctionNode(type, generator).asLongListToDoubleOperator())); }
+    { return new TensorFunctionNode(Generate.bound(type, TensorFunctionNode.wrapScalar(generator))); }
 }
 
 TensorFunctionNode tensorRange() :
@@ -847,7 +847,7 @@ DynamicTensor mappedTensorValueBody(TensorType type) :
         (         tensorCell(type, cells))*
         ( <COMMA> tensorCell(type, cells))*
     <RCURLY>
-    { return DynamicTensor.from(type, TensorFunctionNode.wrap(cells)); }
+    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
 }
 
 DynamicTensor indexedTensorValueBody(TensorType type) :
@@ -860,7 +860,7 @@ DynamicTensor indexedTensorValueBody(TensorType type) :
         ( (<LSQUARE>)* value = expression() (<RSQUARE>)* { cells.add(value); }  )*
         ( <COMMA> (<LSQUARE>)* value = expression() (<RSQUARE>)* { cells.add(value); } )*
 //    <RSQUARE>
-    { return DynamicTensor.from(type, TensorFunctionNode.wrap(cells)); }
+    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
 }
 
 void tensorCell(TensorType type, java.util.Map cells) :

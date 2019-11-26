@@ -5,6 +5,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -34,14 +35,14 @@ public class DynamicTensorTestCase {
         assertEquals("tensor(x{}):{{x:a}:5.0}", t2.toString());
     }
 
-    private static class Constant implements ScalarFunction {
+    private static class Constant implements ScalarFunction<TypeContext.Name> {
 
         private final double value;
 
         public Constant(double value) { this.value = value; }
 
         @Override
-        public Double apply(EvaluationContext<?> evaluationContext) { return value; }
+        public Double apply(EvaluationContext<TypeContext.Name> evaluationContext) { return value; }
 
         @Override
         public String toString() { return String.valueOf(value); }

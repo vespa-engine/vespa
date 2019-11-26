@@ -358,6 +358,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates("500",
                                "join(tensor0, tensor1, f(x,y) (x*y)){tag2}",
                                "tensor(tag{}):{{tag:tag1}:10, {tag:tag2}:20}", "{25}");
+        tester.assertEvaluates("tensor(j[3]):[3, 3, 3]",
+                               "tensor(j[3])(tensor0[2])",
+                               "tensor(values[5]):[1, 2, 3, 4, 5]");
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");

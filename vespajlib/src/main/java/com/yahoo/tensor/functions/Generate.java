@@ -27,28 +27,33 @@ public class Generate extends PrimitiveTensorFunction {
     private final Function<List<Long>, Double> freeGenerator;
     private final ScalarFunction boundGenerator;
 
-    /**
-     * Creates a generated tensor
-     *
-     * @param type the type of the tensor
-     * @param generator the function generating values from a list of numbers specifying the indexes of the
-     *                  tensor cell which will receive the value
-     * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
-     */
+    /** The same as Generate.free */
     public Generate(TensorType type, Function<List<Long>, Double> generator) {
         this(type, Objects.requireNonNull(generator), null);
     }
 
     /**
-     * Creates a generated tensor
+     * Creates a generated tensor from a free function
      *
      * @param type the type of the tensor
      * @param generator the function generating values from a list of numbers specifying the indexes of the
      *                  tensor cell which will receive the value
      * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
      */
-    public Generate(TensorType type, ScalarFunction generator) {
-        this(type, null, Objects.requireNonNull(generator));
+    public static Generate free(TensorType type, Function<List<Long>, Double> generator) {
+        return new Generate(type, Objects.requireNonNull(generator), null);
+    }
+
+    /**
+     * Creates a generated tensor from a bound function
+     *
+     * @param type the type of the tensor
+     * @param generator the function generating values from a list of numbers specifying the indexes of the
+     *                  tensor cell which will receive the value
+     * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
+     */
+    public static Generate bound(TensorType type, ScalarFunction generator) {
+        return new Generate(type, null, Objects.requireNonNull(generator));
     }
 
     private Generate(TensorType type, Function<List<Long>, Double> freeGenerator, ScalarFunction boundGenerator) {
@@ -127,6 +132,7 @@ public class Generate extends PrimitiveTensorFunction {
             this.context = context;
         }
 
+        @SuppressWarnings("unchecked")
         double apply(IndexedTensor.Indexes indexes) {
             if (freeGenerator != null) {
                 return freeGenerator.apply(indexes.toList());

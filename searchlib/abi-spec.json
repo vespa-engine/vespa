@@ -1615,8 +1615,9 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode$ExpressionTensorFunction wrap(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
-      "public static java.util.Map wrap(java.util.Map)",
-      "public static java.util.List wrap(java.util.List)"
+      "public static java.util.Map wrapScalars(java.util.Map)",
+      "public static java.util.List wrapScalars(java.util.List)",
+      "public static com.yahoo.tensor.functions.ScalarFunction wrapScalar(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)"
     ],
     "fields": []
   },

@@ -73,6 +73,7 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
             Tensor.Builder builder = Tensor.Builder.of(type());
             for (var cell : cells.entrySet())
@@ -114,6 +115,7 @@ public abstract class DynamicTensor extends PrimitiveTensorFunction {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
             IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder)Tensor.Builder.of(type());
             for (int i = 0; i < cells.size(); i++)

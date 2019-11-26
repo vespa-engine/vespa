@@ -16,6 +16,7 @@ import com.yahoo.tensor.functions.ScalarFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 
+import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -81,21 +82,22 @@ public class TensorFunctionNode extends CompositeNode {
         return new ExpressionTensorFunction(node);
     }
 
-    public static Map<TensorAddress, ScalarFunction> wrap(Map<TensorAddress, ExpressionNode> nodes) {
-        Map<TensorAddress, ScalarFunction> functions = new LinkedHashMap<>();
+    public static Map<TensorAddress, ScalarFunction<Reference>> wrapScalars(Map<TensorAddress, ExpressionNode> nodes) {
+        Map<TensorAddress, ScalarFunction<Reference>> functions = new LinkedHashMap<>();
         for (var entry : nodes.entrySet())
-            functions.put(entry.getKey(), new ExpressionScalarFunction(entry.getValue()));
+            functions.put(entry.getKey(), wrapScalar(entry.getValue()));
         return functions;
     }
 
-    public static List<ScalarFunction> wrap(List<ExpressionNode> nodes) {
-        List<ScalarFunction> functions = new ArrayList<>();
-        for (var entry : nodes)
-            functions.add(new ExpressionScalarFunction(entry));
-        return functions;
+    public static List<ScalarFunction<Reference>> wrapScalars(List<ExpressionNode> nodes) {
+        return nodes.stream().map(node -> wrapScalar(node)).collect(Collectors.toList());
     }
 
-    private static class ExpressionScalarFunction implements ScalarFunction {
+    public static ScalarFunction<Reference> wrapScalar(ExpressionNode node) {
+        return new ExpressionScalarFunction(node);
+    }
+
+    private static class ExpressionScalarFunction implements ScalarFunction<Reference> {
 
         private final ExpressionNode expression;
 
@@ -104,8 +106,8 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public Double apply(EvaluationContext<?> context) {
-            return expression.evaluate((Context)context).asDouble();
+        public Double apply(EvaluationContext<Reference> context) {
+            return expression.evaluate(new ContextWrapper(context)).asDouble();
         }
 
         @Override
@@ -205,6 +207,28 @@ public class TensorFunctionNode extends CompositeNode {
             this.context = context;
             this.path = path;
             this.parent = parent;
+        }
+
+    }
+
+    /** Turns an EvaluationContext into a Context */
+    // TODO: We should be able to change RankingExpression.evaluate to take an EvaluationContext and then get rid of this
+    private static class ContextWrapper extends Context {
+
+        private final EvaluationContext<Reference> delegate;
+
+        public ContextWrapper(EvaluationContext<Reference> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Value get(String name) {
+            return new TensorValue(delegate.getTensor(name));
+        }
+
+        @Override
+        public TensorType getType(Reference name) {
+            return delegate.getType(name);
         }
 
     }
