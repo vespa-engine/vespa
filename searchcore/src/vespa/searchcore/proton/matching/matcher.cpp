@@ -296,8 +296,9 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             if (adjustedDuration < 0) {
                 adjustedDuration = 0;
             }
-            bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT);
-            if (allowedSoftTimeoutFactorAdjustment && ! isDoomExplicit) {
+            bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
+                                                      && ! isDoomExplicit;
+            if (allowedSoftTimeoutFactorAdjustment) {
                 _stats.updatesoftDoomFactor(request.getTimeout(), overtimeLimit, adjustedDuration);
             }
             LOG(info, "Triggered softtimeout %s. Coverage = %lu of %u documents. request=%1.3f, doomOvertime=%1.3f, overtime_limit=%1.3f and duration=%1.3f, rankprofile=%s"
