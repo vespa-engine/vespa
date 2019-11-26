@@ -321,13 +321,15 @@ public class DeploymentSpec {
         private final boolean active;
         private final Optional<AthenzService> athenzService;
         private final Optional<String> testerFlavor;
+        private final Optional<Duration> testDelay;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty());
+            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
-                            Optional<AthenzService> athenzService, Optional<String> testerFlavor) {
+                            Optional<AthenzService> athenzService, Optional<String> testerFlavor,
+                            Optional<Duration> testDelay) {
             if (environment != Environment.prod && region.isPresent())
                 throw new IllegalArgumentException("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
@@ -337,6 +339,7 @@ public class DeploymentSpec {
             this.active = active;
             this.athenzService = athenzService;
             this.testerFlavor = testerFlavor;
+            this.testDelay = testDelay;
         }
 
         public Environment environment() { return environment; }
@@ -348,6 +351,8 @@ public class DeploymentSpec {
         public boolean active() { return active; }
 
         public Optional<String> testerFlavor() { return testerFlavor; }
+
+        public Optional<Duration> testDelay() { return testDelay; }
 
         public Optional<AthenzService> athenzService() { return athenzService; }
 

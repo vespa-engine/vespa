@@ -335,7 +335,6 @@ public class JobRunnerTest {
     public void sleep() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        Map<Step, RunStatus> outcomes = new EnumMap<>(Step.class);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                          inThreadExecutor(), (step, id) -> Optional.of(running));
 

@@ -175,6 +175,7 @@ public class DeploymentSpecXmlReader {
                                                         .map(AthenzService::from);
         Optional<String> testerFlavor = stringAttribute(testerFlavorAttribute, stepTag)
                                                 .or(() -> stringAttribute(testerFlavorAttribute, parentTag));
+        Optional<Duration> testDelay = Optional.empty();
 
         if (prodTag.equals(stepTag.getTagName()))
             globalServiceId.set(readGlobalServiceId(stepTag));
@@ -183,7 +184,7 @@ public class DeploymentSpecXmlReader {
 
         switch (stepTag.getTagName()) {
             case testTag: case stagingTag:
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, testDelay));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
                                                .flatMap(child -> readNonInstanceSteps(child, globalServiceId, stepTag).stream())
@@ -197,7 +198,7 @@ public class DeploymentSpecXmlReader {
                                                     .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
                                                     .collect(Collectors.toList())));
             case regionTag:
-                return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
+                return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, testDelay, stepTag));
             default:
                 return List.of();
         }
@@ -338,9 +339,9 @@ public class DeploymentSpecXmlReader {
     }
 
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
-                                          Optional<String> testerFlavor, Element regionTag) {
+                                          Optional<String> testerFlavor, Optional<Duration> testDelay, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                readActive(regionTag), athenzService, testerFlavor);
+                                readActive(regionTag), athenzService, testerFlavor, testDelay);
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {

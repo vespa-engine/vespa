@@ -291,6 +291,7 @@ public class InternalStepRunner implements StepRunner {
             if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
                 if (containersAreUp(id.application(), id.type().zone(controller.system()), logger)) {
                     logger.log("Installation succeeded!");
+                    addTestDelay(id);
                     return Optional.of(running);
                 }
             }
@@ -696,6 +697,16 @@ public class InternalStepRunner implements StepRunner {
         controller.jobController().storeTesterCertificate(id, certificate);
         zipBuilder.add("artifacts/key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
         zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
+    }
+
+    private void addTestDelay(RunId id) {
+        controller.applications().requireApplication(TenantAndApplicationId.from(id.application()))
+                  .deploymentSpec().instance(id.application().instance()).stream()
+                  .flatMap(spec -> spec.zones().stream())
+                  .filter(zone -> zone.deploysTo(id.type().environment(), Optional.of(id.type().zone(controller.system()).region())))
+                  .findAny()
+                  .flatMap(zone -> zone.testDelay())
+                  .ifPresent(delay -> controller.jobController().locked(id, run -> run.sleepUntil(controller.clock().instant().plus(delay))));
     }
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
