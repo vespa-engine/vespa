@@ -9,14 +9,14 @@ import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyStoreUtils;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import com.yahoo.text.Utf8;
 
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,12 +25,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * Writes zookeeper config and starts zookeeper server.
@@ -120,12 +121,17 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
 
         StringBuilder sb = new StringBuilder();
 
+        // Create a SSLContext instance and determine the allowed ciphers/versions supported by the JVM's default provider.
+        SSLContext sslContext = new SslContextBuilder().build();
+        Set<String> allowedCiphers = new TreeSet<>(TlsContext.getAllowedCipherSuites(sslContext));
+        Set<String> allowedProtocols = new TreeSet<>(TlsContext.getAllowedProtocols(sslContext));
+
         // Common config
         sb.append("ssl.quorum.hostnameVerification=false\n");
         sb.append("ssl.quorum.clientAuth=NEED\n");
-        sb.append("ssl.quorum.ciphersuites=").append(String.join(",", getCipherSuites())).append("\n");
-        sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", new TreeSet<>(TlsContext.ALLOWED_PROTOCOLS))).append("\n");
-        sb.append("ssl.quorum.protocol=TLS\n");
+        sb.append("ssl.quorum.ciphersuites=").append(String.join(",", allowedCiphers)).append("\n");
+        sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", allowedProtocols)).append("\n");
+        sb.append("ssl.quorum.protocol=").append(sslContext.getProtocol()).append("\n");
 
         boolean sslQuorum;
         boolean portUnification;
@@ -161,16 +167,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         });
 
         return sb.toString();
-    }
-
-    private TreeSet<String> getCipherSuites() {
-        Set<String> cipherSuites = new HashSet<>(TlsContext.ALLOWED_CIPHER_SUITES);
-        // Remove cipher suites not supported by Java 11
-        cipherSuites.remove("TLS_CHACHA20_POLY1305_SHA256");
-        cipherSuites.remove("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
-        cipherSuites.remove("TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256");
-        cipherSuites.remove("TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256");
-        return new TreeSet<>(cipherSuites);
     }
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {

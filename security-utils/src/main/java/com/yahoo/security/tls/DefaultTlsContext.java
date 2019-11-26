@@ -10,7 +10,6 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -55,32 +54,23 @@ public class DefaultTlsContext implements TlsContext {
     }
 
     private static String[] getAllowedCiphers(SSLContext sslContext, Set<String> acceptedCiphers) {
-        String[] supportedCipherSuites = sslContext.getSupportedSSLParameters().getCipherSuites();
-        String[] validCipherSuites = Arrays.stream(supportedCipherSuites)
-                .filter(suite -> ALLOWED_CIPHER_SUITES.contains(suite) && acceptedCiphers.contains(suite))
+        Set<String> supportedCiphers = TlsContext.getAllowedCipherSuites(sslContext);
+        String[] allowedCiphers = supportedCiphers.stream()
+                .filter(acceptedCiphers::contains)
                 .toArray(String[]::new);
-        if (validCipherSuites.length == 0) {
+        if (allowedCiphers.length == 0) {
             throw new IllegalStateException(
-                    String.format("None of the allowed cipher suites are supported " +
-                                          "(allowed-cipher-suites=%s, supported-cipher-suites=%s, accepted-cipher-suites=%s)",
-                                  ALLOWED_CIPHER_SUITES, List.of(supportedCipherSuites), acceptedCiphers));
+                    String.format("None of the accepted ciphers are supported (supported=%s, accepted=%s)",
+                                  supportedCiphers, acceptedCiphers));
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", List.of(validCipherSuites)));
-        return validCipherSuites;
+        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", List.of(allowedCiphers)));
+        return allowedCiphers;
     }
 
     private static String[] getAllowedProtocols(SSLContext sslContext) {
-        String[] supportedProtocols = sslContext.getSupportedSSLParameters().getProtocols();
-        String[] validProtocols = Arrays.stream(supportedProtocols)
-                .filter(ALLOWED_PROTOCOLS::contains)
-                .toArray(String[]::new);
-        if (validProtocols.length == 0) {
-            throw new IllegalArgumentException(
-                    String.format("None of the allowed protocols are supported (allowed-protocols=%s, supported-protocols=%s)",
-                                  ALLOWED_PROTOCOLS, List.of(supportedProtocols)));
-        }
-        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", List.of(validProtocols)));
-        return validProtocols;
+        Set<String> allowedProtocols = TlsContext.getAllowedProtocols(sslContext);
+        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", List.of(allowedProtocols)));
+        return allowedProtocols.toArray(String[]::new);
     }
 
     @Override
