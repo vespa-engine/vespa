@@ -149,6 +149,10 @@ public class RoutingPolicies {
         // Remove active load balancers and irrelevant zones from candidates
         removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()) ||
                                              !policy.zone().equals(loadBalancers.zone));
+        if (!removalCandidates.isEmpty()) {
+            LOGGER.log(LogLevel.WARNING, "Removing " + removalCandidates + ". Active load balancers " +
+                                         activeLoadBalancers);
+        }
         for (var policy : removalCandidates) {
             var dnsName = policy.endpointIn(controller.system()).dnsName();
             controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
@@ -235,6 +239,7 @@ public class RoutingPolicies {
                     return true;
             }
             // Any other state, such as inactive, is ignored.
+            LOGGER.log(LogLevel.WARNING, "Ignoring load balancer " + loadBalancer.hostname() + " in state " + loadBalancer.state());
             return false;
         }
 
