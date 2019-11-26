@@ -26,18 +26,11 @@ NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
 std::unique_ptr<SearchIterator>
 NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray& tfmda, bool strict) const
 {
-    using StrictNN = NearestNeighborIterator<true>;
-    using UnStrict = NearestNeighborIterator<false>;
-
     assert(tfmda.size() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0]; // always search in only one field
     const vespalib::tensor::DenseTensorView &qT = *_query_tensor;
 
-    if (strict) {
-        return std::make_unique<StrictNN>(tfmd, qT, _attr_tensor, _distance_heap);
-    } else {
-        return std::make_unique<UnStrict>(tfmd, qT, _attr_tensor, _distance_heap);
-    }
+    return NearestNeighborIteratorFactory::createIterator(strict, tfmd, qT, _attr_tensor, _distance_heap);
 }
 
 void

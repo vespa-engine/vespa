@@ -93,7 +93,6 @@ struct Fixture
 
 template <bool strict>
 SimpleResult find_matches(Fixture &env) {
-    using NNI = NearestNeighborIterator<strict>;
     auto md = MatchData::makeTestInstance(2, 2);
     auto qt = createTensor(TensorSpec(denseSpec));
 
@@ -102,11 +101,11 @@ SimpleResult find_matches(Fixture &env) {
     auto &attr = *(env._tensorAttr);
 
     NearestNeighborDistanceHeap dh(2);
-    NNI search(tfmd, qtv, attr, dh);
+    auto search = NearestNeighborIteratorFactory::createIterator(strict, tfmd, qtv, attr, dh);
     if (strict) {
-        return SimpleResult().searchStrict(search, attr.getNumDocs());
+        return SimpleResult().searchStrict(*search, attr.getNumDocs());
     } else {
-        return SimpleResult().search(search, attr.getNumDocs());
+        return SimpleResult().search(*search, attr.getNumDocs());
     }
 }
 
@@ -128,28 +127,27 @@ TEST("require that NearestNeighborIterator returns expected results") {
 
 template <bool strict>
 std::vector<feature_t> get_rawscores(Fixture &env) {
-    using NNI = NearestNeighborIterator<strict>;
     auto md = MatchData::makeTestInstance(2, 2);
     auto qt = createTensor(TensorSpec(denseSpec));
     auto &tfmd = *(md->resolveTermField(0));
     const DenseTensorView &qtv = *qt;
     auto &attr = *(env._tensorAttr);
     NearestNeighborDistanceHeap dh(2);
-    NNI search(tfmd, qtv, attr, dh);
+    auto search = NearestNeighborIteratorFactory::createIterator(strict, tfmd, qtv, attr, dh);
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
-    search.initRange(docid, limit);
+    search->initRange(docid, limit);
     std::vector<feature_t> rv;
     while (docid < limit) {
         if (strict) {
-            search.seek(docid);
-            if (search.isAtEnd()) break;
-            docid = search.getDocId();
-            search.unpack(docid);
+            search->seek(docid);
+            if (search->isAtEnd()) break;
+            docid = search->getDocId();
+            search->unpack(docid);
             rv.push_back(tfmd.getRawScore());
         } else {
-            if (search.seek(docid)) {
-                search.unpack(docid);
+            if (search->seek(docid)) {
+                search->unpack(docid);
                 rv.push_back(tfmd.getRawScore());
             }
         }
