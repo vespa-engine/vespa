@@ -7,6 +7,10 @@
 #include <util/filereader.h>
 #include <cassert>
 #include <cstring>
+#include <iostream>
+#include <vespa/vespalib/encoding/base64.h>
+
+using namespace vespalib;
 
 Client::Client(vespalib::CryptoEngine::SP engine, ClientArguments *args)
     : _args(args),
@@ -220,8 +224,17 @@ Client::run()
                 strcat(_linebuf, _args->_queryStringToAppend.c_str());
             }
             int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
+            
+            const char* content = urlSource.content();
+            std::string base64_decoded;
+            if (_args->_usePostMode && _args->_base64Decode) {
+                base64_decoded = Base64::decode(content, cLen);
+                content = base64_decoded.c_str();
+                cLen = base64_decoded.size();
+            }
+                        
             _reqTimer->Start();
-            auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, urlSource.content(), cLen);
+            auto fetch_status = _http->Fetch(_linebuf, _output.get(), _args->_usePostMode, content, cLen);
             _reqTimer->Stop();
             _status->AddRequestStatus(fetch_status.RequestStatus());
             if (fetch_status.Ok() && fetch_status.TotalHitCount() == 0)
