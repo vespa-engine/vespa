@@ -110,7 +110,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                 return Long.parseLong(labels[i]);
             }
             catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Expected a long label in " + this + " at position " + i);
+                throw new IllegalArgumentException("Expected an integer label in " + this + " at position " + i + " but got '" + labels[i] + "'");
             }
         }
 

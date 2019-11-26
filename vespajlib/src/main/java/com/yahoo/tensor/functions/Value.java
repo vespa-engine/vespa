@@ -82,7 +82,7 @@ public class Value extends PrimitiveTensorFunction {
             if (cellAddress.get(0).index().isPresent())
                 return "[" + cellAddress.get(0).index().get() + "]";
             else
-                return "{" + cellAddress.get(0).index().get() + "}";
+                return "{" + cellAddress.get(0).label() + "}";
         }
         else {
             return "{" + cellAddress.stream().map(i -> i.toString()).collect(Collectors.joining(", ")) + "}";
