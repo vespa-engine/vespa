@@ -224,9 +224,11 @@ Client::run()
                 strcat(_linebuf, _args->_queryStringToAppend.c_str());
             }
             int cLen = _args->_usePostMode ? urlSource.nextContent() : 0;
-            auto content = urlSource.content();
+            
+            const char* content = urlSource.content();
+            std::string base64_decoded;
             if (_args->_usePostMode && _args->_base64Decode) {
-                auto base64_decoded = Base64::decode(std::string(content, cLen));
+                base64_decoded = Base64::decode(content, cLen);
                 content = base64_decoded.c_str();
                 cLen = base64_decoded.size();
             }
