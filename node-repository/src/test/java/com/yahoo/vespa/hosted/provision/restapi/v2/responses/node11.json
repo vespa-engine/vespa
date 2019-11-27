@@ -8,7 +8,7 @@
   "openStackId": "host11.yahoo.com",
   "flavor": "[vcpu: 1.0, memory: 1.0 Gb, disk 100.0 Gb, bandwidth: 0.3 Gbps]",
   "canonicalFlavor": "[vcpu: 1.0, memory: 1.0 Gb, disk 100.0 Gb, bandwidth: 0.3 Gbps]",
-  "resources":{"vcpu":1.0,"memoryGb":1.0,"diskGb":100.0,"bandwidthGbps":0.3},
+  "resources":{"vcpu":1.0,"memoryGb":1.0,"diskGb":100.0,"bandwidthGbps":0.3,"diskSpeed":"fast","storageType":"any"},
   "minDiskAvailableGb": 100.0,
   "minMainMemoryAvailableGb": 1.0,
   "minCpuCores": 1.0,

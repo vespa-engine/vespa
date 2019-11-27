@@ -9,7 +9,7 @@
     {
       "tenant": "host4.yahoo.com",
       "newParent": "dockerhost4.yahoo.com",
-      "eligibleParents": 2
+      "eligibleParents": 1
     },
     {
       "tenant": "test-node-pool-102-2",

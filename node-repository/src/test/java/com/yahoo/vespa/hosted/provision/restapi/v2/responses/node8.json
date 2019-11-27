@@ -7,7 +7,7 @@
   "openStackId": "host8.yahoo.com",
   "flavor": "default",
   "canonicalFlavor": "default",
-  "resources":{"vcpu":2.0,"memoryGb":16.0,"diskGb":400.0,"bandwidthGbps":10.0,"storageType": "remote"},
+  "resources":{"vcpu":2.0,"memoryGb":16.0,"diskGb":400.0,"bandwidthGbps":10.0,"diskSpeed":"fast","storageType": "remote"},
   "minDiskAvailableGb": 400.0,
   "minMainMemoryAvailableGb": 16.0,
   "minCpuCores": 2.0,
