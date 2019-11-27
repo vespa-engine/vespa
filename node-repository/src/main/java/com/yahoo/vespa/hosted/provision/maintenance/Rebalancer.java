@@ -56,6 +56,7 @@ public class Rebalancer extends Maintainer {
     @Override
     protected void maintain() {
         if (hostProvisioner.isPresent()) return; // All nodes will be allocated on new hosts, so rebalancing makes no sense
+        if (nodeRepository().zone().environment().isTest()) return; // Test zones have short lived deployments, no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
         NodeList allNodes = nodeRepository().list();
