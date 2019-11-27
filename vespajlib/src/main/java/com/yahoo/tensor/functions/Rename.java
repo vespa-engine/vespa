@@ -20,18 +20,18 @@ import java.util.Objects;
  *
  * @author bratseth
  */
-public class Rename extends PrimitiveTensorFunction {
+public class Rename<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
-    private final TensorFunction argument;
+    private final TensorFunction<NAMETYPE> argument;
     private final List<String> fromDimensions;
     private final List<String> toDimensions;
     private final Map<String, String> fromToMap;
 
-    public Rename(TensorFunction argument, String fromDimension, String toDimension) {
+    public Rename(TensorFunction<NAMETYPE> argument, String fromDimension, String toDimension) {
         this(argument, ImmutableList.of(fromDimension), ImmutableList.of(toDimension));
     }
 
-    public Rename(TensorFunction argument, List<String> fromDimensions, List<String> toDimensions) {
+    public Rename(TensorFunction<NAMETYPE> argument, List<String> fromDimensions, List<String> toDimensions) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(fromDimensions, "The 'from' dimensions cannot be null");
         Objects.requireNonNull(toDimensions, "The 'to' dimensions cannot be null");
@@ -57,20 +57,20 @@ public class Rename extends PrimitiveTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("Rename must have 1 argument, got " + arguments.size());
-        return new Rename(arguments.get(0), fromDimensions, toDimensions);
+        return new Rename<>(arguments.get(0), fromDimensions, toDimensions);
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() { return this; }
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() { return this; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext<NAMETYPE> context) {
         return type(argument.type(context));
     }
 
@@ -82,7 +82,7 @@ public class Rename extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor tensor = argument.evaluate(context);
 
         TensorType renamedType = type(tensor.type());

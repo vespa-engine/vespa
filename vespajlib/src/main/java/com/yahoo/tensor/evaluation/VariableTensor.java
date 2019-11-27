@@ -16,7 +16,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class VariableTensor extends PrimitiveTensorFunction {
+public class VariableTensor<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final String name;
     private final Optional<TensorType> requiredType;
@@ -33,16 +33,16 @@ public class VariableTensor extends PrimitiveTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) { return this; }
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) { return this; }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() { return this; }
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() { return this; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext<NAMETYPE> context) {
         TensorType givenType = context.getType(name);
         if (givenType == null) return null;
         verifyType(givenType);
@@ -50,7 +50,7 @@ public class VariableTensor extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor tensor = context.getTensor(name);
         if (tensor == null) return null;
         verifyType(tensor.type());
@@ -67,4 +67,5 @@ public class VariableTensor extends PrimitiveTensorFunction {
             throw new IllegalArgumentException("Variable '" + name + "' must be compatible with " +
                                                requiredType.get() + " but was " + givenType);
     }
+
 }

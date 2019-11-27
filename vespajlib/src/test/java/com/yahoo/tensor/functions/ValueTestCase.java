@@ -19,9 +19,9 @@ public class ValueTestCase {
     @Test
     public void testValueFunctionGeneralForm() {
         Tensor input = Tensor.from("tensor(key{},x{}):{ {key:foo,x:0}:1.4, {key:bar,x:0}:2.3 }");
-        Tensor result = new Value(new ConstantTensor(input),
-                                  List.of(new Value.DimensionValue("key", "bar"),
-                                          new Value.DimensionValue("x", 0)))
+        Tensor result = new Value<>(new ConstantTensor<>(input),
+                                  List.of(new Value.DimensionValue<>("key", "bar"),
+                                          new Value.DimensionValue<>("x", 0)))
                                 .evaluate();
         assertEquals(0, result.type().rank());
         assertEquals(2.3, result.asDouble(), delta);
@@ -30,8 +30,8 @@ public class ValueTestCase {
     @Test
     public void testValueFunctionSingleMappedDimension() {
         Tensor input = Tensor.from("tensor(key{}):{ {key:foo}:1.4, {key:bar}:2.3 }");
-        Tensor result = new Value(new ConstantTensor(input),
-                                  List.of(new Value.DimensionValue("foo")))
+        Tensor result = new Value<>(new ConstantTensor<>(input),
+                                    List.of(new Value.DimensionValue<>("foo")))
                                 .evaluate();
         assertEquals(0, result.type().rank());
         assertEquals(1.4, result.asDouble(), delta);
@@ -40,8 +40,8 @@ public class ValueTestCase {
     @Test
     public void testValueFunctionSingleIndexedDimension() {
         Tensor input = Tensor.from("tensor(key[3]):[1.1, 2.2, 3.3]");
-        Tensor result = new Value(new ConstantTensor(input),
-                                  List.of(new Value.DimensionValue(2)))
+        Tensor result = new Value<>(new ConstantTensor<>(input),
+                                    List.of(new Value.DimensionValue<>(2)))
                                 .evaluate();
         assertEquals(0, result.type().rank());
         assertEquals(3.3, result.asDouble(), delta);
@@ -51,9 +51,9 @@ public class ValueTestCase {
     public void testValueFunctionShortFormWithMultipleDimensionsIsNotAllowed() {
         try {
             Tensor input = Tensor.from("tensor(key{},x{}):{ {key:foo,x:0}:1.4, {key:bar,x:0}:2.3 }");
-            new Value(new ConstantTensor(input),
-                      List.of(new Value.DimensionValue("bar"),
-                              new Value.DimensionValue(0)))
+            new Value<>(new ConstantTensor<>(input),
+                        List.of(new Value.DimensionValue<>("bar"),
+                                new Value.DimensionValue<>(0)))
                     .evaluate();
             fail("Expected exception");
         }

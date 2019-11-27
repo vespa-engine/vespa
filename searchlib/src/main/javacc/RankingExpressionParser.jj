@@ -887,30 +887,46 @@ void labelAndDimension(TensorAddress.Builder addressBuilder) :
 
 void labelAndDimensionValues(List addressValues) :
 {
-    String dimension, label;
+    String dimension;
+    Value.DimensionValue dimensionValue;
 }
 {
-    dimension = identifier() <COLON> label = tag()
-    { addressValues.add(new Value.DimensionValue(dimension, label)); }
+    dimension = identifier() <COLON> dimensionValue = dimensionValue(Optional.of(dimension))
+    { addressValues.add(dimensionValue); }
 }
 
 /** A tensor address (possibly on short form) represented as a list because the tensor type is not available */
 List valueAddress() :
 {
     List dimensionValues = new ArrayList();
-    String label;
+    ExpressionNode valueExpression;
+    Value.DimensionValue dimensionValue;
 }
 {
     (
-    ( <LSQUARE> ( <INTEGER> { dimensionValues.add(new Value.DimensionValue(token.image)); } ) <RSQUARE> )
+    ( <LSQUARE> ( valueExpression = expression() { dimensionValues.add(new Value.DimensionValue(TensorFunctionNode.wrapScalar(valueExpression))); } ) <RSQUARE> )
     |
-    LOOKAHEAD(3) ( <LCURLY> label = tag() { dimensionValues.add(new Value.DimensionValue(label)); } <RCURLY> )
-    |
-    ( <LCURLY>
-      (         labelAndDimensionValues(dimensionValues))*
+    LOOKAHEAD(3) ( <LCURLY>
+      (         labelAndDimensionValues(dimensionValues))+
       ( <COMMA> labelAndDimensionValues(dimensionValues))*
       <RCURLY>
     )
+    |
+    ( <LCURLY> dimensionValue = dimensionValue(Optional.empty()) { dimensionValues.add(dimensionValue); } <RCURLY> )
     )
     { return dimensionValues;}
+}
+
+Value.DimensionValue dimensionValue(Optional dimensionName) :
+{
+    ExpressionNode value;
+}
+{
+    value = expression()
+    {
+        if (value instanceof ReferenceNode && ((ReferenceNode)value).reference().isIdentifier())
+            return new Value.DimensionValue(dimensionName, ((ReferenceNode)value).reference().name());
+        else
+            return new Value.DimensionValue(dimensionName, TensorFunctionNode.wrapScalar(value));
+    }
 }

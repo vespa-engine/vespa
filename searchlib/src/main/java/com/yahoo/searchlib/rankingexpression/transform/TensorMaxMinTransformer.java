@@ -87,7 +87,7 @@ public class TensorMaxMinTransformer<CONTEXT extends TransformContext> extends E
         Reduce.Aggregator aggregator = Reduce.Aggregator.valueOf(node.getFunction().name());
         String dimension = ((ReferenceNode) arg2).getName();
 
-        return new TensorFunctionNode(new Reduce(expression, aggregator, dimension));
+        return new TensorFunctionNode(new Reduce<>(expression, aggregator, dimension));
     }
 
 }

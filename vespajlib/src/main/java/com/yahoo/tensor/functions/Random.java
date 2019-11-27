@@ -2,6 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.stream.Stream;
  *
  * @author bratseth
  */
-public class Random extends CompositeTensorFunction {
+public class Random<NAMETYPE extends TypeContext.Name> extends CompositeTensorFunction<NAMETYPE> {
 
     private final TensorType type;
 
@@ -22,18 +23,18 @@ public class Random extends CompositeTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 0)
             throw new IllegalArgumentException("Random must have 0 arguments, got " + arguments.size());
         return this;
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() {
-        return new Generate(type, ScalarFunctions.random());
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
+        return new Generate<>(type, ScalarFunctions.random());
     }
 
     @Override

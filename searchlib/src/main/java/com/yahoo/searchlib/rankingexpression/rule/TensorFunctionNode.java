@@ -33,14 +33,14 @@ import java.util.stream.Collectors;
 @Beta
 public class TensorFunctionNode extends CompositeNode {
 
-    private final TensorFunction function;
+    private final TensorFunction<Reference> function;
 
-    public TensorFunctionNode(TensorFunction function) {
+    public TensorFunctionNode(TensorFunction<Reference> function) {
         this.function = function;
     }
 
     /** Returns the tensor function wrapped by this */
-    public TensorFunction function() { return function; }
+    public TensorFunction<Reference> function() { return function; }
 
     @Override
     public List<ExpressionNode> children() {
@@ -49,7 +49,7 @@ public class TensorFunctionNode extends CompositeNode {
                                            .collect(Collectors.toList());
     }
 
-    private ExpressionNode toExpressionNode(TensorFunction f) {
+    private ExpressionNode toExpressionNode(TensorFunction<Reference> f) {
         if (f instanceof ExpressionTensorFunction)
             return ((ExpressionTensorFunction)f).expression;
         else
@@ -58,9 +58,9 @@ public class TensorFunctionNode extends CompositeNode {
 
     @Override
     public CompositeNode setChildren(List<ExpressionNode> children) {
-        List<TensorFunction> wrappedChildren = children.stream()
-                                                        .map(ExpressionTensorFunction::new)
-                                                        .collect(Collectors.toList());
+        List<TensorFunction<Reference>> wrappedChildren = children.stream()
+                                                                 .map(ExpressionTensorFunction::new)
+                                                                 .collect(Collectors.toList());
         return new TensorFunctionNode(function.withArguments(wrappedChildren));
     }
 
@@ -132,7 +132,7 @@ public class TensorFunctionNode extends CompositeNode {
      * A tensor function implemented by an expression.
      * This allows us to pass expressions as tensor function arguments.
      */
-    public static class ExpressionTensorFunction extends PrimitiveTensorFunction {
+    public static class ExpressionTensorFunction extends PrimitiveTensorFunction<Reference> {
 
         /** An expression which produces a tensor */
         private final ExpressionNode expression;
@@ -142,7 +142,7 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public List<TensorFunction> arguments() {
+        public List<TensorFunction<Reference>> arguments() {
             if (expression instanceof CompositeNode)
                 return ((CompositeNode)expression).children().stream()
                                                              .map(ExpressionTensorFunction::new)
@@ -152,7 +152,7 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public TensorFunction withArguments(List<TensorFunction> arguments) {
+        public TensorFunction<Reference> withArguments(List<TensorFunction<Reference>> arguments) {
             if (arguments.size() == 0) return this;
             List<ExpressionNode> unwrappedChildren = arguments.stream()
                                                               .map(arg -> ((ExpressionTensorFunction)arg).expression)
@@ -161,16 +161,15 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public PrimitiveTensorFunction toPrimitive() { return this; }
+        public PrimitiveTensorFunction<Reference> toPrimitive() { return this; }
 
         @Override
-        @SuppressWarnings("unchecked") // Generics awkwardness
-        public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
-            return expression.type((TypeContext<Reference>)context);
+        public TensorType type(TypeContext<Reference> context) {
+            return expression.type(context);
         }
 
         @Override
-        public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+        public Tensor evaluate(EvaluationContext<Reference> context) {
             return expression.evaluate((Context)context).asTensor();
         }
 

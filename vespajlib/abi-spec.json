@@ -2519,8 +2519,13 @@
       "public void <init>(java.lang.String, int)",
       "public void <init>(int)",
       "public void <init>(java.lang.String)",
+      "public void <init>(com.yahoo.tensor.functions.ScalarFunction)",
+      "public void <init>(java.util.Optional, java.lang.String)",
+      "public void <init>(java.util.Optional, com.yahoo.tensor.functions.ScalarFunction)",
+      "public void <init>(java.lang.String, com.yahoo.tensor.functions.ScalarFunction)",
       "public java.util.Optional dimension()",
-      "public java.lang.String label()",
+      "public java.util.Optional label()",
+      "public java.util.Optional index()",
       "public java.lang.String toString()"
     ],
     "fields": []

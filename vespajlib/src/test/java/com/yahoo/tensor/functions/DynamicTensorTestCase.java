@@ -22,15 +22,15 @@ public class DynamicTensorTestCase {
     @Test
     public void testDynamicTensorFunction() {
         TensorType dense = TensorType.fromSpec("tensor(x[3])");
-        DynamicTensor t1 = DynamicTensor.from(dense,
-                                              List.of(new Constant(1), new Constant(2), new Constant(3)));
+        DynamicTensor<TypeContext.Name> t1 = DynamicTensor.from(dense,
+                                                                List.of(new Constant(1), new Constant(2), new Constant(3)));
         assertEquals(Tensor.from(dense, "[1, 2, 3]"), t1.evaluate());
         assertEquals("tensor(x[3]):{{x:0}:1.0,{x:1}:2.0,{x:2}:3.0}", t1.toString());
 
         TensorType sparse = TensorType.fromSpec("tensor(x{})");
-        DynamicTensor t2 = DynamicTensor.from(sparse,
-                                              Collections.singletonMap(new TensorAddress.Builder(sparse).add("x", "a").build(),
-                                                                       new Constant(5)));
+        DynamicTensor<TypeContext.Name>  t2 = DynamicTensor.from(sparse,
+                                                                 Collections.singletonMap(new TensorAddress.Builder(sparse).add("x", "a").build(),
+                                                                                          new Constant(5)));
         assertEquals(Tensor.from(sparse, "{{x:a}:5}"), t2.evaluate());
         assertEquals("tensor(x{}):{{x:a}:5.0}", t2.toString());
     }

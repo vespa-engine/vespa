@@ -2,6 +2,7 @@
 package com.yahoo.tensor;
 
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
@@ -49,10 +50,10 @@ public class TensorFunctionBenchmark {
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double largest = Double.MIN_VALUE;
-        TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
-                                                                new VariableTensor("argument"), (a, b) -> a * b),
-                                                       Reduce.Aggregator.sum).toPrimitive();
-        MapEvaluationContext context = new MapEvaluationContext();
+        TensorFunction<TypeContext.Name> dotProductFunction = new Reduce<>(new Join<>(new ConstantTensor<>(tensor),
+                                                                                      new VariableTensor<>("argument"), (a, b) -> a * b),
+                                                                           Reduce.Aggregator.sum).toPrimitive();
+        MapEvaluationContext<TypeContext.Name> context = new MapEvaluationContext<>();
 
         for (Tensor tensorElement : tensors) { // tensors.size() = 1 for larger tensor
             context.put("argument", tensorElement);

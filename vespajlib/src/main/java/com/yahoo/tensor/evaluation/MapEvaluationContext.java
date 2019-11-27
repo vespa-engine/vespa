@@ -9,7 +9,7 @@ import java.util.HashMap;
 /**
  * @author bratseth
  */
-public class MapEvaluationContext implements EvaluationContext<TypeContext.Name> {
+public class MapEvaluationContext<NAMETYPE extends TypeContext.Name> implements EvaluationContext<NAMETYPE> {
 
     private final java.util.Map<String, Tensor> bindings = new HashMap<>();
 
@@ -17,14 +17,14 @@ public class MapEvaluationContext implements EvaluationContext<TypeContext.Name>
 
     @Override
     public TensorType getType(String name) {
-        return getType(new Name(name));
+        Tensor tensor = bindings.get(name);
+        if (tensor == null) return null;
+        return tensor.type();
     }
 
     @Override
-    public TensorType getType(Name name) {
-        Tensor tensor = bindings.get(name.toString());
-        if (tensor == null) return null;
-        return tensor.type();
+    public TensorType getType(NAMETYPE name) {
+        return getType(name.name());
     }
 
     @Override

@@ -16,17 +16,17 @@ import java.util.List;
  *
  * @author bratseth
  */
-public abstract class TensorFunction {
+public abstract class TensorFunction<NAMETYPE extends TypeContext.Name> {
 
     /** Returns the function arguments of this node in the order they are applied */
-    public abstract List<TensorFunction> arguments();
+    public abstract List<TensorFunction<NAMETYPE>> arguments();
 
     /**
      * Returns a copy of this tensor function with the arguments replaced by the given list of arguments.
      *
      * @throws IllegalArgumentException if the argument list has the wrong size for this function
      */
-    public abstract TensorFunction withArguments(List<TensorFunction> arguments);
+    public abstract TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments);
 
     /**
      * Translate this function - and all of its arguments recursively -
@@ -34,24 +34,24 @@ public abstract class TensorFunction {
      *
      * @return a tree of primitive functions implementing this
      */
-    public abstract PrimitiveTensorFunction toPrimitive();
+    public abstract PrimitiveTensorFunction<NAMETYPE> toPrimitive();
 
     /**
      * Evaluates this tensor.
      *
      * @param context a context which must be passed to all nested functions when evaluating
      */
-    public abstract <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE>  context);
+    public abstract Tensor evaluate(EvaluationContext<NAMETYPE>  context);
 
     /**
      * Returns the type of the tensor this produces given the input types in the context
      *
      * @param context a context which must be passed to all nexted functions when evaluating
      */
-    public abstract <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context);
+    public abstract TensorType type(TypeContext<NAMETYPE> context);
 
     /** Evaluate with no context */
-    public final Tensor evaluate() { return evaluate(new MapEvaluationContext()); }
+    public final Tensor evaluate() { return evaluate(new MapEvaluationContext<>()); }
 
     /**
      * Return a string representation of this context.

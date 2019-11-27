@@ -2,6 +2,7 @@
 package com.yahoo.searchlib.rankingexpression.evaluation.tensoroptimization;
 
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.ContextIndex;
 import com.yahoo.searchlib.rankingexpression.evaluation.OptimizationReport;
 import com.yahoo.searchlib.rankingexpression.evaluation.Optimizer;
@@ -58,11 +59,12 @@ public class TensorOptimizer extends Optimizer {
      * The ReduceJoin class determines whether or not the arguments are
      * compatible with the optimization.
      */
+    @SuppressWarnings("unchecked")
     private ExpressionNode optimizeReduceJoin(ExpressionNode node) {
         if ( ! (node instanceof TensorFunctionNode)) {
             return node;
         }
-        TensorFunction function = ((TensorFunctionNode) node).function();
+        TensorFunction<Reference> function = ((TensorFunctionNode) node).function();
         if ( ! (function instanceof Reduce)) {
             return node;
         }
@@ -74,10 +76,10 @@ public class TensorOptimizer extends Optimizer {
         if ( ! (child instanceof TensorFunctionNode)) {
             return node;
         }
-        TensorFunction argument = ((TensorFunctionNode) child).function();
+        TensorFunction<Reference> argument = ((TensorFunctionNode) child).function();
         if (argument instanceof Join) {
             report.incMetric("Replaced reduce->join", 1);
-            return new TensorFunctionNode(new ReduceJoin((Reduce)function, (Join)argument));
+            return new TensorFunctionNode(new ReduceJoin<>((Reduce<Reference>)function, (Join<Reference>)argument));
         }
         return node;
     }

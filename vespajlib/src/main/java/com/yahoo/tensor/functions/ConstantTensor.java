@@ -14,7 +14,7 @@ import java.util.List;
  *
  * @author bratseth
  */
-public class ConstantTensor extends PrimitiveTensorFunction {
+public class ConstantTensor<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final Tensor constant;
 
@@ -27,23 +27,23 @@ public class ConstantTensor extends PrimitiveTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("ConstantTensor must have 0 arguments, got " + arguments.size());
         return this;
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() { return this; }
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() { return this; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) { return constant.type(); }
+    public TensorType type(TypeContext<NAMETYPE> context) { return constant.type(); }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) { return constant; }
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) { return constant; }
 
     @Override
     public String toString(ToStringContext context) { return constant.toString(); }
