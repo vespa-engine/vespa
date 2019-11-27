@@ -8,13 +8,11 @@ import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
-import com.yahoo.vespa.hosted.controller.Instance;
 
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -51,34 +49,6 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
 
     // ----------------------------------- Filters
 
-    /** Returns the subset of applications which are upgrading (to any version), not considering block windows. */
-    public ApplicationList upgrading() {
-        return matching(application -> application.change().platform().isPresent());
-    }
-
-    /** Returns the subset of applications which are currently upgrading to the given version */
-    public ApplicationList upgradingTo(Version version) {
-        return upgradingTo(List.of(version));
-    }
-
-    /** Returns the subset of applications which are currently upgrading to the given version */
-    public ApplicationList upgradingTo(Collection<Version> versions) {
-        return matching(application -> versions.stream().anyMatch(version -> isUpgradingTo(version, application)));
-    }
-
-    /** Returns the subset of applications which are not pinned to a certain Vespa version. */
-    public ApplicationList unpinned() {
-        return matching(application -> ! application.change().isPinned());
-    }
-
-    public ApplicationList failingUpgrade() {
-        return matching(application -> ! application.instances().values().stream()
-                                                    .allMatch(instance -> JobList.from(instance)
-                                                                                 .failing()
-                                                                                 .not().failingApplicationChange()
-                                                                                 .isEmpty()));
-    }
-
     /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
     public ApplicationList withChanges() {
         return matching(application -> application.change().hasTargets() || application.outstandingChange().hasTargets());
@@ -89,47 +59,10 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
         return matching(application -> application.change().hasTargets());
     }
 
-    /** Returns the subset of applications which currently have failing jobs */
-    public ApplicationList failing() {
-        return matching(application -> application.instances().values().stream()
-                                                  .anyMatch(instance -> instance.deploymentJobs().hasFailures()));
-    }
-
-    /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */
-    public ApplicationList failingUpgradeToVersionSince(Version version, Instant threshold) {
-        return matching(application -> application.instances().values().stream()
-                                                  .anyMatch(instance -> failingUpgradeToVersionSince(instance, version, threshold)));
-    }
-
-    /** Returns the subset of applications which have been failing an application change since the given instant */
-    public ApplicationList failingApplicationChangeSince(Instant threshold) {
-        return matching(application -> application.instances().values().stream()
-                                                  .anyMatch(instance -> failingApplicationChangeSince(instance, threshold)));
-    }
-
-    /** Returns the subset of applications which currently have failing jobs on the given version */
-    public ApplicationList failingOn(Version version) {
-        return matching(application -> application.instances().values().stream()
-                                                  .anyMatch(instance -> failingOn(version, instance)));
-    }
-
     /** Returns the subset of applications which have at least one production deployment */
     public ApplicationList withProductionDeployment() {
         return matching(application -> application.instances().values().stream()
                                                     .anyMatch(instance -> instance.productionDeployments().size() > 0));
-    }
-
-    /** Returns the subset of applications which started failing on the given version */
-    public ApplicationList startedFailingOn(Version version) {
-        return matching(application -> application.instances().values().stream()
-                                                    .anyMatch(instance ->  ! JobList.from(instance).firstFailing().on(version).isEmpty()));
-    }
-
-    /** Returns the subset of applications which has the given upgrade policy */
-    // TODO jonmv: Make this instance based when instances are orchestrated, and deployments reported per instance.
-    public ApplicationList with(UpgradePolicy policy) {
-        return matching(application ->  application.deploymentSpec().instances().stream()
-                                                     .anyMatch(instance -> instance.upgradePolicy() == policy));
     }
 
     /** Returns the subset of applications which have at least one deployment on a lower version than the given one */
@@ -183,34 +116,6 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
     public ApplicationList byIncreasingDeployedVersion() {
         return sortedBy(Comparator.comparing(application -> application.oldestDeployedPlatform()
                                                                        .orElse(Version.emptyVersion)));
-    }
-
-    // ----------------------------------- Internal helpers
-
-    private static boolean isUpgradingTo(Version version, Application application) {
-        return application.change().platform().equals(Optional.of(version));
-    }
-
-    private static boolean failingOn(Version version, Instance instance) {
-        return ! JobList.from(instance)
-                        .failing()
-                        .lastCompleted().on(version)
-                        .isEmpty();
-    }
-
-    private static boolean failingUpgradeToVersionSince(Instance instance, Version version, Instant threshold) {
-        return ! JobList.from(instance)
-                        .not().failingApplicationChange()
-                        .firstFailing().before(threshold)
-                        .lastCompleted().on(version)
-                        .isEmpty();
-    }
-
-    private static boolean failingApplicationChangeSince(Instance instance, Instant threshold) {
-        return ! JobList.from(instance)
-                        .failingApplicationChange()
-                        .firstFailing().before(threshold)
-                        .isEmpty();
     }
 
 }
