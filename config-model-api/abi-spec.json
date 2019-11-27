@@ -239,11 +239,12 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.config.provision.Environment)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional, java.util.Optional)",
+      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
       "public boolean active()",
       "public java.util.Optional testerFlavor()",
+      "public java.util.Optional testDelay()",
       "public java.util.Optional athenzService()",
       "public java.util.List zones()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
