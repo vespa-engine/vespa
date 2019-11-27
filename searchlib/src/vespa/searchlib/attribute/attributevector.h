@@ -47,7 +47,7 @@ namespace search {
     class IAttributeSaveTarget;
     struct IDocumentWeightAttribute;
     class QueryTermSimple;
-    class QueryTermBase;
+    class QueryTermUCS4;
 
     namespace fef {
         class TermFieldMatchData;
@@ -525,8 +525,8 @@ public:
         void fetchPostings(bool strict) override;
         bool valid() const override { return false; }
         Int64Range getAsIntegerTerm() const override { return Int64Range(); }
-        const QueryTermBase * queryTerm() const override {
-            return static_cast<const QueryTermBase *>(nullptr);
+        const QueryTermUCS4 * queryTerm() const override {
+            return static_cast<const QueryTermUCS4 *>(nullptr);
         }
         const vespalib::string &attributeName() const override {
             return _attr.getName();

@@ -100,7 +100,7 @@ protected:
     protected:
         bool valid() const override;
 
-        const QueryTermBase * queryTerm() const override;
+        const QueryTermUCS4 * queryTerm() const override;
         bool isMatch(const char *src) const {
             if (__builtin_expect(isRegex(), false)) {
                 return _regex ? std::regex_search(src, *_regex) : false;

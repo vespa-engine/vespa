@@ -2,7 +2,7 @@
 #pragma once
 
 #include "posocc.h"
-#include "query_term_simple.h"
+#include "query_term_ucs4.h"
 #include "querynode.h"
 #include "querynoderesultbase.h"
 #include "weight.h"
@@ -13,41 +13,13 @@
 
 namespace search {
 
-class QueryTermBase : public QueryTermSimple
-{
-public:
-    typedef std::vector<ucs4_t> UCS4StringT;
-    typedef std::unique_ptr<QueryTermBase> UP;
-    QueryTermBase(const QueryTermBase &) = default;
-    QueryTermBase & operator = (const QueryTermBase &) = default;
-    QueryTermBase(QueryTermBase &&) = default;
-    QueryTermBase & operator = (QueryTermBase &&) = default;
-    QueryTermBase();
-    QueryTermBase(const string & term_, SearchTerm type);
-    ~QueryTermBase();
-    size_t getTermLen() const { return _cachedTermLen; }
-    size_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
-    UCS4StringT getUCS4Term() const;
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    size_t term(const ucs4_t * & t) {
-        if (_termUCS4.empty()) {
-            _termUCS4 = getUCS4Term();
-        }
-        t = &_termUCS4[0];
-        return _cachedTermLen;
-    }
-private:
-    size_t                       _cachedTermLen;
-    UCS4StringT                  _termUCS4;
-};
-
 /**
    This is a leaf in the Query tree. All terms are leafs.
    A QueryTerm has the index for where to find the term. The term is a string,
    both char(utf8) and ucs4. There are flags indicating encoding. And there are
    flags indicating if it should be considered a prefix.
 */
-class QueryTerm : public QueryTermBase, public QueryNode
+class QueryTerm : public QueryTermUCS4, public QueryNode
 {
 public:
     typedef std::unique_ptr<QueryTerm> UP;

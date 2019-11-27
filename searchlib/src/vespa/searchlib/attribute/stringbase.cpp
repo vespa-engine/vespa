@@ -5,7 +5,7 @@
 #include "readerbase.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/util/fileutil.hpp>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -251,10 +251,10 @@ StringAttribute::StringSearchContext::valid() const
     return (_queryTerm.get() && (!_queryTerm->empty()));
 }
 
-const QueryTermBase *
+const QueryTermUCS4 *
 StringAttribute::StringSearchContext::queryTerm() const
 {
-    return static_cast<const QueryTermBase *>(_queryTerm.get());
+    return static_cast<const QueryTermUCS4 *>(_queryTerm.get());
 }
 
 uint32_t StringAttribute::clearDoc(DocId doc)

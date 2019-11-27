@@ -90,7 +90,7 @@ struct FakeContext : attribute::ISearchContext {
     void fetchPostings(bool) override { }
     bool valid() const override { return true; }
     search::Int64Range getAsIntegerTerm() const override { abort(); }
-    const search::QueryTermBase * queryTerm() const override { abort(); }
+    const search::QueryTermUCS4 * queryTerm() const override { abort(); }
     const vespalib::string &attributeName() const override { return name; }
 };
 

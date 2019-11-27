@@ -40,45 +40,8 @@ static CharInfo _G_charTable;
 
 namespace search {
 
-QueryTermBase::UCS4StringT
-QueryTermBase::getUCS4Term() const {
-    UCS4StringT ucs4;
-    const string & term = getTermString();
-    ucs4.reserve(term.size() + 1);
-    vespalib::Utf8Reader r(term);
-    while (r.hasMore()) {
-        ucs4_t u = r.getChar();
-        ucs4.push_back(u);
-    }
-    ucs4.push_back(0);
-    return ucs4;
-}
-
-QueryTermBase::QueryTermBase() :
-    QueryTermSimple(),
-    _cachedTermLen(0),
-    _termUCS4()
-{
-    _termUCS4.push_back(0);
-}
-
-QueryTermBase::~QueryTermBase() = default;
-
-QueryTermBase::QueryTermBase(const string & termS, SearchTerm type) :
-    QueryTermSimple(termS, type),
-    _cachedTermLen(0),
-    _termUCS4()
-{
-    vespalib::Utf8Reader r(termS);
-    while (r.hasMore()) {
-        ucs4_t u = r.getChar();
-        (void) u;
-        _cachedTermLen++;
-    }
-}
-
 QueryTerm::QueryTerm() :
-    QueryTermBase(),
+    QueryTermUCS4(),
     _index(),
     _encoding(),
     _result(),
@@ -96,16 +59,9 @@ QueryTerm & QueryTerm::operator = (QueryTerm &&) = default;
 QueryTerm::~QueryTerm() = default;
 
 void
-QueryTermBase::visitMembers(vespalib::ObjectVisitor & visitor) const
-{
-    QueryTermSimple::visitMembers(visitor);
-    visit(visitor, "termlength", static_cast<uint64_t>(_cachedTermLen));
-}
-
-void
 QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
 {
-    QueryTermBase::visitMembers(visitor);
+    QueryTermUCS4::visitMembers(visitor);
     visit(visitor, "encoding.isBase10Integer", _encoding.isBase10Integer());
     visit(visitor, "encoding.isFloat", _encoding.isFloat());
     visit(visitor, "encoding.isAscii7Bit", _encoding.isAscii7Bit());
@@ -115,7 +71,7 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
 }
 
 QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & termS, const string & indexS, SearchTerm type) :
-    QueryTermBase(termS, type),
+    QueryTermUCS4(termS, type),
     _index(indexS),
     _encoding(0x01),
     _result(org.release()),
