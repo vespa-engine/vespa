@@ -7,7 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  *
  * @author lesters
  */
-public class ReduceJoin<NAMETYPE extends TypeContext.Name> extends CompositeTensorFunction<NAMETYPE> {
+public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final DoubleBinaryOperator combinator;

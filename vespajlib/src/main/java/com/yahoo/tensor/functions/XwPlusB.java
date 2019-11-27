@@ -2,14 +2,14 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.List;
 
 /**
  * @author bratseth
  */
-public class XwPlusB<NAMETYPE extends TypeContext.Name> extends CompositeTensorFunction<NAMETYPE> {
+public class XwPlusB<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> x, w, b;
     private final String dimension;

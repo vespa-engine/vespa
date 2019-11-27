@@ -9,7 +9,7 @@ import java.util.HashMap;
 /**
  * @author bratseth
  */
-public class MapEvaluationContext<NAMETYPE extends TypeContext.Name> implements EvaluationContext<NAMETYPE> {
+public class MapEvaluationContext<NAMETYPE extends Name> implements EvaluationContext<NAMETYPE> {
 
     private final java.util.Map<String, Tensor> bindings = new HashMap<>();
 

@@ -3,7 +3,7 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Collections;
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * @author bratseth
  */
-public class Softmax<NAMETYPE extends TypeContext.Name> extends CompositeTensorFunction<NAMETYPE> {
+public class Softmax<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argument;
     private final String dimension;

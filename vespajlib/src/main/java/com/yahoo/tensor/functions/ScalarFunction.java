@@ -2,7 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.evaluation.EvaluationContext;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.function.Function;
 
@@ -11,7 +11,7 @@ import java.util.function.Function;
  *
  * @author bratseth
  */
-public interface ScalarFunction<NAMETYPE extends TypeContext.Name> extends Function<EvaluationContext<NAMETYPE>, Double> {
+public interface ScalarFunction<NAMETYPE extends Name> extends Function<EvaluationContext<NAMETYPE>, Double> {
 
     @Override
     Double apply(EvaluationContext<NAMETYPE> context);

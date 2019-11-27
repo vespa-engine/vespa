@@ -7,6 +7,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
@@ -24,7 +25,7 @@ import java.util.Set;
  *
  * @author bratseth
  */
-public class Reduce<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     public enum Aggregator { avg, count, prod, sum, max, min; }
 

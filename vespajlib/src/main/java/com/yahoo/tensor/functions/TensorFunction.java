@@ -5,6 +5,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.List;
@@ -16,7 +17,7 @@ import java.util.List;
  *
  * @author bratseth
  */
-public abstract class TensorFunction<NAMETYPE extends TypeContext.Name> {
+public abstract class TensorFunction<NAMETYPE extends Name> {
 
     /** Returns the function arguments of this node in the order they are applied */
     public abstract List<TensorFunction<NAMETYPE>> arguments();

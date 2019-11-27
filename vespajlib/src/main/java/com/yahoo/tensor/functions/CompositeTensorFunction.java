@@ -4,6 +4,7 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 /**
@@ -12,7 +13,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
  *
  * @author bratseth
  */
-public abstract class CompositeTensorFunction<NAMETYPE extends TypeContext.Name>  extends TensorFunction<NAMETYPE> {
+public abstract class CompositeTensorFunction<NAMETYPE extends Name> extends TensorFunction<NAMETYPE> {
 
     /** Finds the type this produces by first converting it to a primitive function */
     @Override

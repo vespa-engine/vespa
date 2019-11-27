@@ -2,7 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Collections;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  *
  * @author bratseth
  */
-public class Range<NAMETYPE extends TypeContext.Name> extends CompositeTensorFunction<NAMETYPE> {
+public class Range<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
     private final TensorType type;
     private final Function<List<Long>, Double> rangeFunction;

@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 /**
  * A primitive tensor function is a tensor function which cannot be expressed in terms of other tensor functions.
@@ -10,6 +10,6 @@ import com.yahoo.tensor.evaluation.TypeContext;
  *
  * @author bratseth
  */
-public abstract class PrimitiveTensorFunction<NAMETYPE extends TypeContext.Name> extends TensorFunction<NAMETYPE> {
+public abstract class PrimitiveTensorFunction<NAMETYPE extends Name> extends TensorFunction<NAMETYPE> {
 
 }

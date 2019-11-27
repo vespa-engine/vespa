@@ -6,6 +6,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.List;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 @Beta
-public class Value<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argument;
     private final List<DimensionValue<NAMETYPE>> cellAddress;
@@ -93,7 +94,7 @@ public class Value<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFun
         }
     }
 
-    public static class DimensionValue<NAMETYPE extends TypeContext.Name>  {
+    public static class DimensionValue<NAMETYPE extends Name>  {
 
         private final Optional<String> dimension;
 
@@ -166,7 +167,7 @@ public class Value<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFun
 
     }
 
-    private static class ConstantScalarFunction<NAMETYPE extends TypeContext.Name>  implements ScalarFunction<NAMETYPE> {
+    private static class ConstantScalarFunction<NAMETYPE extends Name> implements ScalarFunction<NAMETYPE> {
 
         private final Double value;
 

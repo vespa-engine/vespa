@@ -8,6 +8,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Arrays;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class Concat<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final String dimension;

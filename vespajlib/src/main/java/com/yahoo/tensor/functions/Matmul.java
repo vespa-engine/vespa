@@ -3,14 +3,14 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.List;
 
 /**
  * @author bratseth
  */
-public class Matmul<NAMETYPE extends TypeContext.Name> extends CompositeTensorFunction<NAMETYPE> {
+public class Matmul<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argument1, argument2;
     private final String dimension;

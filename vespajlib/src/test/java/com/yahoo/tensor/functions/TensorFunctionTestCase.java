@@ -2,7 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -23,7 +23,7 @@ public class TensorFunctionTestCase {
                          new Argmax<>(new ConstantTensor<>("{ {x:1}:1, {x:3}:5, {x:9}:3 }"), "x"));
     }
 
-    private void assertTranslated(String expectedTranslation, TensorFunction<TypeContext.Name> inputFunction) {
+    private void assertTranslated(String expectedTranslation, TensorFunction<Name> inputFunction) {
         assertEquals(expectedTranslation, inputFunction.toPrimitive().toString());
     }
 

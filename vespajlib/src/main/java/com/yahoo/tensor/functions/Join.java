@@ -10,6 +10,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import java.util.function.DoubleBinaryOperator;
  *
  * @author bratseth
  */
-public class Join<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final DoubleBinaryOperator combinator;

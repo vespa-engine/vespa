@@ -4,6 +4,7 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
@@ -14,7 +15,7 @@ import java.util.List;
  *
  * @author bratseth
  */
-public class ConstantTensor<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class ConstantTensor<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final Tensor constant;
 

@@ -16,7 +16,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class VariableTensor<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class VariableTensor<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final String name;
     private final Optional<TensorType> requiredType;

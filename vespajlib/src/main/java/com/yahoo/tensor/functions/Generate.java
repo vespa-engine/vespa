@@ -6,6 +6,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
@@ -19,7 +20,7 @@ import java.util.function.Function;
  *
  * @author bratseth
  */
-public class Generate<NAMETYPE extends TypeContext.Name>  extends PrimitiveTensorFunction<NAMETYPE> {
+public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorType type;
 
@@ -40,7 +41,7 @@ public class Generate<NAMETYPE extends TypeContext.Name>  extends PrimitiveTenso
      *                  tensor cell which will receive the value
      * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
      */
-    public static <NAMETYPE extends TypeContext.Name> Generate<NAMETYPE> free(TensorType type, Function<List<Long>, Double> generator) {
+    public static <NAMETYPE extends Name> Generate<NAMETYPE> free(TensorType type, Function<List<Long>, Double> generator) {
         return new Generate<>(type, Objects.requireNonNull(generator), null);
     }
 
@@ -52,7 +53,7 @@ public class Generate<NAMETYPE extends TypeContext.Name>  extends PrimitiveTenso
      *                  tensor cell which will receive the value
      * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
      */
-    public static <NAMETYPE extends TypeContext.Name> Generate<NAMETYPE> bound(TensorType type, ScalarFunction<NAMETYPE> generator) {
+    public static <NAMETYPE extends Name> Generate<NAMETYPE> bound(TensorType type, ScalarFunction<NAMETYPE> generator) {
         return new Generate<>(type, null, Objects.requireNonNull(generator));
     }
 

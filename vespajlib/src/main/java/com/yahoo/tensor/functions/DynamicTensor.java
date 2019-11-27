@@ -7,20 +7,19 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * A function which is a tensor whose values are computed by individual lambda functions on evaluation.
  *
  * @author bratseth
  */
-public abstract class DynamicTensor<NAMETYPE extends TypeContext.Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorType type;
 
@@ -54,16 +53,16 @@ public abstract class DynamicTensor<NAMETYPE extends TypeContext.Name> extends P
     abstract String contentToString(ToStringContext context);
 
     /** Creates a dynamic tensor function. The cell addresses must match the type. */
-    public static <NAMETYPE extends TypeContext.Name> DynamicTensor<NAMETYPE> from(TensorType type, Map<TensorAddress, ScalarFunction<NAMETYPE>> cells) {
+    public static <NAMETYPE extends Name> DynamicTensor<NAMETYPE> from(TensorType type, Map<TensorAddress, ScalarFunction<NAMETYPE>> cells) {
         return new MappedDynamicTensor<>(type, cells);
     }
 
     /** Creates a dynamic tensor function for a bound, indexed tensor */
-    public static <NAMETYPE extends TypeContext.Name> DynamicTensor<NAMETYPE> from(TensorType type, List<ScalarFunction<NAMETYPE>> cells) {
+    public static <NAMETYPE extends Name> DynamicTensor<NAMETYPE> from(TensorType type, List<ScalarFunction<NAMETYPE>> cells) {
         return new IndexedDynamicTensor<>(type, cells);
     }
 
-    private static class MappedDynamicTensor<NAMETYPE extends TypeContext.Name> extends DynamicTensor<NAMETYPE> {
+    private static class MappedDynamicTensor<NAMETYPE extends Name> extends DynamicTensor<NAMETYPE> {
 
         private final ImmutableMap<TensorAddress, ScalarFunction<NAMETYPE>> cells;
 
@@ -101,7 +100,7 @@ public abstract class DynamicTensor<NAMETYPE extends TypeContext.Name> extends P
 
     }
 
-    private static class IndexedDynamicTensor<NAMETYPE extends TypeContext.Name> extends DynamicTensor<NAMETYPE> {
+    private static class IndexedDynamicTensor<NAMETYPE extends Name> extends DynamicTensor<NAMETYPE> {
 
         private final List<ScalarFunction<NAMETYPE>> cells;
 
