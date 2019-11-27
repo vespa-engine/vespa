@@ -78,4 +78,16 @@ search tensor {
 
   }
 
+  rank-profile profile7 {
+
+    first-phase {
+      expression: sum(reshaped())
+    }
+
+    function reshaped() {
+      expression: tensor<float>(d0[1],x[2])(attribute(f2){x:1-x, y:d0})
+    }
+
+  }
+
 }
