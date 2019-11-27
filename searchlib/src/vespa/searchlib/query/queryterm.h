@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "posocc.h"
+#include "hit.h"
 #include "query_term_ucs4.h"
 #include "querynode.h"
 #include "querynoderesultbase.h"
