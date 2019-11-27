@@ -12,12 +12,15 @@
 #include "requestcontext.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/queryeval/idiversifier.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/clock.h>
 
+namespace search::fef {
+    class RankProgram;
+    class RankSetup;
+}
 namespace proton::matching {
 
 class MatchTools
@@ -32,12 +35,12 @@ private:
     const QueryEnvironment                &_queryEnv;
     const search::fef::RankSetup          &_rankSetup;
     const search::fef::Properties         &_featureOverrides;
-    search::fef::MatchData::UP             _match_data;
-    search::fef::RankProgram::UP           _rank_program;
+    std::unique_ptr<search::fef::MatchData>     _match_data;
+    std::unique_ptr<search::fef::RankProgram>   _rank_program;
     search::queryeval::SearchIterator::UP  _search;
     HandleRecorder::HandleMap              _used_handles;
     bool                                   _search_has_changed;
-    void setup(search::fef::RankProgram::UP, double termwise_limit = 1.0);
+    void setup(std::unique_ptr<search::fef::RankProgram>, double termwise_limit = 1.0);
 public:
     typedef std::unique_ptr<MatchTools> UP;
     MatchTools(const MatchTools &) = delete;
@@ -56,7 +59,7 @@ public:
     const vespalib::Doom &getHardDoom() const { return _hardDoom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
     MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
-    bool has_second_phase_rank() const { return !_rankSetup.getSecondPhaseRank().empty(); }
+    bool has_second_phase_rank() const;
     const search::fef::MatchData &match_data() const { return *_match_data; }
     search::fef::RankProgram &rank_program() { return *_rank_program; }
     search::queryeval::SearchIterator &search() { return *_search; }
@@ -126,12 +129,11 @@ public:
     bool should_diversify() const { return _diversityParams.enabled(); }
     std::unique_ptr<search::queryeval::IDiversifier> createDiversifier(uint32_t heapSize) const;
     search::queryeval::Blueprint::HitEstimate estimate() const { return _query.estimate(); }
-    bool has_first_phase_rank() const { return !_rankSetup.getFirstPhaseRank().empty(); }
+    bool has_first_phase_rank() const;
     std::unique_ptr<AttributeOperationTask> createOnMatchTask() const;
     std::unique_ptr<AttributeOperationTask> createOnReRankTask() const;
     std::unique_ptr<AttributeOperationTask> createOnSummaryTask() const;
 
-    const RequestContext & requestContext() const { return _requestContext; }
     const Query & query() const { return _query; }
 };
 

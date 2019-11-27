@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "match_tools.h"
 #include "i_match_loop_communicator.h"
 #include "match_params.h"
 #include "matching_stats.h"
@@ -14,13 +13,21 @@
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
+#include <vespa/searchlib/fef/featureexecutor.h>
 
 namespace search::engine {
     class Trace;
     class RelativeTime;
 }
 
+namespace search::fef {class RankProgram; }
+
+namespace search::queryeval { class SearchIterator; }
+
 namespace proton::matching {
+
+class MatchTools;
+class MatchToolsFactory;
 
 /**
  * Runs a single match thread and keeps track of local state.

@@ -2,14 +2,16 @@
 
 #include "match_tools.h"
 #include "querynodes.h"
+#include <vespa/searchcorespi/index/indexsearchable.h>
+#include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/common/bitvector.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.match_tools");
-#include <vespa/searchlib/query/tree/querytreecreator.h>
-#include <vespa/searchcorespi/index/indexsearchable.h>
 
 using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
@@ -33,7 +35,7 @@ bool contains_all(const HandleRecorder::HandleMap &old_map,
     for (const auto &handle: new_map) {
         const auto old_itr = old_map.find(handle.first);
         if (old_itr == old_map.end() ||
-            ((static_cast<int>(handle.second) & ~static_cast<int>(old_itr->second)) != 0)) {
+            ((int(handle.second) & ~int(old_itr->second)) != 0)) {
             return false;
         }
     }
@@ -112,6 +114,11 @@ MatchTools::MatchTools(QueryLimiter & queryLimiter,
 }
 
 MatchTools::~MatchTools() = default;
+
+bool
+MatchTools::has_second_phase_rank() const {
+    return !_rankSetup.getSecondPhaseRank().empty();
+}
 
 void
 MatchTools::setup_first_phase()
@@ -237,6 +244,11 @@ std::unique_ptr<AttributeOperationTask>
 MatchToolsFactory::createOnSummaryTask() const {
     return createTask(execute::onsummary::Attribute::lookup(_queryEnv.getProperties()),
                       execute::onsummary::Operation::lookup(_queryEnv.getProperties()));
+}
+
+bool
+MatchToolsFactory::has_first_phase_rank() const {
+    return !_rankSetup.getFirstPhaseRank().empty();
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

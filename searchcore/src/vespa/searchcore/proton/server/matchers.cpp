@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "matchers.h"
+#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
@@ -17,9 +18,9 @@ Matchers::Matchers(const vespalib::Clock &clock,
 Matchers::~Matchers() = default;
 
 void
-Matchers::add(const vespalib::string &name, matching::Matcher::SP matcher)
+Matchers::add(const vespalib::string &name, std::shared_ptr<matching::Matcher> matcher)
 {
-    _rpmap[name] = matcher;
+    _rpmap[name] = std::move(matcher);
     if ((name == "default") || ! _default) {
         _default = matcher;
     }

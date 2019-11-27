@@ -12,6 +12,8 @@
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/features/setup.h>
+#include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/ranksetup.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 
@@ -363,6 +365,16 @@ Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_
         return std::make_unique<DocsumMatcher>();
     }
     return std::make_unique<DocsumMatcher>(std::move(mtf), std::move(docs));
+}
+
+bool
+Matcher::canProduceSummaryFeatures() const {
+    return ! _rankSetup->getSummaryFeatures().empty();
+}
+
+double
+Matcher::get_termwise_limit() const {
+    return _rankSetup->get_termwise_limit();
 }
 
 }

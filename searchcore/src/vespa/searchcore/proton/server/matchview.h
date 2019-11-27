@@ -7,7 +7,7 @@
 #include <vespa/searchcore/proton/common/docid_limit.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/matching/match_context.h>
-#include <vespa/searchcore/proton/matching/matcher.h>
+#include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 
@@ -15,7 +15,9 @@ namespace proton {
 
 namespace matching {
     class SessionManager;
+    class Matcher;
 }
+
 class MatchView {
     using SessionManagerSP = std::shared_ptr<matching::SessionManager>;
     Matchers::SP                         _matchers;
@@ -50,7 +52,7 @@ public:
     DocIdLimit & getDocIdLimit() const { return _docIdLimit; }
 
     // Throws on error.
-    matching::Matcher::SP getMatcher(const vespalib::string & rankProfile) const;
+    std::shared_ptr<matching::Matcher> getMatcher(const vespalib::string & rankProfile) const;
 
     matching::MatchingStats
     getMatcherStats(const vespalib::string &rankProfile) const {
@@ -60,7 +62,7 @@ public:
     matching::MatchContext::UP createContext() const;
 
     std::unique_ptr<search::engine::SearchReply>
-    match(const ISearchHandler::SP &searchHandler,
+    match(const std::shared_ptr<ISearchHandler> &searchHandler,
           const search::engine::SearchRequest &req,
           vespalib::ThreadBundle &threadBundle) const;
 };

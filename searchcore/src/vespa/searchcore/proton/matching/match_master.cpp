@@ -4,14 +4,12 @@
 #include "docid_range_scheduler.h"
 #include "match_loop_communicator.h"
 #include "match_thread.h"
-#include <vespa/searchlib/attribute/attribute_operation.h>
+#include "match_tools.h"
 #include <vespa/searchlib/engine/trace.h>
-#include <vespa/searchlib/common/featureset.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
 
@@ -23,7 +21,6 @@ namespace proton::matching {
 using namespace search::fef;
 using search::queryeval::SearchIterator;
 using search::FeatureSet;
-using search::attribute::AttributeOperation;
 
 namespace {
 

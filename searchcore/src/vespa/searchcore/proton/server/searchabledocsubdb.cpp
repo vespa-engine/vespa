@@ -14,6 +14,8 @@
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
+#include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
@@ -91,19 +93,19 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum 
                               const IndexConfig &indexCfg,
                               std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const
 {
-    Schema::SP schema(configSnapshot.getSchemaSP());
+    const Schema::SP & schema(configSnapshot.getSchemaSP());
     vespalib::string vespaIndexDir(_baseDir + "/index");
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>
         (vespaIndexDir, indexCfg, *schema, configSerialNum, const_cast<SearchableDocSubDB &>(*this),
          _writeService, _warmupExecutor, configSnapshot.getTuneFileDocumentDBSP()->_index,
-         configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, indexManager);
+         configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, std::move(indexManager));
 }
 
 void
 SearchableDocSubDB::setupIndexManager(searchcorespi::IIndexManager::SP indexManager)
 {
-    _indexMgr = indexManager;
+    _indexMgr = std::move(indexManager);
     _indexWriter = std::make_shared<IndexWriter>(_indexMgr);
 }
 
@@ -263,7 +265,7 @@ reconfigure(vespalib::Closure0<bool>::UP closure)
 
     bool ret = true;
 
-    if (closure.get() != NULL)
+    if (closure.get() != nullptr)
         ret = closure->call();  // Perform index manager reconfiguration now
     reconfigureIndexSearchable();
     return ret;

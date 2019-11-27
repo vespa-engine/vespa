@@ -2,7 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/common/feature.h>
+#include <cstdint>
 
 namespace proton::matching {
 

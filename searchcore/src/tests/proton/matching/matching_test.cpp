@@ -24,6 +24,7 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
@@ -159,7 +160,7 @@ struct MyWorld {
         // attribute context
         {
             SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("a1");
-            AttributeVector::DocId docid;
+            AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
                 attr->add(i, docid); // value = docid
@@ -169,7 +170,7 @@ struct MyWorld {
         }
         {
             SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("a2");
-            AttributeVector::DocId docid;
+            AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
                 attr->add(i * 2, docid); // value = docid * 2
@@ -179,7 +180,7 @@ struct MyWorld {
         }
         {
             SingleInt32ExtAttribute *attr = new SingleInt32ExtAttribute("a3");
-            AttributeVector::DocId docid;
+            AttributeVector::DocId docid(0);
             for (uint32_t i = 0; i < NUM_DOCS; ++i) {
                 attr->addDoc(docid);
                 attr->add(i%10, docid);
@@ -253,11 +254,11 @@ struct MyWorld {
                                                                  .doc(600).doc(700).doc(800).doc(900));
     }
 
-    void setStackDump(Request &request, const vespalib::string &stack_dump) {
+    static void setStackDump(Request &request, const vespalib::string &stack_dump) {
         request.stackDump.assign(stack_dump.data(), stack_dump.data() + stack_dump.size());
     }
 
-    SearchRequest::SP createRequest(const vespalib::string &stack_dump)
+    static SearchRequest::SP createRequest(const vespalib::string &stack_dump)
     {
         SearchRequest::SP request(new SearchRequest);
         request->setTimeout(60 * fastos::TimeStamp::SEC);
@@ -266,12 +267,12 @@ struct MyWorld {
         return request;
     }
 
-    SearchRequest::SP createSimpleRequest(const vespalib::string &field, const vespalib::string &term)
+    static SearchRequest::SP createSimpleRequest(const vespalib::string &field, const vespalib::string &term)
     {
         return createRequest(make_simple_stack_dump(field, term));
     }
 
-    SearchRequest::SP createSameElementRequest(const vespalib::string &a1_term, const vespalib::string &f1_term)
+    static SearchRequest::SP createSameElementRequest(const vespalib::string &a1_term, const vespalib::string &f1_term)
     {
         return createRequest(make_same_element_stack_dump(a1_term, f1_term));
     }
@@ -325,7 +326,7 @@ struct MyWorld {
         return reply;
     }
 
-    DocsumRequest::UP create_docsum_request(const vespalib::string &stack_dump, const std::initializer_list<uint32_t> docs) {
+    static DocsumRequest::UP create_docsum_request(const vespalib::string &stack_dump, const std::initializer_list<uint32_t> docs) {
         auto req = std::make_unique<DocsumRequest>();
         setStackDump(*req, stack_dump);
         for (uint32_t docid: docs) {
@@ -335,7 +336,7 @@ struct MyWorld {
         return req;
     }
 
-    DocsumRequest::SP createSimpleDocsumRequest(const vespalib::string & field, const vespalib::string & term) {
+    static DocsumRequest::SP createSimpleDocsumRequest(const vespalib::string & field, const vespalib::string & term) {
         // match a subset of basic result + request for a non-hit (not
         // sorted on docid)
         return create_docsum_request(make_simple_stack_dump(field, term), {30, 10, 15});

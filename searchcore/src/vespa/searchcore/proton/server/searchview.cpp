@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "searchcontext.h"
 #include "searchview.h"
 #include <vespa/searchcore/proton/docsummary/docsumcontext.h>
 #include <vespa/searchlib/engine/searchreply.h>
@@ -145,9 +144,8 @@ SearchView::getDocsumsInternal(const DocsumRequest & req)
 
     convertGidsToLids(req, metaStore, _matchView->getDocIdLimit().get());
     IDocsumStore::UP store(_summarySetup->createDocsumStore(req.resultClassName));
-    Matcher::SP matcher = _matchView->getMatcher(req.ranking);
     MatchContext::UP mctx = _matchView->createContext();
-    auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, matcher,
+    auto ctx = std::make_unique<DocsumContext>(req, _summarySetup->getDocsumWriter(), *store, _matchView->getMatcher(req.ranking),
                                                mctx->getSearchContext(), mctx->getAttributeContext(),
                                                *_summarySetup->getAttributeManager(), *getSessionManager());
     SearchView::InternalDocsumReply reply(ctx->getDocsums(), true);

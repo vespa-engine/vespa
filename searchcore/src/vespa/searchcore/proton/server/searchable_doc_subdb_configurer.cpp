@@ -2,6 +2,7 @@
 
 #include "reconfig_params.h"
 #include "searchable_doc_subdb_configurer.h"
+#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
@@ -43,7 +44,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                                                   const SearchView::SP &searchView)
 {
     SearchableFeedView::SP curr = _feedView.get();
-    _feedView.set(SearchableFeedView::SP(new SearchableFeedView(
+    _feedView.set(std::make_shared<SearchableFeedView>(
             StoreOnlyFeedView::Context(summaryAdapter,
                     schema,
                     searchView->getDocumentMetaStore(),
@@ -53,7 +54,7 @@ SearchableDocSubDBConfigurer::reconfigureFeedView(const IIndexWriter::SP &indexW
                     curr->getLidReuseDelayer(), curr->getCommitTimeTracker()),
             curr->getPersistentParams(),
             FastAccessFeedView::Context(attrWriter, curr->getDocIdLimit()),
-            SearchableFeedView::Context(indexWriter))));
+            SearchableFeedView::Context(indexWriter)));
 }
 
 void
@@ -115,7 +116,7 @@ SearchableDocSubDBConfigurer(const ISummaryManager::SP &summaryMgr,
     _distributionKey(distributionKey)
 { }
 
-SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() { }
+SearchableDocSubDBConfigurer::~SearchableDocSubDBConfigurer() = default;
 
 Matchers::UP
 SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
@@ -130,7 +131,7 @@ SearchableDocSubDBConfigurer::createMatchers(const Schema::SP &schema,
                            property.value);
         }
         // schema instance only used during call.
-        Matcher::SP profptr(new Matcher(*schema, properties, _clock, _queryLimiter, _constantValueRepo, _distributionKey));
+        auto profptr = std::make_shared<Matcher>(*schema, properties, _clock, _queryLimiter, _constantValueRepo, _distributionKey);
         newMatchers->add(name, profptr);
     }
     return newMatchers;
@@ -227,8 +228,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         shouldFeedViewChange = true;
     }
 
-    ISummaryManager::ISummarySetup::SP sumSetup =
-        _searchView.get()->getSummarySetup();
+    ISummaryManager::ISummarySetup::SP sumSetup = _searchView.get()->getSummarySetup();
     if (params.shouldSummaryManagerChange() ||
         params.shouldAttributeManagerChange())
     {
