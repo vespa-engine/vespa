@@ -12,8 +12,7 @@
 #include <set>
 #include <vector>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * A rank program is able to lazily calculate a set of feature
@@ -90,5 +89,4 @@ public:
     FeatureResolver get_all_features(bool unbox_seeds = true) const;
 };
 
-} // namespace fef
-} // namespace search
+}

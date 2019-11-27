@@ -20,6 +20,7 @@
 #include <vespa/searchcore/proton/server/i_document_subdb_owner.h>
 #include <vespa/searchcore/proton/server/minimal_document_retriever.h>
 #include <vespa/searchcore/proton/server/searchabledocsubdb.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/searchcore/proton/test/thread_utils.h>
 #include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
@@ -30,8 +31,6 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/lambdatask.h>
-
-#include <iostream>
 
 using namespace cloud::config::filedistribution;
 using namespace document;

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsumstore.h>
 #include <vespa/searchsummary/docsummary/docsumwriter.h>
@@ -9,6 +8,12 @@
 #include <vespa/searchlib/engine/docsumreply.h>
 
 namespace proton {
+
+namespace matching {
+    class Matcher;
+    class ISearchContext;
+    class SessionManager;
+}
 
 /**
  * The DocsumContext class is responsible for performing a docsum request and
@@ -19,7 +24,7 @@ private:
     const search::engine::DocsumRequest  & _request;
     search::docsummary::IDocsumWriter    & _docsumWriter;
     search::docsummary::IDocsumStore     & _docsumStore;
-    matching::Matcher::SP                  _matcher;
+    std::shared_ptr<matching::Matcher>     _matcher;
     matching::ISearchContext             & _searchCtx;
     search::attribute::IAttributeContext & _attrCtx;
     search::IAttributeManager            & _attrMgr;
@@ -36,7 +41,7 @@ public:
     DocsumContext(const search::engine::DocsumRequest & request,
                   search::docsummary::IDocsumWriter & docsumWriter,
                   search::docsummary::IDocsumStore & docsumStore,
-                  const matching::Matcher::SP & matcher,
+                  std::shared_ptr<matching::Matcher> matcher,
                   matching::ISearchContext & searchCtx,
                   search::attribute::IAttributeContext & attrCtx,
                   search::IAttributeManager & attrMgr,

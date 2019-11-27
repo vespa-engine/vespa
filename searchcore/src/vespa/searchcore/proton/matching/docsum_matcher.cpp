@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsum_matcher.h"
+#include "match_tools.h"
+#include "search_session.h"
 #include <vespa/eval/eval/tensor.h>
 #include <vespa/eval/eval/tensor_engine.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -9,6 +11,8 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
+#include <vespa/searchlib/fef/feature_resolver.h>
+#include <vespa/searchlib/fef/rank_program.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.docsum_matcher");
@@ -30,9 +34,10 @@ namespace proton::matching {
 
 namespace {
 
-FeatureSet::UP get_feature_set(const MatchToolsFactory &mtf,
-                               const std::vector<uint32_t> &docs,
-                               bool summaryFeatures)
+FeatureSet::UP
+get_feature_set(const MatchToolsFactory &mtf,
+                const std::vector<uint32_t> &docs,
+                bool summaryFeatures)
 {
     MatchTools::UP matchTools = mtf.createMatchTools();
     if (summaryFeatures) {
@@ -143,7 +148,7 @@ DocsumMatcher::DocsumMatcher()
 {
 }
 
-DocsumMatcher::DocsumMatcher(SearchSession::SP session, std::vector<uint32_t> docs)
+DocsumMatcher::DocsumMatcher(std::shared_ptr<SearchSession> session, std::vector<uint32_t> docs)
     : _from_session(std::move(session)),
       _from_mtf(),
       _mtf(&_from_session->getMatchToolsFactory()),
@@ -151,7 +156,7 @@ DocsumMatcher::DocsumMatcher(SearchSession::SP session, std::vector<uint32_t> do
 {
 }
 
-DocsumMatcher::DocsumMatcher(MatchToolsFactory::UP mtf, std::vector<uint32_t> docs)
+DocsumMatcher::DocsumMatcher(std::unique_ptr<MatchToolsFactory> mtf, std::vector<uint32_t> docs)
     : _from_session(),
       _from_mtf(std::move(mtf)),
       _mtf(_from_mtf.get()),

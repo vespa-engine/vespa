@@ -10,12 +10,12 @@
 #include "docsum_matcher.h"
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/base.h>
 #include <vespa/vespalib/util/clock.h>
 #include <vespa/vespalib/util/closure.h>
@@ -35,6 +35,7 @@ namespace search::engine {
     class SearchReply;
 }
 namespace search { struct IDocumentMetaStore; }
+namespace search::fef { class RankSetup; }
 
 namespace proton::matching {
 
@@ -50,13 +51,14 @@ class Matcher
 private:
     using IAttributeContext = search::attribute::IAttributeContext;
     using DocsumRequest = search::engine::DocsumRequest;
+    using SearchRequest = search::engine::SearchRequest;
     using Properties = search::fef::Properties;
     using my_clock = std::chrono::steady_clock;
     using StructFieldMapper = search::StructFieldMapper;
     using MatchingElements = search::MatchingElements;
     IndexEnvironment              _indexEnv;
     search::fef::BlueprintFactory _blueprintFactory;
-    search::fef::RankSetup::SP    _rankSetup;
+    std::shared_ptr<search::fef::RankSetup>  _rankSetup;
     ViewResolver                  _viewResolver;
     std::mutex                    _statsLock;
     MatchingStats                 _stats;
@@ -124,7 +126,7 @@ public:
      * @param metaStore the document meta store used to map from lid to gid
      **/
     std::unique_ptr<search::engine::SearchReply>
-    match(const search::engine::SearchRequest &request, vespalib::ThreadBundle &threadBundle,
+    match(const SearchRequest &request, vespalib::ThreadBundle &threadBundle,
           ISearchContext &searchContext, IAttributeContext &attrContext,
           SessionManager &sessionManager, const search::IDocumentMetaStore &metaStore,
           SearchSession::OwnershipBundle &&owned_objects);
@@ -179,8 +181,8 @@ public:
     /**
      * @return true if this rankprofile has summary-features enabled
      **/
-    bool canProduceSummaryFeatures() const { return ! _rankSetup->getSummaryFeatures().empty(); }
-    double get_termwise_limit() const { return _rankSetup->get_termwise_limit(); }
+    bool canProduceSummaryFeatures() const;
+    double get_termwise_limit() const;
 };
 
 }

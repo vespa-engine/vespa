@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "search_session.h"
-#include "match_tools.h"
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/struct_field_mapper.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -11,6 +9,9 @@
 #include <memory>
 
 namespace proton::matching {
+
+class MatchToolsFactory;
+class SearchSession;
 
 /**
  * Used to perform additional matching related to a docsum
@@ -24,15 +25,15 @@ private:
     using StructFieldMapper = search::StructFieldMapper;
     using MatchingElements = search::MatchingElements;
 
-    SearchSession::SP     _from_session;
-    MatchToolsFactory::UP _from_mtf;
+    std::shared_ptr<SearchSession>     _from_session;
+    std::unique_ptr<MatchToolsFactory> _from_mtf;
     MatchToolsFactory    *_mtf;
     std::vector<uint32_t> _docs;
 
 public:
     DocsumMatcher();
-    DocsumMatcher(SearchSession::SP session, std::vector<uint32_t> docs);
-    DocsumMatcher(MatchToolsFactory::UP mtf, std::vector<uint32_t> docs);
+    DocsumMatcher(std::shared_ptr<SearchSession> session, std::vector<uint32_t> docs);
+    DocsumMatcher(std::unique_ptr<MatchToolsFactory> mtf, std::vector<uint32_t> docs);
     ~DocsumMatcher();
 
     using UP = std::unique_ptr<DocsumMatcher>;

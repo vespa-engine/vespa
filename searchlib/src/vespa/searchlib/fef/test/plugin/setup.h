@@ -4,13 +4,9 @@
 
 #include <vespa/searchlib/fef/iblueprintregistry.h>
 
-namespace search {
-namespace fef {
-namespace test {
+namespace search::fef::test {
 
 void setup_fef_test_plugin(IBlueprintRegistry & registry);
 
-} // namespace test
-} // namespace fef
-} // namespace search
+}
 

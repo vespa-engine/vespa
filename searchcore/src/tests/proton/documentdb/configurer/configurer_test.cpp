@@ -7,19 +7,18 @@
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/docsummary/summarymanager.h>
-#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/lidreusedelayer.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
-#include <vespa/searchcore/proton/server/attribute_writer_factory.h>
-#include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/searchable_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/searchcore/proton/server/fast_access_doc_subdb_configurer.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
+#include <vespa/searchcore/proton/server/attribute_writer_factory.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
 #include <vespa/searchcore/proton/test/mock_summary_adapter.h>
 #include <vespa/searchcore/proton/test/mock_gid_to_lid_change_handler.h>
@@ -133,10 +132,10 @@ ViewSet::ViewSet()
       feedView(),
       _hwInfo()
 { }
-ViewSet::~ViewSet() {}
+ViewSet::~ViewSet() = default;
 
 struct EmptyConstantValueFactory : public vespalib::eval::ConstantValueFactory {
-    virtual vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
+    vespalib::eval::ConstantValue::UP create(const vespalib::string &, const vespalib::string &) const override {
         return vespalib::eval::ConstantValue::UP(nullptr);
     }
 };
@@ -294,7 +293,7 @@ struct FastAccessFixture
         : _sharedExecutor(1, 0x10000),
           _writeService(_sharedExecutor),
           _view(_writeService),
-          _configurer(_view._feedView, IAttributeWriterFactory::UP(new AttributeWriterFactory), "test")
+          _configurer(_view._feedView, std::make_unique<AttributeWriterFactory>(), "test")
     {
         vespalib::rmdir(BASE_DIR, true);
         vespalib::mkdir(BASE_DIR);

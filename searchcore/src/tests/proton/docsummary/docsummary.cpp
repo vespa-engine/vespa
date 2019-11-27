@@ -22,6 +22,7 @@
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/server/searchview.h>
 #include <vespa/searchcore/proton/server/summaryadapter.h>
+#include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchlib/common/gatecallback.h>
 #include <vespa/searchlib/engine/docsumapi.h>
 #include <vespa/searchlib/index/docbuilder.h>

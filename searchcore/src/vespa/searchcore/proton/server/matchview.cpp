@@ -2,6 +2,7 @@
 
 #include "matchview.h"
 #include "searchcontext.h"
+#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -58,7 +59,8 @@ MatchView::getMatcher(const vespalib::string & rankProfile) const
 }
 
 
-MatchContext::UP MatchView::createContext() const {
+MatchContext::UP
+MatchView::createContext() const {
     IAttributeContext::UP attrCtx = _attrMgr->createContext();
     auto searchCtx = std::make_unique<SearchContext>(_indexSearchable, _docIdLimit.get());
     return std::make_unique<MatchContext>(std::move(attrCtx), std::move(searchCtx));

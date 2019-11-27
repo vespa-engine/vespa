@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "docsumcontext.h"
+#include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/searchlib/queryeval/begin_and_end_id.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -134,13 +135,13 @@ DocsumContext::createSlimeReply()
 }
 
 DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docsumWriter,
-                             IDocsumStore & docsumStore, const Matcher::SP & matcher,
+                             IDocsumStore & docsumStore, std::shared_ptr<Matcher> matcher,
                              ISearchContext & searchCtx, IAttributeContext & attrCtx,
                              IAttributeManager & attrMgr, SessionManager & sessionMgr) :
     _request(request),
     _docsumWriter(docsumWriter),
     _docsumStore(docsumStore),
-    _matcher(matcher),
+    _matcher(std::move(matcher)),
     _searchCtx(searchCtx),
     _attrCtx(attrCtx),
     _attrMgr(attrMgr),
