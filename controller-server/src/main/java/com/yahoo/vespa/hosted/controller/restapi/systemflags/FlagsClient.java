@@ -177,7 +177,7 @@ class FlagsClient {
                 builder.append('/').append(errorCode);
             }
             if (flagId != null) {
-                builder.append("' for flag '").append(flagId).append("'");
+                builder.append(" for flag '").append(flagId).append("'");
             }
             return builder.append(": ").append(errorMessage).toString();
         }
