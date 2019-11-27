@@ -19,7 +19,7 @@ import java.security.cert.X509Certificate;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
-import static java.time.Instant.EPOCH;
+import static java.time.Instant.now;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,7 +38,7 @@ public class ConfigFileBasedTlsContextTest {
         Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
 
         X509Certificate certificate = X509CertificateBuilder
-                .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
+                .fromKeypair(keyPair, new X500Principal("CN=dummy"), now(), now().plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         Path certificateChainFile = tempDirectory.newFile().toPath();
         String certificatePem = X509CertificateUtils.toPem(certificate);

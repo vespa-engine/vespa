@@ -75,8 +75,8 @@ public class AutoReloadingX509KeyManagerTest {
     private static X509Certificate generateCertificate(KeyPair keyPair, BigInteger serialNumber) {
         return X509CertificateBuilder.fromKeypair(keyPair,
                                                   SUBJECT,
-                                                  Instant.EPOCH,
-                                                  Instant.EPOCH.plus(1, DAYS),
+                                                  Instant.now(),
+                                                  Instant.now().plus(1, DAYS),
                                                   SignatureAlgorithm.SHA256_WITH_ECDSA,
                                                   serialNumber)
                 .build();

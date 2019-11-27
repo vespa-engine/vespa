@@ -55,7 +55,7 @@ public class MutableX509KeyManagerTest {
 
     private static KeyStore generateKeystore(KeyPair keyPair, BigInteger serialNumber) {
         X509Certificate certificate = X509CertificateBuilder.fromKeypair(
-                keyPair, SUBJECT, Instant.EPOCH, Instant.EPOCH.plus(1, DAYS), SignatureAlgorithm.SHA256_WITH_ECDSA, serialNumber)
+                keyPair, SUBJECT, Instant.now(), Instant.now().plus(1, DAYS), SignatureAlgorithm.SHA256_WITH_ECDSA, serialNumber)
                 .build();
         return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                 .withKeyEntry("default", keyPair.getPrivate(), certificate)
