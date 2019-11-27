@@ -22,7 +22,6 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
-import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.OFF;
 import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.PORT_UNIFICATION;
 import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.TLS_ONLY;
 import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.TLS_WITH_PORT_UNIFICATION;
@@ -57,7 +56,6 @@ public class VespaZooKeeperServerImplTest {
     @Test
     public void config_is_written_correctly_when_one_server() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
-        builder.tlsForQuorumCommunication(OFF);
         createServer(builder);
         validateConfigFileSingleHost(cfgFile);
         validateIdFile(idFile, "");
@@ -72,7 +70,6 @@ public class VespaZooKeeperServerImplTest {
         builder.server(newServer(2, "baz", 345, 543));
         builder.myidFile(idFile.getAbsolutePath());
         builder.myid(1);
-        builder.tlsForQuorumCommunication(OFF);
         createServer(builder);
         validateConfigFileMultipleHosts(cfgFile);
         validateIdFile(idFile, "1\n");
@@ -145,7 +142,6 @@ public class VespaZooKeeperServerImplTest {
         builder.server(new ZookeeperServerConfig.Server.Builder().id(0).hostname("testhost"));
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
-        builder.tlsForQuorumCommunication(OFF);
 
         createServer(builder);
         assertThat(System.getProperty(VespaZooKeeperServerImpl.ZOOKEEPER_JUTE_MAX_BUFFER), is("" + new ZookeeperServerConfig(builder).juteMaxBuffer()));
