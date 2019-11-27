@@ -74,6 +74,7 @@ class SystemFlagsDeployResult {
             wireChange.targets = change.targets().stream().map(FlagsTarget::asString).collect(toList());
             wireChange.data = change.data().map(FlagData::toWire).orElse(null);
             wireChange.previousData = change.previousData().map(FlagData::toWire).orElse(null);
+            wireResult.changes.add(wireChange);
         }
         wireResult.errors = new ArrayList<>();
         for (OperationError error : errors) {
@@ -83,6 +84,7 @@ class SystemFlagsDeployResult {
             wireError.target = error.target().asString();
             wireError.flagId = error.flagId().map(FlagId::toString).orElse(null);
             wireError.data = error.flagData().map(FlagData::toWire).orElse(null);
+            wireResult.errors.add(wireError);
         }
         return wireResult;
     }
