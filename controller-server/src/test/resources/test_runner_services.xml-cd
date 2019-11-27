@@ -59,7 +59,7 @@
         </http>
 
         <nodes count="1" allocated-memory="17%">
-            <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb" disk-speed="fast"/>
+            <resources vcpu="2.00" memory="12.00Gb" disk="75.00Gb" disk-speed="fast" storage-type="local"/>
         </nodes>
     </container>
 </services>

@@ -412,7 +412,7 @@ public class InternalStepRunnerTest {
         assertFile("test_runner_services.xml-cd", new String(InternalStepRunner.servicesXml(AthenzDomain.from("vespa.vespa.cd"),
                                                                                             true,
                                                                                             false,
-                                                                                            new NodeResources(2, 12, 75, 1))));
+                                                                                            new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local))));
     }
 
     private void assertFile(String resourceName, String actualContent) {
