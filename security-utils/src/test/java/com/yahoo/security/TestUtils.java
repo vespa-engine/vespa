@@ -7,8 +7,8 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 import static com.yahoo.security.KeyStoreUtils.writeKeyStoreToFile;
 
@@ -30,9 +30,13 @@ class TestUtils {
     }
 
     static X509Certificate createCertificate(KeyPair keyPair, X500Principal subject)  {
+        return createCertificate(keyPair, subject, Instant.now(), Instant.now().plus(Duration.ofDays(1)));
+    }
+
+    static X509Certificate createCertificate(KeyPair keyPair, X500Principal subject, Instant notBefore, Instant notAfter) {
         return X509CertificateBuilder
                 .fromKeypair(
-                        keyPair, subject, Instant.now(), Instant.now().plus(1, ChronoUnit.DAYS), SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
+                        keyPair, subject, notBefore, notAfter, SignatureAlgorithm.SHA512_WITH_ECDSA, BigInteger.valueOf(1))
                 .build();
     }
 

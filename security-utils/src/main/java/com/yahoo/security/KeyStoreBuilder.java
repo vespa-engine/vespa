@@ -88,6 +88,11 @@ public class KeyStoreBuilder {
             }
             for (KeyEntry entry : keyEntries) {
                 char[] password = entry.password != null ? entry.password : new char[0];
+
+                // Validate certificate chain to fail early.
+                for (X509Certificate x509Certificate : entry.certificateChain) {
+                    x509Certificate.checkValidity();
+                }
                 Certificate[] certificateChain = entry.certificateChain.toArray(new Certificate[entry.certificateChain.size()]);
                 keystore.setKeyEntry(entry.alias, entry.privateKey, password, certificateChain);
             }
