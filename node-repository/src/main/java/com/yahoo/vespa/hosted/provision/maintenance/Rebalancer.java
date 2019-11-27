@@ -5,12 +5,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.jdisc.core.Main;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -24,14 +22,14 @@ import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Logger;
 
+/**
+ * @author bratseth
+ */
 public class Rebalancer extends Maintainer {
 
     private final Deployer deployer;
@@ -147,10 +145,11 @@ public class Rebalancer extends Maintainer {
                 if ( ! deployment.prepare()) return false;
                 expectedNewNode =
                         nodeRepository().getNodes(application, Node.State.reserved).stream()
-                                        .filter(node -> node.hasParent(move.toHost.hostname()))
+                                        .filter(node -> !node.hostname().equals(move.node.hostname()))
                                         .filter(node -> node.allocation().get().membership().cluster().id().equals(move.node.allocation().get().membership().cluster().id()))
                                         .findAny();
                 if (expectedNewNode.isEmpty()) return false;
+                if ( ! expectedNewNode.get().hasParent(move.toHost.hostname())) return false;
                 if ( ! deployment.activate()) return false;
 
                 log.info("Rebalancer redeployed " + application + " to " + move);
@@ -158,10 +157,10 @@ public class Rebalancer extends Maintainer {
             }
             finally {
                 markWantToRetire(move.node, false); // Necessary if this failed, no-op otherwise
-                if (expectedNewNode.isPresent()) { // Immediately clean up if we reserved the node but could not activate
-                     Optional<Node> reservedNewNode = nodeRepository().getNode(expectedNewNode.get().hostname(), Node.State.reserved);
-                     reservedNewNode.ifPresent(reserved -> nodeRepository().setDirty(reserved, Agent.system, "Expired by Rebalancer"));
-                }
+
+                // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
+                expectedNewNode.flatMap(node -> nodeRepository().getNode(node.hostname(), Node.State.reserved))
+                               .ifPresent(node -> nodeRepository().setDirty(node, Agent.system, "Expired by Rebalancer"));
             }
         }
     }
