@@ -93,11 +93,11 @@ createIndexManagerInitializer(const DocumentDBConfig &configSnapshot, SerialNum 
                               const IndexConfig &indexCfg,
                               std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager) const
 {
-    const Schema::SP & schema(configSnapshot.getSchemaSP());
+    const Schema & schema = *configSnapshot.getSchemaSP();
     vespalib::string vespaIndexDir(_baseDir + "/index");
     // Note: const_cast for reconfigurer role
     return std::make_shared<IndexManagerInitializer>
-        (vespaIndexDir, indexCfg, *schema, configSerialNum, const_cast<SearchableDocSubDB &>(*this),
+        (vespaIndexDir, indexCfg, schema, configSerialNum, const_cast<SearchableDocSubDB &>(*this),
          _writeService, _warmupExecutor, configSnapshot.getTuneFileDocumentDBSP()->_index,
          configSnapshot.getTuneFileDocumentDBSP()->_attr, _fileHeaderContext, std::move(indexManager));
 }
