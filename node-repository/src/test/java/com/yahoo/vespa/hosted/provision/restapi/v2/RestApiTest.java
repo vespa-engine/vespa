@@ -828,28 +828,6 @@ public class RestApiTest {
     }
 
     @Test
-    public void test_flavor_overrides_old_format() throws Exception {
-        String hostname = "parent2.yahoo.com";
-        // Test adding with overrides
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
-                        "\"flavor\":\"large-variant\",\"minDiskAvailableGb\":1234,\"minMainMemoryAvailableGb\":4321}]").
-                        getBytes(StandardCharsets.UTF_8),
-                Request.Method.POST),
-                400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Can only override disk GB for configured flavor\"}");
-
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node",
-                        ("[{\"hostname\":\"" + hostname + "\"," + createIpAddresses("::1") + "\"openStackId\":\"osid-123\"," +
-                                "\"flavor\":\"large-variant\",\"type\":\"host\",\"minDiskAvailableGb\":1234}]").
-                                getBytes(StandardCharsets.UTF_8),
-                        Request.Method.POST),
-                "{\"message\":\"Added 1 nodes to the provisioned state\"}");
-        assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/" + hostname),
-                "\"resources\":{\"vcpu\":64.0,\"memoryGb\":128.0,\"diskGb\":1234.0,\"bandwidthGbps\":15.0,\"diskSpeed\":\"fast\",\"storageType\":\"remote\"}");
-    }
-
-    @Test
     public void test_flavor_overrides() throws Exception {
         String host = "parent2.yahoo.com";
         // Test adding with overrides
