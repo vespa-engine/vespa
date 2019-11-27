@@ -63,14 +63,6 @@ public class DeploymentJobs {
     /** Returns an immutable map of the status entries in this */
     public Map<JobType, JobStatus> jobStatus() { return status; }
 
-    /** Returns whether this has some job status which is not a success */
-    public boolean hasFailures() {
-        return ! JobList.from(status.values())
-                        .failing()
-                        .not().failingBecause(JobError.outOfCapacity)
-                        .isEmpty();
-    }
-
     /** Returns the JobStatus of the given JobType, or empty. */
     public Optional<JobStatus> statusOf(JobType jobType) {
         return Optional.ofNullable(jobStatus().get(jobType));

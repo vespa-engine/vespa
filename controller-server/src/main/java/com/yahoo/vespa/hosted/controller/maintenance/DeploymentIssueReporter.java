@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
@@ -63,11 +64,9 @@ public class DeploymentIssueReporter extends Maintainer {
      * where deployment has not failed for this amount of time.
      */
     private void maintainDeploymentIssues(List<Application> applications) {
-        Set<TenantAndApplicationId> failingApplications = ApplicationList.from(applications)
-                                                                         .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
-                                                                         .asList().stream()
-                                                                         .map(Application::id)
-                                                                         .collect(Collectors.toSet());
+        List<TenantAndApplicationId> failingApplications = controller().jobController().deploymentStatuses(ApplicationList.from(applications))
+                                                                       .failingApplicationChangeSince(controller().clock().instant().minus(maxFailureAge))
+                                                                       .mapToList(status -> status.application().id());
 
         for (Application application : applications)
             if (failingApplications.contains(application.id()))
@@ -90,17 +89,12 @@ public class DeploymentIssueReporter extends Maintainer {
         if ((controller().versionStatus().version(systemVersion).confidence() != broken))
             return;
 
-        if (ApplicationList.from(applications)
-                           .failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod))
-                           .isEmpty())
+        DeploymentStatusList statuses = controller().jobController().deploymentStatuses(ApplicationList.from(applications));
+        if (statuses.failingUpgradeToVersionSince(systemVersion, controller().clock().instant().minus(upgradeGracePeriod)).isEmpty())
             return;
 
-        List<ApplicationId> failingApplications = ApplicationList.from(applications)
-                                                                 .failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
-                                                                 .idList()
-                                                                 .stream()
-                                                                 .map(TenantAndApplicationId::defaultInstance)
-                                                                 .collect(Collectors.toUnmodifiableList());
+        List<ApplicationId> failingApplications = statuses.failingUpgradeToVersionSince(systemVersion, controller().clock().instant())
+                                                          .mapToList(status -> status.application().id().defaultInstance());
 
         // TODO jonmv: Send only tenant and application, here and elsewhere in this.
         deploymentIssues.fileUnlessOpen(failingApplications, systemVersion);
