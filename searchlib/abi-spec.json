@@ -342,7 +342,7 @@
     "fields": []
   },
   "com.yahoo.searchlib.rankingexpression.Reference": {
-    "superClass": "com.yahoo.tensor.evaluation.TypeContext$Name",
+    "superClass": "com.yahoo.tensor.evaluation.Name",
     "interfaces": [],
     "attributes": [
       "public"
@@ -414,7 +414,7 @@
       "public final double getDouble(int)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext clone()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -521,7 +521,7 @@
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleOnlyArrayContext clone()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -592,7 +592,7 @@
       "public java.util.Set names()",
       "public java.lang.String toString()",
       "public static com.yahoo.searchlib.rankingexpression.evaluation.MapContext fromString(java.lang.String)",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)"
     ],
     "fields": []
   },
@@ -610,7 +610,7 @@
       "public com.yahoo.tensor.TensorType getType(java.lang.String)",
       "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
       "public java.util.Map bindings()",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)"
     ],
     "fields": []
   },
