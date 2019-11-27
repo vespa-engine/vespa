@@ -7,7 +7,7 @@
 #include "attributeiterators.hpp"
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search {

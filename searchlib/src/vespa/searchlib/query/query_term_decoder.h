@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "queryterm.h"
+#include "query_term_simple.h"
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {

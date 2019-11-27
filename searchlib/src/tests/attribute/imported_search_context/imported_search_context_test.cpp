@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/test/imported_attribute_fixture.h>
 #include <vespa/vespalib/test/insertion_operators.h>

@@ -2,7 +2,7 @@
 
 #include "search_context.h"
 #include <vespa/searchlib/attribute/attributeiterators.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using document::GlobalId;

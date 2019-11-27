@@ -4,7 +4,7 @@
 #include "imported_attribute_vector.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search::attribute {
 

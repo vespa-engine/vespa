@@ -6,7 +6,6 @@
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/searchlib/fef/termfieldmatchdataposition.h>
-#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/objects/visit.h>
 

@@ -2,12 +2,12 @@
 
 #include "attribute_weighted_set_blueprint.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
-#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/searchlib/query/queryterm.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/queryeval/weighted_set_term_search.h>
 #include <vespa/vespalib/objects/visit.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 namespace search {

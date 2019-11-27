@@ -2,7 +2,6 @@
 
 #include "multistringattribute.h"
 #include "multistringattribute.hpp"
-#include <vespa/searchlib/query/queryterm.h>
 
 namespace search {
 

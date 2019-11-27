@@ -7,6 +7,7 @@
 #include "load_utils.h"
 #include "primitivereader.h"
 #include "attributeiterators.hpp"
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 
 namespace search {
