@@ -361,16 +361,21 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(j[3]):[3, 3, 3]",
                                "tensor(j[3])(tensor0[2])",
                                "tensor(values[5]):[1, 2, 3, 4, 5]");
-        tester.assertEvaluates("tensor(j[3]):[5, 4, 3]",
-                               "tensor(j[3])(tensor0[4-j])",
-                               "tensor(values[5]):[1, 2, 3, 4, 5]");
-        tester.assertEvaluates("tensor(j[2]):[6, 5]",
-                               "tensor(j[2])(tensor0{key:bar,i:2-j})",
-                               "tensor(key{},i[5]):{{key:foo,i:0}:1,{key:foo,i:1}:2,{key:foo,i:2}:2,{key:bar,i:0}:4,{key:bar,i:1}:5,{key:bar,i:2}:6}");
-
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");
         tester.assertEvaluates("tensor(x{},y{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{},y{}):{ {x:1,y:0}:1, {x:2,y:1}:1 }");
+    }
+
+    @Test
+    public void testTensorReshape() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates("tensor(j[3]):[5, 4, 3]",
+                               "tensor(j[3])(tensor0[4-%j])",
+                               "tensor(values[5]):[1, 2, 3, 4, 5]");
+        tester.assertEvaluates("tensor(j[2]):[6, 5]",
+                               "tensor(j[2])(tensor0{key:bar,i:2-%j})",
+                               "tensor(key{},i[5]):{{key:foo,i:0}:1,{key:foo,i:1}:2,{key:foo,i:2}:2,{key:bar,i:0}:4,{key:bar,i:1}:5,{key:bar,i:2}:6}");
+
     }
 
     @Test

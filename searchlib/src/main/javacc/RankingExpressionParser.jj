@@ -68,7 +68,7 @@ TOKEN :
     <MOD: "%"> |
     <POWOP: "^"> |
 
-    <DOLLAR: "$"> |
+    <DOLLAR:"$"> |
     <COMMA: ","> |
     <COLON: ":"> |
 
@@ -244,6 +244,7 @@ ExpressionNode value() :
                    LOOKAHEAD(4) value = function()                            |
                    value = feature()                                          |
                    value = legacyQueryFeature()                               |
+                   value = indexVariable()                                    |
                    ( <LBRACE> value = expression() <RBRACE> { value = new EmbracedNode(value); } ) )
 
       )
@@ -288,6 +289,17 @@ ReferenceNode legacyQueryFeature() :
     {
         return new ReferenceNode("query", Arrays.asList((ExpressionNode)new NameNode(name)), null);
     }
+}
+
+ReferenceNode indexVariable() :
+{
+    String name;
+}
+{
+     ( <MOD> name = identifier() )
+     {
+         return new ReferenceNode("%" + name);
+     }
 }
 
 String outs() :
