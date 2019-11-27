@@ -19,5 +19,6 @@ vespa_add_executable(searchlib_attribute_blueprint_test_app TEST
     attributeblueprint_test.cpp
     DEPENDS
     searchlib
+    gtest
 )
 vespa_add_test(NAME searchlib_attribute_blueprint_test_app COMMAND searchlib_attribute_blueprint_test_app)
