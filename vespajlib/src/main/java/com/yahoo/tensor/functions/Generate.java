@@ -145,15 +145,17 @@ public class Generate<NAMETYPE extends TypeContext.Name>  extends PrimitiveTenso
 
         @Override
         public Tensor getTensor(String name) {
-            if (name.startsWith("%")) // this is the name of a dimension
-                return Tensor.from(indexes.indexesForReading()[dimensionIndexFrom(name)]);
+            Optional<Integer> index = type.indexOfDimension(name);
+            if (index.isPresent()) // this is the name of a dimension
+                return Tensor.from(indexes.indexesForReading()[index.get()]);
             else
                 return context.getTensor(name);
         }
 
         @Override
         public TensorType getType(NAMETYPE name) {
-            if (name.name().startsWith("%")) // this is the name of a dimension
+            Optional<Integer> index = type.indexOfDimension(name.name());
+            if (index.isPresent()) // this is the name of a dimension
                 return TensorType.empty;
             else
                 return context.getType(name);
@@ -161,16 +163,11 @@ public class Generate<NAMETYPE extends TypeContext.Name>  extends PrimitiveTenso
 
         @Override
         public TensorType getType(String name) {
-            if (name.startsWith("%")) // this is the name of a dimension
+            Optional<Integer> index = type.indexOfDimension(name);
+            if (index.isPresent()) // this is the name of a dimension
                 return TensorType.empty;
             else
                 return context.getType(name);
-        }
-
-        private int dimensionIndexFrom(String nameWithPercentage) {
-            String name = nameWithPercentage.substring(1);
-            return type.indexOfDimension(name)
-                       .orElseThrow(() -> new IllegalArgumentException("No dimension '" + name + "' in " + type));
         }
 
     }
