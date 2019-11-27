@@ -12,6 +12,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Set;
 
@@ -118,8 +120,7 @@ public class SystemFlagsDeployerTest {
     }
 
     private static FlagData flagData(String filename) throws IOException {
-        return FlagData.deserializeUtf8Json(
-                SystemFlagsDeployerTest.class.getResourceAsStream("/system-flags/" + filename).readAllBytes());
+        return FlagData.deserializeUtf8Json(Files.readAllBytes(Paths.get("src/test/resources/system-flags/" + filename)));
     }
 
 }
