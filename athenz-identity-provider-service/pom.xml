@@ -94,12 +94,6 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-dev</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
 
         <!-- COMPILE -->
         <dependency>
@@ -131,13 +125,6 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <!-- Needed for node repo mock -->
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>zkfacade</artifactId>
-            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
