@@ -141,7 +141,7 @@ DocsumContext::DocsumContext(const DocsumRequest & request, IDocsumWriter & docs
     _request(request),
     _docsumWriter(docsumWriter),
     _docsumStore(docsumStore),
-    _matcher(matcher),
+    _matcher(std::move(matcher)),
     _searchCtx(searchCtx),
     _attrCtx(attrCtx),
     _attrMgr(attrMgr),

@@ -20,10 +20,10 @@ Matchers::~Matchers() = default;
 void
 Matchers::add(const vespalib::string &name, std::shared_ptr<matching::Matcher> matcher)
 {
-    _rpmap[name] = std::move(matcher);
     if ((name == "default") || ! _default) {
         _default = matcher;
     }
+    _rpmap[name] = std::move(matcher);
 }
 
 matching::MatchingStats
