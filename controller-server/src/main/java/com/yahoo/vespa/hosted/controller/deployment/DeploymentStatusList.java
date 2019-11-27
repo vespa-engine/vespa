@@ -27,6 +27,11 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
         return ApplicationList.from(mapToList(DeploymentStatus::application));
     }
 
+    public DeploymentStatusList withProductionDeployment() {
+        return matching(status -> status.application().productionDeployments().values().stream()
+                                        .anyMatch(deployments -> ! deployments.isEmpty()));
+    }
+
     public DeploymentStatusList failing() {
         return matching(DeploymentStatus::hasFailures);
     }

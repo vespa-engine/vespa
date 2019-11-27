@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 
@@ -124,6 +125,11 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         /** Returns the runs of the given kind, mapped by the given function, as a list. */
         public <OtherType> List<OtherType> mapToList(Function<? super Run, OtherType> mapper) {
             return present().mapToList(which.andThen(Optional::get).andThen(mapper));
+        }
+
+        /** Returns the runs of the given kind. */
+        public List<Run> asList() {
+            return mapToList(Function.identity());
         }
 
         /** Returns the subset of jobs where the run of the given type occurred before the given instant */
