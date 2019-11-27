@@ -1448,12 +1448,12 @@
       "public void <init>()",
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
       "public com.yahoo.tensor.TensorType getType(java.lang.String)",
-      "public com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)"
     ],
     "fields": []
   },
-  "com.yahoo.tensor.evaluation.TypeContext$Name": {
+  "com.yahoo.tensor.evaluation.Name": {
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
@@ -1477,7 +1477,7 @@
       "abstract"
     ],
     "methods": [
-      "public abstract com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public abstract com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public abstract com.yahoo.tensor.TensorType getType(java.lang.String)"
     ],
     "fields": []
