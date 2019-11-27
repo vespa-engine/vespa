@@ -60,7 +60,7 @@ class FlagsClient {
     List<FlagData> listFlagData(FlagsTarget target) throws FlagsException, UncheckedIOException {
         HttpGet request = new HttpGet(createUri(target, "/data", List.of(new BasicNameValuePair("recursive", "true"))));
         return executeRequest(request, response -> {
-            verifySuccess(response, target, null);
+            verifySuccess(response, null);
             return FlagData.deserializeList(EntityUtils.toByteArray(response.getEntity()));
         });
     }
@@ -69,7 +69,7 @@ class FlagsClient {
         HttpPut request = new HttpPut(createUri(target, "/data/" + flagData.id().toString(), List.of()));
         request.setEntity(jsonContent(flagData.serializeToJson()));
         executeRequest(request, response -> {
-            verifySuccess(response, target, flagData.id());
+            verifySuccess(response, flagData.id());
             return null;
         });
     }
@@ -77,7 +77,7 @@ class FlagsClient {
     void deleteFlagData(FlagsTarget target, FlagId flagId) throws FlagsException, UncheckedIOException {
         HttpDelete request = new HttpDelete(createUri(target, "/data/" + flagId.toString(), List.of()));
         executeRequest(request, response -> {
-            verifySuccess(response, target, flagId);
+            verifySuccess(response, flagId);
             return null;
         });
     }
@@ -118,21 +118,21 @@ class FlagsClient {
         }
     }
 
-    private static void verifySuccess(HttpResponse response, FlagsTarget target, FlagId flagId) throws IOException {
+    private static void verifySuccess(HttpResponse response, FlagId flagId) throws IOException {
         if (!success(response)) {
-            throw createFlagsException(response, target, flagId);
+            throw createFlagsException(response, flagId);
         }
     }
 
-    private static FlagsException createFlagsException(HttpResponse response, FlagsTarget target, FlagId flagId) throws IOException {
+    private static FlagsException createFlagsException(HttpResponse response, FlagId flagId) throws IOException {
         HttpEntity entity = response.getEntity();
         String content = EntityUtils.toString(entity);
         int statusCode = response.getStatusLine().getStatusCode();
         if (ContentType.get(entity).getMimeType().equals(ContentType.APPLICATION_JSON.getMimeType())) {
             WireErrorResponse error = mapper.readValue(content, WireErrorResponse.class);
-            return new FlagsException(statusCode, target, flagId, error.errorCode, error.message);
+            return new FlagsException(statusCode, flagId, error.errorCode, error.message);
         } else {
-            return new FlagsException(statusCode, target, flagId, null, content);
+            return new FlagsException(statusCode, flagId, null, content);
         }
     }
 
@@ -167,18 +167,17 @@ class FlagsClient {
 
     static class FlagsException extends RuntimeException {
 
-        private FlagsException(int statusCode, FlagsTarget target, FlagId flagId, String errorCode, String errorMessage) {
-            super(createErrorMessage(statusCode, target, flagId, errorCode, errorMessage));
+        private FlagsException(int statusCode, FlagId flagId, String errorCode, String errorMessage) {
+            super(createErrorMessage(statusCode, flagId, errorCode, errorMessage));
         }
 
-        private static String createErrorMessage(int statusCode, FlagsTarget target, FlagId flagId, String errorCode, String errorMessage) {
+        private static String createErrorMessage(int statusCode, FlagId flagId, String errorCode, String errorMessage) {
             StringBuilder builder = new StringBuilder().append("Received ").append(statusCode);
             if (errorCode != null) {
                 builder.append('/').append(errorCode);
             }
-            builder.append(" from '").append(target.endpoint().getHost()).append("'");
             if (flagId != null) {
-                builder.append("' for flag '").append(flagId).append("'");
+                builder.append(" for flag '").append(flagId).append("'");
             }
             return builder.append(": ").append(errorMessage).toString();
         }
