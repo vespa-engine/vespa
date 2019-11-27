@@ -163,8 +163,8 @@ public class Flags {
     public static final UnboundBooleanFlag USE_OLD_METRICS_CHECKS = defineFeatureFlag(
             "use-old-metrics-checks", true,
             "Whether to use old metrics checks",
-            "Takes effect on restart of Docker container",
-            NODE_TYPE, HOSTNAME);
+             "Takes effect on next host admin tick",
+            NODE_TYPE, HOSTNAME, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
