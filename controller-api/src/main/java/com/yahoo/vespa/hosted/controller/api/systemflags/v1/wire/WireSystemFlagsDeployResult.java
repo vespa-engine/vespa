@@ -34,10 +34,12 @@ public class WireSystemFlagsDeployResult {
     public static class WireOperationFailure {
         @JsonProperty("flag-id") public String flagId;
         @JsonProperty("message") public String message;
-        @JsonProperty("target") public String target;
+        @JsonProperty("targets") public List<String> targets;
         @JsonProperty("operation") public String operation;
         @JsonProperty("data") public WireFlagData data;
     }
+
+    public boolean hasErrors() { return errors != null && !errors.isEmpty(); }
 }
 
 

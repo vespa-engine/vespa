@@ -46,23 +46,41 @@ class SystemFlagsDeployResult {
     }
 
     static SystemFlagsDeployResult merge(List<SystemFlagsDeployResult> results) {
-        Map<FlagDataOperation, Set<FlagsTarget>> targetsForOperation = new HashMap<>();
+        List<FlagDataChange> mergedChanges = mergeChanges(results);
+        List<OperationError> mergedErrors = mergeErrors(results);
+        return new SystemFlagsDeployResult(mergedChanges, mergedErrors);
+    }
 
-        List<OperationError> errors = new ArrayList<>();
+    private static List<OperationError> mergeErrors(List<SystemFlagsDeployResult> results) {
+        Map<OperationErrorWithoutTarget, Set<FlagsTarget>> targetsForError = new HashMap<>();
         for (SystemFlagsDeployResult result : results) {
-            errors.addAll(result.errors);
+            for (OperationError error : result.errors()) {
+                var errorWithoutTarget = new OperationErrorWithoutTarget(error);
+                targetsForError.computeIfAbsent(errorWithoutTarget, k -> new HashSet<>())
+                        .addAll(error.targets());
+            }
+        }
+        List<OperationError> mergedErrors = new ArrayList<>();
+        targetsForError.forEach(
+                (error, targets) -> mergedErrors.add(error.toOperationError(targets)));
+        return mergedErrors;
+    }
+
+    private static List<FlagDataChange> mergeChanges(List<SystemFlagsDeployResult> results) {
+        Map<FlagDataChangeWithoutTarget, Set<FlagsTarget>> targetsForChange = new HashMap<>();
+        for (SystemFlagsDeployResult result : results) {
             for (FlagDataChange change : result.flagChanges()) {
-                FlagDataOperation operation = new FlagDataOperation(change);
-                targetsForOperation.computeIfAbsent(operation, k -> new HashSet<>())
+                var changeWithoutTarget = new FlagDataChangeWithoutTarget(change);
+                targetsForChange.computeIfAbsent(changeWithoutTarget, k -> new HashSet<>())
                         .addAll(change.targets());
             }
         }
-
-        List<FlagDataChange> mergedResult = new ArrayList<>();
-        targetsForOperation.forEach(
-                (operation, targets) -> mergedResult.add(operation.toFlagDataChange(targets)));
-        return new SystemFlagsDeployResult(mergedResult, errors);
+        List<FlagDataChange> mergedChanges = new ArrayList<>();
+        targetsForChange.forEach(
+                (change, targets) -> mergedChanges.add(change.toFlagDataChange(targets)));
+        return mergedChanges;
     }
+
 
     WireSystemFlagsDeployResult toWire() {
         var wireResult = new WireSystemFlagsDeployResult();
@@ -81,7 +99,7 @@ class SystemFlagsDeployResult {
             var wireError = new WireOperationFailure();
             wireError.message = error.message();
             wireError.operation = error.operation().asString();
-            wireError.target = error.target().asString();
+            wireError.targets = error.targets().stream().map(FlagsTarget::asString).collect(toList());
             wireError.flagId = error.flagId().map(FlagId::toString).orElse(null);
             wireError.data = error.flagData().map(FlagData::toWire).orElse(null);
             wireResult.errors.add(wireError);
@@ -170,38 +188,38 @@ class SystemFlagsDeployResult {
     static class OperationError {
 
         final String message;
-        final FlagsTarget target;
+        final Set<FlagsTarget> targets;
         final OperationType operation;
         final FlagId flagId;
         final FlagData flagData;
 
         private OperationError(
-                String message, FlagsTarget target, OperationType operation, FlagId flagId, FlagData flagData) {
+                String message, Set<FlagsTarget> targets, OperationType operation, FlagId flagId, FlagData flagData) {
             this.message = message;
-            this.target = target;
+            this.targets = targets;
             this.operation = operation;
             this.flagId = flagId;
             this.flagData = flagData;
         }
 
         static OperationError listFailed(String message, FlagsTarget target) {
-            return new OperationError(message, target, OperationType.LIST, null, null);
+            return new OperationError(message, Set.of(target), OperationType.LIST, null, null);
         }
 
         static OperationError createFailed(String message, FlagsTarget target, FlagData flagData) {
-            return new OperationError(message, target, OperationType.CREATE, flagData.id(), flagData);
+            return new OperationError(message, Set.of(target), OperationType.CREATE, flagData.id(), flagData);
         }
 
         static OperationError updateFailed(String message, FlagsTarget target, FlagData flagData) {
-            return new OperationError(message, target, OperationType.UPDATE, flagData.id(), flagData);
+            return new OperationError(message, Set.of(target), OperationType.UPDATE, flagData.id(), flagData);
         }
 
         static OperationError deleteFailed(String message, FlagsTarget target, FlagId id) {
-            return new OperationError(message, target, OperationType.UPDATE, id, null);
+            return new OperationError(message, Set.of(target), OperationType.UPDATE, id, null);
         }
 
         String message() { return message; }
-        FlagsTarget target() { return target; }
+        Set<FlagsTarget> targets() { return targets; }
         OperationType operation() { return operation; }
         Optional<FlagId> flagId() { return Optional.ofNullable(flagId); }
         Optional<FlagData> flagData() { return Optional.ofNullable(flagData); }
@@ -212,19 +230,19 @@ class SystemFlagsDeployResult {
             if (o == null || getClass() != o.getClass()) return false;
             OperationError that = (OperationError) o;
             return Objects.equals(message, that.message) &&
-                    Objects.equals(target, that.target) &&
+                    Objects.equals(targets, that.targets) &&
                     operation == that.operation &&
                     Objects.equals(flagId, that.flagId) &&
                     Objects.equals(flagData, that.flagData);
         }
 
-        @Override public int hashCode() { return Objects.hash(message, target, operation, flagId, flagData); }
+        @Override public int hashCode() { return Objects.hash(message, targets, operation, flagId, flagData); }
 
         @Override
         public String toString() {
             return "OperationFailure{" +
                     "message='" + message + '\'' +
-                    ", target=" + target +
+                    ", targets=" + targets +
                     ", operation=" + operation +
                     ", flagId=" + flagId +
                     ", flagData=" + flagData +
@@ -242,7 +260,7 @@ class SystemFlagsDeployResult {
         String asString() { return stringValue; }
     }
 
-    private static class FlagDataOperation {
+    private static class FlagDataChangeWithoutTarget {
         final FlagId flagId;
         final OperationType operationType;
         final FlagData data;
@@ -251,7 +269,7 @@ class SystemFlagsDeployResult {
         final JsonNode jsonPreviousData; // needed for FlagData equality check
 
 
-        FlagDataOperation(FlagDataChange change) {
+        FlagDataChangeWithoutTarget(FlagDataChange change) {
             this.flagId = change.flagId();
             this.operationType = change.operation();
             this.data = change.data().orElse(null);
@@ -268,7 +286,7 @@ class SystemFlagsDeployResult {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            FlagDataOperation that = (FlagDataOperation) o;
+            FlagDataChangeWithoutTarget that = (FlagDataChangeWithoutTarget) o;
             return Objects.equals(flagId, that.flagId) &&
                     operationType == that.operationType &&
                     Objects.equals(jsonData, that.jsonData) &&
@@ -279,5 +297,36 @@ class SystemFlagsDeployResult {
         public int hashCode() {
             return Objects.hash(flagId, operationType, jsonData, jsonPreviousData);
         }
+    }
+
+    private static class OperationErrorWithoutTarget {
+        final String message;
+        final OperationType operation;
+        final FlagId flagId;
+        final FlagData flagData;
+
+        OperationErrorWithoutTarget(OperationError operationError) {
+            this.message = operationError.message();
+            this.operation = operationError.operation();
+            this.flagId = operationError.flagId().orElse(null);
+            this.flagData = operationError.flagData().orElse(null);
+        }
+
+        OperationError toOperationError(Set<FlagsTarget> targets) {
+            return new OperationError(message, targets, operation, flagId, flagData);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            OperationErrorWithoutTarget that = (OperationErrorWithoutTarget) o;
+            return Objects.equals(message, that.message) &&
+                    operation == that.operation &&
+                    Objects.equals(flagId, that.flagId) &&
+                    Objects.equals(flagData, that.flagData);
+        }
+
+        @Override public int hashCode() { return Objects.hash(message, operation, flagId, flagData); }
     }
 }
