@@ -5,6 +5,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
@@ -18,12 +19,12 @@ import java.util.function.DoubleUnaryOperator;
  *
  * @author bratseth
  */
-public class Map extends PrimitiveTensorFunction {
+public class Map<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
-    private final TensorFunction argument;
+    private final TensorFunction<NAMETYPE> argument;
     private final DoubleUnaryOperator mapper;
 
-    public Map(TensorFunction argument, DoubleUnaryOperator mapper) {
+    public Map(TensorFunction<NAMETYPE> argument, DoubleUnaryOperator mapper) {
         Objects.requireNonNull(argument, "The argument tensor cannot be null");
         Objects.requireNonNull(mapper, "The argument function cannot be null");
         this.argument = argument;
@@ -32,31 +33,31 @@ public class Map extends PrimitiveTensorFunction {
 
     public static TensorType outputType(TensorType inputType) { return inputType; }
 
-    public TensorFunction argument() { return argument; }
+    public TensorFunction<NAMETYPE> argument() { return argument; }
     public DoubleUnaryOperator mapper() { return mapper; }
 
     @Override
-    public List<TensorFunction> arguments() { return Collections.singletonList(argument); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.singletonList(argument); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 1)
             throw new IllegalArgumentException("Map must have 1 argument, got " + arguments.size());
-        return new Map(arguments.get(0), mapper);
+        return new Map<>(arguments.get(0), mapper);
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() {
-        return new Map(argument.toPrimitive(), mapper);
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
+        return new Map<>(argument.toPrimitive(), mapper);
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext<NAMETYPE> context) {
         return argument.type(context);
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor argument = argument().evaluate(context);
         Tensor.Builder builder = Tensor.Builder.of(argument.type());
         for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {

@@ -411,7 +411,7 @@ public class ConvertedModel {
                 }
                 // Modify any renames in expression to disregard batch dimension
                 else if (children.size() == 1 && children.get(0) instanceof TensorFunctionNode) {
-                    TensorFunction childFunction = (((TensorFunctionNode) children.get(0)).function());
+                    TensorFunction<Reference> childFunction = (((TensorFunctionNode) children.get(0)).function());
                     TensorType childType = childFunction.type(typeContext);
                     Rename rename = (Rename) tensorFunction;
                     List<String> from = new ArrayList<>();
@@ -422,10 +422,10 @@ public class ConvertedModel {
                             throw new IllegalArgumentException("Rename does not contain dimension '" +
                                     dimension + "' in child expression type: " + childType);
                         }
-                        from.add(rename.fromDimensions().get(i));
-                        to.add(rename.toDimensions().get(i));
+                        from.add((String)rename.fromDimensions().get(i));
+                        to.add((String)rename.toDimensions().get(i));
                     }
-                    return new TensorFunctionNode(new Rename(childFunction, from, to));
+                    return new TensorFunctionNode(new Rename<>(childFunction, from, to));
                 }
             }
         }

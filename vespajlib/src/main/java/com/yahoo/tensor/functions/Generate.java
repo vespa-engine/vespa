@@ -6,11 +6,13 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 /**
@@ -18,25 +20,49 @@ import java.util.function.Function;
  *
  * @author bratseth
  */
-public class Generate extends PrimitiveTensorFunction {
+public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorType type;
-    private final Function<List<Long>, Double> generator;
+
+    // One of these are null
+    private final Function<List<Long>, Double> freeGenerator;
+    private final ScalarFunction<NAMETYPE> boundGenerator;
+
+    /** The same as Generate.free */
+    public Generate(TensorType type, Function<List<Long>, Double> generator) {
+        this(type, Objects.requireNonNull(generator), null);
+    }
 
     /**
-     * Creates a generated tensor
+     * Creates a generated tensor from a free function
      *
      * @param type the type of the tensor
      * @param generator the function generating values from a list of numbers specifying the indexes of the
      *                  tensor cell which will receive the value
      * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
      */
-    public Generate(TensorType type, Function<List<Long>, Double> generator) {
+    public static <NAMETYPE extends Name> Generate<NAMETYPE> free(TensorType type, Function<List<Long>, Double> generator) {
+        return new Generate<>(type, Objects.requireNonNull(generator), null);
+    }
+
+    /**
+     * Creates a generated tensor from a bound function
+     *
+     * @param type the type of the tensor
+     * @param generator the function generating values from a list of numbers specifying the indexes of the
+     *                  tensor cell which will receive the value
+     * @throws IllegalArgumentException if any of the tensor dimensions are not indexed bound
+     */
+    public static <NAMETYPE extends Name> Generate<NAMETYPE> bound(TensorType type, ScalarFunction<NAMETYPE> generator) {
+        return new Generate<>(type, null, Objects.requireNonNull(generator));
+    }
+
+    private Generate(TensorType type, Function<List<Long>, Double> freeGenerator, ScalarFunction<NAMETYPE> boundGenerator) {
         Objects.requireNonNull(type, "The argument tensor type cannot be null");
-        Objects.requireNonNull(generator, "The argument function cannot be null");
         validateType(type);
         this.type = type;
-        this.generator = generator;
+        this.freeGenerator = freeGenerator;
+        this.boundGenerator = boundGenerator;
     }
 
     private void validateType(TensorType type) {
@@ -46,28 +72,29 @@ public class Generate extends PrimitiveTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() { return Collections.emptyList(); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return Collections.emptyList(); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 0)
             throw new IllegalArgumentException("Generate must have 0 arguments, got " + arguments.size());
         return this;
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() { return this; }
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() { return this; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) { return type; }
+    public TensorType type(TypeContext<NAMETYPE> context) { return type; }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor.Builder builder = Tensor.Builder.of(type);
         IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(dimensionSizes(type));
+        GenerateContext generateContext = new GenerateContext(type, context);
         for (int i = 0; i < indexes.size(); i++) {
             indexes.next();
-            builder.cell(generator.apply(indexes.toList()), indexes.indexesForReading());
+            builder.cell(generateContext.apply(indexes), indexes.indexesForReading());
         }
         return builder.build();
     }
@@ -80,6 +107,70 @@ public class Generate extends PrimitiveTensorFunction {
     }
 
     @Override
-    public String toString(ToStringContext context) { return type + "(" + generator + ")"; }
+    public String toString(ToStringContext context) { return type + "(" + generatorToString(context) + ")"; }
+
+    private String generatorToString(ToStringContext context) {
+        if (freeGenerator != null)
+            return freeGenerator.toString();
+        else
+            return boundGenerator.toString(context);
+    }
+
+    /**
+     * A context for generating all the values of a tensor produced by evaluating Generate.
+     * This returns all the current index values as variables and falls back to delivering from the given
+     * evaluation context.
+     */
+    private class GenerateContext implements EvaluationContext<NAMETYPE> {
+
+        private final TensorType type;
+        private final EvaluationContext<NAMETYPE> context;
+
+        private IndexedTensor.Indexes indexes;
+
+        GenerateContext(TensorType type, EvaluationContext<NAMETYPE> context) {
+            this.type = type;
+            this.context = context;
+        }
+
+        @SuppressWarnings("unchecked")
+        double apply(IndexedTensor.Indexes indexes) {
+            if (freeGenerator != null) {
+                return freeGenerator.apply(indexes.toList());
+            }
+            else {
+                this.indexes = indexes;
+                return boundGenerator.apply(this);
+            }
+        }
+
+        @Override
+        public Tensor getTensor(String name) {
+            Optional<Integer> index = type.indexOfDimension(name);
+            if (index.isPresent()) // this is the name of a dimension
+                return Tensor.from(indexes.indexesForReading()[index.get()]);
+            else
+                return context.getTensor(name);
+        }
+
+        @Override
+        public TensorType getType(NAMETYPE name) {
+            Optional<Integer> index = type.indexOfDimension(name.name());
+            if (index.isPresent()) // this is the name of a dimension
+                return TensorType.empty;
+            else
+                return context.getType(name);
+        }
+
+        @Override
+        public TensorType getType(String name) {
+            Optional<Integer> index = type.indexOfDimension(name);
+            if (index.isPresent()) // this is the name of a dimension
+                return TensorType.empty;
+            else
+                return context.getType(name);
+        }
+
+    }
 
 }

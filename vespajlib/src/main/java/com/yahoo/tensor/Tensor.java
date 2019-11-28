@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.Argmin;
 import com.yahoo.tensor.functions.Concat;
@@ -37,7 +38,7 @@ import java.util.function.Function;
  * Each cell is is identified by its <i>address</i>, which consists of a set of dimension-label pairs which defines
  * the location of that cell. Both dimensions and labels are string on the form of an identifier or integer.
  * <p>
- * The size of the set of dimensions of a tensor is called its <i>order</i>.
+ * The size of the set of dimensions of a tensor is called its <i>rank</i>.
  * <p>
  * In contrast to regular mathematical formulations of tensors, this definition of a tensor allows <i>sparseness</i>
  * as there is no built-in notion of a contiguous space, and even in cases where a space is implied (such as when
@@ -144,25 +145,25 @@ public interface Tensor {
     // ----------------- Primitive tensor functions
 
     default Tensor map(DoubleUnaryOperator mapper) {
-        return new com.yahoo.tensor.functions.Map(new ConstantTensor(this), mapper).evaluate();
+        return new com.yahoo.tensor.functions.Map<>(new ConstantTensor<>(this), mapper).evaluate();
     }
 
     /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
     default Tensor reduce(Reduce.Aggregator aggregator, String ... dimensions) {
-        return new Reduce(new ConstantTensor(this), aggregator, Arrays.asList(dimensions)).evaluate();
+        return new Reduce<>(new ConstantTensor<>(this), aggregator, Arrays.asList(dimensions)).evaluate();
     }
     /** Aggregates cells over a set of dimensions, or over all dimensions if no dimensions are specified */
     default Tensor reduce(Reduce.Aggregator aggregator, List<String> dimensions) {
-        return new Reduce(new ConstantTensor(this), aggregator, dimensions).evaluate();
+        return new Reduce<>(new ConstantTensor<>(this), aggregator, dimensions).evaluate();
     }
 
     default Tensor join(Tensor argument, DoubleBinaryOperator combinator) {
-        return new Join(new ConstantTensor(this), new ConstantTensor(argument), combinator).evaluate();
+        return new Join<>(new ConstantTensor<>(this), new ConstantTensor<>(argument), combinator).evaluate();
     }
 
     default Tensor rename(String fromDimension, String toDimension) {
-        return new Rename(new ConstantTensor(this), Collections.singletonList(fromDimension),
-                                                    Collections.singletonList(toDimension)).evaluate();
+        return new Rename<>(new ConstantTensor<>(this), Collections.singletonList(fromDimension),
+                                                        Collections.singletonList(toDimension)).evaluate();
     }
 
     default Tensor concat(double argument, String dimension) {
@@ -170,50 +171,50 @@ public interface Tensor {
     }
 
     default Tensor concat(Tensor argument, String dimension) {
-        return new Concat(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
+        return new Concat<>(new ConstantTensor<>(this), new ConstantTensor<>(argument), dimension).evaluate();
     }
 
     default Tensor rename(List<String> fromDimensions, List<String> toDimensions) {
-        return new Rename(new ConstantTensor(this), fromDimensions, toDimensions).evaluate();
+        return new Rename<>(new ConstantTensor<>(this), fromDimensions, toDimensions).evaluate();
     }
 
     static Tensor generate(TensorType type, Function<List<Long>, Double> valueSupplier) {
-        return new Generate(type, valueSupplier).evaluate();
+        return new Generate<>(type, valueSupplier).evaluate();
     }
 
     // ----------------- Composite tensor functions which have a defined primitive mapping
 
     default Tensor l1Normalize(String dimension) {
-        return new L1Normalize(new ConstantTensor(this), dimension).evaluate();
+        return new L1Normalize<>(new ConstantTensor<>(this), dimension).evaluate();
     }
 
     default Tensor l2Normalize(String dimension) {
-        return new L2Normalize(new ConstantTensor(this), dimension).evaluate();
+        return new L2Normalize<>(new ConstantTensor<>(this), dimension).evaluate();
     }
 
     default Tensor matmul(Tensor argument, String dimension) {
-        return new Matmul(new ConstantTensor(this), new ConstantTensor(argument), dimension).evaluate();
+        return new Matmul<>(new ConstantTensor<>(this), new ConstantTensor<>(argument), dimension).evaluate();
     }
 
     default Tensor softmax(String dimension) {
-        return new Softmax(new ConstantTensor(this), dimension).evaluate();
+        return new Softmax<>(new ConstantTensor<>(this), dimension).evaluate();
     }
 
     default Tensor xwPlusB(Tensor w, Tensor b, String dimension) {
-        return new XwPlusB(new ConstantTensor(this), new ConstantTensor(w), new ConstantTensor(b), dimension).evaluate();
+        return new XwPlusB<>(new ConstantTensor<>(this), new ConstantTensor<>(w), new ConstantTensor<>(b), dimension).evaluate();
     }
 
     default Tensor argmax(String dimension) {
-        return new Argmax(new ConstantTensor(this), dimension).evaluate();
+        return new Argmax<>(new ConstantTensor<>(this), dimension).evaluate();
     }
 
-    default Tensor argmin(String dimension) { return new Argmin(new ConstantTensor(this), dimension).evaluate(); }
+    default Tensor argmin(String dimension) { return new Argmin<>(new ConstantTensor<>(this), dimension).evaluate(); }
 
-    static Tensor diag(TensorType type) { return new Diag(type).evaluate(); }
+    static Tensor diag(TensorType type) { return new Diag<>(type).evaluate(); }
 
-    static Tensor random(TensorType type) { return new Random(type).evaluate(); }
+    static Tensor random(TensorType type) { return new Random<>(type).evaluate(); }
 
-    static Tensor range(TensorType type) { return new Range(type).evaluate(); }
+    static Tensor range(TensorType type) { return new Range<>(type).evaluate(); }
 
     // ----------------- Composite tensor functions mapped to primitives here on the fly
 

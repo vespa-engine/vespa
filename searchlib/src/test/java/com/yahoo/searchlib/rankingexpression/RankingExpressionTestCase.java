@@ -61,7 +61,7 @@ public class RankingExpressionTestCase {
         ReferenceNode input = new ReferenceNode("input");
         ReferenceNode constant = new ReferenceNode("constant");
         ArithmeticNode product = new ArithmeticNode(input, ArithmeticOperator.MULTIPLY, constant);
-        Reduce sum = new Reduce(new TensorFunctionNode.ExpressionTensorFunction(product), Reduce.Aggregator.sum);
+        Reduce<Reference> sum = new Reduce<>(new TensorFunctionNode.ExpressionTensorFunction(product), Reduce.Aggregator.sum);
         RankingExpression expression = new RankingExpression(new TensorFunctionNode(sum));
 
         RankingExpression expected = new RankingExpression("sum(input * constant)");

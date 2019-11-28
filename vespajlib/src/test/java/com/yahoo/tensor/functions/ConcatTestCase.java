@@ -101,8 +101,8 @@ public class ConcatTestCase {
 
     private void assertConcat(String expectedType, String expected, Tensor a, Tensor b, String dimension) {
         Tensor expectedAsTensor = Tensor.from(expected);
-        TensorType inferredType = new Concat(new ConstantTensor(a), new ConstantTensor(b), dimension)
-                                           .type(new MapEvaluationContext());
+        TensorType inferredType = new Concat<>(new ConstantTensor<>(a), new ConstantTensor<>(b), dimension)
+                                          .type(new MapEvaluationContext<>());
         Tensor result = a.concat(b, dimension);
 
         if (expectedType != null)

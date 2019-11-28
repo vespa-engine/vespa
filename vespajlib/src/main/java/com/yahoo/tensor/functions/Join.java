@@ -10,6 +10,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.ArrayList;
@@ -31,12 +32,12 @@ import java.util.function.DoubleBinaryOperator;
  *
  * @author bratseth
  */
-public class Join extends PrimitiveTensorFunction {
+public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
-    private final TensorFunction argumentA, argumentB;
+    private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final DoubleBinaryOperator combinator;
 
-    public Join(TensorFunction argumentA, TensorFunction argumentB, DoubleBinaryOperator combinator) {
+    public Join(TensorFunction<NAMETYPE> argumentA, TensorFunction<NAMETYPE> argumentB, DoubleBinaryOperator combinator) {
         Objects.requireNonNull(argumentA, "The first argument tensor cannot be null");
         Objects.requireNonNull(argumentB, "The second argument tensor cannot be null");
         Objects.requireNonNull(combinator, "The combinator function cannot be null");
@@ -53,18 +54,18 @@ public class Join extends PrimitiveTensorFunction {
     public DoubleBinaryOperator combinator() { return combinator; }
 
     @Override
-    public List<TensorFunction> arguments() { return ImmutableList.of(argumentA, argumentB); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return ImmutableList.of(argumentA, argumentB); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 2)
             throw new IllegalArgumentException("Join must have 2 arguments, got " + arguments.size());
-        return new Join(arguments.get(0), arguments.get(1), combinator);
+        return new Join<>(arguments.get(0), arguments.get(1), combinator);
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() {
-        return new Join(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
+        return new Join<>(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
     }
 
     @Override
@@ -73,12 +74,12 @@ public class Join extends PrimitiveTensorFunction {
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
+    public TensorType type(TypeContext<NAMETYPE> context) {
         return new TensorType.Builder(argumentA.type(context), argumentB.type(context)).build();
     }
 
     @Override
-    public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
         TensorType joinedType = new TensorType.Builder(a.type(), b.type()).build();

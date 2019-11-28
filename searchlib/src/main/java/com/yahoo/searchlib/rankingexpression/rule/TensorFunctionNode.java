@@ -16,6 +16,7 @@ import com.yahoo.tensor.functions.ScalarFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 
+import java.sql.Ref;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
@@ -32,14 +33,14 @@ import java.util.stream.Collectors;
 @Beta
 public class TensorFunctionNode extends CompositeNode {
 
-    private final TensorFunction function;
+    private final TensorFunction<Reference> function;
 
-    public TensorFunctionNode(TensorFunction function) {
+    public TensorFunctionNode(TensorFunction<Reference> function) {
         this.function = function;
     }
 
     /** Returns the tensor function wrapped by this */
-    public TensorFunction function() { return function; }
+    public TensorFunction<Reference> function() { return function; }
 
     @Override
     public List<ExpressionNode> children() {
@@ -48,7 +49,7 @@ public class TensorFunctionNode extends CompositeNode {
                                            .collect(Collectors.toList());
     }
 
-    private ExpressionNode toExpressionNode(TensorFunction f) {
+    private ExpressionNode toExpressionNode(TensorFunction<Reference> f) {
         if (f instanceof ExpressionTensorFunction)
             return ((ExpressionTensorFunction)f).expression;
         else
@@ -57,9 +58,9 @@ public class TensorFunctionNode extends CompositeNode {
 
     @Override
     public CompositeNode setChildren(List<ExpressionNode> children) {
-        List<TensorFunction> wrappedChildren = children.stream()
-                                                        .map(ExpressionTensorFunction::new)
-                                                        .collect(Collectors.toList());
+        List<TensorFunction<Reference>> wrappedChildren = children.stream()
+                                                                 .map(ExpressionTensorFunction::new)
+                                                                 .collect(Collectors.toList());
         return new TensorFunctionNode(function.withArguments(wrappedChildren));
     }
 
@@ -81,21 +82,22 @@ public class TensorFunctionNode extends CompositeNode {
         return new ExpressionTensorFunction(node);
     }
 
-    public static Map<TensorAddress, ScalarFunction> wrap(Map<TensorAddress, ExpressionNode> nodes) {
-        Map<TensorAddress, ScalarFunction> functions = new LinkedHashMap<>();
+    public static Map<TensorAddress, ScalarFunction<Reference>> wrapScalars(Map<TensorAddress, ExpressionNode> nodes) {
+        Map<TensorAddress, ScalarFunction<Reference>> functions = new LinkedHashMap<>();
         for (var entry : nodes.entrySet())
-            functions.put(entry.getKey(), new ExpressionScalarFunction(entry.getValue()));
+            functions.put(entry.getKey(), wrapScalar(entry.getValue()));
         return functions;
     }
 
-    public static List<ScalarFunction> wrap(List<ExpressionNode> nodes) {
-        List<ScalarFunction> functions = new ArrayList<>();
-        for (var entry : nodes)
-            functions.add(new ExpressionScalarFunction(entry));
-        return functions;
+    public static List<ScalarFunction<Reference>> wrapScalars(List<ExpressionNode> nodes) {
+        return nodes.stream().map(node -> wrapScalar(node)).collect(Collectors.toList());
     }
 
-    private static class ExpressionScalarFunction implements ScalarFunction {
+    public static ScalarFunction<Reference> wrapScalar(ExpressionNode node) {
+        return new ExpressionScalarFunction(node);
+    }
+
+    private static class ExpressionScalarFunction implements ScalarFunction<Reference> {
 
         private final ExpressionNode expression;
 
@@ -104,8 +106,8 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public Double apply(EvaluationContext<?> context) {
-            return expression.evaluate((Context)context).asDouble();
+        public Double apply(EvaluationContext<Reference> context) {
+            return expression.evaluate(new ContextWrapper(context)).asDouble();
         }
 
         @Override
@@ -130,7 +132,7 @@ public class TensorFunctionNode extends CompositeNode {
      * A tensor function implemented by an expression.
      * This allows us to pass expressions as tensor function arguments.
      */
-    public static class ExpressionTensorFunction extends PrimitiveTensorFunction {
+    public static class ExpressionTensorFunction extends PrimitiveTensorFunction<Reference> {
 
         /** An expression which produces a tensor */
         private final ExpressionNode expression;
@@ -140,7 +142,7 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public List<TensorFunction> arguments() {
+        public List<TensorFunction<Reference>> arguments() {
             if (expression instanceof CompositeNode)
                 return ((CompositeNode)expression).children().stream()
                                                              .map(ExpressionTensorFunction::new)
@@ -150,7 +152,7 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public TensorFunction withArguments(List<TensorFunction> arguments) {
+        public TensorFunction<Reference> withArguments(List<TensorFunction<Reference>> arguments) {
             if (arguments.size() == 0) return this;
             List<ExpressionNode> unwrappedChildren = arguments.stream()
                                                               .map(arg -> ((ExpressionTensorFunction)arg).expression)
@@ -159,16 +161,15 @@ public class TensorFunctionNode extends CompositeNode {
         }
 
         @Override
-        public PrimitiveTensorFunction toPrimitive() { return this; }
+        public PrimitiveTensorFunction<Reference> toPrimitive() { return this; }
 
         @Override
-        @SuppressWarnings("unchecked") // Generics awkwardness
-        public <NAMETYPE extends TypeContext.Name> TensorType type(TypeContext<NAMETYPE> context) {
-            return expression.type((TypeContext<Reference>)context);
+        public TensorType type(TypeContext<Reference> context) {
+            return expression.type(context);
         }
 
         @Override
-        public <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+        public Tensor evaluate(EvaluationContext<Reference> context) {
             return expression.evaluate((Context)context).asTensor();
         }
 
@@ -205,6 +206,28 @@ public class TensorFunctionNode extends CompositeNode {
             this.context = context;
             this.path = path;
             this.parent = parent;
+        }
+
+    }
+
+    /** Turns an EvaluationContext into a Context */
+    // TODO: We should be able to change RankingExpression.evaluate to take an EvaluationContext and then get rid of this
+    private static class ContextWrapper extends Context {
+
+        private final EvaluationContext<Reference> delegate;
+
+        public ContextWrapper(EvaluationContext<Reference> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public Value get(String name) {
+            return new TensorValue(delegate.getTensor(name));
+        }
+
+        @Override
+        public TensorType getType(Reference name) {
+            return delegate.getType(name);
         }
 
     }

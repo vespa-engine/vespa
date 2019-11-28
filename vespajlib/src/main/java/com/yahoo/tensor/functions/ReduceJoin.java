@@ -7,7 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
-import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,19 +26,19 @@ import java.util.stream.Collectors;
  *
  * @author lesters
  */
-public class ReduceJoin extends CompositeTensorFunction {
+public class ReduceJoin<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
-    private final TensorFunction argumentA, argumentB;
+    private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final DoubleBinaryOperator combinator;
     private final Reduce.Aggregator aggregator;
     private final List<String> dimensions;
 
-    public ReduceJoin(Reduce reduce, Join join) {
+    public ReduceJoin(Reduce<NAMETYPE> reduce, Join<NAMETYPE> join) {
         this(join.arguments().get(0), join.arguments().get(1), join.combinator(), reduce.aggregator(), reduce.dimensions());
     }
 
-    public ReduceJoin(TensorFunction argumentA,
-                      TensorFunction argumentB,
+    public ReduceJoin(TensorFunction<NAMETYPE> argumentA,
+                      TensorFunction<NAMETYPE> argumentB,
                       DoubleBinaryOperator combinator,
                       Reduce.Aggregator aggregator,
                       List<String> dimensions) {
@@ -50,25 +50,25 @@ public class ReduceJoin extends CompositeTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() {
+    public List<TensorFunction<NAMETYPE>> arguments() {
         return ImmutableList.of(argumentA, argumentB);
     }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 2)
             throw new IllegalArgumentException("ReduceJoin must have 2 arguments, got " + arguments.size());
-        return new ReduceJoin(arguments.get(0), arguments.get(1), combinator, aggregator, dimensions);
+        return new ReduceJoin<>(arguments.get(0), arguments.get(1), combinator, aggregator, dimensions);
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() {
-        Join join = new Join(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
-        return new Reduce(join, aggregator, dimensions);
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
+        Join<NAMETYPE> join = new Join<>(argumentA.toPrimitive(), argumentB.toPrimitive(), combinator);
+        return new Reduce<>(join, aggregator, dimensions);
     }
 
     @Override
-    public final <NAMETYPE extends TypeContext.Name> Tensor evaluate(EvaluationContext<NAMETYPE> context) {
+    public final Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
         TensorType joinedType = new TensorType.Builder(a.type(), b.type()).build();

@@ -2,18 +2,19 @@
 package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.List;
 
 /**
  * @author bratseth
  */
-public class XwPlusB extends CompositeTensorFunction {
+public class XwPlusB<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE> {
 
-    private final TensorFunction x, w, b;
+    private final TensorFunction<NAMETYPE> x, w, b;
     private final String dimension;
 
-    public XwPlusB(TensorFunction x, TensorFunction w, TensorFunction b, String dimension) {
+    public XwPlusB(TensorFunction<NAMETYPE> x, TensorFunction<NAMETYPE> w, TensorFunction<NAMETYPE> b, String dimension) {
         this.x = x;
         this.w = w;
         this.b = b;
@@ -21,25 +22,25 @@ public class XwPlusB extends CompositeTensorFunction {
     }
 
     @Override
-    public List<TensorFunction> arguments() { return ImmutableList.of(x, w, b); }
+    public List<TensorFunction<NAMETYPE>> arguments() { return ImmutableList.of(x, w, b); }
 
     @Override
-    public TensorFunction withArguments(List<TensorFunction> arguments) {
+    public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 3)
             throw new IllegalArgumentException("XwPlusB must have 3 arguments, got " + arguments.size());
-        return new XwPlusB(arguments.get(0), arguments.get(1), arguments.get(2), dimension);
+        return new XwPlusB<>(arguments.get(0), arguments.get(1), arguments.get(2), dimension);
     }
 
     @Override
-    public PrimitiveTensorFunction toPrimitive() {
-        TensorFunction primitiveX = x.toPrimitive();
-        TensorFunction primitiveW = w.toPrimitive();
-        TensorFunction primitiveB = b.toPrimitive();
-        return new Join(new Reduce(new Join(primitiveX, primitiveW, ScalarFunctions.multiply()),
-                                   Reduce.Aggregator.sum,
-                                   dimension),
-                        primitiveB,
-                        ScalarFunctions.add());
+    public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
+        TensorFunction<NAMETYPE> primitiveX = x.toPrimitive();
+        TensorFunction<NAMETYPE> primitiveW = w.toPrimitive();
+        TensorFunction<NAMETYPE> primitiveB = b.toPrimitive();
+        return new Join<>(new Reduce<>(new Join<>(primitiveX, primitiveW, ScalarFunctions.multiply()),
+                                       Reduce.Aggregator.sum,
+                                       dimension),
+                          primitiveB,
+                          ScalarFunctions.add());
     }
 
     @Override

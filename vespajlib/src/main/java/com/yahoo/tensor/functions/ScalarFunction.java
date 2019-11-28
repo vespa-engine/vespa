@@ -2,6 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.evaluation.EvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 
 import java.util.function.Function;
 
@@ -10,10 +11,10 @@ import java.util.function.Function;
  *
  * @author bratseth
  */
-public interface ScalarFunction extends Function<EvaluationContext<?>, Double> {
+public interface ScalarFunction<NAMETYPE extends Name> extends Function<EvaluationContext<NAMETYPE>, Double> {
 
     @Override
-    Double apply(EvaluationContext<?> context);
+    Double apply(EvaluationContext<NAMETYPE> context);
 
     default String toString(ToStringContext context) {
         return toString();

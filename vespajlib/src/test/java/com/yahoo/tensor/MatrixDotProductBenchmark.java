@@ -2,17 +2,16 @@
 package com.yahoo.tensor;
 
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
+import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.VariableTensor;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 
 /**
  * Microbenchmark of a "dot product" of two mapped rank 2 tensors
@@ -42,10 +41,10 @@ public class MatrixDotProductBenchmark {
 
     private double dotProduct(Tensor tensor, List<Tensor> tensors) {
         double largest = Double.MIN_VALUE;
-        TensorFunction dotProductFunction = new Reduce(new Join(new ConstantTensor(tensor),
-                                                                new VariableTensor("argument"), (a, b) -> a * b),
-                                                       Reduce.Aggregator.sum).toPrimitive();
-        MapEvaluationContext context = new MapEvaluationContext();
+        TensorFunction<Name> dotProductFunction = new Reduce<>(new Join<>(new ConstantTensor<>(tensor),
+                                                                          new VariableTensor<>("argument"), (a, b) -> a * b),
+                                                               Reduce.Aggregator.sum).toPrimitive();
+        MapEvaluationContext<Name> context = new MapEvaluationContext<>();
 
         for (Tensor tensorElement : tensors) { // tensors.size() = 1 for larger tensor
             context.put("argument", tensorElement);

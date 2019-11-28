@@ -342,7 +342,7 @@
     "fields": []
   },
   "com.yahoo.searchlib.rankingexpression.Reference": {
-    "superClass": "com.yahoo.tensor.evaluation.TypeContext$Name",
+    "superClass": "com.yahoo.tensor.evaluation.Name",
     "interfaces": [],
     "attributes": [
       "public"
@@ -414,7 +414,7 @@
       "public final double getDouble(int)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.ArrayContext clone()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -521,7 +521,7 @@
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value get(int)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.DoubleOnlyArrayContext clone()",
       "public bridge synthetic com.yahoo.searchlib.rankingexpression.evaluation.AbstractArrayContext clone()",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)",
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -592,7 +592,7 @@
       "public java.util.Set names()",
       "public java.lang.String toString()",
       "public static com.yahoo.searchlib.rankingexpression.evaluation.MapContext fromString(java.lang.String)",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)"
     ],
     "fields": []
   },
@@ -610,7 +610,7 @@
       "public com.yahoo.tensor.TensorType getType(java.lang.String)",
       "public com.yahoo.tensor.TensorType getType(com.yahoo.searchlib.rankingexpression.Reference)",
       "public java.util.Map bindings()",
-      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.TypeContext$Name)"
+      "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)"
     ],
     "fields": []
   },
@@ -872,25 +872,25 @@
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode arg()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode function()",
       "public final com.yahoo.searchlib.rankingexpression.rule.FunctionNode scalarOrTensorFunction()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorFunction()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorMap()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorReduce()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorReduceComposites()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorJoin()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorRename()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorConcat()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorGenerate()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorGenerateBody(com.yahoo.tensor.TensorType)",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorRange()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorDiag()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorRandom()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorL1Normalize()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorL2Normalize()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorMatmul()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorSoftmax()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorXwPlusB()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorArgmax()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorArgmin()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorFunction()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorMap()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorReduce()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorReduceComposites()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorJoin()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorRename()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorConcat()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorGenerate()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorGenerateBody(com.yahoo.tensor.TensorType)",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorRange()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorDiag()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorRandom()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorL1Normalize()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorL2Normalize()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorMatmul()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorSoftmax()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorXwPlusB()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorArgmax()",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorArgmin()",
       "public final com.yahoo.searchlib.rankingexpression.rule.LambdaFunctionNode lambdaFunction()",
       "public final com.yahoo.tensor.functions.Reduce$Aggregator tensorReduceAggregator()",
       "public final com.yahoo.tensor.TensorType tensorType()",
@@ -909,11 +909,14 @@
       "public final java.util.List tagCommaLeadingList()",
       "public final com.yahoo.searchlib.rankingexpression.rule.ConstantNode constantPrimitive()",
       "public final com.yahoo.searchlib.rankingexpression.evaluation.Value primitiveValue()",
-      "public final com.yahoo.searchlib.rankingexpression.rule.ExpressionNode tensorValueBody(com.yahoo.tensor.TensorType)",
+      "public final com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode tensorValueBody(com.yahoo.tensor.TensorType)",
       "public final com.yahoo.tensor.functions.DynamicTensor mappedTensorValueBody(com.yahoo.tensor.TensorType)",
       "public final com.yahoo.tensor.functions.DynamicTensor indexedTensorValueBody(com.yahoo.tensor.TensorType)",
       "public final void tensorCell(com.yahoo.tensor.TensorType, java.util.Map)",
       "public final void labelAndDimension(com.yahoo.tensor.TensorAddress$Builder)",
+      "public final void labelAndDimensionValues(java.util.List)",
+      "public final java.util.List valueAddress()",
+      "public final com.yahoo.tensor.functions.Value$DimensionValue dimensionValue(java.util.Optional)",
       "public void <init>(java.io.InputStream)",
       "public void <init>(java.io.InputStream, java.lang.String)",
       "public void ReInit(java.io.InputStream)",
@@ -1613,8 +1616,9 @@
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public static com.yahoo.searchlib.rankingexpression.rule.TensorFunctionNode$ExpressionTensorFunction wrap(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)",
-      "public static java.util.Map wrap(java.util.Map)",
-      "public static java.util.List wrap(java.util.List)"
+      "public static java.util.Map wrapScalars(java.util.Map)",
+      "public static java.util.List wrapScalars(java.util.List)",
+      "public static com.yahoo.tensor.functions.ScalarFunction wrapScalar(com.yahoo.searchlib.rankingexpression.rule.ExpressionNode)"
     ],
     "fields": []
   },
