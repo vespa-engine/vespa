@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance;
 
-import com.google.common.collect.ImmutableSet;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
@@ -17,15 +17,14 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author dybis
@@ -81,11 +80,15 @@ public class StorageMaintainerTest {
                     .stream()
                     .map(FileFinder.FileAttributes::filename)
                     .collect(Collectors.toSet());
-            assertEquals(ImmutableSet.of("container-archive", "container-1", "container-2"), containerStorageRootContentsBeforeArchive);
+            assertEquals(Set.of("container-archive", "container-1", "container-2"), containerStorageRootContentsBeforeArchive);
 
 
             // Archive container-1
-            StorageMaintainer storageMaintainer = new StorageMaintainer(null, null, pathToArchiveDir);
+            ManualClock clock = new ManualClock(Instant.ofEpochSecond(1234567890));
+            StorageMaintainer storageMaintainer = new StorageMaintainer(null, null, pathToArchiveDir, clock);
+            storageMaintainer.archiveNodeStorage(context1);
+
+            clock.advance(Duration.ofSeconds(3));
             storageMaintainer.archiveNodeStorage(context1);
 
             // container-1 should be gone from container-storage
@@ -94,18 +97,18 @@ public class StorageMaintainerTest {
                     .stream()
                     .map(FileFinder.FileAttributes::filename)
                     .collect(Collectors.toSet());
-            assertEquals(ImmutableSet.of("container-archive", "container-2"), containerStorageRootContentsAfterArchive);
+            assertEquals(Set.of("container-archive", "container-2"), containerStorageRootContentsAfterArchive);
 
             // container archive directory should contain exactly 1 directory - the one we just archived
             List<FileFinder.FileAttributes> containerArchiveContentsAfterArchive = FileFinder.from(pathToArchiveDir).maxDepth(1).list();
             assertEquals(1, containerArchiveContentsAfterArchive.size());
             Path archivedContainerStoragePath = containerArchiveContentsAfterArchive.get(0).path();
-            assertTrue(archivedContainerStoragePath.getFileName().toString().matches("container-1_[0-9]{14}"));
+            assertEquals("container-1_20090213233130", archivedContainerStoragePath.getFileName().toString());
             Set<String> archivedContainerStorageContents = FileFinder.files(archivedContainerStoragePath)
                     .stream()
                     .map(fileAttributes -> archivedContainerStoragePath.relativize(fileAttributes.path()).toString())
                     .collect(Collectors.toSet());
-            assertEquals(ImmutableSet.of("opt/vespa/logs/vespa/vespa.log", "opt/vespa/logs/vespa/zookeeper.log"), archivedContainerStorageContents);
+            assertEquals(Set.of("opt/vespa/logs/vespa/vespa.log", "opt/vespa/logs/vespa/zookeeper.log"), archivedContainerStorageContents);
         }
 
         private NodeAgentContext createNodeAgentContextAndContainerStorage(FileSystem fileSystem, String containerName) throws IOException {
@@ -128,11 +131,11 @@ public class StorageMaintainerTest {
                     .stream()
                     .map(fileAttributes -> containerRootOnHost.relativize(fileAttributes.path()).toString())
                     .collect(Collectors.toSet());
-            Set<String> expectedContents = new HashSet<>(Arrays.asList(
+            Set<String> expectedContents = Set.of(
                     "etc/something/conf",
                     "opt/vespa/logs/vespa/vespa.log",
                     "opt/vespa/logs/vespa/zookeeper.log",
-                    "opt/vespa/var/db/some-file"));
+                    "opt/vespa/var/db/some-file");
             assertEquals(expectedContents, actualContents);
             return context;
         }

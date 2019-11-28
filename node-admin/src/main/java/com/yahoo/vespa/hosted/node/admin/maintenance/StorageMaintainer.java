@@ -15,8 +15,8 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -42,6 +42,7 @@ public class StorageMaintainer {
     private final Terminal terminal;
     private final CoredumpHandler coredumpHandler;
     private final Path archiveContainerStoragePath;
+    private final Clock clock;
 
     // We cache disk usage to avoid doing expensive disk operations so often
     private final Cache<Path, Long> diskUsage = CacheBuilder.newBuilder()
@@ -50,9 +51,14 @@ public class StorageMaintainer {
             .build();
 
     public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
+        this(terminal, coredumpHandler, archiveContainerStoragePath, Clock.systemUTC());
+    }
+
+    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath, Clock clock) {
         this.terminal = terminal;
         this.coredumpHandler = coredumpHandler;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
+        this.clock = clock;
     }
 
     public Optional<Long> getDiskUsageFor(NodeAgentContext context) {
@@ -154,12 +160,14 @@ public class StorageMaintainer {
      */
     public void archiveNodeStorage(NodeAgentContext context) {
         Path logsDirInContainer = context.pathInNodeUnderVespaHome("logs");
-        Path containerLogsOnHost = context.pathOnHostFromPathInNode(logsDirInContainer);
         Path containerLogsInArchiveDir = archiveContainerStoragePath
-                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(Instant.now()) + logsDirInContainer);
+                .resolve(context.containerName().asString() + "_" + DATE_TIME_FORMATTER.format(clock.instant()) + logsDirInContainer);
+        UnixPath containerLogsOnHost = new UnixPath(context.pathOnHostFromPathInNode(logsDirInContainer));
 
-        new UnixPath(containerLogsInArchiveDir).createParents();
-        new UnixPath(containerLogsOnHost).moveIfExists(containerLogsInArchiveDir);
+        if (containerLogsOnHost.exists()) {
+            new UnixPath(containerLogsInArchiveDir).createParents();
+            containerLogsOnHost.moveIfExists(containerLogsInArchiveDir);
+        }
         new UnixPath(context.pathOnHostFromPathInNode("/")).deleteRecursively();
     }
 
