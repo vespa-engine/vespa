@@ -236,7 +236,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Optional<DeploymentInstanceSpec> instance = spec.instance(app.getApplicationId().instance());
         if (instance.isEmpty()) return false;
         return instance.get().zones().stream()
-                   .anyMatch(declaredZone -> declaredZone.deploysTo(zone.environment(), Optional.of(zone.region())) &&
+                   .anyMatch(declaredZone -> declaredZone.concerns(zone.environment(), Optional.of(zone.region())) &&
                                              declaredZone.active());
     }
 

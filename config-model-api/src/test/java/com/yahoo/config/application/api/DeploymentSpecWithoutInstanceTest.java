@@ -3,7 +3,6 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
@@ -40,11 +39,11 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(specXml, spec.xmlForm());
         assertEquals(1, spec.steps().size());
         assertFalse(spec.majorVersion().isPresent());
-        assertTrue(spec.steps().get(0).deploysTo(Environment.test));
-        assertTrue(spec.requireInstance("default").includes(Environment.test, Optional.empty()));
-        assertFalse(spec.requireInstance("default").includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertFalse(spec.requireInstance("default").includes(Environment.staging, Optional.empty()));
-        assertFalse(spec.requireInstance("default").includes(Environment.prod, Optional.empty()));
+        assertTrue(spec.steps().get(0).concerns(Environment.test));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.of(RegionName.from("region1"))));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.empty()));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
@@ -73,11 +72,11 @@ public class DeploymentSpecWithoutInstanceTest {
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertEquals(2, spec.steps().size());
         assertEquals(1, spec.requireInstance("default").steps().size());
-        assertTrue(spec.steps().get(0).deploysTo(Environment.test));
-        assertTrue(spec.requireInstance("default").steps().get(0).deploysTo(Environment.staging));
-        assertFalse(spec.requireInstance("default").includes(Environment.test, Optional.empty()));
-        assertTrue(spec.requireInstance("default").includes(Environment.staging, Optional.empty()));
-        assertFalse(spec.requireInstance("default").includes(Environment.prod, Optional.empty()));
+        assertTrue(spec.steps().get(0).concerns(Environment.test));
+        assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.staging));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.empty()));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 
@@ -96,21 +95,21 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(3, spec.steps().size());
         assertEquals(2, spec.requireInstance("default").steps().size());
 
-        assertTrue(spec.steps().get(0).deploysTo(Environment.test));
+        assertTrue(spec.steps().get(0).concerns(Environment.test));
 
-        assertTrue(spec.steps().get(1).deploysTo(Environment.staging));
+        assertTrue(spec.steps().get(1).concerns(Environment.staging));
 
-        assertTrue(spec.requireInstance("default").steps().get(0).deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
         assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(0)).active());
 
-        assertTrue(spec.requireInstance("default").steps().get(1).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(spec.requireInstance("default").steps().get(1).concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(1)).active());
 
-        assertFalse(spec.requireInstance("default").includes(Environment.test, Optional.empty()));
-        assertFalse(spec.requireInstance("default").includes(Environment.staging, Optional.empty()));
-        assertTrue(spec.requireInstance("default").includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.requireInstance("default").includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.requireInstance("default").includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
         
         assertEquals(DeploymentSpec.UpgradePolicy.defaultPolicy, spec.requireInstance("default").upgradePolicy());
@@ -134,25 +133,25 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(5, spec.requireInstance("default").steps().size());
         assertEquals(4, spec.requireInstance("default").zones().size());
 
-        assertTrue(spec.requireInstance("default").steps().get(0).deploysTo(Environment.test));
+        assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.test));
 
-        assertTrue(spec.requireInstance("default").steps().get(1).deploysTo(Environment.staging));
+        assertTrue(spec.requireInstance("default").steps().get(1).concerns(Environment.staging));
 
-        assertTrue(spec.requireInstance("default").steps().get(2).deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").steps().get(2).concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
         assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(2)).active());
 
         assertTrue(spec.requireInstance("default").steps().get(3) instanceof DeploymentSpec.Delay);
         assertEquals(3 * 60 * 60 + 30 * 60, spec.requireInstance("default").steps().get(3).delay().getSeconds());
 
-        assertTrue(spec.requireInstance("default").steps().get(4).deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertTrue(spec.requireInstance("default").steps().get(4).concerns(Environment.prod, Optional.of(RegionName.from("us-west1"))));
         assertTrue(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(4)).active());
 
-        assertTrue(spec.requireInstance("default").includes(Environment.test, Optional.empty()));
-        assertFalse(spec.requireInstance("default").includes(Environment.test, Optional.of(RegionName.from("region1"))));
-        assertTrue(spec.requireInstance("default").includes(Environment.staging, Optional.empty()));
-        assertTrue(spec.requireInstance("default").includes(Environment.prod, Optional.of(RegionName.from("us-east1"))));
-        assertTrue(spec.requireInstance("default").includes(Environment.prod, Optional.of(RegionName.from("us-west1"))));
-        assertFalse(spec.requireInstance("default").includes(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.of(RegionName.from("region1"))));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("us-east1"))));
+        assertTrue(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("us-west1"))));
+        assertFalse(spec.requireInstance("default").deploysTo(Environment.prod, Optional.of(RegionName.from("no-such-region"))));
         assertFalse(spec.requireInstance("default").globalServiceId().isPresent());
     }
 

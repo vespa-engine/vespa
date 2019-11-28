@@ -80,7 +80,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
         Objects.requireNonNull(endpoints, "Missing endpoints parameter");
 
         var productionRegions = steps.stream()
-                                     .filter(step -> step.deploysTo(Environment.prod))
+                                     .filter(step -> step.concerns(Environment.prod))
                                      .flatMap(step -> step.zones().stream())
                                      .flatMap(zone -> zone.region().stream())
                                      .map(RegionName::value)
@@ -173,19 +173,17 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
                              .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns all the deployment steps which are zones in the order they are declared */
+    @Override
     public List<DeploymentSpec.DeclaredZone> zones() {
         return steps.stream()
                     .flatMap(step -> step.zones().stream())
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
     @Override
-    public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-        for (DeploymentSpec.Step step : steps)
-            if (step.deploysTo(environment, region)) return true;
-        return false;
+    public boolean concerns(Environment environment, Optional<RegionName> region) {
+        return steps.stream().anyMatch(step -> step.concerns(environment, region));
     }
 
     /** Returns the athenz domain if configured */
@@ -193,12 +191,11 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
 
     /** Returns the athenz service for environment/region if configured */
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
-        AthenzService athenzService = zones().stream()
-                                             .filter(zone -> zone.deploysTo(environment, Optional.of(region)))
-                                             .findFirst()
-                                             .flatMap(DeploymentSpec.DeclaredZone::athenzService)
-                                             .orElse(this.athenzService.orElse(null));
-        return Optional.ofNullable(athenzService);
+        return zones().stream()
+                      .filter(zone -> zone.concerns(environment, Optional.of(region)))
+                      .findFirst()
+                      .flatMap(DeploymentSpec.DeclaredZone::athenzService)
+                      .or(() -> this.athenzService);
     }
 
     /** Returns the notification configuration of these instances */
@@ -207,23 +204,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Step {
     /** Returns the rotations configuration of these instances */
     public List<Endpoint> endpoints() { return endpoints; }
 
-    /** Returns whether this instances deployment specifies the given zone, either implicitly or explicitly */
-    public boolean includes(Environment environment, Optional<RegionName> region) {
-        for (DeploymentSpec.Step step : steps)
-            if (step.deploysTo(environment, region)) return true;
-        return false;
-    }
-
-    DeploymentInstanceSpec withSteps(List<DeploymentSpec.Step> steps) {
-        return new DeploymentInstanceSpec(name,
-                                          steps,
-                                          upgradePolicy,
-                                          changeBlockers,
-                                          globalServiceId,
-                                          athenzDomain,
-                                          athenzService,
-                                          notifications,
-                                          endpoints);
+    /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
+    public boolean deploysTo(Environment environment, Optional<RegionName> region) {
+        return zones().stream().anyMatch(zone -> zone.concerns(environment, region));
     }
 
     @Override
