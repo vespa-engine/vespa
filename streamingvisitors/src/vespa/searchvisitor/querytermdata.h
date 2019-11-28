@@ -4,7 +4,7 @@
 
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/simpletermdata.h>
-#include <vespa/searchlib/query/querynoderesultbase.h>
+#include <vespa/searchlib/query/streaming/querynoderesultbase.h>
 
 namespace storage {
 

@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/searchlib/query/query.h>
-#include <vespa/searchlib/query/querynode.h>
+#include <vespa/searchlib/query/streaming/query.h>
+#include <vespa/searchlib/query/streaming/querynode.h>
 
 namespace storage {
 

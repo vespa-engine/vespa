@@ -3,10 +3,6 @@ vespa_add_library(searchlib_query OBJECT
     SOURCES
     query_term_simple.cpp
     query_term_ucs4.cpp
-    queryterm.cpp
-    querynode.cpp
-    query.cpp
     query_term_decoder.cpp
-    querynoderesultbase.cpp
     DEPENDS
 )

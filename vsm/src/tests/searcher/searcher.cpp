@@ -13,7 +13,7 @@
 #include <vespa/vsm/searcher/utf8substringsnippetmodifier.h>
 #include <vespa/vsm/searcher/utf8suffixstringfieldsearcher.h>
 #include <vespa/vsm/vsm/snippetmodifier.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 
 using namespace document;

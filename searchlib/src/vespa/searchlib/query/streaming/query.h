@@ -2,8 +2,8 @@
 #pragma once
 
 #include "queryterm.h"
-#include "base.h"
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchlib/query/base.h>
 
 namespace search
 {

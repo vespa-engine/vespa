@@ -13,8 +13,8 @@
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
-#include <vespa/searchlib/query/queryterm.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>

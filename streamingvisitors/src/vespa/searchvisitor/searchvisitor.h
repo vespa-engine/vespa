@@ -18,7 +18,7 @@
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>

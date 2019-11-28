@@ -20,6 +20,7 @@ vespa_add_library(searchlib
     $<TARGET_OBJECTS:searchlib_parsequery>
     $<TARGET_OBJECTS:searchlib_predicate>
     $<TARGET_OBJECTS:searchlib_query>
+    $<TARGET_OBJECTS:searchlib_query_streaming>
     $<TARGET_OBJECTS:searchlib_query_tree>
     $<TARGET_OBJECTS:searchlib_queryeval>
     $<TARGET_OBJECTS:searchlib_queryeval_wand>

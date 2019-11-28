@@ -41,6 +41,7 @@ vespa_define_module(
     src/vespa/searchlib/parsequery
     src/vespa/searchlib/predicate
     src/vespa/searchlib/query
+    src/vespa/searchlib/query/streaming
     src/vespa/searchlib/query/tree
     src/vespa/searchlib/queryeval
     src/vespa/searchlib/queryeval/test

@@ -2,14 +2,14 @@
 #pragma once
 
 #include "hit.h"
-#include "query_term_ucs4.h"
 #include "querynode.h"
 #include "querynoderesultbase.h"
-#include "weight.h"
+#include <vespa/fastlib/text/unicodeutil.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchlib/query/weight.h>
+#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memory.h>
-#include <vespa/vespalib/objects/objectvisitor.h>
-#include <vespa/fastlib/text/unicodeutil.h>
 
 namespace search {
 

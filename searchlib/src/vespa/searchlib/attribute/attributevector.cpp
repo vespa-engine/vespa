@@ -16,7 +16,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>

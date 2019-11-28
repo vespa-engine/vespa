@@ -7,7 +7,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/ranksetup.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include "hitcollector.h"
 #include "queryenvironment.h"

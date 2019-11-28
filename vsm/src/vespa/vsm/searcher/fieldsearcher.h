@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/query/query.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
-#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 namespace vsm {
 
