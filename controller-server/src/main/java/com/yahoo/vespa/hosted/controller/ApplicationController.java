@@ -644,6 +644,7 @@ public class ApplicationController {
         for (JobType job : JobList.from(instance).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
             if (deploymentSpec.instance(instance.name())
+                              // TODO jonmv: Properly convert to job here.
                               .map(spec -> spec.deploysTo(zone.environment(), Optional.of(zone.region())))
                               .orElse(false))
                 continue;

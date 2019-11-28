@@ -5,7 +5,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
-import com.yahoo.config.application.api.DeploymentSpec.ParallelZones;
+import com.yahoo.config.application.api.DeploymentSpec.ParallelSteps;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.application.api.Notifications;
@@ -50,6 +50,7 @@ public class DeploymentSpecXmlReader {
     private static final String regionTag = "region";
     private static final String delayTag = "delay";
     private static final String parallelTag = "parallel";
+    private static final String stepsTag = "steps";
     private static final String endpointsTag = "endpoints";
     private static final String endpointTag = "endpoint";
     private static final String notificationsTag = "notifications";
@@ -193,7 +194,7 @@ public class DeploymentSpecXmlReader {
                                                             longAttribute("minutes", stepTag) * 60 +
                                                             longAttribute("seconds", stepTag))));
             case parallelTag: // regions and instances may be nested within
-                return List.of(new ParallelZones(XML.getChildren(stepTag).stream()
+                return List.of(new ParallelSteps(XML.getChildren(stepTag).stream()
                                                     .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
                                                     .collect(Collectors.toList())));
             case regionTag:

@@ -271,10 +271,10 @@ public class DeploymentSpecWithoutInstanceTest {
                         "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        DeploymentSpec.ParallelZones parallelZones = ((DeploymentSpec.ParallelZones) spec.requireInstance("default").steps().get(1));
-        assertEquals(2, parallelZones.zones().size());
-        assertEquals(RegionName.from("us-central-1"), parallelZones.zones().get(0).region().get());
-        assertEquals(RegionName.from("us-east-3"), parallelZones.zones().get(1).region().get());
+        DeploymentSpec.ParallelSteps parallelSteps = ((DeploymentSpec.ParallelSteps) spec.requireInstance("default").steps().get(1));
+        assertEquals(2, parallelSteps.zones().size());
+        assertEquals(RegionName.from("us-central-1"), parallelSteps.zones().get(0).region().get());
+        assertEquals(RegionName.from("us-east-3"), parallelSteps.zones().get(1).region().get());
     }
 
     @Test
