@@ -2,9 +2,9 @@
 .depend
 Makefile
 searchlib_customtypevisitor_test_app
-searchlib_query-old-large_test_app
-searchlib_query-old_test_app
 searchlib_query_visitor_test_app
 searchlib_querybuilder_test_app
 searchlib_stackdumpquerycreator_test_app
+searchlib_streaming_query_large_test_app
+searchlib_streaming_query_test_app
 searchlib_templatetermvisitor_test_app
