@@ -46,32 +46,41 @@ class SystemFlagsDeployResult {
     }
 
     static SystemFlagsDeployResult merge(List<SystemFlagsDeployResult> results) {
-        Map<FlagDataChangeWithoutTarget, Set<FlagsTarget>> targetsForChange = new HashMap<>();
+        List<FlagDataChange> mergedChanges = mergeChanges(results);
+        List<OperationError> mergedErrors = mergeErrors(results);
+        return new SystemFlagsDeployResult(mergedChanges, mergedErrors);
+    }
+
+    private static List<OperationError> mergeErrors(List<SystemFlagsDeployResult> results) {
         Map<OperationErrorWithoutTarget, Set<FlagsTarget>> targetsForError = new HashMap<>();
-
         for (SystemFlagsDeployResult result : results) {
-            for (FlagDataChange change : result.flagChanges()) {
-                var changeWithoutTarget = new FlagDataChangeWithoutTarget(change);
-                targetsForChange.computeIfAbsent(changeWithoutTarget, k -> new HashSet<>())
-                        .addAll(change.targets());
-            }
-
             for (OperationError error : result.errors()) {
                 var errorWithoutTarget = new OperationErrorWithoutTarget(error);
                 targetsForError.computeIfAbsent(errorWithoutTarget, k -> new HashSet<>())
                         .addAll(error.targets());
             }
         }
-
-        List<FlagDataChange> mergedChanges = new ArrayList<>();
-        targetsForChange.forEach(
-                (change, targets) -> mergedChanges.add(change.toFlagDataChange(targets)));
-
         List<OperationError> mergedErrors = new ArrayList<>();
         targetsForError.forEach(
                 (error, targets) -> mergedErrors.add(error.toOperationError(targets)));
-        return new SystemFlagsDeployResult(mergedChanges, mergedErrors);
+        return mergedErrors;
     }
+
+    private static List<FlagDataChange> mergeChanges(List<SystemFlagsDeployResult> results) {
+        Map<FlagDataChangeWithoutTarget, Set<FlagsTarget>> targetsForChange = new HashMap<>();
+        for (SystemFlagsDeployResult result : results) {
+            for (FlagDataChange change : result.flagChanges()) {
+                var changeWithoutTarget = new FlagDataChangeWithoutTarget(change);
+                targetsForChange.computeIfAbsent(changeWithoutTarget, k -> new HashSet<>())
+                        .addAll(change.targets());
+            }
+        }
+        List<FlagDataChange> mergedChanges = new ArrayList<>();
+        targetsForChange.forEach(
+                (change, targets) -> mergedChanges.add(change.toFlagDataChange(targets)));
+        return mergedChanges;
+    }
+
 
     WireSystemFlagsDeployResult toWire() {
         var wireResult = new WireSystemFlagsDeployResult();
