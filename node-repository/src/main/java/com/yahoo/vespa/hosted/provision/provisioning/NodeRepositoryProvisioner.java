@@ -12,7 +12,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.NestedTransaction;
@@ -96,7 +95,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                                        ", downscaling to " + nodeCount + " nodes in " + zone.environment());
             resources = Optional.of(capacityPolicies.decideNodeResources(requestedCapacity, cluster));
             boolean exclusive = capacityPolicies.decideExclusivity(cluster.isExclusive());
-            effectiveGroups = wantedGroups > nodeCount ? nodeCount : wantedGroups; // cannot have more groups than nodes
+            effectiveGroups = Math.min(wantedGroups, nodeCount); // cannot have more groups than nodes
             requestedNodes = NodeSpec.from(nodeCount, resources.get(), exclusive, requestedCapacity.canFail());
         }
         else {
@@ -146,9 +145,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     private void validate(Collection<HostSpec> hosts) {
         for (HostSpec host : hosts) {
-            if ( ! host.membership().isPresent())
+            if (host.membership().isEmpty())
                 throw new IllegalArgumentException("Hosts must be assigned a cluster when activating, but got " + host);
-            if ( ! host.membership().get().cluster().group().isPresent())
+            if (host.membership().get().cluster().group().isEmpty())
                 throw new IllegalArgumentException("Hosts must be assigned a group when activating, but got " + host);
         }
     }

@@ -5,9 +5,10 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
-import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Locale;
 
 /**
@@ -58,7 +59,7 @@ public class CapacityPolicies {
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
-        double minMemoryGb = cluster.type() == ClusterSpec.Type.admin ? 2 : 4;
+        double minMemoryGb = minMemoryGb(cluster.type());
         if (resources.memoryGb() >= minMemoryGb) return;
 
         throw new IllegalArgumentException(String.format(Locale.ENGLISH,
@@ -66,8 +67,18 @@ public class CapacityPolicies {
                 minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
     }
 
+    private int minMemoryGb(ClusterSpec.Type clusterType) {
+        if (zone.system() == SystemName.dev) return 1; // Allow small containers in dev system
+        if (clusterType == ClusterSpec.Type.admin) return 2;
+        return 4;
+    }
+
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin) {
+            if (zone.system() == SystemName.dev) {
+                // Use small logserver in dev system
+                return new NodeResources(0.1, 1, 10, 0.3);
+            }
             return isUsingAdvertisedResources ?
                     new NodeResources(0.5, 4, 50, 0.3) :
                     new NodeResources(0.5, 2, 50, 0.3);
@@ -94,9 +105,9 @@ public class CapacityPolicies {
      */
     private int ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
         if (canFail &&
-                nodeCount == 1 &&
-                Arrays.asList(ClusterSpec.Type.container, ClusterSpec.Type.content).contains(clusterType) &&
-                zone.environment().isProduction())
+            nodeCount == 1 &&
+            EnumSet.of(ClusterSpec.Type.container, ClusterSpec.Type.content).contains(clusterType) &&
+            zone.environment().isProduction())
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         return nodeCount;
     }
