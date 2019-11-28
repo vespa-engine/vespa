@@ -160,6 +160,12 @@ public class Flags {
             "Takes effect on restart of config server",
             NODE_TYPE, HOSTNAME);
 
+    public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
+            "tls-for-zookeeper-client-server-communication", "OFF",
+            "How to setup TLS for ZooKeeper client/server communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
+            "Takes effect on restart of config server",
+            NODE_TYPE, HOSTNAME);
+
     public static final UnboundBooleanFlag USE_OLD_METRICS_CHECKS = defineFeatureFlag(
             "use-old-metrics-checks", true,
             "Whether to use old metrics checks",
