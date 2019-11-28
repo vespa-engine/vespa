@@ -109,7 +109,9 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
+        // TODO: Refactor TLS config generation in the tow methods below, lots of common code
         sb.append(createTlsQuorumConfig(config, transportSecurityOptions));
+        sb.append(createTlsClientServerConfig(config, transportSecurityOptions));
         return sb.toString();
     }
 
@@ -168,6 +170,53 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
 
         return sb.toString();
     }
+
+    private String createTlsClientServerConfig(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
+        String tlsSetting = getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION")
+                .orElse(config.tlsForClientServerCommunication().name());
+        if (transportSecurityOptions.isEmpty() && !tlsSetting.equals("OFF"))
+            throw new RuntimeException("Could not retrieve transport security options");
+
+        StringBuilder sb = new StringBuilder();
+
+        // Create a SSLContext instance and determine the allowed ciphers/versions supported by the JVM's default provider.
+        SSLContext sslContext = new SslContextBuilder().build();
+        Set<String> allowedCiphers = new TreeSet<>(TlsContext.getAllowedCipherSuites(sslContext));
+        Set<String> allowedProtocols = new TreeSet<>(TlsContext.getAllowedProtocols(sslContext));
+
+        // Common config
+        sb.append("ssl.hostnameVerification=false\n");
+        sb.append("ssl.clientAuth=NEED\n");
+        sb.append("ssl.ciphersuites=").append(String.join(",", allowedCiphers)).append("\n");
+        sb.append("ssl.enabledProtocols=").append(String.join(",", allowedProtocols)).append("\n");
+        sb.append("ssl.protocol=").append(sslContext.getProtocol()).append("\n");
+
+        boolean portUnification;
+        switch (tlsSetting) {
+            case "OFF":
+            case "TLS_ONLY":
+                portUnification = false;
+                break;
+            case "PORT_UNIFICATION":
+            case "TLS_WITH_PORT_UNIFICATION":
+                portUnification = true;
+                break;
+            default: throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
+        }
+        sb.append("client.portUnification=").append(portUnification).append("\n");
+
+        transportSecurityOptions.ifPresent(options -> {
+            sb.append("ssl.keyStore.location=").append(jksKeyStoreFilePath).append("\n");
+            sb.append("ssl.keyStore.type=JKS\n");
+
+            Path caCertificatesFile = options.getCaCertificatesFile().orElseThrow(() -> new RuntimeException("Could not find ca certificates file"));
+            sb.append("ssl.trustStore.location=").append(caCertificatesFile).append("\n");
+            sb.append("ssl.trustStore.type=PEM\n");
+        });
+
+        return sb.toString();
+    }
+
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
         if (config.server().size() > 1) {
