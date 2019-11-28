@@ -46,20 +46,20 @@ class SystemFlagsDeployResult {
     }
 
     static SystemFlagsDeployResult merge(List<SystemFlagsDeployResult> results) {
-        Map<FlagDataOperation, Set<FlagsTarget>> targetsForOperation = new HashMap<>();
+        Map<FlagDataChangeWithoutTarget, Set<FlagsTarget>> targetsForChange = new HashMap<>();
 
         List<OperationError> errors = new ArrayList<>();
         for (SystemFlagsDeployResult result : results) {
             errors.addAll(result.errors);
             for (FlagDataChange change : result.flagChanges()) {
-                FlagDataOperation operation = new FlagDataOperation(change);
-                targetsForOperation.computeIfAbsent(operation, k -> new HashSet<>())
+                var changeWithoutTarget = new FlagDataChangeWithoutTarget(change);
+                targetsForChange.computeIfAbsent(changeWithoutTarget, k -> new HashSet<>())
                         .addAll(change.targets());
             }
         }
 
         List<FlagDataChange> mergedResult = new ArrayList<>();
-        targetsForOperation.forEach(
+        targetsForChange.forEach(
                 (operation, targets) -> mergedResult.add(operation.toFlagDataChange(targets)));
         return new SystemFlagsDeployResult(mergedResult, errors);
     }
@@ -242,7 +242,7 @@ class SystemFlagsDeployResult {
         String asString() { return stringValue; }
     }
 
-    private static class FlagDataOperation {
+    private static class FlagDataChangeWithoutTarget {
         final FlagId flagId;
         final OperationType operationType;
         final FlagData data;
@@ -251,7 +251,7 @@ class SystemFlagsDeployResult {
         final JsonNode jsonPreviousData; // needed for FlagData equality check
 
 
-        FlagDataOperation(FlagDataChange change) {
+        FlagDataChangeWithoutTarget(FlagDataChange change) {
             this.flagId = change.flagId();
             this.operationType = change.operation();
             this.data = change.data().orElse(null);
@@ -268,7 +268,7 @@ class SystemFlagsDeployResult {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            FlagDataOperation that = (FlagDataOperation) o;
+            FlagDataChangeWithoutTarget that = (FlagDataChangeWithoutTarget) o;
             return Objects.equals(flagId, that.flagId) &&
                     operationType == that.operationType &&
                     Objects.equals(jsonData, that.jsonData) &&
