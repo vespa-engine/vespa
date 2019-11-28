@@ -419,6 +419,14 @@
                 <version>1.6</version>
             </dependency>
             <dependency>
+                <!-- Needed by zookeeper, which has an optional dependency.
+                     Version must be the same as the one zk uses - check the zk pom file.  -->
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <!-- No version property, as we don't want maven-dependency-plugin to alert about newer versions. -->
+                <version>3.1.9</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock-standalone</artifactId>
                 <version>2.6.0</version>
