@@ -75,6 +75,10 @@ public class CapacityPolicies {
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
         if (clusterType == ClusterSpec.Type.admin) {
+            if (zone.system() == SystemName.dev) {
+                // Use small logserver in dev system
+                return new NodeResources(0.1, 1, 10, 0.3);
+            }
             return isUsingAdvertisedResources ?
                     new NodeResources(0.5, 4, 50, 0.3) :
                     new NodeResources(0.5, 2, 50, 0.3);
