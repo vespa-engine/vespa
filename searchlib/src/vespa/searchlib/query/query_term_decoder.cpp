@@ -6,6 +6,8 @@
 
 namespace search {
 
+using namespace search::streaming;
+
 QueryTermSimple::UP
 QueryTermDecoder::decodeTerm(QueryPacketT term)
 {

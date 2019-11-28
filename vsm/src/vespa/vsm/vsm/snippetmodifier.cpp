@@ -8,8 +8,8 @@
 LOG_SETUP(".vsm.snippetmodifier");
 
 using namespace document;
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 typedef vespalib::hash_map<vsm::FieldIdT, QueryTermList> FieldQueryTermMap;
 
 namespace {

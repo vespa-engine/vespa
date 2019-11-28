@@ -15,17 +15,17 @@ class QueryWrapper
 public:
     class PhraseList {
     private:
-        std::vector<search::PhraseQueryNode *> _phrases;
+        std::vector<search::streaming::PhraseQueryNode *> _phrases;
 
     public:
-        PhraseList(search::Query & query);
-        search::PhraseQueryNode * findPhrase(search::QueryTerm * term, size_t & index);
+        PhraseList(search::streaming::Query & query);
+        search::streaming::PhraseQueryNode * findPhrase(search::streaming::QueryTerm * term, size_t & index);
     };
 
     class Term {
     private:
-        search::QueryTerm       * _term;
-        search::PhraseQueryNode * _parent;
+        search::streaming::QueryTerm       * _term;
+        search::streaming::PhraseQueryNode * _parent;
         size_t                    _index;
 
     public:
@@ -35,14 +35,14 @@ public:
             _index(0)
         {
         }
-        Term(search::QueryTerm * term, search::PhraseQueryNode * parent, size_t index) :
+        Term(search::streaming::QueryTerm * term, search::streaming::PhraseQueryNode * parent, size_t index) :
             _term(term),
             _parent(parent),
             _index(index)
         {
         }
-        search::QueryTerm * getTerm() { return _term; }
-        search::PhraseQueryNode * getParent() { return _parent; }
+        search::streaming::QueryTerm * getTerm() { return _term; }
+        search::streaming::PhraseQueryNode * getParent() { return _parent; }
         size_t getIndex() const { return _index; }
         bool isPhraseTerm() const { return _parent != nullptr; }
         bool isFirstPhraseTerm() const { return isPhraseTerm() && getIndex() == 0; }
@@ -56,7 +56,7 @@ private:
     TermList   _termList;
 
 public:
-    QueryWrapper(search::Query & query);
+    QueryWrapper(search::streaming::Query & query);
     ~QueryWrapper();
     TermList & getTermList() { return _termList; }
     const TermList & getTermList() const { return _termList; }

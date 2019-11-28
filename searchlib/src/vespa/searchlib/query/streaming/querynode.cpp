@@ -6,7 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
 
-namespace search {
+namespace search::streaming {
 
 namespace {
     vespalib::stringref DEFAULT("default");

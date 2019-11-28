@@ -10,6 +10,7 @@
 
 using namespace search;
 using namespace search::query;
+using namespace search::streaming;
 
 void assertHit(const Hit & h, size_t expWordpos, size_t expContext, int32_t weight) {
     EXPECT_EQUAL(h.wordpos(), expWordpos);

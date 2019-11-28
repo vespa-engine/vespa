@@ -153,7 +153,7 @@ private:
          * @param attrMan the attribute manager.
          * @param attributeFields the list of attribute vectors needed.
          **/
-        void setupRankProcessors(search::Query & query,
+        void setupRankProcessors(search::streaming::Query & query,
                                  const vespalib::string & location,
                                  size_t wantedHitCount,
                                  const search::IAttributeManager & attrMan,
@@ -424,7 +424,7 @@ private:
     size_t                                  _docSearchedCount;
     size_t                                  _hitCount;
     size_t                                  _hitsRejectedCount;
-    search::Query                           _query;
+    search::streaming::Query                _query;
     std::unique_ptr<documentapi::QueryResultMessage>    _queryResult;
     vsm::FieldIdTSearcherMap                _fieldSearcherMap;
     vsm::SharedFieldPathMap                 _fieldPathMap;

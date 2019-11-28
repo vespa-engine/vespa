@@ -4,7 +4,7 @@
 #include <vespa/vespalib/objects/cloneable.h>
 #include <memory>
 
-namespace search {
+namespace search::streaming {
 
 /**
   This is the base of any item that can be attached to the leafs in a querytree.

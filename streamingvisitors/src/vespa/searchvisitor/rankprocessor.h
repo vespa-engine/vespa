@@ -57,7 +57,7 @@ public:
 
     RankProcessor(RankManager::Snapshot::SP snapshot,
                   const vespalib::string &rankProfile,
-                  search::Query & query,
+                  search::streaming::Query & query,
                   const vespalib::string & location,
                   search::fef::Properties & queryProperties,
                   const search::IAttributeManager * attrMgr);

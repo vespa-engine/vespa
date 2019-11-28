@@ -4,9 +4,10 @@
 #include "hit.h"
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
+namespace search { class SimpleQueryStackDumpIterator; }
 
-class SimpleQueryStackDumpIterator;
+namespace search::streaming {
+
 class QueryTerm;
 class QueryNode;
 class QueryNodeResultFactory;

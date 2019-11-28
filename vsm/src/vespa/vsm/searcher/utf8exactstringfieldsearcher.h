@@ -12,7 +12,7 @@ namespace vsm
 class UTF8ExactStringFieldSearcher : public UTF8StringFieldSearcherBase
 {
 protected:
-    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
+    virtual size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
     virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 
 public:

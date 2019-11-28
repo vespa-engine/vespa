@@ -8,6 +8,7 @@
 
 using namespace search;
 using namespace search::query;
+using namespace search::streaming;
 
 namespace {
 

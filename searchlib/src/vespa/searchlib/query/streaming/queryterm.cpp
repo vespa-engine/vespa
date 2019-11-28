@@ -38,7 +38,7 @@ static CharInfo _G_charTable;
 
 }
 
-namespace search {
+namespace search::streaming {
 
 QueryTerm::QueryTerm() :
     QueryTermUCS4(),

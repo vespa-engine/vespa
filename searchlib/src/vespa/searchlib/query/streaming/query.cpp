@@ -3,7 +3,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search {
+namespace search::streaming {
 
 void QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
 {

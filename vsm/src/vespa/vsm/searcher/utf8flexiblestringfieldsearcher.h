@@ -17,7 +17,7 @@ private:
      * Tries to match the given query term against the content of the given field reference.
      * Search strategy is choosen based on the query term type.
      **/
-    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
+    virtual size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
 
     /**
      * Tries to match each query term in the underlying query against the content of the given field reference.

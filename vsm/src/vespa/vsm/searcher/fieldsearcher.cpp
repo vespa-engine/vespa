@@ -8,10 +8,10 @@
 LOG_SETUP(".vsm.searcher.fieldsearcher");
 
 using search::byte;
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::Query;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 using search::v16qi;
-using search::Query;
 
 namespace vsm {
 

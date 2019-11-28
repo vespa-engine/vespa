@@ -24,7 +24,7 @@ public:
     /**
      * Reconfigures the field searcher based on information in the given query term.
      **/
-    void reconfig(const search::QueryTerm & term);
+    void reconfig(const search::streaming::QueryTerm & term);
 
     friend vespalib::asciistream & operator <<(vespalib::asciistream & os, const FieldSearchSpec & f);
 
@@ -61,13 +61,13 @@ public:
     /**
      * Reconfigures some of the field searchers based on information in the given query.
      **/
-    void reconfigFromQuery(const search::Query & query);
+    void reconfigFromQuery(const search::streaming::Query & query);
 
     /**
      * Adds a [field name, field id] entry to the given mapping for each field name used in the given query.
      * This is achieved by mapping from query term index name -> list of field ids -> [field name, field id] pairs.
      **/
-    bool buildFieldsInQuery(const search::Query & query, StringFieldIdTMap & fieldsInQuery) const;
+    bool buildFieldsInQuery(const search::streaming::Query & query, StringFieldIdTMap & fieldsInQuery) const;
 
     /**
      * Adds a [field name, field id] entry to the given mapping for each field name in the given vector.

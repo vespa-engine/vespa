@@ -11,7 +11,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memory.h>
 
-namespace search {
+namespace search::streaming {
 
 /**
    This is a leaf in the Query tree. All terms are leafs.

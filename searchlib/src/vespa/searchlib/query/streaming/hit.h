@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace search {
+namespace search::streaming {
 
 class Hit
 {

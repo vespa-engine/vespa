@@ -2,7 +2,7 @@
 
 #include "querywrapper.h"
 
-using namespace search;
+using namespace search::streaming;
 
 namespace storage {
 

@@ -2,8 +2,8 @@
 
 #include "floatfieldsearcher.h"
 
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 
 namespace vsm {
 

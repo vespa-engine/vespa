@@ -17,9 +17,10 @@
 #include <vespa/document/fieldvalue/fieldvalues.h>
 
 using namespace document;
-using search::QueryNodeResultFactory;
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::HitList;
+using search::streaming::QueryNodeResultFactory;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 using namespace vsm;
 
 template <typename T>
@@ -328,7 +329,7 @@ assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv
     EXPECT_EQUAL(qtv.size(), exp.size());
     ASSERT_TRUE(qtv.size() == exp.size());
     for (size_t i = 0; i < qtv.size(); ++i) {
-        const search::HitList & hl = qtv[i].getHitList();
+        const HitList & hl = qtv[i].getHitList();
         EXPECT_EQUAL(hl.size(), exp[i].size());
         ASSERT_TRUE(hl.size() == exp[i].size());
         for (size_t j = 0; j < hl.size(); ++j) {

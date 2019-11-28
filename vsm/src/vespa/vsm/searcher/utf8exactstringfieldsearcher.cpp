@@ -2,8 +2,8 @@
 #include "utf8exactstringfieldsearcher.h"
 
 using search::byte;
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 
 namespace vsm {
 

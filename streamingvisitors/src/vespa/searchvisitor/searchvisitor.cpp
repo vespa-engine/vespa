@@ -22,18 +22,20 @@ LOG_SETUP(".visitor.instance.searchvisitor");
 
 namespace storage {
 
+using document::DataType;
+using document::PositionDataType;
+using search::AttributeGuard;
+using search::AttributeVector;
+using search::aggregation::HitsAggregationResult;
+using search::attribute::IAttributeVector;
+using search::expression::ConfigureStaticParams;
+using search::streaming::Query;
+using search::streaming::QueryTermList;
+using vdslib::Parameters;
 using vsm::DocsumFilter;
 using vsm::FieldPath;
 using vsm::StorageDocument;
 using vsm::StringFieldIdTMap;
-using search::AttributeGuard;
-using search::AttributeVector;
-using search::attribute::IAttributeVector;
-using search::aggregation::HitsAggregationResult;
-using search::expression::ConfigureStaticParams;
-using vdslib::Parameters;
-using document::PositionDataType;
-using document::DataType;
 
 class ForceWordfolderInit
 {
@@ -292,7 +294,7 @@ void SearchVisitor::init(const Parameters & params)
             LOG(spam, "Received query blob of %zu bytes", queryBlob.size());
             VISITOR_TRACE(9, vespalib::make_string("Setting up for query blob of %zu bytes", queryBlob.size()));
             QueryTermDataFactory addOnFactory;
-            _query = search::Query(addOnFactory, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
+            _query = Query(addOnFactory, search::QueryPacketT(queryBlob.data(), queryBlob.size()));
             _searchBuffer->reserve(0x10000);
 
             int stackCount = 0;
@@ -469,7 +471,7 @@ SearchVisitor::RankController::RankController() :
 SearchVisitor::RankController::~RankController() {}
 
 void
-SearchVisitor::RankController::setupRankProcessors(search::Query & query, 
+SearchVisitor::RankController::setupRankProcessors(Query & query,
                                                    const vespalib::string & location,
                                                    size_t wantedHitCount,
                                                    const search::IAttributeManager & attrMan,
@@ -651,7 +653,7 @@ SearchVisitor::setupFieldSearchers(const std::vector<vespalib::string> & additio
 void
 SearchVisitor::setupSnippetModifiers()
 {
-    search::QueryTermList qtl;
+    QueryTermList qtl;
     _query.getLeafs(qtl);
     _snippetModifierManager.setup(qtl, _fieldSearchSpecMap.specMap(), _fieldSearchSpecMap.documentTypeMap().begin()->second);
 }
