@@ -90,6 +90,16 @@ public class DockerImageGarbageCollectionTest {
                 .expectDeletedImages("vespa-6", "vespa-6.28", "vespa:latest", "parent-image");
     }
 
+
+    @Test
+    public void unusedImagesWithMultipleUntagged() {
+        gcTester.withExistingImages(ImageBuilder.forId("image1")
+                                                .withTags("<none>:<none>"),
+                                    ImageBuilder.forId("image2")
+                                                .withTags("<none>:<none>"))
+                .expectDeletedImages("image1", "image2");
+    }
+
     @Test
     public void taggedImageWithNoContainersIsUnused() {
         gcTester.withExistingImages(ImageBuilder.forId("image-1").withTags("vespa-6"))

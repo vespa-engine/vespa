@@ -10,6 +10,7 @@ import com.yahoo.config.provision.DockerImage;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -125,14 +126,10 @@ class DockerImageGarbageCollector {
                 // Delete image, if successful also remove last usage time to prevent re-download being instantly deleted
                 .peek(image -> {
                     // Deleting an image by image ID with multiple tags will fail -> delete by tags instead
-                    Optional.ofNullable(image.getRepoTags())
-                            .map(Stream::of)
-                            .orElse(Stream.of(image.getId()))
-                            .forEach(imageReference -> {
-                                logger.info("Deleting unused docker image " + imageReference);
-                                docker.deleteImage(DockerImage.fromString(imageReference));
-                            });
-
+                    referencesOf(image).forEach(imageReference -> {
+                        logger.info("Deleting unused docker image " + imageReference);
+                        docker.deleteImage(DockerImage.fromString(imageReference));
+                    });
                     lastTimeUsedByImageId.remove(image.getId());
                 })
                 .count() > 0;
@@ -161,10 +158,8 @@ class DockerImageGarbageCollector {
      */
     private Set<String> dockerImageToImageIds(List<DockerImage> dockerImages, List<Image> images) {
         Map<String, String> imageIdByImageTag = images.stream()
-                .flatMap(image -> Optional.ofNullable(image.getRepoTags())
-                        .map(Stream::of)
-                        .orElseGet(Stream::empty)
-                        .map(repoTag -> new Pair<>(repoTag, image.getId())))
+                .flatMap(image -> referencesOf(image).stream()
+                                                     .map(repoTag -> new Pair<>(repoTag, image.getId())))
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond));
 
         return dockerImages.stream()
@@ -184,4 +179,23 @@ class DockerImageGarbageCollector {
         }
         return false;
     }
+
+    /**
+     * Returns list of references to given image, preferring image tag(s), if any exist.
+     *
+     * If image is untagged, its ID is returned instead.
+     */
+    private static List<String> referencesOf(Image image) {
+        if (image.getRepoTags() == null) {
+            return List.of(image.getId());
+        }
+        return Arrays.stream(image.getRepoTags())
+                     // Docker API returns untagged images as having the tag "<none>:<none>".
+                     .map(tag -> {
+                         if ("<none>:<none>".equals(tag)) return image.getId();
+                         return tag;
+                     })
+                     .collect(Collectors.toUnmodifiableList());
+    }
+
 }
