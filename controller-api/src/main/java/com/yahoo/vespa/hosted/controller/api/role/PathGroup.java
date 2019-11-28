@@ -173,6 +173,7 @@ enum PathGroup {
                    "/deployment/v1/{*}",
                    "/",
                    "/d/{*}",
+                   "/static/{*}",
                    "/statuspage/v1/{*}"),
 
     /** Paths providing public information. */
