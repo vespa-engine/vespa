@@ -117,6 +117,8 @@ public class VespaJsonDocumentReader {
 
     private void addFieldUpdates(DocumentUpdate update, TokenBuffer buffer, String fieldName) {
         Field field = update.getType().getField(fieldName);
+        if (field == null)
+            throw new IllegalArgumentException("No field named '" + fieldName + "' in " + update.getType());
         int localNesting = buffer.nesting();
         FieldUpdate fieldUpdate = FieldUpdate.create(field);
 

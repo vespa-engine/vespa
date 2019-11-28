@@ -328,8 +328,8 @@ public class DocumentType extends StructuredDataType {
     /**
      * Gets the field matching a given name.
      *
-     * @param name The name of a field.
-     * @return Returns the matching field, or null if not found.
+     * @param name the name of a field.
+     * @return returns the matching field, or null if not found.
      */
     public Field getField(String name) {
         Field field = headerType.getField(name);
