@@ -12,7 +12,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <set>
 
-namespace storage {
+namespace streaming {
 
 /**
  * Implementation of the feature execution framework
@@ -83,5 +83,5 @@ public:
 
 };
 
-} // namespace storage
+} // namespace streaming
 

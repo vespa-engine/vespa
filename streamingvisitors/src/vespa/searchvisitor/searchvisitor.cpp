@@ -20,7 +20,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".visitor.instance.searchvisitor");
 
-namespace storage {
+namespace streaming {
 
 using document::DataType;
 using document::PositionDataType;
@@ -31,6 +31,8 @@ using search::attribute::IAttributeVector;
 using search::expression::ConfigureStaticParams;
 using search::streaming::Query;
 using search::streaming::QueryTermList;
+using storage::StorageComponent;
+using storage::VisitorEnvironment;
 using vdslib::Parameters;
 using vsm::DocsumFilter;
 using vsm::FieldPath;
@@ -869,7 +871,7 @@ SearchVisitor::compatibleDocumentTypes(const document::DocumentType& typeA,
 
 void
 SearchVisitor::handleDocuments(const document::BucketId&,
-                               std::vector<spi::DocEntry::UP>& entries,
+                               std::vector<storage::spi::DocEntry::UP>& entries,
                                HitCounter& hitCounter)
 {
     (void) hitCounter;

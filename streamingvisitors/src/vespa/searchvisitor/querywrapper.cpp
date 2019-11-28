@@ -4,7 +4,7 @@
 
 using namespace search::streaming;
 
-namespace storage {
+namespace streaming {
 
 QueryWrapper::PhraseList::PhraseList(Query & query) :
     _phrases()
@@ -45,5 +45,5 @@ QueryWrapper::QueryWrapper(Query & query) :
 
 QueryWrapper::~QueryWrapper() = default;
 
-} // namespace storage
+} // namespace streaming
 

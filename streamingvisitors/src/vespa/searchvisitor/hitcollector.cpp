@@ -15,7 +15,7 @@ using search::FeatureSet;
 using search::fef::MatchData;
 using vdslib::SearchResult;
 
-namespace storage {
+namespace streaming {
 
 HitCollector::Hit::Hit(const vsm::StorageDocument *  doc, uint32_t docId, const search::fef::MatchData & matchData,
                        double score, const void * sortData, size_t sortDataLen) :
@@ -180,5 +180,5 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     return retval;
 }
 
-} // namespace storage
+} // namespace streaming
 

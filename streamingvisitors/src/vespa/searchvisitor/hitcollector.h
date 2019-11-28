@@ -11,7 +11,7 @@
 
 namespace search { namespace fef { class FeatureResolver; } }
 
-namespace storage {
+namespace streaming {
 
 /**
  * This class is used to store hits and MatchData objects for the m best hits.
@@ -136,5 +136,5 @@ public:
 
 };
 
-} // namespace storage
+} // namespace streaming
 

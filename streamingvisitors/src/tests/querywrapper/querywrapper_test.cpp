@@ -11,7 +11,7 @@ using namespace search;
 using namespace search::query;
 using namespace search::streaming;
 
-namespace storage {
+namespace streaming {
 
 class QueryWrapperTest : public vespalib::TestApp
 {
@@ -103,6 +103,6 @@ QueryWrapperTest::Main()
     TEST_DONE();
 }
 
-} // namespace storage
+} // namespace streaming
 
-TEST_APPHOOK(storage::QueryWrapperTest)
+TEST_APPHOOK(::streaming::QueryWrapperTest)

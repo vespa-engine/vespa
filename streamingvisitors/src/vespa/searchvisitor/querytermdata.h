@@ -6,7 +6,7 @@
 #include <vespa/searchlib/fef/simpletermdata.h>
 #include <vespa/searchlib/query/streaming/querynoderesultbase.h>
 
-namespace storage {
+namespace streaming {
 
 /**
  * This class keeps data for a query term that is used by the ranking framework.
@@ -29,5 +29,5 @@ public:
 };
 
 
-} // namespace storage
+} // namespace streaming
 

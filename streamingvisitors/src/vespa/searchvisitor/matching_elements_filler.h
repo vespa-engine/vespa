@@ -11,7 +11,7 @@ class FieldIdTSearcherMap;
 class StorageDocument;
 }
 
-namespace storage {
+namespace streaming {
 
 class HitCollector;
 

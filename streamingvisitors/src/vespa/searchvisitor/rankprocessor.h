@@ -14,7 +14,7 @@
 #include "querywrapper.h"
 #include "rankmanager.h"
 
-namespace storage {
+namespace streaming {
 
 /**
  * This class is associated with a query and a rank profile and
@@ -75,5 +75,5 @@ public:
     uint32_t getDocId() const { return _docId; }
 };
 
-} // namespace storage
+} // namespace streaming
 

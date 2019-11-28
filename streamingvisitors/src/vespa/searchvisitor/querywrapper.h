@@ -5,7 +5,7 @@
 #include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/query/streaming/querynode.h>
 
-namespace storage {
+namespace streaming {
 
 /**
  * This class wraps a query and adds extra information to the list of leaf terms.
@@ -62,5 +62,5 @@ public:
     const TermList & getTermList() const { return _termList; }
 };
 
-} // namespace storage
+} // namespace streaming
 

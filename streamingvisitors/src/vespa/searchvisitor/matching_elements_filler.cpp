@@ -21,7 +21,7 @@ using vdslib::SearchResult;
 using vsm::FieldIdTSearcherMap;
 using vsm::StorageDocument;
 
-namespace storage {
+namespace streaming {
 
 namespace {
 

@@ -28,7 +28,7 @@ using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
 using vdslib::SearchResult;
 
-namespace storage {
+namespace streaming {
 
 namespace {
 
@@ -290,5 +290,5 @@ RankProcessor::unpackMatchData(MatchData &matchData)
     }
 }
 
-} // namespace storage
+} // namespace streaming
 

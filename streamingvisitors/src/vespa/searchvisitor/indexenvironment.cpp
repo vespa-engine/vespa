@@ -4,7 +4,7 @@
 
 using namespace search::fef;
 
-namespace storage {
+namespace streaming {
 
 IndexEnvironment::IndexEnvironment(const ITableManager & tableManager) :
     _tableManager(&tableManager),
@@ -45,5 +45,5 @@ IndexEnvironment::hintAttributeAccess(const string & name) const {
     }
 }
 
-} // namespace storage
+} // namespace streaming
 

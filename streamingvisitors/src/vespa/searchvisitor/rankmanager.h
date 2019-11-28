@@ -9,7 +9,7 @@
 #include <vespa/searchlib/fef/tablemanager.h>
 #include <vespa/vsm/vsm/vsm-adapter.h>
 
-namespace storage {
+namespace streaming {
 
 /**
  * This class subscribes to the rank-profiles config and keeps a setup per rank profile.
@@ -89,5 +89,5 @@ public:
     Snapshot::SP getSnapshot() const { return _snapshot.get(); }
 };
 
-} // namespace storage
+} // namespace streaming
 
