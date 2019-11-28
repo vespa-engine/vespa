@@ -38,6 +38,8 @@ public class WireSystemFlagsDeployResult {
         @JsonProperty("operation") public String operation;
         @JsonProperty("data") public WireFlagData data;
     }
+
+    public boolean hasErrors() { return errors != null && !errors.isEmpty(); }
 }
 
 
