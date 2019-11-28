@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
 import java.util.EnumSet;
@@ -58,12 +59,18 @@ public class CapacityPolicies {
     }
 
     private void ensureSufficientResources(NodeResources resources, ClusterSpec cluster) {
-        double minMemoryGb = cluster.type() == ClusterSpec.Type.admin ? 2 : 4;
+        double minMemoryGb = minMemoryGb(cluster.type());
         if (resources.memoryGb() >= minMemoryGb) return;
 
         throw new IllegalArgumentException(String.format(Locale.ENGLISH,
                 "Must specify at least %.2f Gb of memory for %s cluster '%s', was: %.2f Gb",
                 minMemoryGb, cluster.type().name(), cluster.id().value(), resources.memoryGb()));
+    }
+
+    private int minMemoryGb(ClusterSpec.Type clusterType) {
+        if (zone.system() == SystemName.dev) return 1; // Allow small containers in dev system
+        if (clusterType == ClusterSpec.Type.admin) return 2;
+        return 4;
     }
 
     private NodeResources defaultNodeResources(ClusterSpec.Type clusterType) {
