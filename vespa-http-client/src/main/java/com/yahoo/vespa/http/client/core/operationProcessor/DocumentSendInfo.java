@@ -9,7 +9,7 @@ import java.util.Map;
 
 /**
  * Keeps an overview of what is sent and what is received for an operation.
- * This class is NOT thread-safe.
+ * This class is not thread-safe.
  */
 class DocumentSendInfo {
 
@@ -30,7 +30,7 @@ class DocumentSendInfo {
         if (detailByClusterId.containsKey(clusterId)) {
             if (localTrace != null) {
                 localTrace.append(System.currentTimeMillis() + " Got duplicate detail, ignoring this: "
-                        + detail.toString() + "\n");
+                                  + detail.toString() + "\n");
             }
             return false;
         }
