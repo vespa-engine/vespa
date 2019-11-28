@@ -7,6 +7,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.identity.ServiceIdentitySslSocketFactory;
 import com.yahoo.vespa.hosted.node.admin.component.ConfigServerInfo;
+import com.yahoo.yolean.Exceptions;
 import org.apache.http.HttpHeaders;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -26,6 +27,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
 import java.io.IOException;
@@ -107,12 +109,14 @@ public class ConfigServerApiImpl implements ConfigServerApi {
     private <T> T tryAllConfigServers(CreateRequest requestFactory, Class<T> wantedReturnType) {
         Exception lastException = null;
         for (URI configServer : configServers) {
-            try (CloseableHttpResponse response = client.execute(requestFactory.createRequest(configServer))) {
-                HttpException.handleStatusCode(
-                        response.getStatusLine().getStatusCode(), "Config server " + configServer);
-
+            var request = Exceptions.uncheck(() -> requestFactory.createRequest(configServer));
+            try (CloseableHttpResponse response = client.execute(request)) {
+                var responseBody = EntityUtils.toString(response.getEntity());
+                HttpException.handleStatusCode(response.getStatusLine().getStatusCode(),
+                                               request.getMethod() + " " + request.getURI() +
+                                               " failed with response '" + responseBody + "'");
                 try {
-                    return mapper.readValue(response.getEntity().getContent(), wantedReturnType);
+                    return mapper.readValue(responseBody, wantedReturnType);
                 } catch (IOException e) {
                     throw new UncheckedIOException("Failed parse response from config server", e);
                 }
