@@ -26,16 +26,42 @@ LOG_SETUP(".distributor.manager");
 
 namespace storage::distributor {
 
+class DirectDispatchSender : public DistributorMessageSender {
+    Distributor& _distributor;
+public:
+    explicit DirectDispatchSender(Distributor& distributor)
+        : _distributor(distributor)
+    {}
+    ~DirectDispatchSender() override = default;
+
+    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
+        _distributor.send_up_without_tracking(cmd);
+    }
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override {
+        _distributor.send_up_without_tracking(reply);
+    }
+    int getDistributorIndex() const override {
+        return _distributor.getDistributorIndex(); // Thread safe
+    }
+    const std::string& getClusterName() const override {
+        return _distributor.getClusterName(); // Thread safe
+    }
+    const PendingMessageTracker& getPendingMessageTracker() const override {
+        abort(); // Never called by the messages using this component.
+    }
+};
+
 ExternalOperationHandler::ExternalOperationHandler(Distributor& owner,
                                                    DistributorBucketSpaceRepo& bucketSpaceRepo,
                                                    DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                                    const MaintenanceOperationGenerator& gen,
                                                    DistributorComponentRegister& compReg)
     : DistributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "External operation handler"),
+      _direct_dispatch_sender(std::make_unique<DirectDispatchSender>(owner)),
       _operationGenerator(gen),
       _rejectFeedBeforeTimeReached(), // At epoch
       _non_main_thread_ops_mutex(),
-      _non_main_thread_ops_owner(owner, getClock()),
+      _non_main_thread_ops_owner(*_direct_dispatch_sender, getClock()),
       _concurrent_gets_enabled(false)
 {
 }
@@ -49,6 +75,12 @@ ExternalOperationHandler::handleMessage(const std::shared_ptr<api::StorageMessag
     bool retVal = msg->callHandler(*this, msg);
     op = _op;
     return retVal;
+}
+
+void ExternalOperationHandler::close_pending() {
+    std::lock_guard g(_non_main_thread_ops_mutex);
+    // Make sure we drain any pending operations upon close.
+    _non_main_thread_ops_owner.onClose();
 }
 
 api::ReturnCode

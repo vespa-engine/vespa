@@ -173,7 +173,7 @@ void StorageLink::sendUp(const shared_ptr<StorageMessage> & msg)
         ost << vespalib::getStackTrace(0);
         if (!msg->getType().isReply()) {
             LOGBP(warning, "%s", ost.str().c_str());
-            StorageCommand& cmd = static_cast<StorageCommand&>(*msg);
+            auto& cmd = static_cast<StorageCommand&>(*msg);
             shared_ptr<StorageReply> reply(cmd.makeReply().release());
 
             if (reply.get()) {
