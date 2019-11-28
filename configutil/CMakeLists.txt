@@ -6,7 +6,6 @@ vespa_define_module(
     config_cloudconfig
     vbench
     vespalib
-    fastlib_fast
 
     LIBS
     src/lib
