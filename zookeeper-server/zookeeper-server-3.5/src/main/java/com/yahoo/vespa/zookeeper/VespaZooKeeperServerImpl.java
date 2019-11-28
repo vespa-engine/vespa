@@ -110,113 +110,11 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
         // TODO: Refactor TLS config generation in the tow methods below, lots of common code
-        sb.append(createTlsQuorumConfig(config, transportSecurityOptions));
-        sb.append(createTlsClientServerConfig(config, transportSecurityOptions));
-        return sb.toString();
-    }
-
-    private String createTlsQuorumConfig(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
-        String tlsSetting = getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION")
-                .orElse(config.tlsForQuorumCommunication().name());
-        if (transportSecurityOptions.isEmpty() && !tlsSetting.equals("OFF"))
-            throw new RuntimeException("Could not retrieve transport security options");
-
-        StringBuilder sb = new StringBuilder();
-
-        // Create a SSLContext instance and determine the allowed ciphers/versions supported by the JVM's default provider.
         SSLContext sslContext = new SslContextBuilder().build();
-        Set<String> allowedCiphers = new TreeSet<>(TlsContext.getAllowedCipherSuites(sslContext));
-        Set<String> allowedProtocols = new TreeSet<>(TlsContext.getAllowedProtocols(sslContext));
-
-        // Common config
-        sb.append("ssl.quorum.hostnameVerification=false\n");
-        sb.append("ssl.quorum.clientAuth=NEED\n");
-        sb.append("ssl.quorum.ciphersuites=").append(String.join(",", allowedCiphers)).append("\n");
-        sb.append("ssl.quorum.enabledProtocols=").append(String.join(",", allowedProtocols)).append("\n");
-        sb.append("ssl.quorum.protocol=").append(sslContext.getProtocol()).append("\n");
-
-        boolean sslQuorum;
-        boolean portUnification;
-        switch (tlsSetting) {
-            case "OFF":
-                sslQuorum = false;
-                portUnification = false;
-                break;
-            case "PORT_UNIFICATION":
-                sslQuorum = false;
-                portUnification = true;
-                break;
-            case "TLS_WITH_PORT_UNIFICATION":
-                sslQuorum = true;
-                portUnification = true;
-                break;
-            case "TLS_ONLY":
-                sslQuorum = true;
-                portUnification = false;
-                break;
-            default: throw new IllegalArgumentException("Unknown value of config setting tlsForQuorumCommunication: " + tlsSetting);
-        }
-        sb.append("sslQuorum=").append(sslQuorum).append("\n");
-        sb.append("portUnification=").append(portUnification).append("\n");
-
-        transportSecurityOptions.ifPresent(options -> {
-            sb.append("ssl.quorum.keyStore.location=").append(jksKeyStoreFilePath).append("\n");
-            sb.append("ssl.quorum.keyStore.type=JKS\n");
-
-            Path caCertificatesFile = options.getCaCertificatesFile().orElseThrow(() -> new RuntimeException("Could not find ca certificates file"));
-            sb.append("ssl.quorum.trustStore.location=").append(caCertificatesFile).append("\n");
-            sb.append("ssl.quorum.trustStore.type=PEM\n");
-        });
-
+        sb.append(new TlsQuorumConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
+        sb.append(new TlsClientServerConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
         return sb.toString();
     }
-
-    private String createTlsClientServerConfig(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
-        String tlsSetting = getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION")
-                .orElse(config.tlsForClientServerCommunication().name());
-        if (transportSecurityOptions.isEmpty() && !tlsSetting.equals("OFF"))
-            throw new RuntimeException("Could not retrieve transport security options");
-
-        StringBuilder sb = new StringBuilder();
-
-        // Create a SSLContext instance and determine the allowed ciphers/versions supported by the JVM's default provider.
-        SSLContext sslContext = new SslContextBuilder().build();
-        Set<String> allowedCiphers = new TreeSet<>(TlsContext.getAllowedCipherSuites(sslContext));
-        Set<String> allowedProtocols = new TreeSet<>(TlsContext.getAllowedProtocols(sslContext));
-
-        // Common config
-        sb.append("ssl.hostnameVerification=false\n");
-        sb.append("ssl.clientAuth=NEED\n");
-        sb.append("ssl.ciphersuites=").append(String.join(",", allowedCiphers)).append("\n");
-        sb.append("ssl.enabledProtocols=").append(String.join(",", allowedProtocols)).append("\n");
-        sb.append("ssl.protocol=").append(sslContext.getProtocol()).append("\n");
-
-        boolean portUnification;
-        switch (tlsSetting) {
-            case "OFF":
-            case "TLS_ONLY":
-                portUnification = false;
-                break;
-            case "PORT_UNIFICATION":
-            case "TLS_WITH_PORT_UNIFICATION":
-                portUnification = true;
-                break;
-            default: throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
-        }
-        sb.append("client.portUnification=").append(portUnification).append("\n");
-
-        transportSecurityOptions.ifPresent(options -> {
-            sb.append("ssl.keyStore.location=").append(jksKeyStoreFilePath).append("\n");
-            sb.append("ssl.keyStore.type=JKS\n");
-
-            Path caCertificatesFile = options.getCaCertificatesFile().orElseThrow(() -> new RuntimeException("Could not find ca certificates file"));
-            sb.append("ssl.trustStore.location=").append(caCertificatesFile).append("\n");
-            sb.append("ssl.trustStore.type=PEM\n");
-        });
-
-        return sb.toString();
-    }
-
 
     private void writeMyIdFile(ZookeeperServerConfig config) throws IOException {
         if (config.server().size() > 1) {
@@ -290,9 +188,168 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         return zookeeperServerConfig.server().stream().map(ZookeeperServerConfig.Server::hostname).collect(Collectors.toSet());
     }
 
-    private static Optional<String> getEnvironmentVariable(String variableName) {
-        return Optional.ofNullable(System.getenv().get(variableName))
-                .filter(var -> !var.isEmpty());
+    private interface TlsConfig {
+        default Set<String> allowedCiphers(SSLContext sslContext) { return new TreeSet<>(TlsContext.getAllowedCipherSuites(sslContext)); }
+
+        default Set<String> allowedProtocols(SSLContext sslContext) { return new TreeSet<>(TlsContext.getAllowedProtocols(sslContext)); }
+
+        default Optional<String> getEnvironmentVariable(String variableName) {
+            return Optional.ofNullable(System.getenv().get(variableName))
+                    .filter(var -> !var.isEmpty());
+        }
+
+        default void validateOptions(Optional<TransportSecurityOptions> transportSecurityOptions, String tlsSetting) {
+            if (transportSecurityOptions.isEmpty() && !tlsSetting.equals("OFF"))
+                throw new RuntimeException("Could not retrieve transport security options");
+        }
+
+        String configFieldPrefix();
+
+        String jksKeyStoreFilePath();
+
+        default String createCommonKeyStoreTrustStoreOptions(Optional<TransportSecurityOptions> transportSecurityOptions) {
+            StringBuilder sb = new StringBuilder();
+            transportSecurityOptions.ifPresent(options -> {
+                sb.append(configFieldPrefix()).append(".keyStore.location=").append(jksKeyStoreFilePath()).append("\n");
+                sb.append(configFieldPrefix()).append(".keyStore.type=JKS\n");
+
+                Path caCertificatesFile = options.getCaCertificatesFile().orElseThrow(() -> new RuntimeException("Could not find ca certificates file"));
+                sb.append(configFieldPrefix()).append(".trustStore.location=").append(caCertificatesFile).append("\n");
+                sb.append(configFieldPrefix()).append(".trustStore.type=PEM\n");
+            });
+            return sb.toString();
+        }
+
+        SSLContext sslContext();
+
+        default String createCommonConfig() {
+            StringBuilder sb = new StringBuilder();
+            // Common config
+            sb.append(configFieldPrefix()).append(".hostnameVerification=false\n");
+            sb.append(configFieldPrefix()).append(".clientAuth=NEED\n");
+            sb.append(configFieldPrefix()).append(".ciphersuites=").append(String.join(",", allowedCiphers(sslContext()))).append("\n");
+            sb.append(configFieldPrefix()).append(".enabledProtocols=").append(String.join(",", allowedProtocols(sslContext()))).append("\n");
+            sb.append(configFieldPrefix()).append(".protocol=").append(sslContext().getProtocol()).append("\n");
+
+            return sb.toString();
+        }
+
+    }
+
+    static class TlsClientServerConfig implements TlsConfig {
+
+        private final SSLContext sslContext;
+        private final String jksKeyStoreFilePath;
+
+        TlsClientServerConfig(SSLContext sslContext, String jksKeyStoreFilePath) {
+            this.sslContext = sslContext;
+            this.jksKeyStoreFilePath = jksKeyStoreFilePath;
+        }
+
+        String createConfig(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
+            String tlsSetting = getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION")
+                    .orElse(config.tlsForClientServerCommunication().name());
+            validateOptions(transportSecurityOptions, tlsSetting);
+
+            StringBuilder sb = new StringBuilder(createCommonConfig());
+
+            boolean portUnification;
+            switch (tlsSetting) {
+                case "OFF":
+                case "TLS_ONLY":
+                    portUnification = false;
+                    break;
+                case "PORT_UNIFICATION":
+                case "TLS_WITH_PORT_UNIFICATION":
+                    portUnification = true;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
+            }
+            sb.append("client.portUnification=").append(portUnification).append("\n");
+
+            sb.append(createCommonKeyStoreTrustStoreOptions(transportSecurityOptions));
+
+            return sb.toString();
+        }
+
+        @Override
+        public String configFieldPrefix() {
+            return "ssl";
+        }
+
+        @Override
+        public String jksKeyStoreFilePath() {
+            return jksKeyStoreFilePath;
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            return sslContext;
+        }
+    }
+
+    static class TlsQuorumConfig implements TlsConfig {
+
+        private final SSLContext sslContext;
+        private final String jksKeyStoreFilePath;
+
+        TlsQuorumConfig(SSLContext sslContext, String jksKeyStoreFilePath) {
+            this.sslContext = sslContext;
+            this.jksKeyStoreFilePath = jksKeyStoreFilePath;
+        }
+
+        String createConfig(ZookeeperServerConfig config, Optional<TransportSecurityOptions> transportSecurityOptions) {
+            String tlsSetting = getEnvironmentVariable("VESPA_TLS_FOR_ZOOKEEPER_QUORUM_COMMUNICATION")
+                    .orElse(config.tlsForQuorumCommunication().name());
+            validateOptions(transportSecurityOptions, tlsSetting);
+
+            StringBuilder sb = new StringBuilder(createCommonConfig());
+
+            boolean sslQuorum;
+            boolean portUnification;
+            switch (tlsSetting) {
+                case "OFF":
+                    sslQuorum = false;
+                    portUnification = false;
+                    break;
+                case "PORT_UNIFICATION":
+                    sslQuorum = false;
+                    portUnification = true;
+                    break;
+                case "TLS_WITH_PORT_UNIFICATION":
+                    sslQuorum = true;
+                    portUnification = true;
+                    break;
+                case "TLS_ONLY":
+                    sslQuorum = true;
+                    portUnification = false;
+                    break;
+                default: throw new IllegalArgumentException("Unknown value of config setting tlsForQuorumCommunication: " + tlsSetting);
+            }
+            sb.append("sslQuorum=").append(sslQuorum).append("\n");
+            sb.append("portUnification=").append(portUnification).append("\n");
+
+            sb.append(createCommonKeyStoreTrustStoreOptions(transportSecurityOptions));
+
+            return sb.toString();
+        }
+
+        @Override
+        public String configFieldPrefix() {
+            return "ssl.quorum";
+        }
+
+        @Override
+        public String jksKeyStoreFilePath() {
+            return jksKeyStoreFilePath;
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            return sslContext;
+        }
+
     }
 
 }
