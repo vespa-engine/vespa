@@ -40,4 +40,5 @@ trustEmptySnapshot bool default=true
 
 # TLS options
 tlsForQuorumCommunication enum { OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY } default=OFF
+tlsForClientServerCommunication enum { OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY } default=OFF
 jksKeyStoreFile string default="conf/zookeeper/zookeeper.jks"

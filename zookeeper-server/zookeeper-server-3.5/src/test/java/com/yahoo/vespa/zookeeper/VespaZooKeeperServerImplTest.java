@@ -22,9 +22,8 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
 
-import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.PORT_UNIFICATION;
-import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.TLS_ONLY;
-import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication.Enum.TLS_WITH_PORT_UNIFICATION;
+import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForQuorumCommunication;
+import static com.yahoo.cloud.config.ZookeeperServerConfig.TlsForClientServerCommunication;
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static java.time.Instant.EPOCH;
@@ -78,7 +77,8 @@ public class VespaZooKeeperServerImplTest {
     @Test
     public void config_is_written_correctly_with_tls_for_quorum_communication_port_unification() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
-        builder.tlsForQuorumCommunication(PORT_UNIFICATION);
+        builder.tlsForQuorumCommunication(TlsForQuorumCommunication.PORT_UNIFICATION);
+        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.PORT_UNIFICATION);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
         createServer(builder, transportSecurityOptions);
         validateConfigFilePortUnification(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
@@ -88,7 +88,8 @@ public class VespaZooKeeperServerImplTest {
     @Test
     public void config_is_written_correctly_with_tls_for_quorum_communication_tls_with_port_unification() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
-        builder.tlsForQuorumCommunication(TLS_WITH_PORT_UNIFICATION);
+        builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_WITH_PORT_UNIFICATION);
+        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.TLS_WITH_PORT_UNIFICATION);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
         createServer(builder, transportSecurityOptions);
         validateConfigFileTlsWithPortUnification(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
@@ -98,7 +99,8 @@ public class VespaZooKeeperServerImplTest {
     @Test
     public void config_is_written_correctly_with_tls_for_quorum_communication_tls_only() throws IOException {
         ZookeeperServerConfig.Builder builder = createConfigBuilderForSingleHost(cfgFile, idFile, jksKeyStoreFile);
-        builder.tlsForQuorumCommunication(TLS_ONLY);
+        builder.tlsForQuorumCommunication(TlsForQuorumCommunication.TLS_ONLY);
+        builder.tlsForClientServerCommunication(TlsForClientServerCommunication.Enum.TLS_ONLY);
         Optional<TransportSecurityOptions> transportSecurityOptions = createTransportSecurityOptions();
         createServer(builder, transportSecurityOptions);
         validateConfigFileTlsOnly(cfgFile, jksKeyStoreFile, transportSecurityOptions.get().getCaCertificatesFile().get().toFile());
@@ -181,7 +183,7 @@ public class VespaZooKeeperServerImplTest {
                "serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory\n";
     }
 
-    private String keyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
+    private String quorumKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
         StringBuilder sb = new StringBuilder();
 
         sb.append("ssl.quorum.keyStore.location=").append(jksKeyStoreFilePath.getAbsolutePath()).append("\n");
@@ -191,22 +193,42 @@ public class VespaZooKeeperServerImplTest {
         return sb.toString();
     }
 
+    private String clientServerKeyStoreAndTrustStoreConfig(File jksKeyStoreFilePath, File caCertificatesFilePath) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("ssl.keyStore.location=").append(jksKeyStoreFilePath.getAbsolutePath()).append("\n");
+        sb.append("ssl.keyStore.type=JKS\n");
+        sb.append("ssl.trustStore.location=").append(caCertificatesFilePath.getAbsolutePath()).append("\n");
+        sb.append("ssl.trustStore.type=PEM\n");
+        return sb.toString();
+    }
+
     private void validateConfigFileSingleHost(File cfgFile) throws IOException {
         String expected =
                 commonConfig() +
                 "server.0=foo:321:123\n" +
-                commonTlsConfig() +
+                commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
-                "portUnification=false\n";
+                "portUnification=false\n" +
+                commonTlsClientServerConfig() +
+                "client.portUnification=false\n";
         validateConfigFile(cfgFile, expected);
     }
 
-    private String commonTlsConfig() {
+    private String commonTlsQuorumConfig() {
         return "ssl.quorum.hostnameVerification=false\n" +
                "ssl.quorum.clientAuth=NEED\n" +
                "ssl.quorum.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
                "ssl.quorum.enabledProtocols=TLSv1.2\n" +
                "ssl.quorum.protocol=TLSv1.2\n";
+    }
+
+    private String commonTlsClientServerConfig() {
+        return "ssl.hostnameVerification=false\n" +
+               "ssl.clientAuth=NEED\n" +
+               "ssl.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
+               "ssl.enabledProtocols=TLSv1.2\n" +
+               "ssl.protocol=TLSv1.2\n";
     }
 
     private void validateConfigFileMultipleHosts(File cfgFile) throws IOException {
@@ -215,9 +237,11 @@ public class VespaZooKeeperServerImplTest {
                 "server.0=foo:321:123\n" +
                 "server.1=bar:432:234\n" +
                 "server.2=baz:543:345\n" +
-                commonTlsConfig() +
+                commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
-                "portUnification=false\n";
+                "portUnification=false\n" +
+                commonTlsClientServerConfig() +
+                "client.portUnification=false\n";
         validateConfigFile(cfgFile, expected);
     }
 
@@ -225,10 +249,13 @@ public class VespaZooKeeperServerImplTest {
         String expected =
                 commonConfig() +
                 "server.0=foo:321:123\n" +
-                commonTlsConfig() +
+                commonTlsQuorumConfig() +
                 "sslQuorum=false\n" +
                 "portUnification=true\n" +
-                keyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile);
+                quorumKeyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile) +
+                commonTlsClientServerConfig() +
+                "client.portUnification=true\n" +
+                clientServerKeyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile);
         validateConfigFile(cfgFile, expected);
     }
 
@@ -236,10 +263,13 @@ public class VespaZooKeeperServerImplTest {
         String expected =
                 commonConfig() +
                 "server.0=foo:321:123\n" +
-                commonTlsConfig() +
+                commonTlsQuorumConfig() +
                 "sslQuorum=true\n" +
                 "portUnification=true\n" +
-                keyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile);
+                quorumKeyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile) +
+                commonTlsClientServerConfig() +
+                "client.portUnification=true\n" +
+                clientServerKeyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile);
         validateConfigFile(cfgFile, expected);
     }
 
@@ -247,10 +277,13 @@ public class VespaZooKeeperServerImplTest {
         String expected =
                 commonConfig() +
                 "server.0=foo:321:123\n" +
-                commonTlsConfig() +
+                commonTlsQuorumConfig() +
                 "sslQuorum=true\n" +
                 "portUnification=false\n" +
-                keyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile);
+                quorumKeyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile) +
+                commonTlsClientServerConfig() +
+                "client.portUnification=false\n" +
+                clientServerKeyStoreAndTrustStoreConfig(jksKeyStoreFile, caCertificatesFile);
         validateConfigFile(cfgFile, expected);
     }
 
