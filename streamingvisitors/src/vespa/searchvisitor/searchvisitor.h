@@ -18,7 +18,7 @@
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/vespalib/objects/objectoperation.h>
 #include <vespa/vespalib/objects/objectpredicate.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -31,7 +31,7 @@
 
 using namespace search::aggregation;
 
-namespace storage {
+namespace streaming {
 
 /**
  * @class storage::SearchVisitor
@@ -39,9 +39,9 @@ namespace storage {
  * @brief Visitor that applies a search query to visitor data and
  * converts them to a SearchResultCommand and a DocumentSummaryCommand.
  **/
-class SearchVisitor : public Visitor {
+class SearchVisitor : public storage::Visitor {
 public:
-    SearchVisitor(StorageComponent&, VisitorEnvironment& vEnv,
+    SearchVisitor(storage::StorageComponent&, storage::VisitorEnvironment& vEnv,
                   const vdslib::Parameters & params);
 
     ~SearchVisitor();
@@ -153,7 +153,7 @@ private:
          * @param attrMan the attribute manager.
          * @param attributeFields the list of attribute vectors needed.
          **/
-        void setupRankProcessors(search::Query & query,
+        void setupRankProcessors(search::streaming::Query & query,
                                  const vespalib::string & location,
                                  size_t wantedHitCount,
                                  const search::IAttributeManager & attrMan,
@@ -298,7 +298,7 @@ private:
 
     // Inherit doc from Visitor
     void handleDocuments(const document::BucketId&,
-                         std::vector<spi::DocEntry::UP>& entries,
+                         std::vector<storage::spi::DocEntry::UP>& entries,
                          HitCounter& hitCounter) override;
 
     bool compatibleDocumentTypes(const document::DocumentType& typeA,
@@ -347,9 +347,9 @@ private:
     // Inherit doc from Visitor
     void completedVisiting(HitCounter& counter) override;
 
-    spi::ReadConsistency getRequiredReadConsistency() const override {
+    storage::spi::ReadConsistency getRequiredReadConsistency() const override {
         // Searches are not considered to require strong consistency.
-        return spi::ReadConsistency::WEAK;
+        return storage::spi::ReadConsistency::WEAK;
     }
 
     /**
@@ -424,7 +424,7 @@ private:
     size_t                                  _docSearchedCount;
     size_t                                  _hitCount;
     size_t                                  _hitsRejectedCount;
-    search::Query                           _query;
+    search::streaming::Query                _query;
     std::unique_ptr<documentapi::QueryResultMessage>    _queryResult;
     vsm::FieldIdTSearcherMap                _fieldSearcherMap;
     vsm::SharedFieldPathMap                 _fieldPathMap;
@@ -454,11 +454,11 @@ private:
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
 };
 
-class SearchVisitorFactory : public VisitorFactory {
+class SearchVisitorFactory : public storage::VisitorFactory {
     config::ConfigUri _configUri;
-    VisitorEnvironment::UP makeVisitorEnvironment(StorageComponent&) override;
+    storage::VisitorEnvironment::UP makeVisitorEnvironment(storage::StorageComponent&) override;
 
-    Visitor* makeVisitor(StorageComponent&, VisitorEnvironment&env,
+    storage::Visitor* makeVisitor(storage::StorageComponent&, storage::VisitorEnvironment&env,
                          const vdslib::Parameters& params) override;
 public:
     SearchVisitorFactory(const config::ConfigUri & configUri);

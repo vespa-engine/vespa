@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "utf8strchrfieldsearcher.h"
 
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 using search::byte;
 
 namespace vsm {

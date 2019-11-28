@@ -4,8 +4,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.searcher.utf8flexiblestringfieldsearcher");
 
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 
 namespace vsm {
 

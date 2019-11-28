@@ -8,20 +8,20 @@
 #include "hitcollector.h"
 #include <algorithm>
 
-using search::AndNotQueryNode;
-using search::HitList;
 using search::MatchingElements;
-using search::Query;
-using search::QueryConnector;
-using search::QueryNode;
-using search::QueryTerm;
-using search::SameElementQueryNode;
 using search::StructFieldMapper;
+using search::streaming::AndNotQueryNode;
+using search::streaming::HitList;
+using search::streaming::Query;
+using search::streaming::QueryConnector;
+using search::streaming::QueryNode;
+using search::streaming::QueryTerm;
+using search::streaming::SameElementQueryNode;
 using vdslib::SearchResult;
 using vsm::FieldIdTSearcherMap;
 using vsm::StorageDocument;
 
-namespace storage {
+namespace streaming {
 
 namespace {
 
@@ -141,7 +141,8 @@ Matcher::find_matching_elements(const StorageDocument& doc, uint32_t doc_lid, Ma
 
 }
 
-MatchingElementsFiller::MatchingElementsFiller(FieldIdTSearcherMap& field_searcher_map, search::Query& query, HitCollector& hit_collector, SearchResult& search_result)
+MatchingElementsFiller::MatchingElementsFiller(FieldIdTSearcherMap& field_searcher_map, Query& query,
+                                               HitCollector& hit_collector, SearchResult& search_result)
     : vsm::IMatchingElementsFiller(),
       _field_searcher_map(field_searcher_map),
       _query(query),

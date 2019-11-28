@@ -23,7 +23,7 @@ private:
     const char        * _readPtr;  // buffer to read from (field reference)
     char                _unitSep;  // the unit separator character to use
 
-    virtual size_t matchTerm(const FieldRef & f, search::QueryTerm & qt) override;
+    virtual size_t matchTerm(const FieldRef & f, search::streaming::QueryTerm & qt) override;
     virtual size_t matchTerms(const FieldRef & f, const size_t shortestTerm) override;
 
     /**
@@ -65,7 +65,7 @@ public:
     UTF8SubstringSnippetModifier(FieldIdT fId, const CharBuffer::SP & modBuf, const SharedOffsetBuffer & offBuf);
 
     const CharBuffer & getModifiedBuf() const { return *_modified; }
-    const search::QueryTermList & getQueryTerms() const { return _qtl; }
+    const search::streaming::QueryTermList & getQueryTerms() const { return _qtl; }
 };
 
 }

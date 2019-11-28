@@ -9,7 +9,7 @@ LOG_SETUP(".visitor.instance.searchenvironment");
 using search::docsummary::JuniperProperties;
 using vsm::VSMAdapter;
 
-namespace storage {
+namespace streaming {
 
 __thread SearchEnvironment::EnvMap * SearchEnvironment::_localEnvMap=0;
 

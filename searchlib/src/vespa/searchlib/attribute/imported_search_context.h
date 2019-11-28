@@ -59,7 +59,7 @@ public:
     void fetchPostings(bool strict) override;
     bool valid() const override;
     Int64Range getAsIntegerTerm() const override;
-    const QueryTermBase * queryTerm() const override;
+    const QueryTermUCS4 * queryTerm() const override;
     const vespalib::string& attributeName() const override;
 
     using DocId = IAttributeVector::DocId;

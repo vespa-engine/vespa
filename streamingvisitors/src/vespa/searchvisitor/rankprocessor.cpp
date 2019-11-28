@@ -10,24 +10,25 @@
 LOG_SETUP(".searchvisitor.rankprocessor");
 
 using search::FeatureSet;
-using search::HitList;
-using search::Query;
-using search::QueryTerm;
-using search::QueryTermList;
 using search::fef::FeatureHandle;
+using search::fef::ITermData;
+using search::fef::ITermFieldData;
+using search::fef::IllegalHandle;
 using search::fef::MatchData;
 using search::fef::Properties;
 using search::fef::RankProgram;
 using search::fef::RankSetup;
-using search::fef::IllegalHandle;
-using search::fef::ITermData;
-using search::fef::ITermFieldData;
 using search::fef::TermFieldHandle;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
+using search::streaming::Hit;
+using search::streaming::HitList;
+using search::streaming::Query;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 using vdslib::SearchResult;
 
-namespace storage {
+namespace streaming {
 
 namespace {
 
@@ -128,7 +129,7 @@ RankProcessor::init(bool forRanking, size_t wantedHitCount)
 
 RankProcessor::RankProcessor(RankManager::Snapshot::SP snapshot,
                              const vespalib::string &rankProfile,
-                             search::Query & query,
+                             Query & query,
                              const vespalib::string & location,
                              Properties & queryProperties,
                              const search::IAttributeManager * attrMgr) :
@@ -246,7 +247,7 @@ RankProcessor::unpackMatchData(MatchData &matchData)
                 uint32_t fieldLen = search::fef::FieldPositionsIterator::UNKNOWN_LENGTH;
 
                 // optimize for hitlist giving all hits for a single field in one chunk
-                for (const search::Hit & hit : hitList) {
+                for (const Hit & hit : hitList) {
                     uint32_t fieldId = hit.context();
                     if (fieldId != lastFieldId) {
                         // reset to notfound/unknown values
@@ -289,5 +290,5 @@ RankProcessor::unpackMatchData(MatchData &matchData)
     }
 }
 
-} // namespace storage
+} // namespace streaming
 

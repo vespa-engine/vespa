@@ -3,8 +3,8 @@
 #include <vespa/vsm/searcher/utf8substringsearcher.h>
 
 using search::byte;
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 
 namespace vsm {
 

@@ -8,7 +8,7 @@
 #include <vespa/document/base/idstringexception.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/unique_store.hpp>

@@ -7,14 +7,14 @@
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/searchlib/fef/rank_program.h>
 #include <vespa/searchlib/fef/ranksetup.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include "hitcollector.h"
 #include "queryenvironment.h"
 #include "querywrapper.h"
 #include "rankmanager.h"
 
-namespace storage {
+namespace streaming {
 
 /**
  * This class is associated with a query and a rank profile and
@@ -57,7 +57,7 @@ public:
 
     RankProcessor(RankManager::Snapshot::SP snapshot,
                   const vespalib::string &rankProfile,
-                  search::Query & query,
+                  search::streaming::Query & query,
                   const vespalib::string & location,
                   search::fef::Properties & queryProperties,
                   const search::IAttributeManager * attrMgr);
@@ -75,5 +75,5 @@ public:
     uint32_t getDocId() const { return _docId; }
 };
 
-} // namespace storage
+} // namespace streaming
 

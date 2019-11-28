@@ -14,11 +14,12 @@
 #include <vespa/log/log.h>
 LOG_SETUP("searchvisitor_test");
 
-using namespace search;
-using namespace search::query;
 using namespace document;
+using namespace search::query;
+using namespace search;
+using namespace storage;
 
-namespace storage {
+namespace streaming {
 
 class SearchVisitorTest : public vespalib::TestApp
 {
@@ -124,6 +125,6 @@ SearchVisitorTest::Main()
     TEST_DONE();
 }
 
-} // namespace storage
+} // namespace streaming
 
-TEST_APPHOOK(storage::SearchVisitorTest)
+TEST_APPHOOK(::streaming::SearchVisitorTest)

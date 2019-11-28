@@ -10,7 +10,7 @@
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
@@ -541,7 +541,7 @@ public:
         if (isInteger) {
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
         }
-        return std::make_unique<QueryTermBase>(term, QueryTermSimple::WORD);
+        return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::WORD);
     }
 
     template <typename WS, typename NODE>

@@ -18,8 +18,9 @@ LOG_SETUP(".vsm.fieldsearchspec");
 
 #define DEBUGMASK 0x01
 
-using search::Query;
-using search::ConstQueryTermList;
+using search::streaming::ConstQueryTermList;
+using search::streaming::Query;
+using search::streaming::QueryTerm;
 
 namespace vsm {
 
@@ -112,7 +113,7 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const vespalib::string & 
 }
 
 void
-FieldSearchSpec::reconfig(const search::QueryTerm & term)
+FieldSearchSpec::reconfig(const QueryTerm & term)
 {
     if (_reconfigured) {
         return;
@@ -269,7 +270,7 @@ bool FieldSearchSpecMap::buildFromConfig(const VsmfieldsHandle & conf)
 }
 
 void
-FieldSearchSpecMap::reconfigFromQuery(const search::Query & query)
+FieldSearchSpecMap::reconfigFromQuery(const Query & query)
 {
     ConstQueryTermList qtl;
     query.getLeafs(qtl);

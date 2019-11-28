@@ -17,7 +17,7 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -141,7 +141,7 @@ GlobalId dummy_gid(uint32_t doc_index) {
 }
 
 std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
-    return std::make_unique<QueryTermSimple>(term, QueryTerm::WORD);
+    return std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
 }
 
 struct ReadGuardWrapper {

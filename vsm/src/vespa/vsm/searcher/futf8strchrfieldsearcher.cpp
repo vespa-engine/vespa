@@ -3,10 +3,10 @@
 #include "futf8strchrfieldsearcher.h"
 #include "fold.h"
 
-using vespalib::Optimized;
 using search::byte;
-using search::QueryTerm;
+using search::streaming::QueryTerm;
 using search::v16qi;
+using vespalib::Optimized;
 
 namespace vsm {
 

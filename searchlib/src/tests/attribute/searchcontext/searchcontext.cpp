@@ -15,7 +15,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/attributevector.hpp>
 

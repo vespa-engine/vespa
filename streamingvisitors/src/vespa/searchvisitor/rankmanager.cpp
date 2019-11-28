@@ -21,7 +21,7 @@ using vsm::VsmfieldsHandle;
 using vsm::VSMAdapter;
 using vsm::FieldIdTList;
 
-namespace storage {
+namespace streaming {
 
 void
 RankManager::Snapshot::addProperties(const vespa::config::search::RankProfilesConfig & cfg)

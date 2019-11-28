@@ -34,17 +34,17 @@ vespa_add_executable(searchlib_stackdumpquerycreator_test_app TEST
     searchlib
 )
 vespa_add_test(NAME searchlib_stackdumpquerycreator_test_app COMMAND searchlib_stackdumpquerycreator_test_app)
-vespa_add_executable(searchlib_query-old_test_app TEST
+vespa_add_executable(searchlib_streaming_query_test_app TEST
     SOURCES
-    query-old.cpp
+    streaming_query_test.cpp
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_query-old_test_app COMMAND searchlib_query-old_test_app)
-vespa_add_executable(searchlib_query-old-large_test_app TEST
+vespa_add_test(NAME searchlib_streaming_query_test_app COMMAND searchlib_streaming_query_test_app)
+vespa_add_executable(searchlib_streaming_query_large_test_app TEST
     SOURCES
-    query-old-large.cpp
+    streaming_query_large_test.cpp
     DEPENDS
     searchlib
 )
-vespa_add_test(NAME searchlib_query-old-large_test_app COMMAND searchlib_query-old-large_test_app)
+vespa_add_test(NAME searchlib_streaming_query_large_test_app COMMAND searchlib_streaming_query_large_test_app)

@@ -71,7 +71,7 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermRegular(const FieldRef & f, search::QueryTerm & qt);
+    size_t matchTermRegular(const FieldRef & f, search::streaming::QueryTerm & qt);
 
     /**
      * Matches the given query term against the characters in the given field reference
@@ -81,7 +81,7 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermSubstring(const FieldRef & f, search::QueryTerm & qt);
+    size_t matchTermSubstring(const FieldRef & f, search::streaming::QueryTerm & qt);
 
     /**
      * Matches the given query term against the words in the given field reference
@@ -91,7 +91,7 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermSuffix(const FieldRef & f, search::QueryTerm & qt);
+    size_t matchTermSuffix(const FieldRef & f, search::streaming::QueryTerm & qt);
 
     /**
      * Matches the given query term against the words in the given field reference
@@ -101,13 +101,13 @@ protected:
      * @param qt the query term trying to match.
      * @return   the number of words in the field ref.
      **/
-    size_t matchTermExact(const FieldRef & f, search::QueryTerm & qt);
+    size_t matchTermExact(const FieldRef & f, search::streaming::QueryTerm & qt);
 
 public:
     UTF8StringFieldSearcherBase();
     UTF8StringFieldSearcherBase(FieldIdT fId);
     ~UTF8StringFieldSearcherBase();
-    void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
     /**
      * Matches the given query term against the given word using suffix match strategy.
      *

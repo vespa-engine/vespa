@@ -8,9 +8,10 @@
 #include "multinumericattributesaver.h"
 #include "load_utils.h"
 #include "primitivereader.h"
+#include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/fileutil.h>
-#include <vespa/fastlib/io/bufferedfile.h>
 
 namespace search {
 

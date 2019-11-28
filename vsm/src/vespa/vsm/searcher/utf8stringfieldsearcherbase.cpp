@@ -3,8 +3,8 @@
 #include "utf8stringfieldsearcherbase.h"
 #include <cassert>
 
-using search::QueryTerm;
-using search::QueryTermList;
+using search::streaming::QueryTerm;
+using search::streaming::QueryTermList;
 using search::byte;
 
 namespace vsm {

@@ -100,7 +100,7 @@ public:
      * @param specMap mapping from field id to search spec objects.
      * @param fieldMap mapping from index (used in the query) to a list of field ids.
      **/
-    void setup(const search::QueryTermList & queryTerms,
+    void setup(const search::streaming::QueryTermList & queryTerms,
                const FieldSearchSpecMapT & specMap, const IndexFieldMapT & fieldMap);
 
     const FieldModifierMap & getModifiers() const { return _modifiers; }

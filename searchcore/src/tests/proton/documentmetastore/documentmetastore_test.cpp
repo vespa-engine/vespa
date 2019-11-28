@@ -12,7 +12,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>

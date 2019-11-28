@@ -4,14 +4,14 @@
 
 #include <vespa/vsm/vsm/i_matching_elements_filler.h>
 
-namespace search { class Query; }
+namespace search::streaming { class Query; }
 namespace vdslib { class SearchResult; }
 namespace vsm {
 class FieldIdTSearcherMap;
 class StorageDocument;
 }
 
-namespace storage {
+namespace streaming {
 
 class HitCollector;
 
@@ -21,12 +21,13 @@ class HitCollector;
  */
 class MatchingElementsFiller : public vsm::IMatchingElementsFiller {
     vsm::FieldIdTSearcherMap& _field_searcher_map;
-    search::Query&            _query;
+    search::streaming::Query& _query;
     HitCollector&             _hit_collector;
     vdslib::SearchResult&     _search_result;
 
 public:
-    MatchingElementsFiller(vsm::FieldIdTSearcherMap& field_searcher_map, search::Query& query, HitCollector& hit_collector, vdslib::SearchResult& search_result);
+    MatchingElementsFiller(vsm::FieldIdTSearcherMap& field_searcher_map, search::streaming::Query& query,
+                           HitCollector& hit_collector, vdslib::SearchResult& search_result);
     virtual ~MatchingElementsFiller();
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::StructFieldMapper& struct_field_mapper) override;
 };

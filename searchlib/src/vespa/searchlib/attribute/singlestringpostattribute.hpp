@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
 
 namespace search {
 

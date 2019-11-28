@@ -4,7 +4,7 @@
 
 using namespace search::fef;
 
-namespace storage {
+namespace streaming {
 
-} // namespace storage
+} // namespace streaming
 

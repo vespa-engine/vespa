@@ -3,7 +3,7 @@
 #pragma once
 
 #include "numericbase.h"
-#include <vespa/searchlib/query/queryterm.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 
 namespace search {
 

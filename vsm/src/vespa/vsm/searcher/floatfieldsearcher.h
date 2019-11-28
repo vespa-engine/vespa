@@ -11,7 +11,7 @@ class FloatFieldSearcherT : public FieldSearcher
 public:
     FloatFieldSearcherT(FieldIdT fId=0);
     ~FloatFieldSearcherT();
-    void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
+    void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf) override;
     void onValue(const document::FieldValue & fv) override;
 protected:
     class FloatInfo

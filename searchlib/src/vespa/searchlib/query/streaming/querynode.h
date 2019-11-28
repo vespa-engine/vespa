@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "posocc.h"
+#include "hit.h"
 #include <vespa/vespalib/stllike/string.h>
 
-namespace search {
+namespace search { class SimpleQueryStackDumpIterator; }
 
-class SimpleQueryStackDumpIterator;
+namespace search::streaming {
+
 class QueryTerm;
 class QueryNode;
 class QueryNodeResultFactory;

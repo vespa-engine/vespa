@@ -10,9 +10,9 @@
 #include <vespa/vsm/vsm/vsm-adapter.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 
-namespace storage {
+namespace streaming {
 
-class SearchEnvironment : public VisitorEnvironment
+class SearchEnvironment : public storage::VisitorEnvironment
 {
 private:
     class Env : public config::SimpleConfigurable {

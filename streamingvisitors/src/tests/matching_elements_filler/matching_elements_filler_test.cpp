@@ -13,8 +13,8 @@
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
-#include <vespa/searchlib/query/queryterm.h>
-#include <vespa/searchlib/query/query.h>
+#include <vespa/searchlib/query/streaming/queryterm.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vsm/searcher/fieldsearcher.h>
 #include <vespa/vsm/searcher/utf8strchrfieldsearcher.h>
 #include <vespa/vsm/searcher/intfieldsearcher.h>
@@ -26,11 +26,11 @@
 
 using document::ArrayDataType;
 using document::ArrayFieldValue;
-using document::Field;
-using document::FieldPath;
 using document::DataType;
 using document::DocumentId;
 using document::DocumentType;
+using document::Field;
+using document::FieldPath;
 using document::IntFieldValue;
 using document::MapDataType;
 using document::MapFieldValue;
@@ -38,13 +38,14 @@ using document::StringFieldValue;
 using document::StructDataType;
 using document::StructFieldValue;
 using search::MatchingElements;
-using search::Query;
 using search::StructFieldMapper;
 using search::fef::MatchData;
 using search::query::StackDumpCreator;
 using search::query::Weight;
-using storage::HitCollector;
-using storage::MatchingElementsFiller;
+using search::streaming::Query;
+using search::streaming::QueryNodeResultFactory;
+using streaming::HitCollector;
+using streaming::MatchingElementsFiller;
 using vdslib::SearchResult;
 using vsm::FieldIdTList;
 using vsm::IntFieldSearcher;
@@ -84,7 +85,7 @@ struct BoundTerm {
 
 Query make_query(std::unique_ptr<search::query::Node> root) {
     vespalib::string stack_dump = StackDumpCreator::create(*root);
-    search::QueryNodeResultFactory empty;
+    QueryNodeResultFactory empty;
     Query query(empty, stack_dump);
     return query;
 }
@@ -278,7 +279,7 @@ class MatchingElementsFillerTest : public ::testing::Test {
     vsm::DocumentTypeIndexFieldMapT         _index_to_field_ids;
     HitCollector                            _hit_collector;
     SearchResult                            _search_result;
-    search::Query                           _query;
+    Query                                   _query;
     vsm::SharedSearcherBuf                  _shared_searcher_buf;
     std::unique_ptr<MatchingElementsFiller> _matching_elements_filler;
     std::unique_ptr<MatchingElements>       _matching_elements;

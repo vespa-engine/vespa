@@ -5,6 +5,7 @@
 #include "imported_attribute_vector.h"
 #include "reference_attribute.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include "attributeiterators.hpp"
 
@@ -249,7 +250,7 @@ Int64Range ImportedSearchContext::getAsIntegerTerm() const {
     return _target_search_context->getAsIntegerTerm();
 }
 
-const QueryTermBase * ImportedSearchContext::queryTerm() const {
+const QueryTermUCS4 * ImportedSearchContext::queryTerm() const {
     return _target_search_context->queryTerm();
 }
 

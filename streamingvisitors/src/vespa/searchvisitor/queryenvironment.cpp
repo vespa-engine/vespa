@@ -10,7 +10,7 @@ using search::IAttributeManager;
 using search::fef::Properties;
 using vespalib::string;
 
-namespace storage {
+namespace streaming {
 
 namespace {
 
@@ -60,5 +60,5 @@ QueryEnvironment::QueryEnvironment(const string & location_str,
 
 QueryEnvironment::~QueryEnvironment() {}
 
-} // namespace storage
+} // namespace streaming
 

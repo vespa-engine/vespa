@@ -23,7 +23,7 @@ using vespalib::eval::TensorSpec;
 using vespalib::tensor::DefaultTensorEngine;
 
 
-namespace storage {
+namespace streaming {
 
 class HitCollectorTest : public vespalib::TestApp
 {
@@ -347,6 +347,6 @@ HitCollectorTest::Main()
     TEST_DONE();
 }
 
-} // namespace storage
+} // namespace streaming
 
-TEST_APPHOOK(storage::HitCollectorTest)
+TEST_APPHOOK(streaming::HitCollectorTest)

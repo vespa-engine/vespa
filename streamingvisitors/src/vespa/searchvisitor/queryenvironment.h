@@ -10,7 +10,7 @@
 #include <vespa/searchlib/fef/properties.h>
 #include "indexenvironment.h"
 
-namespace storage {
+namespace streaming {
 
 /**
  * Implementation of the feature execution framework
@@ -62,5 +62,5 @@ public:
     void addTerm(const search::fef::ITermData *term) { _queryTerms.push_back(term); }
 };
 
-} // namespace storage
+} // namespace streaming
 

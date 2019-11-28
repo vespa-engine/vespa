@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/query/query.h>
+#include <vespa/document/fieldvalue/iteratorhandler.h>
+#include <vespa/searchlib/query/streaming/query.h>
 #include <vespa/vsm/common/document.h>
 #include <vespa/vsm/common/storagedocument.h>
-#include <vespa/document/fieldvalue/iteratorhandler.h>
 
 namespace vsm {
 
@@ -25,7 +25,7 @@ typedef std::vector<char> CharVector;
 class FieldSearcherBase
 {
 protected:
-    search::QueryTermList _qtl;
+    search::streaming::QueryTermList _qtl;
 private:
     CharVector    _qtlFastBuffer;
 protected:
@@ -33,7 +33,7 @@ protected:
     FieldSearcherBase(const FieldSearcherBase & org);
     virtual ~FieldSearcherBase(void);
     FieldSearcherBase & operator = (const FieldSearcherBase & org);
-    void prepare(const search::QueryTermList & qtl);
+    void prepare(const search::streaming::QueryTermList & qtl);
     size_t          _qtlFastSize;
     search::v16qi  *_qtlFast;
 };
@@ -53,7 +53,7 @@ public:
     ~FieldSearcher() override;
     virtual std::unique_ptr<FieldSearcher> duplicate() const = 0;
     bool search(const StorageDocument & doc);
-    virtual void prepare(search::QueryTermList & qtl, const SharedSearcherBuf & buf);
+    virtual void prepare(search::streaming::QueryTermList & qtl, const SharedSearcherBuf & buf);
     const FieldIdT & field()         const { return _field; }
     void field(const FieldIdT & v)         { _field = v; prepareFieldId(); }
     bool prefix()                    const { return _matchType == PREFIX; }
@@ -126,7 +126,7 @@ protected:
      * Adds a hit to the given query term.
      * For each call to onValue() a batch of words are processed, and the position is local to this batch.
      **/
-    void addHit(search::QueryTerm & qt, uint32_t pos) const {
+    void addHit(search::streaming::QueryTerm & qt, uint32_t pos) const {
         qt.add(_words + pos, field(), _currentElementId, getCurrentWeight());
     }
 public:
@@ -140,7 +140,7 @@ typedef std::vector<FieldSearcherContainer> FieldIdTSearcherMapT;
 class FieldIdTSearcherMap : public FieldIdTSearcherMapT
 {
 public:
-    void prepare(const DocumentTypeIndexFieldMapT & difm, const SharedSearcherBuf & searcherBuf, search::Query & query);
+    void prepare(const DocumentTypeIndexFieldMapT & difm, const SharedSearcherBuf & searcherBuf, search::streaming::Query & query);
 };
 
 }
