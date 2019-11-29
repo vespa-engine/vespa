@@ -13,10 +13,12 @@ import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Specifies the environments and regions to which an application should be deployed.
@@ -198,9 +200,13 @@ public class DeploymentSpec {
 
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
-                    .flatMap(step -> step instanceof Steps ? step.steps().stream() : List.of(step).stream())
-                    .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
+                    .flatMap(DeploymentSpec::flatten)
                     .collect(Collectors.toList());
+    }
+
+    private static Stream<DeploymentInstanceSpec> flatten(Step step) {
+        if (step instanceof DeploymentInstanceSpec) return Stream.of((DeploymentInstanceSpec) step);
+        return step.steps().stream().flatMap(DeploymentSpec::flatten);
     }
 
     /**
@@ -265,25 +271,30 @@ public class DeploymentSpec {
     /** A deployment step */
     public abstract static class Step {
 
-        /** Returns whether this step specifies the given environment */
+        /** Returns whether this step specifies the given environment. */
         public final boolean concerns(Environment environment) {
             return concerns(environment, Optional.empty());
         }
 
-        /** Returns whether this step specifies the given environment, and (optionally) region */
+        /** Returns whether this step specifies the given environment, and, optionally, region. */
         public abstract boolean concerns(Environment environment, Optional<RegionName> region);
 
-        /** Returns the zones deployed to in this step */
+        /** Returns the zones deployed to in this step. */
         public List<DeclaredZone> zones() { return Collections.emptyList(); }
 
-        /** The delay introduced by this step (beyond the time it takes to execute the step). Default is zero. */
+        /** The delay introduced by this step (beyond the time it takes to execute the step). */
         public Duration delay() { return Duration.ZERO; }
 
-        /** Returns all the steps nested in this. */
+        /** Returns any steps nested in this. */
         public List<Step> steps() { return List.of(); }
 
-        /** Returns whether this step is a test run. */
+        /** Returns whether this step is a test step. */
         public boolean isTest() { return false; }
+
+        /** Returns whether the nested steps in this, if any, should be performed in declaration order. */
+        public boolean isOrdered() {
+            return true;
+        }
 
     }
 
@@ -386,33 +397,35 @@ public class DeploymentSpec {
     public static class DeclaredTest extends Step {
 
         private final RegionName region;
-        private final Optional<String> testerFlavor;
 
-        public DeclaredTest(RegionName region, Optional<String> testerFlavor) {
-            this.region = region;
-            this.testerFlavor = testerFlavor;
+        public DeclaredTest(RegionName region) {
+            this.region = Objects.requireNonNull(region);
         }
 
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) {
-            return environment == Environment.prod && Optional.of(this.region).equals(region);
+            return region.map(this.region::equals).orElse(true) && environment == Environment.prod;
         }
 
         @Override
         public boolean isTest() { return true; }
+
+        /** Returns the region this test is for. */
+        public RegionName region() {
+            return region;
+        }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             DeclaredTest that = (DeclaredTest) o;
-            return region.equals(that.region) &&
-                   testerFlavor.equals(that.testerFlavor);
+            return region.equals(that.region);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(region, testerFlavor);
+            return Objects.hash(region);
         }
 
         @Override
@@ -433,10 +446,9 @@ public class DeploymentSpec {
 
         @Override
         public List<DeclaredZone> zones() {
-            return this.steps.stream()
-                             .filter(step -> step instanceof DeclaredZone)
-                             .map(DeclaredZone.class::cast)
-                             .collect(Collectors.toList());
+            return steps.stream()
+                        .flatMap(step -> step.zones().stream())
+                        .collect(Collectors.toUnmodifiableList());
         }
 
         @Override
@@ -445,6 +457,11 @@ public class DeploymentSpec {
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) {
             return steps.stream().anyMatch(step -> step.concerns(environment, region));
+        }
+
+        @Override
+        public Duration delay() {
+            return steps.stream().map(Step::delay).reduce(Duration.ZERO, Duration::plus);
         }
 
         @Override
@@ -471,6 +488,16 @@ public class DeploymentSpec {
 
         public ParallelSteps(List<Step> steps) {
             super(steps);
+        }
+
+        @Override
+        public Duration delay() {
+            return steps().stream().map(Step::delay).max(Comparator.naturalOrder()).orElse(Duration.ZERO);
+        }
+
+        @Override
+        public boolean isOrdered() {
+            return false;
         }
 
         @Override

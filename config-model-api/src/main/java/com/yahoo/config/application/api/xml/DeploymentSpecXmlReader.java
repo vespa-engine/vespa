@@ -3,10 +3,12 @@ package com.yahoo.config.application.api.xml;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.Delay;
 import com.yahoo.config.application.api.DeploymentSpec.ParallelSteps;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
+import com.yahoo.config.application.api.DeploymentSpec.Steps;
 import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.Role;
@@ -20,6 +22,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -32,8 +35,10 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author bratseth
@@ -119,7 +124,7 @@ public class DeploymentSpecXmlReader {
      *
      * @param instanceNameString a comma-separated list of the names of the instances this is for
      * @param instanceTag the element having the content of this instance
-     * @param parentTag the parent of instanceTag (or the same, if this instances is implicitly defined which means instanceTag is the root)
+     * @param parentTag the parent of instanceTag (or the same, if this instance is implicitly defined, which means instanceTag is the root)
      * @return the instances specified, one for each instance name element
      */
     private List<DeploymentInstanceSpec> readInstanceContent(String instanceNameString,
@@ -170,6 +175,7 @@ public class DeploymentSpecXmlReader {
     }
 
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
+    @SuppressWarnings("fallthrough")
     private List<Step> readNonInstanceSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
         Optional<AthenzService> athenzService = stringAttribute(athenzServiceAttribute, stepTag)
                                                         .or(() -> stringAttribute(athenzServiceAttribute, parentTag))
@@ -183,7 +189,11 @@ public class DeploymentSpecXmlReader {
             throw new IllegalArgumentException("Attribute 'global-service-id' is only valid on 'prod' tag.");
 
         switch (stepTag.getTagName()) {
-            case testTag: case stagingTag:
+            case testTag:
+                if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
+                          .anyMatch(node -> prodTag.equals(node.getNodeName())))
+                    return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
+            case stagingTag:
                 return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
@@ -197,6 +207,10 @@ public class DeploymentSpecXmlReader {
                 return List.of(new ParallelSteps(XML.getChildren(stepTag).stream()
                                                     .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
                                                     .collect(Collectors.toList())));
+            case stepsTag: // regions and instances may be nested within
+                return List.of(new Steps(XML.getChildren(stepTag).stream()
+                                            .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
+                                            .collect(Collectors.toList())));
             case regionTag:
                 return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
             default:

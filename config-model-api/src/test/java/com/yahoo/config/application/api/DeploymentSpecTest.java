@@ -7,6 +7,7 @@ import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
@@ -141,6 +142,84 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         assertCorrectFirstInstance(spec.requireInstance("default"));
+    }
+
+    @Test
+    public void productionTests() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <test/>" +
+                "      <staging/>" +
+                "      <prod>" +
+                "         <region active='false'>us-east-1</region>" +
+                "         <region active='true'>us-west-1</region>" +
+                "         <delay hours='1' />" +
+                "         <test>us-west-1</test>" +
+                "         <test>us-east-1</test>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        List<DeploymentSpec.Step> instanceSteps = spec.steps().get(0).steps();
+        assertEquals(7, instanceSteps.size());
+        assertEquals("test", instanceSteps.get(0).toString());
+        assertEquals("staging", instanceSteps.get(1).toString());
+        assertEquals("prod.us-east-1", instanceSteps.get(2).toString());
+        assertEquals("prod.us-west-1", instanceSteps.get(3).toString());
+        assertEquals("delay PT1H", instanceSteps.get(4).toString());
+        assertEquals("tests for prod.us-west-1", instanceSteps.get(5).toString());
+        assertEquals("tests for prod.us-east-1", instanceSteps.get(6).toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void duplicateProductionTest() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <prod>" +
+                "         <region active='true'>us-east1</region>" +
+                "         <test>us-east1</test>" +
+                "         <test>us-east1</test>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec.fromXml(r);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void productionTestBeforeDeployment() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <prod>" +
+                "         <test>us-east1</test>" +
+                "         <region active='true'>us-east1</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec.fromXml(r);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void productionTestInParallelWithDeployment() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0'>" +
+                "   <instance id='default'>" +
+                "      <prod>" +
+                "         <parallel>" +
+                "            <region active='true'>us-east1</region>" +
+                "            <test>us-east1</test>" +
+                "         </parallel>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+         DeploymentSpec.fromXml(r);
     }
 
     @Test
@@ -418,6 +497,77 @@ public class DeploymentSpecTest {
     }
 
     @Test
+    public void testNestedParallelAndSteps() {
+        StringReader r = new StringReader(
+                "<deployment athenz-domain='domain'>" +
+                "   <instance id='instance' athenz-service='in-service'>" +
+                "      <prod>" +
+                "         <parallel>" +
+                "            <region active='true'>us-west-1</region>" +
+                "            <steps>" +
+                "               <region active='true'>us-east-3</region>" +
+                "               <delay hours='2' />" +
+                "               <region active='true'>eu-west-1</region>" +
+                "               <delay hours='2' />" +
+                "            </steps>" +
+                "            <steps>" +
+                "               <delay hours='3' />" +
+                "               <region active='true'>aws-us-east-1a</region>" +
+                "               <parallel>" +
+                "                  <region active='true' athenz-service='no-service'>ap-northeast-1</region>" +
+                "                  <region active='true'>ap-southeast-2</region>" +
+                "               </parallel>" +
+                "            </steps>" +
+                "            <delay hours='3' minutes='30' />" +
+                "         </parallel>" +
+                "         <region active='true'>us-north-7</region>" +
+                "      </prod>" +
+                "   </instance>" +
+                "</deployment>"
+        );
+
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        List<DeploymentSpec.Step> steps = spec.steps();
+        assertEquals(3, steps.size());
+        assertEquals("test", steps.get(0).toString());
+        assertEquals("staging", steps.get(1).toString());
+        assertEquals("instance 'instance'", steps.get(2).toString());
+        assertEquals(Duration.ofHours(4), steps.get(2).delay());
+
+        List<DeploymentSpec.Step> instanceSteps = steps.get(2).steps();
+        assertEquals(2, instanceSteps.size());
+        assertEquals("4 parallel steps", instanceSteps.get(0).toString());
+        assertEquals("prod.us-north-7", instanceSteps.get(1).toString());
+
+        List<DeploymentSpec.Step> parallelSteps = instanceSteps.get(0).steps();
+        assertEquals(4, parallelSteps.size());
+        assertEquals("prod.us-west-1", parallelSteps.get(0).toString());
+        assertEquals("4 steps", parallelSteps.get(1).toString());
+        assertEquals("3 steps", parallelSteps.get(2).toString());
+        assertEquals("delay PT3H30M", parallelSteps.get(3).toString());
+
+        List<DeploymentSpec.Step> firstSerialSteps = parallelSteps.get(1).steps();
+        assertEquals(4, firstSerialSteps.size());
+        assertEquals("prod.us-east-3", firstSerialSteps.get(0).toString());
+        assertEquals("delay PT2H", firstSerialSteps.get(1).toString());
+        assertEquals("prod.eu-west-1", firstSerialSteps.get(2).toString());
+        assertEquals("delay PT2H", firstSerialSteps.get(3).toString());
+
+        List<DeploymentSpec.Step> secondSerialSteps = parallelSteps.get(2).steps();
+        assertEquals(3, secondSerialSteps.size());
+        assertEquals("delay PT3H", secondSerialSteps.get(0).toString());
+        assertEquals("prod.aws-us-east-1a", secondSerialSteps.get(1).toString());
+        assertEquals("2 parallel steps", secondSerialSteps.get(2).toString());
+
+        List<DeploymentSpec.Step> innerParallelSteps = secondSerialSteps.get(2).steps();
+        assertEquals(2, innerParallelSteps.size());
+        assertEquals("prod.ap-northeast-1", innerParallelSteps.get(0).toString());
+        assertEquals("no-service", spec.requireInstance("instance").athenzService(Environment.prod, RegionName.from("ap-northeast-1")).get().value());
+        assertEquals("prod.ap-southeast-2", innerParallelSteps.get(1).toString());
+        assertEquals("in-service", spec.requireInstance("instance").athenzService(Environment.prod, RegionName.from("ap-southeast-2")).get().value());
+    }
+
+    @Test
     public void testParallelInstances() {
         StringReader r = new StringReader(
                 "<deployment>" +
@@ -485,8 +635,8 @@ public class DeploymentSpecTest {
                 "         <region active='true'>us-west-1</region>" +
                 "         <parallel>" +
                 "            <region active='true'>us-west-1</region>" +
-                "             <region active='true'>us-central-1</region>" +
-                "             <region active='true'>us-east-3</region>" +
+                "            <region active='true'>us-central-1</region>" +
+                "            <region active='true'>us-east-3</region>" +
                 "         </parallel>" +
                 "      </prod>" +
                 "   </instance>" +

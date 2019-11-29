@@ -188,7 +188,7 @@
     "fields": []
   },
   "com.yahoo.config.application.api.DeploymentInstanceSpec": {
-    "superClass": "com.yahoo.config.application.api.DeploymentSpec$Step",
+    "superClass": "com.yahoo.config.application.api.DeploymentSpec$Steps",
     "interfaces": [],
     "attributes": [
       "public"
@@ -196,15 +196,11 @@
     "methods": [
       "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List)",
       "public com.yahoo.config.provision.InstanceName name()",
-      "public java.time.Duration delay()",
-      "public java.util.List steps()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public java.util.List changeBlocker()",
       "public java.util.Optional globalServiceId()",
       "public boolean canUpgradeAt(java.time.Instant)",
       "public boolean canChangeRevisionAt(java.time.Instant)",
-      "public java.util.List zones()",
-      "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.util.Optional athenzDomain()",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.application.api.Notifications notifications()",
@@ -238,7 +234,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.RegionName, java.util.Optional)",
+      "public void <init>(com.yahoo.config.provision.RegionName)",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public boolean isTest()",
       "public boolean equals(java.lang.Object)",
@@ -292,6 +288,8 @@
     ],
     "methods": [
       "public void <init>(java.util.List)",
+      "public java.time.Duration delay()",
+      "public boolean isOrdered()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -312,7 +310,8 @@
       "public java.util.List zones()",
       "public java.time.Duration delay()",
       "public java.util.List steps()",
-      "public boolean isTest()"
+      "public boolean isTest()",
+      "public boolean isOrdered()"
     ],
     "fields": []
   },
@@ -327,6 +326,7 @@
       "public java.util.List zones()",
       "public java.util.List steps()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
+      "public java.time.Duration delay()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
