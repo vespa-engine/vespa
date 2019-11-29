@@ -1,0 +1,48 @@
+<deployment version='1.0' athenz-domain='domain'>
+    <staging />
+    <parallel>
+        <instance id='instance' athenz-service='in-service'>
+            <prod>
+                <parallel>
+                    <region active='true'>us-west-1</region>
+                    <steps>
+                        <region active='true'>us-east-3</region>
+                        <delay hours='2' />
+                        <region active='true'>eu-west-1</region>
+                        <delay hours='2' />
+                    </steps>
+                    <steps>
+                        <delay hours='3' />
+                        <region active='true'>aws-us-east-1a</region>
+                        <parallel>
+                            <region active='true' athenz-service='no-service'>ap-northeast-1</region>
+                            <region active='true'>ap-southeast-2</region>
+                        </parallel>
+                    </steps>
+                    <delay hours='3' minutes='30' />
+                </parallel>
+                <region active='true'>us-north-7</region>
+            </prod>
+        </instance>
+        <instance id='other'>
+            <upgrade policy='conservative' />
+            <block-change days='sat' hours='10' time-zone='CET' />
+            <test />
+            <prod>
+                <region active='true'>eu-central-2</region>
+            </prod>
+            <notifications when='failing'>
+                <email role='author' />
+                <email address='john@dev' when='failing-commit' />
+                <email address='jane@dev' />
+            </notifications>
+            <endpoints>
+                <endpoint id='foo' container-id='bar'>
+                    <region>us-east</region>
+                </endpoint>
+                <endpoint id='nalle' container-id='frosk' />
+                <endpoint container-id='quux' />
+            </endpoints>
+        </instance>
+    </parallel>
+</deployment>
