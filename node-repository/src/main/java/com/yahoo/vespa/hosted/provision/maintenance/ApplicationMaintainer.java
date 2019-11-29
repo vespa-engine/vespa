@@ -79,21 +79,10 @@ public abstract class ApplicationMaintainer extends Maintainer {
 
     /** Redeploy this application. A lock will be taken for the duration of the deployment activation */
     protected final void deployWithLock(ApplicationId application) {
-        // An application might change its state between the time the set of applications is retrieved and the
-        // time deployment happens. Lock the application and check if it's still active.
-        //
-        // Lock is acquired with a low timeout to reduce the chance of colliding with an external deployment.
-        try (Mutex lock = nodeRepository().lock(application, Duration.ofSeconds(1))) {
-            if ( ! isActive(application)) return; // became inactive since deployment was requested
+        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+            if ( ! deployment.isValid()) return; // this will be done at another config server
             if ( ! canDeployNow(application)) return; // redeployment is no longer needed
-            Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
-            if ( ! deployment.isPresent()) return; // this will be done at another config server
-            log.log(LogLevel.DEBUG, this.getClass().getSimpleName() + " deploying " + application);
-            deployment.get().activate();
-        } catch (TransientException e) {
-            log.log(LogLevel.INFO, "Failed to redeploy " + application + " with a transient error: " + Exceptions.toMessageString(e));
-        } catch (RuntimeException e) {
-            log.log(LogLevel.WARNING, "Exception on maintenance redeploy", e);
+            deployment.activate();
         } finally {
             pendingDeployments.remove(application);
         }
@@ -102,11 +91,6 @@ public abstract class ApplicationMaintainer extends Maintainer {
     /** Returns the last time application was deployed. Epoch is returned if the application has never been deployed. */
     protected final Instant getLastDeployTime(ApplicationId application) {
         return deployer.lastDeployTime(application).orElse(Instant.EPOCH);
-    }
-
-    /** Returns true when application has at least one active node */
-    private boolean isActive(ApplicationId application) {
-        return ! nodeRepository().getNodes(application, Node.State.active).isEmpty();
     }
 
     @Override

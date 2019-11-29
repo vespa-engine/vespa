@@ -19,6 +19,7 @@ import java.util.logging.Logger;
 
 /**
  * A wrapper of a deployment suitable for maintenance.
+ * This is a single-use, single-thread object.
  *
  * @author bratseth
  */
@@ -29,6 +30,8 @@ class MaintenanceDeployment implements Closeable {
     private final ApplicationId application;
     private final Optional<Mutex> lock;
     private final Optional<Deployment> deployment;
+
+    private boolean closed = false;
 
     public MaintenanceDeployment(ApplicationId application, Deployer deployer, NodeRepository nodeRepository) {
         this.application = application;
@@ -50,6 +53,7 @@ class MaintenanceDeployment implements Closeable {
     }
 
     private boolean doStep(Runnable action) {
+        if (closed) throw new IllegalStateException("Deployment of '" + application + "' is closed");
         if ( ! isValid()) return false;
         try {
             action.run();
@@ -86,6 +90,7 @@ class MaintenanceDeployment implements Closeable {
     @Override
     public void close() {
         lock.ifPresent(l -> l.close());
+        closed = true;
     }
 
 }
