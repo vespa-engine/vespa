@@ -35,6 +35,7 @@ public class RoutingPolicySerializer {
     private static final String zoneField = "zone";
     private static final String dnsZoneField = "dnsZone";
     private static final String rotationsField = "rotations";
+    private static final String activeField = "active";
 
     public Slime toSlime(Set<RoutingPolicy> routingPolicies) {
         var slime = new Slime();
@@ -50,6 +51,7 @@ public class RoutingPolicySerializer {
             policy.endpoints().forEach(endpointId -> {
                 rotationArray.addString(endpointId.id());
             });
+            policyObject.setBool(activeField, policy.active());
         });
         return slime;
     }
@@ -61,12 +63,15 @@ public class RoutingPolicySerializer {
         field.traverse((ArrayTraverser) (i, inspect) -> {
             var endpointIds = new LinkedHashSet<EndpointId>();
             inspect.field(rotationsField).traverse((ArrayTraverser) (j, endpointId) -> endpointIds.add(EndpointId.of(endpointId.asString())));
+            var activeFieldInspector = inspect.field(activeField);
+            // TODO(mpolden): Remove field presence check after January 2020
+            boolean active = !activeFieldInspector.valid() || activeFieldInspector.asBool();
             policies.add(new RoutingPolicy(owner,
                                            ClusterSpec.Id.from(inspect.field(clusterField).asString()),
                                            ZoneId.from(inspect.field(zoneField).asString()),
                                            HostName.from(inspect.field(canonicalNameField).asString()),
                                            Serializers.optionalString(inspect.field(dnsZoneField)),
-                                           endpointIds));
+                                           endpointIds, active));
         });
         return Collections.unmodifiableSet(policies);
     }

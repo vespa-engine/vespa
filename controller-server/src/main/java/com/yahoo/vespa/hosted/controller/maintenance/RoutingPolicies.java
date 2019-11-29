@@ -127,7 +127,7 @@ public class RoutingPolicies {
     private RoutingPolicy createPolicy(ApplicationId application, ZoneId zone, LoadBalancer loadBalancer,
                                        Set<EndpointId> endpointIds) {
         var routingPolicy = new RoutingPolicy(application, loadBalancer.cluster(), zone, loadBalancer.hostname(),
-                                              loadBalancer.dnsZone(), endpointIds);
+                                              loadBalancer.dnsZone(), endpointIds, isActive(loadBalancer));
         var name = RecordName.from(routingPolicy.endpointIn(controller.system()).dnsName());
         var data = RecordData.fqdn(loadBalancer.hostname().value());
         controller.nameServiceForwarder().createCname(name, data, Priority.normal);
@@ -197,6 +197,15 @@ public class RoutingPolicies {
         return routingTable;
     }
 
+    private static boolean isActive(LoadBalancer loadBalancer) {
+        switch (loadBalancer.state()) {
+            case reserved: // Count reserved as active as we want callers (application API) to see the endpoint as early
+                           // as possible
+            case active: return true;
+        }
+        return false;
+    }
+
     /** Load balancers allocated to a deployment */
     private static class AllocatedLoadBalancers {
 
@@ -209,9 +218,7 @@ public class RoutingPolicies {
                                        DeploymentSpec deploymentSpec) {
             this.application = application;
             this.zone = zone;
-            this.list = loadBalancers.stream()
-                                     .filter(AllocatedLoadBalancers::shouldUpdatePolicy)
-                                     .collect(Collectors.toUnmodifiableList());
+            this.list = List.copyOf(loadBalancers);
             this.deploymentSpec = deploymentSpec;
         }
 
@@ -230,17 +237,6 @@ public class RoutingPolicies {
                                .map(com.yahoo.config.application.api.Endpoint::endpointId)
                                .map(EndpointId::of)
                                .collect(Collectors.toSet());
-        }
-
-        private static boolean shouldUpdatePolicy(LoadBalancer loadBalancer) {
-            switch (loadBalancer.state()) {
-                case active:
-                case reserved: // This allows DNS updates to happen early, while an application is being prepared.
-                    return true;
-            }
-            // Any other state, such as inactive, is ignored.
-            LOGGER.log(LogLevel.WARNING, "Ignoring load balancer " + loadBalancer.hostname() + " in state " + loadBalancer.state());
-            return false;
         }
 
     }

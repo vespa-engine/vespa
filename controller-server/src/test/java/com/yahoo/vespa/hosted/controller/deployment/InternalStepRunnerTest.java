@@ -221,13 +221,13 @@ public class InternalStepRunnerTest {
                                                                                                       JobType.systemTest.zone(system()),
                                                                                                       HostName.from("host"),
                                                                                                       Optional.empty(),
-                                                                                                      emptySet())));
+                                                                                                      emptySet(), true)));
         tester.controller().curator().writeRoutingPolicies(app.testerId().id(), Set.of(new RoutingPolicy(app.testerId().id(),
                                                                                                          ClusterSpec.Id.from("default"),
                                                                                                          JobType.systemTest.zone(system()),
                                                                                                          HostName.from("host"),
                                                                                                          Optional.empty(),
-                                                                                                         emptySet())));
+                                                                                                         emptySet(), true)));
         tester.runner().run();;
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().steps().get(Step.installTester));
