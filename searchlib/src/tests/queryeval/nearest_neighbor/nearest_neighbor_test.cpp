@@ -100,7 +100,7 @@ SimpleResult find_matches(Fixture &env, const DenseTensorView &qtv) {
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._tensorAttr);
     NearestNeighborDistanceHeap dh(2);
-    auto search = NearestNeighborIteratorFactory::createIterator(strict, tfmd, qtv, attr, dh);
+    auto search = NearestNeighborIterator::create(strict, tfmd, qtv, attr, dh);
     if (strict) {
         return SimpleResult().searchStrict(*search, attr.getNumDocs());
     } else {
@@ -137,7 +137,7 @@ std::vector<feature_t> get_rawscores(Fixture &env, const DenseTensorView &qtv) {
     auto &tfmd = *(md->resolveTermField(0));
     auto &attr = *(env._tensorAttr);
     NearestNeighborDistanceHeap dh(2);
-    auto search = NearestNeighborIteratorFactory::createIterator(strict, tfmd, qtv, attr, dh);
+    auto search = NearestNeighborIterator::create(strict, tfmd, qtv, attr, dh);
     uint32_t limit = attr.getNumDocs();
     uint32_t docid = 1;
     search->initRange(docid, limit);

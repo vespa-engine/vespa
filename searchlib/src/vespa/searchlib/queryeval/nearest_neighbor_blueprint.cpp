@@ -30,7 +30,7 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     fef::TermFieldMatchData &tfmd = *tfmda[0]; // always search in only one field
     const vespalib::tensor::DenseTensorView &qT = *_query_tensor;
 
-    return NearestNeighborIteratorFactory::createIterator(strict, tfmd, qT, _attr_tensor, _distance_heap);
+    return NearestNeighborIterator::create(strict, tfmd, qT, _attr_tensor, _distance_heap);
 }
 
 void
