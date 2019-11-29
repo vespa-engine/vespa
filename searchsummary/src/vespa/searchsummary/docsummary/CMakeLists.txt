@@ -10,6 +10,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     docsumstate.cpp
     docsumwriter.cpp
     dynamicteaserdfw.cpp
+    general_result.cpp
     geoposdfw.cpp
     getdocsumargs.cpp
     juniperproperties.cpp
@@ -28,7 +29,6 @@ vespa_add_library(searchsummary_docsummary OBJECT
     summaryfieldconverter.cpp
     textextractordfw.cpp
     tokenizer.cpp
-    urlresult.cpp
     AFTER
     searchsummary_config
 )

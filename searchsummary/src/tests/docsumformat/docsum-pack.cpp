@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/urlresult.h>
+#include <vespa/searchsummary/docsummary/general_result.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
 #include <vespa/fastos/app.h>

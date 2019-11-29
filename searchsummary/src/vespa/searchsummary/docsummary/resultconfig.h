@@ -3,7 +3,7 @@
 #pragma once
 
 #include "resultclass.h"
-#include "urlresult.h"
+#include "general_result.h"
 #include <vespa/config-summary.h>
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/stringenum.h>
