@@ -25,6 +25,11 @@ StepExceptInstance =
     Staging? &
     Prod*
 
+PrimitiveStep =
+    Delay* &
+    Region* &
+    ProdTest*
+
 Instance = element instance {
    attribute id { xsd:string } &
    attribute athenz-domain { xsd:string }? &
@@ -32,8 +37,14 @@ Instance = element instance {
    StepExceptInstance
 }
 
-ParallelRegions = element parallel {
-    Region*
+ParallelSteps = element parallel {
+    SerialSteps* &
+    PrimitiveStep*
+}
+
+SerialSteps = element steps {
+    ParallelSteps* &
+    PrimitiveStep*
 }
 
 ParallelInstances = element parallel {
@@ -81,7 +92,12 @@ Prod = element prod {
    attribute tester-flavor { xsd:string }? &
    Region* &
    Delay* &
-   ParallelRegions*
+   ProdTest* &
+   ParallelSteps*
+}
+
+ProdTest = element test {
+   text
 }
 
 Region = element region {
