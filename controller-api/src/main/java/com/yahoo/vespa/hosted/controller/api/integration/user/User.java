@@ -9,14 +9,14 @@ public class User {
 
     public static final String ATTRIBUTE_NAME = User.class.getName();
 
-    private final String name;
     private final String email;
+    private final String name;
     private final String nickname;
     private final String picture;
 
     public User(String email, String name, String nickname, String picture) {
-        this.name = Objects.requireNonNull(name);
         this.email = Objects.requireNonNull(email);
+        this.name = name;
         this.nickname = nickname;
         this.picture = picture;
     }
