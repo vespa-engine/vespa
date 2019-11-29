@@ -37,7 +37,7 @@ public:
     void doSeek(uint32_t docId) override {
         double distanceLimit = params().distanceHeap.distanceLimit();
         while (__builtin_expect((docId < getEndId()), true)) {
-            double d = computeDistance(docId);
+            double d = computeDistance(docId, distanceLimit);
             if (d <= distanceLimit) {
                 _lastScore = d;
                 setDocId(docId);
@@ -60,20 +60,20 @@ public:
     Trinary is_strict() const override { return strict ? Trinary::True : Trinary::False ; }
 
 private:
-    static double computeSum(ConstArrayRef<LCT> lhs, ConstArrayRef<RCT> rhs) {
+    static double computeSum(ConstArrayRef<LCT> lhs, ConstArrayRef<RCT> rhs, double limit) {
         double sum = 0.0;
         size_t sz = lhs.size();
         assert(sz == rhs.size());
-        for (size_t i = 0; i < sz; ++i) {
+        for (size_t i = 0; i < sz && sum <= limit; ++i) {
             double diff = lhs[i] - rhs[i];
             sum += diff*diff;
         }
         return sum;
     }
 
-    double computeDistance(uint32_t docId) {
+    double computeDistance(uint32_t docId, double limit) {
         params().tensorAttribute.getTensor(docId, _fieldTensor);
-        return computeSum(_lhs, _fieldTensor.cellsRef().typify<RCT>());
+        return computeSum(_lhs, _fieldTensor.cellsRef().typify<RCT>(), limit);
     }
 
     ConstArrayRef<LCT>     _lhs;
