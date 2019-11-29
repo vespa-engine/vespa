@@ -29,7 +29,7 @@ public:
           _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
-        assert(params().queryTensor.fast_type() == params().queryTensor.fast_type());
+        assert(_fieldTensor.fast_type() == params().queryTensor.fast_type());
     }
 
     ~NearestNeighborImpl();
