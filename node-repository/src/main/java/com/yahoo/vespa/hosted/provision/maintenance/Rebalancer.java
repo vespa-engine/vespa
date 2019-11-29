@@ -2,14 +2,10 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TransientException;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -19,13 +15,10 @@ import com.yahoo.vespa.hosted.provision.provisioning.DockerHostCapacity;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
-import com.yahoo.yolean.Exceptions;
 
-import java.io.Closeable;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
-import java.util.logging.Logger;
 
 /**
  * @author bratseth
@@ -199,74 +192,6 @@ public class Rebalancer extends Maintainer {
             return "move " +
                    ( node == null ? "none" :
                                     (node.hostname() + " to " + toHost + " [skew reduction "  + netSkewReduction + "]"));
-        }
-
-    }
-
-    private static class MaintenanceDeployment implements Closeable {
-
-        private static final Logger log = Logger.getLogger(MaintenanceDeployment.class.getName());
-
-        private final ApplicationId application;
-        private final Optional<Mutex> lock;
-        private final Optional<Deployment> deployment;
-
-        public MaintenanceDeployment(ApplicationId application, Deployer deployer, NodeRepository nodeRepository) {
-            this.application = application;
-            lock = tryLock(application, nodeRepository);
-            deployment = tryDeployment(lock, application, deployer, nodeRepository);
-        }
-
-        /** Return whether this is - as yet - functional and can be used to carry out the deployment */
-        public boolean isValid() {
-            return deployment.isPresent();
-        }
-
-        private Optional<Mutex> tryLock(ApplicationId application, NodeRepository nodeRepository) {
-            try {
-                // Use a short lock to avoid interfering with change deployments
-                return Optional.of(nodeRepository.lock(application, Duration.ofSeconds(1)));
-            }
-            catch (ApplicationLockException e) {
-                return Optional.empty();
-            }
-        }
-
-        private Optional<Deployment> tryDeployment(Optional<Mutex> lock,
-                                                   ApplicationId application,
-                                                   Deployer deployer,
-                                                   NodeRepository nodeRepository) {
-            if (lock.isEmpty()) return Optional.empty();
-            if (nodeRepository.getNodes(application, Node.State.active).isEmpty()) return Optional.empty();
-            return deployer.deployFromLocalActive(application);
-        }
-
-        public boolean prepare() {
-            return doStep(() -> deployment.get().prepare());
-        }
-
-        public boolean activate() {
-            return doStep(() -> deployment.get().activate());
-        }
-
-        private boolean doStep(Runnable action) {
-            if ( ! isValid()) return false;
-            try {
-                action.run();
-                return true;
-            } catch (TransientException e) {
-                log.log(LogLevel.INFO, "Failed to deploy " + application + " with a transient error: " +
-                                       Exceptions.toMessageString(e));
-                return false;
-            } catch (RuntimeException e) {
-                log.log(LogLevel.WARNING, "Exception on maintenance deploy of " + application, e);
-                return false;
-            }
-        }
-
-        @Override
-        public void close() {
-            lock.ifPresent(l -> l.close());
         }
 
     }
