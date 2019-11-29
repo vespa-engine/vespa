@@ -27,16 +27,18 @@ public class RoutingPolicy {
     private final HostName canonicalName;
     private final Optional<String> dnsZone;
     private final Set<EndpointId> endpoints;
+    private final boolean active;
 
     /** DO NOT USE. Public for serialization purposes */
     public RoutingPolicy(ApplicationId owner, ClusterSpec.Id cluster, ZoneId zone, HostName canonicalName,
-                         Optional<String> dnsZone, Set<EndpointId> endpoints) {
+                         Optional<String> dnsZone, Set<EndpointId> endpoints, boolean active) {
         this.owner = Objects.requireNonNull(owner, "owner must be non-null");
         this.cluster = Objects.requireNonNull(cluster, "cluster must be non-null");
         this.zone = Objects.requireNonNull(zone, "zone must be non-null");
         this.canonicalName = Objects.requireNonNull(canonicalName, "canonicalName must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.endpoints = ImmutableSortedSet.copyOf(Objects.requireNonNull(endpoints, "endpoints must be non-null"));
+        this.active = active;
     }
 
     /** The application owning this */
@@ -67,6 +69,11 @@ public class RoutingPolicy {
     /** The endpoints of this policy */
     public Set<EndpointId> endpoints() {
         return endpoints;
+    }
+
+    /** Returns whether this is active (the underlying load balancer is in an active state) */
+    public boolean active() {
+        return active;
     }
 
     /** Returns the endpoint of this */

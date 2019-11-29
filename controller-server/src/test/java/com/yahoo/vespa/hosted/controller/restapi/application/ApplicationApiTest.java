@@ -1430,12 +1430,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .region("us-west-1")
                 .build();
         app.submit(applicationPackage).deploy();
-        RoutingPolicy policy = new RoutingPolicy(app.instanceId(),
+        Set<RoutingPolicy> policies = Set.of(new RoutingPolicy(app.instanceId(),
                                                  ClusterSpec.Id.from("default"),
                                                  ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
                                                  HostName.from("lb-0-canonical-name"),
-                                                 Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")));
-        tester.controller().curator().writeRoutingPolicies(app.instanceId(), Set.of(policy));
+                                                 Optional.of("dns-zone-1"), Set.of(EndpointId.of("c0")), true),
+                                           // Inactive policy is not included
+                                           new RoutingPolicy(app.instanceId(),
+                                                             ClusterSpec.Id.from("deleted-cluster"),
+                                                             ZoneId.from(Environment.prod, RegionName.from("us-west-1")),
+                                                             HostName.from("lb-1-canonical-name"),
+                                                             Optional.of("dns-zone-1"), Set.of(), false));
+        tester.controller().curator().writeRoutingPolicies(app.instanceId(), policies);
 
         // GET application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
