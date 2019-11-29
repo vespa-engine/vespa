@@ -15,14 +15,14 @@ import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.TenantController;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
-import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
+import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.tenant.UserTenant;
 import com.yahoo.yolean.Exceptions;
 
 import java.net.URI;
@@ -82,13 +82,13 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
 
         AthenzIdentity identity = principal.getIdentity();
 
-        if (athenz.hasHostedOperatorAccess(identity))
-            return Set.of(Role.hostedOperator());
-
-        // A principal can be both tenant admin and tenantPipeline
         Set<Role> roleMemberships = new HashSet<>();
-        if (tenant.isPresent() && isTenantAdmin(identity, tenant.get()))
-            roleMemberships.add(Role.athenzTenantAdmin(tenant.get().name()));
+        if (athenz.hasHostedOperatorAccess(identity))
+            roleMemberships.add(Role.hostedOperator());
+
+        // Add all tenants that are accessible for this request
+        athenz.accessibleTenants(tenants.asList(), new Credentials(principal))
+                .forEach(accessibleTenant -> roleMemberships.add(Role.athenzTenantAdmin(accessibleTenant.name())));
 
         if (identity.getDomain().equals(SCREWDRIVER_DOMAIN) && application.isPresent() && tenant.isPresent())
             // NOTE: Only fine-grained deploy authorization for Athenz tenants
@@ -112,14 +112,6 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         return roleMemberships.isEmpty()
                 ? Set.of(Role.everyone())
                 : Set.copyOf(roleMemberships);
-    }
-
-    private boolean isTenantAdmin(AthenzIdentity identity, Tenant tenant) {
-        switch (tenant.type()) {
-            case athenz: return athenz.hasTenantAdminAccess(identity, ((AthenzTenant) tenant).domain());
-            case user: return ((UserTenant) tenant).is(identity.getName()) || athenz.hasHostedOperatorAccess(identity);
-            default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
-        }
     }
 
     private boolean hasDeployerAccess(AthenzIdentity identity, AthenzDomain tenantDomain, ApplicationName application) {
