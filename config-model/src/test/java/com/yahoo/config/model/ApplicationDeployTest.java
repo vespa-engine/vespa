@@ -219,7 +219,7 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testAppWithIllegalEmptyProdRegion() throws IOException {
+    public void testAppWithEmptyProdRegion() throws IOException {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "empty_prod_region_in_deployment_xml"), tmpDir);
         ApplicationPackageTester.create(tmpDir.getAbsolutePath());
