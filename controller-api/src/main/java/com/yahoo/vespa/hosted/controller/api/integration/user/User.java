@@ -2,19 +2,21 @@ package com.yahoo.vespa.hosted.controller.api.integration.user;
 
 import java.util.Objects;
 
+/**
+ * @author smorgrav
+ */
 public class User {
 
-    private final String name;
+    public static final String ATTRIBUTE_NAME = User.class.getName();
+
     private final String email;
+    private final String name;
     private final String nickname;
     private final String picture;
 
     public User(String email, String name, String nickname, String picture) {
-        Objects.requireNonNull(email);
-        Objects.requireNonNull(name);
-
+        this.email = Objects.requireNonNull(email);
         this.name = name;
-        this.email = email;
         this.nickname = nickname;
         this.picture = picture;
     }
