@@ -102,6 +102,7 @@ ProdTest = element test {
 
 Region = element region {
    attribute active { xsd:boolean } &
+   attribute athenz-service { xsd:string }? &
    text
 }
 
