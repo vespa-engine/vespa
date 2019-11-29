@@ -83,7 +83,7 @@ public class RotationRepository {
                                                instance.name() + "'");
         }
         long productionZones = deploymentSpec.requireInstance(instance.name()).zones().stream()
-                                                     .filter(zone -> zone.concerns(Environment.prod))
+                                                     .filter(zone -> zone.deploysTo(Environment.prod))
                                                      .count();
         if (productionZones < 2) {
             throw new IllegalArgumentException("global-service-id is set but less than 2 prod zones are defined " +

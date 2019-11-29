@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -21,11 +22,12 @@ import java.util.stream.Collectors;
  *
  * @author bratseth
  */
-public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
+public class DeploymentInstanceSpec extends DeploymentSpec.Step {
 
     /** The name of the instance this step deploys */
     private final InstanceName name;
 
+    private final List<DeploymentSpec.Step> steps;
     private final DeploymentSpec.UpgradePolicy upgradePolicy;
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
@@ -43,54 +45,34 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   Optional<AthenzService> athenzService,
                                   Notifications notifications,
                                   List<Endpoint> endpoints) {
-        super(steps);
         this.name = name;
+        this.steps = steps;
         this.upgradePolicy = upgradePolicy;
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.notifications = notifications;
-        this.endpoints = List.copyOf(validateEndpoints(endpoints, steps()));
-        validateZones(new HashSet<>(), this);
-        validateEndpoints(steps(), globalServiceId, this.endpoints);
+        this.endpoints = List.copyOf(validateEndpoints(endpoints, this.steps));
+        validateZones(this.steps);
+        validateEndpoints(this.steps, globalServiceId, this.endpoints);
         validateAthenz();
     }
 
     public InstanceName name() { return name; }
 
-    /**
-     * Throws an IllegalArgumentException if any production deployment or test is declared multiple times,
-     * or if any production test is declared not after its corresponding deployment.
-     *
-     * @param deployments previously seen deployments
-     * @param step step whose members to validate
-     * @return all contained tests
-     */
-    private static Set<RegionName> validateZones(Set<RegionName> deployments, DeploymentSpec.Step step) {
-        if ( ! step.steps().isEmpty()) {
-            Set<RegionName> oldDeployments = Set.copyOf(deployments);
-            Set<RegionName> tests = new HashSet<>();
-            for (DeploymentSpec.Step nested : step.steps()) {
-                for (RegionName test : validateZones(deployments, nested)) {
-                    if ( ! (step.isOrdered() ? deployments : oldDeployments).contains(test))
-                        throw new IllegalArgumentException("tests for prod." + test + " must be after the corresponding deployment in deployment.xml");
+    /** Throw an IllegalArgumentException if any production zone is declared multiple times */
+    private void validateZones(List<DeploymentSpec.Step> steps) {
+        Set<DeploymentSpec.DeclaredZone> zones = new HashSet<>();
 
-                    if ( ! tests.add(test))
-                        throw new IllegalArgumentException("tests for prod." + test + " arelisted twice in deployment.xml");
-                }
-            }
-            return tests;
-        }
-        if (step.concerns(Environment.prod)) {
-            if (step.isTest())
-                return Set.of(((DeploymentSpec.DeclaredTest) step).region());
+        for (DeploymentSpec.Step step : steps)
+            for (DeploymentSpec.DeclaredZone zone : step.zones())
+                ensureUnique(zone, zones);
+    }
 
-            RegionName region = ((DeploymentSpec.DeclaredZone) step).region().get();
-            if ( ! deployments.add(region))
-                throw new IllegalArgumentException("prod." + region + " is listed twice in deployment.xml");
-        }
-        return Set.of();
+    private void ensureUnique(DeploymentSpec.DeclaredZone zone, Set<DeploymentSpec.DeclaredZone> zones) {
+        if ( ! zones.add(zone))
+            throw new IllegalArgumentException(zone + " is listed twice in deployment.xml");
     }
 
     /** Validates the endpoints and makes sure default values are respected */
@@ -98,7 +80,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         Objects.requireNonNull(endpoints, "Missing endpoints parameter");
 
         var productionRegions = steps.stream()
-                                     .filter(step -> step.concerns(Environment.prod))
+                                     .filter(step -> step.deploysTo(Environment.prod))
                                      .flatMap(step -> step.zones().stream())
                                      .flatMap(zone -> zone.region().stream())
                                      .map(RegionName::value)
@@ -161,6 +143,15 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         }
     }
 
+    @Override
+    public Duration delay() {
+        return Duration.ofSeconds(steps.stream().mapToLong(step -> (step.delay().getSeconds())).sum());
+    }
+
+    /** Returns the deployment steps inside this in the order they will be performed */
+    @Override
+    public List<DeploymentSpec.Step> steps() { return steps; }
+
     /** Returns the upgrade policy of this, which is defaultPolicy if none is specified */
     public DeploymentSpec.UpgradePolicy upgradePolicy() { return upgradePolicy; }
 
@@ -182,16 +173,32 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                              .noneMatch(block -> block.window().includes(instant));
     }
 
+    /** Returns all the deployment steps which are zones in the order they are declared */
+    public List<DeploymentSpec.DeclaredZone> zones() {
+        return steps.stream()
+                    .flatMap(step -> step.zones().stream())
+                    .collect(Collectors.toList());
+    }
+
+    /** Returns whether this deployment spec specifies the given zone, either implicitly or explicitly */
+    @Override
+    public boolean deploysTo(Environment environment, Optional<RegionName> region) {
+        for (DeploymentSpec.Step step : steps)
+            if (step.deploysTo(environment, region)) return true;
+        return false;
+    }
+
     /** Returns the athenz domain if configured */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
     /** Returns the athenz service for environment/region if configured */
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
-        return zones().stream()
-                      .filter(zone -> zone.concerns(environment, Optional.of(region)))
-                      .findFirst()
-                      .flatMap(DeploymentSpec.DeclaredZone::athenzService)
-                      .or(() -> this.athenzService);
+        AthenzService athenzService = zones().stream()
+                                             .filter(zone -> zone.deploysTo(environment, Optional.of(region)))
+                                             .findFirst()
+                                             .flatMap(DeploymentSpec.DeclaredZone::athenzService)
+                                             .orElse(this.athenzService.orElse(null));
+        return Optional.ofNullable(athenzService);
     }
 
     /** Returns the notification configuration of these instances */
@@ -200,9 +207,23 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     /** Returns the rotations configuration of these instances */
     public List<Endpoint> endpoints() { return endpoints; }
 
-    /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
-    public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-        return zones().stream().anyMatch(zone -> zone.concerns(environment, region));
+    /** Returns whether this instances deployment specifies the given zone, either implicitly or explicitly */
+    public boolean includes(Environment environment, Optional<RegionName> region) {
+        for (DeploymentSpec.Step step : steps)
+            if (step.deploysTo(environment, region)) return true;
+        return false;
+    }
+
+    DeploymentInstanceSpec withSteps(List<DeploymentSpec.Step> steps) {
+        return new DeploymentInstanceSpec(name,
+                                          steps,
+                                          upgradePolicy,
+                                          changeBlockers,
+                                          globalServiceId,
+                                          athenzDomain,
+                                          athenzService,
+                                          notifications,
+                                          endpoints);
     }
 
     @Override
@@ -213,7 +234,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         return globalServiceId.equals(other.globalServiceId) &&
                upgradePolicy == other.upgradePolicy &&
                changeBlockers.equals(other.changeBlockers) &&
-               steps().equals(other.steps()) &&
+               steps.equals(other.steps) &&
                athenzDomain.equals(other.athenzDomain) &&
                athenzService.equals(other.athenzService) &&
                notifications.equals(other.notifications) &&
@@ -222,7 +243,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     @Override
     public int hashCode() {
-        return Objects.hash(globalServiceId, upgradePolicy, changeBlockers, steps(), athenzDomain, athenzService, notifications, endpoints);
+        return Objects.hash(globalServiceId, upgradePolicy, changeBlockers, steps, athenzDomain, athenzService, notifications, endpoints);
     }
 
     @Override

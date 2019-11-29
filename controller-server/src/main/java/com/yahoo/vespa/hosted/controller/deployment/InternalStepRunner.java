@@ -700,7 +700,7 @@ public class InternalStepRunner implements StepRunner {
 
     private static Optional<String> testerFlavorFor(RunId id, DeploymentSpec spec) {
         for (DeploymentSpec.Step step : spec.steps())
-            if (step.concerns(id.type().environment()))
+            if (step.deploysTo(id.type().environment()))
                 return step.zones().get(0).testerFlavor();
 
         throw new IllegalStateException("No step deploys to the zone this run is for!");
