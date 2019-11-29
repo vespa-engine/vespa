@@ -19,4 +19,10 @@
     <module>integration-test</module>
     <module>test-bundles</module>
   </modules>
+
+  <properties>
+    <!-- This project only builds test artifacts -->
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+
 </project>
