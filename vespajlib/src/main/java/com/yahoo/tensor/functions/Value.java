@@ -47,7 +47,7 @@ public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
     public Value<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if (arguments.size() != 1)
             throw new IllegalArgumentException("Value takes exactly one argument but got " + arguments.size());
-        return new Value<NAMETYPE>(arguments.get(0), cellAddress);
+        return new Value<>(arguments.get(0), cellAddress);
     }
 
     @Override
@@ -78,20 +78,17 @@ public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     @Override
     public String toString(ToStringContext context) {
-        return toString();
-    }
-
-    @Override
-    public String toString() {
+        StringBuilder b = new StringBuilder(argument.toString());
         if (cellAddress.size() == 1 && cellAddress.get(0).dimension().isEmpty()) {
             if (cellAddress.get(0).index().isPresent())
-                return "[" + cellAddress.get(0).index().get() + "]";
+                b.append("[").append(cellAddress.get(0).index().get()).append("]");
             else
-                return "{" + cellAddress.get(0).label() + "}";
+                b.append("{").append(cellAddress.get(0).label()).append("}");
         }
         else {
-            return "{" + cellAddress.stream().map(i -> i.toString()).collect(Collectors.joining(", ")) + "}";
+            b.append("{").append(cellAddress.stream().map(i -> i.toString()).collect(Collectors.joining(", "))).append("}");
         }
+        return b.toString();
     }
 
     public static class DimensionValue<NAMETYPE extends Name>  {
@@ -109,11 +106,11 @@ public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
         }
 
         public DimensionValue(String dimension, int index) {
-            this(Optional.of(dimension), null, new ConstantScalarFunction<>(index));
+            this(Optional.of(dimension), null, new ConstantIntegerFunction<>(index));
         }
 
         public DimensionValue(int index) {
-            this(Optional.empty(), null, new ConstantScalarFunction<>(index));
+            this(Optional.empty(), null, new ConstantIntegerFunction<>(index));
         }
 
         public DimensionValue(String label) {
@@ -167,18 +164,21 @@ public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     }
 
-    private static class ConstantScalarFunction<NAMETYPE extends Name> implements ScalarFunction<NAMETYPE> {
+    private static class ConstantIntegerFunction<NAMETYPE extends Name> implements ScalarFunction<NAMETYPE> {
 
-        private final Double value;
+        private final int value;
 
-        public ConstantScalarFunction(int value) {
-            this.value = (double)value;
+        public ConstantIntegerFunction(int value) {
+            this.value = value;
         }
 
         @Override
         public Double apply(EvaluationContext<NAMETYPE> context) {
-            return value;
+            return (double)value;
         }
+
+        @Override
+        public String toString() { return String.valueOf(value); }
 
     }
 

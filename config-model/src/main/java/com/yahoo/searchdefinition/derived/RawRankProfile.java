@@ -324,7 +324,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     try {
                         firstPhaseRanking = new RankingExpression(property.getValue());
                     } catch (ParseException e) {
-                        throw new IllegalArgumentException("Could not parse second phase expression", e);
+                        throw new IllegalArgumentException("Could not parse first phase expression", e);
                     }
                 }
                 else if ("rankingExpression(secondphase).rankingScript".equals(property.getName())) {

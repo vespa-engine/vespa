@@ -367,6 +367,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(j[2]):[6, 5]",
                                "tensor(j[2])(tensor0{key:bar,i:2-j})",
                                "tensor(key{},i[5]):{{key:foo,i:0}:1,{key:foo,i:1}:2,{key:foo,i:2}:2,{key:bar,i:0}:4,{key:bar,i:1}:5,{key:bar,i:2}:6}");
+        tester.assertEvaluates("5.5",
+                               "sum(tensor(d0[1])(tensor0{x:mykey}))",
+                               "tensor(x{}):{{x:mykey}:5.5}");
 
         // tensor result dimensions are given from argument dimensions, not the resulting values
         tester.assertEvaluates("tensor(x{}):{}", "tensor0 * tensor1", "{ {x:0}:1 }", "tensor(x{}):{ {x:1}:1 }");

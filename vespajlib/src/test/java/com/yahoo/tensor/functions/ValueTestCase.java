@@ -63,4 +63,13 @@ public class ValueTestCase {
         }
     }
 
+    @Test
+    public void testToString() {
+        Tensor input = Tensor.from("tensor(key[3]):[1.1, 2.2, 3.3]");
+        assertEquals("tensor(key[3]):[1.1, 2.2, 3.3][2]",
+                     new Value<>(new ConstantTensor<>(input),
+                                 List.of(new Value.DimensionValue<>(2)))
+                     .toString());
+    }
+
 }

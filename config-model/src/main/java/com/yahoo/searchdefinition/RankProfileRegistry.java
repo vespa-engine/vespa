@@ -53,8 +53,8 @@ public class RankProfileRegistry {
         if (existingRangProfileWithSameName == null) return;
 
         if ( ! overridableRankProfileNames.contains(rankProfileName)) {
-            throw new IllegalArgumentException("Cannot add rank profile '" + rankProfileName + "' in search definition '"
-                                               + rankProfile.getSearch().getName() + "', since it already exists");
+            throw new IllegalArgumentException("Duplicate rank profile '" + rankProfileName + "' in " +
+                                               rankProfile.getSearch());
         }
     }
 

@@ -2544,7 +2544,6 @@
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
-      "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)"
     ],
     "fields": []

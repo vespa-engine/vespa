@@ -245,7 +245,7 @@ public class RankingExpressionTestCase {
 
     @Test
     public void testNonCanonicalLegalStrings() throws ParseException {
-        assertParse("a * b + c * d", "a* (b) + \nc*d");
+        assertParse("a * (b) + c * d", "a* (b) + \nc*d");
     }
 
     @Test
