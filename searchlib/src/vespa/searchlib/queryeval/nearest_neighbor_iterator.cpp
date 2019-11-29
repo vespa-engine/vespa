@@ -94,41 +94,29 @@ create_impl(const NearestNeighborIterator::Params &params)
     return std::make_unique<NNI>(params);
 }
 
-template<bool strict, typename LCT>
-std::unique_ptr<NearestNeighborIterator>
-resolve_RCT(const NearestNeighborIterator::Params &params)
-{
-    CellType ct = params.tensorAttribute.getTensorType().cell_type();
-    if (ct == CellType::FLOAT) {
-        return create_impl<strict, LCT, float>(params);
-    }
-    if (ct == CellType::DOUBLE) {
-        return create_impl<strict, LCT, double>(params);
-    }
-    abort();
-}
+using Creator = std::unique_ptr<NearestNeighborIterator>(*)(const NearestNeighborIterator::Params &params);
 
-template<bool strict>
-std::unique_ptr<NearestNeighborIterator>
-resolve_LCT_RCT(const NearestNeighborIterator::Params &params)
+template <bool strict>
+struct CellTypeResolver
 {
-    CellType ct = params.queryTensor.fast_type().cell_type();
-    if (ct == CellType::FLOAT) {
-        return resolve_RCT<strict, float>(params);
-    }
-    if (ct == CellType::DOUBLE) {
-        return resolve_RCT<strict, double>(params);
-    }
-    abort();
-}
+    template <typename LCT, typename RCT>
+    static Creator
+    get_fun() { return create_impl<strict, LCT, RCT>; }
+};
 
 std::unique_ptr<NearestNeighborIterator>
 resolve_strict_LCT_RCT(bool strict, const NearestNeighborIterator::Params &params)
 {
+    CellType lct = params.queryTensor.fast_type().cell_type();
+    CellType rct = params.tensorAttribute.getTensorType().cell_type();
     if (strict) {
-        return resolve_LCT_RCT<true>(params);
+        using Resolver = CellTypeResolver<true>;
+        auto fun = vespalib::tensor::select_2<Resolver>(lct, rct);
+        return fun(params);
     } else {
-        return resolve_LCT_RCT<false>(params);
+        using Resolver = CellTypeResolver<false>;
+        auto fun = vespalib::tensor::select_2<Resolver>(lct, rct);
+        return fun(params);
     }
 }
 
