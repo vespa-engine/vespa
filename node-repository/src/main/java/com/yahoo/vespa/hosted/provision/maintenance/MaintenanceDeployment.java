@@ -59,7 +59,7 @@ class MaintenanceDeployment implements Closeable {
             action.run();
             return true;
         } catch (TransientException e) {
-            log.log(LogLevel.INFO, "Failed to deploy " + application + " with a transient error: " +
+            log.log(LogLevel.INFO, "Failed to maintenance deploy " + application + " with a transient error: " +
                                    Exceptions.toMessageString(e));
             return false;
         } catch (RuntimeException e) {

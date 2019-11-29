@@ -4,23 +4,17 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.TransientException;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -62,28 +56,18 @@ public class RetiredExpirer extends Maintainer {
             ApplicationId application = entry.getKey();
             List<Node> retiredNodes = entry.getValue();
 
-            try {
-                Optional<Deployment> deployment = deployer.deployFromLocalActive(application);
-                if ( ! deployment.isPresent()) continue; // this will be done at another config server
+            try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, nodeRepository())) {
+                if ( ! deployment.isValid()) continue; // this will be done at another config server
 
                 List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
-                if (nodesToRemove.isEmpty()) {
-                    continue;
-                }
+                if (nodesToRemove.isEmpty()) continue;
 
                 nodeRepository().setRemovable(application, nodesToRemove);
 
-                deployment.get().activate();
-
+                boolean success = deployment.activate();
+                if ( ! success) return;
                 String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
                 log.info("Redeployed " + application + " to deactivate retired nodes: " +  nodeList);
-            } catch (TransientException e) {
-                log.log(LogLevel.INFO, "Failed to redeploy " + application +
-                        " with a transient error, will be retried by application maintainer: " + Exceptions.toMessageString(e));
-            } catch (RuntimeException e) {
-                String nodeList = retiredNodes.stream().map(Node::hostname).collect(Collectors.joining(", "));
-                log.log(Level.WARNING, "Exception trying to deactivate retired nodes from " + application
-                        + ": " + nodeList, e);
             }
         }
     }

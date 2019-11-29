@@ -4,17 +4,11 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Deployment;
-import com.yahoo.config.provision.TransientException;
 import com.yahoo.log.LogLevel;
-import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
