@@ -20,6 +20,7 @@ namespace distributor {
 
 class Distributor;
 class MaintenanceOperationGenerator;
+class DirectDispatchSender;
 
 class ExternalOperationHandler : public DistributorComponent,
                                  public api::MessageHandler
@@ -55,6 +56,8 @@ public:
     // Returns true iff message was handled and should not be processed further by the caller.
     bool try_handle_message_outside_main_thread(const std::shared_ptr<api::StorageMessage>& msg);
 
+    void close_pending();
+
     void set_concurrent_gets_enabled(bool enabled) noexcept {
         _concurrent_gets_enabled.store(enabled, std::memory_order_relaxed);
     }
@@ -64,6 +67,7 @@ public:
     }
 
 private:
+    std::unique_ptr<DirectDispatchSender> _direct_dispatch_sender;
     const MaintenanceOperationGenerator& _operationGenerator;
     OperationSequencer _mutationSequencer;
     Operation::SP _op;

@@ -27,7 +27,7 @@ namespace storage::api {
 namespace storage {
 
 struct MessageSender {
-    virtual ~MessageSender() {}
+    virtual ~MessageSender() = default;
 
     virtual void sendCommand(const std::shared_ptr<api::StorageCommand>&) = 0;
     virtual void sendReply(const std::shared_ptr<api::StorageReply>&) = 0;
@@ -36,7 +36,7 @@ struct MessageSender {
 };
 
 struct ChainedMessageSender {
-    virtual ~ChainedMessageSender() {}
+    virtual ~ChainedMessageSender() = default;
     virtual void sendUp(const std::shared_ptr<api::StorageMessage>&) = 0;
     virtual void sendDown(const std::shared_ptr<api::StorageMessage>&) = 0;
 };

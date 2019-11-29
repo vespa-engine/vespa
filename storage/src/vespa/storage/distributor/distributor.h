@@ -55,13 +55,15 @@ public:
                 HostInfo& hostInfoReporterRegistrar,
                 ChainedMessageSender* = nullptr);
 
-    ~Distributor();
+    ~Distributor() override;
 
     void onOpen() override;
     void onClose() override;
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
+    // Bypasses message tracker component. Thread safe.
+    void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&);
 
     ChainedMessageSender& getMessageSender() override {
         return (_messageSender == 0 ? *this : *_messageSender);

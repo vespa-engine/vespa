@@ -532,7 +532,6 @@ TEST_F(ExternalOperationHandlerTest, gets_are_busy_bounced_during_transition_per
             makeGetCommandForUser(non_owned_bucket.withoutCountBits())));
     EXPECT_EQ("ReturnCode(BUSY, Currently pending cluster state transition from version 123 to 321)",
               _sender.reply(0)->getResult().toString());
-
 }
 
 // TODO support sequencing of RemoveLocation? It's a mutating operation, but supporting it with

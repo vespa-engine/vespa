@@ -217,15 +217,13 @@ void Distributor::onClose() {
 
     LOG(debug, "Distributor::onClose invoked");
     _bucketDBUpdater.flush();
+    _externalOperationHandler.close_pending();
     _operationOwner.onClose();
     _maintenanceOperationOwner.onClose();
 }
 
-void
-Distributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
-{
-    _pendingMessageTracker.insert(msg);
-    if (_messageSender != 0) {
+void Distributor::send_up_without_tracking(const std::shared_ptr<api::StorageMessage>& msg) {
+    if (_messageSender) {
         _messageSender->sendUp(msg);
     } else {
         StorageLink::sendUp(msg);
@@ -233,9 +231,16 @@ Distributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
 }
 
 void
+Distributor::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
+{
+    _pendingMessageTracker.insert(msg);
+    send_up_without_tracking(msg);
+}
+
+void
 Distributor::sendDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
-    if (_messageSender != 0) {
+    if (_messageSender) {
         _messageSender->sendDown(msg);
     } else {
         StorageLink::sendDown(msg);
