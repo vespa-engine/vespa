@@ -212,14 +212,7 @@ public class ApplicationDeployTest {
     }
 
     @Test
-    public void testComplicatedDeploymentSpec() throws IOException {
-        File tmpDir = tmpFolder.getRoot();
-        IOUtils.copyDirectory(new File(TESTDIR, "app_complicated_deployment_spec"), tmpDir);
-        ApplicationPackageTester.create(tmpDir.getAbsolutePath());
-    }
-
-    @Test
-    public void testAppWithEmptyProdRegion() throws IOException {
+    public void testThatAppWithIllegalEmptyProdRegion() throws IOException {
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "empty_prod_region_in_deployment_xml"), tmpDir);
         ApplicationPackageTester.create(tmpDir.getAbsolutePath());
@@ -233,7 +226,7 @@ public class ApplicationDeployTest {
             ApplicationPackageTester.create(tmpDir.getAbsolutePath());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("XML error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n", e.getMessage());
+            assertEquals("XML error in deployment.xml: element \"delay\" not allowed here; expected the element end-tag or element \"region\" [8:25], input:\n", e.getMessage());
         }
     }
 

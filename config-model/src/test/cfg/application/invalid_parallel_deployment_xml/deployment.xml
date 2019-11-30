@@ -4,7 +4,9 @@
   <staging/>
   <prod global-service-id="query">
     <parallel>
-      <instance id="hello" />
+      <region active="true">us-east-3</region>
+      <delay hours="1"/>
+      <region active="true">us-west-1</region>
     </parallel>
   </prod>
 </deployment>

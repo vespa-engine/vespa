@@ -19,6 +19,9 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
@@ -453,7 +456,7 @@ public class ApplicationController {
         }
 
         for (InstanceName instance : declaredInstances)
-            if (applicationPackage.deploymentSpec().requireInstance(instance).concerns(Environment.prod))
+            if (applicationPackage.deploymentSpec().requireInstance(instance).deploysTo(Environment.prod))
                 application = withRotation(applicationPackage.deploymentSpec(), application, instance);
 
         store(application);
@@ -613,8 +616,8 @@ public class ApplicationController {
         List<ZoneId> deploymentsToRemove = application.get().require(instance).productionDeployments().values().stream()
                                                       .map(Deployment::zone)
                                                       .filter(zone ->      deploymentSpec.instance(instance).isEmpty()
-                                                                      || ! deploymentSpec.requireInstance(instance).deploysTo(zone.environment(),
-                                                                                                                              Optional.of(zone.region())))
+                                                                      || ! deploymentSpec.requireInstance(instance).includes(zone.environment(),
+                                                                                                                             Optional.of(zone.region())))
                                                       .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty())
@@ -644,8 +647,7 @@ public class ApplicationController {
         for (JobType job : JobList.from(instance).production().mapToList(JobStatus::type)) {
             ZoneId zone = job.zone(controller.system());
             if (deploymentSpec.instance(instance.name())
-                              // TODO jonmv: Properly convert to job here.
-                              .map(spec -> spec.deploysTo(zone.environment(), Optional.of(zone.region())))
+                              .map(spec -> spec.includes(zone.environment(), Optional.of(zone.region())))
                               .orElse(false))
                 continue;
             instance = instance.withoutDeploymentJob(job);
