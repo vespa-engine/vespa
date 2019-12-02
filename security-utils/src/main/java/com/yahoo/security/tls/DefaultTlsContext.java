@@ -63,14 +63,14 @@ public class DefaultTlsContext implements TlsContext {
                     String.format("None of the accepted ciphers are supported (supported=%s, accepted=%s)",
                                   supportedCiphers, acceptedCiphers));
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", List.of(allowedCiphers)));
+        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", com.yahoo.vespa.jdk8compat.List.of(allowedCiphers)));
         return allowedCiphers;
     }
 
     private static String[] getAllowedProtocols(SSLContext sslContext) {
         Set<String> allowedProtocols = TlsContext.getAllowedProtocols(sslContext);
-        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", List.of(allowedProtocols)));
-        return allowedProtocols.toArray(String[]::new);
+        log.log(Level.FINE, () -> String.format("Allowed protocols that are supported: %s", com.yahoo.vespa.jdk8compat.List.of(allowedProtocols)));
+        return com.yahoo.vespa.jdk8compat.Collection.toArray(allowedProtocols, String[]::new);
     }
 
     @Override
@@ -131,7 +131,7 @@ public class DefaultTlsContext implements TlsContext {
         if (authorizedPeers != null) {
             builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(authorizedPeers, mode, truststore));
         } else {
-            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, truststore));
+            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, truststore));
         }
         return builder.build();
     }

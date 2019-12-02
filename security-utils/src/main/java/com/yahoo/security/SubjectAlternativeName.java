@@ -64,7 +64,7 @@ public class SubjectAlternativeName {
             case GeneralName.directoryName:
                 return X500Name.getInstance(name).toString();
             case GeneralName.iPAddress:
-                var octets = DEROctetString.getInstance(name.toASN1Primitive()).getOctets();
+                byte[] octets = DEROctetString.getInstance(name.toASN1Primitive()).getOctets();
                 try {
                     return InetAddress.getByAddress(octets).getHostAddress();
                 } catch (UnknownHostException e) {
