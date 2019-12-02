@@ -13,10 +13,12 @@ import java.io.Reader;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Specifies the environments and regions to which an application should be deployed.
@@ -75,14 +77,14 @@ public class DeploymentSpec {
         List<Step> steps = new ArrayList<>(inputSteps);
 
         // Add staging if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.prod)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.staging))) {
+        if (steps.stream().anyMatch(step -> step.concerns(Environment.prod)) &&
+            steps.stream().noneMatch(step -> step.concerns(Environment.staging))) {
             steps.add(new DeploymentSpec.DeclaredZone(Environment.staging));
         }
 
         // Add test if required and missing
-        if (steps.stream().anyMatch(step -> step.deploysTo(Environment.staging)) &&
-            steps.stream().noneMatch(step -> step.deploysTo(Environment.test))) {
+        if (steps.stream().anyMatch(step -> step.concerns(Environment.staging)) &&
+            steps.stream().noneMatch(step -> step.concerns(Environment.test))) {
             steps.add(new DeploymentSpec.DeclaredZone(Environment.test));
         }
 
@@ -162,13 +164,6 @@ public class DeploymentSpec {
     //    to have environment, instance or region variants on those.
     public Optional<AthenzService> athenzService() { return this.athenzService; }
 
-    // TODO remove when 7.135 is the oldest version
-    public Optional<AthenzService> athenzService(InstanceName instanceName, Environment environment, RegionName region) {
-        Optional<DeploymentInstanceSpec> instance = instance(instanceName);
-        if (instance.isEmpty()) return this.athenzService;
-        return instance.get().athenzService(environment, region).or(() -> this.athenzService);
-    }
-
     /** Returns the XML form of this spec, or null if it was not created by fromXml, nor is empty */
     public String xmlForm() { return xmlForm; }
 
@@ -205,9 +200,13 @@ public class DeploymentSpec {
 
     private static List<DeploymentInstanceSpec> instances(List<DeploymentSpec.Step> steps) {
         return steps.stream()
-                    .flatMap(step -> step instanceof ParallelZones ? ((ParallelZones) step).steps.stream() : List.of(step).stream())
-                    .filter(step -> step instanceof DeploymentInstanceSpec).map(DeploymentInstanceSpec.class::cast)
+                    .flatMap(DeploymentSpec::flatten)
                     .collect(Collectors.toList());
+    }
+
+    private static Stream<DeploymentInstanceSpec> flatten(Step step) {
+        if (step instanceof DeploymentInstanceSpec) return Stream.of((DeploymentInstanceSpec) step);
+        return step.steps().stream().flatMap(DeploymentSpec::flatten);
     }
 
     /**
@@ -272,22 +271,36 @@ public class DeploymentSpec {
     /** A deployment step */
     public abstract static class Step {
 
-        /** Returns whether this step deploys to the given region */
-        public final boolean deploysTo(Environment environment) {
-            return deploysTo(environment, Optional.empty());
+        /** Returns whether this step specifies the given environment. */
+        public final boolean concerns(Environment environment) {
+            return concerns(environment, Optional.empty());
         }
 
-        /** Returns whether this step deploys to the given environment, and (if specified) region */
-        public abstract boolean deploysTo(Environment environment, Optional<RegionName> region);
+        /** Returns whether this step specifies the given environment, and, optionally, region. */
+        // TODO jonmv: Remove when 7.147 is the oldest version.
+        public boolean deploysTo(Environment environment, Optional<RegionName> region) {
+            return concerns(environment, region);
+        }
 
-        /** Returns the zones deployed to in this step */
+        /** Returns whether this step specifies the given environment, and, optionally, region. */
+        public abstract boolean concerns(Environment environment, Optional<RegionName> region);
+
+        /** Returns the zones deployed to in this step. */
         public List<DeclaredZone> zones() { return Collections.emptyList(); }
 
-        /** The delay introduced by this step (beyond the time it takes to execute the step). Default is zero. */
+        /** The delay introduced by this step (beyond the time it takes to execute the step). */
         public Duration delay() { return Duration.ZERO; }
 
-        /** Returns all the steps nested in this. This default implementatiino returns an empty list. */
+        /** Returns any steps nested in this. */
         public List<Step> steps() { return List.of(); }
+
+        /** Returns whether this step is a test step. */
+        public boolean isTest() { return false; }
+
+        /** Returns whether the nested steps in this, if any, should be performed in declaration order. */
+        public boolean isOrdered() {
+            return true;
+        }
 
     }
 
@@ -304,7 +317,7 @@ public class DeploymentSpec {
         public Duration delay() { return duration; }
 
         @Override
-        public boolean deploysTo(Environment environment, Optional<RegionName> region) { return false; }
+        public boolean concerns(Environment environment, Optional<RegionName> region) { return false; }
 
         @Override
         public String toString() {
@@ -355,11 +368,14 @@ public class DeploymentSpec {
         public List<DeclaredZone> zones() { return Collections.singletonList(this); }
 
         @Override
-        public boolean deploysTo(Environment environment, Optional<RegionName> region) {
+        public boolean concerns(Environment environment, Optional<RegionName> region) {
             if (environment != this.environment) return false;
             if (region.isPresent() && ! region.equals(this.region)) return false;
             return true;
         }
+
+        @Override
+        public boolean isTest() { return environment.isTest(); }
 
         @Override
         public int hashCode() {
@@ -383,39 +399,82 @@ public class DeploymentSpec {
 
     }
 
-    /** A deployment step which is to run multiple steps (zones or instances) in parallel */
-    public static class ParallelZones extends Step {
+    /** A declared production test */
+    public static class DeclaredTest extends Step {
 
-        private final List<Step> steps;
+        private final RegionName region;
 
-        public ParallelZones(List<Step> steps) {
-            this.steps = List.copyOf(steps);
+        public DeclaredTest(RegionName region) {
+            this.region = Objects.requireNonNull(region);
         }
 
-        /** Returns the steps inside this which are zones */
         @Override
-        public List<DeclaredZone> zones() {
-            return this.steps.stream()
-                             .filter(step -> step instanceof DeclaredZone)
-                             .map(DeclaredZone.class::cast)
-                             .collect(Collectors.toList());
+        public boolean concerns(Environment environment, Optional<RegionName> region) {
+            return region.map(this.region::equals).orElse(true) && environment == Environment.prod;
         }
 
-        /** Returns all the steps nested in this */
         @Override
-        public List<Step> steps() { return steps; }
+        public boolean isTest() { return true; }
 
-        @Override
-        public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-            return steps().stream().anyMatch(zone -> zone.deploysTo(environment, region));
+        /** Returns the region this test is for. */
+        public RegionName region() {
+            return region;
         }
 
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof ParallelZones)) return false;
-            ParallelZones that = (ParallelZones) o;
-            return Objects.equals(steps, that.steps);
+            if (o == null || getClass() != o.getClass()) return false;
+            DeclaredTest that = (DeclaredTest) o;
+            return region.equals(that.region);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(region);
+        }
+
+        @Override
+        public String toString() {
+            return "tests for prod." + region;
+        }
+
+    }
+
+    /** A container for several steps, by default in serial order */
+    public static class Steps extends Step {
+
+        private final List<Step> steps;
+
+        public Steps(List<Step> steps) {
+            this.steps = List.copyOf(steps);
+        }
+
+        @Override
+        public List<DeclaredZone> zones() {
+            return steps.stream()
+                        .flatMap(step -> step.zones().stream())
+                        .collect(Collectors.toUnmodifiableList());
+        }
+
+        @Override
+        public List<Step> steps() { return steps; }
+
+        @Override
+        public boolean concerns(Environment environment, Optional<RegionName> region) {
+            return steps.stream().anyMatch(step -> step.concerns(environment, region));
+        }
+
+        @Override
+        public Duration delay() {
+            return steps.stream().map(Step::delay).reduce(Duration.ZERO, Duration::plus);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            return steps.equals(((Steps) o).steps);
         }
 
         @Override
@@ -425,7 +484,43 @@ public class DeploymentSpec {
 
         @Override
         public String toString() {
-            return steps.size() + " parallel steps";
+            return steps.size() + " steps";
+        }
+
+    }
+
+    /** A container for multiple other steps, which are executed in parallel */
+    public static class ParallelSteps extends Steps {
+
+        public ParallelSteps(List<Step> steps) {
+            super(steps);
+        }
+
+        @Override
+        public Duration delay() {
+            return steps().stream().map(Step::delay).max(Comparator.naturalOrder()).orElse(Duration.ZERO);
+        }
+
+        @Override
+        public boolean isOrdered() {
+            return false;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if ( ! (o instanceof ParallelSteps)) return false;
+            return Objects.equals(steps(), ((ParallelSteps) o).steps());
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(steps());
+        }
+
+        @Override
+        public String toString() {
+            return steps().size() + " parallel steps";
         }
 
     }

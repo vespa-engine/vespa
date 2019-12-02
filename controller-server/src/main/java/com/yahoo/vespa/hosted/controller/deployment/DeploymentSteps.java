@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -91,7 +90,7 @@ public class DeploymentSteps {
     }
 
     private boolean isTest(DeploymentSpec.Step step) {
-        return step.deploysTo(Environment.test) || step.deploysTo(Environment.staging);
+        return step.concerns(Environment.test) || step.concerns(Environment.staging);
     }
 
     /** Resolve job from deployment zone */
