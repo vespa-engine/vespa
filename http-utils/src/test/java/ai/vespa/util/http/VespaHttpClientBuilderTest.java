@@ -6,6 +6,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.routing.HttpRoutePlanner;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -32,7 +33,7 @@ public class VespaHttpClientBuilderTest {
     }
 
     private static void verifyProcessedUriMatchesExpectedOutput(String inputHostString, String expectedHostString) throws HttpException {
-        var routePlanner = new VespaHttpClientBuilder.HttpToHttpsRoutePlanner();
+        HttpRoutePlanner routePlanner = new VespaHttpClientBuilder.HttpToHttpsRoutePlanner();
         HttpRoute newRoute = routePlanner.determineRoute(HttpHost.create(inputHostString), mock(HttpRequest.class), new HttpClientContext());
         HttpHost target = newRoute.getTargetHost();
         assertEquals(expectedHostString, target.toURI());

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
+import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
@@ -396,7 +397,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         public HttpClient createClient() {
             HttpClientBuilder clientBuilder;
             if (connectionParams.useTlsConfigFromEnvironment()) {
-                clientBuilder = VespaTlsAwareClientBuilder.createHttpClientBuilder();
+                clientBuilder = VespaHttpClientBuilder.create();
             } else {
                 clientBuilder = HttpClientBuilder.create();
                 if (useSsl && connectionParams.getSslContext() != null) {
