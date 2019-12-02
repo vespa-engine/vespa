@@ -6,6 +6,7 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.update.AddValueUpdate;
+import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -63,5 +64,31 @@ public class DocumentUpdateTestCase {
 
         upd = Expression.execute(Expression.fromString("input my_str | index my_str"), upd);
         assertTrue(upd.getCreateIfNonExistent());
+    }
+
+    @Test
+    public void assign_updates_to_structs_are_preserved() throws ParseException {
+        var docType = new DocumentType("my_input");
+        var structType = new StructDataType("foobarstruct");
+        var fooField = new Field("foo", DataType.STRING);
+        var barField = new Field("bar", DataType.STRING);
+        structType.addField(fooField);
+        structType.addField(barField);
+        docType.addField(new Field("mystruct", structType));
+
+        var upd = new DocumentUpdate(docType, "id:scheme:my_input::");
+        var updatedStruct = new Struct(structType);
+        updatedStruct.setFieldValue("foo", new StringFieldValue("new groovy value"));
+        updatedStruct.setFieldValue("bar", new StringFieldValue("totally tubular!"));
+        upd.addFieldUpdate(FieldUpdate.createAssign(docType.getField("mystruct"), updatedStruct));
+
+        upd = Expression.execute(Expression.fromString("input mystruct | passthrough mystruct"), upd);
+        assertEquals(upd.fieldUpdates().size(), 1);
+        var fieldUpdate = upd.getFieldUpdate("mystruct");
+        assertNotNull(fieldUpdate);
+        var valueUpdate = fieldUpdate.getValueUpdate(0);
+        assertTrue(valueUpdate instanceof AssignValueUpdate);
+        var av = (AssignValueUpdate)valueUpdate;
+        assertEquals(av.getValue(), updatedStruct);
     }
 }
