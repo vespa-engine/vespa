@@ -13,32 +13,25 @@ class State
 private:
     const std::vector<ValueType>      &_params;
     std::map<const Node *, ValueType> &_type_map;
-    std::vector<ValueType>             _types;
 
 public:
     State(const std::vector<ValueType> &params,
           std::map<const Node *, ValueType> &type_map)
-        : _params(params), _type_map(type_map), _types() {}
+        : _params(params), _type_map(type_map) {}
 
     const ValueType &param_type(size_t idx) {
         assert(idx < _params.size());
         return _params[idx];
     }
-    const ValueType &peek(size_t ridx) const {
-        assert(_types.size() > ridx);
-        return _types[_types.size() - 1 - ridx];
-    }
-    void bind(size_t prune_cnt, const ValueType &type_ref, const Node &node) {
-        ValueType type = type_ref; // need copy since type_ref might be inside _types
-        assert(_types.size() >= prune_cnt);
-        for (size_t i = 0; i < prune_cnt; ++i) {
-            _types.pop_back();
-        }
-        _types.push_back(type);
+    void bind(const ValueType &type, const Node &node) {
+        auto pos = _type_map.find(&node);
+        assert(pos == _type_map.end());
         _type_map.emplace(&node, type);
     }
-    void assert_valid_end_state() const {
-        assert(_types.size() == 1);
+    const ValueType &type(const Node &node) {
+        auto pos = _type_map.find(&node);
+        assert(pos != _type_map.end());
+        return pos->second;
     }
 };
 
@@ -48,22 +41,24 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
                  std::map<const Node *, ValueType> &type_map_out);
     ~TypeResolver();
 
-    //-------------------------------------------------------------------------
+    const ValueType &param_type(size_t idx) {
+        return state.param_type(idx);
+    }
 
-    void assert_valid_end_state() const {
-        state.assert_valid_end_state();
+    void bind(const ValueType &type, const Node &node) {
+        state.bind(type, node);
+    }
+
+    const ValueType &type(const Node &node) {
+        return state.type(node);
     }
 
     //-------------------------------------------------------------------------
-
-    void bind_type(const ValueType &type, const Node &node) {
-        state.bind(node.num_children(), type, node);
-    }
 
     bool check_error(const Node &node) {
         for (size_t i = 0; i < node.num_children(); ++i) {
-            if (state.peek(i).is_error()) {
-                bind_type(ValueType::error_type(), node);
+            if (type(node.get_child(i)).is_error()) {
+                bind(ValueType::error_type(), node);
                 return true;
             }
         }
@@ -71,58 +66,87 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     }
 
     void resolve_op1(const Node &node) {
-        bind_type(state.peek(0), node);
+        bind(type(node.get_child(0)), node);
     }
 
     void resolve_op2(const Node &node) {
-        bind_type(ValueType::join(state.peek(1), state.peek(0)), node);
+        bind(ValueType::join(type(node.get_child(0)),
+                             type(node.get_child(1))), node);
     }
 
     //-------------------------------------------------------------------------
 
     void visit(const Number &node) override {
-        bind_type(ValueType::double_type(), node);
+        bind(ValueType::double_type(), node);
     }
     void visit(const Symbol &node) override {
-        bind_type(state.param_type(node.id()), node);
+        bind(param_type(node.id()), node);
     }
     void visit(const String &node) override {
-        bind_type(ValueType::double_type(), node);
+        bind(ValueType::double_type(), node);
     }
     void visit(const In &node) override { resolve_op1(node); }
     void visit(const Neg &node) override { resolve_op1(node); }
     void visit(const Not &node) override { resolve_op1(node); }
     void visit(const If &node) override {
-        bind_type(ValueType::either(state.peek(1), state.peek(0)), node);
+        bind(ValueType::either(type(node.true_expr()),
+                               type(node.false_expr())), node);
     }
     void visit(const Error &node) override {
-        bind_type(ValueType::error_type(), node);
+        bind(ValueType::error_type(), node);
     }
     void visit(const TensorMap &node) override { resolve_op1(node); }
     void visit(const TensorJoin &node) override { resolve_op2(node); }
     void visit(const TensorReduce &node) override {
-        const ValueType &child = state.peek(0);
-        bind_type(child.reduce(node.dimensions()), node);
+        const ValueType &child = type(node.get_child(0));
+        bind(child.reduce(node.dimensions()), node);
     }
     void visit(const TensorRename &node) override {
-        const ValueType &child = state.peek(0);
-        bind_type(child.rename(node.from(), node.to()), node);
+        const ValueType &child = type(node.get_child(0));
+        bind(child.rename(node.from(), node.to()), node);
     }
     void visit(const TensorLambda &node) override {
-        bind_type(node.type(), node);
+        bind(node.type(), node);
     }
     void visit(const TensorConcat &node) override {
-        bind_type(ValueType::concat(state.peek(1), state.peek(0), node.dimension()), node);
+        bind(ValueType::concat(type(node.get_child(0)),
+                               type(node.get_child(1)), node.dimension()), node);
     }
     void visit(const TensorCreate &node) override {
         for (size_t i = 0; i < node.num_children(); ++i) {
-            if (!state.peek(i).is_double()) {
-                return bind_type(ValueType::error_type(), node);
+            if (!type(node.get_child(i)).is_double()) {
+                return bind(ValueType::error_type(), node);
             }
         }
-        bind_type(node.type(), node);
+        bind(node.type(), node);
     }
-
+    void visit(const TensorPeek &node) override {
+        const ValueType &param_type = type(node.param());
+        std::vector<vespalib::string> dimensions;
+        for (const auto &dim: node.dim_list()) {
+            dimensions.push_back(dim.first);
+            if (dim.second.is_expr()) {
+                if (!type(*dim.second.expr).is_double()) {
+                    return bind(ValueType::error_type(), node);
+                }
+            } else {
+                size_t dim_idx = param_type.dimension_index(dim.first);
+                if (dim_idx == ValueType::Dimension::npos) {
+                    return bind(ValueType::error_type(), node);
+                }
+                const auto &param_dim = param_type.dimensions()[dim_idx];
+                if (param_dim.is_indexed()) {
+                    if (!is_number(dim.second.label)) {
+                        return bind(ValueType::error_type(), node);
+                    }
+                    if (as_number(dim.second.label) >= param_dim.size) {
+                        return bind(ValueType::error_type(), node);
+                    }
+                }
+            }
+        }
+        bind(param_type.reduce(dimensions), node);
+    }
     void visit(const Add &node) override { resolve_op2(node); }
     void visit(const Sub &node) override { resolve_op2(node); }
     void visit(const Mul &node) override { resolve_op2(node); }
@@ -202,7 +226,6 @@ NodeTypes::NodeTypes(const Function &function, const std::vector<ValueType> &inp
     assert(input_types.size() == function.num_params());
     nodes::TypeResolver resolver(input_types, _type_map);
     function.root().traverse(resolver);
-    resolver.assert_valid_end_state();
 }
 
 const ValueType &

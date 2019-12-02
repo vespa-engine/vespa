@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include "value_type.h"
-#include "tensor_function.h"
 #include "aggr.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
@@ -18,8 +16,9 @@ class nbostream;
 namespace eval {
 
 struct Value;
-class Tensor;
+class ValueType;
 class TensorSpec;
+class TensorFunction;
 
 /**
  * Top-level API for a tensor implementation. All Tensor operations
@@ -33,7 +32,6 @@ class TensorSpec;
 struct TensorEngine
 {
     using Aggr = eval::Aggr;
-    using Tensor = eval::Tensor;
     using TensorFunction = eval::TensorFunction;
     using TensorSpec = eval::TensorSpec;
     using Value = eval::Value;
@@ -42,10 +40,10 @@ struct TensorEngine
     using map_fun_t = double (*)(double);
 
     virtual TensorSpec to_spec(const Value &value) const = 0;
-    virtual Value::UP from_spec(const TensorSpec &spec) const = 0;
+    virtual std::unique_ptr<Value> from_spec(const TensorSpec &spec) const = 0;
 
     virtual void encode(const Value &value, nbostream &output) const = 0;
-    virtual Value::UP decode(nbostream &input) const = 0;
+    virtual std::unique_ptr<Value> decode(nbostream &input) const = 0;
 
     virtual const TensorFunction &optimize(const TensorFunction &expr, Stash &) const { return expr; }
 

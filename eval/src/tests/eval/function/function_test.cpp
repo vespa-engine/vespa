@@ -81,6 +81,12 @@ void verify_error(const vespalib::string &expr, const vespalib::string &expected
     EXPECT_EQUAL(expected_error, function.get_error());
 }
 
+void verify_parse(const vespalib::string &expr, const vespalib::string &expect) {
+    Function function = Function::parse(expr);
+    EXPECT_TRUE(!function.has_error());
+    EXPECT_EQUAL(function.dump_as_lambda(), expect);
+}
+
 TEST("require that scientific numbers can be parsed") {
     EXPECT_EQUAL(1.0,     as_number(Function::parse(params, "1")));
     EXPECT_EQUAL(2.5,     as_number(Function::parse(params, "2.5")));
@@ -929,6 +935,28 @@ TEST("require that convenient tensor create detects too large indexed dimensions
 TEST("require that convenient tensor create detects under-specified cells") {
     TEST_DO(verify_error("tensor(x[1],y[1]):[1]",
                          "[tensor(x[1],y[1]):[]...[expected '[', but got '1']...[1]]"));
+}
+
+//-----------------------------------------------------------------------------
+
+TEST("require that tensor peek can be parsed") {
+    TEST_DO(verify_parse("t{x:1,y:foo}", "f(t)(t{x:1,y:foo})"));
+}
+
+TEST("require that tensor peek can contain expressions") {
+    TEST_DO(verify_parse("t{x:1+2,y:foo}", "f(t)(t{x:(1+2),y:foo})"));
+    TEST_DO(verify_parse("t{x:1+bar,y:foo}", "f(t,bar)(t{x:(1+bar),y:foo})"));
+    TEST_DO(verify_parse("t{x:1,y:foo+2}", "f(t,foo)(t{x:1,y:(foo+2)})"));
+    TEST_DO(verify_parse("t{x:1,y:(foo)}", "f(t,foo)(t{x:1,y:(foo)})"));
+}
+
+TEST("require that tensor peek can contain extra whitespace") {
+    TEST_DO(verify_parse(" t { x : 1 + bar , y : foo + 2 } ",
+                         "f(t,bar,foo)(t{x:(1+bar),y:(foo+2)})"));
+}
+
+TEST("require that empty tensor peek is not allowed") {
+    TEST_DO(verify_error("x{}", "[x{}]...[empty peek spec]...[]"));
 }
 
 //-----------------------------------------------------------------------------

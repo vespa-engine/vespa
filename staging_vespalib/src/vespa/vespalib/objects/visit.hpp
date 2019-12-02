@@ -48,7 +48,7 @@ template<typename T>
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const std::vector<T> &list) {
     self.openStruct(name, "std::vector");
     for (uint32_t i = 0; i < list.size(); ++i) {
-        visit(self, vespalib::make_string("[%u]", i), list[i]);
+        ::visit(self, vespalib::make_string("[%u]", i), list[i]);
     }
     self.closeStruct();
 }
@@ -57,7 +57,7 @@ template<typename T>
 void visit(vespalib::ObjectVisitor &self, const vespalib::string &name, const vespalib::Array<T> &list) {
     self.openStruct(name, "vespalib::Array");
     for (uint32_t i = 0; i < list.size(); ++i) {
-        visit(self, vespalib::make_string("[%u]", i), list[i]);
+        ::visit(self, vespalib::make_string("[%u]", i), list[i]);
     }
     self.closeStruct();
 }

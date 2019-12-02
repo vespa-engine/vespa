@@ -20,10 +20,10 @@ public:
     static const TensorEngine &ref() { return _engine; };
 
     TensorSpec to_spec(const Value &value) const override;
-    Value::UP from_spec(const TensorSpec &spec) const override;
+    std::unique_ptr<Value> from_spec(const TensorSpec &spec) const override;
 
     void encode(const Value &value, nbostream &output) const override;
-    Value::UP decode(nbostream &input) const override;
+    std::unique_ptr<Value> decode(nbostream &input) const override;
 
     const Value &map(const Value &a, map_fun_t function, Stash &stash) const override;
     const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const override;

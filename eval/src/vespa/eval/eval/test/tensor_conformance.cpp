@@ -810,6 +810,25 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_tensor_peek(const vespalib::string &expr, const TensorSpec &param, const TensorSpec &expect) {
+        TEST_DO(verify_result(Expr_TT(expr).eval(engine, param, spec(1.0)), expect));
+    }
+
+    void test_tensor_peek() {
+        auto param_double = spec({x({"0", "1"}),y(2)}, Seq({1.0, 2.0, 3.0, 4.0}));
+        auto param_float = spec(float_cells({x({"0", "1"}),y(2)}), Seq({1.0, 2.0, 3.0, 4.0}));
+        TEST_DO(test_tensor_peek("tensor(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_double, spec(x(2), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_float, spec(x(2), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor<float>(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_double, spec(float_cells({x(2)}), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor<float>(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_float, spec(float_cells({x(2)}), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("a{x:(b)}", param_double, spec(y(2), Seq({3.0, 4.0}))));
+        TEST_DO(test_tensor_peek("a{x:(b)}", param_float, spec(float_cells({y(2)}), Seq({3.0, 4.0}))));
+        TEST_DO(test_tensor_peek("a{y:(b)}", param_double, spec(x({"0", "1"}), Seq({2.0, 4.0}))));
+        TEST_DO(test_tensor_peek("a{y:(b)}", param_float, spec(float_cells({x({"0", "1"})}), Seq({2.0, 4.0}))));
+    }
+
+    //-------------------------------------------------------------------------
+
     void verify_encode_decode(const TensorSpec &spec,
                               const TensorEngine &encode_engine,
                               const TensorEngine &decode_engine)
@@ -893,6 +912,7 @@ struct TestContext {
         TEST_DO(test_rename());
         TEST_DO(test_tensor_lambda());
         TEST_DO(test_tensor_create());
+        TEST_DO(test_tensor_peek());
         TEST_DO(test_binary_format());
     }
 };

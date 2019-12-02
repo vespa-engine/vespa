@@ -97,7 +97,7 @@ public:
     void reserve(size_t sz) override { _result.reserve(sz); }
     void negate() override;
 private:
-    void visitMembers(vespalib::ObjectVisitor &visitor) const override { visit(visitor, "Vector", _result); }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override { ::visit(visitor, "Vector", _result); }
     size_t onSize() const override { return _result.size(); }
     const vespalib::Identifiable::RuntimeClass & getBaseClass() const override { return B::_RTClass; }
     int64_t onGetInteger(size_t index) const override { return _result[index].getInteger(index); }

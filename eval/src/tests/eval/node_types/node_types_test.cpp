@@ -214,6 +214,31 @@ TEST("require that tensor create resolves correct type") {
     TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error"));
 }
 
+TEST("require that tensor peek resolves correct type") {
+    TEST_DO(verify("tensor(x[3]){x:1}", "double"));
+    TEST_DO(verify("tensor(x[3]){x:double}", "error"));
+    TEST_DO(verify("tensor(x[3]){x:(double)}", "double"));
+    TEST_DO(verify("tensor(x[3]){x:3}", "error"));
+    TEST_DO(verify("tensor(x{}){x:1}", "double"));
+    TEST_DO(verify("tensor(x{}){x:foo}", "double"));
+    TEST_DO(verify("tensor(x{}){x:(double)}", "double"));
+    TEST_DO(verify("tensor(x{}){x:tensor(x[3])}", "error"));
+    TEST_DO(verify("tensor(x{},y[3]){x:foo,y:2}", "double"));
+    TEST_DO(verify("tensor(x{},y[3]){x:foo}", "tensor(y[3])"));
+    TEST_DO(verify("tensor(x{},y[3]){y:2}", "tensor(x{})"));
+    TEST_DO(verify("tensor<float>(x[3]){x:1}", "double"));
+    TEST_DO(verify("tensor<float>(x[3]){x:double}", "error"));
+    TEST_DO(verify("tensor<float>(x[3]){x:(double)}", "double"));
+    TEST_DO(verify("tensor<float>(x[3]){x:3}", "error"));
+    TEST_DO(verify("tensor<float>(x{}){x:1}", "double"));
+    TEST_DO(verify("tensor<float>(x{}){x:foo}", "double"));
+    TEST_DO(verify("tensor<float>(x{}){x:(double)}", "double"));
+    TEST_DO(verify("tensor<float>(x{}){x:tensor(x[3])}", "error"));
+    TEST_DO(verify("tensor<float>(x{},y[3]){x:foo,y:2}", "double"));
+    TEST_DO(verify("tensor<float>(x{},y[3]){x:foo}", "tensor<float>(y[3])"));
+    TEST_DO(verify("tensor<float>(x{},y[3]){y:2}", "tensor<float>(x{})"));
+}
+
 TEST("require that tensor concat resolves correct type") {
     TEST_DO(verify("concat(double,double,x)", "tensor(x[2])"));
     TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),x)", "tensor(x[5])"));

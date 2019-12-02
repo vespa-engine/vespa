@@ -734,6 +734,37 @@ bool maybe_parse_tensor_generator(ParseContext &ctx) {
     return true;
 }
 
+// tensor_value <-(bind)- '{d1:1,d2:foo,d3:(a+b)}'
+void parse_tensor_peek(ParseContext &ctx) {
+    ctx.skip_spaces();
+    ctx.eat('{');
+    nodes::TensorPeek::Spec peek_spec;
+    CommaTracker list;
+    while (!ctx.find_list_end()) {
+        list.maybe_eat_comma(ctx);
+        auto dim_name = get_ident(ctx, false);
+        ctx.skip_spaces();
+        ctx.eat(':');
+        if (!ctx.failed()) {
+            ParseContext::InputMark before_label = ctx.get_input_mark();
+            auto label = get_ident(ctx, false);
+            bool verbatim = !ctx.failed() && ctx.find_expression_end();
+            if (verbatim) {
+                peek_spec.emplace(dim_name, label);
+            } else {
+                ctx.restore_input_mark(before_label);
+                peek_spec.emplace(dim_name, get_expression(ctx));
+            }
+        }
+    }
+    ctx.eat('}');
+    if (peek_spec.empty()) {
+        return ctx.fail("empty peek spec");
+    }
+    auto peek = std::make_unique<nodes::TensorPeek>(ctx.pop_expression(), std::move(peek_spec));
+    ctx.push_expression(std::move(peek));
+}
+
 void parse_tensor_concat(ParseContext &ctx) {
     Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
@@ -858,6 +889,9 @@ bool parse_operator(ParseContext &ctx) {
     if (op.get() != nullptr) {
         ctx.push_operator(std::move(op));
         ctx.skip(str.size());
+    } else if (ctx.get() == '{') {
+        parse_tensor_peek(ctx);
+        expect_value = false;
     } else {
         vespalib::string ident = get_ident(ctx, true);
         if (ident == "in") {

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 

@@ -42,6 +42,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const TensorLambda &) override { add_byte(15); } // type/lambda should be part of key
     void visit(const TensorConcat &) override { add_byte(16); } // dimension should be part of key
     void visit(const TensorCreate &) override { add_byte(17); } // type should be part of key
+    void visit(const TensorPeek   &) override { add_byte(18); } // addr should be part of key
     void visit(const Add          &) override { add_byte(20); }
     void visit(const Sub          &) override { add_byte(21); }
     void visit(const Mul          &) override { add_byte(22); }

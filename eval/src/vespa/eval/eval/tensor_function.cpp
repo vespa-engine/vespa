@@ -129,6 +129,63 @@ void op_tensor_create(State &state, uint64_t param) {
     state.pop_n_push(i, result);
 }
 
+const Value &extract_single_value(const TensorSpec &spec, const TensorSpec::Address &addr, State &state) {
+    auto pos = spec.cells().find(addr);
+    if (pos == spec.cells().end()) {
+        return state.stash.create<DoubleValue>(0.0);
+    }
+    return state.stash.create<DoubleValue>(pos->second);
+}
+
+const Value &extract_tensor_subspace(const ValueType &my_type, const TensorSpec &spec, const TensorSpec::Address &addr, State &state) {
+    TensorSpec my_spec(my_type.to_spec());
+    for (const auto &cell: spec.cells()) {
+        bool keep = true;
+        TensorSpec::Address my_addr;
+        for (const auto &binding: cell.first) {
+            auto pos = addr.find(binding.first);
+            if (pos == addr.end()) {
+                my_addr.emplace(binding.first, binding.second);
+            } else {
+                if (!(pos->second == binding.second)) {
+                    keep = false;
+                }
+            }
+        }
+        if (keep) {
+            my_spec.add(my_addr, cell.second);
+        }
+    }
+    return *state.stash.create<Value::UP>(state.engine.from_spec(my_spec));
+}
+
+void op_tensor_peek(State &state, uint64_t param) {
+    const Peek &self = unwrap_param<Peek>(param);
+    TensorSpec::Address addr;
+    size_t child_cnt = 0;
+    for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
+        if (std::holds_alternative<TensorSpec::Label>(pos->second)) {
+            addr.emplace(pos->first, std::get<TensorSpec::Label>(pos->second));
+        } else {
+            assert(std::holds_alternative<TensorFunction::Child>(pos->second));
+            size_t index(state.peek(child_cnt++).as_double());
+            size_t dim_idx = self.param_type().dimension_index(pos->first);
+            assert(dim_idx != ValueType::Dimension::npos);
+            const auto &param_dim = self.param_type().dimensions()[dim_idx];
+            if (param_dim.is_mapped()) {
+                addr.emplace(pos->first, vespalib::make_string("%zu", index));
+            } else {
+                addr.emplace(pos->first, index);
+            }
+        }
+    }
+    TensorSpec spec = state.engine.to_spec(state.peek(child_cnt++));
+    const Value &result = self.result_type().is_double()
+                          ? extract_single_value(spec, addr, state)
+                          : extract_tensor_subspace(self.result_type(), spec, addr, state);
+    state.pop_n_push(child_cnt, result);
+}
+
 } // namespace vespalib::eval::tensor_function
 
 //-----------------------------------------------------------------------------
@@ -302,6 +359,44 @@ Create::visit_children(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
+void
+Peek::push_children(std::vector<Child::CREF> &children) const
+{
+    children.emplace_back(_param);
+    for (const auto &dim: _spec) {
+        if (std::holds_alternative<Child>(dim.second)) {
+            children.emplace_back(std::get<Child>(dim.second));
+        }
+    }
+}
+
+Instruction
+Peek::compile_self(Stash &) const
+{
+    return Instruction(op_tensor_peek, wrap_param<Peek>(*this));
+}
+
+void
+Peek::visit_children(vespalib::ObjectVisitor &visitor) const
+{
+    ::visit(visitor, "param", _param.get());
+    for (const auto &dim: _spec) {
+        if (std::holds_alternative<TensorSpec::Label>(dim.second)) {
+            const auto &label = std::get<TensorSpec::Label>(dim.second);
+            if (label.is_mapped()) {
+                ::visit(visitor, dim.first, label.name);
+            } else {
+                ::visit(visitor, dim.first, label.index);
+            }
+        } else {
+            assert(std::holds_alternative<Child>(dim.second));
+            ::visit(visitor, dim.first, std::get<Child>(dim.second).get());
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 Instruction
 Rename::compile_self(Stash &stash) const
 {
@@ -374,6 +469,15 @@ const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dim
 
 const Node &create(const ValueType &type, const std::map<TensorSpec::Address,Node::CREF> &spec, Stash &stash) {
     return stash.create<Create>(type, spec);
+}
+
+const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash) {
+    std::vector<vespalib::string> dimensions;
+    for (const auto &dim_spec: spec) {
+        dimensions.push_back(dim_spec.first);
+    }
+    ValueType result_type = param.result_type().reduce(dimensions);
+    return stash.create<Peek>(result_type, param, spec);
 }
 
 const Node &rename(const Node &child, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) {

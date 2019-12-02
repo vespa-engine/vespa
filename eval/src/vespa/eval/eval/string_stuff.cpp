@@ -5,6 +5,19 @@
 
 namespace vespalib::eval {
 
+bool is_number(const vespalib::string &str) {
+    for (char c: str) {
+        if (!isdigit(c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+size_t as_number(const vespalib::string &str) {
+    return atoi(str.c_str());
+}
+
 vespalib::string as_string(const TensorSpec::Address &address) {
     CommaTracker label_list;
     vespalib::string str = "{";

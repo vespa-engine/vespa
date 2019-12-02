@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <map>
 
 using namespace vespalib;
@@ -49,12 +50,27 @@ struct EvalCtx {
     Value::UP make_false() {
         return engine.from_spec(TensorSpec("double").add({}, 0.0));
     }
-    Value::UP make_simple_vector() {
+    Value::UP make_vector(std::initializer_list<double> cells, vespalib::string dim = "x", bool mapped = false) {
+        vespalib::string type_spec = mapped
+                                     ? make_string("tensor(%s{})", dim.c_str())
+                                     : make_string("tensor(%s[%zu])", dim.c_str(), cells.size());
+        TensorSpec spec(type_spec);
+        size_t idx = 0;
+        for (double cell_value: cells) {
+            TensorSpec::Label label = mapped
+                                      ? TensorSpec::Label(make_string("%zu", idx++))
+                                      : TensorSpec::Label(idx++);
+            spec.add({{dim, label}}, cell_value);
+        }
+        return engine.from_spec(spec);
+    }
+    Value::UP make_mixed_tensor(double a, double b, double c, double d) {
         return engine.from_spec(
-                TensorSpec("tensor(x[3])")
-                .add({{"x",0}}, 1)
-                .add({{"x",1}}, 2)
-                .add({{"x",2}}, 3));
+                TensorSpec("tensor(x{},y[2])")
+                .add({{"x", "foo"}, {"y", 0}}, a)
+                .add({{"x", "foo"}, {"y", 1}}, b)
+                .add({{"x", "bar"}, {"y", 0}}, c)
+                .add({{"x", "bar"}, {"y", 1}}, d));
     }
     Value::UP make_tensor_matrix_first_half() {
         return engine.from_spec(
@@ -240,7 +256,7 @@ TEST("require that tensor create works") {
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     size_t b_id = ctx.add_tensor(ctx.make_double(2.0));
     Value::UP my_const = ctx.make_double(3.0);
-    Value::UP expect = ctx.make_simple_vector();
+    Value::UP expect = ctx.make_vector({1.0, 2.0, 3.0});
     const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
     const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
     const auto &c = const_value(*my_const, ctx.stash);
@@ -255,6 +271,56 @@ TEST("require that tensor create works") {
     EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
     TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
+TEST("require that single value tensor peek works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
+    Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
+    Value::UP expect = ctx.make_vector({2.0, 3.0, 0.0});
+    const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &t = const_value(*my_const, ctx.stash);
+    const auto &peek1 = peek(t, {{"x", "foo"}, {"y", a}}, ctx.stash);
+    const auto &peek2 = peek(t, {{"x", "bar"}, {"y", size_t(0)}}, ctx.stash);
+    const auto &peek3 = peek(t, {{"x", "bar"}, {"y", size_t(1000)}}, ctx.stash);
+    const auto &fun = create(ValueType::from_spec("tensor(x[3])"),
+                             {
+                                 {{{"x", 0}}, peek1},
+                                 {{{"x", 1}}, peek2},
+                                 {{{"x", 2}}, peek3}
+                             },
+                             ctx.stash);
+    EXPECT_TRUE(fun.result_is_mutable());
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
+TEST("require that tensor subspace tensor peek works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
+    Value::UP expect = ctx.make_vector({3.0, 4.0}, "y");
+    const auto &t = const_value(*my_const, ctx.stash);
+    const auto &fun = peek(t, {{"x", "bar"}}, ctx.stash);
+    EXPECT_TRUE(fun.result_is_mutable());
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
+TEST("require that automatic string conversion tensor peek works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
+    Value::UP my_const = ctx.make_vector({1.0, 2.0, 3.0}, "x", true);
+    const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &t = const_value(*my_const, ctx.stash);
+    const auto &fun = peek(t, {{"x", a}}, ctx.stash);
+    EXPECT_TRUE(fun.result_is_mutable());
+    EXPECT_TRUE(fun.result_type().is_double());
+    const auto &prog = ctx.compile(fun);
+    const Value &result = ctx.eval(prog);
+    EXPECT_TRUE(result.is_double());
+    EXPECT_EQUAL(2.0, result.as_double());
 }
 
 TEST("require that tensor rename works") {
@@ -365,20 +431,20 @@ TEST("require that push_children works") {
 
 TEST("require that tensor function can be dumped for debugging") {
     Stash stash;
-    auto my_value_1 = stash.create<DoubleValue>(5.0);
-    auto my_value_2 = stash.create<DoubleValue>(1.0);
+    auto my_value_1 = stash.create<DoubleValue>(1.0);
+    auto my_value_2 = stash.create<DoubleValue>(2.0);
     //-------------------------------------------------------------------------
     const auto &x5 = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
     const auto &mapped_x5 = map(x5, operation::Relu::f, stash);
     const auto &const_1 = const_value(my_value_1, stash);
     const auto &joined_x5 = join(mapped_x5, const_1, operation::Mul::f, stash);
     //-------------------------------------------------------------------------
-    const auto &x2_0 = const_value(my_value_1, stash);
-    const auto &x2_1 = const_value(my_value_2, stash);
+    const auto &peek1 = peek(x5, {{"x", const_1}}, stash);
+    const auto &peek2 = peek(x5, {{"x", size_t(2)}}, stash);
     const auto &x2 = create(ValueType::from_spec("tensor(x[2])"),
                             {
-                                {{{"x", 0}}, x2_0},
-                                {{{"x", 1}}, x2_1}
+                                {{{"x", 0}}, peek1},
+                                {{{"x", 1}}, peek2}
                             }, stash);
     const auto &a3y10 = inject(ValueType::from_spec("tensor(a[3],y[10])"), 2, stash);
     const auto &a3 = reduce(a3y10, Aggr::SUM, {"y"}, stash);
