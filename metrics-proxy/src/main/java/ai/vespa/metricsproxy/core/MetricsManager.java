@@ -46,6 +46,8 @@ public class MetricsManager {
     private final NodeDimensions nodeDimensions;
 
     private volatile Map<DimensionId, String> extraDimensions = new HashMap<>();
+    private volatile Instant externalMetricsUpdateTime = Instant.now();
+    private static final Duration EXTERNAL_DIMENSIONS_TTL = Duration.ofMinutes(10);
 
     public MetricsManager(VespaServices vespaServices,
                           VespaMetrics vespaMetrics,
@@ -88,6 +90,7 @@ public class MetricsManager {
         List<MetricsPacket.Builder> result = vespaMetrics.getMetrics(services);
         log.log(DEBUG, () -> "Got " + result.size() + " metrics packets for vespa services.");
 
+        clearStaleMetrics();
         List<MetricsPacket.Builder> externalPackets = externalMetrics.getMetrics().stream()
                 .filter(MetricsPacket.Builder::hasMetrics)
                 .collect(toList());
@@ -145,12 +148,21 @@ public class MetricsManager {
     }
 
     public void setExtraMetrics(List<MetricsPacket.Builder> packets) {
+        externalMetricsUpdateTime = Instant.now();
         extraDimensions = extractConfigserverDimensions(packets);
         externalMetrics.setExtraMetrics(packets);
     }
 
     public Map<DimensionId, String> getExtraDimensions() {
+        clearStaleMetrics();
         return this.extraDimensions;
+    }
+
+    private void clearStaleMetrics() {
+        if (Duration.between(externalMetricsUpdateTime, Instant.now()).getSeconds() > EXTERNAL_DIMENSIONS_TTL.getSeconds()) {
+            this.extraDimensions = new HashMap<>();
+            externalMetrics.setExtraMetrics(Collections.emptyList());
+        }
     }
 
     /**
