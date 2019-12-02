@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
@@ -27,7 +28,6 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
     protected String variablePartXml() {
         return "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
 
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
                "    <binding>http://*/application/v4/*</binding>\n" +
@@ -39,11 +39,6 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
                "    <binding>http://*/zone/v1/*</binding>\n" +
                "    <binding>http://*/api/zone/v1</binding>\n" +
                "    <binding>http://*/api/zone/v1/*</binding>\n" +
-               "  </handler>\n" +
-
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
-               "    <binding>http://*/user/v1/*</binding>\n" +
-               "    <binding>http://*/api/user/v1/*</binding>\n" +
                "  </handler>\n" +
 
                "  <http>\n" +
@@ -69,7 +64,8 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         private final String path;
         private final Request.Method method;
         private byte[] data = new byte[0];
-        private Principal user = () -> "user@test";
+        private Principal principal = () -> "user@test";
+        private User user;
         private Set<Role> roles = Set.of(Role.everyone());
 
         private RequestBuilder(String path, Request.Method method) {
@@ -79,13 +75,15 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
 
         public RequestBuilder data(byte[] data) { this.data = data; return this; }
         public RequestBuilder data(String data) { this.data = data.getBytes(StandardCharsets.UTF_8); return this; }
-        public RequestBuilder user(String user) { this.user = new SimplePrincipal(user); return this; }
+        public RequestBuilder principal(String principal) { this.principal = new SimplePrincipal(principal); return this; }
+        public RequestBuilder user(User user) { this.user = user; return this; }
         public RequestBuilder roles(Set<Role> roles) { this.roles = roles; return this; }
 
         @Override
         public Request get() {
-            Request request = new Request("http://localhost:8080" + path, data, method, user);
-            request.getAttributes().put(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(user, roles));
+            Request request = new Request("http://localhost:8080" + path, data, method, principal);
+            request.getAttributes().put(SecurityContext.ATTRIBUTE_NAME, new SecurityContext(principal, roles));
+            if (user != null) request.getAttributes().put(User.ATTRIBUTE_NAME, user);
             request.getHeaders().put("Content-Type", "application/json");
             return request;
         }

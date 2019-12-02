@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.user;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -19,22 +20,27 @@ import com.yahoo.slime.SlimeStream;
 import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
+import com.yahoo.vespa.hosted.controller.api.integration.ApplicationIdSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.user.Roles;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserId;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.vespa.hosted.controller.api.role.TenantRole;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -51,6 +57,7 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
     private static final String optionalPrefix = "/api";
+    private static final TenantName sandboxTenant = TenantName.from("sandbox");
 
     private final UserManagement users;
     private final Controller controller;
@@ -84,6 +91,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(Path path, HttpRequest request) {
+        if (path.matches("/user/v1/user")) return userMetadata(request);
         if (path.matches("/user/v1/tenant/{tenant}")) return listTenantRoleMembers(path.get("tenant"));
         if (path.matches("/user/v1/tenant/{tenant}/application/{application}")) return listApplicationRoleMembers(path.get("tenant"), path.get("application"));
 
@@ -111,6 +119,72 @@ public class UserApiHandler extends LoggingRequestHandler {
         EmptyResponse response = new EmptyResponse();
         response.headers().put("Allow", "GET,PUT,POST,PATCH,DELETE,OPTIONS");
         return response;
+    }
+
+    private HttpResponse userMetadata(HttpRequest request) {
+        User user = getAttribute(request, User.ATTRIBUTE_NAME, User.class);
+        Set<Role> roles = getAttribute(request, SecurityContext.ATTRIBUTE_NAME, SecurityContext.class).roles();
+
+        ApplicationIdSnapshot snapshot = controller.applicationIdSnapshot();
+        Map<TenantName, List<TenantRole>> tenantRolesByTenantName = roles.stream()
+                .flatMap(role -> filterTenantRoles(role).stream())
+                .distinct()
+                .sorted(Comparator.comparing(Role::definition).reversed())
+                .collect(Collectors.groupingBy(TenantRole::tenant, Collectors.toList()));
+
+        // List of operator roles, currently only one available, but possible to extend
+        List<Role> operatorRoles = roles.stream()
+                .filter(role -> role.definition().equals(RoleDefinition.hostedOperator))
+                .collect(Collectors.toList());
+
+
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+
+        toSlime(root.setObject("user"), user);
+
+        Cursor tenants = root.setObject("tenants");
+        InstanceName userInstance = InstanceName.from(user.nickname());
+        tenantRolesByTenantName.keySet().stream()
+                .sorted()
+                .forEach(tenant -> {
+                    Cursor tenantObject = tenants.setObject(tenant.value());
+
+                    Cursor tenantRolesObject = tenantObject.setArray("roles");
+                    tenantRolesByTenantName.getOrDefault(tenant, List.of())
+                            .forEach(role -> tenantRolesObject.addString(role.definition().name()));
+
+                    Cursor tenantApplicationsObject = tenantObject.setObject("applications");
+                    accessibleInstances(snapshot, tenant, userInstance).entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey())
+                            .forEach(appInstances -> {
+                                Cursor applicationObject = tenantApplicationsObject.setObject(appInstances.getKey().value());
+                                Cursor applicationInstancesObject = applicationObject.setArray("instances");
+                                appInstances.getValue().stream()
+                                        .sorted()
+                                        .forEach(instance -> applicationInstancesObject.addString(instance.value()));
+                            });
+                });
+
+        if (!operatorRoles.isEmpty()) {
+            Cursor operator = root.setArray("operator");
+            operatorRoles.forEach(role -> operator.addString(role.definition().name()));
+        }
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private Map<ApplicationName, Set<InstanceName>> accessibleInstances(
+            ApplicationIdSnapshot snapshot, TenantName tenant, InstanceName userInstance) {
+        return snapshot.applications(tenant).stream()
+                .filter(application ->      controller.system().isPublic()
+                                       || ! sandboxTenant.equals(tenant)
+                                       ||   snapshot.instances(tenant, application).contains(userInstance))
+                .collect(Collectors.toUnmodifiableMap(
+                        Function.identity(),
+                        application -> controller.system().isPublic() || ! sandboxTenant.equals(tenant) ?
+                                snapshot.instances(tenant, application) :
+                                Set.of(userInstance)));
     }
 
     private HttpResponse listTenantRoleMembers(String tenantName) {
@@ -151,14 +225,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         Cursor usersArray = root.setArray("users");
         memberships.forEach((user, userRoles) -> {
             Cursor userObject = usersArray.addObject();
-            userObject.setString("name", user.name());
-            userObject.setString("email", user.email());
-            if (user.nickname() != null) {
-                userObject.setString("nickname", user.nickname());
-            }
-            if (user.picture()!= null) {
-                userObject.setString("picture", user.picture());
-            }
+            toSlime(userObject, user);
 
             Cursor rolesObject = userObject.setObject("roles");
             for (Role role : roles) {
@@ -167,6 +234,13 @@ public class UserApiHandler extends LoggingRequestHandler {
                 roleObject.setBool("implied", userRoles.stream().anyMatch(userRole -> userRole.implies(role)));
             }
         });
+    }
+
+    private void toSlime(Cursor userObject, User user) {
+        if (user.name() != null) userObject.setString("name", user.name());
+        userObject.setString("email", user.email());
+        if (user.nickname() != null) userObject.setString("nickname", user.nickname());
+        if (user.picture() != null) userObject.setString("picture", user.picture());
     }
 
     private HttpResponse addTenantRoleMember(String tenantName, HttpRequest request) {
@@ -299,4 +373,24 @@ public class UserApiHandler extends LoggingRequestHandler {
         }
     }
 
+    private static Set<TenantRole> filterTenantRoles(Role role) {
+        if (!(role instanceof TenantRole))
+            return Set.of();
+
+        TenantRole tenantRole = (TenantRole) role;
+        if (tenantRole.definition() == RoleDefinition.administrator || tenantRole.definition() == RoleDefinition.developer)
+            return Set.of(tenantRole);
+
+        if (tenantRole.definition() == RoleDefinition.athenzTenantAdmin)
+            return Set.of(Role.administrator(tenantRole.tenant()), Role.developer(tenantRole.tenant()));
+
+        return Set.of();
+    }
+
+    private static <T> T getAttribute(HttpRequest request, String attributeName, Class<T> clazz) {
+        return Optional.ofNullable(request.getJDiscRequest().context().get(attributeName))
+                .filter(clazz::isInstance)
+                .map(clazz::cast)
+                .orElseThrow(() -> new IllegalArgumentException("Attribute '" + attributeName + "' was not set on request"));
+    }
 }

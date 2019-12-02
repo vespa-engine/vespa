@@ -221,7 +221,7 @@ public class JobRunnerTest {
 
         // Thread is still trying to deploy tester -- delete application, and see all data is garbage collected.
         assertEquals(Collections.singletonList(runId), jobs.active().stream().map(run -> run.id()).collect(Collectors.toList()));
-        tester.controllerTester().controller().applications().deleteApplication(TenantAndApplicationId.from(id), tester.controllerTester().credentialsFor(TenantAndApplicationId.from(id)));
+        tester.controllerTester().controller().applications().deleteApplication(TenantAndApplicationId.from(id), tester.controllerTester().credentialsFor(id.tenant()));
         assertEquals(Collections.emptyList(), jobs.active());
         assertEquals(runId, jobs.last(id, systemTest).get().id());
 

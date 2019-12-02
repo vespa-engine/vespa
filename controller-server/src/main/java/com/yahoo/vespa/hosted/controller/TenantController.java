@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -61,9 +62,10 @@ public class TenantController {
                       .collect(Collectors.toList());
     }
 
+    // TODO jonmv: Remove.
     /** Returns the list of tenants accessible to the given user. */
     public List<Tenant> asList(Credentials credentials) {
-        return accessControl.accessibleTenants(asList(), credentials);
+        return ((AthenzFacade) accessControl).accessibleTenants(asList(), credentials);
     }
 
     /** Locks a tenant for modification and applies the given action. */

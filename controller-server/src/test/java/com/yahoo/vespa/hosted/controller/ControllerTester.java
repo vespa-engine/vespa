@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
+import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -38,7 +39,9 @@ import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.security.AthenzCredentials;
 import com.yahoo.vespa.hosted.controller.security.AthenzTenantSpec;
+import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
@@ -271,12 +274,24 @@ public final class ControllerTester {
         return domain;
     }
 
-    public Optional<AthenzDomain> domainOf(TenantAndApplicationId id) {
-        Tenant tenant = controller().tenants().require(id.tenant());
-        return tenant.type() == Tenant.Type.athenz ? Optional.of(((AthenzTenant) tenant).domain()) : Optional.empty();
+    public TenantName createTenant(String tenantName) {
+        return createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(),
+                            nextPropertyId.getAndIncrement());
     }
 
-    public TenantName createTenant(String tenantName, String domainName, Long propertyId, Optional<Contact> contact) {
+    public TenantName createTenant(String tenantName, Tenant.Type type) {
+        switch (type) {
+            case athenz: return createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(), nextPropertyId.getAndIncrement());
+            case cloud: return createCloudTenant(tenantName);
+            default: throw new UnsupportedOperationException();
+        }
+    }
+
+    public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
+        return createAthenzTenant(tenantName, domainName, propertyId, Optional.empty());
+    }
+
+    private TenantName createAthenzTenant(String tenantName, String domainName, Long propertyId, Optional<Contact> contact) {
         TenantName name = TenantName.from(tenantName);
         Optional<Tenant> existing = controller().tenants().get(name);
         if (existing.isPresent()) return name;
@@ -296,36 +311,47 @@ public final class ControllerTester {
         return name;
     }
 
-    public TenantName createTenant(String tenantName) {
-        return createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(),
-                            nextPropertyId.getAndIncrement());
+    private TenantName createCloudTenant(String tenantName) {
+        TenantName tenant = TenantName.from(tenantName);
+        TenantSpec spec = new CloudTenantSpec(tenant, "token");
+        controller().tenants().create(spec, new Credentials(new SimplePrincipal("dev")));
+        return tenant;
     }
 
-    public TenantName createTenant(String tenantName, String domainName, Long propertyId) {
-        return createTenant(tenantName, domainName, propertyId, Optional.empty());
+    public Optional<Credentials> credentialsFor(TenantName tenantName) {
+        Tenant tenant = controller().tenants().require(tenantName);
+
+        switch (tenant.type()) {
+            case athenz:
+                return Optional.of(new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
+                                                                             ((AthenzTenant) tenant).domain(),
+                                                                             new OktaIdentityToken("okta-identity-token"),
+                                                                             new OktaAccessToken("okta-access-token")));
+            case cloud:
+                return Optional.of(new Credentials(new SimplePrincipal("dev")));
+
+            default:
+                return Optional.empty();
+        }
     }
 
-    public Optional<Credentials> credentialsFor(TenantAndApplicationId id) {
-        return domainOf(id).map(domain -> new AthenzCredentials(new AthenzPrincipal(new AthenzUser("user")),
-                                                                domain,
-                                                                new OktaIdentityToken("okta-identity-token"),
-                                                                new OktaAccessToken("okta-access-token")));
+    public Application createApplication(String tenant, String applicationName, String instanceName) {
+        Application application = createApplication(tenant, applicationName);
+        controller().applications().createInstance(application.id().instance(instanceName));
+        return application;
     }
 
-    public Application createApplication(TenantName tenant, String applicationName, String instanceName) {
-        return createApplication(tenant, applicationName, instanceName, nextProjectId.getAndIncrement());
-    }
-
-    public Application createApplication(TenantName tenant, String applicationName, String instanceName, long projectId) {
-        TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenant.value(), applicationName);
-        controller().applications().createApplication(applicationId, credentialsFor(applicationId));
-        controller().applications().lockApplicationOrThrow(applicationId, application ->
-                controller().applications().store(application.withProjectId(OptionalLong.of(projectId))));
-        controller().applications().createInstance(applicationId.instance(instanceName));
+    public Application createApplication(String tenant, String applicationName) {
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenant, applicationName);
+        controller().applications().getApplication(applicationId)
+                .orElseGet(() -> controller().applications().createApplication(applicationId, credentialsFor(applicationId.tenant())));
+        controller().applications().lockApplicationOrThrow(applicationId, app ->
+                controller().applications().store(app.withProjectId(OptionalLong.of(nextProjectId.getAndIncrement()))));
         Application application = controller().applications().requireApplication(applicationId);
         assertTrue(application.projectId().isPresent());
         return application;
     }
+
 
     public void deploy(ApplicationId id, ZoneId zone) {
         deploy(id, zone, new ApplicationPackage(new byte[0]));

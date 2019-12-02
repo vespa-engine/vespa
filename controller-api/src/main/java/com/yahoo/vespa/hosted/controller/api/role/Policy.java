@@ -34,9 +34,9 @@ enum Policy {
                                 .in(SystemName.all())),
 
     /** Access to create a user tenant in select systems. */
-    userCreate(Privilege.grant(Action.update)
-                        .on(PathGroup.user)
-                        .in(SystemName.main, SystemName.cd, SystemName.dev)),
+    user(Privilege.grant(Action.create, Action.update)
+                  .on(PathGroup.user)
+                  .in(SystemName.main, SystemName.cd, SystemName.dev)),
 
     /** Access to create a tenant in select systems. */
     tenantCreate(Privilege.grant(Action.create)
@@ -117,6 +117,10 @@ enum Policy {
     classifiedRead(Privilege.grant(Action.read)
                             .on(PathGroup.allExcept(PathGroup.classifiedOperator))
                             .in(SystemName.main, SystemName.cd, SystemName.dev)),
+
+    classifiedApiRead(Privilege.grant(Action.read)
+            .on(PathGroup.classifiedApiInfo)
+            .in(SystemName.all())),
 
     /** Read access to public info. */
     publicRead(Privilege.grant(Action.read)

@@ -34,8 +34,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class ControllerContainerTest {
 
-    private static final AthenzUser hostedOperator = AthenzUser.fromUserId("alice");
-    private static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
+    protected static final AthenzUser hostedOperator = AthenzUser.fromUserId("alice");
+    protected static final AthenzUser defaultUser = AthenzUser.fromUserId("bob");
 
     protected JDisc container;
 
@@ -76,6 +76,7 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.maintenance.JobControl'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository'/>\n" +
+               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
                "    <binding>http://*/deployment/v1/*</binding>\n" +
                "  </handler>\n" +
@@ -104,6 +105,10 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>\n" +
                "    <binding>http://*/flags/v1</binding>\n" +
                "    <binding>http://*/flags/v1/*</binding>\n" +
+               "  </handler>\n" +
+               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
+               "    <binding>http://*/user/v1/*</binding>\n" +
+               "    <binding>http://*/api/user/v1/*</binding>\n" +
                "  </handler>\n" +
                variablePartXml() +
                "</container>";

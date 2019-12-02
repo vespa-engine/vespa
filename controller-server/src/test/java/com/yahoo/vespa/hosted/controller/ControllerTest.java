@@ -13,8 +13,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -557,7 +555,8 @@ public class ControllerTest {
                     .allow(ValidationId.globalEndpointChange)
                     .build();
             context.submit(applicationPackage);
-            tester.applications().deleteApplication(context.application().id(), tester.controllerTester().credentialsFor(context.application().id()));
+            tester.applications().deleteApplication(context.application().id(),
+                                                    tester.controllerTester().credentialsFor(context.application().id().tenant()));
             try (RotationLock lock = tester.applications().rotationRepository().lock()) {
                 assertTrue("Rotation is unassigned",
                            tester.applications().rotationRepository().availableRotations(lock)
