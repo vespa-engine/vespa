@@ -109,7 +109,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server));
-        // TODO: Refactor TLS config generation in the tow methods below, lots of common code
         SSLContext sslContext = new SslContextBuilder().build();
         sb.append(new TlsQuorumConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
         sb.append(new TlsClientServerConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
@@ -207,6 +206,8 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
 
         String jksKeyStoreFilePath();
 
+        SSLContext sslContext();
+
         default String createCommonKeyStoreTrustStoreOptions(Optional<TransportSecurityOptions> transportSecurityOptions) {
             StringBuilder sb = new StringBuilder();
             transportSecurityOptions.ifPresent(options -> {
@@ -220,11 +221,8 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
             return sb.toString();
         }
 
-        SSLContext sslContext();
-
         default String createCommonConfig() {
             StringBuilder sb = new StringBuilder();
-            // Common config
             sb.append(configFieldPrefix()).append(".hostnameVerification=false\n");
             sb.append(configFieldPrefix()).append(".clientAuth=NEED\n");
             sb.append(configFieldPrefix()).append(".ciphersuites=").append(String.join(",", allowedCiphers(sslContext()))).append("\n");
@@ -252,7 +250,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
             validateOptions(transportSecurityOptions, tlsSetting);
 
             StringBuilder sb = new StringBuilder(createCommonConfig());
-
             boolean portUnification;
             switch (tlsSetting) {
                 case "OFF":
@@ -267,7 +264,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
                     throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
             }
             sb.append("client.portUnification=").append(portUnification).append("\n");
-
             sb.append(createCommonKeyStoreTrustStoreOptions(transportSecurityOptions));
 
             return sb.toString();
@@ -305,7 +301,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
             validateOptions(transportSecurityOptions, tlsSetting);
 
             StringBuilder sb = new StringBuilder(createCommonConfig());
-
             boolean sslQuorum;
             boolean portUnification;
             switch (tlsSetting) {
@@ -329,7 +324,6 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
             }
             sb.append("sslQuorum=").append(sslQuorum).append("\n");
             sb.append("portUnification=").append(portUnification).append("\n");
-
             sb.append(createCommonKeyStoreTrustStoreOptions(transportSecurityOptions));
 
             return sb.toString();
