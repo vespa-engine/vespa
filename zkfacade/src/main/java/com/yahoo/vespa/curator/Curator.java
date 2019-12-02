@@ -29,7 +29,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 /**
@@ -44,7 +43,6 @@ import java.util.function.Function;
  */
 public class Curator implements AutoCloseable {
 
-    private static final long UNKNOWN_HOST_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(30);
     private static final int ZK_SESSION_TIMEOUT = 30000;
     private static final int ZK_CONNECTION_TIMEOUT = 30000;
 
@@ -91,7 +89,7 @@ public class Curator implements AutoCloseable {
                         .sessionTimeoutMs(ZK_SESSION_TIMEOUT)
                         .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
                         .connectString(connectionSpec)
-                        .zookeeperFactory(new DNSResolvingFixerZooKeeperFactory(UNKNOWN_HOST_TIMEOUT_MILLIS))
+                        .zookeeperFactory(new VespaZooKeeperFactory())
                         .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
                         .build());
     }
