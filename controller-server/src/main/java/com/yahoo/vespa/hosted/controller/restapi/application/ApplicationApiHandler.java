@@ -325,6 +325,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 : new ResourceResponse(request, "user", "tenant");
     }
 
+    // TODO jonmv: Move to Athenz API.
     private HttpResponse authenticatedUser(HttpRequest request) {
         Principal user = requireUserPrincipal(request);
         if (user == null)

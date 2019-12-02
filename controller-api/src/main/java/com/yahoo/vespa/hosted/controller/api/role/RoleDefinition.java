@@ -24,7 +24,7 @@ public enum RoleDefinition {
     everyone(Policy.classifiedRead,
              Policy.classifiedApiRead,
              Policy.publicRead,
-             Policy.userCreate,
+             Policy.user,
              Policy.tenantCreate),
 
     /** Application reader which can see all information about an application, its tenant and deployments. */

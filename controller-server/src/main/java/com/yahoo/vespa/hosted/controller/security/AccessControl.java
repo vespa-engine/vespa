@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.security;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -62,13 +61,5 @@ public interface AccessControl {
      * @param credentials the credentials for the entity requesting the deletion
      */
     void deleteApplication(TenantAndApplicationId id, Credentials credentials);
-
-    /**
-     * Returns the list of tenants to which a user has access.
-     * @param tenants the list of all known tenants
-     * @param credentials the credentials of user whose tenants to list
-     * @return the list of tenants the given user has access to
-     */
-    List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials);
 
 }

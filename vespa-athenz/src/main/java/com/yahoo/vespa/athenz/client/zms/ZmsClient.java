@@ -28,6 +28,8 @@ public interface ZmsClient extends AutoCloseable {
     void deleteProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
                                      OktaIdentityToken identityToken, OktaAccessToken accessToken);
 
+    void addRoleMember(AthenzRole role, AthenzIdentity member);
+
     boolean getMembership(AthenzRole role, AthenzIdentity identity);
 
     List<AthenzDomain> getDomainList(String prefix);

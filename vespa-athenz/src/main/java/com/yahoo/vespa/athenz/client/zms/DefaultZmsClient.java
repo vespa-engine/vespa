@@ -99,6 +99,11 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     }
 
     @Override
+    public void addRoleMember(AthenzRole role, AthenzIdentity member) {
+
+    }
+
+    @Override
     public boolean getMembership(AthenzRole role, AthenzIdentity identity) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), identity.getFullName()));
         HttpUriRequest request = RequestBuilder.get()

@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -71,13 +70,6 @@ public class CloudAccessControl implements AccessControl {
     public void deleteApplication(TenantAndApplicationId id, Credentials credentials) {
         for (ApplicationRole role : Roles.applicationRoles(id.tenant(), id.application()))
             userManagement.deleteRole(role);
-    }
-
-    @Override
-    public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
-        // TODO: Get credential things (token with roles or something) and check what it's good for.
-        // TODO  ... or ignore this here, and compute it somewhere else.
-        return Collections.emptyList();
     }
 
 }

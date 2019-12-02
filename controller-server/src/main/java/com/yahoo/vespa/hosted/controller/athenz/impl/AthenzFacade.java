@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzResourceName;
 import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzService;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.athenz.api.OktaAccessToken;
 import com.yahoo.vespa.athenz.api.OktaIdentityToken;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
@@ -174,7 +175,13 @@ public class AthenzFacade implements AccessControl {
                                               athenzCredentials.identityToken(), athenzCredentials.accessToken());
     }
 
-    @Override
+    /**
+     * Returns the list of tenants to which a user has access.
+     * @param tenants the list of all known tenants
+     * @param credentials the credentials of user whose tenants to list
+     * @return the list of tenants the given user has access to
+     */
+    // TODO jonmv: Remove
     public List<Tenant> accessibleTenants(List<Tenant> tenants, Credentials credentials) {
         AthenzIdentity identity =  ((AthenzPrincipal) credentials.user()).getIdentity();
         List<AthenzDomain> userDomains = ztsClient.getTenantDomains(service, identity, "admin");
@@ -182,6 +189,10 @@ public class AthenzFacade implements AccessControl {
                       .filter(tenant ->    tenant.type() == Tenant.Type.user && ((UserTenant) tenant).is(identity.getName())
                                         || tenant.type() == Tenant.Type.athenz && userDomains.contains(((AthenzTenant) tenant).domain()))
                       .collect(Collectors.toUnmodifiableList());
+    }
+
+    public void addTenantAdmin(AthenzDomain tenantDomain, AthenzUser user) {
+        zmsClient.addRoleMember(new AthenzRole(tenantDomain, "tenancy." + service.getFullName() + ".admin"), user);
     }
 
     private void deleteApplication(AthenzDomain domain, ApplicationName application, OktaIdentityToken identityToken, OktaAccessToken accessToken) {
