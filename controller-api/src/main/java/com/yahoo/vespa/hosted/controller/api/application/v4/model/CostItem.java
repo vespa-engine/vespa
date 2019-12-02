@@ -34,24 +34,4 @@ public class CostItem {
     public CostItemUsage getDisk() {
         return disk;
     }
-
-    public static CostItem zeroItem(String applicationId, String zoneId) {
-        var item = new CostItem();
-        item.applicationId = applicationId;
-        item.zoneId = zoneId;
-        item.cpu = CostItemUsage.zero();
-        item.memory = CostItemUsage.zero();
-        item.disk = CostItemUsage.zero();
-        return item;
-    }
-
-    public static CostItem add(CostItem a, CostItem b) {
-        var added = new CostItem();
-        added.applicationId = a.applicationId;
-        added.zoneId = a.zoneId;
-        added.cpu = CostItemUsage.add(a.cpu, b.cpu);
-        added.memory = CostItemUsage.add(a.memory, b.memory);
-        added.disk = CostItemUsage.add(a.disk, b.disk);
-        return added;
-    }
 }
