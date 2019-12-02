@@ -60,8 +60,8 @@ public class RpcServer {
                         .paramDesc(0, "metricsJson", "The metrics in json format"));
 
         connector.addMethod(
-                new Method("flushExtraMetrics", "", "", this::flushExtraMetrics)
-                        .methodDesc("Flush metrics and dimensions populated by setExtraMetrics"));
+                new Method("purgeExtraMetrics", "", "", this::purgeExtraMetrics)
+                        .methodDesc("Purge metrics and dimensions populated by setExtraMetrics"));
 
         connector.addMethod(
                 new Method("getMetricsById", "s", "s", this::getMetricsById)
@@ -153,8 +153,8 @@ public class RpcServer {
         withExceptionHandling(req, () -> metricsManager.setExtraMetrics(toMetricsPackets(metricsJson)));
     }
 
-    void flushExtraMetrics(Request req) {
-        withExceptionHandling(req, metricsManager::flushExtraMetrics);
+    void purgeExtraMetrics(Request req) {
+        withExceptionHandling(req, metricsManager::purgeExtraMetrics);
     }
 
     private static void withExceptionHandling(Request req, ThrowingRunnable runnable) {

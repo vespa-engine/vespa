@@ -90,7 +90,7 @@ public class MetricsManager {
         List<MetricsPacket.Builder> result = vespaMetrics.getMetrics(services);
         log.log(DEBUG, () -> "Got " + result.size() + " metrics packets for vespa services.");
 
-        flushStaleMetrics();
+        purgeStaleMetrics();
         List<MetricsPacket.Builder> externalPackets = externalMetrics.getMetrics().stream()
                 .filter(MetricsPacket.Builder::hasMetrics)
                 .collect(toList());
@@ -154,17 +154,17 @@ public class MetricsManager {
     }
 
     public Map<DimensionId, String> getExtraDimensions() {
-        flushStaleMetrics();
+        purgeStaleMetrics();
         return this.extraDimensions;
     }
 
-    private void flushStaleMetrics() {
+    private void purgeStaleMetrics() {
         if (Duration.between(externalMetricsUpdateTime, Instant.now()).getSeconds() > EXTERNAL_METRICS_TTL.getSeconds()) {
-            flushExtraMetrics();
+            purgeExtraMetrics();
         }
     }
 
-    public void flushExtraMetrics() {
+    public void purgeExtraMetrics() {
         extraDimensions = new HashMap<>();
         externalMetrics.setExtraMetrics(Collections.emptyList());
     }
