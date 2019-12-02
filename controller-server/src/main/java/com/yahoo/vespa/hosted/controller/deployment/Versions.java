@@ -3,12 +3,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -57,14 +54,6 @@ public class Versions {
     /** Source application version for this */
     public Optional<ApplicationVersion> sourceApplication() {
         return sourceApplication;
-    }
-
-    /** Returns whether source versions are present and match those of the given job run */
-    public boolean sourcesMatchIfPresent(JobStatus.JobRun jobRun) {
-        return (!sourcePlatform.filter(version -> !version.equals(targetPlatform)).isPresent() ||
-                sourcePlatform.equals(jobRun.sourcePlatform())) &&
-               (!sourceApplication.filter(version -> !version.equals(targetApplication)).isPresent() ||
-                sourceApplication.equals(jobRun.sourceApplication()));
     }
 
     /** Returns whether source versions are present and match those of the given job other versions. */

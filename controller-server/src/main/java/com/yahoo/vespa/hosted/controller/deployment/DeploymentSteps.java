@@ -8,7 +8,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +48,7 @@ public class DeploymentSteps {
     public List<JobStatus> sortedJobs(Collection<JobStatus> jobStatus) {
         List<JobType> sortedJobs = jobs();
         return jobStatus.stream()
-                        .sorted(comparingInt(job -> sortedJobs.indexOf(job.type())))
+                        .sorted(comparingInt(job -> sortedJobs.indexOf(job.id().type())))
                         .collect(Collectors.toUnmodifiableList());
     }
 

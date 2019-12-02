@@ -68,13 +68,15 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
+import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
@@ -474,7 +476,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse instance(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         Slime slime = new Slime();
         toSlime(slime.setObject(), getInstance(tenantName, applicationName, instanceName),
-                getApplication(tenantName, applicationName), request);
+                controller.jobController().deploymentStatus(getApplication(tenantName, applicationName)), request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -713,9 +715,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         Cursor instancesArray = object.setArray("instances");
         for (Instance instance : application.instances().values())
-            toSlime(instancesArray.addObject(), instance, application.deploymentSpec(), request);
+            toSlime(instancesArray.addObject(), status, instance, application.deploymentSpec(), request);
 
         application.deployKeys().stream().map(KeyUtils::toPem).forEach(object.setArray("pemDeployKeys")::addString);
 
@@ -736,20 +739,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         application.deploymentIssueId().ifPresent(issueId -> object.setString("deploymentIssueId", issueId.value()));
     }
 
-    private void toSlime(Cursor object, Instance instance, DeploymentSpec deploymentSpec, HttpRequest request) {
+    private void toSlime(Cursor object, DeploymentStatus status, Instance instance, DeploymentSpec deploymentSpec, HttpRequest request) {
         object.setString("instance", instance.name().value());
 
         if (deploymentSpec.instance(instance.name()).isPresent()) {
             // Jobs sorted according to deployment spec
-            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
+            List<com.yahoo.vespa.hosted.controller.deployment.JobStatus> jobStatus = controller.applications().deploymentTrigger()
                                                   .steps(deploymentSpec.requireInstance(instance.name()))
-                                                  .sortedJobs(instance.deploymentJobs().jobStatus().values());
+                                                  .sortedJobs(status.instanceJobs(instance.name()).values());
 
 
             Cursor deploymentJobsArray = object.setArray("deploymentJobs");
-            for (JobStatus job : jobStatus) {
+            for (com.yahoo.vespa.hosted.controller.deployment.JobStatus job : jobStatus) {
                 Cursor jobObject = deploymentJobsArray.addObject();
-                jobObject.setString("type", job.type().jobName());
+                jobObject.setString("type", job.id().type().jobName());
                 jobObject.setBool("success", job.isSuccess());
                 job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
                 job.lastCompleted().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastCompleted")));
@@ -830,7 +833,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void toSlime(Cursor object, Instance instance, Application application, HttpRequest request) {
+    private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
+        Application application = status.application();
         object.setString("tenant", instance.id().tenant().value());
         object.setString("application", instance.id().application().value());
         object.setString("instance", instance.id().instance().value());
@@ -856,14 +860,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         if (application.deploymentSpec().instance(instance.name()).isPresent()) {
             // Jobs sorted according to deployment spec
-            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                                                  .steps(application.deploymentSpec().requireInstance(instance.name()))
-                                                  .sortedJobs(instance.deploymentJobs().jobStatus().values());
+            List<com.yahoo.vespa.hosted.controller.deployment.JobStatus> jobStatus = controller.applications().deploymentTrigger()
+                                                                                               .steps(application.deploymentSpec().requireInstance(instance.name()))
+                                                                                               .sortedJobs(status.instanceJobs(instance.name()).values());
 
             Cursor deploymentsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {
                 Cursor jobObject = deploymentsArray.addObject();
-                jobObject.setString("type", job.type().jobName());
+                jobObject.setString("type", job.id().type().jobName());
                 jobObject.setBool("success", job.isSuccess());
 
                 job.lastTriggered().ifPresent(jobRun -> toSlime(jobRun, jobObject.setObject("lastTriggered")));
@@ -1696,12 +1700,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");
         }
         Cursor applicationArray = object.setArray("applications");
-        for (Application application : applications)
+        for (Application application : applications) {
+            DeploymentStatus status = controller.jobController().deploymentStatus(application);
             for (Instance instance : application.instances().values())
                 if (recurseOverApplications(request))
-                    toSlime(applicationArray.addObject(), instance, application, request);
+                    toSlime(applicationArray.addObject(), instance, status, request);
                 else
                     toSlime(instance.id(), applicationArray.addObject(), request);
+        }
     }
 
     // A tenant has different content when in a list ... antipattern, but not solvable before application/v5
@@ -1742,13 +1748,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private void toSlime(JobStatus.JobRun jobRun, Cursor object) {
-        object.setLong("id", jobRun.id());
-        object.setString("version", jobRun.platform().toFullString());
-        if (!jobRun.application().isUnknown())
-            toSlime(jobRun.application(), object.setObject("revision"));
-        object.setString("reason", jobRun.reason());
-        object.setLong("at", jobRun.at().toEpochMilli());
+    private void toSlime(Run run, Cursor object) {
+        object.setLong("id", run.id().number());
+        object.setString("version", run.versions().targetPlatform().toFullString());
+        if ( ! run.versions().targetApplication().isUnknown())
+            toSlime(run.versions().targetApplication(), object.setObject("revision"));
+        object.setString("reason", "unknown reason");
+        object.setLong("at", run.end().orElse(run.start()).toEpochMilli());
     }
 
     private Slime toSlime(InputStream jsonStream) {

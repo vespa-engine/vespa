@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
-import com.yahoo.vespa.hosted.controller.application.JobStatus.JobRun;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Clock;
@@ -42,7 +41,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static java.util.Collections.emptyList;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.stream.Collectors.groupingBy;
@@ -120,25 +118,8 @@ public class DeploymentTrigger {
             return;
         }
 
-        applications().lockApplicationOrThrow(TenantAndApplicationId.from(report.applicationId()), application -> {
-            var status = application.get().require(report.applicationId().instance())
-                                    .deploymentJobs().statusOf(report.jobType());
-            var triggering = status.filter(job -> job.lastTriggered().isPresent()
-                                                  && job.lastCompleted()
-                                                        .map(completion -> ! completion.at().isAfter(job.lastTriggered().get().at()))
-                                                        .orElse(true))
-                                   .orElseThrow(() -> new IllegalStateException("Notified of completion of " + report.jobType().jobName() + " for " +
-                                                                                report.applicationId() + ", but that has not been triggered; last was " +
-                                                                                status.flatMap(job -> job.lastTriggered().map(run -> run.at().toString()))
-                                                                                      .orElse("never")))
-                                   .lastTriggered().get();
-
-            application = application.with(report.applicationId().instance(),
-                                           instance -> instance.withJobCompletion(report.jobType(),
-                                                                                  triggering.completion(report.buildNumber(), clock.instant()),
-                                                                                  report.jobError()));
-            applications().store(application.withChange(remainingChange(application.get())));
-        });
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(report.applicationId()), application ->
+                applications().store(application.withChange(remainingChange(application.get()))));
     }
 
     /**
@@ -175,17 +156,10 @@ public class DeploymentTrigger {
      * the project id is removed from the application owning the job, to prevent further trigger attempts.
      */
     public boolean trigger(Job job) {
-        log.log(LogLevel.DEBUG, String.format("Triggering %s: %s", job, job.triggering));
+        log.log(LogLevel.DEBUG, String.format("Triggering %s for %s", job.jobType, job.applicationId()));
         try {
-            applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
-                jobs.start(job.applicationId(), job.jobType, new Versions(job.triggering.platform(),
-                                                                          job.triggering.application(),
-                                                                          job.triggering.sourcePlatform(),
-                                                                          job.triggering.sourceApplication()));
-
-                applications().store(application.with(job.applicationId().instance(),
-                                                      instance -> instance.withJobTriggering(job.jobType, job.triggering)));
-            });
+            applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()),
+                                                  application -> jobs.start(job.applicationId(), job.jobType, job.versions));
             return true;
         }
         catch (RuntimeException e) {
@@ -529,12 +503,7 @@ public class DeploymentTrigger {
     }
 
     private Job deploymentJob(Instance instance, Versions versions, Change change, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
-        if (jobStatus.isOutOfCapacity()) reason += "; retrying on out of capacity";
-
-        var triggering = JobRun.triggering(versions.targetPlatform(), versions.targetApplication(),
-                                           versions.sourcePlatform(), versions.sourceApplication(),
-                                           reason, clock.instant());
-        return new Job(instance, triggering, jobType, availableSince, jobStatus.isOutOfCapacity(), change.application().isPresent());
+        return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), change.application().isPresent());
     }
 
     // ---------- Data containers ----------
@@ -544,16 +513,16 @@ public class DeploymentTrigger {
 
         private final ApplicationId instanceId;
         private final JobType jobType;
-        private final JobRun triggering;
+        private final Versions versions;
         private final Instant availableSince;
         private final boolean isRetry;
         private final boolean isApplicationUpgrade;
 
-        private Job(Instance instance, JobRun triggering, JobType jobType, Instant availableSince,
+        private Job(Instance instance, Versions versions, JobType jobType, Instant availableSince,
                     boolean isRetry, boolean isApplicationUpgrade) {
             this.instanceId = instance.id();
             this.jobType = jobType;
-            this.triggering = triggering;
+            this.versions = versions;
             this.availableSince = availableSince;
             this.isRetry = isRetry;
             this.isApplicationUpgrade = isApplicationUpgrade;
