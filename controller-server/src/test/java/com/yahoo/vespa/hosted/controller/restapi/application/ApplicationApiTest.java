@@ -336,6 +336,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         deploymentTester.triggerJobs();
 
+        // POST a triggering to force a production job to start without successful tests
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/job/production-us-west-1", POST)
+                                      .data("{\"skipTests\":true}")
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1\"}");
+
         // GET application having both change and outstanding change
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
                                       .userIdentity(USER_ID),
@@ -501,8 +507,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1/pause", POST)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"production-us-west-1 for tenant1.application1.instance1 paused for " + DeploymentTrigger.maxPause + "\"}");
-
-        // TODO jonmv: Add test (and support) for triggering a job without running tests first.
 
         // POST a triggering to the same production job
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/production-us-west-1", POST)

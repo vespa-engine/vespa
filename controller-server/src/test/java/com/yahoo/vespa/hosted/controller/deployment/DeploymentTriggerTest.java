@@ -430,7 +430,7 @@ public class DeploymentTriggerTest {
         // us-east-3 does not automatically trigger when paused, but does when forced.
         tester.triggerJobs();
         app.assertNotRunning(productionUsEast3);
-        tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger");
+        tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger", true);
         app.assertRunning(productionUsEast3);
         assertFalse(app.instance().jobPause(productionUsEast3).isPresent());
     }

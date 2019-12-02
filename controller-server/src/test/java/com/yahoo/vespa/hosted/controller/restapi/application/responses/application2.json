@@ -76,7 +76,22 @@
         },
         {
           "type": "production-us-west-1",
-          "success": false
+          "success": false,
+          "lastTriggered": {
+            "id": 1,
+            "version": "7.0.0",
+            "revision": {
+              "buildNumber": 1,
+              "hash": "1.0.1-commit1",
+              "source": {
+                "gitRepository": "repository1",
+                "gitBranch": "master",
+                "gitCommit": "commit1"
+              }
+            },
+            "reason": "unknown reason",
+            "at": "(ignore)"
+          }
         },
         {
           "type": "production-us-east-3",

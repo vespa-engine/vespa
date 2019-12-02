@@ -168,7 +168,7 @@ public class DeploymentTrigger {
     }
 
     /** Force triggering of a job for given instance. */
-    public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user) {
+    public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
         Versions versions = Versions.from(application.change(), application, deploymentFor(instance, jobType),
@@ -176,7 +176,7 @@ public class DeploymentTrigger {
         String reason = "Job triggered manually by " + user;
         var jobStatus = jobs.deploymentStatus(application).instanceJobs(instance.name());
         var jobList = JobList.from(jobStatus.values());
-        return (jobType.isProduction() && ! isTested(jobList, versions)
+        return (jobType.isProduction() && requireTests && ! isTested(jobList, versions)
                 ? testJobs(application.deploymentSpec(), application.change(), instance, jobList, versions, reason, clock.instant(), __ -> true).stream()
                 : Stream.of(deploymentJob(instance, versions, application.change(), jobType, jobStatus.get(jobType), reason, clock.instant())))
                 .peek(this::trigger)

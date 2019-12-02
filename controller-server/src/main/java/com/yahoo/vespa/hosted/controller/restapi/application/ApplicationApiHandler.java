@@ -673,11 +673,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse trigger(ApplicationId id, JobType type, HttpRequest request) {
-            String triggered = controller.applications().deploymentTrigger()
-                                         .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName())
-                                         .stream().map(JobType::jobName).collect(joining(", "));
-            return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
-                                                           : "Triggered " + triggered + " for " + id);
+        Inspector requestObject = toSlime(request.getData()).get();
+        boolean requireTests = ! requestObject.field("skipTests").asBool();
+        String triggered = controller.applications().deploymentTrigger()
+                                     .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
+                                     .stream().map(JobType::jobName).collect(joining(", "));
+        return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
+                                                       : "Triggered " + triggered + " for " + id);
     }
 
     private HttpResponse pause(ApplicationId id, JobType type) {
