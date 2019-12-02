@@ -2,6 +2,9 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import java.util.List;
 
+/**
+ * @author ogronnesby
+ */
 public class CostResult {
     private String month;
     private List<CostItem> items;

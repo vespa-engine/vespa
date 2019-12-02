@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 
+/**
+ * @author ogronnesby
+ */
 public class CostItem {
     private String applicationId;
     private String zoneId;
