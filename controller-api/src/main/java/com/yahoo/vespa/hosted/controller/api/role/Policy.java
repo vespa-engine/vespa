@@ -118,6 +118,10 @@ enum Policy {
                             .on(PathGroup.allExcept(PathGroup.classifiedOperator))
                             .in(SystemName.main, SystemName.cd, SystemName.dev)),
 
+    classifiedApiRead(Privilege.grant(Action.read)
+            .on(PathGroup.classifiedApiInfo)
+            .in(SystemName.all())),
+
     /** Read access to public info. */
     publicRead(Privilege.grant(Action.read)
                         .on(PathGroup.publicInfo)

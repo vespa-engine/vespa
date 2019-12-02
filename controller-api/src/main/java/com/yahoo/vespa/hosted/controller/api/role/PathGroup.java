@@ -176,6 +176,10 @@ enum PathGroup {
                    "/static/{*}",
                    "/statuspage/v1/{*}"),
 
+    /** Same as classifiedInfo, but with optional /api prefix */
+    classifiedApiInfo(Optional.of("/api"),
+                      "/user/v1/user"),
+
     /** Paths providing public information. */
     publicInfo(Optional.of("/api"),
                "/badge/v1/{*}",
