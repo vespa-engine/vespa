@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGenerato
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
@@ -42,6 +43,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -128,6 +130,14 @@ public class DeploymentContext {
 
     public Instance instance() {
         return tester.controller().applications().requireInstance(instanceId);
+    }
+
+    public DeploymentStatus deploymentStatus() {
+        return tester.controller().jobController().deploymentStatus(application());
+    }
+
+    public Map<JobType, JobStatus> instanceJobs() {
+        return deploymentStatus().instanceJobs(instanceId.instance());
     }
 
     public Deployment deployment(ZoneId zone) {

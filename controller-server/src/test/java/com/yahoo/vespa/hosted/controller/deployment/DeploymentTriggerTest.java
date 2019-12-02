@@ -370,7 +370,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
         app.runJob(productionUsWest1);
-        assertEquals(1, app.instance().deploymentJobs().jobStatus().get(productionUsWest1).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals(1, app.instanceJobs().get(productionUsWest1).lastSuccess().get().versions().targetApplication().buildNumber().getAsLong());
         assertEquals(2, app.application().outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.triggerJobs();
@@ -507,7 +507,7 @@ public class DeploymentTriggerTest {
         app1.runJob(systemTest).runJob(stagingTest) // tests for previous version — these are "reused" later.
             .runJob(systemTest).runJob(stagingTest).timeOutConvergence(productionUsCentral1);
         assertEquals(version2, app1.deployment(productionUsCentral1.zone(main)).version());
-        Instant triggered = app1.instance().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at();
+        Instant triggered = app1.instanceJobs().get(productionUsCentral1).lastTriggered().get().start();
         tester.clock().advance(Duration.ofHours(1));
 
         // version2 becomes broken and upgrade targets latest non-broken
@@ -518,7 +518,7 @@ public class DeploymentTriggerTest {
 
         // version1 proceeds 'til the last job, where it fails; us-central-1 is skipped, as current change is strictly dominated by what's deployed there.
         app1.failDeployment(productionEuWest1);
-        assertEquals(triggered, app1.instance().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at());
+        assertEquals(triggered, app1.instanceJobs().get(productionUsCentral1).lastTriggered().get().start());
 
         // Roll out a new application version, which gives a dual change -- this should trigger us-central-1, but only as long as it hasn't yet deployed there.
         ApplicationVersion revision1 = app1.lastSubmission().get();
@@ -530,7 +530,7 @@ public class DeploymentTriggerTest {
         app1.assertRunning(productionUsCentral1);
         assertEquals(version2, app1.instance().deployments().get(productionUsCentral1.zone(main)).version());
         assertEquals(revision1, app1.deployment(productionUsCentral1.zone(main)).applicationVersion());
-        assertTrue(triggered.isBefore(app1.instance().deploymentJobs().jobStatus().get(productionUsCentral1).lastTriggered().get().at()));
+        assertTrue(triggered.isBefore(app1.instanceJobs().get(productionUsCentral1).lastTriggered().get().start()));
 
         // Change has a higher application version than what is deployed -- deployment should trigger.
         app1.timeOutUpgrade(productionUsCentral1);
@@ -546,7 +546,7 @@ public class DeploymentTriggerTest {
         // Last job has a different deployment target, so tests need to run again.
         app1.runJob(systemTest).runJob(stagingTest).runJob(productionEuWest1);
         assertFalse(app1.application().change().hasTargets());
-        assertFalse(app1.instance().deploymentJobs().jobStatus().get(productionUsCentral1).isSuccess());
+        assertFalse(app1.instanceJobs().get(productionUsCentral1).isSuccess());
     }
 
     @Test
@@ -573,15 +573,15 @@ public class DeploymentTriggerTest {
         // New application version should run system and staging tests against both 6.1 and 6.2, in no particular order.
         app.submit(applicationPackage);
         tester.triggerJobs();
-        Version firstTested = app.instance().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform();
-        assertEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+        Version firstTested = app.instanceJobs().get(systemTest).lastTriggered().get().versions().targetPlatform();
+        assertEquals(firstTested, app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetPlatform());
 
         app.runJob(systemTest).runJob(stagingTest);
 
         // Test jobs for next production zone can start and run immediately.
         tester.triggerJobs();
-        assertNotEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(systemTest).lastTriggered().get().platform());
-        assertNotEquals(firstTested, app.instance().deploymentJobs().jobStatus().get(stagingTest).lastTriggered().get().platform());
+        assertNotEquals(firstTested, app.instanceJobs().get(systemTest).lastTriggered().get().versions().targetPlatform());
+        assertNotEquals(firstTested, app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetPlatform());
         app.runJob(systemTest).runJob(stagingTest);
 
          // Finish old run of the aborted production job.
@@ -589,12 +589,12 @@ public class DeploymentTriggerTest {
 
         // New upgrade is already tested for both jobs.
 
+        // Both jobs fail again, and must be re-triggered -- this is ok, as they are both already triggered on their current targets.
         app.failDeployment(productionEuWest1).failDeployment(productionUsEast3)
            .runJob(productionEuWest1).runJob(productionUsEast3);
-        // Both jobs fail again, and must be re-triggered -- this is ok, as they are both already triggered on their current targets.
         assertFalse(app.application().change().hasTargets());
-        assertEquals(2, app.instance().deploymentJobs().jobStatus().get(productionEuWest1).lastSuccess().get().application().buildNumber().getAsLong());
-        assertEquals(2, app.instance().deploymentJobs().jobStatus().get(productionUsEast3).lastSuccess().get().application().buildNumber().getAsLong());
+        assertEquals(2, app.instanceJobs().get(productionEuWest1).lastSuccess().get().versions().targetApplication().buildNumber().getAsLong());
+        assertEquals(2, app.instanceJobs().get(productionUsEast3).lastSuccess().get().versions().targetApplication().buildNumber().getAsLong());
     }
 
     @Test
@@ -646,52 +646,6 @@ public class DeploymentTriggerTest {
         // Another application change is deployed and fixes system-test. Change is triggered immediately as target changes
         app.submit(applicationPackage).deploy();
         assertTrue("Deployment completed", tester.jobs().active().isEmpty());
-    }
-
-    @Test
-    public void testUpdatesFailingJobStatus() {
-        // Setup application
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .environment(Environment.prod)
-                .region("us-west-1")
-                .build();
-
-        // Initial failure
-        Instant initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-        var app = tester.newDeploymentContext().submit(applicationPackage);
-        app.failDeployment(systemTest);
-        assertEquals("Failure age is right at initial failure",
-                     initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
-
-        // Failure again -- failingSince should remain the same
-        tester.clock().advance(Duration.ofMillis(1000));
-        app.failDeployment(systemTest);
-        assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
-
-        // Success resets failingSince
-        tester.clock().advance(Duration.ofMillis(1000));
-        app.runJob(systemTest);
-        assertFalse(app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().isPresent());
-
-        // Complete deployment
-        app.runJob(stagingTest).runJob(productionUsWest1);
-
-        // Two repeated failures again.
-        // Initial failure
-        tester.clock().advance(Duration.ofMillis(1000));
-        initialFailure = tester.clock().instant().truncatedTo(MILLIS);
-
-        app.submit(applicationPackage);
-        app.failDeployment(systemTest);
-        assertEquals("Failure age is right at initial failure",
-                     initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
-
-        // Failure again -- failingSince should remain the same
-        tester.clock().advance(Duration.ofMillis(1000));
-        app.failDeployment(systemTest);
-        assertEquals("Failure age is right at second consecutive failure",
-                     initialFailure, app.instance().deploymentJobs().jobStatus().get(systemTest).firstFailing().get().at());
     }
 
     @Test

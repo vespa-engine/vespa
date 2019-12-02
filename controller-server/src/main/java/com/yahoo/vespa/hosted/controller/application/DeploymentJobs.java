@@ -34,10 +34,12 @@ public class DeploymentJobs {
     /** Return a new instance with the given job update applied. */
     public DeploymentJobs withUpdate(JobType jobType, UnaryOperator<JobStatus> update) {
         Map<JobType, JobStatus> status = new LinkedHashMap<>(this.status);
+
         status.compute(jobType, (type, job) -> {
             if (job == null) job = JobStatus.initial(jobType);
             return update.apply(job);
         });
+
         return new DeploymentJobs(status.values());
     }
 

@@ -41,7 +41,7 @@
           "type": "system-test",
           "success": false,
           "lastTriggered": {
-            "id": -1,
+            "id": 1,
             "version": "7.0.0",
             "revision": {
               "buildNumber": 1,
@@ -52,7 +52,7 @@
                 "gitCommit": "commit1"
               }
             },
-            "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
+            "reason": "unknown reason",
             "at": "(ignore)"
           }
         },
@@ -60,7 +60,7 @@
           "type": "staging-test",
           "success": false,
           "lastTriggered": {
-            "id": -1,
+            "id": 1,
             "version": "7.0.0",
             "revision": {
               "buildNumber": 1,
@@ -71,9 +71,17 @@
                 "gitCommit": "commit1"
               }
             },
-            "reason": "Testing deployment for production-us-west-1 (platform 7, application 1.0.1-commit1)",
+            "reason": "unknown reason",
             "at": "(ignore)"
           }
+        },
+        {
+          "type": "production-us-west-1",
+          "success": false
+        },
+        {
+          "type": "production-us-east-3",
+          "success": false
         }
       ],
       "changeBlockers": [],
