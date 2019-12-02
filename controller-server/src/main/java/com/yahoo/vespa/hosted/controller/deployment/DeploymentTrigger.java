@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobReport;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Clock;
@@ -105,20 +104,13 @@ public class DeploymentTrigger {
      * Records information when a job completes (successfully or not). This information is used when deciding what to
      * trigger next.
      */
-    public void notifyOfCompletion(JobReport report) {
-        log.log(LogLevel.DEBUG, String.format("Notified of %s for %s of %s (%d)",
-                                             report.jobError().map(e -> e.toString() + " error")
-                                                   .orElse("success"),
-                                             report.jobType(),
-                                             report.applicationId(),
-                                             report.projectId()));
-        if (applications().getInstance(report.applicationId()).isEmpty()) {
-            log.log(LogLevel.WARNING, "Ignoring completion of job of project '" + report.projectId() +
-                                      "': Unknown application '" + report.applicationId() + "'");
+    public void notifyOfCompletion(ApplicationId id) {
+        if (applications().getInstance(id).isEmpty()) {
+            log.log(LogLevel.WARNING, "Ignoring completion of job of unknown application '" + id + "'");
             return;
         }
 
-        applications().lockApplicationOrThrow(TenantAndApplicationId.from(report.applicationId()), application ->
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application ->
                 applications().store(application.withChange(remainingChange(application.get()))));
     }
 
@@ -369,7 +361,7 @@ public class DeploymentTrigger {
 
     /** Returns whether the given job can trigger at the given instant */
     public boolean triggerAt(Instant instant, JobType job, JobStatus jobStatus, Versions versions, Instance instance, DeploymentSpec deploymentSpec) {
-        if (instance.deploymentJobs().statusOf(job).map(status -> status.pausedUntil().orElse(0)).orElse(0L) > clock.millis()) return false;
+        if (instance.jobPause(job).map(until -> until.isAfter(clock.instant())).orElse(false)) return false;
         if (jobStatus.lastTriggered().isEmpty()) return true;
         if (jobStatus.isSuccess()) return true; // Success
         if (jobStatus.lastCompleted().isEmpty()) return true; // Never completed

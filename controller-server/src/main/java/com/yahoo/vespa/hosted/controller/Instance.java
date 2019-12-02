@@ -14,15 +14,14 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,40 +43,24 @@ public class Instance {
 
     private final ApplicationId id;
     private final Map<ZoneId, Deployment> deployments;
-    private final DeploymentJobs deploymentJobs;
     private final List<AssignedRotation> rotations;
     private final RotationStatus rotationStatus;
+    private final Map<JobType, Instant> jobPauses;
 
     /** Creates an empty instance */
     public Instance(ApplicationId id) {
-        this(id, Set.of(), new DeploymentJobs(List.of()),
-             List.of(), RotationStatus.EMPTY);
+        this(id, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY);
     }
 
     /** Creates an empty instance*/
-    public Instance(ApplicationId id, Collection<Deployment> deployments, DeploymentJobs deploymentJobs,
+    public Instance(ApplicationId id, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
                     List<AssignedRotation> rotations, RotationStatus rotationStatus) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null").stream()
                                                       .collect(Collectors.toMap(Deployment::zone, Function.identity())));
-        this.deploymentJobs = Objects.requireNonNull(deploymentJobs, "deploymentJobs cannot be null");
+        this.jobPauses = Map.copyOf(Objects.requireNonNull(jobPauses, "deploymentJobs cannot be null"));
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
-    }
-
-    public Instance withJobPause(JobType jobType, OptionalLong pausedUntil) {
-        return new Instance(id, deployments.values(), deploymentJobs.withPause(jobType, pausedUntil),
-                            rotations, rotationStatus);
-    }
-
-    public Instance withJobCompletion(JobType jobType, JobStatus.JobRun completion, Optional<DeploymentJobs.JobError> jobError) {
-        return new Instance(id, deployments.values(), deploymentJobs.withCompletion(jobType, completion, jobError),
-                            rotations, rotationStatus);
-    }
-
-    public Instance withJobTriggering(JobType jobType, JobStatus.JobRun job) {
-        return new Instance(id, deployments.values(), deploymentJobs.withTriggering(jobType, job),
-                            rotations, rotationStatus);
     }
 
     public Instance withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
@@ -90,6 +73,16 @@ public class Instance {
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity());
         return with(newDeployment);
+    }
+
+    public Instance withJobPause(JobType jobType, OptionalLong pausedUntil) {
+        Map<JobType, Instant> jobPauses = new HashMap<>(this.jobPauses);
+        if (pausedUntil.isPresent())
+            jobPauses.put(jobType, Instant.ofEpochMilli(pausedUntil.getAsLong()));
+        else
+            jobPauses.remove(jobType);
+
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus);
     }
 
     public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
@@ -116,16 +109,12 @@ public class Instance {
         return with(deployments);
     }
 
-    public Instance withoutDeploymentJob(JobType jobType) {
-        return new Instance(id, deployments.values(), deploymentJobs.without(jobType), rotations, rotationStatus);
-    }
-
     public Instance with(List<AssignedRotation> assignedRotations) {
-        return new Instance(id, deployments.values(), deploymentJobs, assignedRotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, assignedRotations, rotationStatus);
     }
 
     public Instance with(RotationStatus rotationStatus) {
-        return new Instance(id, deployments.values(), deploymentJobs, rotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus);
     }
 
     private Instance with(Deployment deployment) {
@@ -135,7 +124,7 @@ public class Instance {
     }
 
     private Instance with(Map<ZoneId, Deployment> deployments) {
-        return new Instance(id, deployments.values(), deploymentJobs, rotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus);
     }
 
     public ApplicationId id() { return id; }
@@ -155,7 +144,15 @@ public class Instance {
                                            .collect(Collectors.toMap(Deployment::zone, Function.identity())));
     }
 
-    public DeploymentJobs deploymentJobs() { return deploymentJobs; }
+    /** Returns the instant until which the given job is paused, or empty. */
+    public Optional<Instant> jobPause(JobType jobType) {
+        return Optional.ofNullable(jobPauses.get(jobType));
+    }
+
+    /** Returns the set of instants until which any paused jobs of this instance should remain paused, indexed by job type. */
+    public Map<JobType, Instant> jobPauses() {
+        return jobPauses;
+    }
 
     /** Returns all rotations assigned to this */
     public List<AssignedRotation> rotations() {

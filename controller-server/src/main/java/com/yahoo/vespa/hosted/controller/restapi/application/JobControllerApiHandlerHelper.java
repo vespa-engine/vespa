@@ -241,10 +241,10 @@ class JobControllerApiHandlerHelper {
             deploymentObject.setString("status", pendingProduction.containsKey(type) ? "pending" : "completed");
     }
 
-    private static void jobTypeToSlime(Cursor jobObject, Controller controller, Application application, Instance instance, Map<JobType, JobStatus> status, JobType type, DeploymentSteps steps,
+    private static void jobTypeToSlime(Cursor jobObject, Controller controller, Application application, Instance instance,
+                                       Map<JobType, JobStatus> status, JobType type, DeploymentSteps steps,
                                        Map<JobType, Versions> pendingProduction, Map<JobType, Run> running, URI baseUriForJob) {
-        instance.deploymentJobs().statusOf(type).ifPresent(jobStatus -> jobStatus.pausedUntil().ifPresent(until ->
-                jobObject.setLong("pausedUntil", until)));
+        instance.jobPause(type).ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
         JobList jobList = JobList.from(status.values());
@@ -282,7 +282,7 @@ class JobControllerApiHandlerHelper {
             runObject.setString("status", "pending");
             versionsToSlime(runObject, pendingProduction.get(type));
             Cursor pendingObject = runObject.setObject("tasks");
-            if (instance.deploymentJobs().statusOf(type).map(jobStatus -> jobStatus.pausedUntil().isPresent()).orElse(false))
+            if (instance.jobPauses().containsKey(type))
                 pendingObject.setString("paused", "pending");
             else if ( ! controller.applications().deploymentTrigger().triggerAt(controller.clock().instant(), type, status.get(type), versions, instance, application.deploymentSpec()))
                 pendingObject.setString("cooldown", "failed");

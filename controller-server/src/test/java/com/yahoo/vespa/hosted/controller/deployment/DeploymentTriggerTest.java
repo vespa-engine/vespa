@@ -432,7 +432,7 @@ public class DeploymentTriggerTest {
         app.assertNotRunning(productionUsEast3);
         tester.deploymentTrigger().forceTrigger(app.instanceId(), productionUsEast3, "mrTrigger");
         app.assertRunning(productionUsEast3);
-        assertFalse(app.instance().deploymentJobs().jobStatus().get(productionUsEast3).pausedUntil().isPresent());
+        assertFalse(app.instance().jobPause(productionUsEast3).isPresent());
     }
 
     @Test

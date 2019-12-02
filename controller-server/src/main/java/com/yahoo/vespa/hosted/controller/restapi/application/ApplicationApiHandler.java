@@ -65,7 +65,6 @@ import com.yahoo.vespa.hosted.controller.application.ClusterCost;
 import com.yahoo.vespa.hosted.controller.application.ClusterUtilization;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentCost;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
@@ -260,7 +259,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return addDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
@@ -268,7 +266,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), true, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{ignored}/jobreport")) return notifyJobCompletion(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
@@ -1603,16 +1600,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse("Deactivated " + deploymentId);
     }
 
-    private HttpResponse notifyJobCompletion(String tenant, String application, HttpRequest request) {
-        try {
-            DeploymentJobs.JobReport report = toJobReport(tenant, application, toSlime(request.getData()).get());
-            controller.applications().deploymentTrigger().notifyOfCompletion(report);
-            return new MessageResponse("ok");
-        } catch (IllegalStateException e) {
-            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
-        }
-    }
-
     /** Returns test config for indicated job, with production deployments of the default instance. */
     private HttpResponse testConfig(ApplicationId id, JobType type) {
         // TODO jonmv: Support non-default instances as well; requires API change in clients.
@@ -1634,17 +1621,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                                       false,
                                                                       controller.applications().clusterEndpoints(deployments),
                                                                       controller.applications().contentClustersByZone(deployments)));
-    }
-
-    private static DeploymentJobs.JobReport toJobReport(String tenantName, String applicationName, Inspector report) {
-        Optional<DeploymentJobs.JobError> jobError = Optional.empty();
-        if (report.field("jobError").valid()) {
-            jobError = Optional.of(DeploymentJobs.JobError.valueOf(report.field("jobError").asString()));
-        }
-        ApplicationId id = ApplicationId.from(tenantName, applicationName, report.field("instance").asString());
-        JobType type = JobType.fromJobName(report.field("jobName").asString());
-        long buildNumber = report.field("buildNumber").asLong();
-        return DeploymentJobs.JobReport.ofJob(id, type, buildNumber, jobError);
     }
 
     private static SourceRevision toSourceRevision(Inspector object) {

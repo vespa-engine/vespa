@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.config.SlimeUtils;
@@ -22,10 +21,7 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -104,21 +100,6 @@ public class ApplicationSerializerTest {
                                        DeploymentActivity.create(Optional.of(activityAt), Optional.of(activityAt),
                                                                  OptionalDouble.of(200), OptionalDouble.of(10))));
 
-        List<JobStatus> statusList = new ArrayList<>();
-
-        statusList.add(JobStatus.initial(JobType.systemTest)
-                                .withTriggering(Version.fromString("5.6.7"), ApplicationVersion.unknown, empty(), "Test", Instant.ofEpochMilli(7))
-                                .withCompletion(30, empty(), Instant.ofEpochMilli(8))
-                                .withPause(OptionalLong.of(1L << 32)));
-        statusList.add(JobStatus.initial(JobType.stagingTest)
-                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, empty(), "Test 2", Instant.ofEpochMilli(5))
-                                .withCompletion(11, Optional.of(JobError.unknown), Instant.ofEpochMilli(6)));
-        statusList.add(JobStatus.initial(JobType.from(main, zone1).get())
-                                .withTriggering(Version.fromString("5.6.6"), ApplicationVersion.unknown, deployments.stream().findFirst(), "Test 3", Instant.ofEpochMilli(6))
-                                .withCompletion(11, empty(), Instant.ofEpochMilli(7)));
-
-        DeploymentJobs deploymentJobs = new DeploymentJobs(statusList);
-
         var rotationStatus = RotationStatus.from(Map.of(new RotationId("my-rotation"),
                                                         new RotationStatus.Targets(
                                                                 Map.of(ZoneId.from("prod", "us-west-1"), RotationState.in,
@@ -129,12 +110,12 @@ public class ApplicationSerializerTest {
         ApplicationId id3 = ApplicationId.from("t1", "a1", "i3");
         List<Instance> instances = List.of(new Instance(id1,
                                                         deployments,
-                                                        deploymentJobs,
+                                                        Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
                                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
                                                         rotationStatus),
                                            new Instance(id3,
                                                         List.of(),
-                                                        new DeploymentJobs(List.of()),
+                                                        Map.of(),
                                                         List.of(),
                                                         RotationStatus.EMPTY));
 
@@ -167,7 +148,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.deploymentIssueId(), serialized.deploymentIssueId());
 
         assertEquals(0, serialized.require(id3.instance()).deployments().size());
-        assertEquals(0, serialized.require(id3.instance()).deploymentJobs().jobStatus().size());
         assertEquals(0, serialized.require(id3.instance()).rotations().size());
         assertEquals(RotationStatus.EMPTY, serialized.require(id3.instance()).rotationStatus());
 
@@ -181,11 +161,10 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get());
         assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get());
 
-        assertEquals(original.require(id1.instance()).deploymentJobs().jobStatus().size(), serialized.require(id1.instance()).deploymentJobs().jobStatus().size());
-        assertEquals(  original.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.systemTest),
-                     serialized.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.systemTest));
-        assertEquals(  original.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.stagingTest),
-                     serialized.require(id1.instance()).deploymentJobs().jobStatus().get(JobType.stagingTest));
+        assertEquals(original.require(id1.instance()).jobPause(JobType.systemTest),
+                     serialized.require(id1.instance()).jobPause(JobType.systemTest));
+        assertEquals(original.require(id1.instance()).jobPause(JobType.stagingTest),
+                     serialized.require(id1.instance()).jobPause(JobType.stagingTest));
 
         assertEquals(original.outstandingChange(), serialized.outstandingChange());
 
