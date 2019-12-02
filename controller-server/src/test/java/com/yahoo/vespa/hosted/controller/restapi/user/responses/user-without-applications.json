@@ -1,0 +1,11 @@
+{
+  "user": {
+    "name": "Joe Developer",
+    "email": "dev@domail",
+    "nickname": "dev"
+  },
+  "tenants": {},
+  "operator": [
+    "hostedOperator"
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "user": {
+    "name": "Joe Developer",
+    "email": "dev@domail",
+    "nickname": "dev"
+  },
+  "tenants": {
+    "sandbox": {
+      "roles": [
+        "administrator",
+        "developer"
+      ],
+      "applications": {
+        "app2": {
+          "instances": [
+            "dev"
+          ]
+        }
+      }
+    },
+    "tenant1": {
+      "roles": [
+        "administrator",
+        "developer"
+      ],
+      "applications": {
+        "app1": {
+          "instances": [
+            "default"
+          ]
+        },
+        "app2": {
+          "instances": [
+            "default",
+            "myinstance"
+          ]
+        },
+        "app3": {
+          "instances": []
+        }
+      }
+    },
+    "tenant2": {
+      "roles": [
+        "administrator",
+        "developer"
+      ],
+      "applications": {
+        "app2": {
+          "instances": [
+            "test"
+          ]
+        }
+      }
+    }
+  }
+}
