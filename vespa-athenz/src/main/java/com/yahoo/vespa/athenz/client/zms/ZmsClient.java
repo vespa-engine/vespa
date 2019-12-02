@@ -30,6 +30,8 @@ public interface ZmsClient extends AutoCloseable {
 
     void addRoleMember(AthenzRole role, AthenzIdentity member);
 
+    void deleteRoleMember(AthenzRole role, AthenzIdentity member);
+
     boolean getMembership(AthenzRole role, AthenzIdentity identity);
 
     List<AthenzDomain> getDomainList(String prefix);

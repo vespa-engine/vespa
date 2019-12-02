@@ -81,6 +81,13 @@ public class ZmsClientMock implements ZmsClient {
     }
 
     @Override
+    public void deleteRoleMember(AthenzRole role, AthenzIdentity member) {
+        if ( ! role.roleName().equals("tenancy.vespa.hosting.admin"))
+            throw new IllegalArgumentException("Mock only supports deleting tenant admins, not " + role.roleName());
+        getDomainOrThrow(role.domain(), true).deleteTenantAdmin(member);
+    }
+
+    @Override
     public boolean getMembership(AthenzRole role, AthenzIdentity identity) {
         if (role.roleName().equals("admin")) {
             return getDomainOrThrow(role.domain(), false).admins.contains(identity);

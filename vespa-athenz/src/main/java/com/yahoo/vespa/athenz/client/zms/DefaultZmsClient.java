@@ -100,7 +100,16 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
     @Override
     public void addRoleMember(AthenzRole role, AthenzIdentity member) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
+        HttpUriRequest request = RequestBuilder.put(uri).build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
 
+    @Override
+    public void deleteRoleMember(AthenzRole role, AthenzIdentity member) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
+        HttpUriRequest request = RequestBuilder.delete(uri).build();
+        execute(request, response -> readEntity(response, Void.class));
     }
 
     @Override

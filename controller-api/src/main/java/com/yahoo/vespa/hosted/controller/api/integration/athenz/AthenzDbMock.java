@@ -57,6 +57,11 @@ public class AthenzDbMock {
             return this;
         }
 
+        public Domain deleteTenantAdmin(AthenzIdentity identity) {
+            tenantAdmins.remove(identity);
+            return this;
+        }
+
         /**
          * Simulates establishing Vespa tenancy in Athens.
          */
