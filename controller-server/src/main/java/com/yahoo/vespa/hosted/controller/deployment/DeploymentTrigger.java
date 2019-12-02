@@ -158,8 +158,12 @@ public class DeploymentTrigger {
     public boolean trigger(Job job) {
         log.log(LogLevel.DEBUG, String.format("Triggering %s for %s", job.jobType, job.applicationId()));
         try {
-            applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()),
-                                                  application -> jobs.start(job.applicationId(), job.jobType, job.versions));
+            applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
+                    jobs.start(job.applicationId(), job.jobType, job.versions);
+                    applications().store(application.with(job.applicationId().instance(), instance ->
+                            instance.withJobPause(job.jobType, OptionalLong.empty())));
+            });
+
             return true;
         }
         catch (RuntimeException e) {
