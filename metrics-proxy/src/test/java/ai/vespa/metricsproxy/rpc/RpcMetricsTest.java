@@ -33,6 +33,7 @@ import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_2_CONFIG_ID;
 import static ai.vespa.metricsproxy.service.VespaServices.ALL_SERVICES;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -65,7 +66,7 @@ public class RpcMetricsTest {
     }
 
     @Test
-    public void extra_metrics_are_added_to_output() throws Exception {
+    public void extra_metrics_are_added_to_and_flushed_from_output() throws Exception {
         String extraMetricsPayload = "{\"timestamp\":1557754772,\"application\":\"" + EXTRA_APP +
                 "\",\"metrics\":{\"foo.count\":3},\"dimensions\":{\"role\":\"extra-role\"}}";
 
@@ -80,6 +81,12 @@ public class RpcMetricsTest {
                 JSONObject extraMetrics = findExtraMetricsObject(allServicesResponse);
                 assertThat(extraMetrics.getJSONObject("metrics").getInt("foo.count"), is(3));
                 assertThat(extraMetrics.getJSONObject("dimensions").getString("role"), is("extra-role"));
+
+                req = new Request("flushExtraMetrics");
+                invoke(req, rpcClient, false);
+                allServicesResponse = getMetricsForYamas(ALL_SERVICES, rpcClient).trim();
+                extraMetrics = findExtraMetricsObject(allServicesResponse);
+                assertEquals(extraMetrics.toString(), "{}");
             }
         }
     }
@@ -91,8 +98,7 @@ public class RpcMetricsTest {
             assertTrue(jsonObject.has("application"));
             if (jsonObject.getString("application").equals(EXTRA_APP)) return jsonObject;
         }
-        fail("Metrics from setExtraMetrics was missing.");
-        throw new RuntimeException();
+        return new JSONObject();
     }
 
     @Test
