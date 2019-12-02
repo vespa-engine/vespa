@@ -58,14 +58,14 @@ public class AthenzRoleFilterTest {
 
         tester.athenzDb().hostedOperators.add(HOSTED_OPERATOR.getIdentity());
         tester.createTenant(TENANT.value(), TENANT_DOMAIN.getName(), null);
-        tester.createApplication(TENANT, APPLICATION.value(), "default", 12345);
+        tester.createApplication(TENANT.value(), APPLICATION.value(), "default");
         AthenzDbMock.Domain tenantDomain = tester.athenzDb().domains.get(TENANT_DOMAIN);
         tenantDomain.admins.add(TENANT_ADMIN.getIdentity());
         tenantDomain.admins.add(TENANT_ADMIN_AND_PIPELINE.getIdentity());
         tenantDomain.applications.get(new ApplicationId(APPLICATION.value())).addRoleMember(ApplicationAction.deploy, TENANT_PIPELINE.getIdentity());
         tenantDomain.applications.get(new ApplicationId(APPLICATION.value())).addRoleMember(ApplicationAction.deploy, TENANT_ADMIN_AND_PIPELINE.getIdentity());
         tester.createTenant(TENANT2.value(), TENANT_DOMAIN2.getName(), null);
-        tester.createApplication(TENANT2, APPLICATION.value(), "default", 42);
+        tester.createApplication(TENANT2.value(), APPLICATION.value(), "default");
     }
 
     @Test

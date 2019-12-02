@@ -118,7 +118,7 @@ public class DeploymentContext {
     private void createTenantAndApplication() {
         try {
             var tenant = tester.createTenant(instanceId.tenant().value());
-            tester.createApplication(tenant, instanceId.application().value(), instanceId.instance().value());
+            tester.createApplication(tenant.value(), instanceId.application().value(), instanceId.instance().value());
         } catch (IllegalArgumentException ignored) { } // Tenant and or application may already exist with custom setup.
     }
 
