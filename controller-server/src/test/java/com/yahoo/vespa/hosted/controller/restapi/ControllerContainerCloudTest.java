@@ -27,7 +27,6 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
     protected String variablePartXml() {
         return "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControlRequests'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.controller.security.CloudAccessControl'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
 
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiHandler'>\n" +
                "    <binding>http://*/application/v4/*</binding>\n" +
@@ -39,11 +38,6 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
                "    <binding>http://*/zone/v1/*</binding>\n" +
                "    <binding>http://*/api/zone/v1</binding>\n" +
                "    <binding>http://*/api/zone/v1/*</binding>\n" +
-               "  </handler>\n" +
-
-               "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
-               "    <binding>http://*/user/v1/*</binding>\n" +
-               "    <binding>http://*/api/user/v1/*</binding>\n" +
                "  </handler>\n" +
 
                "  <http>\n" +
