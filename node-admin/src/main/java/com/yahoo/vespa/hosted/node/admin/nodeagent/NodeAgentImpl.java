@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.flags.DoubleFlag;
@@ -428,7 +429,7 @@ public class NodeAgentImpl implements NodeAgent {
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
-                credentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+                credentialsMaintainerIn(context).ifPresent(maintainer -> maintainer.converge(context));
                 if (! container.isPresent()) {
                     containerState = STARTING;
                     startContainer(context);
@@ -560,7 +561,14 @@ public class NodeAgentImpl implements NodeAgent {
         };
     }
 
-    protected Optional<CredentialsMaintainer> credentialsMaintainer() {
+    /** Returns the credentials maintainer to use in given node context */
+    protected Optional<CredentialsMaintainer> credentialsMaintainerIn(NodeAgentContext context) {
+        if (context.nodeType() != NodeType.tenant) {
+            // This check is needed because some hosts can run multiple node types, e.g. config and tenant, where only
+            // tenant container should have credentials maintained.
+            return Optional.empty();
+        }
         return credentialsMaintainer;
     }
+
 }
