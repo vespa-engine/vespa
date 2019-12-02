@@ -205,7 +205,7 @@
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
-      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
+      "public boolean deploysTo(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -307,6 +307,7 @@
     "methods": [
       "public void <init>()",
       "public final boolean concerns(com.yahoo.config.provision.Environment)",
+      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public abstract boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.util.List zones()",
       "public java.time.Duration delay()",

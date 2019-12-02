@@ -614,7 +614,7 @@ public class ApplicationController {
                                                       .map(Deployment::zone)
                                                       .filter(zone ->      deploymentSpec.instance(instance).isEmpty()
                                                                       || ! deploymentSpec.requireInstance(instance).deploysTo(zone.environment(),
-                                                                                                                              Optional.of(zone.region())))
+                                                                                                                              zone.region()))
                                                       .collect(Collectors.toList());
 
         if (deploymentsToRemove.isEmpty())
@@ -645,7 +645,7 @@ public class ApplicationController {
             ZoneId zone = job.zone(controller.system());
             if (deploymentSpec.instance(instance.name())
                               // TODO jonmv: Properly convert to job here.
-                              .map(spec -> spec.deploysTo(zone.environment(), Optional.of(zone.region())))
+                              .map(spec -> spec.deploysTo(zone.environment(), zone.region()))
                               .orElse(false))
                 continue;
             instance = instance.withoutDeploymentJob(job);

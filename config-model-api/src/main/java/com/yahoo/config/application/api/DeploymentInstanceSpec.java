@@ -201,8 +201,8 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     public List<Endpoint> endpoints() { return endpoints; }
 
     /** Returns whether this instance deploys to the given zone, either implicitly or explicitly */
-    public boolean deploysTo(Environment environment, Optional<RegionName> region) {
-        return zones().stream().anyMatch(zone -> zone.concerns(environment, region));
+    public boolean deploysTo(Environment environment, RegionName region) {
+        return zones().stream().anyMatch(zone -> zone.concerns(environment, Optional.of(region)));
     }
 
     @Override

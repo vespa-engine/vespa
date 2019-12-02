@@ -277,6 +277,12 @@ public class DeploymentSpec {
         }
 
         /** Returns whether this step specifies the given environment, and, optionally, region. */
+        // TODO jonmv: Remove when 7.147 is the oldest version.
+        public boolean deploysTo(Environment environment, Optional<RegionName> region) {
+            return concerns(environment, region);
+        }
+
+        /** Returns whether this step specifies the given environment, and, optionally, region. */
         public abstract boolean concerns(Environment environment, Optional<RegionName> region);
 
         /** Returns the zones deployed to in this step. */
