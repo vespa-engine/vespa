@@ -19,6 +19,7 @@ import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
+import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
@@ -154,10 +155,8 @@ public class DocumentScriptTestCase {
         Struct out = (Struct)processDocument(in);
         assertSpanTrees(out.getFieldValue("myString"), "mySpanTree");
 
-        StringFieldValue str = (StringFieldValue)((MapValueUpdate)processFieldUpdate(in)).getUpdate().getValue();
-        assertSpanTrees(str, "mySpanTree");
-
-        str = (StringFieldValue)((MapValueUpdate)processFieldUpdate(in)).getUpdate().getValue();
+        var updStruct = (Struct)((AssignValueUpdate)processFieldUpdate(in)).getValue();
+        var str = (StringFieldValue)updStruct.getFieldValue(updStruct.getField("myString"));
         assertSpanTrees(str, "mySpanTree");
     }
 
