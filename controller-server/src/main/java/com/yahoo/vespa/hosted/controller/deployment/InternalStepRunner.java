@@ -64,14 +64,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.application.api.Notifications.Role.author;
 import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.ACTIVATION_CONFLICT;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.BAD_REQUEST;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.CERTIFICATE_NOT_READY;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.LOAD_BALANCER_NOT_READY;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.OUT_OF_CAPACITY;
-import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.PARENT_HOST_NOT_READY;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
@@ -248,20 +240,25 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(running);
         }
         catch (ConfigServerException e) {
-            if (   e.getErrorCode() == ACTIVATION_CONFLICT
-                || e.getErrorCode() == APPLICATION_LOCK_FAILURE
-                || e.getErrorCode() == PARENT_HOST_NOT_READY
-                || e.getErrorCode() == CERTIFICATE_NOT_READY
-                || e.getErrorCode() == LOAD_BALANCER_NOT_READY) {
-                logger.log("Will retry, because of '" + e.getErrorCode() + "' deploying:\n" + e.getMessage());
-                return Optional.empty();
+            switch (e.getErrorCode()) {
+                case ACTIVATION_CONFLICT:
+                case APPLICATION_LOCK_FAILURE:
+                case CERTIFICATE_NOT_READY:
+                case LOAD_BALANCER_NOT_READY:
+                    logger.log("Deployment failed with transient error " + e.getErrorCode() + ", will retry: " + e.getMessage());
+                    return Optional.empty();
+                case PARENT_HOST_NOT_READY:
+                    logger.log(e.getMessage());
+                    return Optional.empty();
+                case OUT_OF_CAPACITY:
+                    logger.log("Deployment failed: Out of capacity: " + e.getMessage());
+                    return Optional.of(outOfCapacity);
+                case INVALID_APPLICATION_PACKAGE:
+                case BAD_REQUEST:
+                    logger.log("Deployment failed: " + e.getMessage());
+                    return Optional.of(deploymentFailed);
             }
-            if (   e.getErrorCode() == INVALID_APPLICATION_PACKAGE
-                || e.getErrorCode() == BAD_REQUEST
-                || e.getErrorCode() == OUT_OF_CAPACITY) {
-                logger.log("Deployment failed: " + e.getMessage());
-                return Optional.of(e.getErrorCode() == OUT_OF_CAPACITY ? outOfCapacity : deploymentFailed);
-            }
+
             throw e;
         }
     }

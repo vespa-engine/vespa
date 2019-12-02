@@ -119,10 +119,26 @@ class Activator {
                 .collect(Collectors.toSet());
         long numNonActive = nonActiveHosts.size();
         if (numNonActive > 0) {
-            // Note: log parent hosts not ready, but do not add to exception (to avoid leaking hostnames)
-            logger.log(LogLevel.INFO, application + ": Parent hosts not ready: " + nonActiveHosts);
-            throw new ParentHostUnavailableException("Waiting for hosts to finish booting: " +
-                                                     numNonActive + "/" + parentHostnames.size() + " left.");
+            long numActive = parentHostnames.size() - numNonActive;
+            var messageBuilder = new StringBuilder()
+                    .append(numActive).append("/").append(parentHostnames.size())
+                    .append(" hosts have completed provisioning and bootstrapping, still waiting for ");
+
+            if (nonActiveHosts.size() <= 5) {
+                messageBuilder.append(nonActiveHosts.stream()
+                        .sorted()
+                        .collect(Collectors.joining(", ")));
+            } else {
+                messageBuilder.append(nonActiveHosts.stream()
+                        .sorted()
+                        .limit(3)
+                        .collect(Collectors.joining(", ")))
+                        .append(", and others");
+            }
+            var message = messageBuilder.toString();
+
+            logger.log(LogLevel.INFO, application + ": " + message);
+            throw new ParentHostUnavailableException(message);
         }
     }
 
