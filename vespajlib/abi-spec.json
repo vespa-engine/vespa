@@ -2526,7 +2526,8 @@
       "public java.util.Optional dimension()",
       "public java.util.Optional label()",
       "public java.util.Optional index()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
     ],
     "fields": []
   },

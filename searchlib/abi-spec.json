@@ -348,6 +348,7 @@
       "public"
     ],
     "methods": [
+      "public static com.yahoo.searchlib.rankingexpression.Reference fromIdentifier(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.searchlib.rankingexpression.rule.Arguments, java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.rule.Arguments arguments()",
       "public java.lang.String output()",

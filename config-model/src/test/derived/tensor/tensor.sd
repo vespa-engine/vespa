@@ -102,4 +102,17 @@ search tensor {
 
   }
 
+  rank-profile profile9 {
+
+    # shadow refers to the generate index and shadow() to the function
+    first-phase {
+      expression: sum(tensor(shadow[1])(attribute{x: shadow + shadow() }))
+    }
+
+    function shadow() {
+      expression: 3
+    }
+
+  }
+
 }

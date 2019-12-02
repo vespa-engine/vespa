@@ -119,7 +119,7 @@ public class TensorFunctionNode extends CompositeNode {
         public String toString(ToStringContext c) {
             if (c instanceof ExpressionToStringContext) {
                 ExpressionToStringContext context = (ExpressionToStringContext) c;
-                return expression.toString(new StringBuilder(),context.context, context.path, context.parent).toString();
+                return expression.toString(new StringBuilder(), context.context, context.path, context.parent).toString();
             }
             else {
                 return expression.toString();
@@ -182,7 +182,7 @@ public class TensorFunctionNode extends CompositeNode {
         public String toString(ToStringContext c) {
             if (c instanceof ExpressionToStringContext) {
                 ExpressionToStringContext context = (ExpressionToStringContext) c;
-                return expression.toString(new StringBuilder(),context.context, context.path, context.parent).toString();
+                return expression.toString(new StringBuilder(), context.context, context.path, context.parent).toString();
             }
             else {
                 return expression.toString();

@@ -275,7 +275,12 @@ ReferenceNode feature() :
 }
 {
     ( name = identifier() [ <LBRACE> args = args() <RBRACE> ] [ <DOT> out = outs() ] )
-    { return new ReferenceNode(name, args, out); }
+    {
+         if (args == null && out == null) // know the difference between "foo" and "foo()"
+             return new ReferenceNode(name);
+         else
+             return new ReferenceNode(name, args, out);
+    }
 }
 
 // Rank properties are referenced by $propertyname

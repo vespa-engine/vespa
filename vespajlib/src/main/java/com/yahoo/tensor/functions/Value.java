@@ -78,15 +78,15 @@ public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     @Override
     public String toString(ToStringContext context) {
-        StringBuilder b = new StringBuilder(argument.toString());
+        StringBuilder b = new StringBuilder(argument.toString(context));
         if (cellAddress.size() == 1 && cellAddress.get(0).dimension().isEmpty()) {
             if (cellAddress.get(0).index().isPresent())
-                b.append("[").append(cellAddress.get(0).index().get()).append("]");
+                b.append("[").append(cellAddress.get(0).index().get().toString(context)).append("]");
             else
-                b.append("{").append(cellAddress.get(0).label()).append("}");
+                b.append("{").append(cellAddress.get(0).label().get()).append("}");
         }
         else {
-            b.append("{").append(cellAddress.stream().map(i -> i.toString()).collect(Collectors.joining(", "))).append("}");
+            b.append("{").append(cellAddress.stream().map(i -> i.toString(context)).collect(Collectors.joining(", "))).append("}");
         }
         return b.toString();
     }
@@ -153,12 +153,16 @@ public class Value<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
         @Override
         public String toString() {
+            return toString(null);
+        }
+
+        public String toString(ToStringContext context) {
             StringBuilder b = new StringBuilder();
             dimension.ifPresent(d -> b.append(d).append(":"));
             if (label != null)
                 b.append(label);
             else
-                b.append(index);
+                b.append(index.toString(context));
             return b.toString();
         }
 

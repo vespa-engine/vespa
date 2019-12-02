@@ -13,6 +13,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A node referring either to a value in the context or to a named ranking expression function.
@@ -25,7 +26,7 @@ public final class ReferenceNode extends CompositeNode {
 
     /* Creates a node with a simple identifier reference */
     public ReferenceNode(String name) {
-        this(name, null, null);
+        this.reference = Reference.fromIdentifier(name);
     }
 
     public ReferenceNode(String name, List<? extends ExpressionNode> arguments, String output) {
@@ -88,7 +89,6 @@ public final class ReferenceNode extends CompositeNode {
             context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
             return string.append("rankingExpression(").append(instance.getName()).append(')');
         }
-
         // Not resolved in this context: output as-is
         return reference.toString(string, context, path, parent);
     }

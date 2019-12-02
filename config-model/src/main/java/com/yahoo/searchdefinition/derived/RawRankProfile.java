@@ -406,7 +406,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             return properties;
         }
 
-        private List<Pair<String, String>>  deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
+        private List<Pair<String, String>> deriveRankingPhaseRankProperties(RankingExpression expression, String phase) {
             List<Pair<String, String>> properties = new ArrayList<>();
             if (expression == null) return properties;
 

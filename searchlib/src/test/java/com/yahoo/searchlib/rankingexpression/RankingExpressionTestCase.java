@@ -159,6 +159,48 @@ public class RankingExpressionTestCase {
     }
 
     @Test
+    public void testFunctionInTensorSerialization() throws ParseException {
+        List<ExpressionFunction> functions = new ArrayList<>();
+        functions.add(new ExpressionFunction("scalarFunction", List.of(), new RankingExpression("5")));
+        functions.add(new ExpressionFunction("tensorFunction", List.of(), new RankingExpression("tensor(x[3]):[1, 2, 3]")));
+
+        // Getting a value from a tensor supplied by a function, inside a tensor generate function
+        assertSerialization(List.of("tensor(x[3])(rankingExpression(tensorFunction)[x])"),
+                            "tensor(x[3])(tensorFunction[x])",
+                            functions, false);
+
+        // Getting a value from a tensor supplied by a function, where the value index is supplied by a function, inside a tensor generate function, short form
+        assertSerialization(List.of("tensor(x[3])(rankingExpression(tensorFunction)[rankingExpression(scalarFunction)])"),
+                            "tensor(x[3])(tensorFunction[scalarFunction()])",
+                            functions, false);
+
+        // 'scalarFunction'  is interpreted as a label here since it is the short form of a mapped dimension
+        assertSerialization(List.of("tensor(x[3])(rankingExpression(tensorFunction){scalarFunction})"),
+                            "tensor(x[3])(tensorFunction{scalarFunction})",
+                            functions, false);
+
+        // Getting a value from a tensor supplied by a function, where the value index is supplied by a function, inside a tensor generate function, long form
+        assertSerialization(List.of("tensor(x[3])(rankingExpression(tensorFunction){x:rankingExpression(scalarFunction)})"),
+                            "tensor(x[3])(tensorFunction{x:scalarFunction()})",
+                            functions, false);
+
+        // 'scalarFunction'  without parentheses is interpreted as a label instead of a reference to the function
+        assertSerialization(List.of("tensor(x[3])(rankingExpression(tensorFunction){x:scalarFunction})"),
+                            "tensor(x[3])(tensorFunction{x:scalarFunction})",
+                            functions, false);
+
+        // Accessing a function in a dynamic tensor, short form
+        assertSerialization(List.of("tensor(x[2]):{{x:0}:rankingExpression(scalarFunction),{x:1}:rankingExpression(scalarFunction)}"),
+                            "tensor(x[2]):[scalarFunction(), scalarFunction()]]",
+                            functions, false);
+
+        // Accessing a function in a dynamic tensor, long form
+        assertSerialization(List.of("tensor(x{}):{{x:foo}:rankingExpression(scalarFunction),{x:bar}:rankingExpression(scalarFunction)}"),
+                            "tensor(x{}):{{x:foo}:scalarFunction(), {x:bar}:scalarFunction()}",
+                            functions, false);
+    }
+
+    @Test
     public void testBug3464208() throws ParseException {
         List<ExpressionFunction> functions = new ArrayList<>();
         functions.add(new ExpressionFunction("log10tweetage", null, new RankingExpression("69")));
@@ -323,7 +365,8 @@ public class RankingExpressionTestCase {
         }
     }
 
-    private void assertSerialization(List<String> expectedSerialization, String expressionString, 
+    private void assertSerialization(List<String> expectedSerialization,
+                                     String expressionString,
                                      List<ExpressionFunction> functions) {
         assertSerialization(expectedSerialization, expressionString, functions, false);
     }
@@ -331,13 +374,13 @@ public class RankingExpressionTestCase {
                                      List<ExpressionFunction> functions, boolean print) {
         try {
             if (print)
-                System.out.println("Parsing expression '" + expressionString + "'.");
+                System.out.println("Parsing expression '" + expressionString + "':");
 
             RankingExpression expression = new RankingExpression(expressionString);
             Map<String, String> rankProperties = expression.getRankProperties(functions);
             if (print) {
                 for (String key : rankProperties.keySet())
-                    System.out.println("Property '" + key + "': " + rankProperties.get(key));
+                    System.out.println(key + ": " + rankProperties.get(key));
             }
             for (int i = 0; i < expectedSerialization.size();) {
                 String val = expectedSerialization.get(i++);

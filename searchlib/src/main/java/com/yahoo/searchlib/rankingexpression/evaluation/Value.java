@@ -76,7 +76,7 @@ public abstract class Value {
      * @return this for convenience
      */
     public Value freeze() {
-        frozen=true;
+        frozen = true;
         return this;
     }
 
