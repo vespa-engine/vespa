@@ -2,3 +2,4 @@
 Makefile
 clock_test
 staging_vespalib_clock_test_app
+staging_vespalib_clock_benchmark_app
