@@ -102,11 +102,11 @@ Test::testSequencing()
     FastOS_Thread::Sleep(250);
     EXPECT_TRUE(waitQueueSize(dstQ, 2));
     EXPECT_TRUE(waitQueueSize(srcQ, 0));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     EXPECT_TRUE(waitQueueSize(srcQ, 2));
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 3));
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
 }
@@ -137,7 +137,7 @@ Test::testResendError()
     }
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
     {
-        Routable::UP r = dstQ.dequeue(0);
+        Routable::UP r = dstQ.dequeue();
         Reply::UP reply(new EmptyReply());
         r->swapState(*reply);
         reply->addError(Error(ErrorCode::FATAL_ERROR, "error"));
@@ -153,7 +153,7 @@ Test::testResendError()
     }
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
     {
-        Routable::UP r = dstQ.dequeue(0);
+        Routable::UP r = dstQ.dequeue();
         Reply::UP reply(new EmptyReply());
         r->swapState(*reply);
         reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "error"));
@@ -161,12 +161,12 @@ Test::testResendError()
     }
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
     EXPECT_TRUE(waitQueueSize(srcQ, 1));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 2));
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
     {
-        string trace1 = srcQ.dequeue(0)->getTrace().toString();
-        string trace2 = srcQ.dequeue(0)->getTrace().toString();
+        string trace1 = srcQ.dequeue()->getTrace().toString();
+        string trace2 = srcQ.dequeue()->getTrace().toString();
         fprintf(stderr, "\nTRACE DUMP:\n%s\n\n", trace1.c_str());
         fprintf(stderr, "\nTRACE DUMP:\n%s\n\n", trace2.c_str());
     }
@@ -202,7 +202,7 @@ Test::testResendConnDown()
         msg->getTrace().setLevel(9);
         EXPECT_TRUE(ss->send(std::move(msg), "dst").isAccepted());
         EXPECT_TRUE(waitQueueSize(dst2Q, 1));
-        Routable::UP obj = dst2Q.dequeue(0);
+        Routable::UP obj = dst2Q.dequeue();
         obj->discard();
         src.mb.setupRouting(RoutingSpec().addTable(RoutingTableSpec(SimpleProtocol::NAME)
                                                    .addHop(HopSpec("dst", "dst/session"))));
@@ -210,11 +210,11 @@ Test::testResendConnDown()
 
     ASSERT_TRUE(waitQueueSize(dstQ, 1)); // fails
     ASSERT_TRUE(waitQueueSize(srcQ, 0));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 1));
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
 
-    string trace = srcQ.dequeue(0)->getTrace().toString();
+    string trace = srcQ.dequeue()->getTrace().toString();
     fprintf(stderr, "\nTRACE DUMP:\n%s\n\n", trace.c_str());
 }
 
@@ -240,7 +240,7 @@ Test::testIllegalRoute()
     ASSERT_TRUE(waitQueueSize(srcQ, 1));
     {
         while (srcQ.size() > 0) {
-            Routable::UP routable = srcQ.dequeue(0);
+            Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
             Reply::UP r(static_cast<Reply*>(routable.release()));
             EXPECT_EQUAL(1u, r->getNumErrors());
@@ -272,7 +272,7 @@ Test::testNoServices()
     ASSERT_TRUE(waitQueueSize(srcQ, 1));
     {
         while (srcQ.size() > 0) {
-            Routable::UP routable = srcQ.dequeue(0);
+            Routable::UP routable = srcQ.dequeue();
             ASSERT_TRUE(routable->isReply());
             Reply::UP r(static_cast<Reply*>(routable.release()));
             EXPECT_TRUE(r->getNumErrors() == 1);
@@ -300,7 +300,7 @@ Test::testBlockingClose()
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("foo")), "dst").isAccepted());
     ss->close();
     srcQ.handleMessage(Message::UP(new SimpleMessage("bogus")));
-    Routable::UP routable = srcQ.dequeue(0);
+    Routable::UP routable = srcQ.dequeue();
     EXPECT_TRUE(routable->isReply());
 }
 

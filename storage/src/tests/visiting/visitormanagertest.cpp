@@ -617,7 +617,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "InvalidVisitor", ost.str(), "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
         cmd->setAddress(address);
-        cmd->setQueueTimeout(0);
+        cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
         _top->waitForMessages(i+1, 60);
     }
@@ -629,7 +629,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
         cmd->setAddress(address);
-        cmd->setQueueTimeout(0);
+        cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
 
@@ -698,7 +698,7 @@ TEST_F(VisitorManagerTest, visitor_cleanup) {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", ost.str(), "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
         cmd->setAddress(address);
-        cmd->setQueueTimeout(0);
+        cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
 
@@ -730,7 +730,7 @@ TEST_F(VisitorManagerTest, abort_on_failed_visitor_info) {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
         cmd->setAddress(address);
-        cmd->setQueueTimeout(0);
+        cmd->setQueueTimeout(0ms);
         _top->sendDown(cmd);
     }
 
@@ -765,7 +765,7 @@ TEST_F(VisitorManagerTest, abort_on_field_path_error) {
             makeBucketSpace(), "DumpVisitor", "testvis", "testdoctype1.headerval{bogus} == 1234");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->setAddress(address);
-    cmd->setQueueTimeout(0);
+    cmd->setQueueTimeout(0ms);
     _top->sendDown(cmd);
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::ILLEGAL_PARAMETERS));
@@ -782,8 +782,8 @@ TEST_F(VisitorManagerTest, visitor_queue_timeout) {
         auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
         cmd->addBucketToBeVisited(document::BucketId(16, 3));
         cmd->setAddress(address);
-        cmd->setQueueTimeout(1);
-        cmd->setTimeout(100 * 1000 * 1000);
+        cmd->setQueueTimeout(1ms);
+        cmd->setTimeout(100 * 1000 * 1000ms);
         _top->sendDown(cmd);
 
         _node->getClock().addSecondsToTime(1000);
@@ -807,8 +807,8 @@ TEST_F(VisitorManagerTest, visitor_processing_timeout) {
     auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "DumpVisitor", "testvis", "");
     cmd->addBucketToBeVisited(document::BucketId(16, 3));
     cmd->setAddress(address);
-    cmd->setQueueTimeout(0);
-    cmd->setTimeout(100);
+    cmd->setQueueTimeout(0ms);
+    cmd->setTimeout(100ms);
     _top->sendDown(cmd);
 
     // Wait for Put before increasing the clock
@@ -825,7 +825,7 @@ namespace {
 uint32_t nextVisitor = 0;
 
 api::StorageMessage::Id
-sendCreateVisitor(uint32_t timeout, DummyStorageLink& top, uint8_t priority = 127) {
+sendCreateVisitor(vespalib::duration timeout, DummyStorageLink& top, uint8_t priority = 127) {
     std::ostringstream ost;
     ost << "testvis" << ++nextVisitor;
     api::StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
@@ -851,25 +851,25 @@ TEST_F(VisitorManagerTest, prioritized_visitor_queing) {
 
     // First 4 should just start..
     for (uint32_t i = 0; i < 4; ++i) {
-        ids[i] = sendCreateVisitor(i, *_top, i);
+        ids[i] = sendCreateVisitor(i*1ms, *_top, i);
     }
 
     // Next ones should be queued - (Better not finish before we get here)
     // Submit with higher priorities
     for (uint32_t i = 0; i < 4; ++i) {
-        ids[i + 4] = sendCreateVisitor(1000, *_top, 100 - i);
+        ids[i + 4] = sendCreateVisitor(1000ms, *_top, 100 - i);
     }
 
     // Queue is now full with a pri 100 visitor at its end
     // Send a lower pri visitor that will be busy-returned immediately
-    ids[8] = sendCreateVisitor(1000, *_top, 130);
+    ids[8] = sendCreateVisitor(1000ms, *_top, 130);
 
     uint64_t message_id = 0;
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUSY, -1, -1, &message_id));
     ASSERT_EQ(ids[8], message_id);
 
     // Send a higher pri visitor that will take the place of pri 100 visitor
-    ids[9] = sendCreateVisitor(1000, *_top, 60);
+    ids[9] = sendCreateVisitor(1000ms, *_top, 60);
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUSY, -1, -1, &message_id));
     ASSERT_EQ(ids[4], message_id);
@@ -917,44 +917,44 @@ TEST_F(VisitorManagerTest, prioritized_max_concurrent_visitors) {
 
     // First 4 should just start..
     for (uint32_t i = 0; i < 4; ++i) {
-        ids[i] = sendCreateVisitor(i, *_top, i);
+        ids[i] = sendCreateVisitor(i*1ms, *_top, i);
     }
 
     // Low pri messages; get put into queue
     for (uint32_t i = 0; i < 6; ++i) {
-        ids[i + 4] = sendCreateVisitor(1000, *_top, 203 - i);
+        ids[i + 4] = sendCreateVisitor(1000ms, *_top, 203 - i);
     }
 
     // Higher pri message: fits happily into 1 extra concurrent slot
-    ids[10] = sendCreateVisitor(1000, *_top, 190);
+    ids[10] = sendCreateVisitor(1000ms, *_top, 190);
 
     // Should punch pri203 msg out of the queue -> busy
-    ids[11] = sendCreateVisitor(1000, *_top, 197);
+    ids[11] = sendCreateVisitor(1000ms, *_top, 197);
 
     uint64_t message_id = 0;
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUSY, -1, -1, &message_id));
     ASSERT_EQ(ids[4], message_id);
 
     // No concurrency slots left for this message -> busy
-    ids[12] = sendCreateVisitor(1000, *_top, 204);
+    ids[12] = sendCreateVisitor(1000ms, *_top, 204);
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUSY, -1, -1, &message_id));
     ASSERT_EQ(ids[12], message_id);
 
     // Gets a concurrent slot
-    ids[13] = sendCreateVisitor(1000, *_top, 80);
+    ids[13] = sendCreateVisitor(1000ms, *_top, 80);
 
     // Kicks pri 202 out of the queue -> busy
-    ids[14] = sendCreateVisitor(1000, *_top, 79);
+    ids[14] = sendCreateVisitor(1000ms, *_top, 79);
 
     ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUSY, -1, -1, &message_id));
     ASSERT_EQ(ids[5], message_id);
 
     // Gets a concurrent slot
-    ids[15] = sendCreateVisitor(1000, *_top, 63);
+    ids[15] = sendCreateVisitor(1000ms, *_top, 63);
 
     // Very Important Visitor(tm) gets a concurrent slot
-    ids[16] = sendCreateVisitor(1000, *_top, 0);
+    ids[16] = sendCreateVisitor(1000ms, *_top, 0);
 
     std::vector<document::Document::SP> docs;
     std::vector<document::DocumentId> docIds;
@@ -1018,11 +1018,11 @@ TEST_F(VisitorManagerTest, visitor_queing_zero_queue_size) {
 
     // First 4 should just start..
     for (uint32_t i = 0; i < 4; ++i) {
-        sendCreateVisitor(i, *_top, i);
+        sendCreateVisitor(i * 1ms, *_top, i);
     }
     // Queue size is zero, all visitors will be busy-returned
     for (uint32_t i = 0; i < 5; ++i) {
-        sendCreateVisitor(1000, *_top, 100 - i);
+        sendCreateVisitor(1000ms, *_top, 100 - i);
         ASSERT_NO_FATAL_FAILURE(verifyCreateVisitorReply(api::ReturnCode::BUSY));
     }
     for (uint32_t session = 0; session < 4; ++session) {
@@ -1037,8 +1037,8 @@ TEST_F(VisitorManagerTest, status_page) {
     _manager->setMaxConcurrentVisitors(1, 1);
     _manager->setMaxVisitorQueueSize(6);
     // 1 running, 1 queued
-    sendCreateVisitor(1000000, *_top, 1);
-    sendCreateVisitor(1000000, *_top, 128);
+    sendCreateVisitor(1000000ms, *_top, 1);
+    sendCreateVisitor(1000000ms, *_top, 128);
 
     {
         TestVisitorMessageSession& session = getSession(0);

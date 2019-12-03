@@ -76,7 +76,7 @@ Test::testMessageExpires()
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(0).getCode());
 
-    Message::UP msg = dstHandler.getMessage(1);
+    Message::UP msg = dstHandler.getMessage(1s);
     if (msg) {
         msg->discard();
     }

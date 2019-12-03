@@ -378,7 +378,7 @@ public:
     bool wait(int msTimeout) {
         return wait(std::chrono::milliseconds(msTimeout));
     }
-    bool wait(std::chrono::milliseconds timeout) {
+    bool wait(std::chrono::nanoseconds timeout) {
         return _cond->wait_for(_guard, timeout) == std::cv_status::no_timeout;
     }
     /**

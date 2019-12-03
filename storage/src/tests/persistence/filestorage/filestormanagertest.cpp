@@ -856,7 +856,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
         auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
         cmd->setAddress(*address);
         cmd->setPriority(0);
-        cmd->setTimeout(50);
+        cmd->setTimeout(50ms);
         filestorHandler.schedule(cmd, 0);
     }
 
@@ -865,7 +865,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
         auto address = std::make_unique<api::StorageMessageAddress>("storage", lib::NodeType::STORAGE, 3);
         cmd->setAddress(*address);
         cmd->setPriority(200);
-        cmd->setTimeout(10000);
+        cmd->setTimeout(10000ms);
         filestorHandler.schedule(cmd, 0);
     }
 

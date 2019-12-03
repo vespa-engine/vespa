@@ -167,6 +167,8 @@ Test::Main()
 //
 ///////////////////////////////////////////////////////////////////////////////
 
+const vespalib::duration TIMEOUT = 600s;
+
 void
 Test::testFactory(TestData &data)
 {
@@ -174,8 +176,8 @@ Test::testFactory(TestData &data)
 
     // Source should fail to encode the message.
     EXPECT_TRUE(data._srcSession->send(mbus::Message::UP(new MyMessage()), route).isAccepted());
-    mbus::Reply::UP reply = data._srcHandler.getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    mbus::Reply::UP reply = data._srcHandler.getReply(TIMEOUT);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     ASSERT_TRUE(reply->hasErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::ENCODE_ERROR, reply->getError(0).getCode());
@@ -185,8 +187,8 @@ Test::testFactory(TestData &data)
     data._srcProtocol->putRoutableFactory(MyMessage::TYPE, IRoutableFactory::SP(new MyMessageFactory()),
                                           vespalib::VersionSpecification());
     EXPECT_TRUE(data._srcSession->send(mbus::Message::UP(new MyMessage()), route).isAccepted());
-    reply = data._srcHandler.getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    reply = data._srcHandler.getReply(TIMEOUT);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(reply->hasErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::DECODE_ERROR, reply->getError(0).getCode());
@@ -196,13 +198,13 @@ Test::testFactory(TestData &data)
     data._dstProtocol->putRoutableFactory(MyMessage::TYPE, IRoutableFactory::SP(new MyMessageFactory()),
                                           vespalib::VersionSpecification());
     EXPECT_TRUE(data._srcSession->send(mbus::Message::UP(new MyMessage()), route).isAccepted());
-    mbus::Message::UP msg = data._dstHandler.getMessage(600);
-    ASSERT_TRUE(msg.get() != NULL);
+    mbus::Message::UP msg = data._dstHandler.getMessage(TIMEOUT);
+    ASSERT_TRUE(msg);
     reply.reset(new MyReply());
     reply->swapState(*msg);
     data._dstSession->reply(std::move(reply));
-    reply = data._srcHandler.getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    reply = data._srcHandler.getReply(TIMEOUT);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(reply->hasErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::ENCODE_ERROR, reply->getError(0).getCode());
@@ -212,13 +214,13 @@ Test::testFactory(TestData &data)
     data._dstProtocol->putRoutableFactory(MyReply::TYPE, IRoutableFactory::SP(new MyReplyFactory()),
                                           vespalib::VersionSpecification());
     EXPECT_TRUE(data._srcSession->send(mbus::Message::UP(new MyMessage()), route).isAccepted());
-    msg = data._dstHandler.getMessage(600);
-    ASSERT_TRUE(msg.get() != NULL);
+    msg = data._dstHandler.getMessage(TIMEOUT);
+    ASSERT_TRUE(msg);
     reply.reset(new MyReply());
     reply->swapState(*msg);
     data._dstSession->reply(std::move(reply));
-    reply = data._srcHandler.getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    reply = data._srcHandler.getReply(TIMEOUT);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(reply->hasErrors());
     EXPECT_EQUAL((uint32_t)mbus::ErrorCode::DECODE_ERROR, reply->getError(0).getCode());
@@ -228,13 +230,13 @@ Test::testFactory(TestData &data)
     data._srcProtocol->putRoutableFactory(MyReply::TYPE, IRoutableFactory::SP(new MyReplyFactory()),
                                           vespalib::VersionSpecification());
     EXPECT_TRUE(data._srcSession->send(mbus::Message::UP(new MyMessage()), route).isAccepted());
-    msg = data._dstHandler.getMessage(600);
-    ASSERT_TRUE(msg.get() != NULL);
+    msg = data._dstHandler.getMessage(TIMEOUT);
+    ASSERT_TRUE(msg);
     reply.reset(new MyReply());
     reply->swapState(*msg);
     data._dstSession->reply(std::move(reply));
-    reply = data._srcHandler.getReply(600);
-    ASSERT_TRUE(reply.get() != NULL);
+    reply = data._srcHandler.getReply(TIMEOUT);
+    ASSERT_TRUE(reply);
     fprintf(stderr, "%s\n", reply->getTrace().toString().c_str());
     EXPECT_TRUE(!reply->hasErrors());
 }

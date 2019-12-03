@@ -16,14 +16,13 @@ namespace storage {
 namespace {
 
 std::shared_ptr<api::CreateVisitorCommand> getCommand(
-        vespalib::stringref name, int timeout,
+        vespalib::stringref name, vespalib::duration timeout,
         uint8_t priority = 0)
 {
     vespalib::asciistream ost;
-    ost << name << " t=" << timeout << " p=" << static_cast<unsigned int>(priority);
+    ost << name << " t=" << vespalib::count_ms(timeout) << " p=" << static_cast<unsigned int>(priority);
     // Piggyback name in document selection
-    std::shared_ptr<api::CreateVisitorCommand> cmd(
-            new api::CreateVisitorCommand(makeBucketSpace(), "", "", ost.str()));
+    auto cmd = std::make_shared<api::CreateVisitorCommand>(makeBucketSpace(), "", "", ost.str());
     cmd->setQueueTimeout(timeout);
     cmd->setPriority(priority);
     return cmd;
@@ -43,13 +42,13 @@ TEST(CommandQueueTest, fifo) {
     ASSERT_TRUE(queue.empty());
     // Use all default priorities, meaning what comes out should be in the same order
     // as what went in
-    queue.add(getCommand("first",     1));
-    queue.add(getCommand("second",   10));
-    queue.add(getCommand("third",     5));
-    queue.add(getCommand("fourth",    0));
-    queue.add(getCommand("fifth",     3));
-    queue.add(getCommand("sixth",    14));
-    queue.add(getCommand("seventh",   7));
+    queue.add(getCommand("first",     1ms));
+    queue.add(getCommand("second",   10ms));
+    queue.add(getCommand("third",     5ms));
+    queue.add(getCommand("fourth",    0ms));
+    queue.add(getCommand("fifth",     3ms));
+    queue.add(getCommand("sixth",    14ms));
+    queue.add(getCommand("seventh",   7ms));
 
     ASSERT_FALSE(queue.empty());
     std::vector<std::shared_ptr<api::CreateVisitorCommand>> commands;
@@ -74,16 +73,16 @@ TEST(CommandQueueTest, fifo_with_priorities) {
     CommandQueue<api::CreateVisitorCommand> queue(clock);
     ASSERT_TRUE(queue.empty());
 
-    queue.add(getCommand("first",     1, 10));
+    queue.add(getCommand("first",     1ms, 10));
     EXPECT_EQ("first t=1 p=10", getCommandString(queue.peekLowestPriorityCommand()));
-    queue.add(getCommand("second",   10, 22));
-    queue.add(getCommand("third",     5, 9));
+    queue.add(getCommand("second",   10ms, 22));
+    queue.add(getCommand("third",     5ms, 9));
     EXPECT_EQ("second t=10 p=22", getCommandString(queue.peekLowestPriorityCommand()));
-    queue.add(getCommand("fourth",    0, 22));
-    queue.add(getCommand("fifth",     3, 22));
+    queue.add(getCommand("fourth",    0ms, 22));
+    queue.add(getCommand("fifth",     3ms, 22));
     EXPECT_EQ("fifth t=3 p=22", getCommandString(queue.peekLowestPriorityCommand()));
-    queue.add(getCommand("sixth",    14, 50));
-    queue.add(getCommand("seventh",   7, 0));
+    queue.add(getCommand("sixth",    14ms, 50));
+    queue.add(getCommand("seventh",   7ms, 0));
 
     EXPECT_EQ("sixth t=14 p=50", getCommandString(queue.peekLowestPriorityCommand()));
 
@@ -111,19 +110,19 @@ TEST(CommandQueueTest, release_oldest) {
     framework::defaultimplementation::FakeClock clock(framework::defaultimplementation::FakeClock::FAKE_ABSOLUTE);
     CommandQueue<api::CreateVisitorCommand> queue(clock);
     ASSERT_TRUE(queue.empty());
-    queue.add(getCommand("first",    10));
-    queue.add(getCommand("second",  100));
-    queue.add(getCommand("third",  1000));
-    queue.add(getCommand("fourth",    5));
-    queue.add(getCommand("fifth",  3000));
-    queue.add(getCommand("sixth",   400));
-    queue.add(getCommand("seventh", 700));
+    queue.add(getCommand("first",    10ms));
+    queue.add(getCommand("second",  100ms));
+    queue.add(getCommand("third",  1000ms));
+    queue.add(getCommand("fourth",    5ms));
+    queue.add(getCommand("fifth",  3000ms));
+    queue.add(getCommand("sixth",   400ms));
+    queue.add(getCommand("seventh", 700ms));
     ASSERT_EQ(7u, queue.size());
 
     using CommandEntry = CommandQueue<api::CreateVisitorCommand>::CommandEntry;
     std::list<CommandEntry> timedOut(queue.releaseTimedOut());
     ASSERT_TRUE(timedOut.empty());
-    clock.addMilliSecondsToTime(400 * 1000);
+    clock.addMilliSecondsToTime(400);
     timedOut = queue.releaseTimedOut();
     ASSERT_EQ(4, timedOut.size());
     std::ostringstream ost;
@@ -144,13 +143,13 @@ TEST(CommandQueueTest, release_lowest_priority) {
     CommandQueue<api::CreateVisitorCommand> queue(clock);
     ASSERT_TRUE(queue.empty());
 
-    queue.add(getCommand("first",     1, 10));
-    queue.add(getCommand("second",   10, 22));
-    queue.add(getCommand("third",     5, 9));
-    queue.add(getCommand("fourth",    0, 22));
-    queue.add(getCommand("fifth",     3, 22));
-    queue.add(getCommand("sixth",    14, 50));
-    queue.add(getCommand("seventh",   7, 0));
+    queue.add(getCommand("first",     1ms, 10));
+    queue.add(getCommand("second",   10ms, 22));
+    queue.add(getCommand("third",     5ms, 9));
+    queue.add(getCommand("fourth",    0ms, 22));
+    queue.add(getCommand("fifth",     3ms, 22));
+    queue.add(getCommand("sixth",    14ms, 50));
+    queue.add(getCommand("seventh",   7ms, 0));
     ASSERT_EQ(7u, queue.size());
 
     std::vector<std::shared_ptr<api::CreateVisitorCommand>> commands;
@@ -177,13 +176,13 @@ TEST(CommandQueueTest, delete_iterator) {
     framework::defaultimplementation::FakeClock clock;
     CommandQueue<api::CreateVisitorCommand> queue(clock);
     ASSERT_TRUE(queue.empty());
-    queue.add(getCommand("first",    10));
-    queue.add(getCommand("second",  100));
-    queue.add(getCommand("third",  1000));
-    queue.add(getCommand("fourth",    5));
-    queue.add(getCommand("fifth",  3000));
-    queue.add(getCommand("sixth",   400));
-    queue.add(getCommand("seventh", 700));
+    queue.add(getCommand("first",    10ms));
+    queue.add(getCommand("second",  100ms));
+    queue.add(getCommand("third",  1000ms));
+    queue.add(getCommand("fourth",    5ms));
+    queue.add(getCommand("fifth",  3000ms));
+    queue.add(getCommand("sixth",   400ms));
+    queue.add(getCommand("seventh", 700ms));
     ASSERT_EQ(7u, queue.size());
 
     CommandQueue<api::CreateVisitorCommand>::iterator it = queue.begin();

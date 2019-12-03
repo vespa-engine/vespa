@@ -325,7 +325,7 @@ private:
      * Return whether msg has timed out based on waitTime and the message's
      * specified timeout.
      */
-    static bool messageTimedOutInQueue(const api::StorageMessage& msg, uint64_t waitTime);
+    static bool messageTimedOutInQueue(const api::StorageMessage& msg, vespalib::duration waitTime);
 
     /**
      * Creates and returns a reply with api::TIMEOUT return code for msg.

@@ -59,7 +59,7 @@ public:
     bool start();
 };
 
-static const int TIMEOUT_SECS = 6;
+static const duration TIMEOUT_SECS = 6s;
 
 TestData::TestData() :
     _slobrok(),
@@ -121,7 +121,7 @@ testVersionedSend(TestData &data,
         return false;
     }
     msg = data._itrHandler.getMessage(TIMEOUT_SECS);
-    if (!EXPECT_TRUE(msg.get() != NULL)) {
+    if (!EXPECT_TRUE(msg)) {
         return false;
     }
     LOG(info, "Message version %s serialized at source.",
@@ -138,7 +138,7 @@ testVersionedSend(TestData &data,
     }
     data._itrSession->forward(std::move(msg));
     msg = data._dstHandler.getMessage(TIMEOUT_SECS);
-    if (!EXPECT_TRUE(msg.get() != NULL)) {
+    if (!EXPECT_TRUE(msg)) {
         return false;
     }
     LOG(info, "Message version %s serialized at intermediate.",
@@ -157,7 +157,7 @@ testVersionedSend(TestData &data,
     reply->swapState(*msg);
     data._dstSession->reply(std::move(reply));
     reply = data._itrHandler.getReply();
-    if (!EXPECT_TRUE(reply.get() != NULL)) {
+    if (!EXPECT_TRUE(reply)) {
         return false;
     }
     LOG(info, "Reply version %s serialized at destination.",
@@ -173,7 +173,7 @@ testVersionedSend(TestData &data,
     }
     data._itrSession->forward(std::move(reply));
     reply = data._srcHandler.getReply();
-    if (!EXPECT_TRUE(reply.get() != NULL)) {
+    if (!EXPECT_TRUE(reply)) {
         return false;
     }
     LOG(info, "Reply version %s serialized at intermediate.",

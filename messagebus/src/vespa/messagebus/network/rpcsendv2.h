@@ -14,7 +14,7 @@ private:
     std::unique_ptr<Params> toParams(const FRT_Values &param) const override;
     void encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,
                        const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
-                       const PayLoadFiller &filler, milliseconds timeRemaining) const override;
+                       const PayLoadFiller &filler, duration timeRemaining) const override;
 
     std::unique_ptr<Reply> createReply(const FRT_Values & response, const string & serviceName,
                                        Error & error, vespalib::TraceNode & rootTrace) const override;

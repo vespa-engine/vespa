@@ -24,7 +24,7 @@ public:
     api::StorageMessage::Id pendingId;
     std::shared_ptr<api::GetBucketDiffReply> pendingGetDiff;
     std::shared_ptr<api::ApplyBucketDiffReply> pendingApplyDiff;
-    uint32_t timeout;
+    vespalib::duration timeout;
     framework::MilliSecTimer startTime;
     spi::Context context;
  	

@@ -3,7 +3,6 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/messagebus/destinationsession.h>
 #include <vespa/messagebus/dynamicthrottlepolicy.h>
-#include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
 #include <vespa/messagebus/routing/routingspec.h>
@@ -12,7 +11,6 @@
 #include <vespa/messagebus/staticthrottlepolicy.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/testserver.h>
 
@@ -141,15 +139,15 @@ Test::testMaxPendingCount()
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1234567890")), "dst").isAccepted());
 
     EXPECT_TRUE(waitQueueSize(dstQ, 5));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 1));
 
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("1234567890")), "dst").isAccepted());
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1234567890")), "dst").isAccepted());
 
     EXPECT_TRUE(waitQueueSize(dstQ, 5));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 3));
 
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("1234567890")), "dst").isAccepted());
@@ -158,11 +156,11 @@ Test::testMaxPendingCount()
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1234567890")), "dst").isAccepted());
 
     EXPECT_TRUE(waitQueueSize(dstQ, 5));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 8));
     ASSERT_TRUE(waitQueueSize(dstQ, 0));
 }
@@ -202,17 +200,17 @@ Test::testMaxPendingSize()
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1")), "dst").isAccepted());
 
     EXPECT_TRUE(waitQueueSize(dstQ, 2));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 1));
 
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1")), "dst").isAccepted());
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 2));
 
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("12")), "dst").isAccepted());
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("1")), "dst").isAccepted());
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 3));
 }
 
@@ -244,7 +242,7 @@ Test::testMinOne()
     EXPECT_TRUE(!ss->send(Message::UP(new SimpleMessage("")), "dst").isAccepted());
 
     EXPECT_TRUE(waitQueueSize(dstQ, 1));
-    ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));
+    ds->acknowledge(Message::UP((Message*)dstQ.dequeue().release()));
     ASSERT_TRUE(waitQueueSize(srcQ, 1));
     EXPECT_TRUE(waitQueueSize(dstQ, 0));
 }

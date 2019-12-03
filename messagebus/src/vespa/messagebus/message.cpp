@@ -10,7 +10,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".message");
 
-using namespace std::chrono;
 namespace mbus {
 
 Message::Message() :
@@ -58,14 +57,14 @@ Message::swapState(Routable &rhs)
 Message &
 Message::setTimeReceivedNow()
 {
-    _timeReceived = steady_clock::now();
+    _timeReceived = vespalib::steady_clock::now();
     return *this;
 }
 
-milliseconds
+duration
 Message::getTimeRemainingNow() const
 {
-    return std::max(milliseconds(0), _timeRemaining - duration_cast<milliseconds>(steady_clock::now() - _timeReceived));
+    return std::max(0ns, _timeRemaining - (vespalib::steady_clock::now() - _timeReceived));
 }
 
 } // namespace mbus

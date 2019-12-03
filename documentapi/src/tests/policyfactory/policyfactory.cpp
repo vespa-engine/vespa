@@ -73,6 +73,8 @@ createMessage()
 
 TEST_SETUP(Test);
 
+const vespalib::duration TIMEOUT = 600s;
+
 int
 Test::Main()
 {
@@ -89,7 +91,7 @@ Test::Main()
 
     mbus::Route route = mbus::Route::parse("[MyPolicy]");
     ASSERT_TRUE(src->send(createMessage(), route).isAccepted());
-    mbus::Reply::UP reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(600);
+    mbus::Reply::UP reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(TIMEOUT);
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
@@ -101,7 +103,7 @@ Test::Main()
     protocol->putRoutingPolicyFactory("MyPolicy", std::make_shared<MyFactory>());
 
     ASSERT_TRUE(src->send(createMessage(), route).isAccepted());
-    reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(600);
+    reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(TIMEOUT);
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());

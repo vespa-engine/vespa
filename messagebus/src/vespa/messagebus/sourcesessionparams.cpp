@@ -7,8 +7,8 @@ namespace mbus {
 
 SourceSessionParams::SourceSessionParams() :
     _replyHandler(nullptr),
-    _throttlePolicy(new DynamicThrottlePolicy()),
-    _timeout(180.0)
+    _throttlePolicy(std::make_shared<DynamicThrottlePolicy>()),
+    _timeout(180s)
 { }
 
 IThrottlePolicy::SP
@@ -20,18 +20,12 @@ SourceSessionParams::getThrottlePolicy() const
 SourceSessionParams &
 SourceSessionParams::setThrottlePolicy(IThrottlePolicy::SP throttlePolicy)
 {
-    _throttlePolicy = throttlePolicy;
+    _throttlePolicy = std::move(throttlePolicy);
     return *this;
 }
 
-seconds
-SourceSessionParams::getTimeout() const
-{
-    return _timeout;
-}
-
 SourceSessionParams &
-SourceSessionParams::setTimeout(seconds timeout)
+SourceSessionParams::setTimeout(duration timeout)
 {
     _timeout = timeout;
     return *this;

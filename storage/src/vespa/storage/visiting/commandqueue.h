@@ -16,6 +16,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/vespalib/util/printable.h>
+#include <vespa/vespalib//util/time.h>
 #include <vespa/fastos/timestamp.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <list>
@@ -141,11 +142,10 @@ CommandQueue<Command>::peekNextCommand() const
 
 template<class Command>
 void
-CommandQueue<Command>::add(
-        const std::shared_ptr<Command>& cmd)
+CommandQueue<Command>::add(const std::shared_ptr<Command>& cmd)
 {
     framework::MicroSecTime time(_clock.getTimeInMicros()
-            + framework::MicroSecTime(cmd->getQueueTimeout() * 1000000));
+            + framework::MicroSecTime(vespalib::count_us(cmd->getQueueTimeout())));
     _commands.insert(CommandEntry(cmd, time.getTime(), ++_sequenceId, cmd->getPriority()));
 }
 

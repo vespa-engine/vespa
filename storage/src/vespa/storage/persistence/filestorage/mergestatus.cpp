@@ -16,7 +16,7 @@ MergeStatus::MergeStatus(framework::Clock& clock, const metrics::LoadType& lt,
       context(lt, priority, traceLevel)
 {}
 
-MergeStatus::~MergeStatus() {}
+MergeStatus::~MergeStatus() = default;
 
 bool
 MergeStatus::removeFromDiff(

@@ -39,17 +39,17 @@ RoutableQueue::enqueue(Routable::UP r)
 }
 
 Routable::UP
-RoutableQueue::dequeue(uint32_t msTimeout)
+RoutableQueue::dequeue(duration msTimeout)
 {
     steady_clock::time_point startTime = steady_clock::now();
-    uint64_t msLeft = msTimeout;
+    duration msLeft = msTimeout;
     vespalib::MonitorGuard guard(_monitor);
-    while (_queue.size() == 0 && msLeft > 0) {
+    while (_queue.size() == 0 && msLeft > duration::zero()) {
         if (!guard.wait(msLeft) || _queue.size() > 0) {
             break;
         }
-        uint64_t elapsed = duration_cast<milliseconds>(steady_clock::now() - startTime).count();
-        msLeft = (elapsed > msTimeout) ? 0 : msTimeout - elapsed;
+        duration elapsed = (steady_clock::now() - startTime);
+        msLeft = (elapsed > msTimeout) ? duration::zero() : msTimeout - elapsed;
     }
     if (_queue.size() == 0) {
         return Routable::UP();

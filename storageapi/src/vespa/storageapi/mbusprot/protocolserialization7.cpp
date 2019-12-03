@@ -1162,7 +1162,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::CreateVisitorComman
         ctrl_meta->set_visitor_command_id(msg.getVisitorCmdId());
         ctrl_meta->set_control_destination(msg.getControlDestination().data(), msg.getControlDestination().size());
         ctrl_meta->set_data_destination(msg.getDataDestination().data(), msg.getDataDestination().size());
-        ctrl_meta->set_queue_timeout(msg.getQueueTimeout());
+        ctrl_meta->set_queue_timeout(vespalib::count_ms(msg.getQueueTimeout()));
         ctrl_meta->set_max_pending_reply_count(msg.getMaximumPendingReplyCount());
         ctrl_meta->set_max_buckets_per_visitor(msg.getMaxBucketsPerVisitor());
 
@@ -1211,7 +1211,7 @@ api::StorageCommand::UP ProtocolSerialization7::onDecodeCreateVisitorCommand(BBu
         cmd->setControlDestination(ctrl_meta.control_destination());
         cmd->setDataDestination(ctrl_meta.data_destination());
         cmd->setMaximumPendingReplyCount(ctrl_meta.max_pending_reply_count());
-        cmd->setQueueTimeout(ctrl_meta.queue_timeout());
+        cmd->setQueueTimeout(std::chrono::milliseconds(ctrl_meta.queue_timeout()));
         cmd->setMaxBucketsPerVisitor(ctrl_meta.max_buckets_per_visitor());
         cmd->setVisitorDispatcherVersion(50); // FIXME this magic number is lifted verbatim from the 5.1 protocol impl
 

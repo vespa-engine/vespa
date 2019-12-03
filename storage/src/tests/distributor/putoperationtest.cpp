@@ -47,7 +47,7 @@ public:
         close();
     }
 
-    document::BucketId createAndSendSampleDocument(uint32_t timeout);
+    document::BucketId createAndSendSampleDocument(vespalib::duration timeout);
     std::string getNodes(const std::string& infoString);
 
     void sendReply(int idx = -1,
@@ -96,7 +96,7 @@ public:
 PutOperationTest::~PutOperationTest() = default;
 
 document::BucketId
-PutOperationTest::createAndSendSampleDocument(uint32_t timeout) {
+PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
     auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1::"));
 
     document::BucketId id = getExternalOperationHandler().getBucketId(doc->getId());
@@ -119,9 +119,11 @@ using RequirePrimaryWritten = bool;
 
 }
 
+const vespalib::duration TIMEOUT = 180ms;
+
 TEST_F(PutOperationTest, simple) {
     setupDistributor(1, 1, "storage:1 distributor:1");
-    createAndSendSampleDocument(180);
+    createAndSendSampleDocument(TIMEOUT);
 
     ASSERT_EQ("Put(BucketId(0x4000000000001dd4), "
               "id:test:testdoctype1::, timestamp 100, size 45) => 0",
@@ -182,7 +184,7 @@ TEST_F(PutOperationTest, do_not_send_inline_split_if_not_configured) {
 
 TEST_F(PutOperationTest, node_removed_on_reply) {
     setupDistributor(2, 2, "storage:2 distributor:1");
-    createAndSendSampleDocument(180);
+    createAndSendSampleDocument(TIMEOUT);
 
     ASSERT_EQ("Put(BucketId(0x4000000000001dd4), "
               "id:test:testdoctype1::, timestamp 100, size 45) => 0,"
@@ -206,7 +208,7 @@ TEST_F(PutOperationTest, node_removed_on_reply) {
 TEST_F(PutOperationTest, storage_failed) {
     setupDistributor(2, 1, "storage:1 distributor:1");
 
-    createAndSendSampleDocument(180);
+    createAndSendSampleDocument(TIMEOUT);
 
     sendReply(-1, api::ReturnCode::INTERNAL_FAILURE);
 
@@ -334,7 +336,7 @@ TEST_F(PutOperationTest, do_not_revert_on_failure_after_early_return) {
 TEST_F(PutOperationTest, revert_successful_copies_when_one_fails) {
     setupDistributor(3, 4, "storage:4 distributor:1");
 
-    createAndSendSampleDocument(180);
+    createAndSendSampleDocument(TIMEOUT);
 
     ASSERT_EQ("Put => 0,Put => 2,Put => 1", _sender.getCommands(true));
 
@@ -359,7 +361,7 @@ TEST_F(PutOperationTest, no_revert_if_revert_disabled) {
     SetUp();
     setupDistributor(3, 4, "storage:4 distributor:1");
 
-    createAndSendSampleDocument(180);
+    createAndSendSampleDocument(TIMEOUT);
 
     ASSERT_EQ("Put => 0,Put => 2,Put => 1", _sender.getCommands(true));
 
@@ -404,7 +406,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
 
 TEST_F(PutOperationTest, no_storage_nodes) {
     setupDistributor(2, 1, "storage:0 distributor:1");
-    createAndSendSampleDocument(180);
+    createAndSendSampleDocument(TIMEOUT);
     ASSERT_EQ("PutReply(id:test:testdoctype1::, BucketId(0x0000000000000000), "
               "timestamp 100) ReturnCode(NOT_CONNECTED, "
               "Can't store document: No storage nodes available)",

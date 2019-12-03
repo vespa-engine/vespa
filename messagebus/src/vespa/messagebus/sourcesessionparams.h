@@ -3,7 +3,6 @@
 
 #include "ireplyhandler.h"
 #include "ithrottlepolicy.h"
-#include <chrono>
 
 namespace mbus {
 
@@ -18,7 +17,7 @@ class SourceSessionParams {
 private:
     IReplyHandler      *_replyHandler;
     IThrottlePolicy::SP _throttlePolicy;
-    seconds             _timeout;
+    duration             _timeout;
 
 public:
     /**
@@ -46,14 +45,14 @@ public:
      *
      * @return The total timeout parameter.
      */
-    seconds getTimeout() const;
+    duration getTimeout() const { return _timeout; }
 
     /**
      * Returns the number of seconds a message can spend trying to succeed.
      *
      * @return The timeout in seconds.
      */
-    SourceSessionParams &setTimeout(seconds timeout);
+    SourceSessionParams &setTimeout(duration timeout);
 
     /**
      * Returns whether or not a reply handler has been assigned to this.

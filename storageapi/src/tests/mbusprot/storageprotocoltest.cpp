@@ -522,7 +522,7 @@ TEST_P(StorageProtocolTest, create_visitor) {
     cmd->getBuckets() = buckets;
     cmd->setFieldSet("foo,bar,vekterli");
     cmd->setVisitInconsistentBuckets();
-    cmd->setQueueTimeout(100);
+    cmd->setQueueTimeout(100ms);
     cmd->setPriority(149);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("library", cmd2->getLibraryName());

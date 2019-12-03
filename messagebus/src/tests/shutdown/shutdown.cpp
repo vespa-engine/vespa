@@ -30,7 +30,7 @@ public:
     }
 };
 
-static const double TIMEOUT = 120;
+static const duration TIMEOUT = 120s;
 
 TEST_APPHOOK(Test);
 
@@ -77,11 +77,11 @@ Test::requireThatShutdownOnSourceWithPendingIsSafe()
             SourceSession::UP srcSession = srcServer.mb.createSourceSession(SourceSessionParams()
                     .setThrottlePolicy(IThrottlePolicy::SP())
                     .setReplyHandler(srcHandler));
-            ASSERT_TRUE(srcSession.get() != NULL);
+            ASSERT_TRUE(srcSession);
             ASSERT_TRUE(srcServer.waitSlobrok("dst/session", 1));
             ASSERT_TRUE(srcSession->send(std::move(msg), "dst/session", true).isAccepted());
             msg = dstHandler.getMessage(TIMEOUT);
-            ASSERT_TRUE(msg.get() != NULL);
+            ASSERT_TRUE(msg);
         }
         dstSession->acknowledge(std::move(msg));
     }

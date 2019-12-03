@@ -1,17 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/messagebus/destinationsession.h>
-#include <vespa/messagebus/intermediatesession.h>
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/routing/routingspec.h>
 #include <vespa/messagebus/sourcesession.h>
 #include <vespa/messagebus/sourcesessionparams.h>
-#include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
-#include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -24,7 +20,7 @@ struct Handler : public IMessageHandler
     Handler(MessageBus &mb) : session() {
         session = mb.createDestinationSession("session", true, *this);
     }
-    ~Handler() {
+    ~Handler() override {
         session.reset();
     }
     void handleMessage(Message::UP msg) override {
@@ -81,18 +77,18 @@ Test::Main()
     }
     EXPECT_EQUAL(queue.size(), 3u);
     {
-        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(0).release());
-        ASSERT_TRUE(reply.get() != 0);
+        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(duration::zero()).release());
+        ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 10u);
     }
     {
-        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(0).release());
-        ASSERT_TRUE(reply.get() != 0);
+        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(duration::zero()).release());
+        ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 20u);
     }
     {
-        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(0).release());
-        ASSERT_TRUE(reply.get() != 0);
+        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(duration::zero()).release());
+        ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 30u);
     }
     TEST_DONE();

@@ -73,7 +73,7 @@ Test::Main()
         msg.pushHandler(handler);
         msg.discard();
 
-        Reply::UP reply = handler.getReply(0);
+        Reply::UP reply = handler.getReply(duration::zero());
         ASSERT_FALSE(reply);
     }
     {
@@ -86,7 +86,7 @@ Test::Main()
         reply.swapState(msg);
         reply.discard();
 
-        Reply::UP ap = handler.getReply(0);
+        Reply::UP ap = handler.getReply(duration::zero());
         ASSERT_FALSE(ap);
     }
 

@@ -21,7 +21,7 @@ struct Base {
     Base() : queue() {}
     virtual ~Base() {
         while (queue.size() > 0) {
-            Routable::UP r = queue.dequeue(0);
+            Routable::UP r = queue.dequeue();
             r->getCallStack().discard();
         }
     }
@@ -219,8 +219,8 @@ Test::testSendToAny()
     for (uint32_t i = 0; i < dpVec.size(); ++i) {
         DocProc *p = dpVec[i];
         while (p->queue.size() > 0) {
-            Routable::UP msg = p->queue.dequeue(0);
-            ASSERT_TRUE(msg.get() != 0);
+            Routable::UP msg = p->queue.dequeue();
+            ASSERT_TRUE(msg);
             Reply::UP reply(new EmptyReply());
             msg->swapState(*reply);
             reply->addError(Error(ErrorCode::FATAL_ERROR, ""));
@@ -229,8 +229,8 @@ Test::testSendToAny()
     }
     EXPECT_TRUE(client->waitQueueSize(300));
     while (client->queue.size() > 0) {
-        Routable::UP reply = client->queue.dequeue(0);
-        ASSERT_TRUE(reply.get() != 0);
+        Routable::UP reply = client->queue.dequeue();
+        ASSERT_TRUE(reply);
         ASSERT_TRUE(reply->isReply());
         EXPECT_TRUE(static_cast<Reply&>(*reply).getNumErrors() == 1);
     }
@@ -262,8 +262,8 @@ Test::testSendToCol()
     for (uint32_t i = 0; i < searchVec.size(); ++i) {
         Search *s = searchVec[i];
         while (s->queue.size() > 0) {
-            Routable::UP msg = s->queue.dequeue(0);
-            ASSERT_TRUE(msg.get() != 0);
+            Routable::UP msg = s->queue.dequeue();
+            ASSERT_TRUE(msg);
             Reply::UP reply(new EmptyReply());
             msg->swapState(*reply);
             s->session->reply(std::move(reply));
@@ -273,8 +273,8 @@ Test::testSendToCol()
     FastOS_Thread::Sleep(100);
     client->waitQueueSize(300);
     while (client->queue.size() > 0) {
-        Routable::UP reply = client->queue.dequeue(0);
-        ASSERT_TRUE(reply.get() != 0);
+        Routable::UP reply = client->queue.dequeue();
+        ASSERT_TRUE(reply);
         ASSERT_TRUE(reply->isReply());
         EXPECT_TRUE(static_cast<Reply&>(*reply).getNumErrors() == 0);
     }
@@ -296,8 +296,8 @@ Test::testSendToAnyThenCol()
     for (uint32_t i = 0; i < dpVec.size(); ++i) {
         DocProc *p = dpVec[i];
         while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = p->queue.dequeue();
+            ASSERT_TRUE(r);
             p->session->forward(std::move(r));
         }
     }
@@ -316,8 +316,8 @@ Test::testSendToAnyThenCol()
     for (uint32_t i = 0; i < dpVec.size(); ++i) {
         DocProc *p = dpVec[i];
         while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = p->queue.dequeue();
+            ASSERT_TRUE(r);
             p->session->forward(std::move(r));
         }
     }
@@ -328,8 +328,8 @@ Test::testSendToAnyThenCol()
     for (uint32_t i = 0; i < searchVec.size(); ++i) {
         Search *s = searchVec[i];
         while (s->queue.size() > 0) {
-            Routable::UP msg = s->queue.dequeue(0);
-            ASSERT_TRUE(msg.get() != 0);
+            Routable::UP msg = s->queue.dequeue();
+            ASSERT_TRUE(msg);
             Reply::UP reply(new EmptyReply());
             msg->swapState(*reply);
             s->session->reply(std::move(reply));
@@ -341,8 +341,8 @@ Test::testSendToAnyThenCol()
     for (uint32_t i = 0; i < dpVec.size(); ++i) {
         DocProc *p = dpVec[i];
         while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = p->queue.dequeue();
+            ASSERT_TRUE(r);
             p->session->forward(std::move(r));
         }
     }
@@ -350,8 +350,8 @@ Test::testSendToAnyThenCol()
     FastOS_Thread::Sleep(100);
     client->waitQueueSize(300);
     while (client->queue.size() > 0) {
-        Routable::UP reply = client->queue.dequeue(0);
-        ASSERT_TRUE(reply.get() != 0);
+        Routable::UP reply = client->queue.dequeue();
+        ASSERT_TRUE(reply);
         ASSERT_TRUE(reply->isReply());
         EXPECT_TRUE(static_cast<Reply&>(*reply).getNumErrors() == 0);
     }
@@ -423,8 +423,8 @@ void
 Test::assertDst(Search& dst)
 {
     ASSERT_TRUE(dst.waitQueueSize(1));
-    Routable::UP msg = dst.queue.dequeue(0);
-    ASSERT_TRUE(msg.get() != 0);
+    Routable::UP msg = dst.queue.dequeue();
+    ASSERT_TRUE(msg);
     dst.session->acknowledge(Message::UP(static_cast<Message*>(msg.release())));
 }
 
@@ -432,8 +432,8 @@ void
 Test::assertItr(DocProc& itr)
 {
     ASSERT_TRUE(itr.waitQueueSize(1));
-    Routable::UP msg = itr.queue.dequeue(0);
-    ASSERT_TRUE(msg.get() != 0);
+    Routable::UP msg = itr.queue.dequeue();
+    ASSERT_TRUE(msg);
     itr.session->forward(std::move(msg));
 }
 
@@ -441,8 +441,8 @@ void
 Test::assertSrc(Client& src)
 {
     ASSERT_TRUE(src.waitQueueSize(1));
-    Routable::UP msg = src.queue.dequeue(0);
-    ASSERT_TRUE(msg.get() != 0);
+    Routable::UP msg = src.queue.dequeue();
+    ASSERT_TRUE(msg);
 }
 
 void
@@ -485,8 +485,8 @@ Test::debugTrace()
     for (uint32_t i = 0; i < dpVec.size(); ++i) {
         DocProc *p = dpVec[i];
         while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = p->queue.dequeue();
+            ASSERT_TRUE(r);
             p->session->forward(std::move(r));
         }
     }
@@ -497,8 +497,8 @@ Test::debugTrace()
     for (uint32_t i = 0; i < searchVec.size(); ++i) {
         Search *s = searchVec[i];
         while (s->queue.size() > 0) {
-            Routable::UP msg = s->queue.dequeue(0);
-            ASSERT_TRUE(msg.get() != 0);
+            Routable::UP msg = s->queue.dequeue();
+            ASSERT_TRUE(msg);
             Reply::UP reply(new EmptyReply());
             msg->swapState(*reply);
             s->session->reply(std::move(reply));
@@ -510,21 +510,21 @@ Test::debugTrace()
     for (uint32_t i = 0; i < dpVec.size(); ++i) {
         DocProc *p = dpVec[i];
         while (p->queue.size() > 0) {
-            Routable::UP r = p->queue.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = p->queue.dequeue();
+            ASSERT_TRUE(r);
             p->session->forward(std::move(r));
         }
     }
     client->waitQueueSize(3);
-    Routable::UP reply = client->queue.dequeue(0);
+    Routable::UP reply = client->queue.dequeue();
     fprintf(stderr, "\nTRACE DUMP(level=%d):\n%s\n\n",
             reply->getTrace().getLevel(),
             reply->getTrace().toString().c_str());
-    reply = client->queue.dequeue(0);
+    reply = client->queue.dequeue();
     fprintf(stderr, "\nTRACE DUMP(level=%d):\n%s\n\n",
             reply->getTrace().getLevel(),
             reply->getTrace().toString().c_str());
-    reply = client->queue.dequeue(0);
+    reply = client->queue.dequeue();
     fprintf(stderr, "\nTRACE DUMP(level=%d):\n%s\n\n",
             reply->getTrace().getLevel(),
             reply->getTrace().toString().c_str());

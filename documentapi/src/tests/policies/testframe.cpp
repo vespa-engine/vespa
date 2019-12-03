@@ -122,7 +122,7 @@ TestFrame::testSelect(const std::vector<string> &expected)
         }
         node->handleReply(std::make_unique<mbus::EmptyReply>());
     }
-    if (_handler.getReply(600).get() == nullptr) {
+    if (_handler.getReply(600s).get() == nullptr) {
         LOG(error, "Reply not propagated to handler.");
         return false;
     }
@@ -166,7 +166,7 @@ TestFrame::testMerge(const ReplyMap &replies,
         node->handleReply(std::move(ret));
     }
 
-    mbus::Reply::UP reply = _handler.getReply(600);
+    mbus::Reply::UP reply = _handler.getReply(600s);
     if (reply.get() == nullptr) {
         LOG(error, "Reply not propagated to handler.");
         return false;

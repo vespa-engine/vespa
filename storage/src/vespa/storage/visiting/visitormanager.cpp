@@ -309,7 +309,7 @@ VisitorManager::scheduleVisitor(
             if (_enforceQueueUse || totCount >= maximumConcurrent(*cmd)) {
                 api::CreateVisitorCommand::SP failCommand;
 
-                if (cmd->getQueueTimeout() != 0 && _maxVisitorQueueSize > 0) {
+                if (cmd->getQueueTimeout() != vespalib::duration::zero() && _maxVisitorQueueSize > 0) {
                     if (_visitorQueue.size() < _maxVisitorQueueSize) {
                             // Still room in the queue
                         _visitorQueue.add(cmd);
@@ -348,7 +348,7 @@ VisitorManager::scheduleVisitor(
                     std::shared_ptr<api::CreateVisitorReply> reply(
                             new api::CreateVisitorReply(*failCommand));
                     std::ostringstream ost;
-                    if (cmd->getQueueTimeout() == 0) {
+                    if (cmd->getQueueTimeout() == vespalib::duration::zero()) {
                         ost << "Already running the maximum amount ("
                             << maximumConcurrent(*failCommand)
                             << ") of visitors for this priority ("
@@ -632,7 +632,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                             it->_command);
                 assert(cmd.get());
                 out << "<li>" << cmd->getInstanceId() << " - "
-                    << cmd->getQueueTimeout() << ", remaining timeout "
+                    << vespalib::count_ms(cmd->getQueueTimeout()) << ", remaining timeout "
                     << (it->_time - time.getTime()) / 1000000 << " ms\n";
             }
             if (_visitorQueue.empty()) {
@@ -657,7 +657,7 @@ VisitorManager::reportHtmlStatus(std::ostream& out,
                         << "<td>" << it->first << "</td>"
                         << "<td>" << it->second.id << "</td>"
                         << "<td>" << it->second.timestamp << "</td>"
-                        << "<td>" << it->second.timeout << "</td>"
+                        << "<td>" << vespalib::count_ms(it->second.timeout) << "</td>"
                         << "<td>" << it->second.destination << "</td>"
                         << "</tr>\n";
                 }

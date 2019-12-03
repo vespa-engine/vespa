@@ -152,7 +152,7 @@ FNetListener::RPC_getNodeState2(FRT_RPCRequest *req)
                                          : std::unique_ptr<lib::NodeState>()));
 
     cmd->setPriority(api::StorageMessage::VERYHIGH);
-    cmd->setTimeout(req->GetParams()->GetValue(1)._intval32);
+    cmd->setTimeout(std::chrono::milliseconds(req->GetParams()->GetValue(1)._intval32));
     if (req->GetParams()->GetNumValues() > 2) {
         cmd->setSourceIndex(req->GetParams()->GetValue(2)._intval32);
     }

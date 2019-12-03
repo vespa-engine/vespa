@@ -267,7 +267,7 @@ TEST_F(MergeThrottlerTest, chain) {
         }
         auto cmd = std::make_shared<MergeBucketCommand>(bucket, nodes, UINT_MAX, 123);
         cmd->setPriority(7);
-        cmd->setTimeout(54321);
+        cmd->setTimeout(54321ms);
         StorageMessageAddress address("storage", lib::NodeType::STORAGE, 0);
         cmd->setAddress(address);
         const uint16_t distributorIndex = 123;
@@ -306,7 +306,7 @@ TEST_F(MergeThrottlerTest, chain) {
             // Ensure priority, cluster state version and timeout is correctly forwarded
             EXPECT_EQ(7, static_cast<int>(fwd->getPriority()));
             EXPECT_EQ(123, dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
-            EXPECT_EQ(54321, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
+            EXPECT_EQ(54321ms, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
         }
 
         _topLinks[lastNodeIdx]->sendDown(fwd);
@@ -332,7 +332,7 @@ TEST_F(MergeThrottlerTest, chain) {
             }
             EXPECT_EQ(7, static_cast<int>(fwd->getPriority()));
             EXPECT_EQ(123, dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
-            EXPECT_EQ(54321, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
+            EXPECT_EQ(54321ms, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
 
             _topLinks[executorNode]->sendDown(fwd);
         }
@@ -359,7 +359,7 @@ TEST_F(MergeThrottlerTest, chain) {
         fwd = _bottomLinks[executorNode]->getAndRemoveMessage(MessageType::MERGEBUCKET);
         EXPECT_EQ(7, static_cast<int>(fwd->getPriority()));
         EXPECT_EQ(123, dynamic_cast<const MergeBucketCommand&>(*fwd).getClusterStateVersion());
-        EXPECT_EQ(54321, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
+        EXPECT_EQ(54321ms, dynamic_cast<const StorageCommand&>(*fwd).getTimeout());
 
         auto reply = std::make_shared<MergeBucketReply>(dynamic_cast<const MergeBucketCommand&>(*fwd));
         reply->setResult(ReturnCode(ReturnCode::OK, "Great success! :D-|-<"));

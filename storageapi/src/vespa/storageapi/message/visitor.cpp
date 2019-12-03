@@ -34,7 +34,7 @@ CreateVisitorCommand::CreateVisitorCommand(document::BucketSpace bucketSpace,
       _visitRemoves(false),
       _fieldSet("[all]"),
       _visitInconsistentBuckets(false),
-      _queueTimeout(2000),
+      _queueTimeout(2000ms),
       _maxPendingReplyCount(2),
       _version(50),
       _maxBucketsPerVisitor(1)
@@ -82,15 +82,12 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
         out << ") {";
         out << "\n" << indent << "  Library name: '" << _libName << "'";
         out << "\n" << indent << "  Instance Id: '" << _instanceId << "'";
-        out << "\n" << indent << "  Control Destination: '"
-                              << _controlDestination << "'";
-        out << "\n" << indent << "  Data Destination: '"
-                              << _dataDestination << "'";
+        out << "\n" << indent << "  Control Destination: '" << _controlDestination << "'";
+        out << "\n" << indent << "  Data Destination: '" << _dataDestination << "'";
         out << "\n" << indent << "  Doc Selection: '" << _docSelection << "'";
-        out << "\n" << indent << "  Max pending: '"
-                              << _maxPendingReplyCount << "'";
-        out << "\n" << indent << "  Timeout: " << getTimeout();
-        out << "\n" << indent << "  Queue timeout: " << _queueTimeout << " ms";
+        out << "\n" << indent << "  Max pending: '" << _maxPendingReplyCount << "'";
+        out << "\n" << indent << "  Timeout: " << vespalib::count_ms(getTimeout()) << " ms";
+        out << "\n" << indent << "  Queue timeout: " << vespalib::count_ms(_queueTimeout) << " ms";
         out << "\n" << indent << "  VisitorDispatcher version: '" << _version << "'";
         if (visitRemoves()) {
             out << "\n" << indent << "  Visiting remove entries too";
@@ -109,8 +106,7 @@ CreateVisitorCommand::print(std::ostream& out, bool verbose,
         }
         out << "\n" << indent << "  ";
         _params.print(out, verbose, indent + "  ");
-        out << "\n" << indent << "  Max buckets: '"
-                              << _maxBucketsPerVisitor << "'";
+        out << "\n" << indent << "  Max buckets: '" << _maxBucketsPerVisitor << "'";
         out << "\n" << indent << "} : ";
         StorageCommand::print(out, verbose, indent);
     } else if (_buckets.size() == 2) {

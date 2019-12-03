@@ -3,9 +3,7 @@
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
 #include <vespa/messagebus/messagebus.h>
-#include <vespa/messagebus/routing/errordirective.h>
 #include <vespa/messagebus/routing/retrytransienterrorspolicy.h>
-#include <vespa/messagebus/testlib/custompolicy.h>
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
@@ -32,7 +30,7 @@ StringList::add(const string &str)
     std::vector<string>::push_back(str); return *this;
 }
 
-static const double GET_MESSAGE_TIMEOUT = 60.0;
+static const duration GET_MESSAGE_TIMEOUT = 60s;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -158,20 +156,20 @@ Test::testRetryTag(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     for (uint32_t i = 0; i < 5; ++i) {
         EXPECT_EQUAL(i, msg->getRetry());
         EXPECT_EQUAL(true, msg->getRetryEnabled());
         replyFromDestination(data, std::move(msg), ErrorCode::APP_TRANSIENT_ERROR, 0);
         msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
     }
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
     printf("%s", reply->getTrace().toString().c_str());
 }
 
@@ -183,14 +181,14 @@ Test::testRetryEnabledTag(TestData &data)
     msg->setRetryEnabled(false);
     EXPECT_TRUE(data._srcSession->send(std::move(msg), Route::parse("dst/session")).isAccepted());
     msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     EXPECT_EQUAL(false, msg->getRetryEnabled());
     replyFromDestination(data, std::move(msg), ErrorCode::APP_TRANSIENT_ERROR, 0);
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->hasErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
     printf("%s", reply->getTrace().toString().c_str());
 }
 
@@ -200,16 +198,16 @@ Test::testTransientError(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     replyFromDestination(data, std::move(msg), ErrorCode::APP_TRANSIENT_ERROR, 0);
     msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     replyFromDestination(data, std::move(msg), ErrorCode::APP_FATAL_ERROR, 0);
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->hasFatalErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
     printf("%s", reply->getTrace().toString().c_str());
 }
 
@@ -219,13 +217,13 @@ Test::testFatalError(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     replyFromDestination(data, std::move(msg), ErrorCode::APP_FATAL_ERROR, 0);
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->hasFatalErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
     printf("%s", reply->getTrace().toString().c_str());
 }
 
@@ -235,14 +233,14 @@ Test::testDisableRetry(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     replyFromDestination(data, std::move(msg), ErrorCode::APP_TRANSIENT_ERROR, 0);
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->hasErrors());
     EXPECT_TRUE(!reply->hasFatalErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
     printf("%s", reply->getTrace().toString().c_str());
 }
 
@@ -253,19 +251,19 @@ Test::testRetryDelay(TestData &data)
     data._retryPolicy->setBaseDelay(0.01);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     for (uint32_t i = 0; i < 5; ++i) {
         EXPECT_EQUAL(i, msg->getRetry());
         replyFromDestination(data, std::move(msg), ErrorCode::APP_TRANSIENT_ERROR, -1);
         msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
     }
     replyFromDestination(data, std::move(msg), ErrorCode::APP_FATAL_ERROR, 0);
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->hasFatalErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
 
     string trace = reply->getTrace().toString();
     EXPECT_TRUE(trace.find("retry 1 in 0.000") != string::npos);
@@ -282,19 +280,19 @@ Test::testRequestRetryDelay(TestData &data)
     data._retryPolicy->setBaseDelay(1);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     for (uint32_t i = 0; i < 5; ++i) {
         EXPECT_EQUAL(i, msg->getRetry());
         replyFromDestination(data, std::move(msg), ErrorCode::APP_TRANSIENT_ERROR, i / 50.0);
         msg = data._dstHandler.getMessage(GET_MESSAGE_TIMEOUT);
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
     }
     replyFromDestination(data, std::move(msg), ErrorCode::APP_FATAL_ERROR, 0);
     Reply::UP reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(reply->hasFatalErrors());
-    msg = data._dstHandler.getMessage(0);
-    EXPECT_TRUE(msg.get() == NULL);
+    msg = data._dstHandler.getMessageNow();
+    EXPECT_FALSE(msg);
 
     string trace = reply->getTrace().toString();
     EXPECT_TRUE(trace.find("retry 1 in 0.000") != string::npos);

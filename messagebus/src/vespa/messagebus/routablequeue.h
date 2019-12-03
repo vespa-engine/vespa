@@ -69,7 +69,8 @@ public:
      * @return the dequeued routable
      * @param msTimeout how long to wait if the queue is empty
      **/
-    Routable::UP dequeue(uint32_t msTimeout);
+    Routable::UP dequeue(duration timeout);
+    Routable::UP dequeue() { return dequeue(duration::zero());}
 
     /**
      * Handle a Message by enqueuing it.

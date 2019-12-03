@@ -14,18 +14,18 @@ public:
     using UP = std::unique_ptr<SendContext>;
     SendContext(const SendContext &) = delete;
     SendContext & operator = (const SendContext &) = delete;
-    SendContext(mbus::RoutingNode &recipient, milliseconds timeRemaining)
+    SendContext(mbus::RoutingNode &recipient, duration timeRemaining)
         : _recipient(recipient),
           _trace(recipient.getTrace().getLevel()),
           _timeout(timeRemaining)
    { }
     mbus::RoutingNode &getRecipient() { return _recipient; }
     mbus::Trace &getTrace() { return _trace; }
-    seconds getTimeout() { return _timeout; }
+    duration getTimeout() { return _timeout; }
 private:
     mbus::RoutingNode &_recipient;
     mbus::Trace        _trace;
-    seconds             _timeout;
+    duration           _timeout;
 };
 
 /**

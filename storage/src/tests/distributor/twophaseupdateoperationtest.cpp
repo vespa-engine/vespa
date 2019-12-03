@@ -266,7 +266,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
             makeDocumentBucket(document::BucketId(0)), update, api::Timestamp(0)));
     // Misc settings for checking that propagation works.
     msg->getTrace().setLevel(6);
-    msg->setTimeout(6789);
+    msg->setTimeout(6789ms);
     msg->setPriority(99);
     if (options._timestampToUpdate) {
         msg->setOldTimestamp(options._timestampToUpdate);
@@ -517,7 +517,7 @@ TwoPhaseUpdateOperationTest::checkMessageSettingsPropagatedTo(
 {
     // Settings set in sendUpdate().
     EXPECT_EQ(6, msg->getTrace().getLevel());
-    EXPECT_EQ(6789, msg->getTimeout());
+    EXPECT_EQ(6789ms, msg->getTimeout());
     EXPECT_EQ(99, msg->getPriority());
 }
 
