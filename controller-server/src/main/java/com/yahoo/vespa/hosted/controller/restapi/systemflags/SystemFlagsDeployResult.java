@@ -215,7 +215,7 @@ class SystemFlagsDeployResult {
         }
 
         static OperationError deleteFailed(String message, FlagsTarget target, FlagId id) {
-            return new OperationError(message, Set.of(target), OperationType.UPDATE, id, null);
+            return new OperationError(message, Set.of(target), OperationType.DELETE, id, null);
         }
 
         String message() { return message; }
