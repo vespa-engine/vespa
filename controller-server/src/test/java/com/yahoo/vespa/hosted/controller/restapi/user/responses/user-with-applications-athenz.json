@@ -1,4 +1,5 @@
 {
+  "isPublic": false,
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",

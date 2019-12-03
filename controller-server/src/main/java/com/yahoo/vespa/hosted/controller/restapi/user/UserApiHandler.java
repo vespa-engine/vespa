@@ -142,6 +142,8 @@ public class UserApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
+        root.setBool("isPublic", controller.system().isPublic());
+
         toSlime(root.setObject("user"), user);
 
         Cursor tenants = root.setObject("tenants");
