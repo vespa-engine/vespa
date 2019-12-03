@@ -483,23 +483,25 @@ public class DocumentGenMojo extends AbstractMojo {
         out.write("}\n");
     }
 
-    private static boolean hasAnyPostionDataType(DataType dt) {
-        if (dt instanceof CollectionDataType) {
-            return hasAnyPostionDataType(((CollectionDataType)dt).getNestedType());
+    private static boolean hasAnyPositionDataType(DataType dt) {
+        if (PositionDataType.INSTANCE.equals(dt)) {
+            return true;
+        } else if (dt instanceof CollectionDataType) {
+            return hasAnyPositionDataType(((CollectionDataType)dt).getNestedType());
         } else if (dt instanceof StructuredDataType) {
             return hasAnyPositionField(((StructuredDataType)dt).getFields());
         } else {
-            return PositionDataType.INSTANCE.equals(dt);
+            return false;
         }
     }
 
     private static boolean hasAnyPositionField(Collection<Field> fields) {
         for (Field f : fields) {
-            if (hasAnyPostionDataType(f.getDataType())) {
+            if (hasAnyPositionDataType(f.getDataType())) {
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
     private Collection<Field> getAllUniqueFields(Boolean multipleInheritance, Collection<Field> allFields) {
