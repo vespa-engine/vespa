@@ -30,7 +30,7 @@ public class KeyManagerUtils {
                     .filter(manager -> manager instanceof X509ExtendedKeyManager)
                     .map(X509ExtendedKeyManager.class::cast)
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("No X509ExtendedKeyManager in " + List.of(keyManagers)));
+                    .orElseThrow(() -> new RuntimeException("No X509ExtendedKeyManager in " + com.yahoo.vespa.jdk8compat.List.of(keyManagers)));
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }

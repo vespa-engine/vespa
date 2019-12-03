@@ -2,6 +2,7 @@
 package com.yahoo.vespa.http.client.runner;
 
 import com.google.common.base.Splitter;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -18,8 +19,10 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.message.BasicLineParser;
 
 import javax.inject.Inject;
+import javax.net.ssl.SSLContext;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +83,12 @@ public class CommandLineArguments {
                 System.err.printf("Invalid header: '%s' (%s)%n", header, e.getMessage());
                 return null;
             }
+        }
+
+        if (cmdArgs.privateKeyPath == null && cmdArgs.certificatePath != null ||
+                cmdArgs.privateKeyPath != null && cmdArgs.certificatePath == null) {
+            System.err.println("Both '--privateKey' and '--certificate' must be set");
+            return null;
         }
 
         return cmdArgs;
@@ -204,7 +213,7 @@ public class CommandLineArguments {
             description = "Use TLS when connecting to endpoint")
     private boolean useTls = false;
 
-    @Option(name = {"--insecure"},
+    @Option(name = {"--insecure", "--disable-hostname-verification"},
             description = "Skip hostname verification when using TLS")
     private boolean insecure = false;
 
@@ -220,6 +229,18 @@ public class CommandLineArguments {
             description = "Maximum time to live for persistent connections. Specified as integer, in seconds.")
     private long connectionTimeToLive = 15;
 
+    @Option(name = {"--certificate"},
+            description = "Path to a file containing a PEM encoded x509 certificate")
+    private String certificatePath;
+
+    @Option(name = {"--privateKey"},
+            description = "Path to a file containing a PEM encoded private key")
+    private String privateKeyPath;
+
+    @Option(name = "--caCertificates",
+            description = "Path to a file containing a PEM encoded CA certificates")
+    private String caCertificatesPath;
+
     private final List<Header> parsedHeaders = new ArrayList<>();
 
     int getWhenVerboseEnabledPrintMessageForEveryXDocuments() {
@@ -231,6 +252,17 @@ public class CommandLineArguments {
     public boolean getVerbose() { return verboseArg; }
 
     public boolean getAddRootElementToXml() { return addRootElementToXml; }
+
+    private SSLContext createSslContext() {
+        SslContextBuilder builder = new SslContextBuilder();
+        if (privateKeyPath != null && certificatePath != null) {
+            builder.withKeyStore(Paths.get(privateKeyPath), Paths.get(certificatePath));
+        }
+        if (caCertificatesPath != null) {
+            builder.withTrustStore(Paths.get(caCertificatesPath));
+        }
+        return builder.build();
+    }
 
     SessionParams createSessionParams(boolean useJson) {
         final int minThrottleValue = useDynamicThrottlingArg ? 10 : 0;
@@ -263,6 +295,7 @@ public class CommandLineArguments {
                                 .setTraceEveryXOperation(traceEveryXOperation)
                                 .setPrintTraceToStdErr(traceArg > 0)
                                 .setNumPersistentConnectionsPerEndpoint(numPersistentConnectionsPerEndpoint)
+                                .setSslContext(createSslContext())
                                 .setUseTlsConfigFromEnvironment(useTlsConfigFromEnvironment)
                                 .setConnectionTimeToLive(Duration.ofSeconds(connectionTimeToLive))
                                 .build()

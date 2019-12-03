@@ -64,8 +64,8 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
                             CERTIFICATE_ALIAS,
-                            KeyUtils.fromPemEncodedPrivateKey(Files.readString(privateKey)),
-                            X509CertificateUtils.certificateListFromPem(Files.readString(certificateChain)))
+                            KeyUtils.fromPemEncodedPrivateKey(com.yahoo.vespa.jdk8compat.Files.readString(privateKey)),
+                            X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(certificateChain)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);

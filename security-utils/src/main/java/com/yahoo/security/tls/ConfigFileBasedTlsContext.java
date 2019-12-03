@@ -85,7 +85,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private static KeyStore loadTruststore(Path caCertificateFile) {
         try {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
-                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(Files.readString(caCertificateFile)))
+                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(caCertificateFile)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -97,8 +97,8 @@ public class ConfigFileBasedTlsContext implements TlsContext {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
                             "default",
-                            KeyUtils.fromPemEncodedPrivateKey(Files.readString(privateKeyFile)),
-                            X509CertificateUtils.certificateListFromPem(Files.readString(certificatesFile)))
+                            KeyUtils.fromPemEncodedPrivateKey(com.yahoo.vespa.jdk8compat.Files.readString(privateKeyFile)),
+                            X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(certificatesFile)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -115,7 +115,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                 .withTrustManagerFactory(
                         ignoredTruststore -> options.getAuthorizedPeers()
                                 .map(authorizedPeers -> (X509ExtendedTrustManager) new PeerAuthorizerTrustManager(authorizedPeers, mode, mutableTrustManager))
-                                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
+                                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, mutableTrustManager)))
                 .build();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
         Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);

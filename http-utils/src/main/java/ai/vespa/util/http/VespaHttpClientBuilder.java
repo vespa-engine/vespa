@@ -71,7 +71,7 @@ public class VespaHttpClientBuilder {
     }
 
     private static HttpClientBuilder createBuilder(ConnectionManagerFactory connectionManagerFactory) {
-        var builder = HttpClientBuilder.create();
+        HttpClientBuilder builder = HttpClientBuilder.create();
         addSslSocketFactory(builder, connectionManagerFactory);
         addHttpsRewritingRoutePlanner(builder);
         return builder;

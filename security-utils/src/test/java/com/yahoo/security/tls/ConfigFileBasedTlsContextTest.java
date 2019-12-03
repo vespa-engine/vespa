@@ -35,17 +35,17 @@ public class ConfigFileBasedTlsContextTest {
     public void can_create_sslcontext_from_credentials() throws IOException, InterruptedException {
         KeyPair keyPair = KeyUtils.generateKeypair(EC);
         Path privateKeyFile = tempDirectory.newFile().toPath();
-        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+        com.yahoo.vespa.jdk8compat.Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
 
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(keyPair, new X500Principal("CN=dummy"), EPOCH, EPOCH.plus(1, DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         Path certificateChainFile = tempDirectory.newFile().toPath();
         String certificatePem = X509CertificateUtils.toPem(certificate);
-        Files.writeString(certificateChainFile, certificatePem);
+        com.yahoo.vespa.jdk8compat.Files.writeString(certificateChainFile, certificatePem);
 
         Path caCertificatesFile = tempDirectory.newFile().toPath();
-        Files.writeString(caCertificatesFile, certificatePem);
+        com.yahoo.vespa.jdk8compat.Files.writeString(caCertificatesFile, certificatePem);
 
         TransportSecurityOptions options = new TransportSecurityOptions.Builder()
                 .withCertificates(certificateChainFile, privateKeyFile)
