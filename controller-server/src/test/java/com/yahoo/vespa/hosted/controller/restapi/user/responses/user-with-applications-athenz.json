@@ -8,7 +8,8 @@
     "sandbox": {
       "roles": [
         "administrator",
-        "developer"
+        "developer",
+        "reader"
       ],
       "applications": {
         "app2": {
@@ -21,7 +22,8 @@
     "tenant1": {
       "roles": [
         "administrator",
-        "developer"
+        "developer",
+        "reader"
       ],
       "applications": {
         "app1": {
@@ -43,7 +45,8 @@
     "tenant2": {
       "roles": [
         "administrator",
-        "developer"
+        "developer",
+        "reader"
       ],
       "applications": {
         "app2": {

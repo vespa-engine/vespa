@@ -35,6 +35,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -373,16 +374,18 @@ public class UserApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private static Set<TenantRole> filterTenantRoles(Role role) {
+    private static Collection<TenantRole> filterTenantRoles(Role role) {
         if (!(role instanceof TenantRole))
             return Set.of();
 
         TenantRole tenantRole = (TenantRole) role;
-        if (tenantRole.definition() == RoleDefinition.administrator || tenantRole.definition() == RoleDefinition.developer)
+        if (tenantRole.definition() == RoleDefinition.administrator
+                || tenantRole.definition() == RoleDefinition.developer
+                || tenantRole.definition() == RoleDefinition.reader)
             return Set.of(tenantRole);
 
         if (tenantRole.definition() == RoleDefinition.athenzTenantAdmin)
-            return Set.of(Role.administrator(tenantRole.tenant()), Role.developer(tenantRole.tenant()));
+            return Roles.tenantRoles(tenantRole.tenant());
 
         return Set.of();
     }
