@@ -52,6 +52,8 @@ public class FlagData {
         return id;
     }
 
+    public boolean isEmpty() { return rules.isEmpty() && defaultFetchVector.isEmpty(); }
+
     public Optional<RawFlag> resolve(FetchVector fetchVector) {
         return rules.stream()
                 .filter(rule -> rule.match(defaultFetchVector.with(fetchVector)))

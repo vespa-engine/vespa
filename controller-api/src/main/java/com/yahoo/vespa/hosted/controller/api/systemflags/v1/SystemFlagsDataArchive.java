@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,10 +49,8 @@ public class SystemFlagsDataArchive {
                 String name = entry.getName();
                 if (!entry.isDirectory() && name.startsWith("flags/") && name.endsWith(".json")) {
                     Path filePath = Paths.get(name);
-                    String filename = filePath.getFileName().toString();
-                    FlagData flagData = FlagData.deserializeUtf8Json(zipIn.readAllBytes());
-                    verifyFlagDataMatchesDirectoryName(filePath, flagData);
-                    builder.addFile(filename, flagData);
+                    String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
+                    addFile(builder, rawData, filePath);
                 }
             }
             return builder.build();
@@ -70,13 +69,10 @@ public class SystemFlagsDataArchive {
             Builder builder = new Builder();
             directoryStream.forEach(absolutePath -> {
                 Path relativePath = root.relativize(absolutePath);
-                if (!Files.isDirectory(absolutePath) && relativePath.startsWith("flags")) {
-                    String filename = relativePath.getFileName().toString();
-                    if (filename.endsWith(".json")) {
-                        FlagData flagData = FlagData.deserializeUtf8Json(uncheck(() -> Files.readAllBytes(absolutePath)));
-                        verifyFlagDataMatchesDirectoryName(relativePath, flagData);
-                        builder.addFile(filename, flagData);
-                    }
+                if (!Files.isDirectory(absolutePath) &&
+                        relativePath.startsWith("flags") && relativePath.toString().endsWith(".json")) {
+                    String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
+                    addFile(builder, rawData, relativePath);
                 }
             });
             return builder.build();
@@ -106,20 +102,31 @@ public class SystemFlagsDataArchive {
             for (String filename : filenames) {
                 FlagData data = fileMap.get(filename);
                 if (data != null) {
-                    targetData.add(data);
-                    break;
+                    if (!data.isEmpty()) {
+                        targetData.add(data);
+                    }
+                    return;
                 }
             }
         });
         return targetData;
     }
 
-    private static void verifyFlagDataMatchesDirectoryName(Path filePath, FlagData flagData) {
-        String flagDirectoryName = filePath.getName(1).toString();
-        if (!flagDirectoryName.equals(flagData.id().toString())) {
-            throw new IllegalArgumentException(
-                    String.format("Flag data file with flag id '%s' in directory for '%s'", flagData.id(), flagDirectoryName));
+    private static void addFile(Builder builder, String rawData, Path filePath) {
+        String filename = filePath.getFileName().toString();
+        FlagId directoryDeducedFlagId = new FlagId(filePath.getName(1).toString());
+        FlagData flagData;
+        if (rawData.isBlank()) {
+            flagData = new FlagData(directoryDeducedFlagId);
+        } else {
+            flagData = FlagData.deserialize(rawData);
+            if (!directoryDeducedFlagId.equals(flagData.id())) {
+                throw new IllegalArgumentException(
+                        String.format("Flag data file with flag id '%s' in directory for '%s'",
+                                      flagData.id(), directoryDeducedFlagId.toString()));
+            }
         }
+        builder.addFile(filename, flagData);
     }
 
     public static class Builder {

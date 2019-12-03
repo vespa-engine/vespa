@@ -1,5 +1,5 @@
 {
-  "id" : "my-test-flag",
+  "id" : "flag-with-empty-data",
   "rules" : [
     {
       "value" : "main.prod.us-west-1"
