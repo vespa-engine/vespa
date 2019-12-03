@@ -25,6 +25,9 @@ private:
     std::unique_ptr<document::Document> _document;
 
 public:
+    DocsumStoreValue(const DocsumStoreValue&) = delete;
+    DocsumStoreValue& operator=(const DocsumStoreValue&) = delete;
+
     /**
      * Construct object representing an empty docsum blob.
      **/
