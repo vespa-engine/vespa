@@ -10,6 +10,7 @@
 #include <vespa/vespalib/locale/c.h>
 #include <cctype>
 #include <map>
+#include <set>
 
 namespace vespalib::eval {
 
@@ -30,17 +31,28 @@ bool has_duplicates(const std::vector<vespalib::string> &list) {
     return false;
 }
 
+bool step_labels(std::vector<size_t> &labels, const ValueType &type) {
+    for (size_t idx = labels.size(); idx-- > 0; ) {
+        if (++labels[idx] < type.dimensions()[idx].size) {
+            return true;
+        } else {
+            labels[idx] = 0;
+        }
+    }
+    return false;
+}
+
 //-----------------------------------------------------------------------------
 
 class Params {
 private:
     std::map<vespalib::string,size_t> _params;
 protected:
-    size_t lookup(vespalib::stringref token) const {
+    size_t lookup(const vespalib::string &token) const {
         auto result = _params.find(token);
         return (result == _params.end()) ? UNDEF : result->second;
     }
-    size_t lookup_add(vespalib::stringref token) {
+    size_t lookup_add(const vespalib::string &token) {
         size_t result = lookup(token);
         if (result == UNDEF) {
             result = _params.size();
@@ -51,7 +63,7 @@ protected:
 public:
     static const size_t UNDEF = -1;
     virtual bool implicit() const = 0;
-    virtual size_t resolve(vespalib::stringref token) const = 0;
+    virtual size_t resolve(const vespalib::string &token) const = 0;
     std::vector<vespalib::string> extract() const {
         std::vector<vespalib::string> params_out;
         params_out.resize(_params.size());
@@ -71,30 +83,27 @@ struct ExplicitParams : Params {
         }
     }
     bool implicit() const override { return false; }
-    size_t resolve(vespalib::stringref token) const override {
+    size_t resolve(const vespalib::string &token) const override {
         return lookup(token);
     }
 };
 
 struct ImplicitParams : Params {
     bool implicit() const override { return true; }
-    size_t resolve(vespalib::stringref token) const override {
+    size_t resolve(const vespalib::string &token) const override {
         return const_cast<ImplicitParams*>(this)->lookup_add(token);
     }
 };
 
 //-----------------------------------------------------------------------------
 
-class ResolveContext
-{
-private:
-    const Params          &_params;
-    const SymbolExtractor *_symbol_extractor;
-public:
-    ResolveContext(const Params &params, const SymbolExtractor *symbol_extractor)
-        : _params(params), _symbol_extractor(symbol_extractor) {}
-    size_t resolve_param(const vespalib::string &name) const { return _params.resolve(name); }
-    const SymbolExtractor *symbol_extractor() const { return _symbol_extractor; }
+struct ResolveContext {
+    const Params &params;
+    const SymbolExtractor *symbol_extractor;
+    const std::map<vespalib::string,size_t*> *aliases;
+    ResolveContext(const Params &params_in, const SymbolExtractor *symbol_extractor_in,
+                   const std::map<vespalib::string,size_t*> *aliases_in)
+        : params(params_in), symbol_extractor(symbol_extractor_in), aliases(aliases_in) {}
 };
 
 class ParseContext
@@ -118,7 +127,7 @@ public:
           _scratch(), _failure(),
           _expression_stack(), _operator_stack(),
           _operator_mark(0),
-          _resolve_stack({ResolveContext(params, symbol_extractor)})
+          _resolve_stack({ResolveContext(params, symbol_extractor, nullptr)})
     {
         if (_pos < _end) {
             _curr = *_pos;
@@ -141,13 +150,34 @@ public:
         return _resolve_stack.back();
     }
 
-    void push_resolve_context(const Params &params, const SymbolExtractor *symbol_extractor) {
-        _resolve_stack.emplace_back(params, symbol_extractor);
+    void push_resolve_context(const Params &params) {
+        _resolve_stack.emplace_back(params, nullptr, nullptr);
+    }
+
+    void push_resolve_context(const std::map<vespalib::string,size_t*> &aliases) {
+        assert(!_resolve_stack.empty());
+        _resolve_stack.emplace_back(resolver().params, resolver().symbol_extractor, &aliases);
     }
 
     void pop_resolve_context() {
         assert(!_resolve_stack.empty());
         _resolve_stack.pop_back();
+        assert(!_resolve_stack.empty());
+    }
+
+    bool has_alias(const vespalib::string &ident) const {
+        if (auto aliases = resolver().aliases) {
+            return (aliases->find(ident) != aliases->end());
+        }
+        return false;
+    }
+
+    size_t get_alias_value(const vespalib::string &ident) const {
+        auto aliases = resolver().aliases;
+        assert(aliases);
+        auto pos = aliases->find(ident);
+        assert(pos != aliases->end());
+        return *(pos->second);
     }
 
     void fail(const vespalib::string &msg) {
@@ -209,19 +239,18 @@ public:
     }
 
     size_t resolve_parameter(const vespalib::string &name) const {
-        return resolver().resolve_param(name);
+        return resolver().params.resolve(name);
     }
 
     void extract_symbol(vespalib::string &symbol_out, InputMark before_symbol) {
-        const SymbolExtractor *symbol_extractor = resolver().symbol_extractor();
-        if (symbol_extractor == nullptr) {
+        if (resolver().symbol_extractor == nullptr) {
             return;
         }
         symbol_out.clear();
         restore_input_mark(before_symbol);
         if (!eos()) {
             const char *new_pos = nullptr;
-            symbol_extractor->extract_symbol(_pos, _end, new_pos, symbol_out);
+            resolver().symbol_extractor->extract_symbol(_pos, _end, new_pos, symbol_out);
             if ((new_pos != nullptr) && (new_pos > _pos) && (new_pos <= _end)) {
                 _pos = new_pos;
                 _curr = (_pos < _end) ? *_pos : 0;
@@ -232,7 +261,7 @@ public:
     }
 
     Node_UP get_result() {
-        if (!eos() || (num_expressions() != 1) || (num_operators() > 0)) {
+        if (!eos() || (num_expressions() != 1) || (num_operators() > 0) || (_resolve_stack.size() != 1)) {
             fail("incomplete parse");
         }
         if (!_failure.empty()) {
@@ -515,7 +544,7 @@ Function parse_lambda(ParseContext &ctx, size_t num_params) {
     ctx.eat('f');
     auto param_names = get_ident_list(ctx, true);
     ExplicitParams params(param_names);
-    ctx.push_resolve_context(params, nullptr);
+    ctx.push_resolve_context(params);
     ctx.skip_spaces();
     ctx.eat('(');
     Node_UP lambda_root = get_expression(ctx);
@@ -694,15 +723,30 @@ void parse_tensor_create(ParseContext &ctx, const ValueType &type,
 }
 
 void parse_tensor_lambda(ParseContext &ctx, const ValueType &type) {
-    auto param_names = type.dimension_names();
-    ExplicitParams params(param_names);
-    ctx.push_resolve_context(params, nullptr);
     ctx.skip_spaces();
     ctx.eat('(');
-    Function lambda(get_expression(ctx), std::move(param_names));
+    ParseContext::InputMark before_expr = ctx.get_input_mark();
+    std::vector<size_t> params(type.dimensions().size(), 0);
+    std::map<vespalib::string,size_t*> my_aliases;
+    if (auto parent_aliases = ctx.resolver().aliases) {
+        my_aliases = *parent_aliases;
+    }
+    for (size_t i = 0; i < params.size(); ++i) {
+        my_aliases.emplace(type.dimensions()[i].name, &params[i]);
+    }
+    ctx.push_resolve_context(my_aliases);
+    nodes::TensorCreate::Spec create_spec;
+    do {
+        ctx.restore_input_mark(before_expr);
+        TensorSpec::Address address;
+        for (size_t i = 0; i < params.size(); ++i) {
+            address.emplace(type.dimensions()[i].name, params[i]);
+        }
+        create_spec.emplace(std::move(address), get_expression(ctx));
+    } while (!ctx.failed() && step_labels(params, type));
     ctx.eat(')');
     ctx.pop_resolve_context();
-    ctx.push_expression(std::make_unique<nodes::TensorLambda>(std::move(type), std::move(lambda)));
+    ctx.push_expression(std::make_unique<nodes::TensorCreate>(type, std::move(create_spec)));
 }
 
 bool maybe_parse_tensor_generator(ParseContext &ctx) {
@@ -806,23 +850,25 @@ bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
     return false;
 }
 
-size_t parse_symbol(ParseContext &ctx, vespalib::string &name, ParseContext::InputMark before_name) {
-    ctx.extract_symbol(name, before_name);
-    return ctx.resolve_parameter(name);
-}
-
 void parse_symbol_or_call(ParseContext &ctx) {
     ParseContext::InputMark before_name = ctx.get_input_mark();
     vespalib::string name = get_ident(ctx, true);
     bool was_tensor_generate = ((name == "tensor") && maybe_parse_tensor_generator(ctx));
     if (!was_tensor_generate && !maybe_parse_call(ctx, name)) {
-        size_t id = parse_symbol(ctx, name, before_name);
-        if (name.empty()) {
-            ctx.fail("missing value");
-        } else if (id == Params::UNDEF) {
-            ctx.fail(make_string("unknown symbol: '%s'", name.c_str()));
+        ctx.extract_symbol(name, before_name);
+        if (ctx.has_alias(name)) {
+            ctx.push_expression(Node_UP(new nodes::Number(ctx.get_alias_value(name))));
         } else {
-            ctx.push_expression(Node_UP(new nodes::Symbol(id)));
+            if (name.empty()) {
+                ctx.fail("missing value");
+            } else {
+                size_t id = ctx.resolve_parameter(name);
+                if (id == Params::UNDEF) {
+                    ctx.fail(make_string("unknown symbol: '%s'", name.c_str()));
+                } else {
+                    ctx.push_expression(Node_UP(new nodes::Symbol(id)));
+                }
+            }
         }
     }
 }

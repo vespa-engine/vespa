@@ -97,6 +97,24 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::concat(a, b, dimension, stash);
     }
 
+    bool maybe_make_const(const Node &node) {
+        if (auto create = as<TensorCreate>(node)) {
+            bool is_const = true;
+            for (size_t i = 0; i < create->num_children(); ++i) {
+                is_const &= create->get_child(i).is_const();
+            }
+            if (is_const) {
+                TensorSpec spec(create->type().to_spec());
+                for (size_t i = 0; i < create->num_children(); ++i) {
+                    spec.add(create->get_child_address(i), create->get_child(i).get_const_value());
+                }
+                make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
+                return true;
+            }
+        }
+        return false;
+    }
+
     void make_create(const TensorCreate &node) {
         assert(stack.size() >= node.num_children());
         std::map<TensorSpec::Address, tensor_function::Node::CREF> spec;
@@ -348,7 +366,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    bool open(const Node &) override { return true; }
+    bool open(const Node &node) override { return !maybe_make_const(node); }
     void close(const Node &node) override { node.accept(*this); }
 };
 

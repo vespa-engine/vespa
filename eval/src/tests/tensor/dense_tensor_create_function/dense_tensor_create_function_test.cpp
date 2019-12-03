@@ -43,7 +43,7 @@ void verify(const vespalib::string &expr, size_t expect_optimized_cnt, size_t ex
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor create can be optimized") {
-    TEST_DO(verify("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", 1, 0));
+    TEST_DO(verify("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", 0, 0)); // NB: const value
     TEST_DO(verify("tensor(x[3]):{{x:0}:a,{x:1}:b,{x:2}:c}", 1, 0));
     TEST_DO(verify("tensor<float>(x[3]):{{x:0}:a,{x:1}:b,{x:2}:c}", 1, 0));
     TEST_DO(verify("tensor(x[3]):{{x:0}:a+b,{x:1}:b-c,{x:2}:c*a}", 1, 0));
