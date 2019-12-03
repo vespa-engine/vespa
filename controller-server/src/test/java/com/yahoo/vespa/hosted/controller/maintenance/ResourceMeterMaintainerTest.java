@@ -68,7 +68,7 @@ public class ResourceMeterMaintainerTest {
         tester.configServer().nodeRepository().addFixedNodes(nonAwsZone.getId());
         tester.configServer().nodeRepository().addFixedNodes(awsZone1.getId());
         tester.configServer().nodeRepository().addFixedNodes(awsZone2.getId());
-        tester.configServer().nodeRepository().addNodes(
+        tester.configServer().nodeRepository().putByHostname(
                 awsZone1.getId(),
                 createNodesInState(
                         Node.State.provisioned,
