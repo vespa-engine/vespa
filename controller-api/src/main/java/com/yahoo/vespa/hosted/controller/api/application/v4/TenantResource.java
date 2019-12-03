@@ -40,4 +40,6 @@ public interface TenantResource {
     @Path(ApplicationResource.API_PATH)
     ApplicationResource application();
 
+    @Path(CostResource.API_PATH)
+    CostResource cost();
 }
