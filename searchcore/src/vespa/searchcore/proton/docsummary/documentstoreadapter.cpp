@@ -183,7 +183,7 @@ DocumentStoreAdapter::getMappedDocsum(uint32_t docId)
         LOG(warning, "Error while getting the docsum blob for docId %u. Returning empty docsum", docId);
         return DocsumStoreValue();
     }
-    return DocsumStoreValue(buf, buflen);
+    return DocsumStoreValue(buf, buflen, std::move(document));
 }
 
 } // namespace proton

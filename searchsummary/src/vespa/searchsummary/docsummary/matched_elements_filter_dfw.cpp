@@ -3,6 +3,9 @@
 #include "docsumstate.h"
 #include "matched_elements_filter_dfw.h"
 #include "struct_fields_resolver.h"
+#include "summaryfieldconverter.h"
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/struct_field_mapper.h>
@@ -11,6 +14,8 @@
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <cassert>
 
+using document::FieldValue;
+using document::LiteralFieldValueB;
 using vespalib::Slime;
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::BinaryFormat;
@@ -54,12 +59,44 @@ MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;
 namespace {
 
 void
-decode_input_field(const ResEntry& entry, search::RawBuf& target_buf, Slime& input_field)
+decode_input_field_to_slime(const ResEntry& entry, search::RawBuf& target_buf, Slime& input_field_as_slime)
 {
     const char* buf;
     uint32_t buf_len;
     entry._resolve_field(&buf, &buf_len, &target_buf);
-    BinaryFormat::decode(vespalib::Memory(buf, buf_len), input_field);
+    BinaryFormat::decode(vespalib::Memory(buf, buf_len), input_field_as_slime);
+}
+
+void
+convert_input_field_to_slime(const FieldValue& input_field_value, Slime& input_field_as_slime)
+{
+    // This is the same conversion that happens in proton::DocumentStoreAdapter.
+    auto converted = SummaryFieldConverter::convertSummaryField(false, input_field_value);
+    // This should hold as we also have asserted that (type == ResType::RES_JSONSTRING);
+    assert(converted->getClass().inherits(LiteralFieldValueB::classId));
+    auto& literal = static_cast<const LiteralFieldValueB&>(*converted);
+    vespalib::stringref buf = literal.getValueRef();
+    BinaryFormat::decode(vespalib::Memory(buf.data(), buf.size()), input_field_as_slime);
+}
+
+bool
+resolve_input_field_as_slime(GeneralResult& result, GetDocsumsState& state,
+                             int entry_idx, const vespalib::string& input_field_name,
+                             Slime& input_field_as_slime)
+{
+    ResEntry* entry = result.GetEntry(entry_idx);
+    if (entry != nullptr) {
+        decode_input_field_to_slime(*entry, state._docSumFieldSpace, input_field_as_slime);
+        return true;
+    } else {
+        // Use the document instance if the input field is not in the docsum blob.
+        auto field_value = result.get_field_value(input_field_name);
+        if (field_value) {
+            convert_input_field_to_slime(*field_value, input_field_as_slime);
+            return true;
+        }
+    }
+    return false;
 }
 
 void
@@ -86,14 +123,12 @@ MatchedElementsFilterDFW::insertField(uint32_t docid, GeneralResult* result, Get
 {
     assert(type == ResType::RES_JSONSTRING);
     int entry_idx = result->GetClass()->GetIndexFromEnumValue(_input_field_enum);
-    ResEntry* entry = result->GetEntry(entry_idx);
-    if (entry != nullptr) {
-        Slime input_field;
-        decode_input_field(*entry, state->_docSumFieldSpace, input_field);
-
+    Slime input_field;
+    if (resolve_input_field_as_slime(*result, *state, entry_idx, _input_field_name, input_field)) {
         Slime output_field;
-        filter_matching_elements_in_input_field(input_field, state->get_matching_elements(*_struct_field_mapper).get_matching_elements(docid, _input_field_name), output_field);
-
+        filter_matching_elements_in_input_field(input_field,
+                                                state->get_matching_elements(*_struct_field_mapper)
+                                                        .get_matching_elements(docid, _input_field_name), output_field);
         inject(output_field.get(), target);
     }
 }

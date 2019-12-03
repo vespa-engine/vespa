@@ -1,7 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "urlresult.h"
+#include "general_result.h"
 #include "resultconfig.h"
+#include <vespa/document/fieldvalue/document.h>
 #include <zlib.h>
 #include <cassert>
 
@@ -59,7 +60,8 @@ GeneralResult::GeneralResult(const ResultClass *resClass)
       _entrycnt(0),
       _entries(nullptr),
       _buf(nullptr),
-      _bufEnd(nullptr)
+      _bufEnd(nullptr),
+      _document()
 {
 }
 
@@ -88,6 +90,15 @@ GeneralResult::GetEntryFromEnumValue(uint32_t value)
 {
     int idx = _resClass->GetIndexFromEnumValue(value);
     return (idx >= 0 && (uint32_t)idx < _entrycnt) ? &_entries[idx] : nullptr;
+}
+
+std::unique_ptr<document::FieldValue>
+GeneralResult::get_field_value(const vespalib::string& field_name) const
+{
+    if (_document != nullptr) {
+        return _document->getValue(field_name);
+    }
+    return std::unique_ptr<document::FieldValue>();
 }
 
 bool

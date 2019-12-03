@@ -67,6 +67,7 @@ class DocsumStore {
 private:
     ResultConfig _config;
     ResultPacker _packer;
+    DocumentType _doc_type;
     StructDataType::UP _elem_type;
     ArrayDataType _array_type;
     MapDataType _map_type;
@@ -91,10 +92,14 @@ public:
     DocsumStore()
         : _config(),
           _packer(&_config),
+          _doc_type("test"),
           _elem_type(make_struct_elem_type()),
           _array_type(*_elem_type),
           _map_type(*DataType::STRING, *_elem_type)
     {
+        _doc_type.addField(Field("array_in_doc", _array_type, true));
+        _doc_type.addField(Field("map_in_doc", _map_type, true));
+
         auto* result_class = _config.AddResultClass("test", class_id);
         EXPECT_TRUE(result_class->AddConfigEntry("array", ResType::RES_JSONSTRING));
         EXPECT_TRUE(result_class->AddConfigEntry("map", ResType::RES_JSONSTRING));
@@ -106,12 +111,14 @@ public:
     const ResultClass* get_class() const { return _config.LookupResultClass(class_id); }
     search::docsummary::DocsumStoreValue getMappedDocsum() {
         assert(_packer.Init(class_id));
+        auto doc = std::make_unique<Document>(_doc_type, DocumentId("id:test:test::0"));
         {
             ArrayFieldValue array_value(_array_type);
             array_value.append(make_elem_value("a", 3));
             array_value.append(make_elem_value("b", 5));
             array_value.append(make_elem_value("c", 7));
             write_field_value(array_value);
+            doc->setValue("array_in_doc", array_value);
         }
         {
             MapFieldValue map_value(_map_type);
@@ -119,6 +126,7 @@ public:
             map_value.put(StringFieldValue("b"), *make_elem_value("b", 5));
             map_value.put(StringFieldValue("c"), *make_elem_value("c", 7));
             write_field_value(map_value);
+            doc->setValue("map_in_doc", map_value);
         }
         {
             MapFieldValue map2_value(_map_type);
@@ -128,7 +136,7 @@ public:
         const char* buf;
         uint32_t buf_len;
         assert(_packer.GetDocsumBlob(&buf, &buf_len));
-        return DocsumStoreValue(buf, buf_len);
+        return DocsumStoreValue(buf, buf_len, std::move(doc));
     }
 };
 
@@ -186,7 +194,8 @@ private:
     Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
         auto writer = make_field_writer(input_field_name);
         GeneralResult result(_doc_store.get_class());
-        result.inplaceUnpack(_doc_store.getMappedDocsum());
+        auto docsum = _doc_store.getMappedDocsum();
+        result.inplaceUnpack(docsum);
         StateCallback callback(input_field_name, matching_elements);
         GetDocsumsState state(callback);
         Slime slime;
@@ -206,7 +215,6 @@ public:
     ~MatchedElementsFilterTest() {}
     std::unique_ptr<IDocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
         int input_field_enum = _doc_store.get_config().GetFieldNameEnum().Lookup(input_field_name.c_str());
-        EXPECT_GE(input_field_enum, 0);
         return MatchedElementsFilterDFW::create(input_field_name, input_field_enum,
                                                 _attr_ctx, _mapper);
     }
@@ -229,6 +237,17 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
                                         "{'name':'c','weight':7}]");
 }
 
+TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value_when_input_field_is_not_in_docsum_blob)
+{
+    expect_filtered("array_in_doc", {}, "[]");
+    expect_filtered("array_in_doc", {0}, "[{'name':'a','weight':3}]");
+    expect_filtered("array_in_doc", {1}, "[{'name':'b','weight':5}]");
+    expect_filtered("array_in_doc", {2}, "[{'name':'c','weight':7}]");
+    expect_filtered("array_in_doc", {0, 1, 2}, "[{'name':'a','weight':3},"
+                                               "{'name':'b','weight':5},"
+                                               "{'name':'c','weight':7}]");
+}
+
 TEST_F(MatchedElementsFilterTest, struct_field_mapper_is_setup_for_array_field_value)
 {
     auto writer = make_field_writer("array");
@@ -246,6 +265,17 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
     expect_filtered("map", {0, 1, 2}, "[{'key':'a','value':{'name':'a','weight':3}},"
                                       "{'key':'b','value':{'name':'b','weight':5}},"
                                       "{'key':'c','value':{'name':'c','weight':7}}]");
+}
+
+TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value_when_input_field_is_not_in_docsum_blob)
+{
+    expect_filtered("map_in_doc", {}, "[]");
+    expect_filtered("map_in_doc", {0}, "[{'key':'a','value':{'name':'a','weight':3}}]");
+    expect_filtered("map_in_doc", {1}, "[{'key':'b','value':{'name':'b','weight':5}}]");
+    expect_filtered("map_in_doc", {2}, "[{'key':'c','value':{'name':'c','weight':7}}]");
+    expect_filtered("map_in_doc", {0, 1, 2}, "[{'key':'a','value':{'name':'a','weight':3}},"
+                                             "{'key':'b','value':{'name':'b','weight':5}},"
+                                             "{'key':'c','value':{'name':'c','weight':7}}]");
 }
 
 TEST_F(MatchedElementsFilterTest, struct_field_mapper_is_setup_for_map_field_value)
