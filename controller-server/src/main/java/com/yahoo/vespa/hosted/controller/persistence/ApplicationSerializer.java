@@ -487,10 +487,10 @@ public class ApplicationSerializer {
 
     private Map<JobType, Instant> jobPausesFromSlime(Inspector object) {
         Map<JobType, Instant> jobPauses = new HashMap<>();
-        object.field(jobStatusField).traverse((ArrayTraverser) (__, jobPauseObject) -> {
-            jobPauses.put(JobType.fromJobName(jobPauseObject.field(jobTypeField).asString()),
-                          Instant.ofEpochMilli(jobPauseObject.field(pausedUntilField).asLong()));
-        });
+        object.field(jobStatusField).traverse((ArrayTraverser) (__, jobPauseObject) ->
+                JobType.fromOptionalJobName(jobPauseObject.field(jobTypeField).asString())
+                       .ifPresent(jobType -> jobPauses.put(jobType,
+                                                           Instant.ofEpochMilli(jobPauseObject.field(pausedUntilField).asLong()))));
         return jobPauses;
     }
 
