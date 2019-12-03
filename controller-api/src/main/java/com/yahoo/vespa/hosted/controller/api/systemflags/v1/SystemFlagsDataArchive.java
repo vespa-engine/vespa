@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -48,7 +49,7 @@ public class SystemFlagsDataArchive {
                 String name = entry.getName();
                 if (!entry.isDirectory() && name.startsWith("flags/") && name.endsWith(".json")) {
                     Path filePath = Paths.get(name);
-                    String rawData = new String(zipIn.readAllBytes());
+                    String rawData = new String(zipIn.readAllBytes(), StandardCharsets.UTF_8);
                     addFile(builder, rawData, filePath);
                 }
             }
@@ -70,7 +71,7 @@ public class SystemFlagsDataArchive {
                 Path relativePath = root.relativize(absolutePath);
                 if (!Files.isDirectory(absolutePath) &&
                         relativePath.startsWith("flags") && relativePath.toString().endsWith(".json")) {
-                    String rawData = uncheck(() -> Files.readString(absolutePath));
+                    String rawData = uncheck(() -> Files.readString(absolutePath, StandardCharsets.UTF_8));
                     addFile(builder, rawData, relativePath);
                 }
             });
