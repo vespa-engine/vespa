@@ -242,7 +242,6 @@ public class FieldUpdateAdapter implements UpdateAdapter {
 
     private static class CompleteBuilder extends PartialBuilder {
 
-        static final ValueUpdate nullMap = new MapValueUpdate(null, null);
         static final ValueUpdate nullAssign = new AssignValueUpdate(null);
 
         CompleteBuilder() {
@@ -251,11 +250,7 @@ public class FieldUpdateAdapter implements UpdateAdapter {
 
         @Override
         List<ValueUpdate> createValueUpdates(FieldValue val, ValueUpdate upd) {
-            if (val instanceof StructuredFieldValue) {
-                return super.createValueUpdates(val, nullMap);
-            } else {
-                return super.createValueUpdates(val, nullAssign);
-            }
+            return super.createValueUpdates(val, nullAssign);
         }
     }
 }
