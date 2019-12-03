@@ -55,5 +55,4 @@ vespa_define_module(
     src/tests/configparser
 )
 
-vespa_install_script(src/apps/vespa-activate-application/vespa-activate-application.sh vespa-activate-application bin)
 vespa_install_script(src/apps/vespa-config/vespa-config.pl libexec/vespa)
