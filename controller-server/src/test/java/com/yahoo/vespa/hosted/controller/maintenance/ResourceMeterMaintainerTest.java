@@ -1,8 +1,13 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
@@ -10,7 +15,10 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -60,5 +68,37 @@ public class ResourceMeterMaintainerTest {
         tester.configServer().nodeRepository().addFixedNodes(nonAwsZone.getId());
         tester.configServer().nodeRepository().addFixedNodes(awsZone1.getId());
         tester.configServer().nodeRepository().addFixedNodes(awsZone2.getId());
+        tester.configServer().nodeRepository().addNodes(
+                awsZone1.getId(),
+                createNodesInState(
+                        Node.State.provisioned,
+                        Node.State.ready,
+                        Node.State.dirty,
+                        Node.State.failed,
+                        Node.State.parked
+                )
+        );
+    }
+
+    private List<Node> createNodesInState(Node.State ...states) {
+        return Arrays.stream(states)
+                .map(state -> {
+                    return new Node.Builder()
+                            .hostname(HostName.from("host" + state))
+                            .parentHostname(HostName.from("parenthost" + state))
+                            .state(state)
+                            .type(NodeType.tenant)
+                            .owner(ApplicationId.from("tenant1", "app1", "default"))
+                            .currentVersion(Version.fromString("7.42"))
+                            .wantedVersion(Version.fromString("7.42"))
+                            .currentOsVersion(Version.fromString("7.6"))
+                            .wantedOsVersion(Version.fromString("7.6"))
+                            .serviceState(Node.ServiceState.expectedUp)
+                            .resources(new NodeResources(24, 24, 500, 1))
+                            .clusterId("clusterA")
+                            .clusterType(Node.ClusterType.container)
+                            .build();
+                })
+                .collect(Collectors.toUnmodifiableList());
     }
 }

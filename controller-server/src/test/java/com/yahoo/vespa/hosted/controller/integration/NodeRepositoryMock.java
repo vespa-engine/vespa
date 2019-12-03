@@ -63,7 +63,10 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     public void addNodes(ZoneId zone, List<Node> nodes) {
-        nodeRepository.put(zone, nodes.stream().collect(Collectors.toMap(Node::hostname, Function.identity())));
+        var existingNodes = nodeRepository.getOrDefault(zone, new HashMap<>());
+        var newNodes = nodes.stream().collect(Collectors.toMap(Node::hostname, Function.identity()));
+        newNodes.forEach(existingNodes::put);
+        nodeRepository.put(zone, existingNodes);
     }
 
     public void addFixedNodes(ZoneId zone) {

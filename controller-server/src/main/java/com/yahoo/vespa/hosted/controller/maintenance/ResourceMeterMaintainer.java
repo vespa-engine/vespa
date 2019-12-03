@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -74,7 +75,8 @@ public class ResourceMeterMaintainer extends Maintainer {
 
     private Collection<ResourceSnapshot> createResourceSnapshotsFromNodes(ZoneId zoneId, List<Node> nodes) {
         return nodes.stream()
-                .filter(unlessNodeOwnerIsHostedVespa())
+                .filter(this::unlessNodeOwnerIsHostedVespa)
+                .filter(this::isNodeStateMeterable)
                 .collect(Collectors.groupingBy(node ->
                                 node.owner().get(),
                                 Collectors.collectingAndThen(Collectors.toList(),
@@ -85,9 +87,23 @@ public class ResourceMeterMaintainer extends Maintainer {
                                 )).values();
     }
 
-    private Predicate<Node> unlessNodeOwnerIsHostedVespa() {
-        return node -> node.owner().map(owner ->
-                !owner.tenant().value().equals("hosted-vespa")
-        ).orElse(false);
+    private boolean unlessNodeOwnerIsHostedVespa(Node node) {
+        return node.owner()
+                .map(owner -> !owner.tenant().value().equals("hosted-vespa"))
+                .orElse(false);
+    }
+
+    /**
+     * Checks if the node is in some state where it is in active use by the tenant,
+     * and not transitioning out of use, in a failed state, etc.
+     */
+    private static final Set<Node.State> METERABLE_NODE_STATES = Set.of(
+            Node.State.reserved,   // an application will soon use this node
+            Node.State.active,     // an application is currently using this node
+            Node.State.inactive    // an application owner might set a node inactive
+    );
+
+    private boolean isNodeStateMeterable(Node node) {
+        return METERABLE_NODE_STATES.contains(node.state());
     }
 }
