@@ -122,7 +122,9 @@ class Activator {
             long numActive = parentHostnames.size() - numNonActive;
             var messageBuilder = new StringBuilder()
                     .append(numActive).append("/").append(parentHostnames.size())
-                    .append(" hosts have completed provisioning and bootstrapping, still waiting for ");
+                    .append(" hosts for ")
+                    .append(application)
+                    .append(" have completed provisioning and bootstrapping, still waiting for ");
 
             if (nonActiveHosts.size() <= 5) {
                 messageBuilder.append(nonActiveHosts.stream()
@@ -137,7 +139,6 @@ class Activator {
             }
             var message = messageBuilder.toString();
 
-            logger.log(LogLevel.INFO, application + ": " + message);
             throw new ParentHostUnavailableException(message);
         }
     }
