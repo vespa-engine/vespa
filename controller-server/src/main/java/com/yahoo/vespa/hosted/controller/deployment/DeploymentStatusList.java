@@ -2,11 +2,15 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * List for filtering deployment status of applications, for inspection and decision making.
@@ -27,6 +31,15 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
         return ApplicationList.from(mapToList(DeploymentStatus::application));
     }
 
+    public DeploymentStatusList forApplications(Collection<TenantAndApplicationId> applications) {
+        return matching(status -> applications.contains(status.application().id()));
+    }
+
+    public DeploymentStatusList withProductionDeployment() {
+        return matching(status -> status.application().productionDeployments().values().stream()
+                                        .anyMatch(deployments -> ! deployments.isEmpty()));
+    }
+
     public DeploymentStatusList failing() {
         return matching(DeploymentStatus::hasFailures);
     }
@@ -34,6 +47,43 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
     public DeploymentStatusList failingUpgrade() {
         return matching(status -> status.instanceJobs().values().stream()
                                         .anyMatch(jobs -> ! jobs.failing().not().failingApplicationChange().isEmpty()));
+    }
+
+    /** Returns the subset of applications which are upgrading (to any version), not considering block windows. */
+    public DeploymentStatusList upgrading() {
+        return matching(status -> status.application().change().platform().isPresent());
+    }
+
+    /** Returns the subset of applications which are currently upgrading to the given version */
+    public DeploymentStatusList upgradingTo(Version version) {
+        return upgradingTo(List.of(version));
+    }
+
+    /** Returns the subset of applications which are currently upgrading to the given version */
+    public DeploymentStatusList upgradingTo(Collection<Version> versions) {
+        return matching(status -> versions.stream().anyMatch(version -> status.application().change().platform().equals(Optional.of(version))));
+    }
+
+    /** Returns the subset of applications which are not pinned to a certain Vespa version. */
+    public DeploymentStatusList unpinned() {
+        return matching(status -> ! status.application().change().isPinned());
+    }
+
+    /** Returns the subset of applications which has the given upgrade policy */
+    // TODO jonmv: Make this instance based when instances are orchestrated, and deployments reported per instance.
+    public DeploymentStatusList with(DeploymentSpec.UpgradePolicy policy) {
+        return matching(status ->  status.application().deploymentSpec().instances().stream()
+                                         .anyMatch(instance -> instance.upgradePolicy() == policy));
+    }
+
+    /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
+    public DeploymentStatusList withChanges() {
+        return matching(status -> status.application().change().hasTargets() || status.application().outstandingChange().hasTargets());
+    }
+
+    /** Returns the subset of applications which are currently deploying a change */
+    public DeploymentStatusList deploying() {
+        return matching(status -> status.application().change().hasTargets());
     }
 
     /** Returns the subset of applications which have been failing an upgrade to the given version since the given instant */
@@ -74,9 +124,9 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
     }
 
     private static boolean failingApplicationChangeSince(JobList jobs, Instant threshold) {
-        return jobs.failingApplicationChange()
-                   .firstFailing().endedBefore(threshold)
-                   .isEmpty();
+        return ! jobs.failingApplicationChange()
+                     .firstFailing().endedBefore(threshold)
+                     .isEmpty();
     }
 
 }

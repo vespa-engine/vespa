@@ -1,29 +1,23 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.google.inject.Inject;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 
 /**
  * Advances the set of {@link Run}s for a {@link JobController}.
@@ -86,15 +80,8 @@ public class JobRunner extends Maintainer {
     private void finish(RunId id) {
         try {
             jobs.finish(id);
-            controller().jobController().run(id).ifPresent(run -> {
-                DeploymentJobs.JobReport report = DeploymentJobs.JobReport.ofJob(run.id().application(),
-                                                                                 run.id().type(),
-                                                                                 run.id().number(),
-                                                                                 ! run.hasFailed() ? Optional.empty()
-                                                                                                   : Optional.of(run.status() == outOfCapacity ? DeploymentJobs.JobError.outOfCapacity
-                                                                                                                                               : DeploymentJobs.JobError.unknown));
-                controller().applications().deploymentTrigger().notifyOfCompletion(report);
-            });
+            controller().jobController().run(id)
+                        .ifPresent(run -> controller().applications().deploymentTrigger().notifyOfCompletion(id.application()));
         }
         catch (Exception e) {
             log.log(LogLevel.WARNING, "Exception finishing " + id, e);

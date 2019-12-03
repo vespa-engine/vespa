@@ -2,11 +2,15 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
+import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 
@@ -44,11 +48,13 @@ public class VespaVersion implements Comparable<VespaVersion> {
     }
 
     public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
-        // 'production on this': All deployment jobs upgrading to this version have completed without failure
-        ApplicationList productionOnThis = ApplicationList.from(statistics.production(), controller.applications()).not().upgradingTo(statistics.version()).not().failingUpgrade();
-        ApplicationList failingOnThis = ApplicationList.from(statistics.failing(), controller.applications());
-        ApplicationList all = ApplicationList.from(controller.applications().asList())
+        DeploymentStatusList all = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()))
                                              .withProductionDeployment();
+        // 'production on this': All deployment jobs upgrading to this version have completed without failure
+        DeploymentStatusList productionOnThis = all.forApplications(statistics.production().stream().map(TenantAndApplicationId::from).collect(Collectors.toList()))
+                                                   .not().failingUpgrade()
+                                                   .not().upgradingTo(statistics.version());
+        DeploymentStatusList failingOnThis = all.forApplications(statistics.failing().stream().map(TenantAndApplicationId::from).collect(Collectors.toList()));
 
         // 'broken' if any Canary fails
         if  ( ! failingOnThis.with(UpgradePolicy.canary).isEmpty())
@@ -158,10 +164,10 @@ public class VespaVersion implements Comparable<VespaVersion> {
     }
 
     private static boolean nonCanaryApplicationsBroken(Version version,
-                                                       ApplicationList failingOnThis,
-                                                       ApplicationList productionOnThis) {
-        ApplicationList failingNonCanaries = failingOnThis.not().with(UpgradePolicy.canary).startedFailingOn(version);
-        ApplicationList productionNonCanaries = productionOnThis.not().with(UpgradePolicy.canary);
+                                                       DeploymentStatusList failingOnThis,
+                                                       DeploymentStatusList productionOnThis) {
+        DeploymentStatusList failingNonCanaries = failingOnThis.startedFailingOn(version).not().with(UpgradePolicy.canary);
+        DeploymentStatusList productionNonCanaries = productionOnThis.not().with(UpgradePolicy.canary);
 
         if (productionNonCanaries.size() + failingNonCanaries.size() == 0) return false;
 

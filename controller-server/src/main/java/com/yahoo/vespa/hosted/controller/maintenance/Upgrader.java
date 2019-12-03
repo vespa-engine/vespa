@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
@@ -56,24 +57,35 @@ public class Upgrader extends Maintainer {
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
         for (VespaVersion version : controller().versionStatus().versions()) {
             if (version.confidence() == Confidence.broken)
-                cancelUpgradesOf(applications().not().with(UpgradePolicy.canary).upgradingTo(version.versionNumber()),
+                cancelUpgradesOf(applications().upgradingTo(version.versionNumber())
+                                               .not().with(UpgradePolicy.canary),
                                  version.versionNumber() + " is broken");
         }
 
         // Canaries should always try the canary target
-        cancelUpgradesOf(applications().with(UpgradePolicy.canary).upgrading().not().upgradingTo(canaryTarget),
+        cancelUpgradesOf(applications().upgrading()
+                                       .not().upgradingTo(canaryTarget)
+                                       .with(UpgradePolicy.canary),
                          "Outdated target version for Canaries");
 
         // Cancel *failed* upgrades to earlier versions, as the new version may fix it
         String reason = "Failing on outdated version";
-        cancelUpgradesOf(applications().with(UpgradePolicy.defaultPolicy).upgrading().failing().not().upgradingTo(defaultTargets), reason);
-        cancelUpgradesOf(applications().with(UpgradePolicy.conservative).upgrading().failing().not().upgradingTo(conservativeTargets), reason);
+        cancelUpgradesOf(applications().upgrading()
+                                       .failing()
+                                       .not().upgradingTo(defaultTargets)
+                                       .with(UpgradePolicy.defaultPolicy),
+                         reason);
+        cancelUpgradesOf(applications().upgrading()
+                                       .failing()
+                                       .not().upgradingTo(conservativeTargets)
+                                       .with(UpgradePolicy.conservative),
+                         reason);
 
         // Schedule the right upgrades
-        ApplicationList applications = applications();
-        upgrade(applications.with(UpgradePolicy.canary), canaryTarget);
-        defaultTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target));
-        conservativeTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.conservative), target));
+        DeploymentStatusList applications = applications();
+        upgrade(applications.with(UpgradePolicy.canary), canaryTarget, applications.size());
+        defaultTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.defaultPolicy), target, numberOfApplicationsToUpgrade()));
+        conservativeTargets.forEach(target -> upgrade(applications.with(UpgradePolicy.conservative), target, numberOfApplicationsToUpgrade()));
     }
 
     /** Returns the target versions for given confidence, one per major version in the system */
@@ -90,28 +102,27 @@ public class Upgrader extends Maintainer {
     }
 
     /** Returns a list of all applications, except those which are pinned — these should not be manipulated by the Upgrader */
-    private ApplicationList applications() {
-        return ApplicationList.from(controller().applications().asList()).unpinned();
+    private DeploymentStatusList applications() {
+        return controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().asList())).unpinned();
     }
 
-    private void upgrade(ApplicationList applications, Version version) {
-        applications = applications.withProductionDeployment();
-        applications = applications.onLowerVersionThan(version);
-        applications = applications.allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()));
-        applications = applications.not().deploying(); // wait with applications deploying an application change or already upgrading
-        applications = applications.not().failingOn(version); // try to upgrade only if it hasn't failed on this version
-        applications = applications.canUpgradeAt(controller().clock().instant()); // wait with applications that are currently blocking upgrades
-        applications = applications.byIncreasingDeployedVersion(); // start with lowest versions
-        for (Application application : applications.with(UpgradePolicy.canary).asList())
-            controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
-        for (Application application : applications.not().with(UpgradePolicy.canary).first(numberOfApplicationsToUpgrade()).asList())
-            controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version));
+    private void upgrade(DeploymentStatusList statuses, Version version, int numberToUpgrade) {
+        statuses.withProductionDeployment()
+                .not().deploying() // wait with applications deploying an application change or already upgrading
+                .not().failingOn(version) // try to upgrade only if it hasn't failed on this version
+                .asApplicationList()
+                .onLowerVersionThan(version)
+                .allowMajorVersion(version.getMajor(), targetMajorVersion().orElse(version.getMajor()))
+                .canUpgradeAt(controller().clock().instant()) // wait with applications that are currently blocking upgrades
+                .byIncreasingDeployedVersion() // start with lowest versions
+                .first(numberToUpgrade)
+                .asList().forEach(application -> controller().applications().deploymentTrigger().triggerChange(application.id(), Change.of(version)));
     }
 
-    private void cancelUpgradesOf(ApplicationList applications, String reason) {
+    private void cancelUpgradesOf(DeploymentStatusList applications, String reason) {
         if (applications.isEmpty()) return;
         log.info("Cancelling upgrading of " + applications.asList().size() + " applications: " + reason);
-        for (Application application : applications.asList())
+        for (Application application : applications.asApplicationList().asList())
             controller().applications().deploymentTrigger().cancelChange(application.id(), PLATFORM);
     }
 

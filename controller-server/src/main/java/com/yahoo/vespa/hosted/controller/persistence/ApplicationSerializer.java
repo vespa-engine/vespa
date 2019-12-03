@@ -6,7 +6,6 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -28,11 +27,8 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
@@ -45,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -96,7 +91,7 @@ public class ApplicationSerializer {
     // Instance fields
     private static final String instanceNameField = "instanceName";
     private static final String deploymentsField = "deployments";
-    private static final String deploymentJobsField = "deploymentJobs";
+    private static final String deploymentJobsField = "deploymentJobs"; // TODO jonmv: clean up serialisation format
     private static final String assignedRotationsField = "assignedRotations";
     private static final String assignedRotationEndpointField = "endpointId";
 
@@ -124,11 +119,6 @@ public class ApplicationSerializer {
 
     // JobStatus field
     private static final String jobTypeField = "jobType";
-    private static final String errorField = "jobError";
-    private static final String lastTriggeredField = "lastTriggered";
-    private static final String lastCompletedField = "lastCompleted";
-    private static final String firstFailingField = "firstFailing";
-    private static final String lastSuccessField = "lastSuccess";
     private static final String pausedUntilField = "pausedUntil";
 
     // JobRun fields
@@ -197,7 +187,7 @@ public class ApplicationSerializer {
             Cursor instanceObject = array.addObject();
             instanceObject.setString(instanceNameField, instance.name().value());
             deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
-            toSlime(instance.deploymentJobs(), instanceObject.setObject(deploymentJobsField));
+            toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
             assignedRotationsToSlime(instance.rotations(), instanceObject, assignedRotationsField);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
         }
@@ -280,36 +270,13 @@ public class ApplicationSerializer {
         object.setString(commitField, sourceRevision.commit());
     }
 
-    private void toSlime(DeploymentJobs deploymentJobs, Cursor cursor) {
-        jobStatusToSlime(deploymentJobs.jobStatus().values(), cursor.setArray(jobStatusField));
-    }
-
-    private void jobStatusToSlime(Collection<JobStatus> jobStatuses, Cursor jobStatusArray) {
-        for (JobStatus jobStatus : jobStatuses)
-            toSlime(jobStatus, jobStatusArray.addObject());
-    }
-
-    private void toSlime(JobStatus jobStatus, Cursor object) {
-        object.setString(jobTypeField, jobStatus.type().jobName());
-        if (jobStatus.jobError().isPresent())
-            object.setString(errorField, jobStatus.jobError().get().name());
-
-        jobStatus.lastTriggered().ifPresent(run -> jobRunToSlime(run, object, lastTriggeredField));
-        jobStatus.lastCompleted().ifPresent(run -> jobRunToSlime(run, object, lastCompletedField));
-        jobStatus.lastSuccess().ifPresent(run -> jobRunToSlime(run, object, lastSuccessField));
-        jobStatus.firstFailing().ifPresent(run -> jobRunToSlime(run, object, firstFailingField));
-        jobStatus.pausedUntil().ifPresent(until -> object.setLong(pausedUntilField, until));
-    }
-
-    private void jobRunToSlime(JobStatus.JobRun jobRun, Cursor parent, String jobRunObjectName) {
-        Cursor object = parent.setObject(jobRunObjectName);
-        object.setLong(jobRunIdField, jobRun.id());
-        object.setString(versionField, jobRun.platform().toString());
-        toSlime(jobRun.application(), object.setObject(revisionField));
-        jobRun.sourcePlatform().ifPresent(version -> object.setString(sourceVersionField, version.toString()));
-        jobRun.sourceApplication().ifPresent(version -> toSlime(version, object.setObject(sourceApplicationField)));
-        object.setString(reasonField, jobRun.reason());
-        object.setLong(atField, jobRun.at().toEpochMilli());
+    private void toSlime(Map<JobType, Instant> jobPauses, Cursor cursor) {
+        Cursor jobStatusArray = cursor.setArray(jobStatusField);
+        jobPauses.forEach((type, until) -> {
+            Cursor jobPauseObject = jobStatusArray.addObject();
+            jobPauseObject.setString(jobTypeField, type.jobName());
+            jobPauseObject.setLong(pausedUntilField, until.toEpochMilli());
+        });
     }
 
     private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
@@ -387,12 +354,12 @@ public class ApplicationSerializer {
         field.traverse((ArrayTraverser) (name, object) -> {
             InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
             List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField));
-            DeploymentJobs deploymentJobs = deploymentJobsFromSlime(object.field(deploymentJobsField));
+            Map<JobType, Instant> jobPauses = jobPausesFromSlime(object.field(deploymentJobsField));
             List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, instanceName, object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
             instances.add(new Instance(id.instance(instanceName),
                                        deployments,
-                                       deploymentJobs,
+                                       jobPauses,
                                        assignedRotations,
                                        rotationStatus));
         });
@@ -518,9 +485,13 @@ public class ApplicationSerializer {
                                               object.field(commitField).asString()));
     }
 
-    private DeploymentJobs deploymentJobsFromSlime(Inspector object) {
-        List<JobStatus> jobStatusList = jobStatusListFromSlime(object.field(jobStatusField));
-        return new DeploymentJobs(jobStatusList);
+    private Map<JobType, Instant> jobPausesFromSlime(Inspector object) {
+        Map<JobType, Instant> jobPauses = new HashMap<>();
+        object.field(jobStatusField).traverse((ArrayTraverser) (__, jobPauseObject) ->
+                JobType.fromOptionalJobName(jobPauseObject.field(jobTypeField).asString())
+                       .ifPresent(jobType -> jobPauses.put(jobType,
+                                                           Instant.ofEpochMilli(jobPauseObject.field(pausedUntilField).asLong()))));
+        return jobPauses;
     }
 
     private Change changeFromSlime(Inspector object) {
@@ -534,42 +505,6 @@ public class ApplicationSerializer {
         if (object.field(pinnedField).asBool())
             change = change.withPin();
         return change;
-    }
-
-    private List<JobStatus> jobStatusListFromSlime(Inspector array) {
-        List<JobStatus> jobStatusList = new ArrayList<>();
-        array.traverse((ArrayTraverser) (int i, Inspector item) -> jobStatusFromSlime(item).ifPresent(jobStatusList::add));
-        return jobStatusList;
-    }
-
-    private Optional<JobStatus> jobStatusFromSlime(Inspector object) {
-        // if the job type has since been removed, ignore it
-        Optional<JobType> jobType =
-                JobType.fromOptionalJobName(object.field(jobTypeField).asString());
-        if (jobType.isEmpty()) return Optional.empty();
-
-        Optional<JobError> jobError = Optional.empty();
-        if (object.field(errorField).valid())
-            jobError = Optional.of(JobError.valueOf(object.field(errorField).asString()));
-
-        return Optional.of(new JobStatus(jobType.get(),
-                                         jobError,
-                                         jobRunFromSlime(object.field(lastTriggeredField)),
-                                         jobRunFromSlime(object.field(lastCompletedField)),
-                                         jobRunFromSlime(object.field(firstFailingField)),
-                                         jobRunFromSlime(object.field(lastSuccessField)),
-                                         Serializers.optionalLong(object.field(pausedUntilField))));
-    }
-
-    private Optional<JobStatus.JobRun> jobRunFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
-        return Optional.of(new JobStatus.JobRun(object.field(jobRunIdField).asLong(),
-                                                new Version(object.field(versionField).asString()),
-                                                applicationVersionFromSlime(object.field(revisionField)),
-                                                Serializers.optionalString(object.field(sourceVersionField)).map(Version::fromString),
-                                                Optional.of(object.field(sourceApplicationField)).filter(Inspector::valid).map(this::applicationVersionFromSlime),
-                                                object.field(reasonField).asString(),
-                                                Instant.ofEpochMilli(object.field(atField).asLong())));
     }
 
     private List<AssignedRotation> assignedRotationsFromSlime(DeploymentSpec deploymentSpec, InstanceName instance, Inspector root) {

@@ -14,7 +14,7 @@
       "type": "system-test",
       "success": true,
       "lastTriggered": {
-        "id": -1,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -25,7 +25,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform 6.1, application 1.0.2-commit1)",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -40,7 +40,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform 6.1, application 1.0.2-commit1)",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -55,7 +55,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-west-1 (platform 6.1, application 1.0.2-commit1)",
+        "reason": "unknown reason",
         "at": "(ignore)"
       }
     },
@@ -63,7 +63,7 @@
       "type": "staging-test",
       "success": true,
       "lastTriggered": {
-        "id": -1,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -74,7 +74,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.1-commit1 -> 1.0.2-commit1)",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -89,7 +89,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.1-commit1 -> 1.0.2-commit1)",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -104,7 +104,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Testing deployment for production-us-east-3 (platform 6.1, application 1.0.1-commit1 -> 1.0.2-commit1)",
+        "reason": "unknown reason",
         "at": "(ignore)"
       }
     },
@@ -112,7 +112,7 @@
       "type": "production-us-west-1",
       "success": true,
       "lastTriggered": {
-        "id": -1,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -123,7 +123,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "New change available",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -138,7 +138,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "New change available",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -153,7 +153,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "New change available",
+        "reason": "unknown reason",
         "at": "(ignore)"
       }
     },
@@ -161,7 +161,7 @@
       "type": "production-us-east-3",
       "success": true,
       "lastTriggered": {
-        "id": -1,
+        "id": 1,
         "version": "(ignore)",
         "revision": {
           "buildNumber": "(ignore)",
@@ -172,7 +172,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Available change in production-us-west-1",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastCompleted": {
@@ -187,7 +187,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Available change in production-us-west-1",
+        "reason": "unknown reason",
         "at": "(ignore)"
       },
       "lastSuccess": {
@@ -202,7 +202,7 @@
             "gitCommit": "commit1"
           }
         },
-        "reason": "Available change in production-us-west-1",
+        "reason": "unknown reason",
         "at": "(ignore)"
       }
     }

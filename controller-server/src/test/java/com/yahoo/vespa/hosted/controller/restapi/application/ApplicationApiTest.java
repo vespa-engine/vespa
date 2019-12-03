@@ -52,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
@@ -336,6 +335,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         deploymentTester.triggerJobs();
+
+        // POST a triggering to force a production job to start without successful tests
+        tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/job/production-us-west-1", POST)
+                                      .data("{\"skipTests\":true}")
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1\"}");
 
         // GET application having both change and outstanding change
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2", GET)
@@ -899,37 +904,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
     }
 
     @Test
-    public void testSortsDeploymentsAndJobs() {
-        // Deploy
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .instances("instance1")
-                .region("us-east-3")
-                .build();
-
-        var app = deploymentTester.newDeploymentContext("tenant1", "application1", "instance1");
-        app.submit(applicationPackage).deploy();
-
-        // New zone is added before us-east-3
-        applicationPackage = new ApplicationPackageBuilder()
-                .instances("instance1")
-                .globalServiceId("foo")
-                // These decides the ordering of deploymentJobs and instances in the response
-                .region("us-west-1")
-                .region("us-east-3")
-                .build();
-        app.submit(applicationPackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
-
-        setZoneInRotation("rotation-fqdn-1", ZoneId.from("prod", "us-west-1"));
-
-        app.runJob(JobType.stagingTest).runJob(JobType.productionUsEast3);
-
-        setDeploymentMaintainedInfo();
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", GET)
-                                      .userIdentity(USER_ID),
-                              new File("instance-without-change-multiple-deployments.json"));
-    }
-
-    @Test
     public void testMeteringResponses() {
         MockMeteringClient mockMeteringClient = tester.serviceRegistry().meteringService();
 
@@ -1390,35 +1364,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(userId),
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.new-user. This may take about 15 minutes the first time.\",\"run\":1}");
-    }
-
-    @Test
-    public void testJobStatusReporting() {
-        addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
-        var app = deploymentTester.newDeploymentContext(createTenantAndApplication());
-
-        Version vespaVersion = tester.configServer().initialVersion(); // system version from mock config server client
-
-        app.submit(applicationPackageInstance1);
-        String data = "{\"jobName\":\"system-test\",\"instance\":\"instance1\"}";
-
-        var request = request("/application/v4/tenant/tenant1/application/application1/jobreport", POST)
-                .data(data)
-                .userIdentity(HOSTED_VESPA_OPERATOR);
-
-        // Notifying about non-running job fails
-        tester.assertResponse(request, "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Notified of completion " +
-                                       "of system-test for tenant1.application1.instance1, but that has not been triggered; last was never\"}",
-                              400);
-
-        deploymentTester.triggerJobs();
-        // Notifying about running jobs stores success status in DeploymentTrigger
-        tester.assertResponse(request, "{\"message\":\"ok\"}");
-        JobStatus recordedStatus = app.instance().deploymentJobs().jobStatus().get(JobType.systemTest);
-
-        assertNotNull("Status was recorded", recordedStatus);
-        assertTrue(recordedStatus.isSuccess());
-        assertEquals(vespaVersion, recordedStatus.lastCompleted().get().platform());
     }
 
     @Test

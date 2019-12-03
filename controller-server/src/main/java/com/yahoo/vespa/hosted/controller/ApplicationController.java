@@ -51,8 +51,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.JobList;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
@@ -445,11 +443,6 @@ public class ApplicationController {
         // for internally built ones, to be able to return a validation failure message when necessary
         for (InstanceName name : existingInstances) {
             application = withoutDeletedDeployments(application, name);
-            // Clean up deployment jobs that are no longer referenced by deployment spec
-            if (application.get().instances().containsKey(name)) {
-                DeploymentSpec deploymentSpec = application.get().deploymentSpec();
-                application = application.with(name, instance -> withoutUnreferencedDeploymentJobs(deploymentSpec, instance));
-            }
         }
 
         for (InstanceName instance : declaredInstances)
@@ -638,19 +631,6 @@ public class ApplicationController {
         if (removeInstance)
             application = application.without(instance);
         return application;
-    }
-
-    private Instance withoutUnreferencedDeploymentJobs(DeploymentSpec deploymentSpec, Instance instance) {
-        for (JobType job : JobList.from(instance).production().mapToList(JobStatus::type)) {
-            ZoneId zone = job.zone(controller.system());
-            if (deploymentSpec.instance(instance.name())
-                              // TODO jonmv: Properly convert to job here.
-                              .map(spec -> spec.deploysTo(zone.environment(), zone.region()))
-                              .orElse(false))
-                continue;
-            instance = instance.withoutDeploymentJob(job);
-        }
-        return instance;
     }
 
     private DeployOptions withVersion(Version version, DeployOptions options) {

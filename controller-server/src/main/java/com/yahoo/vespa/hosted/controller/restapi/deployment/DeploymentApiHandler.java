@@ -11,24 +11,26 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.Path;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.application.JobList;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
+import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.restapi.Uri;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.JobList;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 import static java.util.Comparator.comparing;
 
 /**
@@ -98,53 +100,55 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 configServerObject.setString("hostname", hostname.value());
             }
 
+            Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()))
+                                                         .asList().stream()
+                                                         .flatMap(status -> status.instanceJobs().entrySet().stream())
+                                                         .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
             Cursor failingArray = versionObject.setArray("failingApplications");
             for (ApplicationId id : version.statistics().failing()) {
-                controller.applications().getInstance(id).ifPresent(application -> {
-                    firstFailingOn(version.versionNumber(), application).ifPresent(firstFailing -> {
+                if (jobs.containsKey(id))
+                    firstFailingOn(version.versionNumber(), jobs.get(id)).ifPresent(firstFailing -> {
                         Cursor applicationObject = failingArray.addObject();
-                        toSlime(applicationObject, application, request);
-                        applicationObject.setString("failing", firstFailing.type().jobName());
+                        toSlime(applicationObject, id, request);
+                        applicationObject.setString("failing", firstFailing.id().type().jobName());
                     });
-                });
             }
 
             Cursor productionArray = versionObject.setArray("productionApplications");
             for (ApplicationId id : version.statistics().production()) {
-                controller.applications().getInstance(id).ifPresent(application -> {
-                    int successes = productionSuccessesFor(version.versionNumber(), application);
-                    if (successes == 0) return; // Just upgraded to a newer version.
+                if (jobs.containsKey(id)) {
+                    int successes = productionSuccessesFor(version.versionNumber(), jobs.get(id));
+                    if (successes == 0) continue; // Just upgraded to a newer version.
                     Cursor applicationObject = productionArray.addObject();
-                    toSlime(applicationObject, application, request);
-                    applicationObject.setLong("productionJobs", productionJobsFor(application));
-                    applicationObject.setLong("productionSuccesses", productionSuccessesFor(version.versionNumber(), application));
-                });
+                    toSlime(applicationObject, id, request);
+                    applicationObject.setLong("productionJobs", jobs.get(id).production().size());
+                    applicationObject.setLong("productionSuccesses", productionSuccessesFor(version.versionNumber(), jobs.get(id)));
+                }
             }
 
             Cursor runningArray = versionObject.setArray("deployingApplications");
             for (ApplicationId id : version.statistics().deploying()) {
-                controller.applications().getInstance(id).ifPresent(application -> {
-                    lastDeployingTo(version.versionNumber(), application).ifPresent(lastDeploying -> {
+                if (jobs.containsKey(id))
+                    lastDeployingTo(version.versionNumber(), jobs.get(id)).ifPresent(lastDeploying -> {
                         Cursor applicationObject = runningArray.addObject();
-                        toSlime(applicationObject, application, request);
-                        applicationObject.setString("running", lastDeploying.type().jobName());
+                        toSlime(applicationObject, id, request);
+                        applicationObject.setString("running", lastDeploying.id().type().jobName());
                     });
-                });
             }
         }
         return new SlimeJsonResponse(slime);
     }
 
-    private void toSlime(Cursor object, Instance instance, HttpRequest request) {
-        object.setString("tenant", instance.id().tenant().value());
-        object.setString("application", instance.id().application().value());
-        object.setString("instance", instance.id().instance().value());
+    private void toSlime(Cursor object, ApplicationId id, HttpRequest request) {
+        object.setString("tenant", id.tenant().value());
+        object.setString("application", id.application().value());
+        object.setString("instance", id.instance().value());
         object.setString("url", new Uri(request.getUri()).withPath("/application/v4/tenant/" +
-                                                                   instance.id().tenant().value() +
+                                                                   id.tenant().value() +
                                                                    "/application/" +
-                                                                   instance.id().application().value()).toString());
-        object.setString("upgradePolicy", toString(controller.applications().requireApplication(TenantAndApplicationId.from(instance.id()))
-                                                             .deploymentSpec().requireInstance(instance.name()).upgradePolicy()));
+                                                                   id.application().value()).toString());
+        object.setString("upgradePolicy", toString(controller.applications().requireApplication(TenantAndApplicationId.from(id))
+                                                             .deploymentSpec().requireInstance(id.instance()).upgradePolicy()));
     }
 
     private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {
@@ -157,40 +161,30 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     // ----------------------------- Utilities to pick out the relevant JobStatus -- filter chains should mirror the ones in VersionStatus
 
     /** The first upgrade job to fail on this version, for this application */
-    private Optional<JobStatus> firstFailingOn(Version version, Instance instance) {
-        return JobList.from(instance)
-                      .failing()
-                      .not().failingApplicationChange()
-                      .not().failingBecause(outOfCapacity)
-                      .lastCompleted().on(version)
-                      .asList().stream()
-                      .min(Comparator.<JobStatus, Instant>comparing(job -> job.lastCompleted().get().at())
-                                   .thenComparing(job -> job.type()));
-    }
-
-    /** The number of production jobs for this application */
-    private int productionJobsFor(Instance instance) {
-        return JobList.from(instance)
-                      .production()
-                      .size();
+    private Optional<Run> firstFailingOn(Version version, JobList jobs) {
+        return jobs.failing()
+                   .not().failingApplicationChange()
+                   .not().withStatus(RunStatus.outOfCapacity)
+                   .lastCompleted().on(version)
+                   .lastCompleted().asList().stream()
+                   .min(Comparator.<Run, Instant>comparing(run -> run.start())
+                                .thenComparing(run -> run.id().type()));
     }
 
     /** The number of production jobs with last success on the given version, for this application */
-    private int productionSuccessesFor(Version version, Instance instance) {
-        return JobList.from(instance)
-                      .production()
-                      .lastSuccess().on(version)
-                      .size();
+    private int productionSuccessesFor(Version version, JobList jobs) {
+        return jobs.production()
+                   .lastSuccess().on(version)
+                   .size();
     }
 
     /** The last triggered upgrade to this version, for this application */
-    private Optional<JobStatus> lastDeployingTo(Version version, Instance instance) {
-        return JobList.from(instance)
-                      .upgrading()
-                      .lastTriggered().on(version)
-                      .asList().stream()
-                      .max(Comparator.<JobStatus, Instant>comparing(job -> job.lastCompleted().get().at())
-                                   .thenComparing(job -> job.type()));
+    private Optional<Run> lastDeployingTo(Version version, JobList jobs) {
+        return jobs.upgrading()
+                   .lastTriggered().on(version)
+                   .lastTriggered().asList().stream()
+                   .max(Comparator.<Run, Instant>comparing(run -> run.start())
+                                .thenComparing(run -> run.id().type()));
     }
 
 }

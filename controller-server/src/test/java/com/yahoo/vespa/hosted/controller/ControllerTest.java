@@ -24,9 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingEndpoint
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
-import com.yahoo.vespa.hosted.controller.application.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -51,7 +49,6 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -85,75 +82,40 @@ public class ControllerTest {
                      context.application().change().application().get());
         context.runJob(systemTest);
         context.runJob(stagingTest);
-        assertEquals(2, context.instance().deploymentJobs().jobStatus().size());
 
         ApplicationVersion applicationVersion = context.application().change().application().get();
         assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
-        assertStatus(JobStatus.initial(stagingTest)
-                              .withTriggering(version1, applicationVersion, Optional.empty(),"", tester.clock().instant().truncatedTo(MILLIS))
-                              .withCompletion(1, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS)),
-                     context.instanceId(),
-                     tester.controller());
 
         tester.triggerJobs();
         // Causes first deployment job to be triggered
-        assertStatus(JobStatus.initial(productionUsWest1)
-                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)),
-                     context.instanceId(),
-                     tester.controller());
         tester.clock().advance(Duration.ofSeconds(1));
 
         // production job (failing) after deployment
         context.timeOutUpgrade(productionUsWest1);
-        assertEquals(3, context.instance().deploymentJobs().jobStatus().size());
+        assertEquals(4, context.instanceJobs().size());
         tester.triggerJobs();
-
-        JobStatus expectedJobStatus = JobStatus.initial(productionUsWest1)
-                                               .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)) // Triggered first without application version info
-                                               .withCompletion(1, Optional.of(JobError.unknown), tester.clock().instant().truncatedTo(MILLIS))
-                                               .withTriggering(version1,
-                                                               applicationVersion,
-                                                               Optional.of(context.instance().deployments().get(productionUsWest1.zone(main))),
-                                                               "",
-                                                               tester.clock().instant().truncatedTo(MILLIS)); // Re-triggering (due to failure) has application version info
-
-        assertStatus(expectedJobStatus, context.instanceId(), tester.controller());
 
         // Simulate restart
         tester.controllerTester().createNewController();
 
         assertNotNull(tester.controller().tenants().get(TenantName.from("tenant1")));
         assertNotNull(tester.controller().applications().requireInstance(context.instanceId()));
-        assertEquals(3, context.instance().deploymentJobs().jobStatus().size());
 
         // system and staging test job - succeeding
         context.submit(applicationPackage);
         applicationVersion = context.application().change().application().get();
         context.runJob(systemTest);
-        assertStatus(JobStatus.initial(systemTest)
-                              .withTriggering(version1, applicationVersion, Optional.of(context.deployment(ZoneId.from("prod", "us-west-1"))), "", tester.clock().instant().truncatedTo(MILLIS))
-                              .withCompletion(2, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS)),
-                     context.instanceId(),
-                     tester.controller());
         context.runJob(stagingTest);
 
         // production job succeeding now
         context.jobAborted(productionUsWest1);
-        expectedJobStatus = expectedJobStatus
-                .withTriggering(version1, applicationVersion, Optional.of(context.deployment(ZoneId.from("prod", "us-west-1"))), "", tester.clock().instant().truncatedTo(MILLIS))
-                .withCompletion(3, Optional.empty(), tester.clock().instant().truncatedTo(MILLIS));
         context.runJob(productionUsWest1);
-        assertStatus(expectedJobStatus, context.instanceId(), tester.controller());
 
         // causes triggering of next production job
         tester.triggerJobs();
-        assertStatus(JobStatus.initial(productionUsEast3)
-                              .withTriggering(version1, applicationVersion, Optional.empty(), "", tester.clock().instant().truncatedTo(MILLIS)),
-                     context.instanceId(),
-                     tester.controller());
         context.runJob(productionUsEast3);
 
-        assertEquals(4, context.instance().deploymentJobs().jobStatus().size());
+        assertEquals(4, context.instanceJobs().size());
 
         // Production zone for which there is no JobType is not allowed.
         applicationPackage = new ApplicationPackageBuilder()
@@ -185,10 +147,6 @@ public class ControllerTest {
         }
         assertNotNull("Zone was not removed",
                       context.instance().deployments().get(productionUsWest1.zone(main)));
-        JobStatus jobStatus = context.instance().deploymentJobs().jobStatus().get(productionUsWest1);
-        assertNotNull("Deployment job was not removed", jobStatus);
-        assertEquals(3, jobStatus.lastCompleted().get().id());
-        assertEquals("New change available", jobStatus.lastCompleted().get().reason());
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -200,7 +158,7 @@ public class ControllerTest {
         context.submit(applicationPackage);
         assertNull("Zone was removed",
                    context.instance().deployments().get(productionUsWest1.zone(main)));
-        assertNull("Deployment job was removed", context.instance().deploymentJobs().jobStatus().get(productionUsWest1));
+        assertNull("Deployment job was removed", context.instanceJobs().get(productionUsWest1));
     }
 
     @Test
@@ -645,7 +603,7 @@ public class ControllerTest {
                    tester.configServer().application(context.instanceId(), zone).get().activated());
 
         assertTrue("No job status added",
-                   context.instance().deploymentJobs().jobStatus().isEmpty());
+                   context.instanceJobs().isEmpty());
 
         Version seven = Version.fromString("7.2");
         tester.controllerTester().upgradeSystem(seven);
@@ -671,7 +629,7 @@ public class ControllerTest {
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context.instanceId(), zone).get().activated());
         assertTrue("No job status added",
-                   context.instance().deploymentJobs().jobStatus().isEmpty());
+                   context.instanceJobs().isEmpty());
         assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, context.application().deploymentSpec());
     }
 
@@ -685,7 +643,6 @@ public class ControllerTest {
                                                         .build();
         SourceRevision source = new SourceRevision("repo", "master", "commit1");
 
-        ApplicationVersion applicationVersion = ApplicationVersion.from(source, 101);
         context.submit(applicationPackage).deploy();
 
         DeploymentId deployment1 = context.deploymentIdIn(ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
@@ -812,13 +769,6 @@ public class ControllerTest {
         } catch (IllegalArgumentException e) {
             assertEquals("Endpoint 'foo' in instance 'default' cannot contain regions in different clouds: [aws-us-east-1, us-west-1]", e.getMessage());
         }
-    }
-
-    private void assertStatus(JobStatus expectedStatus, ApplicationId id, Controller controller) {
-        Instance app = controller.applications().getInstance(id).get();
-        JobStatus existingStatus = app.deploymentJobs().jobStatus().get(expectedStatus.type());
-        assertNotNull("Status of type " + expectedStatus.type() + " is present", existingStatus);
-        assertEquals(expectedStatus, existingStatus);
     }
 
 }

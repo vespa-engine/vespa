@@ -7,13 +7,16 @@ import com.google.common.collect.ListMultimap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.log.LogLevel;
-import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.application.JobList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
+import com.yahoo.vespa.hosted.controller.deployment.JobList;
+import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
 
 import java.util.ArrayList;
@@ -28,8 +31,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static com.yahoo.vespa.hosted.controller.application.DeploymentJobs.JobError.outOfCapacity;
 
 /**
  * Information about the current platform versions in use.
@@ -118,8 +119,9 @@ public class VersionStatus {
             systemVersion = newSystemVersion;
         }
 
-        Collection<DeploymentStatistics> deploymentStatistics = computeDeploymentStatistics(infrastructureVersions.keySet(),
-                                                                                            controller.applications().asList());
+
+        var deploymentStatistics = computeDeploymentStatistics(infrastructureVersions.keySet(),
+                                                               controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())));
         List<VespaVersion> versions = new ArrayList<>();
         List<Version> releasedVersions = controller.mavenRepository().metadata().versions();
 
@@ -187,50 +189,40 @@ public class VersionStatus {
     }
 
     private static Collection<DeploymentStatistics> computeDeploymentStatistics(Set<Version> infrastructureVersions,
-                                                                                List<Application> instances) {
+                                                                                DeploymentStatusList statuses) {
         Map<Version, DeploymentStatistics> versionMap = new HashMap<>();
 
         for (Version infrastructureVersion : infrastructureVersions) {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        for (Application application : ApplicationList.from(instances).withProductionDeployment().asList())
-            for (Instance instance : application.instances().values()) {
-                // Note that each version deployed on this application in production exists
-                // (ignore non-production versions)
-                for (Deployment deployment : instance.productionDeployments().values()) {
+        for (DeploymentStatus status : statuses.withProductionDeployment().asList()) {
+            for (Instance instance : status.application().instances().values())
+                for (Deployment deployment : instance.productionDeployments().values())
                     versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
-                }
 
-                // List versions which have failing jobs, versions which are in production, and versions for which there are running deployment jobs
+            status.instanceJobs().forEach((id, jobs) -> {
+                jobs.failing()
+                    .not().failingApplicationChange()
+                    .not().withStatus(RunStatus.outOfCapacity)
+                    .lastCompleted().mapToList(run -> run.versions().targetPlatform())
+                    .forEach(version -> versionMap.put(version,
+                                                       versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                                 .withFailing(id)));
 
-                // Failing versions
-                JobList.from(instance)
-                       .failing()
-                       .not().failingApplicationChange()
-                       .not().failingBecause(outOfCapacity)
-                       .mapToList(job -> job.lastCompleted().get().platform())
-                       .forEach(version -> versionMap
-                               .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                       .withFailing(instance.id())));
+                jobs.production()
+                    .lastSuccess().mapToList(run -> run.versions().targetPlatform())
+                    .forEach(version -> versionMap.put(version,
+                                                       versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                                 .withProduction(id)));
 
-                // Succeeding versions
-                JobList.from(instance)
-                       .lastSuccess().present()
-                       .production()
-                       .mapToList(job -> job.lastSuccess().get().platform())
-                       .forEach(version -> versionMap
-                               .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                       .withProduction(instance.id())));
-
-                // Deploying versions
-                JobList.from(instance)
-                       .upgrading()
-                       .mapToList(job -> job.lastTriggered().get().platform())
-                       .forEach(version -> versionMap
-                               .put(version, versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                       .withDeploying(instance.id())));
-            }
+                jobs.upgrading()
+                    .lastTriggered().mapToList(run -> run.versions().targetPlatform())
+                    .forEach(version -> versionMap.put(version,
+                                                       versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                                 .withDeploying(id)));
+            });
+        }
         return versionMap.values();
     }
 

@@ -42,6 +42,7 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -128,6 +129,14 @@ public class DeploymentContext {
 
     public Instance instance() {
         return tester.controller().applications().requireInstance(instanceId);
+    }
+
+    public DeploymentStatus deploymentStatus() {
+        return tester.controller().jobController().deploymentStatus(application());
+    }
+
+    public Map<JobType, JobStatus> instanceJobs() {
+        return deploymentStatus().instanceJobs(instanceId.instance());
     }
 
     public Deployment deployment(ZoneId zone) {

@@ -1021,8 +1021,8 @@ public class UpgraderTest {
         tester.triggerJobs();
 
         application.runJob(stagingTest);
-        assertEquals(v1, application.instance().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().sourcePlatform().get());
-        assertEquals(v3, application.instance().deploymentJobs().jobStatus().get(stagingTest).lastSuccess().get().platform());
+        assertEquals(v1, application.instanceJobs().get(stagingTest).lastSuccess().get().versions().sourcePlatform().get());
+        assertEquals(v3, application.instanceJobs().get(stagingTest).lastSuccess().get().versions().targetPlatform());
 
         // First deployment fails and then successfully upgrades to v3
         application.timeOutUpgrade(productionUsCentral1);
