@@ -82,6 +82,8 @@ public class FetchVector {
         return map;
     }
 
+    public boolean isEmpty() { return map.isEmpty(); }
+
     /** Returns a new FetchVector, identical to {@code this} except for its value in {@code dimension}. */
     public FetchVector with(Dimension dimension, String value) {
         return makeFetchVector(merged -> merged.put(dimension, value));
