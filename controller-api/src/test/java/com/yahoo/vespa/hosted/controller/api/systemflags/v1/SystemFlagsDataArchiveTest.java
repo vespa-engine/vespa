@@ -8,6 +8,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
 import org.junit.Rule;
@@ -24,9 +25,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -35,6 +37,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SystemFlagsDataArchiveTest {
 
     private static final SystemName SYSTEM = SystemName.main;
+    private static final FlagId MY_TEST_FLAG = new FlagId("my-test-flag");
+    private static final FlagId FLAG_WITH_EMPTY_DATA = new FlagId("flag-with-empty-data");
 
     @Rule
     public final TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -61,29 +65,49 @@ public class SystemFlagsDataArchiveTest {
         }
         try (InputStream in = new BufferedInputStream(new FileInputStream(tempFile))) {
             SystemFlagsDataArchive archive = SystemFlagsDataArchive.fromZip(in);
-            assertArchiveReturnsCorrectDataForTarget(archive);
+            assertArchiveReturnsCorrectTestFlagDataForTarget(archive);
         }
     }
 
     @Test
     public void retrieves_correct_flag_data_for_target() {
         var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
-        assertArchiveReturnsCorrectDataForTarget(archive);
+        assertArchiveReturnsCorrectTestFlagDataForTarget(archive);
     }
 
-    private static void assertArchiveReturnsCorrectDataForTarget(SystemFlagsDataArchive archive) {
-        assertFlagDataHasValue(archive, mainControllerTarget, "main.controller");
-        assertFlagDataHasValue(archive, prodUsWestCfgTarget, "main.prod.us-west-1.json");
-        assertFlagDataHasValue(archive, prodUsEast3CfgTarget, "main.prod");
-        assertFlagDataHasValue(archive, devUsEast1CfgTarget, "main");
+    @Test
+    public void empty_files_are_handled_as_no_flag_data_for_target() {
+        var archive = SystemFlagsDataArchive.fromDirectory(Paths.get("src/test/resources/system-flags/"));
+        assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, mainControllerTarget);
+        assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, prodUsWestCfgTarget, "main.prod.us-west-1");
+        assertNoFlagData(archive, FLAG_WITH_EMPTY_DATA, prodUsEast3CfgTarget);
+        assertFlagDataHasValue(archive, FLAG_WITH_EMPTY_DATA, devUsEast1CfgTarget, "main");
     }
 
-    private static void assertFlagDataHasValue(SystemFlagsDataArchive archive, FlagsTarget target, String value) {
-        Set<FlagData> data = archive.flagData(target);
+    private static void assertArchiveReturnsCorrectTestFlagDataForTarget(SystemFlagsDataArchive archive) {
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, mainControllerTarget, "main.controller");
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsWestCfgTarget, "main.prod.us-west-1");
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, prodUsEast3CfgTarget, "main.prod");
+        assertFlagDataHasValue(archive, MY_TEST_FLAG, devUsEast1CfgTarget, "main");
+    }
+
+    private static void assertFlagDataHasValue(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target, String value) {
+        List<FlagData> data = getData(archive, flagId, target);
         assertThat(data).hasSize(1);
-        FlagData flagData = data.iterator().next();
+        FlagData flagData = data.get(0);
         RawFlag rawFlag = flagData.resolve(FetchVector.fromMap(Map.of())).get();
         assertThat(rawFlag.asJson()).isEqualTo(String.format("\"%s\"", value));
+    }
+
+    private static void assertNoFlagData(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target) {
+        List<FlagData> data = getData(archive, flagId, target);
+        assertThat(data).isEmpty();
+    }
+
+    private static List<FlagData> getData(SystemFlagsDataArchive archive, FlagId flagId, FlagsTarget target) {
+        return archive.flagData(target).stream()
+                .filter(d -> d.id().equals(flagId))
+                .collect(toList());
     }
 
 }

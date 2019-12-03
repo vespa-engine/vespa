@@ -101,8 +101,10 @@ public class SystemFlagsDataArchive {
             for (String filename : filenames) {
                 FlagData data = fileMap.get(filename);
                 if (data != null) {
-                    targetData.add(data);
-                    break;
+                    if (!data.isEmpty()) {
+                        targetData.add(data);
+                    }
+                    return;
                 }
             }
         });
