@@ -42,7 +42,7 @@ public class MutableX509KeyManagerTest {
         assertThat(certChain).hasSize(1);
         assertThat(certChain[0].getSerialNumber()).isEqualTo(serialNumberInitialCertificate);
 
-        BigInteger serialNumberUpdatedCertificate = BigInteger.TWO;
+        BigInteger serialNumberUpdatedCertificate = BigInteger.TEN;
         KeyStore updatedKeystore = generateKeystore(keyPair, serialNumberUpdatedCertificate);
         keyManager.updateKeystore(updatedKeystore, new char[0]);
 

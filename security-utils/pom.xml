@@ -11,11 +11,25 @@
   <artifactId>security-utils</artifactId>
   <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
+
+  <properties>
+    <!-- vespa-http-client targets jdk8 and uses this library -->
+    <!-- TODO remove once vespa-http-client no longer builds against jdk8 -->
+    <maven.compiler.release>8</maven.compiler.release>
+  </properties>
+
   <dependencies>
     <!-- provided -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>annotations</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <!-- required for bundle-plugin to generate import-package statements for Java's standard library -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc_core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -66,6 +80,23 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <jdkToolchain>
+            <version>${java.version}</version>
+          </jdkToolchain>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+          <showDeprecation>true</showDeprecation>
+          <compilerArgs>
+            <arg>-Xlint:all</arg>
+            <arg>-Xlint:-serial</arg>
+            <arg>-Werror</arg>
+          </compilerArgs>
+        </configuration>
       </plugin>
     </plugins>
   </build>

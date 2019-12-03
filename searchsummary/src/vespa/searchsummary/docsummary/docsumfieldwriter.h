@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "urlresult.h"
+#include "general_result.h"
 #include "resultconfig.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/data/slime/inserter.h>

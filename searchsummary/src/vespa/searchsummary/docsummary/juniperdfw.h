@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "urlresult.h"
+#include "general_result.h"
 #include "resultconfig.h"
 #include "docsumfieldwriter.h"
 #include <vespa/searchlib/util/rawbuf.h>

@@ -15,7 +15,6 @@ import org.mockito.Mockito;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.Principal;
@@ -42,12 +41,12 @@ public class AutoReloadingX509KeyManagerTest {
     public void crypto_material_is_reloaded_when_scheduler_task_is_executed() throws IOException {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         Path privateKeyFile = tempDirectory.newFile().toPath();
-        Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+        com.yahoo.vespa.jdk8compat.Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
 
         Path certificateFile = tempDirectory.newFile().toPath();
         BigInteger serialNumberInitialCertificate = BigInteger.ONE;
         X509Certificate initialCertificate = generateCertificate(keyPair, serialNumberInitialCertificate);
-        Files.writeString(certificateFile, X509CertificateUtils.toPem(initialCertificate));
+        com.yahoo.vespa.jdk8compat.Files.writeString(certificateFile, X509CertificateUtils.toPem(initialCertificate));
 
         ScheduledExecutorService scheduler = Mockito.mock(ScheduledExecutorService.class);
         ArgumentCaptor<Runnable> updaterTaskCaptor = ArgumentCaptor.forClass(Runnable.class);
@@ -60,9 +59,9 @@ public class AutoReloadingX509KeyManagerTest {
         assertThat(certChain).hasSize(1);
         assertThat(certChain[0].getSerialNumber()).isEqualTo(serialNumberInitialCertificate);
 
-        BigInteger serialNumberUpdatedCertificate = BigInteger.TWO;
+        BigInteger serialNumberUpdatedCertificate = BigInteger.TEN;
         X509Certificate updatedCertificate = generateCertificate(keyPair, serialNumberUpdatedCertificate);
-        Files.writeString(certificateFile, X509CertificateUtils.toPem(updatedCertificate));
+        com.yahoo.vespa.jdk8compat.Files.writeString(certificateFile, X509CertificateUtils.toPem(updatedCertificate));
 
         updaterTaskCaptor.getValue().run(); // run update task in ReloadingX509KeyManager
 

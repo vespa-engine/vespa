@@ -3,7 +3,7 @@
 #pragma once
 
 #include "juniperproperties.h"
-#include "urlresult.h"
+#include "general_result.h"
 #include "resultconfig.h"
 #include "docsumstore.h"
 #include "keywordextractor.h"
