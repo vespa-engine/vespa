@@ -75,7 +75,7 @@ class FlagsClient {
     }
 
     void deleteFlagData(FlagsTarget target, FlagId flagId) throws FlagsException, UncheckedIOException {
-        HttpDelete request = new HttpDelete(createUri(target, "/data/" + flagId.toString(), List.of()));
+        HttpDelete request = new HttpDelete(createUri(target, "/data/" + flagId.toString(), List.of(new BasicNameValuePair("force", "true"))));
         executeRequest(request, response -> {
             verifySuccess(response, flagId);
             return null;
