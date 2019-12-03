@@ -60,6 +60,10 @@ public class RpcServer {
                         .paramDesc(0, "metricsJson", "The metrics in json format"));
 
         connector.addMethod(
+                new Method("purgeExtraMetrics", "", "", this::purgeExtraMetrics)
+                        .methodDesc("Purge metrics and dimensions populated by setExtraMetrics"));
+
+        connector.addMethod(
                 new Method("getMetricsById", "s", "s", this::getMetricsById)
                         .methodDesc("Get Vespa metrics for the service with the given Id")
                         .paramDesc(0, "id", "The id of the service")
@@ -147,6 +151,10 @@ public class RpcServer {
         String metricsJson = req.parameters().get(0).asString();
         log.log(DEBUG, "setExtraMetrics called with argument: " + metricsJson);
         withExceptionHandling(req, () -> metricsManager.setExtraMetrics(toMetricsPackets(metricsJson)));
+    }
+
+    void purgeExtraMetrics(Request req) {
+        withExceptionHandling(req, metricsManager::purgeExtraMetrics);
     }
 
     private static void withExceptionHandling(Request req, ThrowingRunnable runnable) {
