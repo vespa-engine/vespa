@@ -1,7 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
@@ -19,12 +17,11 @@
 #include <vespa/searchlib/memoryindex/field_inverter.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <set>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("indexmanager_test");
@@ -57,6 +54,7 @@ using vespalib::makeLambdaTask;
 using namespace proton;
 using namespace searchcorespi;
 using namespace searchcorespi::index;
+using namespace std::chrono_literals;
 
 namespace {
 
@@ -303,7 +301,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().timeSinceEpoch().time());
 
         // updated serial number & flush time when nothing to flush
-        FastOS_Thread::Sleep(8000);
+        std::this_thread::sleep_for(8s);
         fastos::TimeStamp now = fastos::ClockSystem::now().timeSinceEpoch();
         vespalib::Executor::Task::UP task;
         runAsMaster([&]() { task = target.initFlush(2); });

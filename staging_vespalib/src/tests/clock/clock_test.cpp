@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/clock.h>
+#include <vespa/fastos/thread.h>
 
 using vespalib::Clock;
 using fastos::TimeStamp;
@@ -20,7 +21,7 @@ Test::Main()
 
     Clock clock(0.050);
     FastOS_ThreadPool pool(0x10000);
-    ASSERT_TRUE(pool.NewThread(&clock, nullptr) != nullptr);
+    ASSERT_TRUE(pool.NewThread(clock.getRunnable(), nullptr) != nullptr);
     fastos::SteadyTimeStamp start = clock.getTimeNS();
     FastOS_Thread::Sleep(5000);
     fastos::SteadyTimeStamp stop = clock.getTimeNS();

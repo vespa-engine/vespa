@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/clock.h>
+#include <vespa/fastos/thread.h>
 #include <cassert>
 #include <vector>
 #include <atomic>
 #include <cstring>
+#include <condition_variable>
+#include <mutex>
 
 using vespalib::Clock;
 using fastos::TimeStamp;
@@ -134,7 +137,7 @@ main(int , char *argv[])
     TestClock nsClock(nsValue, 1.0/frequency);
     TestClock nsVolatileClock(nsVolatile, 1.0/frequency);
     TestClock nsAtomicClock(nsAtomic, 1.0/frequency);
-    assert(pool.NewThread(&clock, nullptr) != nullptr);
+    assert(pool.NewThread(clock.getRunnable(), nullptr) != nullptr);
     assert(pool.NewThread(&nsClock, nullptr) != nullptr);
     assert(pool.NewThread(&nsVolatileClock, nullptr) != nullptr);
     assert(pool.NewThread(&nsAtomicClock, nullptr) != nullptr);
