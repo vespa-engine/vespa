@@ -1,4 +1,5 @@
 {
+  "isPublic": false,
   "user": {
     "name": "Joe Developer",
     "email": "dev@domail",
@@ -8,7 +9,8 @@
     "sandbox": {
       "roles": [
         "administrator",
-        "developer"
+        "developer",
+        "reader"
       ],
       "applications": {
         "app2": {
@@ -21,7 +23,8 @@
     "tenant1": {
       "roles": [
         "administrator",
-        "developer"
+        "developer",
+        "reader"
       ],
       "applications": {
         "app1": {
@@ -43,7 +46,8 @@
     "tenant2": {
       "roles": [
         "administrator",
-        "developer"
+        "developer",
+        "reader"
       ],
       "applications": {
         "app2": {

@@ -237,7 +237,8 @@ public class UserApiTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/api/user/v1/user")
                         .roles(Set.of(Role.administrator(TenantName.from("tenant1")),
                                 Role.developer(TenantName.from("tenant2")),
-                                Role.developer(TenantName.from("sandbox"))))
+                                Role.developer(TenantName.from("sandbox")),
+                                Role.reader(TenantName.from("sandbox"))))
                         .user(user),
                 new File("user-with-applications-cloud.json"));
     }
