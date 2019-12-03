@@ -69,7 +69,7 @@ TEST("requireThatConfigUpdatesArePerformed") {
         while (!cb._configured && timer.elapsed().ms() < 20000.0) {
             if (cb._configured)
                 break;
-            FastOS_Thread::Sleep(1000);
+            std::this_thread::sleep_for(1s);
         }
         ASSERT_TRUE(cb._configured);
         ASSERT_TRUE(cb._config);

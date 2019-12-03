@@ -167,7 +167,7 @@ Test::Main()
     const int messageCount = 5000;
     for (int i = 0; i < messageCount; ++i) {
         vespalib::string str(vespalib::make_string("%d", i));
-        //FastOS_Thread::Sleep(1);
+        //std::this_thread::sleep_for(1ms);
         auto msg = std::make_unique<SimpleMessage>(str, true, commonMessageId);
         msg->getTrace().setLevel(9);
         //LOG(debug, "Sending message %p for %d", msg.get(), i);

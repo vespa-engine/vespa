@@ -8,6 +8,7 @@
 #include "ibucketfreezelistener.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <mutex>
+#include <vespa/vespalib/util/scheduledexecutor.h>
 
 namespace vespalib {
     class Timer;
@@ -77,7 +78,7 @@ private:
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;
-    std::unique_ptr<vespalib::Timer>  _periodicTimer;
+    std::unique_ptr<vespalib::ScheduledExecutor>  _periodicTimer;
     DocumentDBMaintenanceConfigSP     _config;
     FrozenBuckets                     _frozenBuckets;
     bool                              _started;

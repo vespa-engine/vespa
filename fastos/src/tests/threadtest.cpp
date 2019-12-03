@@ -43,7 +43,7 @@ class ThreadTest : public ThreadTestBase
          if(waitingThreads == numWait)
             break;
 
-         FastOS_Thread::Sleep(100);
+         std::this_thread::sleep_for(100ms);
       }
    }
 
@@ -336,7 +336,7 @@ class ThreadTest : public ThreadTestBase
       // Threads are not guaranteed to have entered sleep yet,
       // as this test only tests for result code
       // Wait another second to be sure.
-      FastOS_Thread::Sleep(1000);
+      std::this_thread::sleep_for(1s);
    }
 
    void SignalTest ()

@@ -4,6 +4,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/summetric.hpp>
+#include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -137,7 +138,7 @@ TEST(StressTest, test_stress)
             new Hammer(metrics, loadTypes, threadPool)));
     }
     LOG(info, "Waiting to let loadgivers hammer a while");
-    FastOS_Thread::Sleep(5 * 1000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5 * 1000));
 
     LOG(info, "Removing loadgivers");
     hammers.clear();

@@ -6,8 +6,10 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/app.h>
 #include <sys/time.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-proton-cmd");
@@ -115,7 +117,7 @@ public:
             slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
-                    FastOS_Thread::Sleep(50*timeout);
+                    std::this_thread::sleep_for(50ms*timeout);
                 }
             }
             if (!sbmirror.ready()) {
@@ -123,12 +125,9 @@ public:
                         "ERROR: no data from service location broker\n");
                 exit(1);
             }
-            slobrok::api::MirrorAPI::SpecList specs =
-                sbmirror.lookup(rtcPattern);
-            slobrok::api::MirrorAPI::SpecList specs2 =
-                sbmirror.lookup(rtcPattern2);
-            slobrok::api::MirrorAPI::SpecList specs3 =
-                sbmirror.lookup(rtcPattern3);
+            slobrok::api::MirrorAPI::SpecList specs = sbmirror.lookup(rtcPattern);
+            slobrok::api::MirrorAPI::SpecList specs2 = sbmirror.lookup(rtcPattern2);
+            slobrok::api::MirrorAPI::SpecList specs3 = sbmirror.lookup(rtcPattern3);
 
             int found = 0;
             std::string service;
@@ -167,7 +166,7 @@ public:
             slobrok::api::MirrorAPI sbmirror(_frt->supervisor(), sbcfg);
             for (int timeout = 1; timeout < 20; timeout++) {
                 if (!sbmirror.ready()) {
-                    FastOS_Thread::Sleep(50*timeout);
+                    std::this_thread::sleep_for(50ms*timeout);
                 }
             }
             if (!sbmirror.ready()) {

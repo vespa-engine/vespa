@@ -35,7 +35,7 @@ struct DelayedHandler : public IMessageHandler
         // this will block the transport thread in the server messagebus,
         // but that should be ok, as we only want to test the timing in the
         // client messagebus...
-        FastOS_Thread::Sleep(delay);
+        std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         session->acknowledge(std::move(msg));
     }
 };
@@ -59,7 +59,7 @@ bool waitQueueSize(RoutableQueue &queue, uint32_t size) {
         if (queue.size() == size) {
             return true;
         }
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
     return false;
 }
@@ -99,7 +99,7 @@ Test::testSequencing()
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("foo", true, 2)), "dst").isAccepted());
     EXPECT_TRUE(ss->send(Message::UP(new SimpleMessage("foo", true, 1)), "dst").isAccepted());
     EXPECT_TRUE(waitQueueSize(dstQ, 2));
-    FastOS_Thread::Sleep(250);
+    std::this_thread::sleep_for(250ms);
     EXPECT_TRUE(waitQueueSize(dstQ, 2));
     EXPECT_TRUE(waitQueueSize(srcQ, 0));
     ds->acknowledge(Message::UP((Message*)dstQ.dequeue(0).release()));

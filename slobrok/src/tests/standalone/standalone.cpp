@@ -132,7 +132,7 @@ TEST("standalone") {
             break;
         }
         fprintf(stderr, "ping failed [retry %d]\n", retry);
-        FastOS_Thread::Sleep(200);
+        std::this_thread::sleep_for(200ms);
         sb->SubRef();
         sb = orb.GetTarget(18541);
     }
@@ -268,7 +268,7 @@ TEST("standalone") {
         }
     }
 
-    FastOS_Thread::Sleep(2000);
+    std::this_thread::sleep_for(2s);
 
     // lookup 'B' should give ''
     req = orb.AllocRPCRequest(req);

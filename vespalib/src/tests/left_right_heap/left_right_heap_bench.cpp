@@ -5,7 +5,12 @@
 #include <vespa/vespalib/util/inline.h>
 #include <vespa/fastos/timestamp.h>
 
-using namespace vespalib;
+using vespalib::RightArrayHeap;
+using vespalib::RightHeap;
+using vespalib::LeftArrayHeap;
+using vespalib::LeftHeap;
+using vespalib::LeftStdHeap;
+using vespalib::make_string;
 
 template <typename H> struct IsRight { enum { VALUE = 0 }; };
 template <> struct IsRight<RightHeap> { enum { VALUE = 1 }; };

@@ -112,7 +112,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
         if (actual == expect) {
             return true;
         }
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
     }
     return false;
 }
@@ -124,7 +124,7 @@ Test::Main()
     TEST_INIT("mirrorapi_test");
 
     SlobrokServer mock(18501);
-    FastOS_Thread::Sleep(300);
+    std::this_thread::sleep_for(300ms);
 
     Server a("A/x/w", 18502, "tcp/localhost:18501");
     Server b("B/x",   18503, "tcp/localhost:18501");
@@ -143,7 +143,7 @@ Test::Main()
     MirrorAPI mirror(supervisor, config::ConfigUri::createFromInstance(specBuilder));
     EXPECT_TRUE(!mirror.ready());
     transport.Start(&threadPool);
-    FastOS_Thread::Sleep(1000);
+    std::this_thread::sleep_for(1s);
 
     a.reg();
     EXPECT_TRUE(compare(mirror, "A/x/w", SpecList().add("A/x/w", "tcp/localhost:18502")));

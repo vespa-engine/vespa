@@ -347,15 +347,7 @@ public:
     /**
      * Destructor.
      */
-    virtual ~FastOS_ThreadInterface (){}
-
-    /**
-     * Sleep for x milliseconds. Attempting to sleep for <1 milliseconds
-     * will result in failure.
-     * @param ms   Number of milliseconds to sleep.
-     * @return     Boolean success/failure
-     */
-    static bool Sleep(int ms);
+    virtual ~FastOS_ThreadInterface () {}
 
     /**
      * Instruct a thread to exit. This could be used in conjunction with

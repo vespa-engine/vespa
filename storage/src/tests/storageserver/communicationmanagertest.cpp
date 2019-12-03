@@ -15,6 +15,8 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/getdocumentreply.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;
@@ -65,7 +67,7 @@ TEST_F(CommunicationManagerTest, simple) {
     distributor.open();
     storage.open();
 
-    FastOS_Thread::Sleep(1000);
+    std::this_thread::sleep_for(1s);
 
     // Send a message through from distributor to storage
     auto cmd = std::make_shared<api::GetCommand>(

@@ -17,7 +17,7 @@ class TimerTask;
  * interval. The timer can be reset to clear all tasks currently being
  * scheduled.
  */
-class Timer
+class ScheduledExecutor
 {
 private:
     typedef std::unique_ptr<TimerTask> TimerTaskPtr;
@@ -31,13 +31,13 @@ public:
     /**
      * Create a new timer, capable of scheduling tasks at fixed intervals.
      */
-    Timer();
+    ScheduledExecutor();
 
     /**
      * Destroys this timer, finishing the current task executing and then
      * finishing.
      */
-    ~Timer();
+    ~ScheduledExecutor();
 
     /**
      * Schedule new task to be executed at specified intervals.

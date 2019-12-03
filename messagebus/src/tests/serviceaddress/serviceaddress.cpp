@@ -82,7 +82,7 @@ Test::waitSlobrok(RPCNetwork &network, const string &pattern, size_t num)
         if (res.size() == num) {
             return true;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     return false;
 }

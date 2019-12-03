@@ -20,7 +20,7 @@ class Thread_Sleep_Test : public ThreadTestBase
          Progress(rc, "Creating Thread");
 
          Progress(true, "Sleeping 3 seconds");
-         FastOS_Thread::Sleep(3000);
+         std::this_thread::sleep_for(3s);
       }
 
       Progress(true, "Closing threadpool...");

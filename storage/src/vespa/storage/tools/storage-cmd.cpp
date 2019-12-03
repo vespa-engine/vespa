@@ -3,6 +3,8 @@
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fastos/app.h>
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-storage-cmd");
@@ -61,7 +63,7 @@ public:
         slobrok::api::MirrorAPI mirror(supervisor.supervisor(), sbcfg);
 
         while (!mirror.ready()) {
-            FastOS_Thread::Sleep(10);
+            std::this_thread::sleep_for(10ms);
         }
 
         slobrok::api::MirrorAPI::SpecList list = mirror.lookup(_argv[1]);

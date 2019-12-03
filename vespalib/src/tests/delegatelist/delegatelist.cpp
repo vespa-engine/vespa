@@ -780,11 +780,11 @@ Test::testWaitSnapshots()
     ASSERT_TRUE(pool.NewThread(&a1, 0) != 0);
     s1.reset(new DL::Snapshot(dl));                 // create snap 1
     a1.doIt(cmd_wait_snap(&dl));                    // wait for snaps
-    FastOS_Thread::Sleep(1000);
+    std::this_thread::sleep_for(1s);
     EXPECT_TRUE(a1.getState() == Actor::STATE_BUSY); // still waiting...
     s2.reset(new DL::Snapshot(dl));                 // create snap 2
     s1.reset();                                     // destroy snap 1
-    FastOS_Thread::Sleep(1000);
+    std::this_thread::sleep_for(1s);
     EXPECT_TRUE(a1.getState() == Actor::STATE_IDLE); // wait done!
     a1.doIt(cmd_exit());
     a1.waitState(Actor::STATE_DONE);

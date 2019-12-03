@@ -6,6 +6,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 namespace storage::framework::defaultimplementation {
 
@@ -35,7 +37,7 @@ struct MyApp : public TickingThread {
         Context& c(_context[index]);
         if (_doCritOverlapTest) {
             uint32_t oldTick = _critOverlapCounter;
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
             _critOverlap |= (_critOverlapCounter != oldTick);
             ++_critOverlapCounter;
         }
@@ -109,7 +111,7 @@ TEST(TickingThreadTest, test_ticks_before_wait_basic)
     // and verify time is in right ballpark.
     int totalSleepMs = 0;
     while (app.getTotalNonCritTicks() < 20) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
         totalSleepMs++;
     }
     EXPECT_GT(totalSleepMs, 10);
@@ -134,7 +136,7 @@ TEST(TickingThreadTest, test_ticks_before_wait_live_update)
     // (if live update is broken it will take more than an hour).
     int maxAttempts = 120000;  // a bit more than 120 secs
     while (app.getTotalNonCritTicks() < ticksBeforeWaitMs && maxAttempts-->0) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
 
     EXPECT_GT(maxAttempts, 0);
@@ -158,7 +160,7 @@ TEST(TickingThreadTest, test_verbose_stopping)
     MyApp app(threadCount, true);
     app.start(testReg.getThreadPoolImpl());
     while (app.getMinCritTick() < 5) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
     app._threadPool->stop();
 }
@@ -171,7 +173,7 @@ TEST(TickingThreadTest, test_stop_on_deletion)
     MyApp app(threadCount, true);
     app.start(testReg.getThreadPoolImpl());
     while (app.getMinCritTick() < 5) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
 }
 
@@ -185,7 +187,7 @@ TEST(TickingThreadTest, test_lock_all_ticks)
     app1.start(testReg.getThreadPoolImpl());
     app2.start(testReg.getThreadPoolImpl());
     while (std::min(app1.getMinCritTick(), app2.getMinCritTick()) < 5) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
     uint64_t ticks1, ticks2;
     {
@@ -194,12 +196,12 @@ TEST(TickingThreadTest, test_lock_all_ticks)
         ticks2 = app2.getTotalTicks();
         
         while (app2.getMinCritTick() < 2 * ticks2 / threadCount) {
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
         }
         EXPECT_EQ(ticks1, app1.getTotalTicks());
     }
     while (app1.getMinCritTick() < 2 * ticks1 / threadCount) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
 }
 
@@ -213,7 +215,7 @@ TEST(TickingThreadTest, test_lock_critical_ticks)
         MyApp app(threadCount, true);
         app.start(testReg.getThreadPoolImpl());
         while (!app.hasCritOverlap()) {
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
             ++app._critOverlapCounter;
             ++iterationsBeforeOverlap;
         }
@@ -222,7 +224,7 @@ TEST(TickingThreadTest, test_lock_critical_ticks)
         MyApp app(threadCount, true);
         app.start(testReg.getThreadPoolImpl());
         for (uint64_t i=0; i<iterationsBeforeOverlap * 10; ++i) {
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
             TickingLockGuard guard(app._threadPool->freezeCriticalTicks());
             for (int j=0; j<threadCount; ++j) {
                 ++app._context[j]._critTickCount;
@@ -318,13 +320,13 @@ TEST(TickingThreadTest, test_broadcast)
     BroadcastApp app;
     app.start(testReg.getThreadPoolImpl());
     app.doTask("foo");
-    FastOS_Thread::Sleep(1);
+    std::this_thread::sleep_for(1ms);
     app.doTask("bar");
-    FastOS_Thread::Sleep(1);
+    std::this_thread::sleep_for(1ms);
     app.doTask("baz");
-    FastOS_Thread::Sleep(1);
+    std::this_thread::sleep_for(1ms);
     app.doTask("hmm");
-    FastOS_Thread::Sleep(1);
+    std::this_thread::sleep_for(1ms);
 }
 
 }

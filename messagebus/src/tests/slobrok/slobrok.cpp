@@ -51,7 +51,7 @@ compare(const IMirrorAPI &api, const string &pattern, SpecList expect)
         if (actual == expect) {
             return true;
         }
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
     }
     return false;
 }

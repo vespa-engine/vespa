@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/thread.h>
-#include <cstdint>
 
 namespace vespalib {
 
@@ -16,7 +16,7 @@ namespace vespalib {
 class ShutdownGuard : public FastOS_Runnable
 {
     FastOS_ThreadPool _pool;
-    volatile uint64_t _dieAtTime;
+    steady_time       _dieAtTime;
 
     void Run(FastOS_ThreadInterface *, void *) override;
 
@@ -25,7 +25,7 @@ public:
      * Construct a shutdown guard with a given lifetime.
      * @arg millis the number of milliseconds before process automatically exits
      **/
-    ShutdownGuard(uint64_t millis);
+    ShutdownGuard(duration millis);
 
     /**
      * Destructor that dismisses the guard and collects the shutdown thread.

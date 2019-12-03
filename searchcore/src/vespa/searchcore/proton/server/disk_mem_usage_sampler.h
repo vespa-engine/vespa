@@ -4,7 +4,7 @@
 
 #include "disk_mem_usage_filter.h"
 
-namespace vespalib { class Timer; }
+namespace vespalib { class ScheduledExecutor; }
 
 namespace proton {
 
@@ -15,7 +15,7 @@ class DiskMemUsageSampler {
     DiskMemUsageFilter _filter;
     std::filesystem::path _path;
     double _sampleInterval;
-    std::unique_ptr<vespalib::Timer> _periodicTimer;
+    std::unique_ptr<vespalib::ScheduledExecutor> _periodicTimer;
 
     void sampleUsage();
     void sampleDiskUsage();

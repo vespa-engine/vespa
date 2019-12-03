@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/bucketdb/bucketmanager.h>
-#include <vespa/storage/persistence/filestorage/filestormanager.h>
 #include <vespa/storage/storageserver/bucketintegritychecker.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/common/testhelper.h>
@@ -9,6 +8,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <tests/common/teststorageapp.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 using namespace ::testing;
 
@@ -175,13 +176,13 @@ TEST_F(BucketIntegrityCheckerTest, basic_functionality) {
         checker.getSchedulingOptions()._minCycleTime = framework::SecondTime(60 * 60);
         topLink.open();
         // Waiting for system to be initialized
-        FastOS_Thread::Sleep(10); // Give next message chance to come
+        std::this_thread::sleep_for(10ms); // Give next message chance to come
         ASSERT_COMMAND_COUNT(0, *dummyLink);
         topLink.doneInit();
         checker.bump();
         // Should have started new run with 2 pending per disk
         dummyLink->waitForMessages(4, _timeout);
-        FastOS_Thread::Sleep(10); // Give 5th message chance to come
+        std::this_thread::sleep_for(10ms); // Give 5th message chance to come
         ASSERT_COMMAND_COUNT(4, *dummyLink);
         auto* cmd1 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(0).get());
         EXPECT_EQ(230, cmd1->getPriority());
@@ -200,13 +201,13 @@ TEST_F(BucketIntegrityCheckerTest, basic_functionality) {
         // Answering a message on disk with no more buckets does not trigger new
         auto reply1 = std::make_shared<RepairBucketReply>(*cmd3);
         ASSERT_TRUE(checker.onUp(reply1));
-        FastOS_Thread::Sleep(10); // Give next message chance to come
+        std::this_thread::sleep_for(10ms); // Give next message chance to come
         ASSERT_COMMAND_COUNT(4, *dummyLink);
         // Answering a message on disk with more buckets trigger new repair
         auto reply2 = std::make_shared<RepairBucketReply>(*cmd2);
         ASSERT_TRUE(checker.onUp(reply2));
         dummyLink->waitForMessages(5, _timeout);
-        FastOS_Thread::Sleep(10); // Give 6th message chance to come
+        std::this_thread::sleep_for(10ms); // Give 6th message chance to come
         ASSERT_COMMAND_COUNT(5, *dummyLink);
         auto* cmd5 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(4).get());
         ASSERT_TRUE(cmd5);
@@ -217,7 +218,7 @@ TEST_F(BucketIntegrityCheckerTest, basic_functionality) {
         reply3->setResult(api::ReturnCode(api::ReturnCode::IGNORED));
         ASSERT_TRUE(checker.onUp(reply3));
         dummyLink->waitForMessages(6, _timeout);
-        FastOS_Thread::Sleep(10); // Give 7th message chance to come
+        std::this_thread::sleep_for(10ms); // Give 7th message chance to come
         ASSERT_COMMAND_COUNT(6, *dummyLink);
         auto* cmd6 = dynamic_cast<RepairBucketCommand*>(dummyLink->getCommand(5).get());
         ASSERT_TRUE(cmd6);
@@ -227,7 +228,7 @@ TEST_F(BucketIntegrityCheckerTest, basic_functionality) {
         auto reply4 = std::make_shared<RepairBucketReply>(*cmd4);
         reply3->setResult(api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND));
         ASSERT_TRUE(checker.onUp(reply4));
-        FastOS_Thread::Sleep(10); // Give 7th message chance to come
+        std::this_thread::sleep_for(10ms); // Give 7th message chance to come
         ASSERT_COMMAND_COUNT(6, *dummyLink);
 
         // Send a repair reply that actually have corrected the bucket.
@@ -247,13 +248,13 @@ TEST_F(BucketIntegrityCheckerTest, basic_functionality) {
         EXPECT_EQ(document::BucketId(16, 0x234), cmd7->getBucketId());
         auto reply7 = std::make_shared<RepairBucketReply>(*cmd7);
         ASSERT_TRUE(checker.onUp(reply7));
-        FastOS_Thread::Sleep(10); // Give 8th message chance to come
+        std::this_thread::sleep_for(10ms); // Give 8th message chance to come
         ASSERT_COMMAND_COUNT(7, *dummyLink);
 
         // Still not time for next iteration
         dummyLink->reset();
         _node->getClock().setAbsoluteTimeInSeconds(getDate("week1 sun 00:59:59"));
-        FastOS_Thread::Sleep(10); // Give new run chance to start
+        std::this_thread::sleep_for(10ms); // Give new run chance to start
         ASSERT_COMMAND_COUNT(0, *dummyLink);
 
         // Pass time until next cycle should start

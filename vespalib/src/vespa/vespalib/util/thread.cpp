@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "thread.h"
+#include <thread>
 
 namespace vespalib {
 
@@ -87,7 +88,7 @@ Thread::currentThread()
 void
 Thread::sleep(size_t ms)
 {
-    FastOS_Thread::Sleep(ms);
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
 }
 
 } // namespace vespalib

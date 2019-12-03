@@ -83,18 +83,6 @@ FastOS_UNIX_Thread::~FastOS_UNIX_Thread()
     }
 }
 
-bool FastOS_UNIX_Thread::Sleep (int ms)
-{
-    bool rc=false;
-
-    if (ms > 0) {
-        usleep(ms*1000);
-        rc = true;
-    }
-
-    return rc;
-}
-
 FastOS_ThreadId FastOS_UNIX_Thread::GetThreadId ()
 {
     return _handle;
