@@ -182,7 +182,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void run() {
-        log.log(LogLevel.INFO, "Rpc will listen on port " + spec.port());
+        log.log(LogLevel.INFO, "Rpc server will listen on port " + spec.port());
         try {
             Acceptor acceptor = supervisor.listen(spec);
             isRunning = true;

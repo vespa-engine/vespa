@@ -97,7 +97,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.sleepTimeWhenRedeployingFails = Duration.ofSeconds(configserverConfig.sleepTimeWhenRedeployingFails());
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
-        log.log(LogLevel.INFO, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
+        log.log(LogLevel.DEBUG, "Bootstrap mode: " + mode + ", VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);
         switch (mode) {
             case BOOTSTRAP_IN_SEPARATE_THREAD:
@@ -121,7 +121,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         log.log(LogLevel.INFO, "Stopping config server");
         down();
         server.stop();
-        log.log(LogLevel.INFO, "RPC server stopped");
+        log.log(LogLevel.DEBUG, "RPC server stopped");
         rpcServerExecutor.shutdown();
         serverThread.ifPresent(thread -> {
             try {
@@ -186,7 +186,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     private void startRpcServer() {
-        log.log(LogLevel.INFO, "Starting RPC server");
         rpcServerExecutor.execute(server);
 
         Instant end = Instant.now().plus(Duration.ofSeconds(10));
@@ -200,7 +199,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         }
         if (!server.isRunning())
             throw new RuntimeException("RPC server not started in 10 seconds");
-        log.log(LogLevel.INFO, "RPC server started");
     }
 
     private void redeployingApplicationsFailed() {
@@ -237,7 +235,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
         for (ApplicationId appId : applicationIds) {
             Optional<Deployment> deploymentOptional = applicationRepository.deployFromLocalActive(appId, true /* bootstrap */);
-            if ( ! deploymentOptional.isPresent()) continue;
+            if (deploymentOptional.isEmpty()) continue;
 
             futures.put(appId, executor.submit(deploymentOptional.get()::activate));
         }
