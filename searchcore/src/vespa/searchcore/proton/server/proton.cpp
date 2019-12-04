@@ -231,7 +231,7 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
-    if (_threadPool.NewThread(&_clock, nullptr) == nullptr) {
+    if (_threadPool.NewThread(_clock.getRunnable(), nullptr) == nullptr) {
         throw IllegalStateException("Failed starting thread for the cheap clock");
     }
     _protonConfigFetcher.start();

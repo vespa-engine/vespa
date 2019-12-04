@@ -1,12 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/fastos/thread.h>
 #include <vespa/fastos/timestamp.h>
-#include <mutex>
-#include <condition_variable>
+#include <atomic>
+#include <memory>
+
+class FastOS_Runnable;
 
 namespace vespalib {
+
+namespace clock::internal { class Updater; }
 
 /**
  * Clock is a clock that updates the time at defined intervals.
@@ -14,23 +17,16 @@ namespace vespalib {
  * resolution is not that important.
  */
 
-class Clock : public FastOS_Runnable
+class Clock
 {
 private:
-    Clock(const Clock &);
-    Clock & operator = (const Clock &);
-
-    mutable std::atomic<int64_t>  _timeNS;
-    int                           _timePeriodMS;
-    std::mutex                    _lock;
-    std::condition_variable       _cond;
-    bool                          _stop;
-    bool                          _running;
+    mutable std::atomic<int64_t>              _timeNS;
+    std::unique_ptr<clock::internal::Updater> _updater;
+    std::atomic<bool>                         _running;
 
     void setTime() const;
-
-    void Run(FastOS_ThreadInterface *thisThread, void *arguments) override;
-
+    void start();
+    friend clock::internal::Updater;
 public:
     Clock(double timePeriod=0.100);
     ~Clock();
@@ -41,9 +37,12 @@ public:
         }
         return getTimeNSAssumeRunning();
     }
-    fastos::SteadyTimeStamp getTimeNSAssumeRunning() const { return fastos::SteadyTimeStamp(_timeNS.load(std::memory_order_relaxed)); }
+    fastos::SteadyTimeStamp getTimeNSAssumeRunning() const {
+        return fastos::SteadyTimeStamp(_timeNS.load(std::memory_order_relaxed));
+    }
 
     void stop();
+    FastOS_Runnable * getRunnable();
 };
 
 }
