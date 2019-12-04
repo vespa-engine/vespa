@@ -226,9 +226,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-
     /** The aliases of query properties */
-    private static Map<String,CompoundName> propertyAliases;
+    private static Map<String, CompoundName> propertyAliases;
     static {
         Map<String,CompoundName> propertyAliasesBuilder = new HashMap<>();
         addAliases(Query.getArgumentType(), propertyAliasesBuilder);
