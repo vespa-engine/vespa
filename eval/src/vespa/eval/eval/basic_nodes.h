@@ -122,7 +122,7 @@ public:
     String(const vespalib::string &value_in) : _value(value_in) {}
     bool is_const() const override { return true; }
     double get_const_value() const override { return hash(); }
-    const vespalib::string value() const { return _value; }
+    const vespalib::string &value() const { return _value; }
     uint32_t hash() const { return hash_code(_value.data(), _value.size()); }
     vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
