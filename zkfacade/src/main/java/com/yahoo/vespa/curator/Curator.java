@@ -18,12 +18,11 @@ import org.apache.curator.framework.recipes.cache.NodeCacheListener;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -59,6 +58,11 @@ public class Curator implements AutoCloseable {
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
+        return Curator.create(connectionSpec, Optional.empty());
+    }
+
+    /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
+    public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
         return new Curator(connectionSpec, connectionSpec);
     }
 
@@ -174,11 +178,8 @@ public class Curator implements AutoCloseable {
 
     // To avoid getting warning in log, see ticket 6389740
     private void addFakeListener() {
-        curatorFramework.getConnectionStateListenable().addListener(new ConnectionStateListener() {
-            @Override
-            public void stateChanged(CuratorFramework curatorFramework, ConnectionState connectionState) {
-                // empty, not needed now
-            }
+        curatorFramework.getConnectionStateListenable().addListener((curatorFramework, connectionState) -> {
+            // empty, not needed now
         });
     }
 
