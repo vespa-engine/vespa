@@ -119,9 +119,16 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder caCertificateFile(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder caCertificate(java.lang.String)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder clientAuth(com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabledCipherSuites(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabledCipherSuites(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabledProtocols(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$Builder enabledProtocols(java.util.Collection)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Ssl build()"
     ],
-    "fields": []
+    "fields": [
+      "public java.util.List enabledCipherSuites",
+      "public java.util.List enabledProtocols"
+    ]
   },
   "com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum": {
     "superClass": "java.lang.Enum",
@@ -174,7 +181,11 @@
       "public java.lang.String certificate()",
       "public java.lang.String caCertificateFile()",
       "public java.lang.String caCertificate()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum clientAuth()"
+      "public com.yahoo.jdisc.http.ConnectorConfig$Ssl$ClientAuth$Enum clientAuth()",
+      "public java.util.List enabledCipherSuites()",
+      "public java.lang.String enabledCipherSuites(int)",
+      "public java.util.List enabledProtocols()",
+      "public java.lang.String enabledProtocols(int)"
     ],
     "fields": []
   },
