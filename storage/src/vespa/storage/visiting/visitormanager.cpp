@@ -309,7 +309,7 @@ VisitorManager::scheduleVisitor(
             if (_enforceQueueUse || totCount >= maximumConcurrent(*cmd)) {
                 api::CreateVisitorCommand::SP failCommand;
 
-                if (cmd->getQueueTimeout() != vespalib::duration::zero() && _maxVisitorQueueSize > 0) {
+                if (cmd->getQueueTimeout() > vespalib::duration::zero() && _maxVisitorQueueSize > 0) {
                     if (_visitorQueue.size() < _maxVisitorQueueSize) {
                             // Still room in the queue
                         _visitorQueue.add(cmd);
@@ -318,20 +318,15 @@ VisitorManager::scheduleVisitor(
                         // If tail of priority queue has a lower priority than
                         // the new visitor, evict it and insert the new one. If
                         // not, immediately return with a busy reply
-                        std::shared_ptr<api::CreateVisitorCommand> tail(
-                                _visitorQueue.peekLowestPriorityCommand());
+                        std::shared_ptr<api::CreateVisitorCommand> tail(_visitorQueue.peekLowestPriorityCommand());
                             // Lower int ==> higher pri
                         if (cmd->getPriority() < tail->getPriority()) {
-                            std::pair<api::CreateVisitorCommand::SP,
-                                      time_t> evictCommand(
-                                _visitorQueue.releaseLowestPriorityCommand());
+                            std::pair<api::CreateVisitorCommand::SP, time_t> evictCommand(_visitorQueue.releaseLowestPriorityCommand());
                             assert(tail == evictCommand.first);
                             _visitorQueue.add(cmd);
                             visitorLock.signal();
-                            framework::MicroSecTime t(
-                                    _component.getClock().getTimeInMicros());
-                            _metrics->queueEvictedWaitTime.addValue(
-                                    t.getTime() - evictCommand.second);
+                            framework::MicroSecTime t(_component.getClock().getTimeInMicros());
+                            _metrics->queueEvictedWaitTime.addValue(t.getTime() - evictCommand.second);
                             failCommand = evictCommand.first;
                         } else {
                             failCommand = cmd;
@@ -344,11 +339,10 @@ VisitorManager::scheduleVisitor(
                 }
                 visitorLock.unlock();
 
-                if (failCommand.get() != 0) {
-                    std::shared_ptr<api::CreateVisitorReply> reply(
-                            new api::CreateVisitorReply(*failCommand));
+                if (failCommand) {
+                    auto reply = std::make_shared<api::CreateVisitorReply>(*failCommand);
                     std::ostringstream ost;
-                    if (cmd->getQueueTimeout() == vespalib::duration::zero()) {
+                    if (cmd->getQueueTimeout() <= vespalib::duration::zero()) {
                         ost << "Already running the maximum amount ("
                             << maximumConcurrent(*failCommand)
                             << ") of visitors for this priority ("
@@ -361,11 +355,9 @@ VisitorManager::scheduleVisitor(
                             << static_cast<uint32_t>(failCommand->getPriority())
                             << "), and maximum queue size is 0.";
                     } else {
-                        ost << "Queue is full and a higher priority visitor was received, "
-                               "taking precedence.";
+                        ost << "Queue is full and a higher priority visitor was received, taking precedence.";
                     }
-                    reply->setResult(api::ReturnCode(api::ReturnCode::BUSY,
-                                                     ost.str()));
+                    reply->setResult(api::ReturnCode(api::ReturnCode::BUSY, ost.str()));
                     send(reply);
                 }
                 return false;
@@ -375,13 +367,11 @@ VisitorManager::scheduleVisitor(
         }
         while (true) {
             id = ++_visitorCounter;
-            std::map<api::VisitorId, std::string>& usedIds(
-                    _visitorThread[id % _visitorThread.size()].second);
+            std::map<api::VisitorId, std::string>& usedIds(_visitorThread[id % _visitorThread.size()].second);
             if (usedIds.size() == minLoadCount &&
                 usedIds.find(id) == usedIds.end())
             {
-                newEntry = _nameToId.insert(NameIdPair(cmd->getInstanceId(),
-                                                       id));
+                newEntry = _nameToId.insert(NameIdPair(cmd->getInstanceId(), id));
                 if (newEntry.second) {
                     usedIds[id] = cmd->getInstanceId();
                 }
@@ -391,13 +381,11 @@ VisitorManager::scheduleVisitor(
     }
     visitorLock.unlock();
     if (!newEntry.second) {
-        std::shared_ptr<api::CreateVisitorReply> reply(
-                new api::CreateVisitorReply(*cmd));
+        auto reply = std::make_shared<api::CreateVisitorReply>(*cmd);
         std::ostringstream ost;
         ost << "Already running a visitor named " << cmd->getInstanceId()
             << ". Not creating visitor.";
-        reply->setResult(api::ReturnCode(api::ReturnCode::EXISTS,
-                                         ost.str()));
+        reply->setResult(api::ReturnCode(api::ReturnCode::EXISTS, ost.str()));
         send(reply);
         return false;
     }
@@ -407,8 +395,7 @@ VisitorManager::scheduleVisitor(
 }
 
 bool
-VisitorManager::onCreateVisitor(
-        const std::shared_ptr<api::CreateVisitorCommand>& cmd)
+VisitorManager::onCreateVisitor(const std::shared_ptr<api::CreateVisitorCommand>& cmd)
 {
     vespalib::MonitorGuard sync(_visitorLock);
     scheduleVisitor(cmd, false, sync);
