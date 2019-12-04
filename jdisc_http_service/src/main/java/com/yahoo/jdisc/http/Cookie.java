@@ -192,8 +192,8 @@ public class Cookie {
                                      cookie.getDomain(),
                                      cookie.getPath(),
                                      cookie.getMaxAge(TimeUnit.SECONDS),
-                                     cookie.isSecure(),
-                                     cookie.isHttpOnly()
+                                     cookie.isHttpOnly(),
+                                     cookie.isSecure()
                              ).getRFC6265SetCookie())
                 .collect(toList());
     }
