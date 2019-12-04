@@ -316,6 +316,12 @@ public class EvaluationTestCase {
         tester.assertEvaluates("{ {x:0}:0, {x:1}:1, {x:2}:2 }", "range(x[3])");
         tester.assertEvaluates("{ {x:0,y:0,z:0}:1, {x:0,y:0,z:1}:0, {x:0,y:1,z:0}:0, {x:0,y:1,z:1}:0, {x:1,y:0,z:0}:0, {x:1,y:0,z:1}:0, {x:1,y:1,z:0}:0, {x:1,y:1,z:1}:1, }", "diag(x[2],y[2],z[2])");
         tester.assertEvaluates("6", "reduce(random(x[2],y[3]), count)");
+        tester.assertEvaluates("tensor(x[2]):[0.0, 2.0]",
+                               "tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a)," +
+                                                                                "{y:1}:((0+1)+a)}{y:0}," +
+                                                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a)," +
+                                                                                "{y:1}:((1+1)+a)}{y:1}" +
+                                                           "}");
 
         // tensor value
         tester.assertEvaluates("3.0", "tensor0{x:1}", "{ {x:0}:1, {x:1}:3 }");
