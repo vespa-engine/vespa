@@ -77,17 +77,17 @@ Test::Main()
     }
     EXPECT_EQUAL(queue.size(), 3u);
     {
-        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(duration::zero()).release());
+        Reply::UP reply = Reply::UP((Reply*)queue.dequeue().release());
         ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 10u);
     }
     {
-        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(duration::zero()).release());
+        Reply::UP reply = Reply::UP((Reply*)queue.dequeue().release());
         ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 20u);
     }
     {
-        Reply::UP reply = Reply::UP((Reply*)queue.dequeue(duration::zero()).release());
+        Reply::UP reply = Reply::UP((Reply*)queue.dequeue().release());
         ASSERT_TRUE(reply);
         EXPECT_EQUAL(reply->getContext().value.UINT64, 30u);
     }
