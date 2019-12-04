@@ -89,7 +89,7 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
 }
 
 MatchTools::MatchTools(QueryLimiter & queryLimiter,
-                       const vespalib::CombinedDoom & doom,
+                       const vespalib::Doom & doom,
                        const Query &query,
                        MaybeMatchPhaseLimiter & match_limiter_in,
                        const QueryEnvironment & queryEnv,
@@ -147,7 +147,7 @@ MatchTools::setup_dump()
 
 MatchToolsFactory::
 MatchToolsFactory(QueryLimiter               & queryLimiter,
-                  const vespalib::CombinedDoom  & doom,
+                  const vespalib::Doom       & doom,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
                   vespalib::stringref          queryStack,

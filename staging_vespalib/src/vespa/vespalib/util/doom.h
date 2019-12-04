@@ -6,35 +6,24 @@
 
 namespace vespalib {
 
-class Doom
-{
-private:
-    const vespalib::Clock   &_clock;
-    fastos::SteadyTimeStamp  _timeOfDoom;
-
+class Doom {
 public:
-    Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp timeOfDoom);
-    bool doom() const {
-        return (_clock.getTimeNSAssumeRunning() > _timeOfDoom);
-    }
-    fastos::TimeStamp left() const { return _timeOfDoom - _clock.getTimeNS(); }
-};
+    Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp doom)
+        : Doom(clock, doom, doom, false)
+    {}
+    Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp softDoom,
+         fastos::SteadyTimeStamp hardDoom, bool explicitSoftDoom);
 
-class CombinedDoom {
-public:
-    CombinedDoom(const vespalib::Clock &clock, fastos::SteadyTimeStamp softDoom,
-                 fastos::SteadyTimeStamp hardDoom, bool explicitSoftDoom)
-        : _soft(clock, softDoom),
-          _hard(clock, hardDoom),
-          _isExplicitSoftDoom(explicitSoftDoom)
-    { }
-    const Doom & soft() const { return _soft; }
-    const Doom & hard() const { return _hard; }
+    bool soft_doom() const { return (_clock.getTimeNSAssumeRunning() > _softDoom); }
+    bool hard_doom() const { return (_clock.getTimeNSAssumeRunning() > _hardDoom); }
+    fastos::TimeStamp soft_left() const { return _softDoom - _clock.getTimeNS(); }
+    fastos::TimeStamp hard_left() const { return _hardDoom - _clock.getTimeNS(); }
     bool isExplicitSoftDoom() const { return _isExplicitSoftDoom; }
 private:
-    Doom _soft;
-    Doom _hard;
-    bool _isExplicitSoftDoom;
+    const vespalib::Clock   &_clock;
+    fastos::SteadyTimeStamp  _softDoom;
+    fastos::SteadyTimeStamp  _hardDoom;
+    bool                     _isExplicitSoftDoom;
 };
 
 }

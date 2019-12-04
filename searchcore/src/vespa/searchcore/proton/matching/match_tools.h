@@ -28,7 +28,7 @@ class MatchTools
 private:
     using IRequestContext = search::queryeval::IRequestContext;
     QueryLimiter                          &_queryLimiter;
-    const vespalib::CombinedDoom          &_doom;
+    const vespalib::Doom                  &_doom;
     const Query                           &_query;
     MaybeMatchPhaseLimiter                &_match_limiter;
     const QueryEnvironment                &_queryEnv;
@@ -45,7 +45,7 @@ public:
     MatchTools(const MatchTools &) = delete;
     MatchTools & operator = (const MatchTools &) = delete;
     MatchTools(QueryLimiter & queryLimiter,
-               const vespalib::CombinedDoom & doom,
+               const vespalib::Doom & doom,
                const Query &query,
                MaybeMatchPhaseLimiter &match_limiter_in,
                const QueryEnvironment &queryEnv,
@@ -53,7 +53,7 @@ public:
                const search::fef::RankSetup &rankSetup,
                const search::fef::Properties &featureOverrides);
     ~MatchTools();
-    const vespalib::CombinedDoom &getDoom() const { return _doom; }
+    const vespalib::Doom &getDoom() const { return _doom; }
     QueryLimiter & getQueryLimiter() { return _queryLimiter; }
     MaybeMatchPhaseLimiter &match_limiter() { return _match_limiter; }
     bool has_second_phase_rank() const;
@@ -106,7 +106,7 @@ public:
     using BasicType = search::attribute::BasicType;
 
     MatchToolsFactory(QueryLimiter & queryLimiter,
-                      const vespalib::CombinedDoom & softDoom,
+                      const vespalib::Doom & softDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
                       vespalib::stringref queryStack,

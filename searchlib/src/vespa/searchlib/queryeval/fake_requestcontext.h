@@ -20,7 +20,7 @@ public:
                        fastos::SteadyTimeStamp soft=fastos::SteadyTimeStamp::FUTURE,
                        fastos::SteadyTimeStamp hard=fastos::SteadyTimeStamp::FUTURE);
     ~FakeRequestContext();
-    const vespalib::CombinedDoom & getDoom() const override { return _doom; }
+    const vespalib::Doom & getDoom() const override { return _doom; }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {
         return _attributeContext
                    ? _attributeContext->getAttribute(name)
@@ -44,7 +44,7 @@ public:
 
 private:
     vespalib::Clock _clock;
-    const vespalib::CombinedDoom _doom;
+    const vespalib::Doom _doom;
     attribute::IAttributeContext *_attributeContext;
     vespalib::string _query_tensor_name;
     std::unique_ptr<vespalib::eval::TensorSpec> _query_tensor;

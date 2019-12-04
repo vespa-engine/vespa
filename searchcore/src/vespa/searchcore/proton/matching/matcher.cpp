@@ -140,7 +140,7 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
                    _stats.softDoomFactor(), factor, hasFactorOverride, safeLeft);
     }
-    vespalib::CombinedDoom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    vespalib::Doom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request.getStackRef(),
                                                request.location, _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides);

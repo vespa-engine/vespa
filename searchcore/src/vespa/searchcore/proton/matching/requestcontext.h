@@ -17,11 +17,11 @@ class RequestContext : public search::queryeval::IRequestContext,
 public:
     using IAttributeContext = search::attribute::IAttributeContext;
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
-    using CombinedDoom = vespalib::CombinedDoom;
-    RequestContext(const CombinedDoom & softDoom, IAttributeContext & attributeContext,
+    using Doom = vespalib::Doom;
+    RequestContext(const Doom & softDoom, IAttributeContext & attributeContext,
                    const search::fef::Properties& rank_properties);
 
-    const CombinedDoom & getDoom() const override { return _doom; }
+    const Doom & getDoom() const override { return _doom; }
     const search::attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override;
 
     void asyncForAttribute(const vespalib::string &name, std::unique_ptr<IAttributeFunctor> func) const override;
@@ -32,7 +32,7 @@ public:
 
 
 private:
-    const CombinedDoom              _doom;
+    const Doom                      _doom;
     IAttributeContext             & _attributeContext;
     const search::fef::Properties & _rank_properties;
 };

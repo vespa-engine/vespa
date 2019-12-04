@@ -27,7 +27,7 @@ public:
 class RequestContextTest : public ::testing::Test {
 private:
     vespalib::Clock        _clock;
-    vespalib::CombinedDoom _doom;
+    vespalib::Doom         _doom;
     MyAttributeContext     _attr_ctx;
     Properties             _props;
     RequestContext         _request_ctx;
