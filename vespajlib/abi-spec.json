@@ -2495,6 +2495,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ToStringContext$EmptyStringContext": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.tensor.functions.ToStringContext"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public java.lang.String getBinding(java.lang.String)",
+      "public com.yahoo.tensor.functions.ToStringContext parent()"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ToStringContext": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -2504,7 +2519,9 @@
       "abstract"
     ],
     "methods": [
-      "public static com.yahoo.tensor.functions.ToStringContext empty()"
+      "public static com.yahoo.tensor.functions.ToStringContext empty()",
+      "public abstract java.lang.String getBinding(java.lang.String)",
+      "public abstract com.yahoo.tensor.functions.ToStringContext parent()"
     ],
     "fields": []
   },

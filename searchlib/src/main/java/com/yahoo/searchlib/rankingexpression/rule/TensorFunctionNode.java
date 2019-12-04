@@ -120,8 +120,8 @@ public class TensorFunctionNode extends CompositeNode {
         @Override
         public String toString(ToStringContext c) {
             ToStringContext outermost = c;
-            while (outermost.wrapped() != null)
-                outermost = outermost.wrapped();
+            while (outermost.parent() != null)
+                outermost = outermost.parent();
 
             if (outermost instanceof ExpressionToStringContext) {
                 ExpressionToStringContext context = (ExpressionToStringContext)outermost;
@@ -190,8 +190,8 @@ public class TensorFunctionNode extends CompositeNode {
         @Override
         public String toString(ToStringContext c) {
             ToStringContext outermost = c;
-            while (outermost.wrapped() != null)
-                outermost = outermost.wrapped();
+            while (outermost.parent() != null)
+                outermost = outermost.parent();
 
             if (outermost instanceof ExpressionToStringContext) {
                 ExpressionToStringContext context = (ExpressionToStringContext)outermost;
@@ -208,7 +208,16 @@ public class TensorFunctionNode extends CompositeNode {
 
     }
 
-    /** Allows passing serialization context arguments through TensorFunctions */
+    /**
+     * This is used to pass a full expression serialization context through tensor functions.
+     * Tensor functions cannot see the full serialization context because it exposes expressions
+     * (which depends on the tensor module), but they need to be able to recursively add their own
+     * contexts (binding scopes) due to Generate binding dimension names.
+     *
+     * To be able to achieve both passing the serialization context through functions *and* allow them
+     * to add more context, we need to keep track of both these contexts here separately and map between
+     * contexts as seen in the toString methods of the function classes above.
+     */
     private static class ExpressionToStringContext extends SerializationContext implements ToStringContext {
 
         private final ToStringContext wrappedToStringContext;
@@ -258,7 +267,7 @@ public class TensorFunctionNode extends CompositeNode {
 
         protected ImmutableMap<String, ExpressionFunction> functions() { return wrappedSerializationContext.functions(); }
 
-        public ToStringContext wrapped() { return wrappedToStringContext; }
+        public ToStringContext parent() { return wrappedToStringContext; }
 
         /** Returns the resolution of an identifier, or null if it isn't defined in this context */
         @Override

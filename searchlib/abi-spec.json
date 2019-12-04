@@ -1399,13 +1399,11 @@
       "public void <init>(java.util.Map)",
       "public void <init>(java.util.Map, java.util.Map)",
       "public com.yahoo.searchlib.rankingexpression.ExpressionFunction getFunction(java.lang.String)",
-      "protected final com.google.common.collect.ImmutableMap functions()",
+      "protected com.google.common.collect.ImmutableMap functions()",
       "public java.lang.String getBinding(java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.rule.FunctionReferenceContext withBindings(java.util.Map)"
     ],
-    "fields": [
-      "public final java.util.Map bindings"
-    ]
+    "fields": []
   },
   "com.yahoo.searchlib.rankingexpression.rule.GeneratorLambdaFunctionNode": {
     "superClass": "com.yahoo.searchlib.rankingexpression.rule.CompositeNode",
@@ -1553,7 +1551,7 @@
       "public void <init>()",
       "public void <init>(java.util.Collection)",
       "public void <init>(java.util.Map)",
-      "public void <init>(java.util.List, java.util.Map)",
+      "public void <init>(java.util.Collection, java.util.Map)",
       "public void <init>(java.util.Collection, java.util.Map, java.util.Map)",
       "public void <init>(com.google.common.collect.ImmutableMap, java.util.Map, java.util.Map)",
       "public void addFunctionSerialization(java.lang.String, java.lang.String)",

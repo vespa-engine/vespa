@@ -190,7 +190,7 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
         }
 
         @Override
-        public ToStringContext wrapped() { return context; }
+        public ToStringContext parent() { return context; }
 
     }
 

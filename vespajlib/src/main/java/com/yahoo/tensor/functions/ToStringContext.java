@@ -13,8 +13,11 @@ public interface ToStringContext {
     /** Returns the name an identifier is bound to, or null if not bound in this context */
     String getBinding(String name);
 
-    /** Returns another context this wraps, or null if none is wrapped */
-    ToStringContext wrapped();
+    /**
+     * Returns the parent context of this (the context we're in scope of when this is created),
+     * or null if this is the root.
+     */
+    ToStringContext parent();
 
     class EmptyStringContext implements ToStringContext {
 
@@ -22,7 +25,7 @@ public interface ToStringContext {
         public String getBinding(String name) { return null; }
 
         @Override
-        public ToStringContext wrapped() { return null; }
+        public ToStringContext parent() { return null; }
 
     }
 
