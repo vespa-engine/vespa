@@ -951,9 +951,20 @@ TEST("require that tensor peek can contain expressions") {
     TEST_DO(verify_parse("t{x:1,y:(foo)}", "f(t,foo)(t{x:1,y:(foo)})"));
 }
 
+TEST("require that trivial tensor peek string/number expressions are converted to verbatim labels") {
+    TEST_DO(verify_parse("t{x:\"foo\"}", "f(t)(t{x:foo})"));
+    TEST_DO(verify_parse("t{x:(\"foo\")}", "f(t)(t{x:foo})"));
+    TEST_DO(verify_parse("t{x:5.5}", "f(t)(t{x:5})"));
+    TEST_DO(verify_parse("t{x:(5.5)}", "f(t)(t{x:5})"));
+}
+
 TEST("require that tensor peek can contain extra whitespace") {
     TEST_DO(verify_parse(" t { x : 1 + bar , y : foo + 2 } ",
                          "f(t,bar,foo)(t{x:(1+bar),y:(foo+2)})"));
+}
+
+TEST("require that converted tensor peek string expression must be valid identifier") {
+    TEST_DO(verify_error("x{a:\"5.5\"}", "[x{a:\"5.5\"]...[invalid identifier: '5.5']...[}]"));
 }
 
 TEST("require that empty tensor peek is not allowed") {
@@ -963,8 +974,8 @@ TEST("require that empty tensor peek is not allowed") {
 //-----------------------------------------------------------------------------
 
 TEST("require that nested tensor lambda using tensor peek can be parsed") {
-    vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:(0)},"
-                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:(1)}}");
+    vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:0},"
+                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:1}}");
     EXPECT_EQUAL(Function::parse(expect).dump(), expect);
     auto fun = Function::parse("tensor(x[2])(tensor(y[2])(x+y+a){y:(x)})");
     EXPECT_EQUAL(fun.dump(), expect);

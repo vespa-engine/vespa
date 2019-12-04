@@ -445,6 +445,14 @@ bool is_ident(char c, bool first) {
             (c == '$' && !first));
 }
 
+bool is_ident(const vespalib::string &str) {
+    bool result = str.empty() ? false : is_ident(str[0], true);
+    for (size_t i = 1; result && (i < str.size()); ++i) {
+        result &= is_ident(str[i], false);
+    }
+    return result;
+}
+
 vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
     ctx.skip_spaces();
     vespalib::string ident;
@@ -797,7 +805,19 @@ void parse_tensor_peek(ParseContext &ctx) {
                 peek_spec.emplace(dim_name, label);
             } else {
                 ctx.restore_input_mark(before_label);
-                peek_spec.emplace(dim_name, get_expression(ctx));
+                auto expr = get_expression(ctx);
+                if (auto num = nodes::as<nodes::Number>(*expr)) {
+                    size_t index(num->value());
+                    peek_spec.emplace(dim_name, make_string("%zu", index));
+                } else if (auto str = nodes::as<nodes::String>(*expr)) {
+                    if (is_ident(str->value())) {
+                        peek_spec.emplace(dim_name, str->value());
+                    } else {
+                        ctx.fail(make_string("invalid identifier: '%s'", str->value().c_str()));
+                    }
+                } else {
+                    peek_spec.emplace(dim_name, std::move(expr));
+                }
             }
         }
     }
