@@ -59,7 +59,7 @@ public:
     bool start();
 };
 
-static const duration TIMEOUT_SECS = 6s;
+static const duration TIMEOUT_SECS = 60s;
 
 TestData::TestData() :
     _slobrok(),
