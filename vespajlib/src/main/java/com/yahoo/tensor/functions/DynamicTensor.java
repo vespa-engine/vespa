@@ -83,7 +83,7 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
         String contentToString(ToStringContext context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
-                return "{" + cells.values().iterator().next() + "}";
+                return "{" + cells.values().iterator().next().toString(context) + "}";
             }
 
             StringBuilder b = new StringBuilder("{");
@@ -124,7 +124,7 @@ public abstract class DynamicTensor<NAMETYPE extends Name> extends PrimitiveTens
         String contentToString(ToStringContext context) {
             if (type().dimensions().isEmpty()) {
                 if (cells.isEmpty()) return "{}";
-                return "{" + cells.get(0) + "}";
+                return "{" + cells.get(0).toString(context) + "}";
             }
 
             IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(type());

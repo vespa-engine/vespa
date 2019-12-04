@@ -8,7 +8,6 @@ import com.yahoo.tensor.TensorType;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -37,7 +36,7 @@ public class SerializationContext extends FunctionReferenceContext {
     }
 
     /** Create a context for a single serialization task */
-    public SerializationContext(List<ExpressionFunction> functions, Map<String, String> bindings) {
+    public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings) {
         this(functions, bindings, new LinkedHashMap<>());
     }
 

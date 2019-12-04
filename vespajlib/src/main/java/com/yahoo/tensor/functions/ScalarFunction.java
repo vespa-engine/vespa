@@ -16,8 +16,6 @@ public interface ScalarFunction<NAMETYPE extends Name> extends Function<Evaluati
     @Override
     Double apply(EvaluationContext<NAMETYPE> context);
 
-    default String toString(ToStringContext context) {
-        return toString();
-    }
+    default String toString(ToStringContext context) { return toString(); }
 
 }

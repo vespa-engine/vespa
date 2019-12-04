@@ -27,14 +27,27 @@ public class Reference extends Name {
     /** The output, or null if none */
     private final String output;
 
+    /** True if this was created by the "fromIdentifier" method. This lets us separate 'foo()' and 'foo' */
+    private final boolean isIdentifier;
+
+    public static Reference fromIdentifier(String identifier) {
+        return new Reference(identifier, new Arguments(), null, true);
+    }
+
     public Reference(String name, Arguments arguments, String output) {
+        this(name, arguments, output, false);
+    }
+
+    private Reference(String name, Arguments arguments, String output, boolean isIdentifier) {
         super(name);
         Objects.requireNonNull(name, "name cannot be null");
         Objects.requireNonNull(arguments, "arguments cannot be null");
         this.arguments = arguments;
         this.output = output;
-        this.hashCode = Objects.hash(name(), arguments, output);
+        this.hashCode = Objects.hash(name(), arguments, output, isIdentifier);
+        this.isIdentifier = isIdentifier;
     }
+
 
     public Arguments arguments() { return arguments; }
 
@@ -66,12 +79,8 @@ public class Reference extends Name {
         return Optional.of(simple(featureName, argument));
     }
 
-    /**
-     * Returns whether this is a simple identifier - no arguments or output
-     */
-    public boolean isIdentifier() {
-        return this.arguments.expressions().size() == 0 && output == null;
-    }
+    /** Returns true if this was created by fromIdentifier. Identifiers have no arguments or outputs. */
+    public boolean isIdentifier() { return isIdentifier; }
 
     /**
      * A <i>simple feature reference</i> is a reference with a single identifier argument
@@ -105,11 +114,11 @@ public class Reference extends Name {
     }
 
     public Reference withArguments(Arguments arguments) {
-        return new Reference(name(), arguments, output);
+        return new Reference(name(), arguments, output, isIdentifier && arguments.isEmpty());
     }
 
     public Reference withOutput(String output) {
-        return new Reference(name(), arguments, output);
+        return new Reference(name(), arguments, output, isIdentifier && output == null);
     }
 
     @Override
@@ -121,6 +130,7 @@ public class Reference extends Name {
         if (!Objects.equals(other.name(), this.name())) return false;
         if (!Objects.equals(other.arguments, this.arguments)) return false;
         if (!Objects.equals(other.output, this.output)) return false;
+        if (!Objects.equals(other.isIdentifier, this.isIdentifier)) return false;
         return true;
     }
 

@@ -44,9 +44,8 @@ public class FunctionShadower extends ExpressionTransformer<RankProfileTransform
     private ExpressionNode transformFunctionNode(FunctionNode function, RankProfileTransformContext context) {
         String name = function.getFunction().toString();
         RankProfile.RankingExpressionFunction rankingExpressionFunction = context.rankProfile().findFunction(name);
-        if (rankingExpressionFunction == null) {
+        if (rankingExpressionFunction == null)
             return transformChildren(function, context);
-        }
 
         int functionArity = function.getFunction().arity();
         if (functionArity != rankingExpressionFunction.function().arguments().size())

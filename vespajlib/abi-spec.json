@@ -2495,6 +2495,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.ToStringContext$EmptyStringContext": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.tensor.functions.ToStringContext"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public java.lang.String getBinding(java.lang.String)",
+      "public com.yahoo.tensor.functions.ToStringContext parent()"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.ToStringContext": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -2504,7 +2519,9 @@
       "abstract"
     ],
     "methods": [
-      "public static com.yahoo.tensor.functions.ToStringContext empty()"
+      "public static com.yahoo.tensor.functions.ToStringContext empty()",
+      "public abstract java.lang.String getBinding(java.lang.String)",
+      "public abstract com.yahoo.tensor.functions.ToStringContext parent()"
     ],
     "fields": []
   },
@@ -2526,7 +2543,8 @@
       "public java.util.Optional dimension()",
       "public java.util.Optional label()",
       "public java.util.Optional index()",
-      "public java.lang.String toString()"
+      "public java.lang.String toString()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
     ],
     "fields": []
   },
@@ -2544,7 +2562,6 @@
       "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
-      "public java.lang.String toString()",
       "public bridge synthetic com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)"
     ],
     "fields": []

@@ -20,8 +20,7 @@ public class FunctionReferenceContext {
     private final ImmutableMap<String, ExpressionFunction> functions;
 
     /** Mapping from argument names to the expressions they resolve to */
-    // TODO: Make private
-    public final Map<String, String> bindings = new HashMap<>();
+    private final Map<String, String> bindings = new HashMap<>();
 
     /** Create a context for a single serialization task */
     public FunctionReferenceContext() {
@@ -56,14 +55,12 @@ public class FunctionReferenceContext {
         return mapBuilder.build();
     }
 
-    /**
-     * Returns a function or null if it isn't defined in this context
-     */
+    /** Returns a function or null if it isn't defined in this context */
     public ExpressionFunction getFunction(String name) { return functions.get(name); }
 
-    protected final ImmutableMap<String, ExpressionFunction> functions() { return functions; }
+    protected ImmutableMap<String, ExpressionFunction> functions() { return functions; }
 
-    /** Returns the resolution of an argument, or null if it isn't defined in this context */
+    /** Returns the resolution of an identifier, or null if it isn't defined in this context */
     public String getBinding(String name) { return bindings.get(name); }
 
     /** Returns a new context with the bindings replaced by the given bindings */

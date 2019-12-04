@@ -265,8 +265,8 @@ public class RankingExpression implements Serializable {
     /**
      * Returns the rank-property name for a given expression name.
      *
-     * @param expressionName The expression name to mangle.
-     * @return The property name.
+     * @param expressionName the expression name to mangle.
+     * @return the property name.
      */
     public static String propertyName(String expressionName) {
         return "rankingExpression(" + expressionName + ").rankingScript";
