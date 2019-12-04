@@ -8,6 +8,7 @@ import com.yahoo.jdisc.http.ssl.impl.ConfiguredSslContextFactoryProvider;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
+import java.util.List;
 import java.util.Optional;
 
 import static com.yahoo.component.ComponentSpecification.fromString;
@@ -16,6 +17,7 @@ import static com.yahoo.component.ComponentSpecification.fromString;
  * Configure SSL using file references
  *
  * @author mortent
+ * @author bjorncs
  */
 public class ConfiguredFilebasedSslProvider extends SimpleComponent implements ConnectorConfig.Producer {
     public static final String COMPONENT_ID_PREFIX = "configured-ssl-provider@";
@@ -26,8 +28,16 @@ public class ConfiguredFilebasedSslProvider extends SimpleComponent implements C
     private final String certificatePath;
     private final String caCertificatePath;
     private final ConnectorConfig.Ssl.ClientAuth.Enum clientAuthentication;
+    private final List<String> cipherSuites;
+    private final List<String> protocolVersions;
 
-    public ConfiguredFilebasedSslProvider(String servername, String privateKeyPath, String certificatePath, String caCertificatePath, String clientAuthentication) {
+    public ConfiguredFilebasedSslProvider(String servername,
+                                          String privateKeyPath,
+                                          String certificatePath,
+                                          String caCertificatePath,
+                                          String clientAuthentication,
+                                          List<String> cipherSuites,
+                                          List<String> protocolVersions) {
         super(new ComponentModel(
                 new BundleInstantiationSpecification(new ComponentId(COMPONENT_ID_PREFIX+servername),
                                                      fromString(COMPONENT_CLASS),
@@ -36,15 +46,21 @@ public class ConfiguredFilebasedSslProvider extends SimpleComponent implements C
         this.certificatePath = certificatePath;
         this.caCertificatePath = caCertificatePath;
         this.clientAuthentication = mapToConfigEnum(clientAuthentication);
+        this.cipherSuites = cipherSuites;
+        this.protocolVersions = protocolVersions;
     }
 
     @Override
     public void getConfig(ConnectorConfig.Builder builder) {
-        builder.ssl.enabled(true);
-        builder.ssl.privateKeyFile(privateKeyPath);
-        builder.ssl.certificateFile(certificatePath);
-        builder.ssl.caCertificateFile(Optional.ofNullable(caCertificatePath).orElse(""));
-        builder.ssl.clientAuth(clientAuthentication);
+        builder.ssl(
+                new ConnectorConfig.Ssl.Builder()
+                        .enabled(true)
+                        .privateKeyFile(privateKeyPath)
+                        .certificateFile(certificatePath)
+                        .caCertificateFile(Optional.ofNullable(caCertificatePath).orElse(""))
+                        .clientAuth(clientAuthentication)
+                        .enabledCipherSuites(cipherSuites)
+                        .enabledProtocols(protocolVersions));
     }
 
     public SimpleComponent getComponent() {
