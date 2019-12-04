@@ -8,9 +8,7 @@
 #include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/select/parser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <iomanip>
 #include <sstream>
 
 #include <vespa/log/log.h>

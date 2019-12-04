@@ -146,8 +146,8 @@ Test::testAdvanced(TestData &data)
     data._bazSession->reply(std::move(reply));
 
     // First retry.
-    msg = data._fooHandler.getMessage(duration::zero());
-    ASSERT_TRUE(msg.get() == NULL);
+    msg = data._fooHandler.getMessageNow();
+    ASSERT_FALSE(msg);
     msg = data._barHandler.getMessage(TIMEOUT);
     ASSERT_TRUE(msg);
     data._barSession->acknowledge(std::move(msg));
@@ -159,10 +159,10 @@ Test::testAdvanced(TestData &data)
     data._bazSession->reply(std::move(reply));
 
     // Second retry.
-    msg = data._fooHandler.getMessage(duration::zero());
-    ASSERT_TRUE(msg.get() == NULL);
-    msg = data._barHandler.getMessage(duration::zero());
-    ASSERT_TRUE(msg.get() == NULL);
+    msg = data._fooHandler.getMessageNow();
+    ASSERT_FALSE(msg);
+    msg = data._barHandler.getMessageNow();
+    ASSERT_FALSE(msg);
     msg = data._bazHandler.getMessage(TIMEOUT);
     ASSERT_TRUE(msg);
     reply.reset(new EmptyReply());
