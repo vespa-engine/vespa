@@ -6,4 +6,3 @@ vespa_install_script(src/main/sh/vespa-start-container-daemon.sh vespa-start-con
 install_config_definition(src/main/resources/configdefinitions/jdisc-bindings.def container.jdisc.jdisc-bindings.def)
 install_config_definition(src/main/resources/configdefinitions/jersey-connection.def container.config.jersey.jersey-connection.def)
 install_config_definition(src/main/resources/configdefinitions/jersey-web-app-pool.def container.config.jersey.jersey-web-app-pool.def)
-install_config_definition(src/main/resources/configdefinitions/score-board.def jdisc.metrics.yamasconsumer.cloud.score-board.def)

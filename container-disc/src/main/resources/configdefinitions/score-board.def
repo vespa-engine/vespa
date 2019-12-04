@@ -1,9 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=jdisc.metrics.yamasconsumer.cloud
-
-applicationName       string default="JDisc"
-step                  int    default=10 # in seconds
-flushTime             int    default=10 # in seconds
-histogram[].metric    string default=""
-histogram[].flags     int    default=0
-histogram[].buckets[] double
