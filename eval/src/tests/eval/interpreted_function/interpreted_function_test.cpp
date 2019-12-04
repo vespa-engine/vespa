@@ -151,24 +151,22 @@ TEST("require that basic addition works") {
 TEST("require that functions with non-compilable lambdas cannot be interpreted") {
     auto good_map = Function::parse("map(a,f(x)(x+1))");
     auto good_join = Function::parse("join(a,b,f(x,y)(x+y))");
-    auto good_tensor = Function::parse("tensor(a[10],b[10])(a+b)");
     auto bad_map = Function::parse("map(a,f(x)(map(x,f(i)(i+1))))");
     auto bad_join = Function::parse("join(a,b,f(x,y)(join(x,y,f(i,j)(i+j))))");
-    auto bad_tensor = Function::parse("tensor(a[10],b[10])(join(a,b,f(i,j)(i+j)))");
-    for (const Function *good: {&good_map, &good_join, &good_tensor}) {
+    for (const Function *good: {&good_map, &good_join}) {
         if (!EXPECT_TRUE(!good->has_error())) {
             fprintf(stderr, "parse error: %s\n", good->get_error().c_str());
         }
         EXPECT_TRUE(!InterpretedFunction::detect_issues(*good));
     }
-    for (const Function *bad: {&bad_map, &bad_join, &bad_tensor}) {
+    for (const Function *bad: {&bad_map, &bad_join}) {
         if (!EXPECT_TRUE(!bad->has_error())) {
             fprintf(stderr, "parse error: %s\n", bad->get_error().c_str());
         }
         EXPECT_TRUE(InterpretedFunction::detect_issues(*bad));
     }
     std::cerr << "Example function issues:" << std::endl
-              << InterpretedFunction::detect_issues(bad_tensor).list
+              << InterpretedFunction::detect_issues(bad_join).list
               << std::endl;
 }
 

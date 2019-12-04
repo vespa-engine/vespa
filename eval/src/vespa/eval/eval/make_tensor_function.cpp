@@ -20,18 +20,6 @@ using join_fun_t = double (*)(double, double);
 
 //-----------------------------------------------------------------------------
 
-bool step_labels(std::vector<double> &labels, const ValueType &type) {
-    for (size_t idx = labels.size(); idx-- > 0; ) {
-        labels[idx] += 1.0;
-        if (size_t(labels[idx]) < type.dimensions()[idx].size) {
-            return true;
-        } else {
-            labels[idx] = 0.0;
-        }
-    }
-    return false;
-}
-
 // TODO(havardpe): generic function pointer resolving for all single
 //                 operation lambdas.
 
@@ -95,6 +83,24 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.pop_back();
         const auto &a = stack.back();
         stack.back() = tensor_function::concat(a, b, dimension, stash);
+    }
+
+    bool maybe_make_const(const Node &node) {
+        if (auto create = as<TensorCreate>(node)) {
+            bool is_const = true;
+            for (size_t i = 0; i < create->num_children(); ++i) {
+                is_const &= create->get_child(i).is_const();
+            }
+            if (is_const) {
+                TensorSpec spec(create->type().to_spec());
+                for (size_t i = 0; i < create->num_children(); ++i) {
+                    spec.add(create->get_child_address(i), create->get_child(i).get_const_value());
+                }
+                make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
+                return true;
+            }
+        }
+        return false;
     }
 
     void make_create(const TensorCreate &node) {
@@ -196,22 +202,6 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorRename &node) override {
         make_rename(node, node.from(), node.to());
-    }
-    void visit(const TensorLambda &node) override {
-        const auto &type = node.type();
-        TensorSpec spec(type.to_spec());
-        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(node.lambda(), PassParams::ARRAY));
-        auto fun = token.get()->get().get_function();
-        std::vector<double> params(type.dimensions().size(), 0.0);
-        assert(token.get()->get().num_params() == params.size());
-        do {
-            TensorSpec::Address addr;
-            for (size_t i = 0; i < params.size(); ++i) {
-                addr.emplace(type.dimensions()[i].name, size_t(params[i]));
-            }
-            spec.add(addr, fun(&params[0]));
-        } while (step_labels(params, type));
-        make_const(node, *stash.create<Value::UP>(tensor_engine.from_spec(spec)));
     }
     void visit(const TensorConcat &node) override {
         make_concat(node, node.dimension());
@@ -348,7 +338,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     //-------------------------------------------------------------------------
 
-    bool open(const Node &) override { return true; }
+    bool open(const Node &node) override { return !maybe_make_const(node); }
     void close(const Node &node) override { node.accept(*this); }
 };
 

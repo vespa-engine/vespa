@@ -11,7 +11,6 @@ void TensorMap   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorJoin  ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorReduce::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorRename::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorLambda::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorConcat::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorCreate::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void TensorPeek  ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }

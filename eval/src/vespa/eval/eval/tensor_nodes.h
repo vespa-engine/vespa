@@ -156,30 +156,6 @@ public:
     }
 };
 
-class TensorLambda : public Leaf {
-private:
-    ValueType _type;
-    Function _lambda;
-public:
-    TensorLambda(ValueType type_in, Function lambda)
-        : _type(std::move(type_in)), _lambda(std::move(lambda)) {}
-    const ValueType &type() const { return _type; }
-    const Function &lambda() const { return _lambda; }
-    vespalib::string dump(DumpContext &) const override {
-        vespalib::string str = _type.to_spec();
-        vespalib::string expr = _lambda.dump();
-        if (starts_with(expr, "(")) {
-            str += expr;
-        } else {
-            str += "(";
-            str += expr;
-            str += ")";
-        }
-        return str;
-    }
-    void accept(NodeVisitor &visitor) const override;
-};
-
 class TensorConcat : public Node {
 private:
     Node_UP          _lhs;
