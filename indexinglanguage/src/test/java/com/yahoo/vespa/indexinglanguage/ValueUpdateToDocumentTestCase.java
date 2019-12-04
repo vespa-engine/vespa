@@ -138,6 +138,32 @@ public class ValueUpdateToDocumentTestCase {
     }
 
     @Test
+    public void array_of_struct_assign_is_converted() {
+        DocumentType docType = new DocumentType("my_type");
+        StructDataType structType = new StructDataType("my_struct");
+        structType.addField(new Field("a", DataType.INT));
+        ArrayDataType arrType = DataType.getArray(structType);
+        Field field = new Field("my_arr", arrType);
+        docType.addField(field);
+
+        var updatedStruct = new Struct(structType);
+        updatedStruct.setFieldValue("a", new IntegerFieldValue(42));
+        ValueUpdate update = ValueUpdate.createMap(new IntegerFieldValue(2), ValueUpdate.createAssign(updatedStruct));
+
+        Document doc = FieldUpdateHelper.newPartialDocument(docType, new DocumentId("id:foo:my_type::1"), field, update);
+        assertNotNull(doc);
+        // Due to how the roller coaster ride of the partial documents appear to work, we end up creating
+        // a document with an array that only contains the to-be-updated element, but always at the first
+        // index rather than the arbitrary updated index (which is good because otherwise it'd have to
+        // be pre-allocated).
+        FieldValue obj = doc.getFieldValue("my_arr");
+        assertTrue(obj instanceof Array);
+        Array arr = (Array)obj;
+        assertEquals(1, arr.size());
+        assertEquals(updatedStruct, arr.get(0));
+    }
+
+    @Test
     public void requireThatRemoveIsConverted() {
         DocumentType docType = new DocumentType("my_type");
         ArrayDataType arrType = DataType.getArray(DataType.INT);
