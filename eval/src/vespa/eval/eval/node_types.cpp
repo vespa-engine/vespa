@@ -105,9 +105,6 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         const ValueType &child = type(node.get_child(0));
         bind(child.rename(node.from(), node.to()), node);
     }
-    void visit(const TensorLambda &node) override {
-        bind(node.type(), node);
-    }
     void visit(const TensorConcat &node) override {
         bind(ValueType::concat(type(node.get_child(0)),
                                type(node.get_child(1)), node.dimension()), node);

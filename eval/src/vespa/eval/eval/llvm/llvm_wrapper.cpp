@@ -473,9 +473,6 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorRename &node) override {
         make_error(node.num_children());
     }
-    void visit(const TensorLambda &node) override {
-        make_error(node.num_children());
-    }
     void visit(const TensorConcat &node) override {
         make_error(node.num_children());
     }

@@ -130,7 +130,6 @@ CompiledFunction::detect_issues(const Function &function)
                                   nodes::TensorJoin,
                                   nodes::TensorReduce,
                                   nodes::TensorRename,
-                                  nodes::TensorLambda,
                                   nodes::TensorConcat,
                                   nodes::TensorCreate,
                                   nodes::TensorPeek>(node))

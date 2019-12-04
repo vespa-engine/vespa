@@ -33,7 +33,6 @@ struct NodeVisitor {
     virtual void visit(const nodes::TensorJoin   &) = 0;
     virtual void visit(const nodes::TensorReduce &) = 0;
     virtual void visit(const nodes::TensorRename &) = 0;
-    virtual void visit(const nodes::TensorLambda &) = 0;
     virtual void visit(const nodes::TensorConcat &) = 0;
     virtual void visit(const nodes::TensorCreate &) = 0;
     virtual void visit(const nodes::TensorPeek   &) = 0;
@@ -103,7 +102,6 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::TensorJoin   &) override {}
     void visit(const nodes::TensorReduce &) override {}
     void visit(const nodes::TensorRename &) override {}
-    void visit(const nodes::TensorLambda &) override {}
     void visit(const nodes::TensorConcat &) override {}
     void visit(const nodes::TensorCreate &) override {}
     void visit(const nodes::TensorPeek   &) override {}
