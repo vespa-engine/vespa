@@ -242,7 +242,7 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     _sortDataArray.resize(n);
 
     document::GlobalId gid;
-    for (uint32_t i(0), idx(0); (i < n) && !_doom.doom(); ++i) {
+    for (uint32_t i(0), idx(0); (i < n) && !_doom.hard_doom(); ++i) {
         uint32_t len = 0;
         for (auto iter = _vectors.begin(); iter != _vectors.end(); ++iter) {
             int written(0);

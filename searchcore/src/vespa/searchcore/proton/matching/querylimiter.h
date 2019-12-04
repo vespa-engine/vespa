@@ -7,8 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace proton {
-namespace matching {
+namespace proton::matching {
 
 class QueryLimiter
 {
@@ -46,6 +45,4 @@ private:
     volatile uint32_t _minHits;
 };
 
-} // namespace matching
-} // namespace proton
-
+}

@@ -73,16 +73,16 @@ private:
         void addHit(uint32_t docId) { _hits.addHit(docId, search::zero_rank_value); }
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
-        bool   atSoftDoom() const { return _softDoom.doom(); }
-        fastos::TimeStamp timeLeft() const { return _softDoom.left(); }
-        uint32_t                 matches;
+        bool   atSoftDoom() const { return _doom.soft_doom(); }
+        fastos::TimeStamp timeLeft() const { return _doom.soft_left(); }
+        uint32_t        matches;
     private:
-        uint32_t                 _matches_limit;
-        LazyValue                _score_feature;
-        RankProgram             &_ranking;
-        double                   _rankDropLimit;
-        HitCollector            &_hits;
-        const Doom              &_softDoom;
+        uint32_t        _matches_limit;
+        LazyValue       _score_feature;
+        RankProgram    &_ranking;
+        double          _rankDropLimit;
+        HitCollector   &_hits;
+        const Doom     &_doom;
     };
 
     double estimate_match_frequency(uint32_t matches, uint32_t searchedSoFar) __attribute__((noinline));
@@ -106,7 +106,7 @@ private:
 
     search::ResultSet::UP findMatches(MatchTools &tools);
 
-    void processResult(const Doom & hardDoom, search::ResultSet::UP result, ResultProcessor::Context &context);
+    void processResult(const Doom & doom, search::ResultSet::UP result, ResultProcessor::Context &context);
 
     bool isFirstThread() const { return thread_id == 0; }
 

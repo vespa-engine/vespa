@@ -7,6 +7,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/vespalib/util/doom.h>
 #include <memory>
 #include <vector>
 
@@ -29,7 +30,7 @@ class SimplePhraseSearch : public AndSearch
     std::vector<It> _iterators;
 
     void phraseSeek(uint32_t doc_id);
-    bool doom() const { return ((_doom != nullptr) && _doom->doom()); }
+    bool doom() const { return ((_doom != nullptr) && _doom->soft_doom()); }
 
 public:
     /**

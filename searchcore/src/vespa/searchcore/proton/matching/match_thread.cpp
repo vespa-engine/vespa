@@ -71,15 +71,14 @@ LazyValue get_score_feature(const RankProgram &rankProgram) {
 
 //-----------------------------------------------------------------------------
 
-MatchThread::Context::Context(double rankDropLimit, MatchTools &tools, HitCollector &hits,
-                              uint32_t num_threads)
+MatchThread::Context::Context(double rankDropLimit, MatchTools &tools, HitCollector &hits, uint32_t num_threads)
     : matches(0),
       _matches_limit(tools.match_limiter().sample_hits_per_thread(num_threads)),
       _score_feature(get_score_feature(tools.rank_program())),
       _ranking(tools.rank_program()),
       _rankDropLimit(rankDropLimit),
       _hits(hits),
-      _softDoom(tools.getSoftDoom())
+      _doom(tools.getDoom())
 {
 }
 
@@ -307,7 +306,7 @@ MatchThread::findMatches(MatchTools &tools)
             auto kept_hits = communicator.selectBest(sorted_hit_seq);
             select_best_timer.done();
             DocumentScorer scorer(tools.rank_program(), tools.search());
-            if (tools.getHardDoom().doom()) {
+            if (tools.getDoom().hard_doom()) {
                 kept_hits.clear();
             }
             uint32_t reRanked = hits.reRank(scorer, std::move(kept_hits));
@@ -330,16 +329,16 @@ MatchThread::findMatches(MatchTools &tools)
 }
 
 void
-MatchThread::processResult(const Doom & hardDoom,
+MatchThread::processResult(const Doom & doom,
                            search::ResultSet::UP result,
                            ResultProcessor::Context &context)
 {
-    if (hardDoom.doom()) return;
+    if (doom.hard_doom()) return;
     bool hasGrouping = (context.grouping.get() != 0);
     if (context.sort->hasSortData() || hasGrouping) {
         result->mergeWithBitOverflow(fallback_rank_value());
     }
-    if (hardDoom.doom()) return;
+    if (doom.hard_doom()) return;
     size_t             totalHits = result->getNumHits();
     const search::RankedHit *hits = result->getArray();
     size_t             numHits   = result->getArrayUsed();
@@ -347,20 +346,20 @@ MatchThread::processResult(const Doom & hardDoom,
     if (bits != nullptr && hits != nullptr) {
         bits->andNotWithT(search::RankedHitIterator(hits, numHits));
     }
-    if (hardDoom.doom()) return;
+    if (doom.hard_doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
         man.groupUnordered(hits, numHits, bits);
     }
-    if (hardDoom.doom()) return;
+    if (doom.hard_doom()) return;
     size_t sortLimit = hasGrouping ? numHits : context.result->maxSize();
     result->sort(*context.sort->sorter, sortLimit);
-    if (hardDoom.doom()) return;
+    if (doom.hard_doom()) return;
     if (hasGrouping) {
         search::grouping::GroupingManager man(*context.grouping);
         man.groupInRelevanceOrder(hits, numHits);
     }
-    if (hardDoom.doom()) return;
+    if (doom.hard_doom()) return;
     PartialResult &pr = *context.result;
     pr.totalHits(totalHits);
     size_t maxHits = std::min(numHits, pr.maxSize());
@@ -432,19 +431,19 @@ MatchThread::run()
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);
     match_time_s = match_time.elapsed().sec();
-    resultContext = resultProcessor.createThreadContext(matchTools->getHardDoom(), thread_id, _distributionKey);
+    resultContext = resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey);
     {
         trace->addEvent(5, "Wait for result processing token");
         WaitTimer get_token_timer(wait_time_s);
         QueryLimiter::Token::UP processToken(
-                matchTools->getQueryLimiter().getToken(matchTools->getHardDoom(),
+                matchTools->getQueryLimiter().getToken(matchTools->getDoom(),
                         scheduler.total_size(thread_id),
                         result->getNumHits(),
                         resultContext->sort->hasSortData(),
                         resultContext->grouping.get() != 0));
         get_token_timer.done();
         trace->addEvent(5, "Start result processing");
-        processResult(matchTools->getHardDoom(), std::move(result), *resultContext);
+        processResult(matchTools->getDoom(), std::move(result), *resultContext);
     }
     total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);

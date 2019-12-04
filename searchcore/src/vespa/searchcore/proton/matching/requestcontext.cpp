@@ -14,9 +14,9 @@ namespace proton {
 
 using search::attribute::IAttributeVector;
 
-RequestContext::RequestContext(const Doom & softDoom, IAttributeContext & attributeContext,
+RequestContext::RequestContext(const Doom & doom, IAttributeContext & attributeContext,
                                const search::fef::Properties& rank_properties)
-    : _softDoom(softDoom),
+    : _doom(doom),
       _attributeContext(attributeContext),
       _rank_properties(rank_properties)
 {

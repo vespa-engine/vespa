@@ -128,19 +128,22 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
 {
     const Properties & rankProperties = request.propertiesMap.rankProperties();
     bool softTimeoutEnabled = Enabled::lookup(rankProperties, _rankSetup->getSoftTimeoutEnabled());
+    bool hasFactorOverride = Factor::isPresent(rankProperties);
     double factor = softTimeoutEnabled
-                    ? Factor::lookup(rankProperties, _stats.softDoomFactor())
+                    ? ( hasFactorOverride
+                        ? Factor::lookup(rankProperties, _stats.softDoomFactor())
+                        : _stats.softDoomFactor())
                     : 0.95;
     int64_t safeLeft = request.getTimeLeft() * factor;
     fastos::SteadyTimeStamp safeDoom(_clock.getTimeNSAssumeRunning() + safeLeft);
     if (softTimeoutEnabled) {
-        LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, softTimeout=%" PRId64,
-                   _stats.softDoomFactor(), factor, safeLeft);
+        LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
+                   _stats.softDoomFactor(), factor, hasFactorOverride, safeLeft);
     }
-    return std::make_unique<MatchToolsFactory>(_queryLimiter, vespalib::Doom(_clock, safeDoom),
-                                               vespalib::Doom(_clock, request.getTimeOfDoom()), searchContext,
-                                               attrContext, request.getStackRef(), request.location, _viewResolver,
-                                               metaStore, _indexEnv, *_rankSetup, rankProperties, feature_overrides);
+    vespalib::Doom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
+    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request.getStackRef(),
+                                               request.location, _viewResolver, metaStore, _indexEnv, *_rankSetup,
+                                               rankProperties, feature_overrides);
 }
 
 SearchReply::UP
@@ -187,6 +190,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     SearchReply::UP reply = std::make_unique<SearchReply>();
     size_t covered = 0;
     uint32_t numActiveLids = 0;
+    bool isDoomExplicit = false;
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
         GroupingContext groupingContext(_clock, request.getTimeOfDoom(),
@@ -212,6 +216,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         }
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
                                                                metaStore, *feature_overrides);
+        isDoomExplicit = mtf->getRequestContext().getDoom().isExplicitSoftDoom();
         traceQuery(6, request.trace(), mtf->query());
         if (!mtf->valid()) {
             return reply;
@@ -288,19 +293,21 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
             double old = _stats.softDoomFactor();
-            fastos::TimeStamp softLimit = (1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout();
+            fastos::TimeStamp overtimeLimit = (1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout();
             fastos::TimeStamp adjustedDuration = duration - my_stats.doomOvertime();
             if (adjustedDuration < 0) {
                 adjustedDuration = 0;
             }
-            bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT);
+            bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
+                                                      && ! isDoomExplicit;
             if (allowedSoftTimeoutFactorAdjustment) {
-                _stats.updatesoftDoomFactor(request.getTimeout(), softLimit, adjustedDuration);
+                _stats.updatesoftDoomFactor(request.getTimeout(), overtimeLimit, adjustedDuration);
             }
-            LOG(info, "Triggered softtimeout factor adjustment. Coverage = %lu of %u documents. request=%1.3f, doomOvertime=%1.3f, limit=%1.3f and duration=%1.3f, rankprofile=%s"
+            LOG(info, "Triggered softtimeout %s. Coverage = %lu of %u documents. request=%1.3f, doomOvertime=%1.3f, overtime_limit=%1.3f and duration=%1.3f, rankprofile=%s"
                       ", factor %sadjusted from %1.3f to %1.3f",
+                isDoomExplicit ? "with query override" : "factor adjustment",
                 covered, numActiveLids,
-                request.getTimeout().sec(), my_stats.doomOvertime().sec(), softLimit.sec(), duration.sec(),
+                request.getTimeout().sec(), my_stats.doomOvertime().sec(), overtimeLimit.sec(), duration.sec(),
                 request.ranking.c_str(), (allowedSoftTimeoutFactorAdjustment ? "" : "NOT "), old, _stats.softDoomFactor());
         }
     }

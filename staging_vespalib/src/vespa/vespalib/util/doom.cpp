@@ -4,10 +4,12 @@
 
 namespace vespalib {
 
-Doom::Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp timeOfDoom) :
-    _clock(clock),
-    _timeOfDoom(timeOfDoom)
-{
-}
+Doom::Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp softDoom,
+           fastos::SteadyTimeStamp hardDoom, bool explicitSoftDoom)
+    : _clock(clock),
+      _softDoom(softDoom),
+      _hardDoom(hardDoom),
+      _isExplicitSoftDoom(explicitSoftDoom)
+{ }
 
-} // namespace vespalib
+}

@@ -85,7 +85,7 @@ ResultProcessor::prepareThreadContextCreation(size_t num_threads)
     if (num_threads > 1) {
         _wasMerged = true;
     }
-    if (_groupingSession.get() != 0) {
+    if (_groupingSession) {
         _groupingSession->prepareThreadContextCreation(num_threads);
     }
 }

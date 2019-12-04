@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search::attribute { class IAttributeVector; }
 namespace vespalib::eval { class Value; }
+namespace vespalib { class Doom; }
 
 namespace search::queryeval {
 
@@ -22,7 +22,7 @@ public:
      * Provides the time of soft doom for the query. Now it is time to start cleaning up and return what you have.
      * @return time of soft doom.
      */
-    virtual const vespalib::Doom & getSoftDoom() const = 0;
+    virtual const vespalib::Doom & getDoom() const = 0;
 
     /**
      * Provide access to attributevectors

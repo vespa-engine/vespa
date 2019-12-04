@@ -26,12 +26,12 @@ public:
 
 class RequestContextTest : public ::testing::Test {
 private:
-    vespalib::Clock _clock;
-    vespalib::Doom _doom;
-    MyAttributeContext _attr_ctx;
-    Properties _props;
-    RequestContext _request_ctx;
-    Value::UP _query_tensor;
+    vespalib::Clock        _clock;
+    vespalib::Doom         _doom;
+    MyAttributeContext     _attr_ctx;
+    Properties             _props;
+    RequestContext         _request_ctx;
+    Value::UP              _query_tensor;
 
     void insert_tensor_in_properties(const vespalib::string& tensor_name, const Value& tensor_value) {
         vespalib::nbostream stream;
@@ -42,7 +42,7 @@ private:
 public:
     RequestContextTest()
         : _clock(),
-          _doom(_clock, fastos::SteadyTimeStamp()),
+          _doom(_clock, fastos::SteadyTimeStamp::ZERO, fastos::SteadyTimeStamp::ZERO, false),
           _attr_ctx(),
           _props(),
           _request_ctx(_doom, _attr_ctx, _props),

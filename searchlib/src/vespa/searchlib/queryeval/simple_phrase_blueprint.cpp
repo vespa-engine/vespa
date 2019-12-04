@@ -11,7 +11,7 @@ namespace search::queryeval {
 
 SimplePhraseBlueprint::SimplePhraseBlueprint(const FieldSpec &field, const IRequestContext & requestContext, bool expensive)
     : ComplexLeafBlueprint(field),
-      _doom(requestContext.getSoftDoom()),
+      _doom(requestContext.getDoom()),
       _field(field),
       _estimate(),
       _layout(),

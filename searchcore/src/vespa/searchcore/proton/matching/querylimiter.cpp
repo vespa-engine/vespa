@@ -2,8 +2,7 @@
 #include "querylimiter.h"
 #include <chrono>
 
-namespace proton {
-namespace matching {
+namespace proton:: matching {
 
 QueryLimiter::LimitedToken::LimitedToken(const Doom & doom, QueryLimiter & limiter) :
     _limiter(limiter)
@@ -20,8 +19,8 @@ void
 QueryLimiter::grabToken(const Doom & doom)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    while ((_maxThreads > 0) && (_activeThreads >= _maxThreads) && !doom.doom()) {
-        int left = doom.left().ms();
+    while ((_maxThreads > 0) && (_activeThreads >= _maxThreads) && !doom.hard_doom()) {
+        int left = doom.hard_left().ms();
         if (left > 0) {
             _cond.wait_for(guard, std::chrono::milliseconds(left));
         }
@@ -62,13 +61,12 @@ QueryLimiter::getToken(const Doom & doom, uint32_t numDocs, uint32_t numHits, bo
         if (hasSorting || hasGrouping) {
             if (numHits > _minHits) {
                 if (numDocs * _coverage < numHits) {
-                    return Token::UP(new LimitedToken(doom, *this));
+                    return std::make_unique<LimitedToken>(doom, *this);
                 }
             }
         }
     }
-    return Token::UP(new NoLimitToken());
+    return std::make_unique<NoLimitToken>();
 }
 
-}
 }

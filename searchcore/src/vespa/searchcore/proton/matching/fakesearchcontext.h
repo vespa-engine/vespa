@@ -6,6 +6,7 @@
 #include <vespa/searchcorespi/index/fakeindexsearchable.h>
 #include <vespa/searchcorespi/index/indexcollection.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
+#include <vespa/vespalib/util/doom.h>
 #include <algorithm>
 #include <map>
 #include <vector>
