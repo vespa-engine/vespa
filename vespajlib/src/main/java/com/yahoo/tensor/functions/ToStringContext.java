@@ -3,13 +3,27 @@ package com.yahoo.tensor.functions;
 
 /**
  * A context which is passed down to all nested functions when returning a string representation.
- * The default implementation is empty as this library does not in itself have any need for a
- * context.
  *
  * @author bratseth
  */
 public interface ToStringContext {
 
-    static ToStringContext empty() { return new ToStringContext() {}; }
+    static ToStringContext empty() { return new EmptyStringContext(); }
+
+    /** Returns the name an identifier is bound to, or null if not bound in this context */
+    String getBinding(String name);
+
+    /** Returns another context this wraps, or null if none is wrapped */
+    ToStringContext wrapped();
+
+    class EmptyStringContext implements ToStringContext {
+
+        @Override
+        public String getBinding(String name) { return null; }
+
+        @Override
+        public ToStringContext wrapped() { return null; }
+
+    }
 
 }

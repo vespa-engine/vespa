@@ -198,6 +198,12 @@ public class RankingExpressionTestCase {
         assertSerialization(List.of("tensor(x{}):{{x:foo}:rankingExpression(scalarFunction),{x:bar}:rankingExpression(scalarFunction)}"),
                             "tensor(x{}):{{x:foo}:scalarFunction(), {x:bar}:scalarFunction()}",
                             functions, false);
+
+        // Shadowing
+        assertSerialization(List.of("tensor(scalarFunction[1])(rankingExpression(tensorFunction){x:scalarFunction + rankingExpression(scalarFunction)})"),
+                            "tensor(scalarFunction[1])(tensorFunction{x: scalarFunction + scalarFunction()})",
+                            functions, false);
+
     }
 
     @Test

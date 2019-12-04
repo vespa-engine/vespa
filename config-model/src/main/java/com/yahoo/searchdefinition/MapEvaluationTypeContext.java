@@ -108,7 +108,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (FeatureNames.isSimpleFeature(reference)) {
                 // The argument may be a local identifier bound to the actual value
                 String argument = reference.simpleArgument().get();
-                reference = Reference.simple(reference.name(), bindings.getOrDefault(argument, argument));
+                String argumentBinding = getBinding(argument);
+                reference = Reference.simple(reference.name(), argumentBinding != null ? argumentBinding : argument);
                 return featureTypes.get(reference);
             }
 
@@ -152,7 +153,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     private Optional<String> boundIdentifier(Reference reference) {
         if ( ! reference.arguments().isEmpty()) return Optional.empty();
         if ( reference.output() != null) return Optional.empty();
-        return Optional.ofNullable(bindings.get(reference.name()));
+        return Optional.ofNullable(getBinding(reference.name()));
     }
 
     private Optional<ExpressionFunction> functionInvocation(Reference reference) {
@@ -203,8 +204,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
             String identifier = invocationArguments.expressions().get(i).toString();
-            identifier = super.bindings.getOrDefault(identifier, identifier);
-            bindings.put(formalArguments.get(i), identifier);
+            String identifierBinding = super.getBinding(identifier);
+            bindings.put(formalArguments.get(i), identifierBinding != null ? identifierBinding : identifier);
         }
         return bindings;
     }
@@ -215,7 +216,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
-        if (bindings.isEmpty() && this.bindings.isEmpty()) return this;
         return new MapEvaluationTypeContext(functions(), bindings, featureTypes, currentResolutionCallStack);
     }
 

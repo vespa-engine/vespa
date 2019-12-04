@@ -91,7 +91,7 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor.Builder builder = Tensor.Builder.of(type);
         IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(dimensionSizes(type));
-        GenerateContext generateContext = new GenerateContext(type, context);
+        GenerateEvaluationContext generateContext = new GenerateEvaluationContext(type, context);
         for (int i = 0; i < indexes.size(); i++) {
             indexes.next();
             builder.cell(generateContext.apply(indexes), indexes.indexesForReading());
@@ -113,7 +113,7 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
         if (freeGenerator != null)
             return freeGenerator.toString();
         else
-            return boundGenerator.toString(context);
+            return boundGenerator.toString(new GenerateToStringContext(context));
     }
 
     /**
@@ -121,19 +121,18 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
      * This returns all the current index values as variables and falls back to delivering from the given
      * evaluation context.
      */
-    private class GenerateContext implements EvaluationContext<NAMETYPE> {
+    private class GenerateEvaluationContext implements EvaluationContext<NAMETYPE> {
 
         private final TensorType type;
         private final EvaluationContext<NAMETYPE> context;
 
         private IndexedTensor.Indexes indexes;
 
-        GenerateContext(TensorType type, EvaluationContext<NAMETYPE> context) {
+        GenerateEvaluationContext(TensorType type, EvaluationContext<NAMETYPE> context) {
             this.type = type;
             this.context = context;
         }
 
-        @SuppressWarnings("unchecked")
         double apply(IndexedTensor.Indexes indexes) {
             if (freeGenerator != null) {
                 return freeGenerator.apply(indexes.toList());
@@ -170,6 +169,28 @@ public class Generate<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
             else
                 return context.getType(name);
         }
+
+    }
+
+    /** A context which adds the bindings of the generate dimension names to the given context. */
+    private class GenerateToStringContext implements ToStringContext {
+
+        private final ToStringContext context;
+
+        public GenerateToStringContext(ToStringContext context) {
+            this.context = context;
+        }
+
+        @Override
+        public String getBinding(String identifier) {
+            if (type.dimension(identifier).isPresent())
+                return identifier; // dimension names are bound but not substituted in the generate context
+            else
+                return context.getBinding(identifier);
+        }
+
+        @Override
+        public ToStringContext wrapped() { return context; }
 
     }
 

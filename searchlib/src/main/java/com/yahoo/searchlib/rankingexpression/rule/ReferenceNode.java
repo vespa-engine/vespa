@@ -68,7 +68,7 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
-        // A reference to a function argument?
+        // A reference to an identifier (function argument or bound variable)?
         if (reference.isIdentifier() && context.getBinding(getName()) != null) {
             // a bound identifier: replace by the value it is bound to
             return string.append(context.getBinding(getName()));
@@ -89,6 +89,8 @@ public final class ReferenceNode extends CompositeNode {
             context.addFunctionSerialization(RankingExpression.propertyName(instance.getName()), instance.getExpressionString());
             return string.append("rankingExpression(").append(instance.getName()).append(')');
         }
+
+
         // Not resolved in this context: output as-is
         return reference.toString(string, context, path, parent);
     }

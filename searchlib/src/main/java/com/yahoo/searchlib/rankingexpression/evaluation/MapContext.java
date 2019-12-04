@@ -69,7 +69,7 @@ public class MapContext extends Context {
      * Sets the value of a key. The value is frozen by this.
      */
     @Override
-    public void put(String key,Value value) {
+    public void put(String key, Value value) {
         bindings.put(key, value.freeze());
     }
 
