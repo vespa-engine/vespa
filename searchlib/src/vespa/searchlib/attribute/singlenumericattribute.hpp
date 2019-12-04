@@ -174,9 +174,14 @@ SingleValueNumericAttribute<B>::clearDocs(DocId lidLow, DocId lidLimit)
 {
     assert(lidLow <= lidLimit);
     assert(lidLimit <= this->getNumDocs());
+    uint32_t count = 0;
+    constexpr uint32_t commit_interval = 1000;
     for (DocId lid = lidLow; lid < lidLimit; ++lid) {
         if (!attribute::isUndefined(_data[lid])) {
             this->clearDoc(lid);
+        }
+        if ((++count % commit_interval) == 0) {
+            this->commit();
         }
     }
 }
