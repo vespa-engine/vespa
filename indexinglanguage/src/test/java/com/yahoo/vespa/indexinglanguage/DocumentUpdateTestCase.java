@@ -9,6 +9,7 @@ import com.yahoo.document.update.AddValueUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
+import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -66,14 +67,19 @@ public class DocumentUpdateTestCase {
         assertTrue(upd.getCreateIfNonExistent());
     }
 
-    @Test
-    public void assign_updates_to_structs_are_preserved() throws ParseException {
-        var docType = new DocumentType("my_input");
+    private static StructDataType makeStructType() {
         var structType = new StructDataType("foobarstruct");
         var fooField = new Field("foo", DataType.STRING);
         var barField = new Field("bar", DataType.STRING);
         structType.addField(fooField);
         structType.addField(barField);
+        return structType;
+    }
+
+    @Test
+    public void assign_updates_to_structs_are_preserved() throws ParseException {
+        var docType = new DocumentType("my_input");
+        var structType = makeStructType();
         docType.addField(new Field("mystruct", structType));
 
         var upd = new DocumentUpdate(docType, "id:scheme:my_input::");
@@ -91,4 +97,59 @@ public class DocumentUpdateTestCase {
         var av = (AssignValueUpdate)valueUpdate;
         assertEquals(av.getValue(), updatedStruct);
     }
+
+    @Test
+    public void assign_matched_array_of_structs_element_update_is_preserved() throws ParseException {
+        var docType = new DocumentType("my_input");
+        var structType = makeStructType();
+        var arrayType = ArrayDataType.getArray(structType);
+        docType.addField(new Field("my_array", arrayType));
+
+        var updatedStruct = new Struct(structType);
+        updatedStruct.setFieldValue("foo", new StringFieldValue("new groovy value"));
+        updatedStruct.setFieldValue("bar", new StringFieldValue("totally tubular!"));
+
+        var upd = new DocumentUpdate(docType, "id:scheme:my_input::");
+        var assignUpdate = ValueUpdate.createAssign(updatedStruct);
+        upd.addFieldUpdate(FieldUpdate.createMap(docType.getField("my_array"),
+                new IntegerFieldValue(2), assignUpdate));
+
+        upd = Expression.execute(Expression.fromString("input my_array | passthrough my_array"), upd);
+
+        assertEquals(upd.fieldUpdates().size(), 1);
+        var fieldUpdate = upd.getFieldUpdate("my_array");
+        assertNotNull(fieldUpdate);
+        var valueUpdate = fieldUpdate.getValueUpdate(0);
+        assertTrue(valueUpdate instanceof MapValueUpdate);
+        var mvu = (MapValueUpdate)valueUpdate;
+        assertEquals(mvu.getValue(), new IntegerFieldValue(2));
+        assertEquals(mvu.getUpdate(), assignUpdate);
+    }
+
+    @Test
+    public void assign_matched_array_of_primitives_element_update_is_preserved() throws ParseException {
+        var docType = new DocumentType("my_input");
+        var arrayType = ArrayDataType.getArray(DataType.INT);
+        docType.addField(new Field("my_array", arrayType));
+
+        var upd = new DocumentUpdate(docType, "id:scheme:my_input::");
+        // Use an unreasonably large array index to ensure nothing creates an implicit array under the
+        // hood when processing the update itself. "Ensure" here means "the test will most likely OOM
+        // and we'll notice it pretty quickly".
+        var arrayIndex = new IntegerFieldValue(2_000_000_000);
+        var assignUpdate = ValueUpdate.createAssign(new IntegerFieldValue(12345));
+        upd.addFieldUpdate(FieldUpdate.createMap(docType.getField("my_array"), arrayIndex, assignUpdate));
+
+        upd = Expression.execute(Expression.fromString("input my_array | passthrough my_array"), upd);
+
+        assertEquals(upd.fieldUpdates().size(), 1);
+        var fieldUpdate = upd.getFieldUpdate("my_array");
+        assertNotNull(fieldUpdate);
+        var valueUpdate = fieldUpdate.getValueUpdate(0);
+        assertTrue(valueUpdate instanceof MapValueUpdate);
+        var mvu = (MapValueUpdate)valueUpdate;
+        assertEquals(mvu.getValue(), arrayIndex);
+        assertEquals(mvu.getUpdate(), assignUpdate);
+    }
+
 }

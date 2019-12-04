@@ -207,7 +207,9 @@ public class FieldUpdateAdapter implements UpdateAdapter {
             for (Iterator<FieldValue> it = arr.fieldValueIterator(); it.hasNext();) {
                 FieldValue childVal = it.next();
                 for (ValueUpdate childUpd : createValueUpdates(childVal, upd.getUpdate())) {
-                    ret.add(new MapValueUpdate(childVal, childUpd));
+                    // The array update is always directed towards a particular array index, which is
+                    // kept as the _value_ in the original update.
+                    ret.add(new MapValueUpdate(upd.getValue(), childUpd));
                 }
             }
             return ret;

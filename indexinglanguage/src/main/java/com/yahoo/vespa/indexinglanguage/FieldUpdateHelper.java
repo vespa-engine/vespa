@@ -88,7 +88,15 @@ public abstract class FieldUpdateHelper {
             return val;
         } else if (upd instanceof MapValueUpdate) {
             if (val instanceof Array) {
-                return createFieldValue(val, ((MapValueUpdate)upd).getUpdate());
+                var nestedUpdate = ((MapValueUpdate)upd).getUpdate();
+                if (nestedUpdate instanceof AssignValueUpdate) {
+                    // Can't assign an array's value type directly to the array, so we have to add it as a
+                    // singular element to the partial document.
+                    ((Array)val).add(nestedUpdate.getValue());
+                    return val;
+                } else {
+                    return createFieldValue(val, nestedUpdate);
+                }
             } else if (val instanceof MapFieldValue) {
                 throw new UnsupportedOperationException("Can not map into a " + val.getClass().getName() + ".");
             } else if (val instanceof StructuredFieldValue) {
