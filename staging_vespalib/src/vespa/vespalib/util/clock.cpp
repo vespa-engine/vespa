@@ -41,9 +41,8 @@ Updater::Updater(Clock & clock, double timePeriod)
 Updater::~Updater() = default;
 
 void
-Updater::Run(FastOS_ThreadInterface *thread, void *arguments)
+Updater::Run(FastOS_ThreadInterface *thread, void *)
 {
-    (void) arguments;
     _clock._running = true;
     std::unique_lock<std::mutex> guard(_lock);
     while ( ! thread->GetBreakFlag() && !_stop) {
@@ -73,7 +72,9 @@ Clock::Clock(double timePeriod) :
 
 Clock::~Clock()
 {
-    _updater.reset();
+    if (_running) {
+        _updater->GetThread()->Join();
+    }
     assert(!_running);
 }
 

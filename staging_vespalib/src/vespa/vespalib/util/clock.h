@@ -22,7 +22,7 @@ class Clock
 private:
     mutable std::atomic<int64_t>              _timeNS;
     std::unique_ptr<clock::internal::Updater> _updater;
-    bool                                      _running;
+    std::atomic<bool>                         _running;
 
     void setTime() const;
     void start();

@@ -148,7 +148,7 @@ public:
     /**
      * Destructor. Closes pool if necessary.
      */
-    virtual ~FastOS_ThreadPool(void);
+    virtual ~FastOS_ThreadPool();
 
 
     /**
@@ -168,9 +168,9 @@ public:
      * Get the stack size used for threads in this pool.
      * @return          Stack size in bytes.
      */
-    int GetStackSize(void) const { return _stackSize; }
+    int GetStackSize() const { return _stackSize; }
 
-    int GetStackGuardSize(void) const { return 0; }
+    int GetStackGuardSize() const { return 0; }
 
     /**
      * Close the threadpool. This involves setting the break flag on
@@ -469,7 +469,7 @@ public:
  */
 class FastOS_Runnable
 {
-protected:
+private:
     friend class FastOS_ThreadInterface;
     FastOS_ThreadInterface *_thread;
 
@@ -498,10 +498,9 @@ public:
      */
     virtual void Run(FastOS_ThreadInterface *thisThread, void *arguments)=0;
 
-    FastOS_ThreadInterface *GetThread(void)             { return _thread; }
-    const FastOS_ThreadInterface *GetThread(void) const { return _thread; }
-    bool HasThread(void)                          const { return _thread != nullptr; }
-    void Detach(void);
+    FastOS_ThreadInterface *GetThread()             { return _thread; }
+    const FastOS_ThreadInterface *GetThread() const { return _thread; }
+    bool HasThread()                          const { return _thread != nullptr; }
 };
 
 #include <vespa/fastos/unix_thread.h>

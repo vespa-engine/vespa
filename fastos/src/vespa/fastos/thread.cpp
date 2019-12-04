@@ -352,17 +352,12 @@ void FastOS_ThreadInterface::Join ()
 // FastOS_Runnable
 // ----------------------------------------------------------------------
 
-FastOS_Runnable::FastOS_Runnable(void)
+FastOS_Runnable::FastOS_Runnable()
     : _thread(nullptr)
 {
 }
 
-FastOS_Runnable::~FastOS_Runnable(void)
+FastOS_Runnable::~FastOS_Runnable()
 {
     //      assert(_thread == nullptr);
-}
-
-void FastOS_Runnable::Detach(void)
-{
-    _thread = nullptr;
 }
