@@ -6,6 +6,7 @@
   "hostname": "dockerhost1.yahoo.com",
   "openStackId": "dockerhost1",
   "flavor": "large",
+  "cpuCores": 4.0,
   "resources":{"vcpu":4.0,"memoryGb":32.0,"diskGb":1600.0,"bandwidthGbps":20.0,"diskSpeed":"fast"},
   "environment": "BARE_METAL",
   "owner": {

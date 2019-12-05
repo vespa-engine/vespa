@@ -147,6 +147,8 @@ class NodesResponse extends HttpResponse {
         }
         object.setString("openStackId", node.id());
         object.setString("flavor", node.flavor().name());
+        if (node.flavor().isConfigured())
+            object.setDouble("cpuCores", node.flavor().getMinCpuCores());
         toSlime(node.flavor().resources(), object.setObject("resources"));
         if (node.flavor().cost() > 0)
             object.setLong("cost", node.flavor().cost());
