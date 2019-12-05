@@ -6,6 +6,7 @@
   "hostname": "cfg2.yahoo.com",
   "openStackId": "cfg2",
   "flavor": "default",
+  "cpuCores": 2.0,
   "resources":{"vcpu":2.0,"memoryGb":16.0,"diskGb":400.0,"bandwidthGbps":10.0,"diskSpeed":"fast","storageType":"remote"},
   "environment": "BARE_METAL",
   "rebootGeneration": 1,

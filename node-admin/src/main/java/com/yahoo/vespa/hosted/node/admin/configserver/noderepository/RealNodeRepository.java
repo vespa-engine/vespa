@@ -157,6 +157,7 @@ public class RealNodeRepository implements NodeRepository {
                 nodeState,
                 nodeType,
                 node.flavor,
+                Optional.ofNullable(node.cpuCores),
                 Optional.ofNullable(node.wantedVespaVersion).map(Version::fromString),
                 Optional.ofNullable(node.vespaVersion).map(Version::fromString),
                 Optional.ofNullable(node.wantedOsVersion).map(Version::fromString),

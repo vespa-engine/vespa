@@ -25,6 +25,7 @@ public class NodeSpec {
     private final NodeState state;
     private final NodeType type;
     private final String flavor;
+    private final Optional<Double> cpuCores;
 
     private final Optional<DockerImage> wantedDockerImage;
     private final Optional<DockerImage> currentDockerImage;
@@ -66,6 +67,7 @@ public class NodeSpec {
             NodeState state,
             NodeType type,
             String flavor,
+            Optional<Double> cpuCores,
             Optional<Version> wantedVespaVersion,
             Optional<Version> currentVespaVersion,
             Optional<Version> wantedOsVersion,
@@ -99,7 +101,8 @@ public class NodeSpec {
         this.state = Objects.requireNonNull(state);
         this.type = Objects.requireNonNull(type);
         this.flavor = Objects.requireNonNull(flavor);
-        this.modelName = modelName;
+        this.cpuCores = Objects.requireNonNull(cpuCores);
+        this.modelName = Objects.requireNonNull(modelName);
         this.wantedVespaVersion = Objects.requireNonNull(wantedVespaVersion);
         this.currentVespaVersion = Objects.requireNonNull(currentVespaVersion);
         this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion);
@@ -135,6 +138,10 @@ public class NodeSpec {
 
     public String flavor() {
         return flavor;
+    }
+
+    public Optional<Double> cpuCores() {
+        return cpuCores;
     }
 
     public Optional<DockerImage> wantedDockerImage() {
@@ -256,6 +263,7 @@ public class NodeSpec {
                 Objects.equals(state, that.state) &&
                 Objects.equals(type, that.type) &&
                 Objects.equals(flavor, that.flavor) &&
+                Objects.equals(cpuCores, that.cpuCores) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(currentVespaVersion, that.currentVespaVersion) &&
                 Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
@@ -286,6 +294,7 @@ public class NodeSpec {
                 state,
                 type,
                 flavor,
+                cpuCores,
                 wantedVespaVersion,
                 currentVespaVersion,
                 wantedOsVersion,
@@ -316,6 +325,7 @@ public class NodeSpec {
                 + " state=" + state
                 + " type=" + type
                 + " flavor=" + flavor
+                + " cpuCores=" + cpuCores
                 + " wantedVespaVersion=" + wantedVespaVersion
                 + " currentVespaVersion=" + currentVespaVersion
                 + " wantedOsVersion=" + wantedOsVersion
@@ -343,6 +353,7 @@ public class NodeSpec {
         private NodeState state;
         private NodeType type;
         private String flavor;
+        private Optional<Double> cpuCores = Optional.empty();
         private Optional<DockerImage> wantedDockerImage = Optional.empty();
         private Optional<DockerImage> currentDockerImage = Optional.empty();
         private Optional<Version> wantedVespaVersion = Optional.empty();
@@ -379,7 +390,7 @@ public class NodeSpec {
             wantedRebootGeneration(node.wantedRebootGeneration);
             currentRebootGeneration(node.currentRebootGeneration);
             reports(new NodeReports(node.reports));
-
+            node.cpuCores.ifPresent(this::cpuCores);
             node.wantedDockerImage.ifPresent(this::wantedDockerImage);
             node.currentDockerImage.ifPresent(this::currentDockerImage);
             node.wantedVespaVersion.ifPresent(this::wantedVespaVersion);
@@ -424,6 +435,11 @@ public class NodeSpec {
 
         public Builder flavor(String flavor) {
             this.flavor = flavor;
+            return this;
+        }
+
+        public Builder cpuCores(double cpuCores) {
+            this.cpuCores = Optional.of(cpuCores);
             return this;
         }
 
@@ -656,7 +672,7 @@ public class NodeSpec {
         }
 
         public NodeSpec build() {
-            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor,
+            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor, cpuCores,
                     wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, allowedToBeDown, wantToDeprovision,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,

@@ -6,6 +6,7 @@
   "hostname": "parent2.yahoo.com",
   "openStackId": "parent2.yahoo.com",
   "flavor": "large-variant",
+  "cpuCores": 64.0,
   "resources": {"vcpu":64.0,"memoryGb":128.0,"diskGb":2000.0,"bandwidthGbps":15.0,"diskSpeed":"fast","storageType":"remote"},
   "environment": "BARE_METAL",
   "rebootGeneration": 0,
