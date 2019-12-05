@@ -8,6 +8,7 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,6 +47,9 @@ public final class ConnectionParams {
         private boolean printTraceToStdErr = true;
         private boolean useTlsConfigFromEnvironment = false;
         private Duration connectionTimeToLive = Duration.ofSeconds(15);
+        private Path privateKey;
+        private Path certificate;
+        private Path caCertificates;
 
         /**
          * Use TLS configuration through the standard Vespa environment variables.
@@ -77,6 +81,23 @@ public final class ConnectionParams {
          */
         public Builder setHostnameVerifier(HostnameVerifier hostnameVerifier) {
             this.hostnameVerifier = hostnameVerifier;
+            return this;
+        }
+
+        /**
+         * Set path to private key and certificate files. Both the private key and certificate must be PEM-encoded.
+         */
+        public Builder setCertificateAndPrivateKey(Path privateKey, Path certificate) {
+            this.privateKey = privateKey;
+            this.certificate = certificate;
+            return this;
+        }
+
+        /**
+         * Set path a PEM file containing the CA certificates.
+         */
+        public Builder setCaCertificates(Path caCertificates) {
+            this.caCertificates = caCertificates;
             return this;
         }
 
@@ -240,6 +261,9 @@ public final class ConnectionParams {
         public ConnectionParams build() {
             return new ConnectionParams(
                     sslContext,
+                    privateKey,
+                    certificate,
+                    caCertificates,
                     hostnameVerifier,
                     headers,
                     headerProviders,
@@ -302,8 +326,14 @@ public final class ConnectionParams {
         public Duration getConnectionTimeToLive() {
             return connectionTimeToLive;
         }
+        public Path getPrivateKey() { return privateKey; }
+        public Path getCertificate() { return certificate; }
+        public Path getCaCertificates() { return caCertificates; }
     }
     private final SSLContext sslContext;
+    private final Path privateKey;
+    private final Path certificate;
+    private final Path caCertificates;
     private final HostnameVerifier hostnameVerifier;
     private final Multimap<String, String> headers = ArrayListMultimap.create();
     private final Map<String, HeaderProvider> headerProviders = new HashMap<>();
@@ -322,6 +352,7 @@ public final class ConnectionParams {
 
     private ConnectionParams(
             SSLContext sslContext,
+            Path privateKey, Path certificate, Path caCertificates,
             HostnameVerifier hostnameVerifier,
             Multimap<String, String> headers,
             Map<String, HeaderProvider> headerProviders,
@@ -338,6 +369,9 @@ public final class ConnectionParams {
             boolean useTlsConfigFromEnvironment,
             Duration connectionTimeToLive) {
         this.sslContext = sslContext;
+        this.privateKey = privateKey;
+        this.certificate = certificate;
+        this.caCertificates = caCertificates;
         this.hostnameVerifier = hostnameVerifier;
         this.useTlsConfigFromEnvironment = useTlsConfigFromEnvironment;
         this.connectionTimeToLive = connectionTimeToLive;
@@ -427,8 +461,9 @@ public final class ConnectionParams {
      *
      * Important: The implementation of {@link #getHeaderValue()} must be thread-safe!
      */
-    public interface HeaderProvider {
-        String getHeaderValue();
-    }
+    public interface HeaderProvider { String getHeaderValue(); }
 
+    public Path getPrivateKey() { return privateKey; }
+    public Path getCertificate() { return certificate; }
+    public Path getCaCertificates() { return caCertificates; }
 }

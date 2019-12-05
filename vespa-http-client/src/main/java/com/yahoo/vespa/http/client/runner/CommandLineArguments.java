@@ -2,7 +2,6 @@
 package com.yahoo.vespa.http.client.runner;
 
 import com.google.common.base.Splitter;
-import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -19,13 +18,14 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.message.BasicLineParser;
 
 import javax.inject.Inject;
-import javax.net.ssl.SSLContext;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -253,19 +253,11 @@ public class CommandLineArguments {
 
     public boolean getAddRootElementToXml() { return addRootElementToXml; }
 
-    private SSLContext createSslContext() {
-        SslContextBuilder builder = new SslContextBuilder();
-        if (privateKeyPath != null && certificatePath != null) {
-            builder.withKeyStore(Paths.get(privateKeyPath), Paths.get(certificatePath));
-        }
-        if (caCertificatesPath != null) {
-            builder.withTrustStore(Paths.get(caCertificatesPath));
-        }
-        return builder.build();
-    }
-
     SessionParams createSessionParams(boolean useJson) {
         final int minThrottleValue = useDynamicThrottlingArg ? 10 : 0;
+        Path privateKeyPath = Optional.ofNullable(this.privateKeyPath).map(Paths::get).orElse(null);
+        Path certificatePath = Optional.ofNullable(this.certificatePath).map(Paths::get).orElse(null);
+        Path caCertificatesPath = Optional.ofNullable(this.caCertificatesPath).map(Paths::get).orElse(null);
         ConnectionParams.Builder connectionParamsBuilder = new ConnectionParams.Builder();
         parsedHeaders.forEach(header -> connectionParamsBuilder.addHeader(header.getName(), header.getValue()));
         SessionParams.Builder builder = new SessionParams.Builder()
@@ -295,7 +287,8 @@ public class CommandLineArguments {
                                 .setTraceEveryXOperation(traceEveryXOperation)
                                 .setPrintTraceToStdErr(traceArg > 0)
                                 .setNumPersistentConnectionsPerEndpoint(numPersistentConnectionsPerEndpoint)
-                                .setSslContext(createSslContext())
+                                .setCertificateAndPrivateKey(privateKeyPath, certificatePath)
+                                .setCaCertificates(caCertificatesPath)
                                 .setUseTlsConfigFromEnvironment(useTlsConfigFromEnvironment)
                                 .setConnectionTimeToLive(Duration.ofSeconds(connectionTimeToLive))
                                 .build()
