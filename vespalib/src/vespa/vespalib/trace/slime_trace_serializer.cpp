@@ -32,7 +32,7 @@ SlimeTraceSerializer::visit(const TraceNode & node)
 void
 SlimeTraceSerializer::addTimestamp(Cursor & current, const TraceNode & node)
 {
-    current.setLong(TIMESTAMP, node.getTimestamp());
+    current.setLong(TIMESTAMP, count_ms(node.getTimestamp().time_since_epoch()));
 }
 
 void

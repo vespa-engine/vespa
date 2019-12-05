@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("trace_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/trace/trace.h>
 #include <vespa/vespalib/trace/tracevisitor.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("trace_test");
 
 using namespace vespalib;
 
@@ -383,27 +384,32 @@ Test::testVisiting()
     EXPECT_EQUAL(encoder.str, b1.encode());
 }
 
+constexpr system_time zero(duration::zero());
+constexpr system_time one234(std::chrono::milliseconds(1234));
+constexpr system_time one23(std::chrono::milliseconds(123));
+constexpr system_time one24(std::chrono::milliseconds(124));
+
 void
 Test::testTimestamp()
 {
     TraceNode root;
-    root.addChild("foo", 1234);
+    root.addChild("foo", one234);
     root.addChild("bar");
-    EXPECT_EQUAL(root.getTimestamp(), 0);
-    EXPECT_EQUAL(root.getChild(0).getTimestamp(), 1234);
-    EXPECT_EQUAL(root.getChild(1).getTimestamp(), 0);
+    EXPECT_EQUAL(root.getTimestamp(), zero);
+    EXPECT_EQUAL(root.getChild(0).getTimestamp(), one234);
+    EXPECT_EQUAL(root.getChild(1).getTimestamp(), zero);
 }
 
 void
 Test::testConstruct()
 {
-    TraceNode leaf1("foo", 123);
+    TraceNode leaf1("foo", one23);
     EXPECT_TRUE(leaf1.hasNote());
     EXPECT_EQUAL("foo", leaf1.getNote());
-    EXPECT_EQUAL(123, leaf1.getTimestamp());
+    EXPECT_EQUAL(one23, leaf1.getTimestamp());
 
-    TraceNode leaf2(124);
+    TraceNode leaf2(one24);
     EXPECT_FALSE(leaf2.hasNote());
     EXPECT_EQUAL("", leaf2.getNote());
-    EXPECT_EQUAL(124, leaf2.getTimestamp());
+    EXPECT_EQUAL(one24, leaf2.getTimestamp());
 }

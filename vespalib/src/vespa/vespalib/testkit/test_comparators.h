@@ -13,6 +13,9 @@ ostream & operator << (ostream & os, duration<rep, period> ts) {
     return os << ts.count();
 }
 
+ostream & operator << (ostream & os, system_clock::time_point ts);
+
+
 }
 
 namespace vespalib {

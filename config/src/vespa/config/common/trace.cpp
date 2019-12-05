@@ -2,7 +2,6 @@
 #include "trace.h"
 #include <vespa/vespalib/trace/slime_trace_serializer.h>
 #include <vespa/vespalib/trace/slime_trace_deserializer.h>
-#include <vespa/fastos/timestamp.h>
 
 using namespace vespalib;
 using namespace vespalib::slime;
@@ -11,8 +10,8 @@ namespace config {
 
 struct SystemClock : public Clock
 {
-    int64_t currentTimeMillis() const override {
-        return fastos::ClockSystem::now().timeSinceEpoch().ms();
+    vespalib::system_time currentTime() const override {
+        return vespalib::system_clock::now();
     }
 };
 
@@ -73,7 +72,7 @@ void
 Trace::trace(uint32_t level, const vespalib::string & message)
 {
     if (shouldTrace(level)) {
-        _root.addChild(message, _clock.currentTimeMillis());
+        _root.addChild(message, _clock.currentTime());
     }
 }
 

@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/trace.h>
-#include <vespa/vespalib/trace/tracenode.h>
 
 
 using namespace config;
@@ -11,9 +10,9 @@ using namespace vespalib::slime;
 
 struct FixedClock : public Clock
 {
-    FixedClock() : currentTime(0) { }
-    int64_t currentTime;
-    int64_t currentTimeMillis() const override { return currentTime; }
+    FixedClock() : _currentTime(duration::zero()) { }
+    vespalib::system_time _currentTime;
+    vespalib::system_time currentTime() const override { return _currentTime; }
 };
 
 TEST("that trace can be serialized and deserialized") {
@@ -38,7 +37,7 @@ TEST("that trace can be serialized and deserialized") {
 }
 
 TEST_F("that trace level is taken into account", FixedClock) {
-    f1.currentTime = 3;
+    f1._currentTime = vespalib::system_time(3ms);
     Trace trace(4, f1);
     trace.trace(4, "foo");
     trace.trace(5, "bar");
@@ -58,11 +57,13 @@ TEST("that trace can be copied") {
     EXPECT_EQUAL(trace.toString(), trace2.toString());
 }
 
+constexpr vespalib::system_time epoch(duration::zero());
+
 TEST("ensure that system clock is used by default") {
     Trace trace(2);
     trace.trace(1, "foo");
     TraceNode child(trace.getRoot().getChild(0));
-    EXPECT_TRUE(child.getTimestamp() > 0);
+    EXPECT_TRUE(child.getTimestamp() > epoch);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

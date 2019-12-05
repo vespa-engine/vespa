@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("trace_test");
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/trace/tracenode.h>
 #include <vespa/vespalib/trace/slime_trace_serializer.h>
 #include <vespa/vespalib/trace/slime_trace_deserializer.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("trace_test");
 
 using namespace vespalib;
 using namespace vespalib::slime;
@@ -20,10 +21,15 @@ TEST("that a single trace node is serialized") {
     EXPECT_FALSE(i["payload"].valid());
 }
 
+constexpr system_time zero_system_time(duration::zero());
+constexpr system_time one234(std::chrono::milliseconds(1234));
+constexpr system_time one235(std::chrono::milliseconds(1235));
+constexpr system_time forty5(std::chrono::milliseconds(45));
+
 TEST("that a trace node with children is serialized") {
     TraceNode node;
-    node.addChild("foo", 1234);
-    node.addChild("bar", 1235);
+    node.addChild("foo", one234);
+    node.addChild("bar", one235);
     Slime slime;
     SlimeTraceSerializer serializer(slime.setObject());
     node.accept(serializer);
@@ -47,7 +53,7 @@ TEST("that an empty root trace node can be deserialized") {
     SlimeTraceDeserializer deserializer(root);
     TraceNode node(deserializer.deserialize());
     EXPECT_FALSE(node.hasNote());
-    EXPECT_EQUAL(0, node.getTimestamp());
+    EXPECT_EQUAL(zero_system_time, node.getTimestamp());
 }
 
 
@@ -58,7 +64,7 @@ TEST("that a single trace node can be deserialized") {
     root.setString("payload", "hello");
     SlimeTraceDeserializer deserializer(root);
     TraceNode node(deserializer.deserialize());
-    EXPECT_EQUAL(1234, node.getTimestamp());
+    EXPECT_EQUAL(one234, node.getTimestamp());
     EXPECT_TRUE(node.hasNote());
     EXPECT_EQUAL("hello", node.getNote());
 }
@@ -95,7 +101,7 @@ TEST("that a trace node with children can be deserialized") {
 
 TEST("test serialization and deserialization") {
     TraceNode root;
-    root.addChild("foo", 45);
+    root.addChild("foo", forty5);
     root.addChild("bar");
     root.addChild(TraceNode());
     Slime slime;

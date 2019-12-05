@@ -7,6 +7,8 @@ using namespace ::testing;
 
 namespace storage {
 
+constexpr vespalib::system_time epoch(vespalib::duration::zero());
+
 TEST(MemoryBoundedTraceTest, no_memory_reported_used_when_empty) {
     MemoryBoundedTrace trace(100);
     EXPECT_EQ(0, trace.getApproxMemoryUsed());
@@ -14,7 +16,7 @@ TEST(MemoryBoundedTraceTest, no_memory_reported_used_when_empty) {
 
 TEST(MemoryBoundedTraceTest, memory_used_is_string_length_for_leaf_node) {
     MemoryBoundedTrace trace(100);
-    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", epoch)));
     EXPECT_EQ(11, trace.getApproxMemoryUsed());
 }
 
@@ -29,7 +31,7 @@ TEST(MemoryBoundedTraceTest, memory_used_is_accumulated_recursively_for_non_leaf
 
 TEST(MemoryBoundedTraceTest, trace_nodes_can_be_moved_and_implicitly_cleared) {
     MemoryBoundedTrace trace(100);
-    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", epoch)));
     mbus::TraceNode target;
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
@@ -49,7 +51,7 @@ TEST(MemoryBoundedTraceTest, trace_nodes_can_be_moved_and_implicitly_cleared) {
  */
 TEST(MemoryBoundedTraceTest, moved_trace_tree_is_marked_as_strict) {
     MemoryBoundedTrace trace(100);
-    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", epoch)));
     mbus::TraceNode target;
     trace.moveTraceTo(target);
     EXPECT_EQ(1, target.getNumChildren());
@@ -60,11 +62,11 @@ TEST(MemoryBoundedTraceTest, can_not_add_more_nodes_when_memory_used_exceeds_upp
     // Note: we allow one complete node tree to exceed the bounds, but as soon
     // as the bound is exceeded no further nodes can be added.
     MemoryBoundedTrace trace(10);
-    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("hello world", epoch)));
     EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
     EXPECT_FALSE(trace.add(mbus::TraceNode("the quick red fox runs across "
-                                           "the freeway", 0)));
+                                           "the freeway", epoch)));
     EXPECT_EQ(11, trace.getApproxMemoryUsed());
 
     mbus::TraceNode target;
@@ -77,8 +79,8 @@ TEST(MemoryBoundedTraceTest, can_not_add_more_nodes_when_memory_used_exceeds_upp
 
 TEST(MemoryBoundedTraceTest, moved_tree_includes_stats_node_when_nodes_omitted) {
     MemoryBoundedTrace trace(5);
-    EXPECT_TRUE(trace.add(mbus::TraceNode("abcdef", 0)));
-    EXPECT_FALSE(trace.add(mbus::TraceNode("ghijkjlmn", 0)));
+    EXPECT_TRUE(trace.add(mbus::TraceNode("abcdef", epoch)));
+    EXPECT_FALSE(trace.add(mbus::TraceNode("ghijkjlmn", epoch)));
 
     mbus::TraceNode target;
     trace.moveTraceTo(target);

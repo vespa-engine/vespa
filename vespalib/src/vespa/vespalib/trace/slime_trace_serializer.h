@@ -22,8 +22,8 @@ public:
     static const Memory PAYLOAD;
     static const Memory CHILDREN;
 private:
-    void addTimestamp(slime::Cursor & current, const TraceNode & node);
-    void addPayload(slime::Cursor & current, const TraceNode & node);
+    static void addTimestamp(slime::Cursor & current, const TraceNode & node);
+    static void addPayload(slime::Cursor & current, const TraceNode & node);
     void addChildrenCursors(slime::Cursor & current, const TraceNode & node);
     void addChildrenCursorsToStack(slime::Cursor & childrenArray, const TraceNode & node);
     std::stack<slime::Cursor *> _cursors;
