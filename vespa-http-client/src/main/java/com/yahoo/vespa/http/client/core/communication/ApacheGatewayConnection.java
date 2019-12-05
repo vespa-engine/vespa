@@ -416,6 +416,7 @@ class ApacheGatewayConnection implements GatewayConnection {
                 if (connectionParams.getHostnameVerifier() != null) {
                     clientBuilder.setSSLHostnameVerifier(connectionParams.getHostnameVerifier());
                 }
+                clientBuilder.setUserTokenHandler(context -> null); // https://stackoverflow.com/a/42112034/1615280
             }
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
