@@ -1985,6 +1985,7 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(double)",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()"
     ],
@@ -2075,6 +2076,7 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(double)",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()"
     ],
@@ -2271,6 +2273,7 @@
     ],
     "methods": [
       "public void <init>()",
+      "public void <init>(double, double)",
       "public double applyAsDouble(double)",
       "public java.lang.String toString()"
     ],
@@ -2437,22 +2440,25 @@
       "public static java.util.function.DoubleUnaryOperator atan()",
       "public static java.util.function.DoubleUnaryOperator ceil()",
       "public static java.util.function.DoubleUnaryOperator cos()",
-      "public static java.util.function.DoubleUnaryOperator elu()",
       "public static java.util.function.DoubleUnaryOperator exp()",
       "public static java.util.function.DoubleUnaryOperator floor()",
       "public static java.util.function.DoubleUnaryOperator log()",
       "public static java.util.function.DoubleUnaryOperator neg()",
       "public static java.util.function.DoubleUnaryOperator reciprocal()",
-      "public static java.util.function.DoubleUnaryOperator relu()",
       "public static java.util.function.DoubleUnaryOperator rsqrt()",
-      "public static java.util.function.DoubleUnaryOperator selu()",
-      "public static java.util.function.DoubleUnaryOperator leakyrelu()",
       "public static java.util.function.DoubleUnaryOperator sin()",
       "public static java.util.function.DoubleUnaryOperator sigmoid()",
       "public static java.util.function.DoubleUnaryOperator sqrt()",
       "public static java.util.function.DoubleUnaryOperator square()",
       "public static java.util.function.DoubleUnaryOperator tan()",
       "public static java.util.function.DoubleUnaryOperator tanh()",
+      "public static java.util.function.DoubleUnaryOperator elu()",
+      "public static java.util.function.DoubleUnaryOperator elu(double)",
+      "public static java.util.function.DoubleUnaryOperator leakyrelu()",
+      "public static java.util.function.DoubleUnaryOperator leakyrelu(double)",
+      "public static java.util.function.DoubleUnaryOperator relu()",
+      "public static java.util.function.DoubleUnaryOperator selu()",
+      "public static java.util.function.DoubleUnaryOperator selu(double, double)",
       "public static java.util.function.Function random()",
       "public static java.util.function.Function equal(java.util.List)",
       "public static java.util.function.Function sum(java.util.List)"

@@ -9,6 +9,8 @@
 #include <vespa/vespalib/util/thread.h>
 #include <vespa/vespalib/stllike/hash_set_insert.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".operationabortingtest");
@@ -53,7 +55,7 @@ public:
         (void) context;
         _queueBarrier.await();
         // message abort stage with active opertion in disk queue
-        FastOS_Thread::Sleep(75);
+        std::this_thread::sleep_for(75ms);
         _completionBarrier.await();
         // test finished
         return spi::Result();

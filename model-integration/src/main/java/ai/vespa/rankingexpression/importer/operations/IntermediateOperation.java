@@ -199,7 +199,9 @@ public abstract class IntermediateOperation {
         String constantName = "constant(" + vespaName() + ")";
         Value result = context.get(constantName);
         if (result == DoubleValue.NaN) {
-            if (inputs.size() == 0) {
+            if (constantValue != null) {
+                result = constantValue;
+            } else if (inputs.size() == 0) {
                 if (getConstantValue().isEmpty()) {
                     throw new IllegalArgumentException("Error in evaluating constant for " + name);
                 }

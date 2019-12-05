@@ -3,6 +3,7 @@
 #pragma once
 
 #include <chrono>
+#include <thread>
 
 static volatile int64_t number;
 #define INCREASE_NUMBER_AMOUNT 10000
@@ -47,7 +48,7 @@ public:
             }
          }
 
-         FastOS_Thread::Sleep(500);
+         std::this_thread::sleep_for(500ms);
 
          if(threadsFinished)
             break;
@@ -88,7 +89,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
          Progress(true, "Thread printing message: [%s]", job->message);
          job->result = strlen(job->message);
 
-         FastOS_Thread::Sleep(3000);
+          std::this_thread::sleep_for(3s);
          break;
       }
 
@@ -109,7 +110,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
             number = number + 2;
 
             if(i == sleepOn)
-               FastOS_Thread::Sleep(1000);
+                std::this_thread::sleep_for(1s);
          }
 
          guard = std::unique_lock<std::mutex>();
@@ -123,7 +124,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       {
          for(;;)
          {
-            FastOS_Thread::Sleep(1000);
+             std::this_thread::sleep_for(1s);
 
             if(thread->GetBreakFlag())
             {
@@ -192,7 +193,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 
       case WAIT2SEC_AND_SIGNALCOND:
       {
-         FastOS_Thread::Sleep(2000);
+          std::this_thread::sleep_for(2s);
          job->condition->notify_one();
          job->result = 1;
          break;
@@ -202,7 +203,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
       {
           {
               std::lock_guard<std::mutex> guard(*job->mutex);
-              FastOS_Thread::Sleep(2000);
+              std::this_thread::sleep_for(2s);
           }
           job->result = 1;
           break;
@@ -210,7 +211,7 @@ void ThreadTestBase::Run (FastOS_ThreadInterface *thread, void *arg)
 
       case WAIT_2_SEC:
       {
-         FastOS_Thread::Sleep(2000);
+          std::this_thread::sleep_for(2s);
          job->result = 1;
          break;
       }

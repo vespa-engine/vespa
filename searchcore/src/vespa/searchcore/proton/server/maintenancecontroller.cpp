@@ -6,7 +6,7 @@
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/timer.h>
+#include <vespa/vespalib/util/scheduledexecutor.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancecontroller");
@@ -167,7 +167,7 @@ MaintenanceController::restart()
     if (!_started || _stopping || !_readySubDB.valid()) {
         return;
     }
-    _periodicTimer.reset(new vespalib::Timer());
+    _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
 
     addJobsToPeriodicTimer();
 }

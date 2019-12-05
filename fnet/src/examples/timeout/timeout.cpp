@@ -2,7 +2,8 @@
 
 #include <vespa/fnet/fnet.h>
 #include <vespa/fastos/app.h>
-#include <chrono>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("timeout");
@@ -55,7 +56,7 @@ MyApp::Main()
   transport.Start(&pool);
 
   // stable-state operation
-  FastOS_Thread::Sleep(500);
+  std::this_thread::sleep_for(500ms);
 
   FNET_Packet  *packet;
   FNET_Context  context;
@@ -64,7 +65,7 @@ MyApp::Main()
   t = clock::now();
   timeout.Schedule(2.0); // timeout in 2 seconds
 
-  FastOS_Thread::Sleep(1000);
+  std::this_thread::sleep_for(1s);
 
   timeout.Unschedule(); // cancel timeout
   ms = (clock::now() - t);

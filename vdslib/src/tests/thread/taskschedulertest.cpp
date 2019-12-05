@@ -2,6 +2,8 @@
 
 #include <vespa/vdslib/thread/taskscheduler.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 namespace vdslib {
 
@@ -141,13 +143,13 @@ TEST(TaskSchedulerTest, test_simple)
         task->registerCallsWithName("", calls);
         scheduler.addAbsolute(TestTask::UP(task), 50);
         watch.increment(49); // Not yet time to run
-        FastOS_Thread::Sleep(5);
+        std::this_thread::sleep_for(5ms);
             // Check that it has not run yet..
         EXPECT_EQ(counter, scheduler.getTaskCounter());
         watch.increment(10); // Now time is enough for it to run
         scheduler.waitForTaskCounterOfAtLeast(counter + 1);
         watch.increment(10);
-        FastOS_Thread::Sleep(5);
+        std::this_thread::sleep_for(5ms);
             // Check that it has not run yet..
         EXPECT_EQ(counter + 1, scheduler.getTaskCounter());
         watch.increment(50);

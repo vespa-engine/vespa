@@ -2,6 +2,8 @@
 
 #include <vespa/fastos/app.h>
 #include <vespa/fnet/frt/frt.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 class RPCInfo : public FastOS_Application
 {
@@ -85,7 +87,7 @@ public:
         if (info->GetErrorCode() != FRTE_RPC_CONNECTION) {
             break;
         }
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(1s);
         target->SubRef();
         target = supervisor.GetTarget(_argv[1]);
     }

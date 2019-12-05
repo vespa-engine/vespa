@@ -40,6 +40,8 @@ extern char **environ;
 
 #endif
 
+using namespace std::chrono_literals;
+
 static pid_t safe_fork ()
 {
     pid_t pid;
@@ -1629,7 +1631,7 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
             }
         }
 
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
     }
 
     return rc;

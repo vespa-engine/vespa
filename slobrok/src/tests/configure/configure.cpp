@@ -85,7 +85,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
         if (actual == expect) {
             return true;
         }
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
     }
     SpecList actual(api.lookup(pattern));
     std::cerr << "Actual: " << actual.strVal() << std::endl;
@@ -176,7 +176,7 @@ Test::Main()
     srv2Builder.slobrok[0].connectionspec = createSpec(18525);
     cfgCtx->reload();
 
-    FastOS_Thread::Sleep(6000); // reconfiguration time
+    std::this_thread::sleep_for(6s); // reconfiguration time
 
     reg1.registerName("A");
     reg2.registerName("B");

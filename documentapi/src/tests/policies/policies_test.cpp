@@ -286,7 +286,7 @@ Test::assertMirrorReady(const slobrok::api::IMirrorAPI &mirror)
         if (mirror.ready()) {
             return;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     ASSERT_TRUE(false);
 }
@@ -299,7 +299,7 @@ Test::assertMirrorContains(const slobrok::api::IMirrorAPI &mirror, const string 
         if (mirror.lookup(pattern).size() == numEntries) {
             return;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     ASSERT_TRUE(false);
 }

@@ -8,6 +8,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/app.h>
@@ -198,7 +199,7 @@ App::Main()
                         LOG(info, "Sleeping 900 seconds due to proton state");
                         int sleepLeft = 900;
                         while (!(SIG::INT.check() || SIG::TERM.check()) && sleepLeft > 0) {
-                            FastOS_Thread::Sleep(1000);
+                            std::this_thread::sleep_for(1000ms);
                             --sleepLeft;
                         }
                         EV_STOPPING("proton", "shutdown after stop on io errors");
@@ -226,7 +227,7 @@ App::Main()
             }
             EV_STARTED("proton");
             while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
-                FastOS_Thread::Sleep(1000);
+                std::this_thread::sleep_for(1000ms);
                 if (spiProton && spiProton->configUpdated()) {
                     storage::ResumeGuard guard(spiProton->getNode().pause());
                     spiProton->updateConfig();
@@ -240,7 +241,7 @@ App::Main()
                             if (spiProton) {
                                 // report down state to cluster controller.
                                 spiProton->getNode().notifyPartitionDown(0, "proton state string is " + stateString);
-                                FastOS_Thread::Sleep(1000);
+                                std::this_thread::sleep_for(1000ms);
                             }
                             EV_STOPPING("proton", "shutdown after new stop on io errors");
                             return 1;

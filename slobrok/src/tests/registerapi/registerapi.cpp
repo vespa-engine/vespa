@@ -64,7 +64,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
         if (actual == expect) {
             return true;
         }
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
     }
     return false;
 }
@@ -75,7 +75,7 @@ Test::Main()
     TEST_INIT("registerapi_test");
 
     SlobrokServer mock(18548);
-    FastOS_Thread::Sleep(300);
+    std::this_thread::sleep_for(300ms);
 
     cloud::config::SlobroksConfigBuilder slobrokSpecs;
     cloud::config::SlobroksConfig::Slobrok sb;
@@ -97,7 +97,7 @@ Test::Main()
     EXPECT_TRUE(compare(mirror, "*/*/*", SpecList().add("A/x/w", myspec.c_str())));
 
     for (int i = 0; i < 30; i++) {
-        if (reg.busy()) FastOS_Thread::Sleep(100);
+        if (reg.busy()) std::this_thread::sleep_for(100ms);
     }
     EXPECT_TRUE(!reg.busy());
 

@@ -127,6 +127,7 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
                "    <binding>http://*/athenz/v1/*</binding>\n" +
+               "    <binding>http://*/api/athenz/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v1</binding>\n" +

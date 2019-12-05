@@ -43,7 +43,7 @@ struct Base {
             if (queue.size() == size) {
                 return true;
             }
-            FastOS_Thread::Sleep(10);
+            std::this_thread::sleep_for(10ms);
         }
         return false;
     }
@@ -270,7 +270,7 @@ Test::testSendToCol()
         }
     }
     client->waitQueueSize(300);
-    FastOS_Thread::Sleep(100);
+    std::this_thread::sleep_for(100ms);
     client->waitQueueSize(300);
     while (client->queue.size() > 0) {
         Routable::UP reply = client->queue.dequeue();
@@ -347,7 +347,7 @@ Test::testSendToAnyThenCol()
         }
     }
     client->waitQueueSize(300);
-    FastOS_Thread::Sleep(100);
+    std::this_thread::sleep_for(100ms);
     client->waitQueueSize(300);
     while (client->queue.size() > 0) {
         Routable::UP reply = client->queue.dequeue();

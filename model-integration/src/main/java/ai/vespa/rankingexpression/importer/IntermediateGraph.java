@@ -70,7 +70,7 @@ public class IntermediateGraph {
         return operations;
     }
 
-    void optimize() {
+    public void optimize() {
         renameDimensions();
     }
 

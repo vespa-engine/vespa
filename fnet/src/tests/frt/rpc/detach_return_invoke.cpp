@@ -54,7 +54,7 @@ TEST("detach return invoke") {
         if (receptor.req != 0) {
             break;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     req->SubRef();
     target->SubRef();

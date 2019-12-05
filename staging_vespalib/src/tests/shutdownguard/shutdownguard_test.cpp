@@ -13,20 +13,20 @@ Test::Main()
 {
     TEST_INIT("shutdownguard_test");
     {
-        ShutdownGuard farFuture(123456789);
-        FastOS_Thread::Sleep(20);
+        ShutdownGuard farFuture(1000000s);
+        std::this_thread::sleep_for(20ms);
     }
     EXPECT_TRUE(true);
     pid_t child = fork();
     if (child == 0) {
-        ShutdownGuard soon(30);
+        ShutdownGuard soon(30ms);
         for (int i = 0; i < 1000; ++i) {
-            FastOS_Thread::Sleep(20);
+            std::this_thread::sleep_for(20ms);
         }
         exit(0);
     }
     for (int i = 0; i < 1000; ++i) {
-        FastOS_Thread::Sleep(20);
+        std::this_thread::sleep_for(20ms);
         int stat = 0;
         if (waitpid(child, &stat, WNOHANG) == child) {
             EXPECT_TRUE(WIFEXITED(stat));

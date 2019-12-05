@@ -20,14 +20,14 @@ import java.util.Map;
 public class PropertyAliases extends Properties {
 
     /** A map from aliases to standard names */
-    private final Map<String,CompoundName> aliases;
+    private final Map<String, CompoundName> aliases;
 
     /**
      * Creates an instance with a set of aliases. The given aliases will be used directly by this class.
      * To make this class immutable and thread safe, relinquish ownership of the parameter map.
      */
-    public PropertyAliases(Map<String,CompoundName> aliases) {
-        this.aliases=aliases;
+    public PropertyAliases(Map<String, CompoundName> aliases) {
+        this.aliases = aliases;
     }
 
     /**
@@ -42,20 +42,21 @@ public class PropertyAliases extends Properties {
     }
 
     @Override
-    public Map<String, Object> listProperties(CompoundName property,Map<String,String> context,
-                                                        com.yahoo.processing.request.Properties substitution) {
-        return super.listProperties(unalias(property),context,substitution);
+    public Map<String, Object> listProperties(CompoundName property,
+                                              Map<String,String> context,
+                                              com.yahoo.processing.request.Properties substitution) {
+        return super.listProperties(unalias(property), context, substitution);
     }
 
     @Override
-    public Object get(CompoundName name,Map<String,String> context,
+    public Object get(CompoundName name, Map<String,String> context,
                                 com.yahoo.processing.request.Properties substitution) {
         return super.get(unalias(name),context,substitution);
     }
 
     @Override
-    public void set(CompoundName name,Object value,Map<String,String> context) {
-        super.set(unalias(name),value,context);
+    public void set(CompoundName name, Object value, Map<String,String> context) {
+        super.set(unalias(name), value, context);
     }
 
 }

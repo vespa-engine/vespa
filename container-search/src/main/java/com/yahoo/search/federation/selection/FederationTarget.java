@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.federation.selection;
 
-import java.util.Optional;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import java.util.Objects;
 
 /**
  * Represents a search chain that the federation searcher should send a query to,
@@ -22,11 +21,8 @@ public final class FederationTarget<T> {
     private final T customData;
 
     public FederationTarget(Chain<Searcher> chain, FederationOptions federationOptions, T customData) {
-        checkNotNull(chain);
-        checkNotNull(federationOptions);
-
-        this.chain = chain;
-        this.federationOptions = federationOptions;
+        this.chain = Objects.requireNonNull(chain, "chain cannot be null");
+        this.federationOptions = Objects.requireNonNull(federationOptions, "federationOptions cannot be null");
         this.customData = customData;
     }
 
@@ -62,9 +58,7 @@ public final class FederationTarget<T> {
 
     @Override
     public int hashCode() {
-        int result = chain.hashCode();
-        result = 31 * result + federationOptions.hashCode();
-        return result;
+        return Objects.hash(chain, federationOptions);
     }
 
 }

@@ -73,7 +73,7 @@ Test::Main()
         if (queue.size() == 3) {
             break;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     EXPECT_EQUAL(queue.size(), 3u);
     {

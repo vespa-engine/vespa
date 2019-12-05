@@ -1,10 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
-#include <vespa/vespalib/util/timer.h>
+#include <vespa/vespalib/util/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <filesystem>
-#include <unistd.h>
 
 using vespalib::makeLambdaTask;
 
@@ -32,7 +31,7 @@ DiskMemUsageSampler::setConfig(const Config &config)
     _filter.setConfig(config.filterConfig);
     _sampleInterval = config.sampleInterval;
     sampleUsage();
-    _periodicTimer = std::make_unique<vespalib::Timer>();
+    _periodicTimer = std::make_unique<vespalib::ScheduledExecutor>();
     _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]()
                                                        { sampleUsage(); }),
                                         _sampleInterval, _sampleInterval);

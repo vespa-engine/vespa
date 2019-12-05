@@ -32,7 +32,7 @@ TEST_MT_FFF("require that source may be unable to serve config temporarily", 2, 
         ASSERT_TRUE(cfg.get() != NULL);
         ASSERT_EQUAL("myfoo", cfg->myField);
     } else {
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(1s);
         f3.myField = "myfoo";
         f2.addBuilder("myid", &f3);
         f1->reload();

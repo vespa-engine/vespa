@@ -7,6 +7,8 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <vespa/fastos/timestamp.h>
 #include <vespa/fastos/app.h>
 
@@ -100,7 +102,7 @@ App::Main()
     Client client(mb.getMessageBus(), SourceSessionParams().setTimeout(30s));
 
     // let the system 'warm up'
-    FastOS_Thread::Sleep(5000);
+    std::this_thread::sleep_for(5s);
 
     // inject messages into the feedback loop
     for (uint32_t i = 0; i < 1024; ++i) {
@@ -108,7 +110,7 @@ App::Main()
     }
 
     // let the system 'warm up'
-    FastOS_Thread::Sleep(5000);
+    std::this_thread::sleep_for(5s);
 
     fastos::StopWatch stopWatch;
     uint32_t okBefore   = 0;
@@ -117,7 +119,7 @@ App::Main()
     uint32_t failAfter  = 0;
 
     client.sample(okBefore, failBefore);
-    FastOS_Thread::Sleep(10000); // Benchmark time
+    std::this_thread::sleep_for(10s); // Benchmark time
     fastos::TimeStamp elapsed = stopWatch.elapsed();
     client.sample(okAfter, failAfter);
     double time = elapsed.ms();

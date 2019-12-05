@@ -38,22 +38,26 @@ public class ScalarFunctions {
     public static DoubleUnaryOperator atan() { return new Atan(); }
     public static DoubleUnaryOperator ceil() { return new Ceil(); }
     public static DoubleUnaryOperator cos() { return new Cos(); }
-    public static DoubleUnaryOperator elu() { return new Elu(); }
     public static DoubleUnaryOperator exp() { return new Exp(); }
     public static DoubleUnaryOperator floor() { return new Floor(); }
     public static DoubleUnaryOperator log() { return new Log(); }
     public static DoubleUnaryOperator neg() { return new Neg(); }
     public static DoubleUnaryOperator reciprocal() { return new Reciprocal(); }
-    public static DoubleUnaryOperator relu() { return new Relu(); }
     public static DoubleUnaryOperator rsqrt() { return new Rsqrt(); }
-    public static DoubleUnaryOperator selu() { return new Selu(); }
-    public static DoubleUnaryOperator leakyrelu() { return new LeakyRelu(); }
     public static DoubleUnaryOperator sin() { return new Sin(); }
     public static DoubleUnaryOperator sigmoid() { return new Sigmoid(); }
     public static DoubleUnaryOperator sqrt() { return new Sqrt(); }
     public static DoubleUnaryOperator square() { return new Square(); }
     public static DoubleUnaryOperator tan() { return new Tan(); }
     public static DoubleUnaryOperator tanh() { return new Tanh(); }
+
+    public static DoubleUnaryOperator elu() { return new Elu(); }
+    public static DoubleUnaryOperator elu(double alpha) { return new Elu(alpha); }
+    public static DoubleUnaryOperator leakyrelu() { return new LeakyRelu(); }
+    public static DoubleUnaryOperator leakyrelu(double alpha) { return new LeakyRelu(alpha); }
+    public static DoubleUnaryOperator relu() { return new Relu(); }
+    public static DoubleUnaryOperator selu() { return new Selu(); }
+    public static DoubleUnaryOperator selu(double scale, double alpha) { return new Selu(scale, alpha); }
 
     public static Function<List<Long>, Double> random() { return new Random(); }
     public static Function<List<Long>, Double> equal(List<String> argumentNames) { return new EqualElements(argumentNames); }
@@ -191,10 +195,17 @@ public class ScalarFunctions {
     }
 
     public static class Elu implements DoubleUnaryOperator {
+        private final double alpha;
+        public Elu() {
+            this(1.0);
+        }
+        public Elu(double alpha) {
+            this.alpha = alpha;
+        }
         @Override
-        public double applyAsDouble(double operand) { return operand < 0 ? Math.exp(operand) -1 : operand; }
+        public double applyAsDouble(double operand) { return operand < 0 ? alpha * (Math.exp(operand) - 1) : operand; }
         @Override
-        public String toString() { return "f(a)(if(a < 0, exp(a)-1, a))"; }
+        public String toString() { return "f(a)(if(a < 0, " + alpha + " * (exp(a)-1), a))"; }
     }
 
     public static class Exp implements DoubleUnaryOperator {
@@ -241,8 +252,15 @@ public class ScalarFunctions {
 
     public static class Selu implements DoubleUnaryOperator {
         // See https://arxiv.org/abs/1706.02515
-        private static final double scale = 1.0507009873554804934193349852946;
-        private static final double alpha = 1.6732632423543772848170429916717;
+        private final double scale; // 1.0507009873554804934193349852946;
+        private final double alpha; // 1.6732632423543772848170429916717;
+        public Selu() {
+            this(1.0507009873554804934193349852946, 1.6732632423543772848170429916717);
+        }
+        public Selu(double scale, double alpha) {
+            this.scale = scale;
+            this.alpha = alpha;
+        }
         @Override
         public double applyAsDouble(double operand) { return scale * (operand >= 0.0 ? operand : alpha * (Math.exp(operand)-1)); }
         @Override
@@ -250,10 +268,17 @@ public class ScalarFunctions {
     }
 
     public static class LeakyRelu implements DoubleUnaryOperator {
+        private final double alpha;
+        public LeakyRelu() {
+            this(0.01);
+        }
+        public LeakyRelu(double alpha) {
+            this.alpha = alpha;
+        }
         @Override
-        public double applyAsDouble(double operand) { return Math.max(0.01 * operand, operand); }
+        public double applyAsDouble(double operand) { return Math.max(alpha * operand, operand); }
         @Override
-        public String toString() { return "f(a)(max(0.01*a, a))"; }
+        public String toString() { return "f(a)(max(" + alpha + " * a, a))"; }
     }
 
     public static class Sin implements DoubleUnaryOperator {

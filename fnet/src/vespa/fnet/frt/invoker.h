@@ -5,7 +5,6 @@
 #include "rpcrequest.h"
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/ipackethandler.h>
-#include <vespa/fastos/thread.h>
 #include <mutex>
 #include <condition_variable>
 

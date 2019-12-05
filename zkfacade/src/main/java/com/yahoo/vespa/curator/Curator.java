@@ -3,9 +3,12 @@ package com.yahoo.vespa.curator;
 
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
+import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -20,7 +23,9 @@ import org.apache.curator.framework.recipes.locks.InterProcessLock;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.data.Stat;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import java.io.File;
 import java.time.Duration;
@@ -63,28 +68,21 @@ public class Curator implements AutoCloseable {
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
-        return new Curator(connectionSpec, connectionSpec);
-    }
-
-    // For testing
-    public Curator(ConfigserverConfig configserverConfig) {
-        this(configserverConfig, createConnectionSpec(configserverConfig));
+        return new Curator(connectionSpec, connectionSpec, clientConfigFile);
     }
 
     // Depend on ZooKeeperServer to make sure it is started first
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
     public Curator(ConfigserverConfig configserverConfig, VespaZooKeeperServer server) {
-        this(configserverConfig, createConnectionSpec(configserverConfig));
+        this(configserverConfig, Optional.empty());
     }
 
-    private Curator(ConfigserverConfig configserverConfig, String zooKeeperEnsembleConnectionSpec) {
-        this((configserverConfig.zookeeperLocalhostAffinity()) ?
-                createConnectionSpecForLocalhost(configserverConfig) : zooKeeperEnsembleConnectionSpec,
-                zooKeeperEnsembleConnectionSpec);
+    Curator(ConfigserverConfig configserverConfig, Optional<File> clientConfigFile) {
+        this(createConnectionSpec(configserverConfig), createEnsembleConnectionSpec(configserverConfig), clientConfigFile);
     }
 
-    private Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec) {
+    private Curator(String connectionSpec, String zooKeeperEnsembleConnectionSpec, Optional<File> clientConfigFile) {
         this(connectionSpec,
                 zooKeeperEnsembleConnectionSpec,
                 (retryPolicy) -> CuratorFrameworkFactory
@@ -93,7 +91,7 @@ public class Curator implements AutoCloseable {
                         .sessionTimeoutMs(ZK_SESSION_TIMEOUT)
                         .connectionTimeoutMs(ZK_CONNECTION_TIMEOUT)
                         .connectString(connectionSpec)
-                        .zookeeperFactory(new VespaZooKeeperFactory())
+                        .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
                         .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
                         .build());
     }
@@ -123,7 +121,29 @@ public class Curator implements AutoCloseable {
         this.zooKeeperEnsembleCount = zooKeeperEnsembleConnectionSpec.split(",").length;
     }
 
-    private static String createConnectionSpec(ConfigserverConfig config) {
+    private static String createConnectionSpec(ConfigserverConfig configserverConfig) {
+        return configserverConfig.zookeeperLocalhostAffinity()
+                ? createConnectionSpecForLocalhost(configserverConfig)
+                : createEnsembleConnectionSpec(configserverConfig);
+    }
+
+    private static ZKClientConfig createClientConfig(Optional<File> file) {
+        boolean useSecureClient = Boolean.parseBoolean(getEnvironmentVariable("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT").orElse("false"));
+        String config = "zookeeper.client.secure=" + useSecureClient + "\n";
+
+        File clientConfigFile =
+                file.orElseGet(() -> new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg")));
+        clientConfigFile.getParentFile().mkdirs();
+        IOUtils.writeFile(clientConfigFile, Utf8.toBytes(config));
+
+        try {
+            return new ZKClientConfig(clientConfigFile);
+        } catch (QuorumPeerConfig.ConfigException e) {
+            throw new RuntimeException("Unable to create ZooKeeper client config file " + file);
+        }
+    }
+
+    private static String createEnsembleConnectionSpec(ConfigserverConfig config) {
         StringBuilder connectionSpec = new StringBuilder();
         for (int i = 0; i < config.zookeeperserver().size(); i++) {
             if (connectionSpec.length() > 0) {
@@ -405,4 +425,10 @@ public class Curator implements AutoCloseable {
      * TODO: Move method out of this class.
      */
     public int zooKeeperEnsembleCount() { return zooKeeperEnsembleCount; }
+
+    private static Optional<String> getEnvironmentVariable(String variableName) {
+        return Optional.ofNullable(System.getenv().get(variableName))
+                .filter(var -> !var.isEmpty());
+    }
+
 }

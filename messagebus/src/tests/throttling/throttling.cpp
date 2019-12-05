@@ -49,7 +49,7 @@ bool waitQueueSize(RoutableQueue &queue, uint32_t size)
         if (queue.size() == size) {
             return true;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     return false;
 }
@@ -60,7 +60,7 @@ bool waitPending(SourceSession& session, uint32_t size)
         if (session.getPendingCount() == size) {
             return true;
         }
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
     return false;
 }

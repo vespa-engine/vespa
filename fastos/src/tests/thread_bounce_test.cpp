@@ -43,7 +43,7 @@ class Thread_Bounce_Test : public ThreadTestBase
 
        int left = static_cast<int>(checkTime.elapsed().ms());
        while (left < 1000) {
-         FastOS_Thread::Sleep(1000 - left);
+         std::this_thread::sleep_for(std::chrono::milliseconds(1000 - left));
          left = static_cast<int>(checkTime.elapsed().ms());
        }
 

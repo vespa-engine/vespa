@@ -115,7 +115,8 @@ public class FederationSearcher extends ForkingSearcher {
         this(searchChainResolver, false, PropagateSourceProperties.ALL, null);
     }
 
-    private FederationSearcher(SearchChainResolver searchChainResolver, boolean strictSearchchain,
+    private FederationSearcher(SearchChainResolver searchChainResolver,
+                               boolean strictSearchchain,
                                PropagateSourceProperties.Enum propagateSourceProperties,
                                TargetSelector targetSelector) {
         this.searchChainResolver = searchChainResolver;
@@ -295,9 +296,11 @@ public class FederationSearcher extends ForkingSearcher {
         }
     }
 
-    private Object getSourceOrProviderProperty(Query query, CompoundName propertyName,
-                                                String sourceName, String providerName,
-                                                Object defaultValue) {
+    private Object getSourceOrProviderProperty(Query query,
+                                               CompoundName propertyName,
+                                               String sourceName,
+                                               String providerName,
+                                               Object defaultValue) {
         Object result = getProperty(query, new SourceKey(sourceName, propertyName.toString()));
         if (result == null)
             result = getProperty(query, new ProviderKey(providerName, propertyName.toString()));

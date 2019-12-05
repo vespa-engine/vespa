@@ -6,9 +6,11 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 #include <sstream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".rpc.listener");
@@ -50,7 +52,7 @@ FNetListener::registerHandle(vespalib::stringref handle) {
     _slobrokRegister.registerName(handle);
     while (_slobrokRegister.busy()) {
         LOG(debug, "Waiting to register in slobrok");
-        FastOS_Thread::Sleep(50);
+        std::this_thread::sleep_for(50ms);
     }
     _handle = handle;
 }

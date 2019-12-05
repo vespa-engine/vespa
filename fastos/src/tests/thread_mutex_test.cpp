@@ -132,7 +132,7 @@ class Thread_Mutex_Test : public ThreadTestBase
       {
          bool lockrc;
 
-         FastOS_Thread::Sleep(1000);
+         std::this_thread::sleep_for(1s);
 
          for(int i=0; i<5; i++)
          {
@@ -145,7 +145,7 @@ class Thread_Mutex_Test : public ThreadTestBase
             }
          }
 
-         FastOS_Thread::Sleep(2000);
+         std::this_thread::sleep_for(2s);
 
          lockrc = mtx.try_lock();
          Progress(lockrc, "We should get the mutex lock now (%s)",

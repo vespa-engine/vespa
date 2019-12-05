@@ -163,7 +163,7 @@ int Test::Main() {
 
     for (; duration > 0; --duration) {
         LOG(info, "%d seconds left...", duration);
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(1s);
     }
     pool.Close();
     fprintf(stderr, "Did (%lu + %lu) = %lu linkIn operations\n",

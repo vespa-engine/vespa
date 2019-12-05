@@ -1,12 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "externslobrokpolicy.h"
-#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/messagebus/routing/routingcontext.h>
+#include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/thread.h>
+#include <thread>
 
 using slobrok::api::IMirrorAPI;
 using slobrok::api::MirrorAPI;
@@ -82,7 +83,7 @@ ExternSlobrokPolicy::lookup(mbus::RoutingContext& context, const string& pattern
     if (_firstTry) {
         int count = 0;
         while (entries.empty() && count < 100) {
-            FastOS_Thread::Sleep(50);
+            std::this_thread::sleep_for(50ms);
             entries = mirror.lookup(pattern);
             count++;
         }
