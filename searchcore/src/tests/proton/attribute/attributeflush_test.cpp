@@ -516,21 +516,21 @@ Test::requireThatLastFlushTimeIsReported()
         EXPECT_EQUAL(fastos::UTCTimeStamp::ZERO, ft->getLastFlushTime());
         ft->initFlush(200)->run();
         EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
-        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().timeSinceEpoch().time());
+        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().time_since_epoch().time());
     }
     { // snapshot flushed
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().timeSinceEpoch().time());
+        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().time_since_epoch().time());
         { // updated flush time after nothing to flush
             std::this_thread::sleep_for(8000ms);
-            fastos::TimeStamp now = fastos::ClockSystem::now().timeSinceEpoch();
+            fastos::TimeStamp now = fastos::ClockSystem::now().time_since_epoch();
             Executor::Task::UP task = ft->initFlush(200);
             EXPECT_TRUE(task.get() == NULL);
-            EXPECT_LESS(stat._modifiedTime, ft->getLastFlushTime().timeSinceEpoch().time());
-            EXPECT_APPROX(now.time(), ft->getLastFlushTime().timeSinceEpoch().time(), 8);
+            EXPECT_LESS(stat._modifiedTime, ft->getLastFlushTime().time_since_epoch().time());
+            EXPECT_APPROX(now.time(), ft->getLastFlushTime().time_since_epoch().time(), 8);
         }
     }
 }

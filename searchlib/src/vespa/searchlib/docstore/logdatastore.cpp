@@ -656,7 +656,7 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
 FileChunk::UP
 LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum)
 {
-    return createWritableFile(fileId, serialNum, NameId(fastos::ClockSystem::now().timeSinceEpoch()));
+    return createWritableFile(fileId, serialNum, NameId(fastos::ClockSystem::now().time_since_epoch()));
 }
 
 namespace {

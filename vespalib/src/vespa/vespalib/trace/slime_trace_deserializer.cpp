@@ -29,7 +29,7 @@ SlimeTraceDeserializer::deserialize(const Inspector & inspector)
 TraceNode
 SlimeTraceDeserializer::deserializeTraceNode(const Inspector & inspector)
 {
-    int64_t timestamp(decodeTimestamp(inspector));
+    system_time timestamp(std::chrono::milliseconds(decodeTimestamp(inspector)));
     if (hasPayload(inspector)) {
         std::string note(decodePayload(inspector));
         return TraceNode(note, timestamp);

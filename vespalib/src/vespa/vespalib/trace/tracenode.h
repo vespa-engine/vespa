@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/time.h>
 #include <vector>
 
 namespace vespalib {
@@ -27,7 +28,7 @@ private:
     bool                   _hasNote;
     string                 _note;
     std::vector<TraceNode> _children;
-    int64_t                _timestamp;
+    system_time            _timestamp;
 
 public:
     /**
@@ -40,13 +41,13 @@ public:
      * @param note The note for this node.
      * @param timestamp The timestamp to give to node.
      */
-    explicit TraceNode(const string &note, int64_t timestamp);
+    explicit TraceNode(const string &note, system_time timestamp);
 
     /**
      * Create a leaf node with no note and a time stamp.
      * @param timestamp The timestamp to give to node.
      */
-    explicit TraceNode(int64_t timestamp);
+    explicit TraceNode(system_time timestamp);
 
     TraceNode & operator =(const TraceNode &);
     TraceNode(TraceNode &&) noexcept;
@@ -104,7 +105,7 @@ public:
      *
      * @return True if this has no parent.
      */
-    bool isRoot() const { return _parent == NULL; }
+    bool isRoot() const { return _parent == nullptr; }
 
     /**
      * Check whether or not this is a leaf node.
@@ -155,7 +156,7 @@ public:
      *
      * @return The timestamp.
      */
-    int64_t getTimestamp() const { return _timestamp; }
+    system_time getTimestamp() const { return _timestamp; }
 
 
     /**
@@ -189,7 +190,7 @@ public:
      * @param timestamp The timestamp to give this child.
      * @return This, to allow chaining.
      */
-    TraceNode &addChild(const string &note, int64_t timestamp);
+    TraceNode &addChild(const string &note, system_time timestamp);
 
     /**
      * Adds a child node to this.

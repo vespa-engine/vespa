@@ -46,7 +46,7 @@ TraceNode::TraceNode() :
     _hasNote(false),
     _note(""),
     _children(),
-    _timestamp(0)
+    _timestamp()
 { }
 
 TraceNode::TraceNode(const TraceNode &rhs) :
@@ -65,7 +65,7 @@ TraceNode & TraceNode::operator =(const TraceNode &) = default;
 
 TraceNode::~TraceNode() = default;
 
-TraceNode::TraceNode(const string &note, int64_t timestamp) :
+TraceNode::TraceNode(const string &note, system_time timestamp) :
     _parent(nullptr),
     _strict(true),
     _hasNote(true),
@@ -74,7 +74,7 @@ TraceNode::TraceNode(const string &note, int64_t timestamp) :
     _timestamp(timestamp)
 { }
 
-TraceNode::TraceNode(int64_t timestamp) :
+TraceNode::TraceNode(system_time timestamp) :
     _parent(nullptr),
     _strict(true),
     _hasNote(false),
@@ -109,7 +109,7 @@ TraceNode::clear()
     _hasNote = false;
     _note.clear();
     _children.clear();
-    _timestamp = 0;
+    _timestamp = system_time();
     return *this;
 }
 
@@ -177,11 +177,11 @@ TraceNode::normalize()
 TraceNode &
 TraceNode::addChild(const string &note)
 {
-    return addChild(TraceNode(note, 0));
+    return addChild(TraceNode(note, system_time()));
 }
 
 TraceNode &
-TraceNode::addChild(const string &note, int64_t timestamp)
+TraceNode::addChild(const string &note, system_time timestamp)
 {
     return addChild(TraceNode(note, timestamp));
 }
@@ -245,8 +245,7 @@ TraceNode::encode() const
     string ret = "";
     if (_hasNote) {
         ret.append("[");
-        for (uint32_t i = 0, len = _note.size(); i < len; ++i) {
-            char c = _note[i];
+        for (char c : _note) {
             if (c == '\\' || c == ']') {
                 ret.append("\\");
             }
@@ -296,7 +295,7 @@ TraceNode::decode(const string &str)
                 node = &node->_children.back();
                 node->setStrict(c == '(');
             } else if (c == ')' || c == '}') {
-                if (node == NULL) {
+                if (node == nullptr) {
                     LOG(warning, "Unexpected closing brace in trace '%s' at "
                                  "position %d.", str.c_str(), i);
                     return TraceNode();

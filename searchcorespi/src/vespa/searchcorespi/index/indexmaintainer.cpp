@@ -944,7 +944,7 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         _lastFlushTime = fastos::ClockSystem::now();
         LOG(debug, "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
-            _flush_serial_num, _lastFlushTime.timeSinceEpoch().sec());
+            _flush_serial_num, _lastFlushTime.time_since_epoch().sec());
         return FlushTask::UP();
     }
     SerialNum realSerialNum = args.flush_serial_num;

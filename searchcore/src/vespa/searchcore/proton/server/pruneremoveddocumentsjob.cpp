@@ -67,7 +67,7 @@ PruneRemovedDocumentsJob::run()
     uint64_t tshz = 1000000;
     fastos::UTCTimeStamp now = fastos::ClockSystem::now();
     const Timestamp ageLimit(static_cast<Timestamp::Type>
-                             ((now.timeSinceEpoch().sec() - _cfgAgeLimit) * tshz));
+                             ((now.time_since_epoch().sec() - _cfgAgeLimit) * tshz));
     DocId lid(_nextLid);
     const DocId olid(lid);
     const DocId docIdLimit(_metaStore.getCommittedDocIdLimit());

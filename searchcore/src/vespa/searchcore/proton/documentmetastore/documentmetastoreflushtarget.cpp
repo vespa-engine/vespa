@@ -223,7 +223,7 @@ DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial)
     if (syncToken <= getFlushedSerialNum()) {
         writer->setLastFlushTime(fastos::ClockSystem::now());
         LOG(debug, "No document meta store to flush. Update flush time to current: lastFlushTime(%f)",
-            getLastFlushTime().timeSinceEpoch().sec());
+            getLastFlushTime().time_since_epoch().sec());
         return Task::UP();
     }
     return std::make_unique<Flusher>(*this, syncToken, *writer);

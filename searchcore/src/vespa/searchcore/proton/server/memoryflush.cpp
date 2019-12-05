@@ -140,7 +140,7 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
         config.maxGlobalMemory, config.maxGlobalTlsSize, config.globalDiskBloatFactor,
         config.maxMemoryGain, config.diskBloatFactor,
         config.maxTimeGain.sec(),
-        _startTime.timeSinceEpoch().sec());
+        _startTime.time_since_epoch().sec());
     for (size_t i(0), m(targetList.size()); i < m; i++) {
         const IFlushTarget & target(*targetList[i]->getTarget());
         const IFlushHandler & handler(*targetList[i]->getHandler());
@@ -183,8 +183,8 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             target.getFlushedSerialNum(),
             localLastSerial,
             serialDiff,
-            lastFlushTime.timeSinceEpoch().sec(),
-            now.timeSinceEpoch().sec(),
+            lastFlushTime.time_since_epoch().sec(),
+            now.time_since_epoch().sec(),
             timeDiff.sec(),
             getOrderName(order).c_str());
     }

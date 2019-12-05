@@ -280,7 +280,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         runAsMaster([&]() { flushTask = target.initFlush(1); });
         flushTask->run();
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().timeSinceEpoch().time());
+        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().time_since_epoch().time());
 
         sources = get_source_collection();
         EXPECT_EQ(2u, sources->getSourceCount());
@@ -298,17 +298,17 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
     { // verify last flush time when loading disk index
         resetIndexManager();
         IndexFlushTarget target(_index_manager->getMaintainer());
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().timeSinceEpoch().time());
+        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().time_since_epoch().time());
 
         // updated serial number & flush time when nothing to flush
         std::this_thread::sleep_for(8s);
-        fastos::TimeStamp now = fastos::ClockSystem::now().timeSinceEpoch();
+        fastos::TimeStamp now = fastos::ClockSystem::now().time_since_epoch();
         vespalib::Executor::Task::UP task;
         runAsMaster([&]() { task = target.initFlush(2); });
         EXPECT_TRUE(task.get() == nullptr);
         EXPECT_EQ(2u, target.getFlushedSerialNum());
-        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime().timeSinceEpoch().time());
-        EXPECT_NEAR(now.time(), target.getLastFlushTime().timeSinceEpoch().time(), 8);
+        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime().time_since_epoch().time());
+        EXPECT_NEAR(now.time(), target.getLastFlushTime().time_since_epoch().time(), 8);
     }
 }
 

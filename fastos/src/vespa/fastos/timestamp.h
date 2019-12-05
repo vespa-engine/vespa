@@ -61,7 +61,6 @@ inline TimeStamp operator *(double a, TimeStamp b) { return TimeStamp(static_cas
 class UTCTimeStamp {
 public:
     static const UTCTimeStamp ZERO;
-    static const UTCTimeStamp FUTURE;
     UTCTimeStamp() : _timeStamp() { }
     explicit UTCTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
 
@@ -92,7 +91,7 @@ public:
     friend bool operator >= (UTCTimeStamp a, UTCTimeStamp b) {
         return a._timeStamp >= b._timeStamp;
     }
-    TimeStamp timeSinceEpoch() const { return _timeStamp - ZERO._timeStamp; }
+    TimeStamp time_since_epoch() const { return _timeStamp - ZERO._timeStamp; }
     std::string toString() const { return _timeStamp.toString(); };
 private:
     TimeStamp _timeStamp;

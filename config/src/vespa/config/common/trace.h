@@ -12,7 +12,7 @@ namespace config {
  * Clock interface for acquiring time.
  */
 struct Clock {
-    virtual int64_t currentTimeMillis() const = 0;
+    virtual vespalib::system_time currentTime() const = 0;
     virtual ~Clock() {}
 };
 

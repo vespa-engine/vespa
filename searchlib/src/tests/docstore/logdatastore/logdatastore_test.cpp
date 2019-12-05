@@ -764,7 +764,7 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     MyTlSyncer tlSyncer;
     LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
                        TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
-    EXPECT_EQUAL(0, store.getLastFlushTime().timeSinceEpoch().time());
+    EXPECT_EQUAL(0, store.getLastFlushTime().time_since_epoch().time());
     uint64_t flushToken = store.initFlush(5);
     EXPECT_EQUAL(5u, flushToken);
     store.flush(flushToken);
