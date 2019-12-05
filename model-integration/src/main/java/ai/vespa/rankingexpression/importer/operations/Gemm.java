@@ -92,7 +92,7 @@ public class Gemm extends IntermediateOperation {
             return null;
         }
 
-        String joinDimension = aType.dimensions().get(1).name(); // TODO: check wrt transpose!
+        String joinDimension = aType.dimensions().get(1 - transposeA).name();
 
         TensorFunction AxB = new com.yahoo.tensor.functions.Matmul(aFunction.get(), bFunction.get(), joinDimension);
         TensorFunction alphaxAxB = new TensorFunctionNode.ExpressionTensorFunction(

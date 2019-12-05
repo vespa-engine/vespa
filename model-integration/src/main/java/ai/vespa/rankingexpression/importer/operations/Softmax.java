@@ -2,8 +2,13 @@
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
+import com.yahoo.tensor.functions.Join;
+import com.yahoo.tensor.functions.Map;
+import com.yahoo.tensor.functions.Reduce;
+import com.yahoo.tensor.functions.ScalarFunctions;
 import com.yahoo.tensor.functions.TensorFunction;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -13,8 +18,11 @@ import java.util.List;
  */
 public class Softmax extends IntermediateOperation {
 
-    public Softmax(String modelName, String nodeName, List<IntermediateOperation> inputs) {
+    private final AttributeMap attributeMap;
+
+    public Softmax(String modelName, String nodeName, List<IntermediateOperation> inputs, AttributeMap attributeMap) {
         super(modelName, nodeName, inputs);
+        this.attributeMap = attributeMap;
     }
 
     @Override
@@ -28,18 +36,30 @@ public class Softmax extends IntermediateOperation {
         if ( ! allInputFunctionsPresent(1)) return null;
 
         OrderedTensorType inputType = inputs.get(0).type().get();
-        String dimension = inputType.dimensions().get(0).name();
-        if (inputType.rank() == 2) {
-            dimension = inputType.dimensions().get(1).name(); // assumption: first dimension is batch dimension
+
+        int axis = inputType.rank() == 1 ? 0 : 1;  // assumption: first dimension is batch dimension, except if there's only one dimension
+        if (attributeMap.get("axis").isPresent()) {
+            axis = (int)attributeMap.get("axis").get().asDouble();
+        }
+        if (axis < 0) {
+            axis = inputType.rank() + axis;
+        }
+        List<String> reduceDimensions = new ArrayList<>();
+        for (int i = axis; i < inputType.rank(); ++i) {
+            reduceDimensions.add(inputType.dimensions().get(i).name());  // Do softmax over all dimensions except batch dimension
         }
 
-        TensorFunction inputFunction = inputs.get(0).function().get();
-        return new com.yahoo.tensor.functions.Softmax(inputFunction, dimension);
+        TensorFunction input = inputs.get(0).function().get();
+        TensorFunction exp = new Map(input, ScalarFunctions.exp());
+        TensorFunction sum = new Reduce(exp, Reduce.Aggregator.sum, reduceDimensions);
+        TensorFunction div = new Join(exp, sum, ScalarFunctions.divide());
+
+        return div;
     }
 
     @Override
     public Softmax withInputs(List<IntermediateOperation> inputs) {
-        return new Softmax(modelName(), name(), inputs);
+        return new Softmax(modelName(), name(), inputs, attributeMap);
     }
 
     @Override
