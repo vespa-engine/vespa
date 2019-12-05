@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/time.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -56,7 +57,7 @@ MemoryFlush::Config::Config()
       globalDiskBloatFactor(0.2),
       maxMemoryGain(1000*1024*1024ul),
       diskBloatFactor(0.2),
-      maxTimeGain(fastos::TimeStamp::MINUTE*60*24)
+      maxTimeGain(std::chrono::hours(24))
 { }
 
 
@@ -65,7 +66,7 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
                             double globalDiskBloatFactor_in,
                             uint64_t maxMemoryGain_in,
                             double diskBloatFactor_in,
-                            fastos::TimeStamp maxTimeGain_in)
+                            vespalib::duration maxTimeGain_in)
     : maxGlobalMemory(maxGlobalMemory_in),
       maxGlobalTlsSize(maxGlobalTlsSize_in),
       globalDiskBloatFactor(globalDiskBloatFactor_in),
@@ -74,7 +75,7 @@ MemoryFlush::Config::Config(uint64_t maxGlobalMemory_in,
       maxTimeGain(maxTimeGain_in)
 { }
 
-MemoryFlush::MemoryFlush(const Config &config, fastos::UTCTimeStamp startTime)
+MemoryFlush::MemoryFlush(const Config &config, vespalib::system_time startTime)
     : _lock(),
       _config(config),
       _startTime(startTime)
@@ -82,7 +83,7 @@ MemoryFlush::MemoryFlush(const Config &config, fastos::UTCTimeStamp startTime)
 
 
 MemoryFlush::MemoryFlush()
-    : MemoryFlush(Config(), fastos::ClockSystem::now())
+    : MemoryFlush(Config(), vespalib::system_clock::now())
 { }
 
 MemoryFlush::~MemoryFlush() = default;
@@ -133,14 +134,14 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
     uint64_t totalTlsSize(0);
     const Config config(getConfig());
     vespalib::hash_set<const void *> visitedHandlers;
-    fastos::UTCTimeStamp now(fastos::ClockSystem::now());
+    vespalib::system_time now(vespalib::system_clock::now());
     LOG(debug,
         "getFlushTargets(): globalMaxMemory(%" PRIu64 "), maxGlobalTlsSize(%" PRIu64 "), globalDiskBloatFactor(%f), "
         "maxMemoryGain(%" PRIu64 "), diskBloatFactor(%f), maxTimeGain(%f), startTime(%f)",
         config.maxGlobalMemory, config.maxGlobalTlsSize, config.globalDiskBloatFactor,
         config.maxMemoryGain, config.diskBloatFactor,
-        config.maxTimeGain.sec(),
-        _startTime.time_since_epoch().sec());
+        vespalib::to_s(config.maxTimeGain),
+        vespalib::to_s(_startTime.time_since_epoch()));
     for (size_t i(0), m(targetList.size()); i < m; i++) {
         const IFlushTarget & target(*targetList[i]->getTarget());
         const IFlushHandler & handler(*targetList[i]->getHandler());
@@ -150,8 +151,8 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
         SerialNum localLastSerial = targetList[i]->getLastSerial();
         int64_t serialDiff = getSerialDiff(localLastSerial, target);
         vespalib::string name(getName(handler, target));
-        fastos::UTCTimeStamp lastFlushTime = target.getLastFlushTime();
-        fastos::TimeStamp timeDiff(now - (lastFlushTime > fastos::UTCTimeStamp::ZERO ? lastFlushTime : _startTime));
+        vespalib::system_time lastFlushTime = target.getLastFlushTime();
+        vespalib::duration timeDiff(now - (lastFlushTime > vespalib::system_time() ? lastFlushTime : _startTime));
         totalMemory += mgain;
         const flushengine::TlsStats &tlsStats = tlsStatsMap.getTlsStats(handler.getName());
         if (visitedHandlers.insert(&handler).second) {
@@ -183,9 +184,9 @@ MemoryFlush::getFlushTargets(const FlushContext::List &targetList,
             target.getFlushedSerialNum(),
             localLastSerial,
             serialDiff,
-            lastFlushTime.time_since_epoch().sec(),
-            now.time_since_epoch().sec(),
-            timeDiff.sec(),
+            vespalib::to_s(lastFlushTime.time_since_epoch()),
+            vespalib::to_s(now.time_since_epoch()),
+            vespalib::to_s(timeDiff),
             getOrderName(order).c_str());
     }
     if (!targetList.empty()) {

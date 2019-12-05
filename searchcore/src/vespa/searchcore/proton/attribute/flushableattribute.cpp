@@ -209,9 +209,9 @@ FlushableAttribute::internalInitFlush(SerialNum currentSerial)
         return Task::UP();
     }
     if (syncToken <= getFlushedSerialNum()) {
-        writer->setLastFlushTime(fastos::ClockSystem::now());
+        writer->setLastFlushTime(vespalib::system_clock::now());
         LOG(debug,"No attribute vector to flush. Update flush time to current: lastFlushTime(%f)",
-            getLastFlushTime().time_since_epoch().sec());
+            vespalib::to_s(getLastFlushTime().time_since_epoch()));
         return Task::UP();
     }
     return std::make_unique<Flusher>(*this, syncToken, *writer);

@@ -293,7 +293,7 @@ FileChunk::getLastPersistedSerialNum() const
     return _lastPersistedSerialNum;
 }
 
-fastos::UTCTimeStamp
+vespalib::system_time
 FileChunk::getModificationTime() const
 {
     return _modificationTime;

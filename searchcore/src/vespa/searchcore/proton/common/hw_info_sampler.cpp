@@ -6,6 +6,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib//util/time.h>
 #include <filesystem>
 #include <thread>
 #include <vespa/log/log.h>
@@ -98,7 +99,7 @@ double measureDiskWriteSpeed(const vespalib::string &path,
     Clock::time_point after = Clock::now();
     testFile.Close();
     vespalib::unlink(fileName);
-    double elapsed = std::chrono::duration<double>(after - before).count();
+    double elapsed = vespalib::to_s(after - before);
     double diskWriteSpeed = diskWriteLen / elapsed / 1024 / 1024;
     return diskWriteSpeed;
 }

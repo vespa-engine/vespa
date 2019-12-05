@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/util/filekit.h>
+#include "filekit.h"
 #include <vespa/vespalib/util/error.h>
 #include <vespa/fastos/file.h>
 
@@ -90,14 +90,14 @@ FileKit::removeStamp(const vespalib::string &name)
 }
 
 
-fastos::UTCTimeStamp
+vespalib::system_time
 FileKit::getModificationTime(const vespalib::string &name)
 {
     FastOS_StatInfo statInfo;
     if (FastOS_File::Stat(name.c_str(), &statInfo)) {
-        return fastos::UTCTimeStamp(statInfo._modifiedTimeNS);
+        return vespalib::system_time(vespalib::duration(statInfo._modifiedTimeNS));
     }
-    return fastos::UTCTimeStamp();
+    return vespalib::system_time();
 }
 
 

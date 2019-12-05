@@ -31,7 +31,7 @@ AttributeDirectory::AttributeDirectory(const std::shared_ptr<AttributeDiskLayout
                                        const vespalib::string &name)
     : _diskLayout(diskLayout),
       _name(name),
-      _lastFlushTime(0),
+      _lastFlushTime(vespalib::system_time()),
       _writer(nullptr),
       _mutex(),
       _cv(),
@@ -75,14 +75,14 @@ AttributeDirectory::getFlushedSerialNum() const
     return bestSnap.valid ? bestSnap.syncToken : 0;
 }
 
-fastos::UTCTimeStamp
+vespalib::system_time
 AttributeDirectory::getLastFlushTime() const
 {
     return _lastFlushTime;
 }
 
 void
-AttributeDirectory::setLastFlushTime(fastos::UTCTimeStamp lastFlushTime)
+AttributeDirectory::setLastFlushTime(vespalib::system_time lastFlushTime)
 {
     _lastFlushTime = lastFlushTime;
 }

@@ -46,7 +46,7 @@ using document::BucketId;
 using document::Document;
 using document::DocumentId;
 using document::test::makeBucketSpace;
-using fastos::ClockSystem;
+using vespalib::system_clock;
 using fastos::TimeStamp;
 using proton::bucketdb::BucketCreateNotifier;
 using proton::matching::ISessionCachePruner;

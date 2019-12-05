@@ -12,6 +12,7 @@
 #include <vespa/vespalib/util/sync.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/timestamp.h>
 
 class FastOS_FileInterface;
@@ -159,7 +160,7 @@ public:
     size_t   getErasedBytes() const { return _erasedBytes; }
     uint64_t getLastPersistedSerialNum() const;
     uint32_t getDocIdLimit() const { return _docIdLimit; }
-    virtual fastos::UTCTimeStamp getModificationTime() const;
+    virtual vespalib::system_time getModificationTime() const;
     virtual bool frozen() const { return true; }
     const vespalib::string & getName() const { return _name; }
     void compact(const IGetLid & iGetLid);
@@ -249,7 +250,7 @@ protected:
     uint32_t              _idxHeaderLen;
     uint64_t              _lastPersistedSerialNum;
     uint32_t              _docIdLimit; // Limit when the file was created. Stored in idx file header.
-    fastos::UTCTimeStamp  _modificationTime;
+    vespalib::system_time  _modificationTime;
 };
 
 } // namespace search

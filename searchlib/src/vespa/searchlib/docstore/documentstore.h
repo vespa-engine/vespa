@@ -75,7 +75,7 @@ public:
     void compact(uint64_t syncToken) override;
     uint64_t lastSyncToken() const override;
     uint64_t tentativeLastSyncToken() const override;
-    fastos::UTCTimeStamp getLastFlushTime() const override;
+    vespalib::system_time getLastFlushTime() const override;
     uint32_t getDocIdLimit() const override { return _backingStore.getDocIdLimit(); }
     size_t        memoryUsed() const override { return _backingStore.memoryUsed(); }
     size_t  getDiskFootprint() const override { return _backingStore.getDiskFootprint(); }

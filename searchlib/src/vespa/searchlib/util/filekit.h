@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace search {
 
@@ -20,7 +20,7 @@ public:
      * Returns the modification time of the given file/directory,
      * or time stamp 0 if stating of file/directory fails.
      **/
-    static fastos::UTCTimeStamp getModificationTime(const vespalib::string &name);
+    static vespalib::system_time getModificationTime(const vespalib::string &name);
 };
 
 }

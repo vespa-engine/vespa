@@ -57,7 +57,7 @@ public:
     uint64_t   getSerialNum() const { return _serialNum; }
     void setSerialNum(uint64_t serialNum) { _serialNum = std::max(_serialNum, serialNum); }
 
-    fastos::UTCTimeStamp getModificationTime() const override;
+    vespalib::system_time getModificationTime() const override;
     void freeze();
     size_t getDiskFootprint() const override;
     size_t getMemoryFootprint() const override;
@@ -90,7 +90,7 @@ private:
     void writeDataHeader(const common::FileHeaderContext &fileHeaderContext);
     bool needFlushPendingChunks(uint64_t serialNum, uint64_t datFileLen);
     bool needFlushPendingChunks(const vespalib::MonitorGuard & guard, uint64_t serialNum, uint64_t datFileLen);
-    fastos::UTCTimeStamp unconditionallyFlushPendingChunks(const vespalib::LockGuard & flushGuard, uint64_t serialNum, uint64_t datFileLen);
+    vespalib::system_time unconditionallyFlushPendingChunks(const vespalib::LockGuard & flushGuard, uint64_t serialNum, uint64_t datFileLen);
     static void insertChunks(ProcessedChunkMap & orderedChunks, ProcessedChunkQ & newChunks, const uint32_t nextChunkId);
     static ProcessedChunkQ fetchNextChain(ProcessedChunkMap & orderedChunks, const uint32_t firstChunkId);
     ChunkMeta computeChunkMeta(const vespalib::LockGuard & guard,

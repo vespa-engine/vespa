@@ -30,8 +30,8 @@ public:
             for (const auto &session: sessions) {
                 Cursor &entry = array.addObject();
                 entry.setString("id", session.id);
-                entry.setString("created", session.created.toUTC().toString());
-                entry.setString("doom", session.doom.toUTC().toString());
+                entry.setString("created", fastos::TimeStamp::asString(session.created.toUTC()));
+                entry.setString("doom", fastos::TimeStamp::asString(session.doom.toUTC()));
             }
         }
     }

@@ -48,6 +48,7 @@ public:
     double sec()                     const { return val()/1000000000.0; }
     std::string toString()           const { return asString(sec()); }
     static std::string asString(double timeInSeconds);
+    static std::string asString(std::chrono::system_clock::time_point duration);
     static TimeStamp fromSec(double sec) { return Seconds(sec); }
 private:
     TimeT _time;
@@ -57,45 +58,6 @@ inline TimeStamp operator +(TimeStamp a, TimeStamp b) { return TimeStamp(a.val()
 inline TimeStamp operator -(TimeStamp a, TimeStamp b) { return TimeStamp(a.val() - b.val()); }
 inline TimeStamp operator *(long a, TimeStamp b) { return TimeStamp(a * b.val()); }
 inline TimeStamp operator *(double a, TimeStamp b) { return TimeStamp(static_cast<int64_t>(a * b.val())); }
-
-class UTCTimeStamp {
-public:
-    static const UTCTimeStamp ZERO;
-    UTCTimeStamp() : _timeStamp() { }
-    explicit UTCTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
-
-    friend TimeStamp operator -(UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp - b._timeStamp;
-    }
-    friend UTCTimeStamp operator -(UTCTimeStamp a, TimeStamp b) {
-        return UTCTimeStamp(a._timeStamp - b);
-    }
-    friend UTCTimeStamp operator +(UTCTimeStamp a, TimeStamp b) {
-        return UTCTimeStamp(a._timeStamp + b);
-    }
-    friend bool operator != (UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp != b._timeStamp;
-    }
-    friend bool operator == (UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp == b._timeStamp;
-    }
-    friend bool operator < (UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp < b._timeStamp;
-    }
-    friend bool operator <= (UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp <= b._timeStamp;
-    }
-    friend bool operator > (UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp > b._timeStamp;
-    }
-    friend bool operator >= (UTCTimeStamp a, UTCTimeStamp b) {
-        return a._timeStamp >= b._timeStamp;
-    }
-    TimeStamp time_since_epoch() const { return _timeStamp - ZERO._timeStamp; }
-    std::string toString() const { return _timeStamp.toString(); };
-private:
-    TimeStamp _timeStamp;
-};
 
 class SteadyTimeStamp {
 public:
@@ -125,20 +87,14 @@ public:
     friend bool operator > (SteadyTimeStamp a, SteadyTimeStamp b) {
         return a._timeStamp > b._timeStamp;
     }
-    UTCTimeStamp toUTC() const;
+    std::chrono::system_clock::time_point toUTC() const;
     std::string toString() const { return _timeStamp.toString(); };
 private:
     TimeStamp _timeStamp;
 };
 
-std::ostream & operator << (std::ostream & os, UTCTimeStamp ts);
+std::ostream & operator << (std::ostream & os, std::chrono::system_clock::time_point ts);
 std::ostream & operator << (std::ostream & os, SteadyTimeStamp ts);
-
-class ClockSystem
-{
-public:
-    static UTCTimeStamp now();
-};
 
 class ClockSteady
 {

@@ -279,7 +279,7 @@ public:
             : SimpleTarget(name, Type::OTHER, flushedSerial, proceedImmediately)
     { }
 
-    Time getLastFlushTime() const override { return fastos::ClockSystem::now(); }
+    Time getLastFlushTime() const override { return vespalib::system_clock::now(); }
 
     SerialNum getFlushedSerialNum() const override {
         LOG(info, "SimpleTarget(%s)::getFlushedSerialNum() = %" PRIu64, getName().c_str(), _flushedSerial);

@@ -57,7 +57,7 @@ struct Fixture
                                                           IFlushTarget::Type::GC,
                                                           IFlushTarget::Component::ATTRIBUTE,
                                                           10,
-                                                          fastos::UTCTimeStamp::ZERO,
+                                                          vespalib::system_time(),
                                                           _lidSpace))
     {
     }

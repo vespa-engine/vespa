@@ -10,7 +10,7 @@
 #include "pruneremoveddocumentsjob.h"
 #include "sample_attribute_usage_job.h"
 
-using fastos::ClockSystem;
+using vespalib::system_clock;
 using fastos::TimeStamp;
 
 namespace proton {

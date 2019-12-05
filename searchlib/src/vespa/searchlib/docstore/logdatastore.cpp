@@ -247,15 +247,15 @@ LogDataStore::tentativeLastSyncToken() const
     return getActive(guard).getSerialNum();
 }
 
-fastos::UTCTimeStamp
+vespalib::system_time
 LogDataStore::getLastFlushTime() const
 {
     if (lastSyncToken() == 0) {
-        return fastos::UTCTimeStamp::ZERO;
+        return vespalib::system_time();
     }
     LockGuard guard(_updateLock);
-    fastos::UTCTimeStamp timeStamp(getActive(guard).getModificationTime());
-    if (timeStamp == fastos::UTCTimeStamp::ZERO) {
+    vespalib::system_time timeStamp(getActive(guard).getModificationTime());
+    if (timeStamp == vespalib::system_time()) {
         const FileChunk * prev = getPrevActive(guard);
         if (prev != nullptr) {
             timeStamp = prev->getModificationTime();
@@ -656,7 +656,7 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
 FileChunk::UP
 LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum)
 {
-    return createWritableFile(fileId, serialNum, NameId(fastos::ClockSystem::now().time_since_epoch()));
+    return createWritableFile(fileId, serialNum, NameId(vespalib::system_clock::now().time_since_epoch().count()));
 }
 
 namespace {

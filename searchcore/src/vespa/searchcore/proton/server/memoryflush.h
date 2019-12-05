@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/flushengine/iflushstrategy.h>
+#include <vespa/vespalib/util/time.h>
 #include <mutex>
 
 namespace proton {
@@ -25,14 +26,14 @@ public:
         double            diskBloatFactor;
 
         /// Maximum age of unflushed data.
-        fastos::TimeStamp maxTimeGain;
+        vespalib::duration maxTimeGain;
         Config();
         Config(uint64_t maxGlobalMemory_in,
                uint64_t maxGlobalTlsSize_in,
                double globalDiskBloatFactor_in,
                uint64_t maxMemoryGain_in,
                double diskBloatFactor_in,
-               fastos::TimeStamp maxTimeGain_in);
+               vespalib::duration maxTimeGain_in);
     };
 
     enum OrderType { DEFAULT, MAXAGE, DISKBLOAT, TLSSIZE, MEMORY };
@@ -42,7 +43,7 @@ private:
     mutable std::mutex _lock;
     Config             _config;
     /// The time when the strategy was started.
-    fastos::UTCTimeStamp  _startTime;
+    vespalib::system_time  _startTime;
 
     class CompareTarget
     {
@@ -62,8 +63,8 @@ public:
     using SP = std::shared_ptr<MemoryFlush>;
 
     MemoryFlush();
-    explicit MemoryFlush(const Config &config) : MemoryFlush(config, fastos::ClockSystem::now()) { }
-    MemoryFlush(const Config &config, fastos::UTCTimeStamp startTime);
+    explicit MemoryFlush(const Config &config) : MemoryFlush(config, vespalib::system_clock::now()) { }
+    MemoryFlush(const Config &config, vespalib::system_time startTime);
     ~MemoryFlush();
 
     FlushContext::List

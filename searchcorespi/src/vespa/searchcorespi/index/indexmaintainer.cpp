@@ -19,6 +19,7 @@
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/time.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -617,7 +618,7 @@ IndexMaintainer::doneFlush(FlushArgs *args, IDiskIndex::SP *disk_index) {
         return false;    // Must retry operation
     }
     _flush_serial_num = std::max(_flush_serial_num, args->flush_serial_num);
-    fastos::UTCTimeStamp timeStamp = search::FileKit::getModificationTime((*disk_index)->getIndexDir());
+    vespalib::system_time timeStamp = search::FileKit::getModificationTime((*disk_index)->getIndexDir());
     _lastFlushTime = timeStamp > _lastFlushTime ? timeStamp : _lastFlushTime;
     const uint32_t old_id = args->old_absolute_id - _last_fusion_id;
     replaceSource(old_id, *disk_index);
@@ -941,10 +942,10 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
         // No memory index to flush, it was empty
         LockGuard lock(_state_lock);
         _flush_serial_num = _current_serial_num;
-        _lastFlushTime = fastos::ClockSystem::now();
+        _lastFlushTime = vespalib::system_clock::now();
         LOG(debug, "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
-            _flush_serial_num, _lastFlushTime.time_since_epoch().sec());
+            _flush_serial_num, vespalib::to_s(_lastFlushTime.time_since_epoch()));
         return FlushTask::UP();
     }
     SerialNum realSerialNum = args.flush_serial_num;
