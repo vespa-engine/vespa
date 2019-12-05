@@ -37,7 +37,7 @@ public class Softmax extends IntermediateOperation {
 
         OrderedTensorType inputType = inputs.get(0).type().get();
 
-        int axis = inputType.rank() == 1 ? 0 : 1;  // assumption: first dimension is batch dimension, except if there's only one dimension
+        int axis = inputType.rank() == 1 ? 0 : 1;  // assumption: first dimension is batch dimension
         if (attributeMap.get("axis").isPresent()) {
             axis = (int)attributeMap.get("axis").get().asDouble();
         }

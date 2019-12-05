@@ -24,7 +24,6 @@ import ai.vespa.rankingexpression.importer.operations.NoOp;
 import ai.vespa.rankingexpression.importer.operations.Reshape;
 import ai.vespa.rankingexpression.importer.operations.Shape;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
-import com.yahoo.tensor.functions.ScalarFunction;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import onnx.Onnx;
 

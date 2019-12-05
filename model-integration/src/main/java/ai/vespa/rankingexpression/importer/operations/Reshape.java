@@ -56,7 +56,7 @@ public class Reshape extends IntermediateOperation {
         List<Integer> dimSizes = new ArrayList<>(shape.type().rank());
         shape.valueIterator().forEachRemaining(v -> dimSizes.add(v.intValue()));
 
-        // first pass - set 0 values
+        // first pass - set 0 values, meaning that size is retained from input
         for (int i = 0; i < dimSizes.size(); ++i) {
             if (dimSizes.get(i) == 0) {
                 if (i >= inputType.dimensions().size()) {
@@ -66,7 +66,7 @@ public class Reshape extends IntermediateOperation {
             }
         }
 
-        // second pass - set any -1 values
+        // second pass - set any -1 value, meaning that the dimension size should be expanded to fill the tensor
         for (int i = 0; i < dimSizes.size(); ++i) {
             if (dimSizes.get(i) < 0) {
                 int shapeSize = dimSizes.stream().reduce(1, (a, b) -> a * b);

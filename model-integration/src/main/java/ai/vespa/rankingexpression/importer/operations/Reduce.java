@@ -63,7 +63,7 @@ public class Reduce extends IntermediateOperation {
             for (Value i : attributeMap.getList("axes").get()) {
                 int dimensionIndex = (int) i.asDouble();
                 if (dimensionIndex < 0) {
-                    dimensionIndex = inputType.dimensions().size() - (-1 * dimensionIndex);
+                    dimensionIndex = inputType.dimensions().size() + dimensionIndex;
                 }
                 reduceDimensions.add(inputType.dimensions().get(dimensionIndex).name());
             }

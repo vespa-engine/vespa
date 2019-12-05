@@ -1,4 +1,4 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.rankingexpression.importer.operations;
 
 import ai.vespa.rankingexpression.importer.DimensionRenamer;
@@ -7,7 +7,6 @@ import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.TensorFunction;
 
 import java.util.List;
-import java.util.Optional;
 
 public class ConcatReduce extends IntermediateOperation {
 
@@ -22,7 +21,7 @@ public class ConcatReduce extends IntermediateOperation {
     @Override
     protected OrderedTensorType lazyGetType() {
         if ( ! allInputTypesPresent(inputs.size())) return null;
-        return inputs.get(0).type().get();  // todo, not necessarily so. Broadcasting etc?
+        return inputs.get(0).type().get();
     }
 
     @Override
@@ -65,7 +64,6 @@ public class ConcatReduce extends IntermediateOperation {
     private OrderedTensorType smallestInput(OrderedTensorType a, OrderedTensorType b) {
         return a.rank() < b.rank() ? a : b;
     }
-
 
     @Override
     public ConcatReduce withInputs(List<IntermediateOperation> inputs) {
