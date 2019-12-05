@@ -100,7 +100,7 @@ public class ResourceMeterMaintainer extends Maintainer {
     private static final Set<Node.State> METERABLE_NODE_STATES = Set.of(
             Node.State.reserved,   // an application will soon use this node
             Node.State.active,     // an application is currently using this node
-            Node.State.inactive    // an application owner might set a node inactive
+            Node.State.inactive    // an application is not using it, but it is reserved for being re-introduced or decommissioned
     );
 
     private boolean isNodeStateMeterable(Node node) {
