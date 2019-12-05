@@ -9,6 +9,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -52,7 +54,7 @@ public class CuratorTest {
     }
 
     @Test
-    public void require_curator_is_created_from_config() {
+    public void require_curator_is_created_from_config() throws IOException {
         try (Curator curator = createCurator(createTestConfig())) {
             assertThat(curator.zooKeeperEnsembleConnectionSpec(), is(spec1 + "," + spec2));
             assertThat(curator.zooKeeperEnsembleCount(), is(2));
@@ -60,7 +62,7 @@ public class CuratorTest {
     }
 
     @Test
-    public void require_that_server_count_is_correct() {
+    public void require_that_server_count_is_correct() throws IOException {
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         builder.zookeeperserver(createZKBuilder(localhost, port1));
         try (Curator curator = createCurator(new ConfigserverConfig(builder))) {
@@ -98,8 +100,8 @@ public class CuratorTest {
         return zkBuilder;
     }
 
-    private Curator createCurator(ConfigserverConfig configserverConfig) {
-        return new Curator(configserverConfig);
+    private Curator createCurator(ConfigserverConfig configserverConfig) throws IOException {
+        return new Curator(configserverConfig, Optional.of(Files.createTempFile("zookeeper-client", "cfg").toFile()));
     }
 
     private static class PortAllocator {
