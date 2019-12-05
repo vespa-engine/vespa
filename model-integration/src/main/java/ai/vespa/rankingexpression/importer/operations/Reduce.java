@@ -16,6 +16,7 @@ import com.yahoo.tensor.functions.TensorFunction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * ONNX Reduce[Sum/Mean/etc] operation
@@ -24,6 +25,8 @@ public class Reduce extends IntermediateOperation {
 
     private final AttributeMap attributeMap;
     private final com.yahoo.tensor.functions.Reduce.Aggregator aggregator;
+    private final DoubleUnaryOperator preOperator;
+    private final DoubleUnaryOperator postOperator;
 
     private List<String> reduceDimensions;
 
@@ -31,10 +34,22 @@ public class Reduce extends IntermediateOperation {
                   List<IntermediateOperation> inputs,
                   AttributeMap attributeMap,
                   com.yahoo.tensor.functions.Reduce.Aggregator aggregator) {
+        this(modelName, nodeName, inputs, attributeMap, aggregator, null, null);
+    }
+
+    public Reduce(String modelName, String nodeName,
+                  List<IntermediateOperation> inputs,
+                  AttributeMap attributeMap,
+                  com.yahoo.tensor.functions.Reduce.Aggregator aggregator,
+                  DoubleUnaryOperator preOperator,
+                  DoubleUnaryOperator postOperator) {
         super(modelName, nodeName, inputs);
         this.attributeMap = attributeMap;
         this.aggregator = aggregator;
+        this.preOperator = preOperator;
+        this.postOperator = postOperator;
     }
+
 
     @Override
     protected OrderedTensorType lazyGetType() {
@@ -48,7 +63,7 @@ public class Reduce extends IntermediateOperation {
             for (Value i : attributeMap.getList("axes").get()) {
                 int dimensionIndex = (int) i.asDouble();
                 if (dimensionIndex < 0) {
-                    dimensionIndex = inputType.dimensions().size() - dimensionIndex;
+                    dimensionIndex = inputType.dimensions().size() + dimensionIndex;
                 }
                 reduceDimensions.add(inputType.dimensions().get(dimensionIndex).name());
             }
@@ -61,6 +76,9 @@ public class Reduce extends IntermediateOperation {
         if ( ! allInputTypesPresent(1)) return null;
 
         TensorFunction inputFunction = inputs.get(0).function().get();
+        if (preOperator != null) {
+            inputFunction = new com.yahoo.tensor.functions.Map(inputFunction, preOperator);
+        }
         TensorFunction output = new com.yahoo.tensor.functions.Reduce(inputFunction, aggregator, reduceDimensions);
         if (shouldKeepDimensions()) {
             // multiply with a generated tensor created from the reduced dimensions
@@ -73,6 +91,9 @@ public class Reduce extends IntermediateOperation {
             Generate generatedFunction = new Generate(generatedType,
                     new GeneratorLambdaFunctionNode(generatedType, generatedExpression).asLongListToDoubleOperator());
             output = new com.yahoo.tensor.functions.Join(output, generatedFunction, ScalarFunctions.multiply());
+        }
+        if (postOperator != null) {
+            output = new com.yahoo.tensor.functions.Map(output, postOperator);
         }
         return output;
     }
@@ -93,7 +114,7 @@ public class Reduce extends IntermediateOperation {
 
     @Override
     public Reduce withInputs(List<IntermediateOperation> inputs) {
-        return new Reduce(modelName(), name(), inputs, attributeMap, aggregator);
+        return new Reduce(modelName(), name(), inputs, attributeMap, aggregator, preOperator, postOperator);
     }
 
     @Override
@@ -101,7 +122,7 @@ public class Reduce extends IntermediateOperation {
 
     private boolean shouldKeepDimensions() {
         Optional<Value> keepDims = attributeMap.get("keepdims");
-        return keepDims.isPresent() && keepDims.get().asBoolean();
+        return keepDims.isEmpty() || keepDims.get().asBoolean();  // default is 1
     }
 
     private OrderedTensorType reducedType(OrderedTensorType inputType, boolean keepDimensions) {

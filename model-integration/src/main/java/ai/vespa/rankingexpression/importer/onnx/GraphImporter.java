@@ -3,11 +3,13 @@
 package ai.vespa.rankingexpression.importer.onnx;
 
 import ai.vespa.rankingexpression.importer.operations.Gemm;
+import ai.vespa.rankingexpression.importer.operations.ConcatReduce;
 import ai.vespa.rankingexpression.importer.operations.OnnxConcat;
 import ai.vespa.rankingexpression.importer.operations.Reduce;
 import ai.vespa.rankingexpression.importer.operations.Select;
 import ai.vespa.rankingexpression.importer.operations.Softmax;
 import ai.vespa.rankingexpression.importer.operations.Squeeze;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.OrderedTensorType;
@@ -21,6 +23,7 @@ import ai.vespa.rankingexpression.importer.operations.MatMul;
 import ai.vespa.rankingexpression.importer.operations.NoOp;
 import ai.vespa.rankingexpression.importer.operations.Reshape;
 import ai.vespa.rankingexpression.importer.operations.Shape;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import onnx.Onnx;
 
@@ -36,24 +39,37 @@ import java.util.stream.Collectors;
  */
 class GraphImporter {
 
+    private static final Value eluAlpha = DoubleValue.frozen(1.0);
+    private static final Value seluAlpha = DoubleValue.frozen(1.6732632423543772848170429916717);
+    private static final Value seluGamma = DoubleValue.frozen(1.0507009873554804934193349852946);
+    private static final Value leakyReluAlpha = DoubleValue.frozen(0.01);
+
     private static IntermediateOperation mapOperation(Onnx.NodeProto node,
                                                      List<IntermediateOperation> inputs,
                                                      IntermediateGraph graph) {
+        String type = node.getOpType();
         String modelName = graph.name();
         String nodeName = getNodeName(node);
         AttributeConverter attributes = AttributeConverter.convert(node);
+        return mapOperation(type, inputs, modelName, nodeName, attributes);
+    }
 
-        switch (node.getOpType().toLowerCase()) {
+    static IntermediateOperation mapOperation(String opType,
+                                              List<IntermediateOperation> inputs,
+                                              String modelName,
+                                              String nodeName,
+                                              AttributeConverter attributes) {
+        switch (opType.toLowerCase()) {
             case "abs":         return new Map(modelName, nodeName, inputs, ScalarFunctions.abs());
-            case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
             case "acos":        return new Map(modelName, nodeName, inputs, ScalarFunctions.acos());
+            case "add":         return new Join(modelName, nodeName, inputs, ScalarFunctions.add());
             case "asin":        return new Map(modelName, nodeName, inputs, ScalarFunctions.asin());
             case "atan":        return new Map(modelName, nodeName, inputs, ScalarFunctions.atan());
             case "ceil":        return new Map(modelName, nodeName, inputs, ScalarFunctions.ceil());
             case "concat":      return new OnnxConcat(modelName, nodeName, inputs, attributes);
             case "cos":         return new Map(modelName, nodeName, inputs, ScalarFunctions.cos());
             case "div":         return new Join(modelName, nodeName, inputs, ScalarFunctions.divide());
-            case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu());
+            case "elu":         return new Map(modelName, nodeName, inputs, ScalarFunctions.elu(attributes.get("alpha").orElse(eluAlpha).asDouble()));
             case "equal":       return new Join(modelName, nodeName, inputs, ScalarFunctions.equal());
             case "exp":         return new Map(modelName, nodeName, inputs, ScalarFunctions.exp());
             case "floor":       return new Map(modelName, nodeName, inputs, ScalarFunctions.floor());
@@ -63,23 +79,31 @@ class GraphImporter {
             case "less":        return new Join(modelName, nodeName, inputs, ScalarFunctions.less());
             case "log":         return new Map(modelName, nodeName, inputs, ScalarFunctions.log());
             case "matmul":      return new MatMul(modelName, nodeName, inputs);
-            case "max":         return new Join(modelName, nodeName, inputs, ScalarFunctions.max());
-            case "min":         return new Join(modelName, nodeName, inputs, ScalarFunctions.min());
-            case "mean":        return new Join(modelName, nodeName, inputs, ScalarFunctions.mean());
+            case "max":         return new ConcatReduce(modelName, nodeName, inputs, com.yahoo.tensor.functions.Reduce.Aggregator.max);
+            case "min":         return new ConcatReduce(modelName, nodeName, inputs, com.yahoo.tensor.functions.Reduce.Aggregator.min);
+            case "mean":        return new ConcatReduce(modelName, nodeName, inputs, com.yahoo.tensor.functions.Reduce.Aggregator.avg);
             case "mul":         return new Join(modelName, nodeName, inputs, ScalarFunctions.multiply());
             case "neg":         return new Map(modelName, nodeName, inputs, ScalarFunctions.neg());
             case "pow":         return new Join(modelName, nodeName, inputs, ScalarFunctions.pow());
-            case "reshape":     return new Reshape(modelName, nodeName, inputs);
-            case "reducesum":   return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum);
+            case "reshape":     return new Reshape(modelName, nodeName, inputs, attributes);
+            case "reducel1":    return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, ScalarFunctions.abs(), null);
+            case "reducel2":    return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, ScalarFunctions.square(), ScalarFunctions.sqrt());
+            case "reducelogsum":return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, null, ScalarFunctions.log());
+            case "reducelogsumexp": return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, ScalarFunctions.exp(), ScalarFunctions.log());
+            case "reducemax":   return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.max);
             case "reducemean":  return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.avg);
+            case "reducemin":   return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.min);
+            case "reduceprod":  return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.prod);
+            case "reducesum":   return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum);
+            case "reducesumsquare": return new Reduce(modelName, nodeName, inputs, attributes, com.yahoo.tensor.functions.Reduce.Aggregator.sum, ScalarFunctions.square(), null);
             case "reciprocal":  return new Map(modelName, nodeName, inputs, ScalarFunctions.reciprocal());
             case "relu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.relu());
-            case "selu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.selu());
-            case "leakyrelu":   return new Map(modelName, nodeName, inputs, ScalarFunctions.leakyrelu());
+            case "selu":        return new Map(modelName, nodeName, inputs, ScalarFunctions.selu(attributes.get("gamma").orElse(seluGamma).asDouble(), attributes.get("alpha").orElse(seluAlpha).asDouble()));
+            case "leakyrelu":   return new Map(modelName, nodeName, inputs, ScalarFunctions.leakyrelu(attributes.get("alpha").orElse(leakyReluAlpha).asDouble()));
             case "shape":       return new Shape(modelName, nodeName, inputs);
             case "sigmoid":     return new Map(modelName, nodeName, inputs, ScalarFunctions.sigmoid());
             case "sin":         return new Map(modelName, nodeName, inputs, ScalarFunctions.sin());
-            case "softmax":     return new Softmax(modelName, nodeName, inputs);
+            case "softmax":     return new Softmax(modelName, nodeName, inputs, attributes);
             case "sub":         return new Join(modelName, nodeName, inputs, ScalarFunctions.subtract());
             case "squeeze":     return new Squeeze(modelName, nodeName, inputs, attributes);
             case "sqrt":        return new Map(modelName, nodeName, inputs, ScalarFunctions.sqrt());
@@ -90,7 +114,7 @@ class GraphImporter {
         }
 
         IntermediateOperation op = new NoOp(modelName, nodeName, inputs);
-        op.warning("Operation '" + node.getOpType() + "' is currently not implemented");
+        op.warning("Operation '" + opType + "' is currently not implemented");
         return op;
     }
 
@@ -259,6 +283,5 @@ class GraphImporter {
         throw new IllegalArgumentException("Unable to find a suitable name for node '" + node.toString() + "'. " +
                 "Either no explicit name given or no single output name.");
     }
-
 
 }

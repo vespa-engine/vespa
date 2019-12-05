@@ -28,6 +28,9 @@ public class OnnxConcat extends IntermediateOperation {
         if ( ! inputs.stream().map(IntermediateOperation::type).allMatch(Optional::isPresent)) return null;
 
         OrderedTensorType aType = inputs.get(0).type().get();
+        if (concatDimensionIndex < 0) {
+            concatDimensionIndex = aType.dimensions().size() + concatDimensionIndex;
+        }
         long concatDimSize = aType.dimensions().get(concatDimensionIndex).size().orElse(-1L);
 
         for (int i = 1; i < inputs.size(); ++i) {
@@ -92,7 +95,7 @@ public class OnnxConcat extends IntermediateOperation {
     public void renameDimensions(DimensionRenamer renamer) {
         super.renameDimensions(renamer);
         concatDimensionName = renamer.dimensionNameOf(concatDimensionName).orElse(concatDimensionName);
-   }
+    }
 
     @Override
     public OnnxConcat withInputs(List<IntermediateOperation> inputs) {
