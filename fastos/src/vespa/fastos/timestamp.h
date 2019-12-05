@@ -92,7 +92,7 @@ public:
     friend bool operator >= (UTCTimeStamp a, UTCTimeStamp b) {
         return a._timeStamp >= b._timeStamp;
     }
-    TimeStamp timeSinceEpoch() const { return _timeStamp - ZERO._timeStamp; }
+    TimeStamp time_since_epoch() const { return _timeStamp - ZERO._timeStamp; }
     std::string toString() const { return _timeStamp.toString(); };
 private:
     TimeStamp _timeStamp;
