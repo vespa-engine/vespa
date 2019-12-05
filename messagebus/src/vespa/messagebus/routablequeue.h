@@ -28,10 +28,9 @@ private:
     vespalib::Monitor _monitor;
     Queue<Routable*>  _queue;
 
-    RoutableQueue(const RoutableQueue &);
-    RoutableQueue &operator=(const RoutableQueue &);
-
 public:
+    RoutableQueue(const RoutableQueue &) = delete;
+    RoutableQueue &operator=(const RoutableQueue &) = delete;
     /**
      * Create an empty queue.
      **/
@@ -60,14 +59,14 @@ public:
 
     /**
      * Dequeue a routable from this queue. This method will block if
-     * the queue is currently empty. The 'msTimeout' parameter
+     * the queue is currently empty. The 'timeout' parameter
      * indicate how long to wait for something to be enqueued. If 0 is
      * given as timeout, this method will not block at all, making it
      * perform a simple poll. If the dequeue operation times out, the
      * returned auto-pointer will point to 0.
      *
      * @return the dequeued routable
-     * @param msTimeout how long to wait if the queue is empty
+     * @param timeout how long to wait if the queue is empty
      **/
     Routable::UP dequeue(duration timeout);
     Routable::UP dequeue() { return dequeue(duration::zero());}
