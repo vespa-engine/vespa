@@ -8,48 +8,7 @@ LOG_SETUP("trace_test");
 
 using namespace vespalib;
 
-class Test : public vespalib::TestApp {
-private:
-    void testEncodeDecode();
-    void testReservedChars();
-    void testConstruct();
-    void testAdd();
-    void testSort();
-    void testStrict();
-    void testTraceLevel();
-    void testCompact();
-    void testNormalize();
-    void testTraceDump();
-    void testVisiting();
-    void testTimestamp();
-
-public:
-    int Main() override;
-};
-
-TEST_APPHOOK(Test);
-
-int
-Test::Main()
-{
-    TEST_INIT("trace_test");
-    testEncodeDecode();
-    testReservedChars();
-    testAdd();
-    testConstruct();
-    testSort();
-    testStrict();
-    testTraceLevel();
-    testCompact();
-    testNormalize();
-    testTraceDump();
-    testVisiting();
-    testTimestamp();
-    TEST_DONE();
-}
-
-void
-Test::testEncodeDecode()
+TEST("testEncodeDecode")
 {
     EXPECT_EQUAL("()", TraceNode::decode("").encode());
     EXPECT_EQUAL("()", TraceNode::decode("[xyz").encode());
@@ -135,8 +94,7 @@ Test::testEncodeDecode()
     }
 }
 
-void
-Test::testReservedChars()
+TEST("testReservedChars")
 {
     TraceNode t;
     t.addChild("abc(){}[]\\xyz");
@@ -155,8 +113,7 @@ Test::testReservedChars()
     }
 }
 
-void
-Test::testAdd()
+TEST("testAdd")
 {
     TraceNode t1 = TraceNode::decode("([x])");
     TraceNode t2 = TraceNode::decode("([y])");
@@ -176,16 +133,14 @@ Test::testAdd()
     EXPECT_EQUAL("([y]([y])([y]([y])))", t2.encode());
 }
 
-void
-Test::testStrict()
+TEST("testStrict")
 {
     EXPECT_EQUAL("{}", TraceNode::decode("()").setStrict(false).encode());
     EXPECT_EQUAL("{[x]}", TraceNode::decode("([x])").setStrict(false).encode());
     EXPECT_EQUAL("{[x][y]}", TraceNode::decode("([x][y])").setStrict(false).encode());
 }
 
-void
-Test::testTraceLevel()
+TEST("testTraceLevel")
 {
     Trace t;
     t.setLevel(4);
@@ -212,8 +167,7 @@ Test::testTraceLevel()
     EXPECT_EQUAL(5u, t.getRoot().getNumChildren());
 }
 
-void
-Test::testCompact()
+TEST("testCompact")
 {
     EXPECT_EQUAL("()", TraceNode::decode("()").compact().encode());
     EXPECT_EQUAL("()", TraceNode::decode("(())").compact().encode());
@@ -243,8 +197,7 @@ Test::testCompact()
     EXPECT_EQUAL("({[a][b][c][d][e][f]})", TraceNode::decode("({({[a][b]})({[c][d]})({[e][f]})})").compact().encode());
 }
 
-void
-Test::testSort()
+TEST("testSort")
 {
     EXPECT_EQUAL("([b][a][c])", TraceNode::decode("([b][a][c])").sort().encode());
     EXPECT_EQUAL("({[a][b][c]})", TraceNode::decode("({[b][a][c]})").sort().encode());
@@ -254,8 +207,7 @@ Test::testSort()
     EXPECT_EQUAL("({([b]){[a][c]}})", TraceNode::decode("({{[c][a]}([b])})").sort().encode());
 }
 
-void
-Test::testNormalize()
+TEST("testNormalize")
 {
     TraceNode t1 = TraceNode::decode("({([a][b]{[x][y]([p][q])})([c][d])([e][f])})");
     TraceNode t2 = TraceNode::decode("({([a][b]{[y][x]([p][q])})([c][d])([e][f])})");
@@ -296,8 +248,7 @@ Test::testNormalize()
     EXPECT_EQUAL("({([c][d])([e][f])([a][b]{[x][y]([p][q])})})", t1.normalize().encode());
 }
 
-void
-Test::testTraceDump()
+TEST("testTraceDump")
 {
     {
         Trace big;
@@ -364,8 +315,7 @@ struct EncoderVisitor : public TraceVisitor
     }
 };
 
-void
-Test::testVisiting()
+TEST("testVisiting")
 {
     TraceNode b1;
     TraceNode b2;
@@ -385,31 +335,29 @@ Test::testVisiting()
 }
 
 constexpr system_time zero(duration::zero());
-constexpr system_time one234(std::chrono::milliseconds(1234));
-constexpr system_time one23(std::chrono::milliseconds(123));
-constexpr system_time one24(std::chrono::milliseconds(124));
+constexpr system_time as_ms(long ms) { return system_time(std::chrono::milliseconds(ms)); }
 
-void
-Test::testTimestamp()
+TEST("testTimestamp")
 {
     TraceNode root;
-    root.addChild("foo", one234);
+    root.addChild("foo", as_ms(1234));
     root.addChild("bar");
     EXPECT_EQUAL(root.getTimestamp(), zero);
-    EXPECT_EQUAL(root.getChild(0).getTimestamp(), one234);
+    EXPECT_EQUAL(root.getChild(0).getTimestamp(), as_ms(1234));
     EXPECT_EQUAL(root.getChild(1).getTimestamp(), zero);
 }
 
-void
-Test::testConstruct()
+TEST("testConstruct")
 {
-    TraceNode leaf1("foo", one23);
+    TraceNode leaf1("foo", as_ms(123));
     EXPECT_TRUE(leaf1.hasNote());
     EXPECT_EQUAL("foo", leaf1.getNote());
-    EXPECT_EQUAL(one23, leaf1.getTimestamp());
+    EXPECT_EQUAL(as_ms(123), leaf1.getTimestamp());
 
-    TraceNode leaf2(one24);
+    TraceNode leaf2(as_ms(124));
     EXPECT_FALSE(leaf2.hasNote());
     EXPECT_EQUAL("", leaf2.getNote());
-    EXPECT_EQUAL(one24, leaf2.getTimestamp());
+    EXPECT_EQUAL(as_ms(124), leaf2.getTimestamp());
 }
+
+TEST_MAIN() { TEST_RUN_ALL(); }
