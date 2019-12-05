@@ -48,7 +48,7 @@ public class AthenzApiTest extends ControllerContainerTest {
                               new File("property-list.json"));
 
         // POST user signup
-        tester.assertResponse(authenticatedRequest("http://localhost:8080/athenz/v1/user", "", Request.Method.POST),
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/api/athenz/v1/user", "", Request.Method.POST),
                               "{\"message\":\"User 'bob' added to admin role of 'vespa.vespa.tenants.sandbox'\"}");
     }
 
