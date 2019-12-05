@@ -61,7 +61,6 @@ inline TimeStamp operator *(double a, TimeStamp b) { return TimeStamp(static_cas
 class UTCTimeStamp {
 public:
     static const UTCTimeStamp ZERO;
-    static const UTCTimeStamp FUTURE;
     UTCTimeStamp() : _timeStamp() { }
     explicit UTCTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
 

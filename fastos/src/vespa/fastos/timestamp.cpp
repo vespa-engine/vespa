@@ -76,7 +76,6 @@ ClockSteady::now()
 const SteadyTimeStamp SteadyTimeStamp::ZERO;
 const SteadyTimeStamp SteadyTimeStamp::FUTURE(TimeStamp::FUTURE);
 const UTCTimeStamp UTCTimeStamp::ZERO;
-const UTCTimeStamp UTCTimeStamp::FUTURE(TimeStamp::FUTURE);
 
 UTCTimeStamp
 SteadyTimeStamp::toUTC() const {
