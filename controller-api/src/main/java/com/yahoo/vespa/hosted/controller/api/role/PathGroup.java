@@ -33,7 +33,8 @@ enum PathGroup {
              "/zone/v2/{*}"),
 
     /** Paths used for creating and reading user resources. */
-    user("/application/v4/user",
+    user(Optional.of("/api"),
+         "/application/v4/user",
          "/athenz/v1/{*}"),
 
     /** Paths used for creating tenants with proper access control. */
