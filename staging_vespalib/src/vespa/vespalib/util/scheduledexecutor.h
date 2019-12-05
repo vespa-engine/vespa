@@ -13,7 +13,7 @@ namespace vespalib {
 class TimerTask;
 
 /**
- * Timer is a class capable of running Tasks at a regular
+ * ScheduledExecutor is a class capable of running Tasks at a regular
  * interval. The timer can be reset to clear all tasks currently being
  * scheduled.
  */

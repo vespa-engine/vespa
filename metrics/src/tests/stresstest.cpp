@@ -4,6 +4,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/summetric.hpp>
+#include <vespa/vespalib/util/time.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -40,7 +41,7 @@ InnerMetricSet::InnerMetricSet(const char* name, const LoadTypeSet& lt, MetricSe
     _valueSum.addMetricToSum(_value1);
     _valueSum.addMetricToSum(_value2);
 }
-InnerMetricSet::~InnerMetricSet() { }
+InnerMetricSet::~InnerMetricSet() = default;
 
     MetricSet*
     InnerMetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
@@ -134,11 +135,10 @@ TEST(StressTest, test_stress)
     FastOS_ThreadPool threadPool(256 * 1024);
     std::vector<Hammer::UP> hammers;
     for (uint32_t i=0; i<10; ++i) {
-        hammers.push_back(Hammer::UP(
-            new Hammer(metrics, loadTypes, threadPool)));
+        hammers.push_back(std::make_unique<Hammer>(metrics, loadTypes, threadPool));
     }
     LOG(info, "Waiting to let loadgivers hammer a while");
-    std::this_thread::sleep_for(std::chrono::milliseconds(5 * 1000));
+    std::this_thread::sleep_for(5s);
 
     LOG(info, "Removing loadgivers");
     hammers.clear();

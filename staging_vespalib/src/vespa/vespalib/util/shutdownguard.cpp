@@ -16,7 +16,7 @@ void ShutdownGuard::Run(FastOS_ThreadInterface *, void *)
     while (_dieAtTime > steady_clock::now() && ! GetThread()->GetBreakFlag()) {
         std::this_thread::sleep_for(5ms);
     }
-    if (_dieAtTime < steady_clock::now()) {
+    if (_dieAtTime <= steady_clock::now()) {
         LOG(warning, "ShutdownGuard is now forcing an exit of the process.");
         _exit(EXIT_FAILURE);
     }
