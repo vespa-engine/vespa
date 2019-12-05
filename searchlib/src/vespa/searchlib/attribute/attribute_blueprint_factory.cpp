@@ -438,6 +438,13 @@ bool check_valid_diversity_attr(const IAttributeVector *attr) {
     return (attr->hasEnum() || attr->isIntegerType() || attr->isFloatingPointType());
 }
 
+bool
+is_compatible_for_nearest_neighbor(const vespalib::eval::ValueType& lhs,
+                                   const vespalib::eval::ValueType& rhs)
+{
+    return (lhs.dimensions() == rhs.dimensions());
+}
+
 //-----------------------------------------------------------------------------
 
 
@@ -630,9 +637,8 @@ public:
             return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
                                                              query_tensor->type().to_spec().c_str()));
         }
-        if (dense_attr_tensor->getTensorType() != dense_query_tensor->type()) {
-            // TODO: consider allowing different data types (float vs double).
-            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not equal",
+        if (!is_compatible_for_nearest_neighbor(dense_attr_tensor->getTensorType(), dense_query_tensor->type())) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
                                                              dense_attr_tensor->getTensorType().to_spec().c_str(), dense_query_tensor->type().to_spec().c_str()));
         }
         std::unique_ptr<DenseTensorView> dense_query_tensor_up(dense_query_tensor);

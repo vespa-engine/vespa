@@ -85,6 +85,10 @@ public class ValidateNearestNeighborSearcher extends Searcher {
             errorMessage = Optional.of(ErrorMessage.createIllegalQuery(description));
         }
 
+        private static boolean isCompatible(TensorType lhs, TensorType rhs) {
+            return lhs.dimensions().equals(rhs.dimensions());
+        }
+
         private static boolean isDenseVector(TensorType tt) {
             List<TensorType.Dimension> dims = tt.dimensions();
             if (dims.size() != 1) return false;
@@ -126,7 +130,7 @@ public class ValidateNearestNeighborSearcher extends Searcher {
                     setError(item.toString() + " field is not a tensor");
                     return;
                 }
-                if (! fTensorType.equals(qTensorType)) {
+                if (! isCompatible(fTensorType, qTensorType)) {
                     setError(item.toString() + " field type "+fTensorType+" does not match query tensor type "+qTensorType);
                     return;
                 }
