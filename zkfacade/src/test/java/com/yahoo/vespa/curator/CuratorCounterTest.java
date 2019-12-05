@@ -8,7 +8,6 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
- * @date 19.08.13
  */
 public class CuratorCounterTest {
 
