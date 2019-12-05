@@ -47,7 +47,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
                          document::BucketId superBucket,
                          document::BucketId lastBucket,
                          uint32_t maxBuckets = 8,
-                         uint32_t timeoutMS = 500,
+                         vespalib::duration timeout = 500ms,
                          bool visitInconsistentBuckets = false,
                          bool visitRemoves = false,
                          std::string libraryName = "dumpvisitor",
@@ -69,7 +69,7 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
 
         cmd->setMaximumPendingReplyCount(VisitorOperationTest::MAX_PENDING);
         cmd->setMaxBucketsPerVisitor(maxBuckets);
-        cmd->setTimeout(timeoutMS);
+        cmd->setTimeout(timeout);
         if (visitInconsistentBuckets) {
             cmd->setVisitInconsistentBuckets();
         }
@@ -178,7 +178,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     msg->addBucketToBeVisited(nullId);
     msg->setFieldSet("[header]");
     msg->setVisitRemoves();
-    msg->setTimeout(1234);
+    msg->setTimeout(1234ms);
     msg->getTrace().setLevel(7);
 
     auto op = createOpWithDefaultConfig(std::move(msg));
@@ -203,7 +203,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     EXPECT_GT(cvc->getToTime(), 0);
     EXPECT_EQ("[header]", cvc->getFieldSet());
     EXPECT_TRUE(cvc->visitRemoves());
-    EXPECT_EQ(1234, cvc->getTimeout());
+    EXPECT_EQ(1234ms, cvc->getTimeout());
     EXPECT_EQ(7, cvc->getTrace().getLevel());
 
     sendReply(*op);
@@ -285,7 +285,7 @@ TEST_F(VisitorOperationTest, no_resend_after_timeout_passed) {
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
-            createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20));
+            createVisitorCommand("lowtimeoutbusy", id, nullId, 8, 20ms));
 
     op->start(_sender, framework::MilliSecTime(0));
 
@@ -331,7 +331,7 @@ TEST_F(VisitorOperationTest, user_single_bucket) {
             userid,
             nullId,
             8,
-            500,
+            500ms,
             false,
             false,
             "dumpvisitor",
@@ -356,7 +356,7 @@ VisitorOperationTest::runVisitor(document::BucketId id,
                 id,
                 lastId,
                 maxBuckets,
-                500,
+                500ms,
                 false,
                 false,
                 "dumpvisitor",
@@ -448,13 +448,7 @@ TEST_F(VisitorOperationTest, empty_buckets_visited_when_visiting_removes) {
     addNodesToBucketDB(id, "0=0/0/0/1/2/t");
 
     auto op = createOpWithDefaultConfig(
-            createVisitorCommand("emptybucket",
-                id,
-                nullId,
-                8,
-                500,
-                false,
-                true));
+            createVisitorCommand("emptybucket", id, nullId, 8, 500ms, false, true));
 
     op->start(_sender, framework::MilliSecTime(0));
 
@@ -534,7 +528,7 @@ TEST_F(VisitorOperationTest, timeout_does_not_override_critical_error) {
                 document::BucketId(16, 1),
                 nullId,
                 8,
-                500)); // ms timeout
+                500ms)); // ms timeout
 
     op->start(_sender, framework::MilliSecTime(0));
     ASSERT_EQ("Visitor Create => 0,Visitor Create => 1",
@@ -607,7 +601,7 @@ TEST_F(VisitorOperationTest, bucket_high_bit_count) {
                 id,
                 nullId,
                 8,
-                500,
+                500ms,
                 false,
                 false,
                 "dumpvisitor",
@@ -633,7 +627,7 @@ TEST_F(VisitorOperationTest, bucket_low_bit_count) {
                 id,
                 nullId,
                 8,
-                500,
+                500ms,
                 false,
                 false,
                 "dumpvisitor",
@@ -829,7 +823,7 @@ TEST_F(VisitorOperationTest, inconsistency_handling) {
     _sender.clear();
 
     auto op = createOpWithConfig(
-            createVisitorCommand("multiplebucketsonesuper", id, nullId, 8, 500, true),
+            createVisitorCommand("multiplebucketsonesuper", id, nullId, 8, 500ms, true),
             VisitorOperation::Config(5, 4));
 
     op->start(_sender, framework::MilliSecTime(0));
@@ -988,7 +982,7 @@ VisitorOperationTest::startOperationWith2StorageNodeVisitors(bool inconsistent)
                 id,
                 nullId,
                 8,
-                500,
+                500ms,
                 inconsistent));
 
     op->start(_sender, framework::MilliSecTime(0));
@@ -1040,13 +1034,13 @@ TEST_F(VisitorOperationTest, queue_timeout_is_factor_of_total_timeout) {
     addNodesToBucketDB(id, "0=1/1/1/t,1=1/1/1/t");
 
     auto op = createOpWithDefaultConfig(
-            createVisitorCommand("foo", id, nullId, 8, 10000));
+            createVisitorCommand("foo", id, nullId, 8, 10000ms));
 
     op->start(_sender, framework::MilliSecTime(0));
     ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
 
     auto& cmd = dynamic_cast<CreateVisitorCommand&>(*_sender.command(0));
-    EXPECT_EQ(5000, cmd.getQueueTimeout());
+    EXPECT_EQ(5000ms, cmd.getQueueTimeout());
 }
 
 void

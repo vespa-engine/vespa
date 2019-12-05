@@ -37,7 +37,7 @@ App::Main()
         msg.reset(new SimpleMessage("test"));
         msg->getTrace().setLevel(9);
         ss->send(std::move(msg), "test");
-        reply = src.getReply(600); // 10 minutes timeout
+        reply = src.getReply(600s); // 10 minutes timeout
         if (reply.get() == 0) {
             fprintf(stderr, "CPP-CLIENT: no reply\n");
         } else {

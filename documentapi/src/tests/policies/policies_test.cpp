@@ -92,8 +92,10 @@ public:
 
 TEST_APPHOOK(Test);
 
-Test::Test() {}
-Test::~Test() {}
+Test::Test() = default;
+Test::~Test() = default;
+
+const vespalib::duration TIMEOUT = 600s;
 
 int
 Test::Main() {
@@ -230,7 +232,7 @@ Test::requireThatExternPolicySelectsFromExternSlobrok()
         lst.insert(leaf[0]->getRoute().toString());
 
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600));
+        ASSERT_TRUE(frame.getReceptor().getReply(TIMEOUT));
     }
     EXPECT_EQUAL(servers.size(), lst.size());
     for (uint32_t i = 0; i < servers.size(); ++i) {
@@ -332,14 +334,14 @@ Test::testExternSend()
     msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:tcp/localhost:%d;itr/session] default", slobrok.port())));
 
     ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
-    ASSERT_TRUE((msg = ir.getMessage(600)));
+    ASSERT_TRUE((msg = ir.getMessage(TIMEOUT)));
     is->forward(std::move(msg));
-    ASSERT_TRUE((msg = dr.getMessage(600)));
+    ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
     ds->acknowledge(std::move(msg));
-    mbus::Reply::UP reply = ir.getReply(600);
+    mbus::Reply::UP reply = ir.getReply(TIMEOUT);
     ASSERT_TRUE(reply);
     is->forward(std::move(reply));
-    ASSERT_TRUE((reply = sr.getReply(600)));
+    ASSERT_TRUE((reply = sr.getReply(TIMEOUT)));
 
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
 }
@@ -366,9 +368,9 @@ Test::testExternMultipleSlobroks()
         mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
-        ASSERT_TRUE((msg = dr.getMessage(600)));
+        ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
         ds->acknowledge(std::move(msg));
-        mbus::Reply::UP reply = sr.getReply(600);
+        mbus::Reply::UP reply = sr.getReply(TIMEOUT);
         ASSERT_TRUE(reply);
     }
     {
@@ -382,9 +384,9 @@ Test::testExternMultipleSlobroks()
         mbus::Message::UP msg(new GetDocumentMessage(DocumentId("id:ns:testdoc::"), 0));
         msg->setRoute(mbus::Route::parse(vespalib::make_string("[Extern:%s;dst/session]", spec.c_str())));
         ASSERT_TRUE(ss->send(std::move(msg)).isAccepted());
-        ASSERT_TRUE((msg = dr.getMessage(600)));
+        ASSERT_TRUE((msg = dr.getMessage(TIMEOUT)));
         ds->acknowledge(std::move(msg));
-        mbus::Reply::UP reply = sr.getReply(600);
+        mbus::Reply::UP reply = sr.getReply(TIMEOUT);
         ASSERT_TRUE(reply);
     }
 }
@@ -410,7 +412,7 @@ Test::testLocalService()
         lst.insert(leaf[0]->getRoute().toString());
 
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600));
+        ASSERT_TRUE(frame.getReceptor().getReply(TIMEOUT));
     }
     EXPECT_EQUAL(10u, lst.size());
 
@@ -423,7 +425,7 @@ Test::testLocalService()
         lst.insert(leaf[0]->getRoute().toString());
 
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600));
+        ASSERT_TRUE(frame.getReceptor().getReply(TIMEOUT));
     }
     EXPECT_EQUAL(1u, lst.size());
     EXPECT_EQUAL("docproc/cluster.default/*/chain.default", *lst.begin());
@@ -466,8 +468,8 @@ Test::testLocalServiceCache()
     barSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
     fooSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
 
-    ASSERT_TRUE(barFrame.getReceptor().getReply(600));
-    ASSERT_TRUE(fooFrame.getReceptor().getReply(600));
+    ASSERT_TRUE(barFrame.getReceptor().getReply(TIMEOUT));
+    ASSERT_TRUE(fooFrame.getReceptor().getReply(TIMEOUT));
 }
 
 void
@@ -543,8 +545,8 @@ Test::testRoundRobinCache()
     barSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
     fooSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
 
-    ASSERT_TRUE(barFrame.getReceptor().getReply(600));
-    ASSERT_TRUE(fooFrame.getReceptor().getReply(600));
+    ASSERT_TRUE(barFrame.getReceptor().getReply(TIMEOUT));
+    ASSERT_TRUE(fooFrame.getReceptor().getReply(TIMEOUT));
 }
 
 void
@@ -573,7 +575,7 @@ Test::multipleGetRepliesAreMergedToFoundDocument()
         mbus::Reply::UP reply(new GetDocumentReply(std::move(doc)));
         selected[i]->handleReply(std::move(reply));
     }
-    mbus::Reply::UP reply = frame.getReceptor().getReply(600);
+    mbus::Reply::UP reply = frame.getReceptor().getReply(TIMEOUT);
     EXPECT_TRUE(reply);
     EXPECT_EQUAL(static_cast<uint32_t>(DocumentProtocol::REPLY_GETDOCUMENT), reply->getType());
     EXPECT_EQUAL(123456ULL, static_cast<GetDocumentReply&>(*reply).getLastModified());
@@ -647,7 +649,7 @@ Test::testDocumentRouteSelectorIgnore()
             make_shared<Document>(*_docType, DocumentId("id:yarn:testdoc:n=1234:fluff"))));
     std::vector<mbus::RoutingNode*> leaf;
     ASSERT_TRUE(frame.select(leaf, 0));
-    mbus::Reply::UP reply = frame.getReceptor().getReply(600);
+    mbus::Reply::UP reply = frame.getReceptor().getReply(TIMEOUT);
     ASSERT_TRUE(reply);
     EXPECT_EQUAL(uint32_t(DocumentProtocol::REPLY_DOCUMENTIGNORED), reply->getType());
     EXPECT_EQUAL(0u, reply->getNumErrors());
@@ -940,7 +942,7 @@ Test::testSubsetService()
         ASSERT_TRUE(frame.select(leaf, 1));
         lst.insert(leaf[0]->getRoute().toString());
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600));
+        ASSERT_TRUE(frame.getReceptor().getReply(TIMEOUT));
     }
     ASSERT_TRUE(lst.size() > 1); // must have requeried
 
@@ -959,7 +961,7 @@ Test::testSubsetService()
 
         prev = next;
         leaf[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
-        ASSERT_TRUE(frame.getReceptor().getReply(600));
+        ASSERT_TRUE(frame.getReceptor().getReply(TIMEOUT));
     }
 
     // Test requerying for dropping nodes.
@@ -976,7 +978,7 @@ Test::testSubsetService()
         mbus::Reply::UP reply(new mbus::EmptyReply());
         reply->addError(mbus::Error(mbus::ErrorCode::NO_ADDRESS_FOR_SERVICE, route));
         leaf[0]->handleReply(std::move(reply));
-        ASSERT_TRUE(frame.getReceptor().getReply(600));
+        ASSERT_TRUE(frame.getReceptor().getReply(TIMEOUT));
     }
     EXPECT_EQUAL(10u, lst.size());
 
@@ -1018,8 +1020,8 @@ Test::testSubsetServiceCache()
     barSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
     fooSelected[0]->handleReply(mbus::Reply::UP(new mbus::EmptyReply()));
 
-    ASSERT_TRUE(barFrame.getReceptor().getReply(600));
-    ASSERT_TRUE(fooFrame.getReceptor().getReply(600));
+    ASSERT_TRUE(barFrame.getReceptor().getReply(TIMEOUT));
+    ASSERT_TRUE(fooFrame.getReceptor().getReply(TIMEOUT));
 }
 
 bool
@@ -1034,7 +1036,7 @@ Test::trySelect(TestFrame &frame, uint32_t numSelects, const std::vector<string>
         } else {
             frame.select(leaf, 0);
         }
-        if( ! frame.getReceptor().getReply(600)) {
+        if( ! frame.getReceptor().getReply(TIMEOUT)) {
             LOG(error, "Reply failed to propagate to reply handler.");
             return false;
         }

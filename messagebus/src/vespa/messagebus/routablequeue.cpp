@@ -39,17 +39,17 @@ RoutableQueue::enqueue(Routable::UP r)
 }
 
 Routable::UP
-RoutableQueue::dequeue(uint32_t msTimeout)
+RoutableQueue::dequeue(duration timeout)
 {
     steady_clock::time_point startTime = steady_clock::now();
-    uint64_t msLeft = msTimeout;
+    duration left = timeout;
     vespalib::MonitorGuard guard(_monitor);
-    while (_queue.size() == 0 && msLeft > 0) {
-        if (!guard.wait(msLeft) || _queue.size() > 0) {
+    while (_queue.size() == 0 && left > duration::zero()) {
+        if (!guard.wait(left) || _queue.size() > 0) {
             break;
         }
-        uint64_t elapsed = duration_cast<milliseconds>(steady_clock::now() - startTime).count();
-        msLeft = (elapsed > msTimeout) ? 0 : msTimeout - elapsed;
+        duration elapsed = (steady_clock::now() - startTime);
+        left = (elapsed > timeout) ? duration::zero() : timeout - elapsed;
     }
     if (_queue.size() == 0) {
         return Routable::UP();
@@ -62,15 +62,13 @@ RoutableQueue::dequeue(uint32_t msTimeout)
 void
 RoutableQueue::handleMessage(Message::UP msg)
 {
-    Routable::UP r(msg.release());
-    enqueue(std::move(r));
+    enqueue(std::move(msg));
 }
 
 void
 RoutableQueue::handleReply(Reply::UP reply)
 {
-    Routable::UP r(reply.release());
-    enqueue(std::move(r));
+    enqueue(std::move(reply));
 }
 
 } // namespace mbus

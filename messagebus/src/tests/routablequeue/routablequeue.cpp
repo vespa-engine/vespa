@@ -40,8 +40,8 @@ Test::Main()
     {
         RoutableQueue rq;
         EXPECT_TRUE(rq.size() == 0);
-        EXPECT_TRUE(rq.dequeue(0).get() == 0);
-        EXPECT_TRUE(rq.dequeue(100).get() == 0);
+        EXPECT_TRUE(rq.dequeue().get() == 0);
+        EXPECT_TRUE(rq.dequeue(100ms).get() == 0);
         EXPECT_TRUE(TestMessage::getCnt() == 0);
         EXPECT_TRUE(TestReply::getCnt() == 0);
         rq.enqueue(Routable::UP(new TestMessage(101)));
@@ -61,16 +61,16 @@ Test::Main()
         EXPECT_TRUE(TestMessage::getCnt() == 2);
         EXPECT_TRUE(TestReply::getCnt() == 2);
         {
-            Routable::UP r = rq.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = rq.dequeue();
+            ASSERT_TRUE(r);
             EXPECT_TRUE(rq.size() == 3);
             EXPECT_TRUE(r->getType() == 101);
         }
         EXPECT_TRUE(TestMessage::getCnt() == 1);
         EXPECT_TRUE(TestReply::getCnt() == 2);
         {
-            Routable::UP r = rq.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = rq.dequeue();
+            ASSERT_TRUE(r);
             EXPECT_TRUE(rq.size() == 2);
             EXPECT_TRUE(r->getType() == 201);
         }
@@ -85,16 +85,16 @@ Test::Main()
         EXPECT_TRUE(TestMessage::getCnt() == 2);
         EXPECT_TRUE(TestReply::getCnt() == 2);
         {
-            Routable::UP r = rq.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = rq.dequeue();
+            ASSERT_TRUE(r);
             EXPECT_TRUE(rq.size() == 3);
             EXPECT_TRUE(r->getType() == 102);
         }
         EXPECT_TRUE(TestMessage::getCnt() == 1);
         EXPECT_TRUE(TestReply::getCnt() == 2);
         {
-            Routable::UP r = rq.dequeue(0);
-            ASSERT_TRUE(r.get() != 0);
+            Routable::UP r = rq.dequeue();
+            ASSERT_TRUE(r);
             EXPECT_TRUE(rq.size() == 2);
             EXPECT_TRUE(r->getType() == 202);
         }

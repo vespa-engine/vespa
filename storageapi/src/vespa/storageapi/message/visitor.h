@@ -44,7 +44,7 @@ private:
     vespalib::string _fieldSet;
     bool _visitInconsistentBuckets;
 
-    uint32_t _queueTimeout;
+    duration _queueTimeout;
     uint32_t _maxPendingReplyCount;
     uint32_t _version;
 
@@ -61,22 +61,17 @@ public:
     ~CreateVisitorCommand();
 
     void setVisitorCmdId(uint32_t id) { _visitorCmdId = id; }
-    void setControlDestination(vespalib::stringref d)
-        { _controlDestination = d; }
+    void setControlDestination(vespalib::stringref d) { _controlDestination = d; }
     void setDataDestination(vespalib::stringref d) { _dataDestination = d; }
     void setParameters(const vdslib::Parameters& params) { _params = params; }
-    void setMaximumPendingReplyCount(uint32_t count)
-    { _maxPendingReplyCount = count; }
-    void setFieldSet(vespalib::stringref fieldSet)
-    { _fieldSet = fieldSet; }
+    void setMaximumPendingReplyCount(uint32_t count) { _maxPendingReplyCount = count; }
+    void setFieldSet(vespalib::stringref fieldSet) { _fieldSet = fieldSet; }
     void setVisitRemoves(bool value = true) { _visitRemoves = value; }
-    void setVisitInconsistentBuckets(bool visitInconsistent = true)
-        { _visitInconsistentBuckets = visitInconsistent; }
-    void addBucketToBeVisited(const document::BucketId& id)
-        { _buckets.push_back(id); }
+    void setVisitInconsistentBuckets(bool visitInconsistent = true) { _visitInconsistentBuckets = visitInconsistent; }
+    void addBucketToBeVisited(const document::BucketId& id) { _buckets.push_back(id); }
     void setVisitorId(const VisitorId id) { _visitorId = id; }
     void setInstanceId(vespalib::stringref id) { _instanceId = id; }
-    void setQueueTimeout(uint32_t milliSecs) { _queueTimeout = milliSecs; }
+    void setQueueTimeout(duration milliSecs) { _queueTimeout = milliSecs; }
     void setFromTime(Timestamp ts) { _fromTime = ts; }
     void setToTime(Timestamp ts) { _toTime = ts; }
 
@@ -86,24 +81,20 @@ public:
     document::Bucket getBucket() const override;
     const vespalib::string & getLibraryName() const { return _libName; }
     const vespalib::string & getInstanceId() const { return _instanceId; }
-    const vespalib::string & getControlDestination() const
-        { return _controlDestination; }
+    const vespalib::string & getControlDestination() const { return _controlDestination; }
     const vespalib::string & getDataDestination() const { return _dataDestination; }
     const vespalib::string & getDocumentSelection() const { return _docSelection; }
     const vdslib::Parameters& getParameters() const { return _params; }
     vdslib::Parameters& getParameters() { return _params; }
-    uint32_t getMaximumPendingReplyCount() const
-        { return _maxPendingReplyCount; }
-    const std::vector<document::BucketId>& getBuckets() const
-        { return _buckets; }
+    uint32_t getMaximumPendingReplyCount() const { return _maxPendingReplyCount; }
+    const std::vector<document::BucketId>& getBuckets() const { return _buckets; }
     Timestamp getFromTime() const { return _fromTime; }
     Timestamp getToTime() const { return _toTime; }
     std::vector<document::BucketId>& getBuckets() { return _buckets; }
     bool visitRemoves() const { return _visitRemoves; }
     const vespalib::string& getFieldSet() const { return _fieldSet; }
     bool visitInconsistentBuckets() const { return _visitInconsistentBuckets; }
-        // In millisec
-    uint32_t getQueueTimeout() const { return _queueTimeout; }
+    duration getQueueTimeout() const { return _queueTimeout; }
 
     void setVisitorDispatcherVersion(uint32_t version) { _version = version; }
     uint32_t getVisitorDispatcherVersion() const { return _version; }

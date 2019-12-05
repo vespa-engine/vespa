@@ -20,8 +20,6 @@ LOG_SETUP(".documentapiconverter");
 
 using document::BucketSpace;
 
-using std::chrono::milliseconds;
-
 namespace storage {
 
 DocumentApiConverter::DocumentApiConverter(const config::ConfigUri &configUri,
@@ -140,9 +138,12 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
         break;
     }
 
-    if (toMsg.get() != 0) {
-        milliseconds timeout = std::min(milliseconds(INT_MAX), fromMsg.getTimeRemaining());
-        toMsg->setTimeout(timeout.count());
+    if (toMsg) {
+        //TODO getTimeRemainingNow ?
+        vespalib::duration cappedTimeout = (fromMsg.getTimeRemaining() < 1ms*INT_MAX)
+                ? fromMsg.getTimeRemaining()
+                : 1ms*INT_MAX;
+        toMsg->setTimeout(cappedTimeout);
         toMsg->setPriority(_priConverter->toStoragePriority(fromMsg.getPriority()));
         toMsg->setLoadType(fromMsg.getLoadType());
 
@@ -308,8 +309,8 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         break;
     }
 
-    if (toMsg.get()) {
-        toMsg->setTimeRemaining(milliseconds(fromMsg.getTimeout()));
+    if (toMsg) {
+        toMsg->setTimeRemaining(fromMsg.getTimeout());
         toMsg->setContext(mbus::Context(fromMsg.getMsgId()));
         if (LOG_WOULD_LOG(spam)) {
             toMsg->getTrace().setLevel(9);

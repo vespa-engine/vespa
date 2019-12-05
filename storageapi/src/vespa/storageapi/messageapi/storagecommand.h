@@ -19,7 +19,7 @@ namespace storage::api {
 class StorageReply;
 
 class StorageCommand : public StorageMessage {
-    uint32_t _timeout; /** Timeout of command in milliseconds */
+    duration _timeout; /** Timeout of command in milliseconds */
         /** Sets what node this message origins from. 0xFFFF is unset. */
     uint16_t _sourceIndex;
 
@@ -37,9 +37,9 @@ public:
     uint16_t getSourceIndex() const { return _sourceIndex; }
 
     /** Set timeout in milliseconds. */
-    void setTimeout(uint32_t milliseconds) { _timeout = milliseconds; }
+    void setTimeout(duration milliseconds) { _timeout = milliseconds; }
     /** Get timeout in milliseconds. */
-    uint32_t getTimeout() const { return _timeout; }
+    duration getTimeout() const { return _timeout; }
 
     /** Used to set a new id so the message can be resent. */
     void setNewId() { StorageMessage::setNewMsgId(); }

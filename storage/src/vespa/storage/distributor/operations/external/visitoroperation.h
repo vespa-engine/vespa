@@ -108,17 +108,15 @@ private:
     bool allowInconsistencies() const noexcept;
     bool shouldAbortDueToTimeout() const noexcept;
     bool assignBucketsToNodes(NodeToBucketsMap& nodeToBucketsMap);
-    int getNumVisitorsToSendForNode(uint16_t node,
-                                    uint32_t totalBucketsOnNode) const;
-    uint32_t computeVisitorQueueTimeoutMs() const noexcept;
+    int getNumVisitorsToSendForNode(uint16_t node, uint32_t totalBucketsOnNode) const;
+    vespalib::duration computeVisitorQueueTimeoutMs() const noexcept;
     bool sendStorageVisitors(const NodeToBucketsMap& nodeToBucketsMap,
                              DistributorMessageSender& sender);
     void sendStorageVisitor(uint16_t node,
                             const std::vector<document::BucketId>& buckets,
                             uint32_t pending,
                             DistributorMessageSender& sender);
-    void markCompleted(const document::BucketId& bid,
-                       const api::ReturnCode& code);
+    void markCompleted(const document::BucketId& bid, const api::ReturnCode& code);
     /**
      * Operation failed and we can pin the blame on a specific node. Updates
      * internal error code and augments error message with the index of the
@@ -138,7 +136,7 @@ private:
      * time point. In case of the current time having passed the timeout
      * point, function returns 0.
      */
-    uint64_t timeLeft() const noexcept;
+    vespalib::duration timeLeft() const noexcept;
 
     DistributorComponent& _owner;
     DistributorBucketSpace &_bucketSpace;

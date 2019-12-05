@@ -355,7 +355,7 @@ FileStorHandlerImpl::tryHandlePause(uint16_t disk) const
 }
 
 bool
-FileStorHandlerImpl::messageTimedOutInQueue(const api::StorageMessage& msg, uint64_t waitTime)
+FileStorHandlerImpl::messageTimedOutInQueue(const api::StorageMessage& msg, vespalib::duration waitTime)
 {
     if (msg.getType().isReply()) {
         return false; // Replies must always be processed and cannot time out.
@@ -980,7 +980,7 @@ FileStorHandlerImpl::Stripe::getNextMessage(FileStorHandler::LockedMessage& lck)
         return lck;
     }
 
-    uint64_t waitTime(range.first->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()]));
+    std::chrono::milliseconds waitTime(uint64_t(range.first->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()])));
 
     if (!messageTimedOutInQueue(m, waitTime)) {
         std::shared_ptr<api::StorageMessage> msg = std::move(range.first->_command);
@@ -1004,7 +1004,7 @@ FileStorHandler::LockedMessage
 FileStorHandlerImpl::Stripe::getMessage(vespalib::MonitorGuard & guard, PriorityIdx & idx, PriorityIdx::iterator iter) {
 
     api::StorageMessage & m(*iter->_command);
-    uint64_t waitTime(iter->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()]));
+    std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(_metrics->averageQueueWaitingTime[m.getLoadType()])));
 
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);

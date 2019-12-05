@@ -115,7 +115,7 @@ Test::Main()
 void
 Test::testAdvanced(TestData &data)
 {
-    const double TIMEOUT = 60;
+    const duration TIMEOUT = 60s;
     IProtocol::SP protocol(new SimpleProtocol());
     SimpleProtocol &simple = static_cast<SimpleProtocol&>(*protocol);
     simple.addPolicyFactory("Custom", SimpleProtocol::IPolicyFactory::SP(new CustomPolicyFactory(false, ErrorCode::NO_ADDRESS_FOR_SERVICE)));
@@ -130,41 +130,41 @@ Test::testAdvanced(TestData &data)
 
     // Initial send.
     Message::UP msg = data._fooHandler.getMessage(TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._fooSession->acknowledge(std::move(msg));
     msg = data._barHandler.getMessage(TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "bar"));
     data._barSession->reply(std::move(reply));
     msg = data._bazHandler.getMessage(TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     reply.reset(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "baz1"));
     data._bazSession->reply(std::move(reply));
 
     // First retry.
-    msg = data._fooHandler.getMessage(0);
-    ASSERT_TRUE(msg.get() == NULL);
+    msg = data._fooHandler.getMessageNow();
+    ASSERT_FALSE(msg);
     msg = data._barHandler.getMessage(TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._barSession->acknowledge(std::move(msg));
     msg = data._bazHandler.getMessage(TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     reply.reset(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::TRANSIENT_ERROR, "baz2"));
     data._bazSession->reply(std::move(reply));
 
     // Second retry.
-    msg = data._fooHandler.getMessage(0);
-    ASSERT_TRUE(msg.get() == NULL);
-    msg = data._barHandler.getMessage(0);
-    ASSERT_TRUE(msg.get() == NULL);
+    msg = data._fooHandler.getMessageNow();
+    ASSERT_FALSE(msg);
+    msg = data._barHandler.getMessageNow();
+    ASSERT_FALSE(msg);
     msg = data._bazHandler.getMessage(TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     reply.reset(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::FATAL_ERROR, "baz3"));
@@ -172,7 +172,7 @@ Test::testAdvanced(TestData &data)
 
     // Done.
     reply = data._srcHandler.getReply();
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(2u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::FATAL_ERROR, reply->getError(0).getCode());

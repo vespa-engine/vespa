@@ -71,13 +71,13 @@ TestData::start()
     _srcSession = _srcServer.mb.createSourceSession(SourceSessionParams()
                                                     .setThrottlePolicy(IThrottlePolicy::SP())
                                                     .setReplyHandler(_srcHandler));
-    if (_srcSession.get() == NULL) {
+    if ( ! _srcSession) {
         return false;
     }
     _dstSession = _dstServer.mb.createDestinationSession(DestinationSessionParams()
                                                          .setName("session")
                                                          .setMessageHandler(_dstHandler));
-    if (_dstSession.get() == NULL) {
+    if ( ! _dstSession) {
         return false;
     }
     if (!_srcServer.waitSlobrok("dst/session", 1u)) {
@@ -108,7 +108,7 @@ Test::Main()
     TEST_DONE();
 }
 
-static const double TIMEOUT = 120;
+static const duration TIMEOUT = 120s;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -131,11 +131,11 @@ Test::testMaxCount(TestData &data)
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
         if (i < max) {
             Message::UP msg = data._dstHandler.getMessage(TIMEOUT);
-            ASSERT_TRUE(msg.get() != NULL);
+            ASSERT_TRUE(msg);
             lst.push_back(msg.release());
         } else {
             Reply::UP reply = data._srcHandler.getReply();
-            ASSERT_TRUE(reply.get() != NULL);
+            ASSERT_TRUE(reply);
             EXPECT_EQUAL(1u, reply->getNumErrors());
             EXPECT_EQUAL((uint32_t)ErrorCode::SESSION_BUSY, reply->getError(0).getCode());
         }
@@ -146,14 +146,14 @@ Test::testMaxCount(TestData &data)
         data._dstSession->acknowledge(std::move(msg));
 
         Reply::UP reply = data._srcHandler.getReply();
-        ASSERT_TRUE(reply.get() != NULL);
+        ASSERT_TRUE(reply);
         EXPECT_TRUE(!reply->hasErrors());
         msg = reply->getMessage();
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
         EXPECT_TRUE(data._srcSession->send(std::move(msg), Route::parse("dst/session")).isAccepted());
 
         msg = data._dstHandler.getMessage(TIMEOUT);
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
         lst.push_back(msg.release());
     }
     while (!lst.empty()) {
@@ -163,7 +163,7 @@ Test::testMaxCount(TestData &data)
         data._dstSession->acknowledge(std::move(msg));
 
         Reply::UP reply = data._srcHandler.getReply();
-        ASSERT_TRUE(reply.get() != NULL);
+        ASSERT_TRUE(reply);
         EXPECT_TRUE(!reply->hasErrors());
     }
     EXPECT_EQUAL(0u, data._dstServer.mb.getPendingCount());
@@ -185,11 +185,11 @@ Test::testMaxSize(TestData &data)
         EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
         if (i < max) {
             Message::UP msg = data._dstHandler.getMessage(TIMEOUT);
-            ASSERT_TRUE(msg.get() != NULL);
+            ASSERT_TRUE(msg);
             lst.push_back(msg.release());
         } else {
             Reply::UP reply = data._srcHandler.getReply();
-            ASSERT_TRUE(reply.get() != NULL);
+            ASSERT_TRUE(reply);
             EXPECT_EQUAL(1u, reply->getNumErrors());
             EXPECT_EQUAL((uint32_t)ErrorCode::SESSION_BUSY, reply->getError(0).getCode());
         }
@@ -200,14 +200,14 @@ Test::testMaxSize(TestData &data)
         data._dstSession->acknowledge(std::move(msg));
 
         Reply::UP reply = data._srcHandler.getReply();
-        ASSERT_TRUE(reply.get() != NULL);
+        ASSERT_TRUE(reply);
         EXPECT_TRUE(!reply->hasErrors());
         msg = reply->getMessage();
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
         EXPECT_TRUE(data._srcSession->send(std::move(msg), Route::parse("dst/session")).isAccepted());
 
         msg = data._dstHandler.getMessage(TIMEOUT);
-        ASSERT_TRUE(msg.get() != NULL);
+        ASSERT_TRUE(msg);
         lst.push_back(msg.release());
     }
     while (!lst.empty()) {
@@ -217,7 +217,7 @@ Test::testMaxSize(TestData &data)
         data._dstSession->acknowledge(std::move(msg));
 
         Reply::UP reply = data._srcHandler.getReply();
-        ASSERT_TRUE(reply.get() != NULL);
+        ASSERT_TRUE(reply);
         EXPECT_TRUE(!reply->hasErrors());
     }
     EXPECT_EQUAL(0u, data._dstServer.mb.getPendingSize());

@@ -226,12 +226,12 @@ RPCNetwork::start()
 }
 
 bool
-RPCNetwork::waitUntilReady(seconds timeout) const
+RPCNetwork::waitUntilReady(duration timeout) const
 {
     slobrok::api::SlobrokList brokerList;
     slobrok::Configurator::UP configurator = _slobrokCfgFactory->create(brokerList);
     bool hasConfig = false;
-    for (uint32_t i = 0; i < timeout.count() * 100; ++i) {
+    for (int64_t i = 0; i < vespalib::count_ms(timeout)/10; ++i) {
         if (configurator->poll()) {
             hasConfig = true;
         }
@@ -241,10 +241,10 @@ RPCNetwork::waitUntilReady(seconds timeout) const
         std::this_thread::sleep_for(10ms);
     }
     if (! hasConfig) {
-        LOG(error, "failed to get config for slobroks in %2.2f seconds", timeout.count());
+        LOG(error, "failed to get config for slobroks in %2.2f seconds", vespalib::to_s(timeout));
     } else if (! _mirror->ready()) {
         auto brokers = brokerList.logString();
-        LOG(error, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), timeout.count());
+        LOG(error, "mirror (of %s) failed to become ready in %2.2f seconds", brokers.c_str(), vespalib::to_s(timeout));
     }
     return false;
 }
@@ -321,7 +321,7 @@ void
 RPCNetwork::send(const Message &msg, const std::vector<RoutingNode*> &recipients)
 {
     SendContext &ctx = *(new SendContext(*this, msg, recipients)); // deletes self
-    seconds timeout = ctx._msg.getTimeRemainingNow();
+    duration timeout = ctx._msg.getTimeRemainingNow();
     for (uint32_t i = 0, len = ctx._recipients.size(); i < len; ++i) {
         RoutingNode *&recipient = ctx._recipients[i];
 
@@ -374,7 +374,7 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
                 make_string("An error occurred while resolving version of recipient(s) [%s] from host '%s'.",
                             buildRecipientListString(ctx).c_str(), getIdentity().getHostname().c_str()));
     } else {
-        std::chrono::milliseconds timeRemaining = ctx._msg.getTimeRemainingNow();
+        duration timeRemaining = ctx._msg.getTimeRemainingNow();
         Blob payload = _owner->getProtocol(ctx._msg.getProtocol())->encode(ctx._version, ctx._msg);
         RPCSendAdapter *adapter = getSendAdapter(ctx._version);
         if (adapter == nullptr) {

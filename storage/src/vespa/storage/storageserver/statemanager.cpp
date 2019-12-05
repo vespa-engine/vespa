@@ -460,14 +460,15 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
             && (*cmd->getExpectedState() == *_nodeState || sentReply)
             && is_up_to_date)
         {
+            int64_t msTimeout = vespalib::count_ms(cmd->getTimeout());
             LOG(debug, "Received get node state request with timeout of "
-                       "%u milliseconds. Scheduling to be answered in "
-                       "%u milliseconds unless a node state change "
+                       "%ld milliseconds. Scheduling to be answered in "
+                       "%ld milliseconds unless a node state change "
                        "happens before that time.",
-                cmd->getTimeout(), cmd->getTimeout() * 800 / 1000);
+                msTimeout, msTimeout * 800 / 1000);
             TimeStatePair pair(
                     _component.getClock().getTimeInMillis()
-                    + framework::MilliSecTime(cmd->getTimeout() * 800 / 1000),
+                    + framework::MilliSecTime(msTimeout * 800 / 1000),
                     cmd);
             _queuedStateRequests.emplace_back(std::move(pair));
         } else {

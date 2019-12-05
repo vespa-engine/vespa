@@ -88,7 +88,7 @@ public:
      * @param timeout The timeout for the request in milliseconds.
      * @param handler The handler to be called once the version is available.
      */
-    void resolveVersion(seconds timeout, IVersionHandler &handler);
+    void resolveVersion(duration timeout, IVersionHandler &handler);
 
     /**
      * @return true if the FRT target is valid or has been invoked (which

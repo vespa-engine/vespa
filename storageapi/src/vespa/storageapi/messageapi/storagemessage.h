@@ -70,6 +70,8 @@ public: \
 
 namespace storage::api {
 
+using duration = vespalib::duration;
+
 /**
  * @class MessageType
  * @ingroup messageapi

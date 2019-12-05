@@ -23,7 +23,7 @@ RPCTarget::~RPCTarget()
 }
 
 void
-RPCTarget::resolveVersion(seconds timeout, RPCTarget::IVersionHandler &handler)
+RPCTarget::resolveVersion(duration timeout, RPCTarget::IVersionHandler &handler)
 {
     bool hasVersion = false;
     bool shouldInvoke = false;
@@ -47,7 +47,7 @@ RPCTarget::resolveVersion(seconds timeout, RPCTarget::IVersionHandler &handler)
     } else if (shouldInvoke) {
         FRT_RPCRequest *req = _orb.AllocRPCRequest();
         req->SetMethodName("mbus.getVersion");
-        _target.InvokeAsync(req, timeout.count(), this);
+        _target.InvokeAsync(req, vespalib::to_s(timeout), this);
     }
 }
 

@@ -246,7 +246,7 @@ void StateManagerTest::mark_reported_node_state_up() {
 void StateManagerTest::send_down_get_node_state_request(uint16_t controller_index) {
     auto cmd = std::make_shared<api::GetNodeStateCommand>(
             std::make_unique<NodeState>(NodeType::STORAGE, State::UP));
-    cmd->setTimeout(10000000);
+    cmd->setTimeout(10000000ms);
     cmd->setSourceIndex(controller_index);
     _upper->sendDown(cmd);
 }
@@ -320,7 +320,7 @@ TEST_F(StateManagerTest, activation_command_is_bounced_with_current_cluster_stat
     force_current_cluster_state_version(12345);
 
     auto cmd = std::make_shared<api::ActivateClusterStateVersionCommand>(12340);
-    cmd->setTimeout(10000000);
+    cmd->setTimeout(10000000ms);
     cmd->setSourceIndex(0);
     _upper->sendDown(cmd);
 

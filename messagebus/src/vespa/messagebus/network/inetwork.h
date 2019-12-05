@@ -62,7 +62,7 @@ public:
      * @param seconds The timeout.
      * @return True if ready.
      */
-    virtual bool waitUntilReady(seconds timeout) const = 0;
+    virtual bool waitUntilReady(duration timeout) const = 0;
 
     /**
      * Register a session name with the network layer. This will make the

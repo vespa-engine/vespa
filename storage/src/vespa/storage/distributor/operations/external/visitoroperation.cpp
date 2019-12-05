@@ -8,9 +8,7 @@
 #include <vespa/storage/distributor/operations/external/visitororder.h>
 #include <vespa/storage/distributor/visitormetricsset.h>
 #include <vespa/document/base/exceptions.h>
-#include <vespa/document/select/parser.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <iomanip>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -76,9 +74,7 @@ VisitorOperation::VisitorOperation(
     }
 }
 
-VisitorOperation::~VisitorOperation()
-{
-}
+VisitorOperation::~VisitorOperation() = default;
 
 document::BucketId
 VisitorOperation::getLastBucketVisited()
@@ -121,22 +117,21 @@ VisitorOperation::getLastBucketVisited()
     return newLastBucket;
 }
 
-uint64_t
+vespalib::duration
 VisitorOperation::timeLeft() const noexcept
 {
     const auto elapsed = _operationTimer.getElapsedTime();
-    framework::MilliSecTime timeSpent(
-            std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count());
+
 
     LOG(spam,
-        "Checking if visitor has timed out: elapsed=%" PRIu64 " ms, timeout=%u ms",
-        timeSpent.getTime(),
-        _msg->getTimeout());
+        "Checking if visitor has timed out: elapsed=%ld ms, timeout=%ld ms",
+        vespalib::count_ms(elapsed),
+        vespalib::count_ms(_msg->getTimeout()));
 
-    if (timeSpent.getTime() >= _msg->getTimeout()) {
-        return 0;
+    if (elapsed >= _msg->getTimeout()) {
+        return vespalib::duration::zero();
     } else {
-        return _msg->getTimeout() - timeSpent.getTime();
+        return _msg->getTimeout() - elapsed;
     }
 }
 
@@ -581,7 +576,7 @@ VisitorOperation::onStart(DistributorMessageSender& sender)
 bool
 VisitorOperation::shouldAbortDueToTimeout() const noexcept
 {
-    return timeLeft() == 0;
+    return timeLeft() <= vespalib::duration::zero();
 }
 
 void
@@ -629,8 +624,8 @@ VisitorOperation::startNewVisitors(DistributorMessageSender& sender)
         markOperationAsFailed(
                 api::ReturnCode(api::ReturnCode::ABORTED,
                                 vespalib::make_string(
-                                    "Timeout of %u ms is running out",
-                                    _msg->getTimeout())));
+                                    "Timeout of %ld ms is running out",
+                                    vespalib::count_ms(_msg->getTimeout()))));
     }
 
     if (maySendNewStorageVisitors()) {
@@ -782,7 +777,7 @@ VisitorOperation::sendStorageVisitors(const NodeToBucketsMap& nodeToBucketsMap,
     return visitorsSent;
 }
 
-uint32_t
+vespalib::duration
 VisitorOperation::computeVisitorQueueTimeoutMs() const noexcept
 {
     return timeLeft() / 2;

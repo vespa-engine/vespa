@@ -4,7 +4,6 @@
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
 #include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/tracelevel.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fnet/frt/reflection.h>
 
@@ -59,7 +58,7 @@ RPCSendV1::build(FRT_ReflectionBuilder & builder)
 void
 RPCSendV1::encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,
                          const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
-                         const PayLoadFiller &filler, milliseconds timeRemaining) const
+                         const PayLoadFiller &filler, duration timeRemaining) const
 {
 
     FRT_Values &args = *req.GetParams();
@@ -69,7 +68,7 @@ RPCSendV1::encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, 
     args.AddString(address.getSessionName().c_str());
     args.AddInt8(msg.getRetryEnabled() ? 1 : 0);
     args.AddInt32(msg.getRetry());
-    args.AddInt64(timeRemaining.count());
+    args.AddInt64(vespalib::count_ms(timeRemaining));
     args.AddString(msg.getProtocol().c_str());
     filler.fill(args);
     args.AddInt32(traceLevel);
@@ -85,7 +84,7 @@ public:
     uint32_t getTraceLevel() const override { return _args[8]._intval32; }
     bool useRetry() const override { return _args[3]._intval8 != 0; }
     uint32_t getRetries() const override { return _args[4]._intval32; }
-    milliseconds getRemainingTime() const override { return milliseconds(_args[5]._intval64); }
+    duration getRemainingTime() const override { return std::chrono::milliseconds(_args[5]._intval64); }
 
     vespalib::Version getVersion() const override {
         return vespalib::Version(vespalib::stringref(_args[0]._string._str, _args[0]._string._len));
@@ -135,7 +134,7 @@ RPCSendV1::createReply(const FRT_Values & ret, const string & serviceName, Error
         reply = decode(protocolName, version, payload, error);
     }
     if ( ! reply ) {
-        reply.reset(new EmptyReply());
+        reply = std::make_unique<EmptyReply>();
     }
     reply->setRetryDelay(retryDelay);
     for (uint32_t i = 0; i < errorCodesLen && i < errorMessagesLen && i < errorServicesLen; ++i) {

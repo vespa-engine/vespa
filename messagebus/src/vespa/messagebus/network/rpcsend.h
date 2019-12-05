@@ -44,7 +44,7 @@ public:
         virtual uint32_t getTraceLevel() const = 0;
         virtual bool useRetry() const = 0;
         virtual uint32_t getRetries() const = 0;
-        virtual milliseconds getRemainingTime() const = 0;
+        virtual duration getRemainingTime() const = 0;
         virtual vespalib::stringref getRoute() const = 0;
         virtual vespalib::stringref getSession() const = 0;
         virtual BlobRef getPayload() const = 0;
@@ -59,13 +59,13 @@ protected:
                                                Error & error, vespalib::TraceNode & rootTrace) const = 0;
     virtual void encodeRequest(FRT_RPCRequest &req, const vespalib::Version &version, const Route & route,
                                const RPCServiceAddress & address, const Message & msg, uint32_t traceLevel,
-                               const PayLoadFiller &filler, milliseconds timeRemaining) const = 0;
+                               const PayLoadFiller &filler, duration timeRemaining) const = 0;
     virtual const char * getReturnSpec() const = 0;
     virtual void createResponse(FRT_Values & ret, const string & version, Reply & reply, Blob payload) const = 0;
     virtual std::unique_ptr<Params> toParams(const FRT_Values &param) const = 0;
 
     void send(RoutingNode &recipient, const vespalib::Version &version,
-              const PayLoadFiller & filler, milliseconds timeRemaining);
+              const PayLoadFiller & filler, duration timeRemaining);
     std::unique_ptr<Reply> decode(vespalib::stringref protocol, const vespalib::Version & version,
                                   BlobRef payload, Error & error) const;
     /**
@@ -89,9 +89,9 @@ private:
     void attach(RPCNetwork &net) final override;
     void handleDiscard(Context ctx) final override;
     void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
-                        Blob payload, milliseconds timeRemaining) final override;
+                        Blob payload, duration timeRemaining) final override;
     void send(RoutingNode &recipient, const vespalib::Version &version,
-              BlobRef payload, milliseconds timeRemaining) final override;
+              BlobRef payload, duration timeRemaining) final override;
     void RequestDone(FRT_RPCRequest *req) final override;
     void handleReply(std::unique_ptr<Reply> reply) final override;
 };

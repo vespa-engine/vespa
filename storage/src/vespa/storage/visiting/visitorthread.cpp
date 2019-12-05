@@ -546,7 +546,7 @@ VisitorThread::onCreateVisitor(
                            std::move(messageSession),
                            documentPriority);
             visitor->attach(cmd, *controlAddress, *dataAddress,
-                            framework::MilliSecTime(cmd->getTimeout()));
+                            framework::MilliSecTime(vespalib::count_ms(cmd->getTimeout())));
         } catch (std::exception& e) {
                 // We don't handle exceptions from this code, as we've
                 // added visitor to internal structs we'll end up calling

@@ -230,7 +230,7 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
                     distributionHash));
 
     cmd->setPriority(api::StorageMessage::HIGH);
-    cmd->setTimeout(INT_MAX);
+    cmd->setTimeout(vespalib::duration::max());
 
     _sentMessages.emplace(cmd->getMsgId(), bucketSpaceAndNode);
 

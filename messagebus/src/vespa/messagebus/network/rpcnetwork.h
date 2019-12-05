@@ -219,7 +219,7 @@ public:
     void attach(INetworkOwner &owner) override;
     const string getConnectionSpec() const override;
     bool start() override;
-    bool waitUntilReady(seconds timout) const override;
+    bool waitUntilReady(duration timout) const override;
     void registerSession(const string &session) override;
     void unregisterSession(const string &session) override;
     bool allocServiceAddress(RoutingNode &recipient) override;

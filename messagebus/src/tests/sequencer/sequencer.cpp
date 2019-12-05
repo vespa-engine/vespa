@@ -21,7 +21,7 @@ struct MyQueue : public RoutableQueue {
 
     virtual ~MyQueue() {
         while (size() > 0) {
-            Routable::UP obj = dequeue(0);
+            Routable::UP obj = dequeue();
             obj->getCallStack().discard();
         }
     }
@@ -31,14 +31,14 @@ struct MyQueue : public RoutableQueue {
             LOG(error, "checkReply(): No reply in queue.");
             return false;
         }
-        Routable::UP obj = dequeue(0);
+        Routable::UP obj = dequeue();
         if (!obj->isReply()) {
             LOG(error, "checkReply(): Got message when expecting reply.");
             return false;
         }
         Reply::UP reply(static_cast<Reply*>(obj.release()));
         Message::UP msg = reply->getMessage();
-        if (msg.get() == NULL) {
+        if ( ! msg) {
             LOG(error, "checkReply(): Reply has no message attached.");
             return false;
         }
@@ -64,7 +64,7 @@ struct MyQueue : public RoutableQueue {
     }
 
     void replyNext() {
-        Routable::UP obj = dequeue(0);
+        Routable::UP obj = dequeue();
         Message::UP msg(static_cast<Message*>(obj.release()));
 
         Reply::UP reply(new EmptyReply());

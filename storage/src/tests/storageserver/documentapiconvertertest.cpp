@@ -195,7 +195,7 @@ TEST_F(DocumentApiConverterTest, create_visitor) {
     EXPECT_EQ("myinstance", cmd->getInstanceId());
     EXPECT_EQ("control-dest", cmd->getControlDestination());
     EXPECT_EQ("data-dest", cmd->getDataDestination());
-    EXPECT_EQ(123456u, cmd->getTimeout());
+    EXPECT_EQ(123456ms, cmd->getTimeout());
 
     auto msg = toDocumentAPI<documentapi::CreateVisitorMessage>(*cmd);
     EXPECT_EQ(defaultSpaceName, msg->getBucketSpace());
@@ -210,7 +210,7 @@ TEST_F(DocumentApiConverterTest, create_visitor_high_timeout) {
     EXPECT_EQ("myinstance", cmd->getInstanceId());
     EXPECT_EQ("control-dest", cmd->getControlDestination());
     EXPECT_EQ("data-dest", cmd->getDataDestination());
-    EXPECT_EQ(std::numeric_limits<int32_t>::max(), cmd->getTimeout());
+    EXPECT_EQ(std::numeric_limits<int32_t>::max(), vespalib::count_ms(cmd->getTimeout()));
 }
 
 TEST_F(DocumentApiConverterTest, create_visitor_reply_not_ready) {

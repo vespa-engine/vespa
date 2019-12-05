@@ -98,22 +98,22 @@ RPCSend::handleDiscard(Context ctx)
 }
 
 void
-RPCSend::sendByHandover(RoutingNode &recipient, const vespalib::Version &version, Blob payload, milliseconds timeRemaining)
+RPCSend::sendByHandover(RoutingNode &recipient, const vespalib::Version &version, Blob payload, duration timeRemaining)
 {
     send(recipient, version, FillByHandover(std::move(payload)), timeRemaining);
 }
 
 void
-RPCSend::send(RoutingNode &recipient, const vespalib::Version &version, BlobRef payload, milliseconds timeRemaining)
+RPCSend::send(RoutingNode &recipient, const vespalib::Version &version, BlobRef payload, duration timeRemaining)
 {
     send(recipient, version, FillByCopy(payload), timeRemaining);
 }
 
 void
 RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
-              const PayLoadFiller & payload, milliseconds timeRemaining)
+              const PayLoadFiller & payload, duration timeRemaining)
 {
-    SendContext::UP ctx(new SendContext(recipient, timeRemaining));
+    auto ctx = std::make_unique<SendContext>(recipient, timeRemaining);
     RPCServiceAddress &address = static_cast<RPCServiceAddress&>(recipient.getServiceAddress());
     const Message &msg = recipient.getMessage();
     Route route = recipient.getRoute();
@@ -126,7 +126,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
         ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
                               make_string("Sending message (version %s) from %s to '%s' with %.2f seconds timeout.",
                                           version.toString().c_str(), _clientIdent.c_str(),
-                                          address.getServiceName().c_str(), ctx->getTimeout().count()));
+                                          address.getServiceName().c_str(), vespalib::to_s(ctx->getTimeout())));
     }
 
     if (hop.getIgnoreResult()) {
@@ -135,13 +135,13 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
             ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
                                   make_string("Not waiting for a reply from '%s'.", address.getServiceName().c_str()));
         }
-        Reply::UP reply(new EmptyReply());
+        auto reply = std::make_unique<EmptyReply>();
         reply->getTrace().swap(ctx->getTrace());
         _net->getOwner().deliverReply(std::move(reply), recipient);
     } else {
         SendContext *ptr = ctx.release();
         req->SetContext(FNET_Context(ptr));
-        address.getTarget().getFRTTarget().InvokeAsync(req, ptr->getTimeout().count(), this);
+        address.getTarget().getFRTTarget().InvokeAsync(req, vespalib::to_s(ptr->getTimeout()), this);
     }
 }
 
@@ -159,12 +159,12 @@ RPCSend::doRequestDone(FRT_RPCRequest *req) {
     Error error;
     Trace & trace = ctx->getTrace();
     if (!req->CheckReturnTypes(getReturnSpec())) {
-        reply.reset(new EmptyReply());
+        reply = std::make_unique<EmptyReply>();
         switch (req->GetErrorCode()) {
             case FRTE_RPC_TIMEOUT:
                 error = Error(ErrorCode::TIMEOUT,
                               make_string("A timeout occured while waiting for '%s' (%g seconds expired); %s",
-                                          serviceName.c_str(), ctx->getTimeout().count(), req->GetErrorMessage()));
+                                          serviceName.c_str(), vespalib::to_s(ctx->getTimeout()), req->GetErrorMessage()));
                 break;
             case FRTE_RPC_CONNECTION:
                 error = Error(ErrorCode::CONNECTION_ERROR,

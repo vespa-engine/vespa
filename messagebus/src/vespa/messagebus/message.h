@@ -3,7 +3,6 @@
 
 #include "routable.h"
 #include <vespa/messagebus/routing/route.h>
-#include <chrono>
 
 namespace mbus {
 
@@ -55,7 +54,7 @@ public:
      *
      * @return The remaining time in milliseconds.
      */
-    milliseconds getTimeRemaining() const { return _timeRemaining; }
+    duration getTimeRemaining() const { return _timeRemaining; }
 
     /**
      * Sets the numer of milliseconds that remain before this message times
@@ -65,7 +64,7 @@ public:
      * @param timeRemaining The number of milliseconds until expiration.
      * @return This, to allow chaining.
      */
-    Message &setTimeRemaining(milliseconds timeRemaining) { _timeRemaining = timeRemaining; return *this; }
+    Message &setTimeRemaining(duration timeRemaining) { _timeRemaining = timeRemaining; return *this; }
 
     /**
      * Returns the number of milliseconds that remain right now before this
@@ -79,7 +78,7 @@ public:
      *
      * @return The remaining time in milliseconds.
      */
-    milliseconds getTimeRemainingNow() const;
+    duration getTimeRemainingNow() const;
 
     /**
      * Access the route associated with this message.
@@ -185,7 +184,7 @@ public:
 private:
     Route         _route;
     time_point    _timeReceived;
-    milliseconds  _timeRemaining;
+    duration      _timeRemaining;
     bool          _retryEnabled;
     uint32_t      _retry;
 };

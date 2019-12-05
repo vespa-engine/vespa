@@ -77,7 +77,7 @@ JoinOperation::enqueueJoinMessagePerTargetNode(
         std::shared_ptr<api::JoinBucketsCommand> msg(
                 new api::JoinBucketsCommand(getBucket()));
         msg->getSourceBuckets() = node.second;
-        msg->setTimeout(INT_MAX);
+        msg->setTimeout(vespalib::duration::max());
         setCommandMeta(*msg);
         _tracker.queueCommand(msg, node.first);
     }
@@ -90,8 +90,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
     api::JoinBucketsReply& rep = static_cast<api::JoinBucketsReply&>(*msg);
     uint16_t node = _tracker.handleReply(rep);
     if (node == 0xffff) {
-        LOG(debug, "Ignored reply since node was max uint16_t for unknown "
-                   "reasons");
+        LOG(debug, "Ignored reply since node was max uint16_t for unknown reasons");
         return;
     }
 

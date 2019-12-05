@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "storagecommand.h"
-#include <limits>
 #include <vespa/vespalib/util/exceptions.h>
 #include <ostream>
 
@@ -20,13 +19,13 @@ StorageCommand::StorageCommand(const MessageType& type, Priority p)
         // Default timeout is unlimited. Set from mbus message. Some internal
         // use want unlimited timeout, (such as readbucketinfo, repair bucket
         // etc)
-      _timeout(std::numeric_limits<uint32_t>().max()),
+      _timeout(duration::max()),
       _sourceIndex(0xFFFF)
 {
     setPriority(p);
 }
 
-StorageCommand::~StorageCommand() { }
+StorageCommand::~StorageCommand() = default;
 
 void
 StorageCommand::print(std::ostream& out, bool verbose,
@@ -36,7 +35,7 @@ StorageCommand::print(std::ostream& out, bool verbose,
     out << "StorageCommand(" << _type.getName();
     if (_priority != NORMAL) out << ", priority = " << static_cast<int>(_priority);
     if (_sourceIndex != 0xFFFF) out << ", source = " << _sourceIndex;
-    out << ", timeout = " << _timeout << " ms";
+    out << ", timeout = " << vespalib::count_ms(_timeout) << " ms";
     out << ")";
 }
 

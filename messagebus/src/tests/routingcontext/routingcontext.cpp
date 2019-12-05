@@ -23,7 +23,7 @@ using namespace mbus;
 
 using vespalib::make_string;
 
-static const double TIMEOUT = 120;
+static const duration TIMEOUT = 120s;
 
 class StringList : public std::vector<string> {
 public:

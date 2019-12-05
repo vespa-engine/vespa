@@ -43,7 +43,7 @@ public:
      * @param timeRemaining The time remaining until the message expires.
      */
     virtual void send(RoutingNode &recipient, const vespalib::Version &version,
-                      BlobRef payload, milliseconds timeRemaining) = 0;
+                      BlobRef payload, duration timeRemaining) = 0;
 
     /**
      * Performs the actual sending to the given recipient.
@@ -54,7 +54,7 @@ public:
      * @param timeRemaining The time remaining until the message expires.
      */
     virtual void sendByHandover(RoutingNode &recipient, const vespalib::Version &version,
-                      Blob payload, milliseconds timeRemaining) = 0;
+                      Blob payload, duration timeRemaining) = 0;
 };
 
 } // namespace mbus

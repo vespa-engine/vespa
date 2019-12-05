@@ -155,7 +155,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
 
         // Set timeout to one hour to prevent hung nodes that manage to keep
         // connections open from stalling merges in the cluster indefinitely.
-        msg->setTimeout(60 * 60 * 1000);
+        msg->setTimeout(3600s);
         setCommandMeta(*msg);
 
         sender.sendToNode(lib::NodeType::STORAGE, _mnodes[0].index, msg);

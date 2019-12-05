@@ -27,7 +27,7 @@ private:
     Sequencer           _sequencer;
     IReplyHandler      &_replyHandler;
     IThrottlePolicy::SP _throttlePolicy;
-    seconds             _timeout;
+    duration            _timeout;
     uint32_t            _pendingCount;
     bool                _closed;
     bool                _done;
@@ -120,7 +120,7 @@ public:
      * @param timeout The numer of seconds allowed.
      * @return This, to allow chaining.
      */
-    SourceSession &setTimeout(double timeout);
+    SourceSession &setTimeout(duration timeout);
 };
 
 } // namespace mbus

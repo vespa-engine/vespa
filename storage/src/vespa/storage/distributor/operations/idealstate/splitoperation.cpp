@@ -20,7 +20,7 @@ SplitOperation::SplitOperation(const std::string& clusterName, const BucketAndNo
       _splitCount(splitCount),
       _splitSize(splitSize)
 {}
-SplitOperation::~SplitOperation() {}
+SplitOperation::~SplitOperation() = default;
 
 void
 SplitOperation::onStart(DistributorMessageSender& sender)
@@ -35,7 +35,7 @@ SplitOperation::onStart(DistributorMessageSender& sender)
         msg->setMaxSplitBits(_maxBits);
         msg->setMinDocCount(_splitCount);
         msg->setMinByteSize(_splitSize);
-        msg->setTimeout(INT_MAX);
+        msg->setTimeout(vespalib::duration::max());
         setCommandMeta(*msg);
         _tracker.queueCommand(msg, entry->getNodeRef(i).getNode());
         _ok = true;

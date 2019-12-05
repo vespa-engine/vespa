@@ -132,7 +132,7 @@ ProtocolSerialization5_1::onEncode(
     buf.putBoolean(msg.visitRemoves());
     buf.putString(msg.getFieldSet());
     buf.putBoolean(msg.visitInconsistentBuckets());
-    buf.putInt(msg.getQueueTimeout());
+    buf.putInt(vespalib::count_ms(msg.getQueueTimeout()));
 
     uint32_t size = msg.getParameters().getSerializedSize();
     char* docBuffer = buf.allocate(size);
@@ -181,7 +181,7 @@ ProtocolSerialization5_1::onDecodeCreateVisitorCommand(BBuf& buf) const
     if (SH::getBoolean(buf)) {
         msg->setVisitInconsistentBuckets();
     }
-    msg->setQueueTimeout(SH::getInt(buf));
+    msg->setQueueTimeout(std::chrono::milliseconds(SH::getInt(buf)));
     msg->getParameters().deserialize(getTypeRepo(), buf);
 
     onDecodeCommand(buf, *msg);

@@ -26,14 +26,13 @@ Receptor::handleReply(Reply::UP reply)
 }
 
 Message::UP
-Receptor::getMessage(double maxWait)
+Receptor::getMessage(duration maxWait)
 {
-    int64_t ms = (int64_t)(maxWait * 1000);
     steady_clock::time_point startTime = steady_clock::now();
     vespalib::MonitorGuard guard(_mon);
     while (_msg.get() == 0) {
-        int64_t w = ms - duration_cast<milliseconds>(steady_clock::now() - startTime).count();
-        if (w <= 0 || !guard.wait(w)) {
+        duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
+        if (w <= duration::zero() || !guard.wait(w)) {
             break;
         }
     }
@@ -41,14 +40,13 @@ Receptor::getMessage(double maxWait)
 }
 
 Reply::UP
-Receptor::getReply(double maxWait)
+Receptor::getReply(duration maxWait)
 {
-    int64_t ms = (int)(maxWait * 1000);
     steady_clock::time_point startTime = steady_clock::now();
     vespalib::MonitorGuard guard(_mon);
     while (_reply.get() == 0) {
-        int64_t w = ms - duration_cast<milliseconds>(steady_clock::now() - startTime).count();
-        if (w <= 0 || !guard.wait(w)) {
+        duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
+        if (w <= duration::zero() || !guard.wait(w)) {
             break;
         }
     }

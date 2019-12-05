@@ -8,7 +8,6 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simpleprotocol.h>
-#include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
 #include <vespa/vespalib/component/vtag.h>
@@ -485,7 +484,7 @@ private:
     bool testTrace(TestData &data, const std::vector<string> &expected);
     bool testTrace(const std::vector<string> &expected, const Trace &trace);
 
-    static const double RECEPTOR_TIMEOUT;
+    static const duration RECEPTOR_TIMEOUT;
 
 public:
     int Main() override;
@@ -540,7 +539,7 @@ public:
     void requireThatDepthLimitCanBeIgnored(TestData &data);
 };
 
-const double Test::RECEPTOR_TIMEOUT = 120.0;
+const duration Test::RECEPTOR_TIMEOUT = 120s;
 
 TEST_APPHOOK(Test);
 
@@ -613,7 +612,7 @@ bool
 Test::testAcknowledge(TestData &data)
 {
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    if (!EXPECT_TRUE(msg.get() != NULL)) {
+    if (!EXPECT_TRUE(msg)) {
         return false;
     }
     data._dstSession->acknowledge(std::move(msg));
@@ -632,7 +631,7 @@ bool
 Test::testTrace(TestData &data, const std::vector<string> &expected)
 {
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    if (!EXPECT_TRUE(reply.get() != NULL)) {
+    if (!EXPECT_TRUE(reply)) {
         return false;
     }
     if (!EXPECT_TRUE(!reply->hasErrors())) {
@@ -747,7 +746,7 @@ Test::testNoRoutingTable(TestData &data)
     EXPECT_TRUE(!res.isAccepted());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
     Message::UP msg = res.getMessage();
-    EXPECT_TRUE(msg.get() != NULL);
+    EXPECT_TRUE(msg);
 }
 
 void
@@ -759,7 +758,7 @@ Test::testUnknownRoute(TestData &data)
     EXPECT_TRUE(!res.isAccepted());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, res.getError().getCode());
     Message::UP msg = res.getMessage();
-    EXPECT_TRUE(msg.get() != NULL);
+    EXPECT_TRUE(msg);
 }
 
 void
@@ -767,7 +766,7 @@ Test::testNoRoute(TestData &data)
 {
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route()).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
@@ -779,10 +778,10 @@ Test::testRecognizeHopName(TestData &data)
                                                            .addHop(HopSpec("dst", "dst/session"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -794,10 +793,10 @@ Test::testRecognizeRouteDirective(TestData &data)
                                                            .addHop(HopSpec("dir", "route:dst"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dir")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -808,10 +807,10 @@ Test::testRecognizeRouteName(TestData &data)
                                                            .addRoute(RouteSpec("dst").addHop("dst/session"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -823,7 +822,7 @@ Test::testHopResolutionOverflow(TestData &data)
                                                            .addHop(HopSpec("bar", "foo"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
@@ -835,7 +834,7 @@ Test::testRouteResolutionOverflow(TestData &data)
                                                            .addRoute(RouteSpec("foo").addHop("route:foo"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), "foo").isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
 }
@@ -847,13 +846,13 @@ Test::testInsertRoute(TestData &data)
                                                            .addRoute(RouteSpec("foo").addHop("dst/session").addHop("bar"))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("route:foo baz")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     EXPECT_EQUAL(2u, msg->getRoute().getNumHops());
     EXPECT_EQUAL("bar", msg->getRoute().getHop(0).toString());
     EXPECT_EQUAL("baz", msg->getRoute().getHop(1).toString());
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -864,7 +863,7 @@ Test::testErrorDirective(TestData &data)
     route.getHop(0).setDirective(1, IHopDirective::SP(new ErrorDirective("err")));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::ILLEGAL_ROUTE, reply->getError(0).getCode());
     EXPECT_EQUAL("err", reply->getError(0).getMessage());
@@ -879,7 +878,7 @@ Test::testSelectError(TestData &data)
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom: ]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     LOG(info, "testSelectError trace=%s", reply->getTrace().toString().c_str());
     LOG(info, "testSelectError error=%s", reply->getError(0).toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
@@ -895,7 +894,7 @@ Test::testSelectNone(TestData &data)
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_SERVICES_FOR_ROUTE, reply->getError(0).getCode());
 }
@@ -909,10 +908,10 @@ Test::testSelectOne(TestData &data)
     data._srcServer.mb.putProtocol(protocol);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -922,22 +921,22 @@ Test::testResend1(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err1"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     reply.reset(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err2"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("[APP_TRANSIENT_ERROR @ localhost]: err1")
@@ -957,22 +956,22 @@ Test::testResend2(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err1"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     reply.reset(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err2"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Source session accepted a 3 byte message. 1 message(s) now pending.")
@@ -1022,13 +1021,13 @@ Test::testNoResend(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err1"));
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_TRANSIENT_ERROR, reply->getError(0).getCode());
 }
@@ -1043,16 +1042,16 @@ Test::testSelectOnResend(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session' }.")
@@ -1075,16 +1074,16 @@ Test::testNoSelectOnResend(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "err"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Selecting { 'dst/session' }.")
@@ -1107,10 +1106,10 @@ Test::testCanConsumeError(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/session,dst/unknown]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
     EXPECT_TRUE(testTrace(StringList()
@@ -1131,7 +1130,7 @@ Test::testCantConsumeError(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:dst/unknown]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     printf("%s", reply->getTrace().toString().c_str());
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
@@ -1152,10 +1151,10 @@ Test::testNestedPolicies(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[Custom:dst/session],[Custom:dst/unknown]]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
 }
@@ -1173,10 +1172,10 @@ Test::testRemoveReply(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[Custom:dst/session],[Custom:dst/unknown]]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("[NO_ADDRESS_FOR_SERVICE @ localhost]")
@@ -1197,10 +1196,10 @@ Test::testSetReply(TestData &data)
     data._retryPolicy->setEnabled(false);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Select:[SetReply:foo],dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL("foo", reply->getError(0).getMessage());
@@ -1221,16 +1220,16 @@ Test::testResendSetAndReuseReply(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[ReuseReply:[SetReply:foo],dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_TRANSIENT_ERROR, "dst"));
     data._dstSession->reply(std::move(reply));
     msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
 }
 
@@ -1250,10 +1249,10 @@ Test::testResendSetAndRemoveReply(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[RemoveReply:[SetReply:foo],dst/session]")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL("foo", reply->getError(0).getMessage());
@@ -1271,13 +1270,13 @@ Test::testHopIgnoresReply(TestData &data)
 {
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("?dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "dst"));
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Not waiting for a reply from 'dst/session'."),
@@ -1291,13 +1290,13 @@ Test::testHopBlueprintIgnoresReply(TestData &data)
                                                            .addHop(HopSpec("foo", "dst/session").setIgnoreResult(true))));
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("foo")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Reply::UP reply(new EmptyReply());
     reply->swapState(*msg);
     reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "dst"));
     data._dstSession->reply(std::move(reply));
     reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_TRUE(!reply->hasErrors());
     EXPECT_TRUE(testTrace(StringList()
                          .add("Not waiting for a reply from 'dst/session'."),
@@ -1309,12 +1308,12 @@ Test::testAcceptEmptyRoute(TestData &data)
 {
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/session")).isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     const Route &route = msg->getRoute();
     EXPECT_EQUAL(0u, route.getNumHops());
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
 }
 
 void
@@ -1333,7 +1332,7 @@ Test::testAbortOnlyActiveNodes(TestData &data)
     data._retryPolicy->setEnabled(true);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Custom:[SetReply:foo],?bar,dst/session]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(2u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::APP_FATAL_ERROR, reply->getError(0).getCode());
     EXPECT_EQUAL((uint32_t)ErrorCode::SEND_ABORTED, reply->getError(1).getCode());
@@ -1344,7 +1343,7 @@ Test::testUnknownPolicy(TestData &data)
 {
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("[Unknown]")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 }
@@ -1362,7 +1361,7 @@ Test::testSelectException(TestData &data)
                                        Route::parse("[SelectException]"))
                 .isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR,
                  reply->getError(0).getCode());
@@ -1383,10 +1382,10 @@ Test::testMergeException(TestData &data)
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), route)
                 .isAccepted());
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     data._dstSession->acknowledge(std::move(msg));
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(1u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::POLICY_ERROR,
                  reply->getError(0).getCode());
@@ -1423,7 +1422,7 @@ Test::requireThatIgnoreFlagIsSerializedWithMessage(TestData &data)
 {
     ASSERT_TRUE(testSend(data, "dst/session foo ?bar"));
     Message::UP msg = data._dstHandler.getMessage(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(msg.get() != NULL);
+    ASSERT_TRUE(msg);
     Route route = msg->getRoute();
     EXPECT_EQUAL(2u, route.getNumHops());
     Hop hop = route.getHop(0);
@@ -1533,10 +1532,10 @@ Test::testTimeout(TestData &data)
 {
     data._retryPolicy->setEnabled(true);
     data._retryPolicy->setBaseDelay(0.01);
-    data._srcSession->setTimeout(0.5);
+    data._srcSession->setTimeout(500ms);
     EXPECT_TRUE(data._srcSession->send(createMessage("msg"), Route::parse("dst/unknown")).isAccepted());
     Reply::UP reply = data._srcHandler.getReply(RECEPTOR_TIMEOUT);
-    ASSERT_TRUE(reply.get() != NULL);
+    ASSERT_TRUE(reply);
     EXPECT_EQUAL(2u, reply->getNumErrors());
     EXPECT_EQUAL((uint32_t)ErrorCode::NO_ADDRESS_FOR_SERVICE, reply->getError(0).getCode());
     EXPECT_EQUAL((uint32_t)ErrorCode::TIMEOUT, reply->getError(1).getCode());

@@ -4,7 +4,6 @@
 #include "slobrok.h"
 #include "slobrokstate.h"
 #include <vespa/vespalib/component/vtag.h>
-#include <vespa/vespalib/util/time.h>
 #include <thread>
 
 namespace mbus {

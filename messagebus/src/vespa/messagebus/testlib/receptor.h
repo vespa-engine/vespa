@@ -25,8 +25,10 @@ public:
     ~Receptor();
     void handleMessage(Message::UP msg) override;
     void handleReply(Reply::UP reply) override;
-    Message::UP getMessage(double maxWait = 120.0);
-    Reply::UP getReply(double maxWait = 120.0);
+    Message::UP getMessage(duration maxWait = 120s);
+    Reply::UP getReply(duration maxWait = 120s);
+    Message::UP getMessageNow() { return getMessage(duration::zero()); }
+    Reply::UP getReplyNow() { return getReply(duration::zero()); }
 };
 
 } // namespace mbus
