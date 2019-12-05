@@ -22,14 +22,13 @@ TEST("that a single trace node is serialized") {
 }
 
 constexpr system_time zero_system_time(duration::zero());
-constexpr system_time one234(std::chrono::milliseconds(1234));
-constexpr system_time one235(std::chrono::milliseconds(1235));
-constexpr system_time forty5(std::chrono::milliseconds(45));
+constexpr system_time as_ms(long ms) { return system_time(std::chrono::milliseconds(ms)); }
+
 
 TEST("that a trace node with children is serialized") {
     TraceNode node;
-    node.addChild("foo", one234);
-    node.addChild("bar", one235);
+    node.addChild("foo", as_ms(1234));
+    node.addChild("bar", as_ms(1235));
     Slime slime;
     SlimeTraceSerializer serializer(slime.setObject());
     node.accept(serializer);
@@ -64,7 +63,7 @@ TEST("that a single trace node can be deserialized") {
     root.setString("payload", "hello");
     SlimeTraceDeserializer deserializer(root);
     TraceNode node(deserializer.deserialize());
-    EXPECT_EQUAL(one234, node.getTimestamp());
+    EXPECT_EQUAL(as_ms(1234), node.getTimestamp());
     EXPECT_TRUE(node.hasNote());
     EXPECT_EQUAL("hello", node.getNote());
 }
@@ -101,7 +100,7 @@ TEST("that a trace node with children can be deserialized") {
 
 TEST("test serialization and deserialization") {
     TraceNode root;
-    root.addChild("foo", forty5);
+    root.addChild("foo", as_ms(45));
     root.addChild("bar");
     root.addChild(TraceNode());
     Slime slime;
