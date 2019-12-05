@@ -654,7 +654,7 @@ public class InternalStepRunner implements StepRunner {
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
-        boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
+        boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
 
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),

@@ -248,7 +248,7 @@ class JobControllerApiHandlerHelper {
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
         JobList jobList = JobList.from(status.values());
-        if (type.isTest()) {
+        if (type.environment().isTest()) {
             Deque<List<JobType>> pending = new ArrayDeque<>();
             pendingProduction.entrySet().stream()
                              .filter(typeVersions -> jobList.type(type).successOn(typeVersions.getValue()).isEmpty())

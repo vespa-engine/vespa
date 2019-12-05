@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -121,7 +120,7 @@ public class DeploymentTrigger {
      */
     public long triggerReadyJobs() {
         return computeReadyJobs().stream()
-                                 .collect(partitioningBy(job -> job.jobType().isTest()))
+                                 .collect(partitioningBy(job -> job.jobType().environment().isTest()))
                                  .entrySet().stream()
                                  .flatMap(entry -> (entry.getKey()
                                          // True for capacity constrained zones -- sort by priority and make a task for each job type.
@@ -232,10 +231,6 @@ public class DeploymentTrigger {
 
     private ApplicationController applications() {
         return controller.applications();
-    }
-
-    private Optional<Run> successOn(JobStatus status, Versions versions) {
-        return status.lastSuccess().filter(run -> versions.targetsMatch(run.versions()));
     }
 
     private Optional<Deployment> deploymentFor(Instance instance, JobType jobType) {
@@ -376,7 +371,7 @@ public class DeploymentTrigger {
         if (firstFailing.isAfter(instant.minus(Duration.ofMinutes(1)))) return true;
 
         // Retry out of capacity errors in test environments every minute
-        if (job.isTest() && jobStatus.isOutOfCapacity()) {
+        if (job.environment().isTest() && jobStatus.isOutOfCapacity()) {
             return lastCompleted.isBefore(instant.minus(Duration.ofMinutes(1)));
         }
 
@@ -385,16 +380,6 @@ public class DeploymentTrigger {
             return lastCompleted.isBefore(instant.minus(Duration.ofMinutes(10))); // ... retry every 10 minutes
         }
         return lastCompleted.isBefore(instant.minus(Duration.ofHours(2))); // Retry at most every 2 hours
-    }
-
-    // ---------- Job state helpers ----------
-
-    private List<JobType> runningProductionJobs(Map<JobType, JobStatus> status) {
-        return status.values().parallelStream()
-                     .filter(job -> job.isRunning())
-                     .map(job -> job.id().type())
-                     .filter(JobType::isProduction)
-                     .collect(toList());
     }
 
     // ---------- Completion logic ----------

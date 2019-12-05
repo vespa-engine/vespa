@@ -100,13 +100,19 @@ public enum JobType {
 
     private final String jobName;
     private final Map<SystemName, ZoneId> zones;
+    private final boolean isTest;
 
-    JobType(String jobName, Map<SystemName, ZoneId> zones) {
+    JobType(String jobName, Map<SystemName, ZoneId> zones, boolean isTest) {
         if (zones.values().stream().map(ZoneId::environment).distinct().count() > 1)
             throw new IllegalArgumentException("All zones of a job must be in the same environment");
 
         this.jobName = jobName;
         this.zones = zones;
+        this.isTest = isTest;
+    }
+
+    JobType(String jobName, Map<SystemName, ZoneId> zones) {
+        this(jobName, zones, false);
     }
 
     public String jobName() { return jobName; }
@@ -126,8 +132,8 @@ public enum JobType {
     /** Returns whether this is a production job */
     public boolean isProduction() { return environment() == Environment.prod; }
 
-    /** Returns whether this is an automated test job */
-    public boolean isTest() { return environment() != null && environment().isTest(); }
+    /** Returns whether this is a pure test step */
+    public boolean isTest() { return isTest; }
 
     /** Returns the environment of this job type, or null if it does not have an environment */
     public Environment environment() {
@@ -146,10 +152,20 @@ public enum JobType {
     }
 
     /** Returns the job type for the given zone */
-    public static Optional<JobType> from(SystemName system, ZoneId zone) {
+    public static Optional<JobType> from(SystemName system, ZoneId zone, boolean isTest) {
         return Stream.of(values())
-                     .filter(job -> zone.equals(job.zones.get(system)))
+                     .filter(job -> zone.equals(job.zones.get(system)) && job.isTest() == isTest)
                      .findAny();
+    }
+
+    /** Returns the job type for the given zone */
+    public static Optional<JobType> from(SystemName system, ZoneId zone) {
+        return from(system, zone, false);
+    }
+
+    /** Returns the production test job type for the given environment and region or null if none */
+    public static Optional<JobType> from(SystemName system, RegionName region) {
+        return from(system, ZoneId.from(Environment.prod, region), true);
     }
 
     /** Returns the job job type for the given environment and region or null if none */
