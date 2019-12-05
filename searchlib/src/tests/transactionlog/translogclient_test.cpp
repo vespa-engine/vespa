@@ -248,7 +248,7 @@ bool Test::partialUpdateTest()
     TransLogClient::Visitor::UP visitor = tls.createVisitor("test1", ca);
     ASSERT_TRUE(visitor.get());
     ASSERT_TRUE( visitor->visit(5, 7) );
-    for (size_t i(0); ! ca._eof && (i < 1000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca._eof );
     ASSERT_TRUE( ca.map().size() == 1);
     ASSERT_TRUE( ca.hasSerial(7) );
@@ -257,7 +257,7 @@ bool Test::partialUpdateTest()
     TransLogClient::Visitor::UP visitor1 = tls.createVisitor("test1", ca1);
     ASSERT_TRUE(visitor1.get());
     ASSERT_TRUE( visitor1->visit(4, 5) );
-    for (size_t i(0); ! ca1._eof && (i < 1000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca1._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca1._eof );
     ASSERT_TRUE( ca1.map().size() == 0);
 
@@ -265,7 +265,7 @@ bool Test::partialUpdateTest()
     TransLogClient::Visitor::UP visitor2 = tls.createVisitor("test1", ca2);
     ASSERT_TRUE(visitor2.get());
     ASSERT_TRUE( visitor2->visit(5, 6) );
-    for (size_t i(0); ! ca2._eof && (i < 1000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca2._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca2._eof );
     ASSERT_TRUE( ca2.map().size() == 0);
 
@@ -273,7 +273,7 @@ bool Test::partialUpdateTest()
     TransLogClient::Visitor::UP visitor3 = tls.createVisitor("test1", ca3);
     ASSERT_TRUE(visitor3.get());
     ASSERT_TRUE( visitor3->visit(5, 1000) );
-    for (size_t i(0); ! ca3._eof && (i < 1000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca3._eof && (i < 1000); i++ ) { std::this_thread::sleep_for(10ms); }
     ASSERT_TRUE( ca3._eof );
     ASSERT_TRUE( ca3.map().size() == 1);
     ASSERT_TRUE( ca3.hasSerial(7) );
@@ -437,7 +437,7 @@ bool Test::visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, c
     TransLogClient::Visitor::UP visitor = tls.createVisitor(name, ca);
     ASSERT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(0, 1) );
-    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
     EXPECT_TRUE( ca._eof );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ca.hasSerial(1) );
@@ -447,7 +447,7 @@ bool Test::visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, c
     visitor = tls.createVisitor(name, ca);
     ASSERT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(1, 2) );
-    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
     EXPECT_TRUE( ca._eof );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ! ca.hasSerial(1) );
@@ -458,7 +458,7 @@ bool Test::visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, c
     visitor = tls.createVisitor(name, ca);
     EXPECT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(0, 3) );
-    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
     EXPECT_TRUE( ca._eof );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ca.hasSerial(1) );
@@ -469,7 +469,7 @@ bool Test::visitDomainTest(TransLogClient & tls, TransLogClient::Session * s1, c
     visitor = tls.createVisitor(name, ca);
     ASSERT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(2, 3) );
-    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { FastOS_Thread::Sleep(10); }
+    for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
     EXPECT_TRUE( ca._eof );
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( !ca.hasSerial(1) );
@@ -575,7 +575,7 @@ assertVisitStats(TransLogClient &tls, const vespalib::string &domain,
     ASSERT_TRUE(visitor.get());
     ASSERT_TRUE( visitor->visit(visitStart, visitEnd) );
     for (size_t i(0); ! ca._eof && (i < 60000); i++ ) {
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     ASSERT_TRUE(ca._eof);
     EXPECT_EQUAL(expFirstSerial, ca._firstSerial);
@@ -623,7 +623,7 @@ void Test::testMany()
         TransLogClient::Visitor::UP visitor = tls.createVisitor("many", ca);
         ASSERT_TRUE(visitor.get());
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
-        for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { FastOS_Thread::Sleep(10); }
+        for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
         EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);
@@ -644,7 +644,7 @@ void Test::testMany()
         TransLogClient::Visitor::UP visitor = tls.createVisitor("many", ca);
         ASSERT_TRUE(visitor.get());
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
-        for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { FastOS_Thread::Sleep(10); }
+        for (size_t i(0); ! ca._eof && (i < 60000); i++ ) { std::this_thread::sleep_for(10ms); }
         ASSERT_TRUE( ca._eof );
         EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
         EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);

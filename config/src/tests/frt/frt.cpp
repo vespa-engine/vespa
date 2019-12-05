@@ -49,7 +49,7 @@ namespace {
             while (timer.elapsed().ms() < timeoutInMillis) {
                 if (notified)
                     break;
-                FastOS_Thread::Sleep(100);
+                std::this_thread::sleep_for(100ms);
             }
             return notified;
         }
@@ -260,7 +260,7 @@ TEST_FF("require that request is config task is scheduled", SourceFixture(), FRT
         f1.conn.scheduler.CheckTasks();
         if (f2.result.notified)
             break;
-        FastOS_Thread::Sleep(500);
+        std::this_thread::sleep_for(500ms);
     }
     ASSERT_TRUE(f2.result.notified);
     f2.src.close();

@@ -175,7 +175,7 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
         while (timer.elapsed().ms() < timeout) {
             if (getConfigured())
                 return true;
-            FastOS_Thread::Sleep(100);
+            std::this_thread::sleep_for(100ms);
         }
         return getConfigured();
     }

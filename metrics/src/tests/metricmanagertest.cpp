@@ -10,8 +10,10 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <vespa/log/log.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
+#include <vespa/log/log.h>
 LOG_SETUP(".test.metricmanager");
 
 namespace metrics {
@@ -386,7 +388,7 @@ bool waitForTimeProcessed(const MetricManager& mm,
     while (time(0) < lastchance) {
         if (mm.getLastProcessedTime() >= processtime) return true;
         mm.timeChangedNotification();
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     return false;
 }

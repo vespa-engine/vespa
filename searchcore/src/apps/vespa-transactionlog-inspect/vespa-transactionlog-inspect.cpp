@@ -7,6 +7,7 @@
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/xmlstream.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/document/config/config-documenttypes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -14,6 +15,7 @@
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/app.h>
 #include <iostream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-transactionlog-inspect");
@@ -491,7 +493,7 @@ protected:
             return 1;
         }
         for (size_t i = 0; !callback.isEof() && (i < 60 * 60); i++ ) {
-            FastOS_Thread::Sleep(1000);
+            std::this_thread::sleep_for(1s);
         }
         return 0;
     }

@@ -7,6 +7,8 @@
 #include <vespa/messagebus/rpcmessagebus.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/testlib/receptor.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <vespa/fastos/app.h>
 
 using namespace mbus;
@@ -45,7 +47,7 @@ App::Main()
                 break;
             }
         }
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(1s);
     }
     if (reply.get() == 0) {
         fprintf(stderr, "CPP-CLIENT: no reply\n");

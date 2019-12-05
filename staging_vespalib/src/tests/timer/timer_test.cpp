@@ -1,8 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/timer.h>
-#include <vespa/vespalib/util/executor.h>
+#include <vespa/vespalib/util/scheduledexecutor.h>
 
 using namespace vespalib;
 using vespalib::Executor;
@@ -37,7 +36,7 @@ void Test::testScheduling()
 {
     vespalib::CountDownLatch latch1(3);
     vespalib::CountDownLatch latch2(2);
-    Timer timer;
+    ScheduledExecutor timer;
     timer.scheduleAtFixedRate(Task::UP(new TestTask(latch1)), 0.1, 0.2);
     timer.scheduleAtFixedRate(Task::UP(new TestTask(latch2)), 0.5, 0.5);
     EXPECT_TRUE(latch1.await(60000));
@@ -47,7 +46,7 @@ void Test::testScheduling()
 void Test::testReset()
 {
     vespalib::CountDownLatch latch1(2);
-    Timer timer;
+    ScheduledExecutor timer;
     timer.scheduleAtFixedRate(Task::UP(new TestTask(latch1)), 2.0, 3.0);
     timer.reset();
     EXPECT_TRUE(!latch1.await(3000));

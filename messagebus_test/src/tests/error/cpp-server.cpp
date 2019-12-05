@@ -6,6 +6,8 @@
 #include <vespa/messagebus/network/rpcnetworkparams.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/errorcode.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <vespa/fastos/app.h>
 
 using namespace mbus;
@@ -55,7 +57,7 @@ App::Main()
                      "file:routing.cfg");
     Server server(mb.getMessageBus());
     while (true) {
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(1s);
     }
     return 0;
 }

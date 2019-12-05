@@ -65,7 +65,7 @@ TEST("estimate cost of thread bundle fork/join") {
                     if (time < minTime) {
                         minTime = time;
                     }
-                    FastOS_Thread::Sleep(10);
+                    std::this_thread::sleep_for(10ms);
                 }
                 fprintf(stderr, "strategy: %s, threads: %zu, fork: %zu, iter: %zu, time: %g, unit: %g\n",
                         strategy_name[strategy].c_str(), threads, fork, iter, minTime,

@@ -14,6 +14,7 @@
 #include <vespa/storage/common/statusmetricconsumer.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/metrics/metricmanager.h>
 #include <fcntl.h>
 
@@ -568,7 +569,7 @@ StorageNode::waitUntilInitialized(uint32_t timeout) {
             lib::NodeState nodeState(*_component->getStateUpdater().getReportedNodeState());
             if (nodeState.getState() == lib::State::UP) break;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
         if (clock.getTimeInMillis() >= endTime) {
             std::ostringstream ost;
             ost << "Storage server not initialized after waiting timeout of "

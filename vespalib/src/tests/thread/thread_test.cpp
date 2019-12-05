@@ -32,7 +32,7 @@ TEST("normal operation") {
     {
         Thread thread(agent);
         thread.start();
-        FastOS_Thread::Sleep(20);
+        std::this_thread::sleep_for(20ms);
         thread.stop().join();
     }
     EXPECT_TRUE(agent.started);

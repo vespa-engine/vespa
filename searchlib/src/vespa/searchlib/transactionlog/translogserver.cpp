@@ -2,12 +2,14 @@
 #include "translogserver.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
 #include <fstream>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".transactionlog.server");
@@ -125,7 +127,7 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
                     listenOk = true;
                 } else {
                     LOG(warning, "Failed listening at port %s trying for %d seconds more.", listenSpec, i);
-                    FastOS_Thread::Sleep(1000);
+                    std::this_thread::sleep_for(1s);
                 }
             }
             if ( ! listenOk ) {

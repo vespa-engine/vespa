@@ -1064,7 +1064,7 @@ TEST_F("require that document pruner is active",
     MyFrozenBucket::UP frozen3(new MyFrozenBucket(f._mc, bucketId3));
     f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(0.2, 900.0));
     for (uint32_t i = 0; i < 6; ++i) {
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
         ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
         if (f._removed.getNumUsedLids() != 10u)
             break;
@@ -1073,7 +1073,7 @@ TEST_F("require that document pruner is active",
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
     frozen3.reset();
     for (uint32_t i = 0; i < 600; ++i) {
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
         ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
         if (f._removed.getNumUsedLids() != 10u)
             break;
@@ -1089,7 +1089,7 @@ TEST_F("require that heartbeats are scheduled",
     f.startMaintenance();
     f.setHeartBeatConfig(DocumentDBHeartBeatConfig(0.2));
     for (uint32_t i = 0; i < 600; ++i) {
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
         if (f._fh.getHeartBeats() != 0u)
             break;
     }
@@ -1104,7 +1104,7 @@ TEST_F("require that periodic session prunings are scheduled",
     f.startMaintenance();
     f.setGroupingSessionPruneInterval(0.2);
     for (uint32_t i = 0; i < 600; ++i) {
-        FastOS_Thread::Sleep(100);
+        std::this_thread::sleep_for(100ms);
         if (f._gsp.isInvoked) {
             break;
         }
@@ -1233,7 +1233,7 @@ TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
     EXPECT_FALSE(myJob2.isBlocked());
     bool done1 = myJob1._latch.await(TIMEOUT_MS);
     EXPECT_TRUE(done1);
-    FastOS_Thread::Sleep(2000);
+    std::this_thread::sleep_for(2s);
     EXPECT_EQUAL(0u, myJob2._runCnt);
 }
 
@@ -1245,7 +1245,7 @@ TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixtur
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
     f.startMaintenance();
-    FastOS_Thread::Sleep(2000);
+    std::this_thread::sleep_for(2s);
     EXPECT_EQUAL(0u, myJob._runCnt);
 }
 

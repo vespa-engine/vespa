@@ -78,7 +78,7 @@ Test::Main()
         if (queue.size() == msgCnt) {
             break;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     EXPECT_TRUE(queue.size() == msgCnt);
     EXPECT_TRUE(h1.cnt == msgCnt / 3);

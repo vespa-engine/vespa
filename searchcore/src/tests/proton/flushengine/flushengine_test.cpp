@@ -685,7 +685,7 @@ assertThatHandlersInCurrentSet(FlushEngine & engine, const std::vector<const cha
 {
     FlushEngine::FlushMetaSet current1 = engine.getCurrentlyFlushingSet();
     while ((current1.size() < targets.size()) || !asserCorrectHandlers(current1, targets)) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
         current1 = engine.getCurrentlyFlushingSet();
     }
 }

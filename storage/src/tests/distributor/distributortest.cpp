@@ -11,9 +11,10 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -383,7 +384,7 @@ TEST_F(DistributorTest, tick_processes_status_requests) {
         thread, "statustest", tickWaitMs, tickMaxProcessTime, ticksBeforeWait));
 
     while (true) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
         framework::TickingLockGuard guard(
             distributor_thread_pool().freezeCriticalTicks());
         if (!distributor_status_todos().empty()) {

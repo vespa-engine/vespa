@@ -5,6 +5,7 @@
 #include <atomic>
 
 class FNET_Transport;
+class FastOS_ThreadPool;
 
 namespace storage {
 

@@ -36,7 +36,7 @@ waitSlobrok(RPCMessageBus &mbus, const std::string &pattern)
         if (res.size() > 0) {
             return true;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     return false;
 }
@@ -112,7 +112,7 @@ Test::Main()
             }
         }
         std::cout << "Attempt " << i << " got errors, retrying in 1 second.." << std::endl;
-        FastOS_Thread::Sleep(1000);
+        std::this_thread::sleep_for(1s);
     }
 
     EXPECT_TRUE(!reply->hasErrors());

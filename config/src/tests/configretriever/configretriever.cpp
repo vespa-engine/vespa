@@ -251,7 +251,7 @@ public:
             if (configured) {
                 return true;
             }
-            FastOS_Thread::Sleep(200);
+            std::this_thread::sleep_for(200ms);
         }
         return configured;
     }

@@ -36,7 +36,6 @@ public:
 
     ~FastOS_UNIX_Thread();
 
-    static bool Sleep (int ms);
     FastOS_ThreadId GetThreadId () override;
     static bool CompareThreadIds (FastOS_ThreadId a, FastOS_ThreadId b);
     static FastOS_ThreadId GetCurrentThreadId ();

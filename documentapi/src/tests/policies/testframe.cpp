@@ -8,6 +8,8 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/network/rpcnetworkparams.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".testframe");
@@ -297,7 +299,7 @@ TestFrame::waitSlobrok(const string &pattern, uint32_t cnt)
         if (res.size() == cnt) {
             return true;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     LOG(error, "Slobrok failed to resolve '%s' to %d recipients in time.", pattern.c_str(), cnt);
     return false;

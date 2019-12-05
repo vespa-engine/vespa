@@ -3,6 +3,8 @@
 #include <vespa/fastos/process.h>
 #include <vespa/fastos/timestamp.h>
 
+using namespace std::chrono_literals;
+
 class MyListener : public FastOS_ProcessRedirectListener
 {
 private:
@@ -119,7 +121,7 @@ public:
                xproc->WriteStdin(nullptr, 0);
             }
 
-            FastOS_Thread::Sleep(1000);
+            std::this_thread::sleep_for(1s);
          }
 
          if(i == 10)

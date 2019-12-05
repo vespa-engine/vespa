@@ -11,6 +11,8 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.statereporter");
@@ -233,7 +235,7 @@ TEST_F(StateReporterTest, report_metrics) {
             uint64_t(_metricManager->getLastProcessedTime())
                     < _clock->getTimeInSeconds().getTime())
         {
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
         }
     }
     LOG(debug, "5 minute snapshot should have been taken. Adding put count");

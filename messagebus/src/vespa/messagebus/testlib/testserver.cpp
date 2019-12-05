@@ -4,6 +4,8 @@
 #include "slobrok.h"
 #include "slobrokstate.h"
 #include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/util/time.h>
+#include <thread>
 
 namespace mbus {
 
@@ -59,7 +61,7 @@ TestServer::waitState(const SlobrokState &slobrokState)
         if (done) {
             return true;
         }
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
     }
     return false;
 }

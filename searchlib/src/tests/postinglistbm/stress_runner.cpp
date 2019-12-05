@@ -8,9 +8,11 @@
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
+#include <vespa/vespalib/util/time.h>
 #include <condition_variable>
 #include <mutex>
 #include <vector>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".stress_runner");
@@ -306,7 +308,7 @@ StressMaster::run()
             totalTime / _loops, type.c_str());
         dropPostings();
     }
-    FastOS_Thread::Sleep(250);
+    std::this_thread::sleep_for(250ms);
 }
 
 double

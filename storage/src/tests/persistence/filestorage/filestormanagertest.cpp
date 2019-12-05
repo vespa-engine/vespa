@@ -20,8 +20,10 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <atomic>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".filestormanagertest");
@@ -556,7 +558,7 @@ public:
 
             auto cmd = std::make_shared<api::PutCommand>(makeDocumentBucket(bucket), _doc, 100);
             _handler.schedule(cmd, 0);
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
         }
 
         _threadDone = true;
@@ -589,13 +591,13 @@ public:
             if (msg.second.get()) {
                 uint32_t originalConfig = _config.load();
                 _fetchedCount++;
-                FastOS_Thread::Sleep(5);
+                std::this_thread::sleep_for(5ms);
 
                 if (_config.load() != originalConfig) {
                     _failed = true;
                 }
             } else {
-                FastOS_Thread::Sleep(1);
+                std::this_thread::sleep_for(1ms);
             }
         }
 
@@ -634,7 +636,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     thread.start(pool);
 
     for (uint32_t i = 0; i < 50; ++i) {
-        FastOS_Thread::Sleep(2);
+        std::this_thread::sleep_for(2ms);
         ResumeGuard guard = filestorHandler.pause();
         thread._config.fetch_add(1);
         uint32_t count = thread._fetchedCount;
@@ -646,7 +648,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
     ASSERT_FALSE(thread._failed);
 
     while (!pushthread._threadDone || !thread._threadDone) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
     }
 }
 
@@ -869,7 +871,7 @@ TEST_F(FileStorManagerTest, handler_timeout) {
         filestorHandler.schedule(cmd, 0);
     }
 
-    FastOS_Thread::Sleep(51);
+    std::this_thread::sleep_for(51ms);
     for (;;) {
         auto lock = filestorHandler.getNextMessage(0, stripeId);
         if (lock.first.get()) {
@@ -944,7 +946,7 @@ TEST_F(FileStorManagerTest, priority) {
     // Wait until everything is done.
     int count = 0;
     while (documents.size() != top.getNumReplies() && count < 10000) {
-        FastOS_Thread::Sleep(10);
+        std::this_thread::sleep_for(10ms);
         count++;
     }
     ASSERT_LT(count, 10000);

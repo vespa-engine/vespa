@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/storage/bucketdb/bucketmanager.h>
@@ -14,6 +13,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/time.h>
 #include <gmock/gmock.h>
 #include <thread>
 
@@ -202,7 +202,7 @@ void MetricsTest::createFakeLoad()
     while (uint64_t(_metricManager->getLastProcessedTime())
                 < _clock->getTimeInSeconds().getTime())
     {
-        FastOS_Thread::Sleep(5);
+        std::this_thread::sleep_for(5ms);
         _metricManager->timeChangedNotification();
     }
 }
@@ -257,7 +257,7 @@ TEST_F(MetricsTest, snapshot_presenting) {
             uint64_t(_metricManager->getLastProcessedTime())
                     < _clock->getTimeInSeconds().getTime())
         {
-            FastOS_Thread::Sleep(1);
+            std::this_thread::sleep_for(1ms);
         }
     }
     LOG(debug, "5 minute snapshot should have been taken. Adding put count");

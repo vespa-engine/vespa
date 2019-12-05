@@ -11,8 +11,11 @@
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
+#include <thread>
 
 #include <vespa/log/log.h>
+#include <vespa/vespalib/util/time.h>
+
 LOG_SETUP("translogstress");
 
 using document::ByteBuffer;
@@ -267,7 +270,7 @@ FeederThread::doRun()
             int64_t milliSecsUsed = _timer.elapsed().ms();
             if (milliSecsUsed < 1000) {
                 //LOG(info, "FeederThread: sleep %u ms", 1000 - milliSecsUsed);
-                FastOS_Thread::Sleep(1000 - milliSecsUsed);
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000 - milliSecsUsed));
             } else {
                 LOG(info, "FeederThread: max throughput");
             }
@@ -457,7 +460,7 @@ private:
     EntryGenerator _generator;
     std::vector<std::shared_ptr<VisitorAgent> > _visitors;
     std::vector<std::shared_ptr<VisitorAgent> > _rndVisitors;
-    uint64_t _visitorInterval; // in milliseconds
+    vespalib::duration _visitorInterval; // in milliseconds
     int64_t _pruneInterval;   // in milliseconds
     fastos::StopWatch _pruneTimer;
     SerialNum _begin;
@@ -481,14 +484,14 @@ ControllerThread::ControllerThread(const std::string & tlsSpec, const std::strin
                                    const EntryGenerator & generator, uint32_t numVisitors,
                                    uint64_t visitorInterval, uint64_t pruneInterval)
     : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec.c_str()), _session(),
-      _generator(generator), _visitors(), _rndVisitors(), _visitorInterval(visitorInterval),
+      _generator(generator), _visitors(), _rndVisitors(), _visitorInterval(std::chrono::milliseconds(visitorInterval)),
       _pruneInterval(pruneInterval), _pruneTimer(), _begin(0), _end(0), _count(0)
 {
     for (uint32_t i = 0; i < numVisitors; ++i) {
         _visitors.push_back(std::make_shared<VisitorAgent>(tlsSpec, domain, generator, i, true));
     }
 }
-ControllerThread::~ControllerThread() {}
+ControllerThread::~ControllerThread() = default;
 
 void
 ControllerThread::getStatus()
@@ -553,7 +556,7 @@ ControllerThread::doRun()
             }
             _pruneTimer.restart();
         }
-        FastOS_Thread::Sleep(_visitorInterval);
+        std::this_thread::sleep_for(_visitorInterval);
     }
 }
 
@@ -569,7 +572,7 @@ private:
     uint64_t domainPartSize;
     size_t packetSize;
 
-    uint64_t stressTime;
+    std::chrono::milliseconds stressTime;
     uint32_t feedRate;
     uint32_t numVisitors;
     uint64_t visitorInterval;
@@ -598,7 +601,7 @@ void
 TransLogStress::printConfig()
 {
     std::cout << "######## Config ########" << std::endl;
-    std::cout << "stressTime:             " << _cfg.stressTime / 1000 << " s" << std::endl;
+    std::cout << "stressTime:             " << vespalib::to_s(_cfg.stressTime) << " s" << std::endl;
     std::cout << "feedRate:               " << _cfg.feedRate << " per/sec" << std::endl;
     std::cout << "numVisitors:            " << _cfg.numVisitors << std::endl;
     std::cout << "visitorInterval:        " << _cfg.visitorInterval << " ms" << std::endl;
@@ -628,7 +631,7 @@ TransLogStress::Main()
     _cfg.domainPartSize = 8000000; // ~8MB
     _cfg.packetSize = 0x10000;
 
-    _cfg.stressTime = 1000 * 60;
+    _cfg.stressTime = std::chrono::milliseconds(1000 * 60);
     _cfg.feedRate = 10000;
     _cfg.numVisitors = 1;
     _cfg.visitorInterval = 1000 * 1;
@@ -639,7 +642,7 @@ TransLogStress::Main()
     _cfg.maxStrLen = 80;
     _cfg.baseSeed = 100;
 
-    uint64_t sleepTime = 4000;
+    vespalib::duration sleepTime = 4s;
 
     int idx = 1;
     char opt;
@@ -654,7 +657,7 @@ TransLogStress::Main()
             _cfg.packetSize = atol(arg);
             break;
         case 't':
-            _cfg.stressTime = 1000 * atol(arg);
+            _cfg.stressTime = std::chrono::milliseconds(1000 * atol(arg));
             break;
         case 'f':
             _cfg.feedRate = atoi(arg);
@@ -690,7 +693,7 @@ TransLogStress::Main()
     }
 
     printConfig();
-    FastOS_Thread::Sleep(sleepTime);
+    std::this_thread::sleep_for(sleepTime);
 
     if (_argc != idx || optError) {
         usage();
@@ -721,13 +724,13 @@ TransLogStress::Main()
     FeederThread feeder(tlsSpec, domain, generator, _cfg.feedRate, _cfg.packetSize);
     threadPool.NewThread(&feeder);
 
-    FastOS_Thread::Sleep(sleepTime);
+    std::this_thread::sleep_for(sleepTime);
 
     ControllerThread controller(tlsSpec, domain, generator, _cfg.numVisitors, _cfg.visitorInterval, _cfg.pruneInterval);
     threadPool.NewThread(&controller);
 
     // stop feeder and controller
-    FastOS_Thread::Sleep(_cfg.stressTime);
+    std::this_thread::sleep_for(_cfg.stressTime);
     printConfig();
     LOG(info, "Stop feeder...");
     feeder.stop();
@@ -735,7 +738,7 @@ TransLogStress::Main()
     std::cout << "<feeder>" << std::endl;
     std::cout << "  <from>" << feeder.getRange().from() << "</from>" << std::endl;
     std::cout << "  <to>" << feeder.getRange().to() << "</to>" << std::endl;
-    std::cout << "  <rate>" << 1000 * (feeder.getRange().to() - feeder.getRange().from()) / (sleepTime + _cfg.stressTime)
+    std::cout << "  <rate>" << 1000 * (feeder.getRange().to() - feeder.getRange().from()) / vespalib::count_ms(sleepTime + _cfg.stressTime)
         << "</rate>" << std::endl;
     std::cout << "</feeder>" << std::endl;
 
@@ -743,7 +746,7 @@ TransLogStress::Main()
     controller.stop();
     controller.join();
 
-    FastOS_Thread::Sleep(sleepTime);
+    std::this_thread::sleep_for(sleepTime);
     std::vector<std::shared_ptr<VisitorAgent> > & visitors = controller.getVisitors();
     for (size_t i = 0; i < visitors.size(); ++i) {
         std::cout << "<visitor id='" << i << "'>" << std::endl;

@@ -47,7 +47,7 @@ TEST_MT_FF("require that signals can be counted and cancelled", 2, Signal, size_
     if (thread_id == 0) {
         for (size_t i = 0; i < f2; ++i) {
             f1.send();
-            if (i % 128 == 0) { FastOS_Thread::Sleep(1); }
+            if (i % 128 == 0) { std::this_thread::sleep_for(1ms); }
         }
         TEST_BARRIER();
         f1.cancel();

@@ -7,10 +7,11 @@
 #include <vespa/config-load-type.h>
 #include <vespa/config-fleetcontroller.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/config/config.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".test.servicelayerapp");
@@ -111,7 +112,7 @@ TestStorageApp::waitUntilInitialized(
     framework::MilliSecTime endTime(
             clock.getTimeInMillis() + timeout.getMillis());
     while (!isInitialized()) {
-        FastOS_Thread::Sleep(1);
+        std::this_thread::sleep_for(1ms);
         framework::MilliSecTime currentTime(clock.getTimeInMillis());
         if (currentTime > endTime) {
             std::ostringstream error;

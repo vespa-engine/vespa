@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include "timer.h"
+#include "scheduledexecutor.h"
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
@@ -34,7 +34,7 @@ public:
     }
 };
 
-Timer::Timer()
+ScheduledExecutor::ScheduledExecutor()
     : _threadPool(128 * 1024),
       _transport(new FNET_Transport()),
       _lock(),
@@ -43,7 +43,7 @@ Timer::Timer()
     _transport->Start(&_threadPool);
 }
 
-Timer::~Timer()
+ScheduledExecutor::~ScheduledExecutor()
 {
     vespalib::LockGuard guard(_lock);
     _transport->ShutDown(true);
@@ -53,7 +53,7 @@ Timer::~Timer()
 
 
 void
-Timer::scheduleAtFixedRate(vespalib::Executor::Task::UP task, double delay, double interval)
+ScheduledExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task, double delay, double interval)
 {
     vespalib::LockGuard guard(_lock);
     TimerTaskPtr tTask(new TimerTask(_transport->GetScheduler(), std::move(task), interval));
@@ -62,7 +62,7 @@ Timer::scheduleAtFixedRate(vespalib::Executor::Task::UP task, double delay, doub
 }
 
 void
-Timer::reset()
+ScheduledExecutor::reset()
 {
     vespalib::LockGuard guard(_lock);
     _transport->ShutDown(true);
