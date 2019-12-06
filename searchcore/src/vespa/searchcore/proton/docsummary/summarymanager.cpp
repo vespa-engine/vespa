@@ -194,9 +194,9 @@ createShrinkLidSpaceFlushTarget(searchcorespi::index::IThreadService & summarySe
                                                        IFlushTarget::Type::GC,
                                                        IFlushTarget::Component::DOCUMENT_STORE,
                                                        docStore->lastSyncToken(),
-                                                       vespalib::system_time(docStore->getLastFlushTime()),
+                                                       docStore->getLastFlushTime(),
                                                        summaryService,
-                                                       docStore);
+                                                       std::move(docStore));
 }
 
 }
