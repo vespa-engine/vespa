@@ -20,11 +20,13 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
@@ -45,7 +47,7 @@ public class DeploymentStatus {
 
     private final Application application;
     private final JobList jobs;
-    private final Map<JobId, List<StepStatus>> steps;
+    private final Map<JobId, StepStatus> steps;
     private final SystemName system = null; // TODO jonmv: Fix.
     private final Version systemVersion = null; // TODO jonmv: Fix.
 
@@ -82,24 +84,73 @@ public class DeploymentStatus {
                                        collectingAndThen(toUnmodifiableList(), JobList::from)));
     }
 
-    Optional<JobId> jobId(DeploymentSpec.Step step, InstanceName instance) {
-        if ( ! step.steps().isEmpty())
-            throw new IllegalArgumentException(step + " is not a primitive");
+    /** Returns the set of jobs that need to run for the application's current change to be considered complete. */
+    public Map<JobId, List<Versions>> jobsToRun() {
+        return jobsToRun(application().change());
+    }
 
-        if ( ! step.delay().isZero())
-            return Optional.empty();
+    /** Returns the set of jobs that need to run for the given change to be considered complete. */
+    public Map<JobId, List<Versions>> jobsToRun(Change change) {
+        Map<JobId, List<Versions>> jobs = new LinkedHashMap<>();
 
-        Optional<JobType> job;
-        if (step.concerns(prod) && step.isTest())
-            job = JobType.from(system, ((DeclaredTest) step).region());
-        else {
-            DeclaredZone zone = (DeclaredZone) step;
-            job = JobType.from(system, zone.environment(), zone.region().orElse(null));
-        }
-        if (job.isEmpty())
-            throw new IllegalArgumentException("No job is known for " + step + " in " + system);
+        addProductionJobs(jobs, change);
+        addTests(jobs);
+        if (jobs.isEmpty())
+            addTestsOnly(jobs, change);
 
-        return job.map(type -> new JobId(application.id().instance(instance), type));
+        return ImmutableMap.copyOf(jobs);
+    }
+
+    private void addProductionJobs(Map<JobId, List<Versions>> jobs, Change change) {
+        steps.forEach((job, step) -> {
+            if (job.type().isProduction() && step.completedAt(change).isEmpty())
+                jobs.put(job, List.of(Versions.from(change, application, deploymentFor(job), systemVersion)));
+        });
+    }
+
+    private void addTests(Map<JobId, List<Versions>> jobs) {
+        Map<JobId, List<Versions>> testJobs = new HashMap<>();
+        jobs.forEach((job, versions) -> {
+            if ( ! job.type().isTest())
+                declaredTest(job.application(), JobType.systemTest).ifPresent(test -> {
+                    testJobs.merge(test, versions, DeploymentStatus::concat);
+                });
+        });
+        jobs.forEach((job, versions) -> {
+            if ( ! job.type().isTest() && ! testedOn(versions, JobType.systemTest, testJobs))
+                testJobs.merge(new JobId(job.application(), JobType.systemTest), versions, DeploymentStatus::concat);
+            if ( ! job.type().isTest() && ! testedOn(versions, JobType.stagingTest, testJobs))
+                testJobs.merge(new JobId(job.application(), JobType.stagingTest), versions, DeploymentStatus::concat);
+        });
+        jobs.putAll(testJobs);
+    }
+
+    private Optional<JobId> declaredTest(ApplicationId instanceId, JobType testJob) {
+        return steps.keySet().stream()
+                    .filter(job -> job.type() == testJob)
+                    .filter(job -> job.application().equals(instanceId))
+                    .findAny();
+    }
+
+    private boolean testedOn(List<Versions> versions, JobType testJob, Map<JobId, List<Versions>> testJobs) {
+        return testJobs.keySet().stream()
+                       .anyMatch(job -> job.type() == testJob && testJobs.get(job).containsAll(versions));
+    }
+
+    private void addTestsOnly(Map<JobId, List<Versions>> jobs, Change change) {
+        steps.forEach((job, step) -> {
+            if (List.of(test, staging).contains(job.type().environment()))
+                jobs.put(job, List.of(Versions.from(change, application, Optional.empty(), systemVersion)));
+        });
+    }
+
+    private  static <T> List<T> concat(List<T> first, List<T> second) {
+        return Stream.concat(first.stream(), second.stream()).collect(toUnmodifiableList());
+    }
+
+    private Optional<Deployment> deploymentFor(JobId job) {
+        return Optional.ofNullable(application.require(job.application().instance())
+                                              .deployments().get(job.type().zone(system)));
     }
 
     /** Returns a DAG of the dependencies between the primitive steps in the spec, with iteration order equal to declaration order. */
@@ -127,7 +178,6 @@ public class DeploymentStatus {
                 previous = new ArrayList<>(previous);
                 stepStatus = JobStepStatus.ofTestDeployment((DeclaredZone) step, List.of(), this, instance, jobType);
                 previous.add(stepStatus);
-                return previous;
             }
             else if (step.isTest()) {
                 jobType = JobType.from(system, ((DeclaredTest) step).region())
@@ -135,15 +185,16 @@ public class DeploymentStatus {
                 JobType preType = JobType.from(system, prod, ((DeclaredTest) step).region())
                                          .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
                 stepStatus = JobStepStatus.ofProductionTest((DeclaredTest) step, previous, this, instance, jobType, preType);
-                return List.of(stepStatus);
+                previous = List.of(stepStatus);
             }
             else {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), ((DeclaredZone) step).region().get())
                                          .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, instance, jobType);
-                return List.of(stepStatus);
+                previous = List.of(stepStatus);
             }
-
+            steps.put(new JobId(application.id().instance(instance), jobType), stepStatus);
+            return previous;
         }
 
         Optional<InstanceName> stepInstance = Optional.of(step)
