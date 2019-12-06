@@ -153,10 +153,17 @@ public class RoutingPolicies {
             LOGGER.log(LogLevel.WARNING, "Removing " + removalCandidates + ". Active load balancers " +
                                          activeLoadBalancers);
         }
+        removalCandidates.forEach(allPolicies::remove);
+
+        // Find CNAMEs in use
+        var cnamesUsed = allPolicies.stream()
+                .map(policy -> policy.endpointIn(controller.system()).dnsName())
+                .collect(Collectors.toSet());
+
         for (var policy : removalCandidates) {
             var dnsName = policy.endpointIn(controller.system()).dnsName();
-            controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
-            allPolicies.remove(policy);
+            if ( ! cnamesUsed.contains(dnsName))
+                controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
         }
         db.writeRoutingPolicies(loadBalancers.application, allPolicies);
     }
