@@ -5,7 +5,7 @@ namespace proton {
 
 using matching::ISessionCachePruner;
 
-PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, double jobInterval)
+PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, vespalib::duration jobInterval)
     : IMaintenanceJob("prune_session_cache", jobInterval, jobInterval),
       _pruner(pruner)
 {

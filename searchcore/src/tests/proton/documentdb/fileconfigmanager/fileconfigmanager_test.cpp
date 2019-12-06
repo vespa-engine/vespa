@@ -175,10 +175,7 @@ TEST_F("requireThatVisibilityDelayIsPropagated",
         cm.setProtonConfig(ProtonConfigSP(new ProtonConfig(protonConfigBuilder)));
         cm.loadConfig(*esnap, 70, esnap);
     }
-    EXPECT_EQUAL(61.0, esnap->getMaintenanceConfigSP()->getVisibilityDelay().sec());
+    EXPECT_EQUAL(61s, esnap->getMaintenanceConfigSP()->getVisibilityDelay());
 }
 
-
-
 TEST_MAIN() { TEST_RUN_ALL(); }
-

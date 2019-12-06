@@ -5,8 +5,8 @@
 
 namespace proton {
 
-DocumentDBCommitJob::DocumentDBCommitJob(ICommitable & committer, fastos::TimeStamp visibilityDelay) :
-    IMaintenanceJob("documentdb_commit", visibilityDelay.sec(), visibilityDelay.sec()),
+DocumentDBCommitJob::DocumentDBCommitJob(ICommitable & committer, vespalib::duration visibilityDelay) :
+    IMaintenanceJob("documentdb_commit", visibilityDelay, visibilityDelay),
     _committer(committer)
 {
 }

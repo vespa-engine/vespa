@@ -26,8 +26,8 @@ public:
                             IAttributeManagerSP notReadyAttributeManager,
                             AttributeUsageFilter &attributeUsageFilter,
                             const vespalib::string &docTypeName,
-                            double interval);
-    ~SampleAttributeUsageJob();
+                            vespalib::duration interval);
+    ~SampleAttributeUsageJob() override;
 
     bool run() override;
 };

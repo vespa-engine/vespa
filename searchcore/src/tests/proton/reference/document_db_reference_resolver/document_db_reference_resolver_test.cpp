@@ -230,18 +230,18 @@ struct Fixture {
         oldAttrMgr.addReferenceAttribute("parent2_ref");
         oldAttrMgr.addReferenceAttribute("parent3_ref");
     }
-    ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay, bool useReferences) {
+    ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay, bool useReferences) {
         DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter, useReferences);
         return resolver.resolve(attrMgr, oldAttrMgr, std::shared_ptr<search::IDocumentMetaStoreContext>(), visibilityDelay);
     }
-    ImportedAttributesRepo::UP resolve(fastos::TimeStamp visibilityDelay) {
+    ImportedAttributesRepo::UP resolve(vespalib::duration visibilityDelay) {
         return resolve(visibilityDelay, true);
     }
     ImportedAttributesRepo::UP resolveReplay() {
-        return resolve(fastos::TimeStamp(0), false);
+        return resolve(vespalib::duration::zero(), false);
     }
     ImportedAttributesRepo::UP resolve() {
-        return resolve(fastos::TimeStamp(0));
+        return resolve(vespalib::duration::zero());
     }
     void teardown() {
         DocumentDBReferenceResolver resolver(registry, docModel.childDocType, importedFieldsCfg, docModel.childDocType, _gidToLidChangeListenerRefCount, _attributeFieldWriter, false);
@@ -306,7 +306,7 @@ TEST_F("require that imported attributes are instantiated without search cache a
 
 TEST_F("require that imported attributes are instantiated with search cache if visibility delay > 0", Fixture)
 {
-    auto repo = f.resolve(fastos::TimeStamp::Seconds(1.0));
+    auto repo = f.resolve(1s);
     EXPECT_EQUAL(2u, repo->size());
     f.assertImportedAttribute("imported_a", "ref", "target_a", true, repo->get("imported_a"));
     f.assertImportedAttribute("imported_b", "other_ref", "target_b", true, repo->get("imported_b"));

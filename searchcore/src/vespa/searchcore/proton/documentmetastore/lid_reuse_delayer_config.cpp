@@ -6,19 +6,16 @@
 namespace proton::documentmetastore {
 
 LidReuseDelayerConfig::LidReuseDelayerConfig()
-    : _visibilityDelay(0),
+    : _visibilityDelay(vespalib::duration::zero()),
       _hasIndexedOrAttributeFields(false)
 {
 }
 
-LidReuseDelayerConfig::LidReuseDelayerConfig(const DocumentDBConfig &
-                                             configSnapshot)
+LidReuseDelayerConfig::LidReuseDelayerConfig(const DocumentDBConfig & configSnapshot)
     : _visibilityDelay(configSnapshot.getMaintenanceConfigSP()->getVisibilityDelay()),
       _hasIndexedOrAttributeFields(configSnapshot.getSchemaSP()->getNumIndexFields() > 0 ||
                                    configSnapshot.getSchemaSP()->getNumAttributeFields() > 0)
 {
 }
 
-
-} // namespace proton::documentmetastore
-
+}

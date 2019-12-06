@@ -107,7 +107,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     typedef IMaintenanceJob::UP MUP;
     controller.registerJobInMasterThread(MUP(new HeartBeatJob(hbHandler, config.getHeartBeatConfig())));
     controller.registerJobInDefaultPool(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
-    if (config.getVisibilityDelay() > 0) {
+    if (config.hasVisibilityDelay()) {
         controller.registerJobInMasterThread(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
     }
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());

@@ -15,11 +15,9 @@ private:
     matching::ISessionCachePruner &_pruner;
 
 public:
-    PruneSessionCacheJob(matching::ISessionCachePruner &pruner,
-                         double jobInterval);
+    PruneSessionCacheJob(matching::ISessionCachePruner &pruner, vespalib::duration jobInterval);
 
-    // Implements IMaintenanceJob
-    virtual bool run() override;
+    bool run() override;
 };
 
 } // namespace proton

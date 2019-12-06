@@ -12,20 +12,20 @@ using namespace proton;
 struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
     bool blocked;
     MyBlockableMaintenanceJob()
-        : IBlockableMaintenanceJob("my_job", 1.0, 1.0),
+        : IBlockableMaintenanceJob("my_job", 1s, 1s),
           blocked(false)
     {}
-    virtual void setBlocked(BlockedReason reason) override {
+    void setBlocked(BlockedReason reason) override {
         ASSERT_TRUE(reason == BlockedReason::OUTSTANDING_OPS);
         EXPECT_FALSE(blocked);
         blocked = true;
     }
-    virtual void unBlock(BlockedReason reason) override {
+    void unBlock(BlockedReason reason) override {
         ASSERT_TRUE(reason == BlockedReason::OUTSTANDING_OPS);
         EXPECT_TRUE(blocked);
         blocked = false;
     }
-    virtual bool run() override { return true; }
+    bool run() override { return true; }
 };
 
 struct Fixture {

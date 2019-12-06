@@ -162,7 +162,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
               const BlockableMaintenanceJobConfig &blockableConfig,
               const vespalib::string &docTypeName,
               document::BucketSpace bucketSpace)
-    : BlockableMaintenanceJob("move_buckets." + docTypeName, 0.0, 0.0, blockableConfig),
+    : BlockableMaintenanceJob("move_buckets." + docTypeName, vespalib::duration::zero(), vespalib::duration::zero(), blockableConfig),
       IClusterStateChangedHandler(),
       IBucketFreezeListener(),
       bucketdb::IBucketCreateListener(),

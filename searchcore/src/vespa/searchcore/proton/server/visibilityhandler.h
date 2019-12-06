@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/server/ifeedview.h>
-#include <vespa/searchcore/proton/server/icommitable.h>
-#include <vespa/searchcore/proton/server/igetserialnum.h>
+#include "ifeedview.h"
+#include "icommitable.h"
+#include "igetserialnum.h"
 #include <vespa/searchcorespi/index/ithreadingservice.h>
 #include <vespa/vespalib/util/varholder.h>
-#include <vespa/fastos/timestamp.h>
 #include <mutex>
 
 namespace proton {
@@ -18,7 +17,6 @@ namespace proton {
  **/
 class VisibilityHandler : public ICommitable
 {
-    typedef fastos::TimeStamp         TimeStamp;
     using IThreadingService = searchcorespi::index::IThreadingService;
     typedef vespalib::ThreadExecutor  ThreadExecutor;
     typedef vespalib::VarHolder<IFeedView::SP> FeedViewHolder;
@@ -27,8 +25,9 @@ public:
     VisibilityHandler(const IGetSerialNum &serial,
                       IThreadingService &threadingService,
                       const FeedViewHolder &feedView);
-    void setVisibilityDelay(TimeStamp visibilityDelay) { _visibilityDelay = visibilityDelay; }
-    TimeStamp getVisibilityDelay() const { return _visibilityDelay; } 
+    void setVisibilityDelay(vespalib::duration visibilityDelay) { _visibilityDelay = visibilityDelay; }
+    vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
+    bool hasVisibilityDelay() const { return _visibilityDelay > vespalib::duration::zero(); }
     void commit() override;
     virtual void commitAndWait() override;
 private:
@@ -37,7 +36,7 @@ private:
     const IGetSerialNum  & _serial;
     IThreadingService    & _writeService;
     const FeedViewHolder & _feedView;
-    TimeStamp              _visibilityDelay;
+    vespalib::duration     _visibilityDelay;
     SerialNum              _lastCommitSerialNum;
     std::mutex             _lock;
 };

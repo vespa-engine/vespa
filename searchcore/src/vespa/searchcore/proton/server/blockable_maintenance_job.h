@@ -22,11 +22,11 @@ private:
     using LockGuard = std::lock_guard<std::mutex>;
     using ReasonSet = std::unordered_set<BlockedReason>;
 
-    mutable std::mutex _mutex;
-    ReasonSet _blockReasons;
-    bool _blocked;
+    mutable std::mutex     _mutex;
+    ReasonSet              _blockReasons;
+    bool                   _blocked;
     IMaintenanceJobRunner *_runner;
-    double _resourceLimitFactor;
+    double                 _resourceLimitFactor;
 
     void updateBlocked(const LockGuard &guard);
 
@@ -37,23 +37,23 @@ protected:
 
 public:
     BlockableMaintenanceJob(const vespalib::string &name,
-                            double delay,
-                            double interval);
+                            vespalib::duration delay,
+                            vespalib::duration interval);
 
     BlockableMaintenanceJob(const vespalib::string &name,
-                            double delay,
-                            double interval,
+                            vespalib::duration delay,
+                            vespalib::duration interval,
                             const BlockableMaintenanceJobConfig &config);
 
-    virtual ~BlockableMaintenanceJob();
+    ~BlockableMaintenanceJob() override;
 
     bool isBlocked(BlockedReason reason);
     void considerRun();
 
-    virtual void setBlocked(BlockedReason reason) override;
-    virtual void unBlock(BlockedReason reason) override;
-    virtual bool isBlocked() const override;
-    virtual void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
+    void setBlocked(BlockedReason reason) override;
+    void unBlock(BlockedReason reason) override;
+    bool isBlocked() const override;
+    void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
 
 };
 

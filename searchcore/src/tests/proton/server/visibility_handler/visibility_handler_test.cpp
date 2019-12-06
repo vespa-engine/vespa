@@ -16,7 +16,6 @@ using proton::test::ThreadingServiceObserver;
 using proton::IFeedView;
 using proton::VisibilityHandler;
 using vespalib::makeLambdaTask;
-using fastos::TimeStamp;
 
 namespace {
 
@@ -28,7 +27,7 @@ public:
         : _serialNum(0u)
     {
     }
-    virtual SerialNum getSerialNum() const override { return _serialNum; }
+    SerialNum getSerialNum() const override { return _serialNum; }
     void setSerialNum(SerialNum serialNum) { _serialNum = serialNum; }
 };
 
@@ -98,14 +97,14 @@ public:
     }
 
     void
-    testCommit(double visibilityDelay, bool internal,
+    testCommit(vespalib::duration visibilityDelay, bool internal,
                uint32_t expForceCommitCount, SerialNum expCommittedSerialNum,
                uint32_t expMasterExecuteCnt,
                uint32_t expAttributeFieldWriterSyncCnt,
                SerialNum currSerialNum = 10u)
     {
         _getSerialNum.setSerialNum(currSerialNum);
-        _visibilityHandler.setVisibilityDelay(TimeStamp::Seconds(visibilityDelay));
+        _visibilityHandler.setVisibilityDelay(visibilityDelay);
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
             auto task = makeLambdaTask([=]() { visibilityHandler->commit(); });
@@ -121,7 +120,7 @@ public:
     }
 
     void
-    testCommitAndWait(double visibilityDelay, bool internal,
+    testCommitAndWait(vespalib::duration visibilityDelay, bool internal,
                       uint32_t expForceCommitCount,
                       SerialNum expCommittedSerialNum,
                       uint32_t expMasterExecuteCnt,
@@ -129,11 +128,10 @@ public:
                       SerialNum currSerialNum = 10u)
     {
         _getSerialNum.setSerialNum(currSerialNum);
-        _visibilityHandler.setVisibilityDelay(TimeStamp::Seconds(visibilityDelay));
+        _visibilityHandler.setVisibilityDelay(visibilityDelay);
         if (internal) {
             VisibilityHandler *visibilityHandler = &_visibilityHandler;
-            auto task =
-                makeLambdaTask([=]() { visibilityHandler->commitAndWait(); });
+            auto task = makeLambdaTask([=]() { visibilityHandler->commitAndWait(); });
             _writeService.master().execute(std::move(task));
             _writeService.master().sync();
         } else {
@@ -150,62 +148,62 @@ public:
 
 TEST_F("Check external commit with zero visibility delay", Fixture)
 {
-    f.testCommit(0.0, false, 0u, 0u, 0u, 0u);
+    f.testCommit(0s, false, 0u, 0u, 0u, 0u);
 }
 
 TEST_F("Check external commit with nonzero visibility delay", Fixture)
 {
-    f.testCommit(1.0, false, 1u, 10u, 1u, 0u);
+    f.testCommit(1s, false, 1u, 10u, 1u, 0u);
 }
 
 TEST_F("Check external commit with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommit(1.0, false, 1u, 0u, 1u, 0u, 0u);
+    f.testCommit(1s, false, 1u, 0u, 1u, 0u, 0u);
 }
 
 TEST_F("Check internal commit with zero visibility delay", Fixture)
 {
-    f.testCommit(0.0, true, 0u, 0u, 1u, 0u);
+    f.testCommit(0s, true, 0u, 0u, 1u, 0u);
 }
 
 TEST_F("Check internal commit with nonzero visibility delay", Fixture)
 {
-    f.testCommit(1.0, true, 1u, 10u, 1u, 0u);
+    f.testCommit(1s, true, 1u, 10u, 1u, 0u);
 }
 
 TEST_F("Check internal commit with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommit(1.0, true, 1u, 0u, 1u, 0u, 0u);
+    f.testCommit(1s, true, 1u, 0u, 1u, 0u, 0u);
 }
 
 TEST_F("Check external commitAndWait with zero visibility delay", Fixture)
 {
-    f.testCommitAndWait(0.0, false, 0u, 0u, 0u, 1u);
+    f.testCommitAndWait(0s, false, 0u, 0u, 0u, 1u);
 }
 
 TEST_F("Check external commitAndWait with nonzero visibility delay", Fixture)
 {
-    f.testCommitAndWait(1.0, false, 1u, 10u, 1u, 1u);
+    f.testCommitAndWait(1s, false, 1u, 10u, 1u, 1u);
 }
 
 TEST_F("Check external commitAndWait with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommitAndWait(1.0, false, 0u, 0u, 0u, 1u, 0u);
+    f.testCommitAndWait(1s, false, 0u, 0u, 0u, 1u, 0u);
 }
 
 TEST_F("Check internal commitAndWait with zero visibility delay", Fixture)
 {
-    f.testCommitAndWait(0.0, true, 0u, 0u, 1u, 1u);
+    f.testCommitAndWait(0s, true, 0u, 0u, 1u, 1u);
 }
 
 TEST_F("Check internal commitAndWait with nonzero visibility delay", Fixture)
 {
-    f.testCommitAndWait(1.0, true, 1u, 10u, 1u, 1u);
+    f.testCommitAndWait(1s, true, 1u, 10u, 1u, 1u);
 }
 
 TEST_F("Check internal commitAndWait with nonzero visibility delay and no new feed operation", Fixture)
 {
-    f.testCommitAndWait(1.0, true, 0u, 0u, 1u, 1u, 0u);
+    f.testCommitAndWait(1s, true, 0u, 0u, 1u, 1u, 0u);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/time.h>
 #include "disk_mem_usage_filter.h"
 
 namespace vespalib { class ScheduledExecutor; }
@@ -14,7 +15,7 @@ namespace proton {
 class DiskMemUsageSampler {
     DiskMemUsageFilter _filter;
     std::filesystem::path _path;
-    double _sampleInterval;
+    vespalib::duration _sampleInterval;
     std::unique_ptr<vespalib::ScheduledExecutor> _periodicTimer;
 
     void sampleUsage();
@@ -23,19 +24,19 @@ class DiskMemUsageSampler {
 public:
     struct Config {
         DiskMemUsageFilter::Config filterConfig;
-        double sampleInterval;
+        vespalib::duration sampleInterval;
         HwInfo hwInfo;
 
         Config()
             : filterConfig(),
-              sampleInterval(60.0),
+              sampleInterval(60s),
               hwInfo()
         {
         }
 
         Config(double memoryLimit_in,
                double diskLimit_in,
-               double sampleInterval_in,
+               vespalib::duration sampleInterval_in,
                const HwInfo &hwInfo_in)
             : filterConfig(memoryLimit_in, diskLimit_in),
               sampleInterval(sampleInterval_in),

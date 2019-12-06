@@ -2,7 +2,7 @@
 #pragma once
 
 #include "i_maintenance_job.h"
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace proton {
 
@@ -17,7 +17,7 @@ private:
     ICommitable & _committer;
 
 public:
-    DocumentDBCommitJob(ICommitable & committer, fastos::TimeStamp visibilityDelay);
+    DocumentDBCommitJob(ICommitable & committer, vespalib::duration visibilityDelay);
 
     bool run() override;
 };

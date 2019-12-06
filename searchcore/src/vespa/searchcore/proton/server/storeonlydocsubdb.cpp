@@ -394,14 +394,14 @@ StoreOnlyDocSubDB::updateLidReuseDelayer(const DocumentDBConfig * newConfigSnaps
 void
 StoreOnlyDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
 {
-    bool immediateCommit = config.visibilityDelay() == 0;
+    bool immediateCommit = config.visibilityDelay() == vespalib::duration::zero();
     /*
      * The lid reuse delayer should not have any pending lids stored at this
      * time, since DocumentDB::applyConfig() calls forceCommit() on the
      * feed view before applying the new config to the sub dbs.
      */
     _lidReuseDelayer->setImmediateCommit(immediateCommit);
-    _commitTimeTracker.setVisibilityDelay(vespalib::from_s(config.visibilityDelay()));
+    _commitTimeTracker.setVisibilityDelay(config.visibilityDelay());
 }
 
 IReprocessingTask::List

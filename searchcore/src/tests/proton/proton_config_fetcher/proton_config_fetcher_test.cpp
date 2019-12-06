@@ -364,7 +364,7 @@ TEST_FF("require that prune removed documents interval can be set based on age",
     f1.protonBuilder.pruneremoveddocumentsinterval = 0;
     f1.addDocType("test");
     auto config = getDocumentDBConfig(f1, f2);
-    EXPECT_EQUAL(20, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
+    EXPECT_EQUAL(20s, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
 }
 
 TEST_FF("require that docstore config computes cachesize automatically if unset",
