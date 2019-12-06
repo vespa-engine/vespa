@@ -55,6 +55,10 @@ constexpr int64_t count_ns(duration d) {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
 }
 
+constexpr duration from_timeval(const timeval & tv) {
+    return duration(tv.tv_sec*1000000000L + tv.tv_usec*1000L);
+}
+
 /**
  * Simple utility class used to measure how much time has elapsed
  * since it was constructed.
