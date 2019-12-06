@@ -38,6 +38,11 @@ struct CommaTracker {
 };
 
 /**
+ * Convert the given string to a quoted string with escaped special characters.
+ **/
+vespalib::string as_quoted_string(const vespalib::string &str);
+
+/**
  * Is this string a positive integer (dimension index)
  **/
 bool is_number(const vespalib::string &str);

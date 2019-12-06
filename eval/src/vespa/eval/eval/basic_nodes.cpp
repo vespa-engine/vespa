@@ -66,49 +66,6 @@ void Not   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void If    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 void Error ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 
-vespalib::string
-String::dump(DumpContext &) const
-{
-    vespalib::string str;
-    str.push_back('"');
-    for (uint32_t i = 0; i < _value.size(); ++i) {
-        char c = _value[i];
-        switch (c) {
-        case '\\':
-            str.append("\\\\");
-            break;
-        case '"':
-            str.append("\\\"");
-            break;
-        case '\t':
-            str.append("\\t");
-            break;
-        case '\n':
-            str.append("\\n");
-            break;
-        case '\r':
-            str.append("\\r");
-            break;
-        case '\f':
-            str.append("\\f");
-            break;
-        default:
-            if (static_cast<unsigned char>(c) >= 32 &&
-                static_cast<unsigned char>(c) <= 126)
-            {
-                str.push_back(c);
-            } else {
-                const char *lookup = "0123456789abcdef";
-                str.append("\\x");
-                str.push_back(lookup[(c >> 4) & 0xf]);
-                str.push_back(lookup[c & 0xf]);
-            }
-        }
-    }
-    str.push_back('"');
-    return str;
-}
-
 If::If(Node_UP cond_in, Node_UP true_expr_in, Node_UP false_expr_in, double p_true_in)
     : _cond(std::move(cond_in)),
       _true_expr(std::move(true_expr_in)),

@@ -285,7 +285,7 @@ public:
                     str += ")";
                 }
             } else {
-                str += dim.second.label;
+                str += as_quoted_string(dim.second.label);
             }
         }
         str += "}";
