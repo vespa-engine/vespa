@@ -54,9 +54,8 @@ public class MixedTensor implements Tensor {
     public double get(TensorAddress address) {
         long cellIndex = index.indexOf(address);
         Cell cell = cells.get((int)cellIndex);
-        if (!address.equals(cell.getKey())) {
-            throw new IllegalStateException("Unable to find correct cell by direct index.");
-        }
+        if ( ! address.equals(cell.getKey()))
+            throw new IllegalStateException("Unable to find correct cell in " + this + " by direct index " + address);
         return cell.getValue();
     }
 
@@ -375,9 +374,8 @@ public class MixedTensor implements Tensor {
 
         public long indexOf(TensorAddress address) {
             TensorAddress sparsePart = sparsePartialAddress(address);
-            if ( ! sparseMap.containsKey(sparsePart)) {
-                throw new IllegalArgumentException("Address not found");
-            }
+            if ( ! sparseMap.containsKey(sparsePart))
+                throw new IllegalArgumentException("Address subspace " + sparsePart + " not found in " + this);
             long base = sparseMap.get(sparsePart);
             long offset = denseOffset(address);
             return base + offset;
@@ -414,7 +412,7 @@ public class MixedTensor implements Tensor {
                     TensorType.Dimension dimension = type.dimensions().get(i);
                     if (dimension.isIndexed()) {
                         denseSubspaceSize *= dimension.size().orElseThrow(() ->
-                                new IllegalArgumentException("Unknown size of indexed dimension."));
+                                new IllegalArgumentException("Unknown size of indexed dimension"));
                     }
                 }
             }
@@ -422,15 +420,13 @@ public class MixedTensor implements Tensor {
         }
 
         private TensorAddress sparsePartialAddress(TensorAddress address) {
-            if (type.dimensions().size() != address.size()) {
-                throw new IllegalArgumentException("Tensor type and address are not of same size.");
-            }
+            if (type.dimensions().size() != address.size())
+                throw new IllegalArgumentException("Tensor type of " + this + " is not the same size as " + address);
             TensorAddress.Builder builder = new TensorAddress.Builder(sparseType);
             for (int i = 0; i < type.dimensions().size(); ++i) {
                 TensorType.Dimension dimension = type.dimensions().get(i);
-                if (!dimension.isIndexed()) {
+                if ( ! dimension.isIndexed())
                     builder.add(dimension.name(), address.label(i));
-                }
             }
             return builder.build();
         }
@@ -486,6 +482,11 @@ public class MixedTensor implements Tensor {
                 }
             }
             return TensorAddress.of(labels);
+        }
+
+        @Override
+        public String toString() {
+            return "indexes into " + type;
         }
 
     }

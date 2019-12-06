@@ -1036,6 +1036,7 @@
     "methods": [
       "public void <init>(int)",
       "public void add(java.lang.String, long)",
+      "public void add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.PartialAddress build()"
     ],
     "fields": []
@@ -1046,7 +1047,15 @@
     "attributes": [
       "public"
     ],
-    "methods": [],
+    "methods": [
+      "public java.lang.String dimension(int)",
+      "public long numericLabel(java.lang.String)",
+      "public java.lang.String label(java.lang.String)",
+      "public java.lang.String label(int)",
+      "public int size()",
+      "public com.yahoo.tensor.TensorAddress asAddress(com.yahoo.tensor.TensorType)",
+      "public java.lang.String toString()"
+    ],
     "fields": []
   },
   "com.yahoo.tensor.Tensor$Builder$CellBuilder": {
@@ -2465,6 +2474,47 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.functions.Slice$DimensionValue": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public void <init>(java.lang.String, int)",
+      "public void <init>(int)",
+      "public void <init>(java.lang.String)",
+      "public void <init>(com.yahoo.tensor.functions.ScalarFunction)",
+      "public void <init>(java.util.Optional, java.lang.String)",
+      "public void <init>(java.util.Optional, com.yahoo.tensor.functions.ScalarFunction)",
+      "public void <init>(java.lang.String, com.yahoo.tensor.functions.ScalarFunction)",
+      "public java.util.Optional dimension()",
+      "public java.util.Optional label()",
+      "public java.util.Optional index()",
+      "public java.lang.String toString()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.Slice": {
+    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.Slice withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public bridge synthetic com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.functions.Softmax": {
     "superClass": "com.yahoo.tensor.functions.CompositeTensorFunction",
     "interfaces": [],
@@ -2528,47 +2578,6 @@
       "public static com.yahoo.tensor.functions.ToStringContext empty()",
       "public abstract java.lang.String getBinding(java.lang.String)",
       "public abstract com.yahoo.tensor.functions.ToStringContext parent()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.tensor.functions.Value$DimensionValue": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, java.lang.String)",
-      "public void <init>(java.lang.String, int)",
-      "public void <init>(int)",
-      "public void <init>(java.lang.String)",
-      "public void <init>(com.yahoo.tensor.functions.ScalarFunction)",
-      "public void <init>(java.util.Optional, java.lang.String)",
-      "public void <init>(java.util.Optional, com.yahoo.tensor.functions.ScalarFunction)",
-      "public void <init>(java.lang.String, com.yahoo.tensor.functions.ScalarFunction)",
-      "public java.util.Optional dimension()",
-      "public java.util.Optional label()",
-      "public java.util.Optional index()",
-      "public java.lang.String toString()",
-      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.tensor.functions.Value": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
-      "public java.util.List arguments()",
-      "public com.yahoo.tensor.functions.Value withArguments(java.util.List)",
-      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
-      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
-      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
-      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
-      "public bridge synthetic com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)"
     ],
     "fields": []
   },
