@@ -153,7 +153,8 @@ $session_id_file = "$cloudconfig_dir/$tenant/deploy-session-id";
 my $command = shift;
 $command ||= "help";
 
-my $curl_command = $VESPA_HOME . '/libexec/vespa/vespa-curl-wrapper -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 1200';
+# The '--insecure' parameter is sadly required as it is not possible to disable or alter hostname verification with curl
+my $curl_command = $VESPA_HOME . '/libexec/vespa/vespa-curl-wrapper --insecure -A vespa-deploy --silent --show-error --connect-timeout 30 --max-time 1200';
 
 my $CURL_PUT = $curl_command . ' --write-out \%{http_code} --request PUT';
 my $CURL_GET = $curl_command . ' --request GET';
