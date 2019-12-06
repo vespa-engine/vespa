@@ -171,7 +171,7 @@ size_t ClockSystem::onRun()
     for (size_t i=0; i < 1000; i++) {
         end = vespalib::system_clock::now();
     }
-    return (start - end).count();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(start - end).count();
 }
 
 size_t ClockREALTIME::onRun()

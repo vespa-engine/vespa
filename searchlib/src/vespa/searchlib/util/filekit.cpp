@@ -95,7 +95,7 @@ FileKit::getModificationTime(const vespalib::string &name)
 {
     FastOS_StatInfo statInfo;
     if (FastOS_File::Stat(name.c_str(), &statInfo)) {
-        return vespalib::system_time(vespalib::duration(statInfo._modifiedTimeNS));
+        return vespalib::system_time(std::chrono::nanoseconds(statInfo._modifiedTimeNS));
     }
     return vespalib::system_time();
 }
