@@ -4,7 +4,7 @@
 
 #include <vector>
 #include <cstddef>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace proton::matching {
 
@@ -87,8 +87,8 @@ public:
         size_t docsReRanked() const { return _docsReRanked; }
         Partition &softDoomed(bool v) { _softDoomed += v ? 1 : 0; return *this; }
         size_t softDoomed() const { return _softDoomed; }
-        Partition & doomOvertime(fastos::TimeStamp overtime) { _doomOvertime.set(overtime.sec()); return *this; }
-        fastos::TimeStamp doomOvertime() const { return fastos::TimeStamp::fromSec(_doomOvertime.max()); }
+        Partition & doomOvertime(vespalib::duration overtime) { _doomOvertime.set(vespalib::to_s(overtime)); return *this; }
+        vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
 
         Partition &active_time(double time_s) { _active_time.set(time_s); return *this; }
         double active_time_avg() const { return _active_time.avg(); }
@@ -162,11 +162,11 @@ public:
     MatchingStats &softDoomed(size_t value) { _softDoomed = value; return *this; }
     size_t softDoomed() const { return _softDoomed; }
 
-    fastos::TimeStamp doomOvertime() const { return fastos::TimeStamp::fromSec(_doomOvertime.max()); }
+    vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
 
     MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
     double softDoomFactor() const { return _softDoomFactor; }
-    MatchingStats &updatesoftDoomFactor(double hardLimit, double softLimit, double duration);
+    MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
 
     MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
     double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }

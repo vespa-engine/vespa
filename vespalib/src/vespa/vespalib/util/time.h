@@ -39,6 +39,8 @@ constexpr double to_s(duration d) {
     return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
 }
 
+system_time to_utc(steady_time ts);
+
 constexpr duration from_s(double seconds) {
     return std::chrono::duration_cast<duration>(std::chrono::duration<double>(seconds));
 }

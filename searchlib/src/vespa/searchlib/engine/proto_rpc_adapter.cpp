@@ -115,7 +115,7 @@ struct SearchCompletionHandler : SearchClient {
         encode_search_reply(msg, *req.GetReturn());
         stats.reply_size = (*req.GetReturn())[2]._data._len;
         if (reply->request) {
-            stats.latency = reply->request->getTimeUsed().sec();
+            stats.latency = vespalib::to_s(reply->request->getTimeUsed());
             metrics.update_query_metrics(stats);
         }
         req.Return();
@@ -161,7 +161,7 @@ struct GetDocsumsCompletionHandler : DocsumClient {
         encode_message(msg, *req.GetReturn());
         stats.reply_size = (*req.GetReturn())[2]._data._len;
         if (reply->request) {
-            stats.latency = reply->request->getTimeUsed().sec();
+            stats.latency = vespalib::to_s(reply->request->getTimeUsed());
             metrics.update_docsum_metrics(stats);
         }
         req.Return();

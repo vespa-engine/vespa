@@ -101,7 +101,7 @@ private:
     IndexSearchable                  & _warmup;
     vespalib::SyncableThreadExecutor & _executor;
     IWarmupDone                      & _warmupDone;
-    fastos::SteadyTimeStamp            _warmupEndTime;
+    vespalib::steady_time              _warmupEndTime;
     std::mutex                         _lock;
     std::unique_ptr<FieldTermMap>      _handledTerms;
 };

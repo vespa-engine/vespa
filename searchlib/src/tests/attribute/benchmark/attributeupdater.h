@@ -49,19 +49,19 @@ public:
 class AttributeUpdaterStatus
 {
 public:
-    double _totalUpdateTime;
+    vespalib::duration _totalUpdateTime;
     uint64_t _numDocumentUpdates;
     uint64_t _numValueUpdates;
 
     AttributeUpdaterStatus() :
-        _totalUpdateTime(0), _numDocumentUpdates(0), _numValueUpdates(0) {}
+        _totalUpdateTime(vespalib::duration::zero()), _numDocumentUpdates(0), _numValueUpdates(0) {}
     void reset() {
-        _totalUpdateTime = 0;
+        _totalUpdateTime = vespalib::duration::zero();
         _numDocumentUpdates = 0;
         _numValueUpdates = 0;
     }
     void printXML() const {
-        std::cout << "<total-update-time>" << _totalUpdateTime << "</total-update-time>" << std::endl;
+        std::cout << "<total-update-time>" << vespalib::count_ms(_totalUpdateTime) << "</total-update-time>" << std::endl;
         std::cout << "<documents-updated>" << _numDocumentUpdates << "</documents-updated>" << std::endl;
         std::cout << "<document-update-throughput>" << documentUpdateThroughput() << "</document-update-throughput>" << std::endl;
         std::cout << "<avg-document-update-time>" << avgDocumentUpdateTime() << "</avg-document-update-time>" << std::endl;
@@ -70,16 +70,16 @@ public:
         std::cout << "<avg-value-update-time>" << avgValueUpdateTime() << "</avg-value-update-time>" << std::endl;
     }
     double documentUpdateThroughput() const {
-        return _numDocumentUpdates * 1000 / _totalUpdateTime;
+        return _numDocumentUpdates * 1000 / vespalib::count_ms(_totalUpdateTime);
     }
     double avgDocumentUpdateTime() const {
-        return _totalUpdateTime / _numDocumentUpdates;
+        return vespalib::count_ms(_totalUpdateTime) / _numDocumentUpdates;
     }
     double valueUpdateThroughput() const {
-        return _numValueUpdates * 1000 / _totalUpdateTime;
+        return _numValueUpdates * 1000 / vespalib::count_ms(_totalUpdateTime);
     }
     double avgValueUpdateTime() const {
-        return _totalUpdateTime / _numValueUpdates;
+        return vespalib::count_ms(_totalUpdateTime) / _numValueUpdates;
     }
 };
 
@@ -98,7 +98,7 @@ protected:
     std::vector<BT> _getBuffer;
     RandomGenerator & _rndGen;
     AttributeCommit _expected;
-    fastos::StopWatch _timer;
+    vespalib::Timer _timer;
     AttributeUpdaterStatus _status;
     AttributeValidator _validator;
 
@@ -267,7 +267,7 @@ template <typename Vector, typename T, typename BT>
 void
 AttributeUpdater<Vector, T, BT>::populate()
 {
-    _timer.restart();
+    _timer = vespalib::Timer();
     for (uint32_t doc = 0; doc < _attrPtr->getNumDocs(); ++doc) {
         updateValues(doc);
         if (doc % _commitFreq == (_commitFreq - 1)) {
@@ -275,7 +275,7 @@ AttributeUpdater<Vector, T, BT>::populate()
         }
     }
     commit();
-    _status._totalUpdateTime += _timer.elapsed().ms();
+    _status._totalUpdateTime += _timer.elapsed();
 }
 
 
@@ -283,7 +283,7 @@ template <typename Vector, typename T, typename BT>
 void
 AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates)
 {
-    _timer.restart();
+    _timer = vespalib::Timer();
     for (uint32_t i = 0; i < numUpdates; ++i) {
         uint32_t doc = getRandomDoc();
         updateValues(doc);
@@ -292,7 +292,7 @@ AttributeUpdater<Vector, T, BT>::update(uint32_t numUpdates)
         }
     }
     commit();
-    _status._totalUpdateTime += _timer.elapsed().ms();
+    _status._totalUpdateTime += _timer.elapsed();
 }
 
 
@@ -300,7 +300,7 @@ template <typename Vector, typename T, typename BT>
 void
 AttributeUpdaterThread<Vector, T, BT>::doRun()
 {
-    this->_timer.restart();
+    this->_timer = vespalib::Timer();
     while(!_done) {
         uint32_t doc = this->getRandomDoc();
         this->updateValues(doc);
@@ -309,7 +309,7 @@ AttributeUpdaterThread<Vector, T, BT>::doRun()
         }
     }
     this->commit();
-    this->_status._totalUpdateTime += this->_timer.elapsed().ms();
+    this->_status._totalUpdateTime += this->_timer.elapsed();
 }
 
 

@@ -2,12 +2,13 @@
 
 #include "trace.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
 
-fastos::SteadyTimeStamp
+vespalib::steady_time
 SteadyClock::now() const {
-    return fastos::ClockSteady::now();
+    return vespalib::steady_clock::now();
 }
 
 RelativeTime::RelativeTime(std::unique_ptr<Clock> clock)
@@ -36,9 +37,12 @@ Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
 }
 
 void
-Trace::start(int level) {
+Trace::start(int level, bool useUTC) {
     if (shouldTrace(level) && !hasTrace()) {
-        root().setString("start_time_relative", _relativeTime.timeOfDawn().toString());
+        vespalib::duration since_epoch = useUTC
+                ? vespalib::to_utc(_relativeTime.timeOfDawn()).time_since_epoch()
+                : _relativeTime.timeOfDawn().time_since_epoch();
+        root().setString("start_time", fastos::TimeStamp::asString(vespalib::to_s(since_epoch)));
     }
 }
 
@@ -68,13 +72,13 @@ Trace::addEvent(uint32_t level, vespalib::stringref event) {
 
 void
 Trace::addTimeStamp(Cursor & trace) {
-    trace.setDouble("timestamp_ms", _relativeTime.timeSinceDawn()/1000000.0);
+    trace.setDouble("timestamp_ms", vespalib::count_ns(_relativeTime.timeSinceDawn())/1000000.0);
 }
 
 void Trace::done() {
     if (!hasTrace()) { return; }
 
-    root().setDouble("duration_ms", _relativeTime.timeSinceDawn()/1000000.0);
+    root().setDouble("duration_ms", vespalib::count_ns(_relativeTime.timeSinceDawn())/1000000.0);
 }
 
 vespalib::string

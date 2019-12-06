@@ -11,24 +11,12 @@ GetDocsumArgs::GetDocsumArgs()
       _stackItems(0),
       _stackDump(),
       _location(),
-      _timeout(30 * fastos::TimeStamp::SEC),
+      _timeout(30s),
       _propertiesMap()
 { }
 
 
 GetDocsumArgs::~GetDocsumArgs() = default;
-
-void
-GetDocsumArgs::setTimeout(const fastos::TimeStamp & timeout)
-{
-    _timeout = timeout;
-}
-
-fastos::TimeStamp
-GetDocsumArgs::getTimeout() const
-{
-    return _timeout;
-}
 
 void
 GetDocsumArgs::initFromDocsumRequest(const search::engine::DocsumRequest &req)
