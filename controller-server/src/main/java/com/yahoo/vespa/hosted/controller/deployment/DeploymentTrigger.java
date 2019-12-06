@@ -147,7 +147,7 @@ public class DeploymentTrigger {
      * the project id is removed from the application owning the job, to prevent further trigger attempts.
      */
     public boolean trigger(Job job) {
-        log.log(LogLevel.DEBUG, String.format("Triggering %s for %s", job.jobType, job.applicationId()));
+        log.log(LogLevel.DEBUG, "Triggering " + job);
         try {
             applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
                     jobs.start(job.applicationId(), job.jobType, job.versions);
@@ -260,6 +260,24 @@ public class DeploymentTrigger {
      */
     private List<Job> computeReadyJobs(TenantAndApplicationId id) {
         List<Job> jobs = new ArrayList<>();
+        applications().getApplication(id).map(controller.jobController()::deploymentStatus).ifPresent(status -> {
+            status.jobsToRun().forEach((job, versionsList) -> {
+                status.stepStatus().get(job).readyAt(status.application().change()).ifPresent(readyAt -> {
+                    for (Versions versions : versionsList)
+                        if ( ! isSuspendedInAnotherZone(status.application().require(job.application().instance()),
+                                                        job.type().zone(controller.system())))
+                            jobs.add(deploymentJob(status.application().require(job.application().instance()),
+                                                   versions,
+                                                   status.application().change(),
+                                                   job.type(),
+                                                   status.instanceJobs(job.application().instance()).get(job.type()),
+                                                   "unknown reason",
+                                                   readyAt));
+                });
+            });
+        });
+
+        /*
         applications().getApplication(id).ifPresent(application -> {
             Collection<Instance> instances = application.deploymentSpec().instances().stream()
                                                         .flatMap(instance -> application.get(instance.name()).stream())
@@ -323,6 +341,7 @@ public class DeploymentTrigger {
                 jobs.addAll(testJobs);
             }
         });
+         */
         return Collections.unmodifiableList(jobs);
     }
 
@@ -514,6 +533,12 @@ public class DeploymentTrigger {
         Instant availableSince() { return availableSince; } // TODO jvenstad: This is 95% broken now. Change.at() can restore it.
         boolean isRetry() { return isRetry; }
         boolean applicationUpgrade() { return isApplicationUpgrade; }
+
+        @Override
+        public String toString() {
+            return jobType + " for " + instanceId + " on (" + versions.targetPlatform() + ", " +
+                   versions.targetApplication().id() + "), ready since " + availableSince;
+        }
 
     }
 

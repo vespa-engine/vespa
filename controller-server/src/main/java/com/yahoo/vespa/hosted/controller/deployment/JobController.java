@@ -297,7 +297,9 @@ public class JobController {
                                                        .jobs().stream()
                                                        .map(type -> jobStatus(new JobId(application.id().instance(spec.name()), type))))
                                                .collect(toUnmodifiableMap(status -> status.id(),
-                                                                          status -> status)));
+                                                                          status -> status)),
+                                    controller.system(),
+                                    controller.systemVersion());
     }
 
     /** Adds deployment status to each of the given applications. */
