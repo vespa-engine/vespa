@@ -549,6 +549,11 @@ public class NodeAgentImpl implements NodeAgent {
             }
 
             @Override
+            public void appendFile(Path pathInContainer, String data) {
+                throw  new UnsupportedOperationException("appendFile not implemented");
+            }
+
+            @Override
             public void addDirectory(Path pathInContainer) {
                 throw new UnsupportedOperationException("addDirectory not implemented");
             }

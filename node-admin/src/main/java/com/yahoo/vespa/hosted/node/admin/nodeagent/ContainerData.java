@@ -18,6 +18,13 @@ public interface ContainerData {
     void addFile(Path pathInContainer, String data);
 
     /**
+     * Add or append file in container at path
+     * @param pathInContainer The path to the file inside the container, absolute or relative root /.
+     * @param data The content to append.
+     */
+    void appendFile(Path pathInContainer, String data);
+
+    /**
      * Add directory in container at path.
      *
      * @param pathInContainer The path to the directory inside the container, absolute or relative root /.
