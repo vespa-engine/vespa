@@ -57,11 +57,6 @@ steady_now() {
 }
 
 std::ostream &
-operator << (std::ostream & os, system_clock::time_point ts) {
-    return os << TimeStamp::asString(seconds(ts.time_since_epoch()).count());
-}
-
-std::ostream &
 operator << (std::ostream & os, SteadyTimeStamp ts) {
     return os << ts.toString();
 }

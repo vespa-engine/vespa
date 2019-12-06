@@ -93,7 +93,6 @@ private:
     TimeStamp _timeStamp;
 };
 
-std::ostream & operator << (std::ostream & os, std::chrono::system_clock::time_point ts);
 std::ostream & operator << (std::ostream & os, SteadyTimeStamp ts);
 
 class ClockSteady
