@@ -176,8 +176,7 @@ enum PathGroup {
     classifiedInfo("/cost/v1/{*}",
                    "/deployment/v1/{*}",
                    "/",
-                   "/d/{*}",
-                   "/statuspage/v1/{*}"),
+                   "/d/{*}"),
 
     /** Same as classifiedInfo, but with optional /api prefix */
     classifiedApiInfo(Optional.of("/api"),
