@@ -27,9 +27,9 @@ public:
                       const FeedViewHolder &feedView);
     void setVisibilityDelay(vespalib::duration visibilityDelay) { _visibilityDelay = visibilityDelay; }
     vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
-    bool hasVisibilityDelay() const { return _visibilityDelay > vespalib::duration::zero(); }
+    bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
     void commit() override;
-    virtual void commitAndWait() override;
+    void commitAndWait() override;
 private:
     bool startCommit(const std::lock_guard<std::mutex> &unused, bool force);
     void performCommit(bool force);

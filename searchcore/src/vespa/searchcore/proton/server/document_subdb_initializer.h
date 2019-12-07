@@ -45,7 +45,7 @@ public:
         return _documentMetaStoreInitTask;
     }
 
-    virtual void run() override;
+    void run() override;
 };
 
 } // namespace proton

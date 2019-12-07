@@ -116,7 +116,7 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
     : _pruneRemovedDocuments(),
       _heartBeat(),
       _sessionCachePruneInterval(900s),
-      _visibilityDelay(0),
+      _visibilityDelay(vespalib::duration::zero()),
       _lidSpaceCompaction(),
       _attributeUsageFilterConfig(),
       _attributeUsageSampleInterval(60s),

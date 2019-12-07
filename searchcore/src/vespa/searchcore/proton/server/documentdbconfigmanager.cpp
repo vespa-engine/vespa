@@ -104,7 +104,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
     typedef ProtonConfig::Documentdb DdbConfig;
     ProtonConfig &proton(bootstrapConfig->getProtonConfig());
 
-    vespalib::duration visibilityDelay;
+    vespalib::duration visibilityDelay = vespalib::duration::zero();
     bool isDocumentTypeGlobal = false;
     // Use document type to find document db config in proton config
     uint32_t index;

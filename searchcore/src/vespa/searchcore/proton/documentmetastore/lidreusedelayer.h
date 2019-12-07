@@ -4,23 +4,9 @@
 
 #include "ilidreusedelayer.h"
 
-namespace searchcorespi
-{
+namespace searchcorespi::index { struct IThreadingService; }
 
-namespace index
-{
-
-struct IThreadingService;
-
-}
-
-}
-
-namespace proton
-{
-
-namespace documentmetastore
-{
+namespace proton::documentmetastore {
 
 struct IStore;
 
@@ -46,15 +32,13 @@ class LidReuseDelayer : public ILidReuseDelayer
 public:
     LidReuseDelayer(searchcorespi::index::IThreadingService &writeService,
                     IStore &documentMetaStore);
-    virtual ~LidReuseDelayer();
-    virtual bool delayReuse(uint32_t lid) override;
-    virtual bool delayReuse(const std::vector<uint32_t> &lids) override;
-    virtual void setImmediateCommit(bool immediateCommit) override;
-    virtual bool getImmediateCommit() const override;
-    virtual void setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields) override;
-    virtual std::vector<uint32_t> getReuseLids() override;
+    ~LidReuseDelayer() override;
+    bool delayReuse(uint32_t lid) override;
+    bool delayReuse(const std::vector<uint32_t> &lids) override;
+    void setImmediateCommit(bool immediateCommit) override;
+    bool getImmediateCommit() const override;
+    void setHasIndexedOrAttributeFields(bool hasIndexedOrAttributeFields) override;
+    std::vector<uint32_t> getReuseLids() override;
 };
-
-}
 
 }
