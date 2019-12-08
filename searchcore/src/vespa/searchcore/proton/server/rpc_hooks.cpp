@@ -13,7 +13,6 @@ LOG_SETUP(".proton.server.rtchooks");
 
 using namespace vespalib;
 using vespalib::compression::CompressionConfig;
-using fastos::TimeStamp;
 
 namespace {
 

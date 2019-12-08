@@ -11,17 +11,15 @@
 #include "sample_attribute_usage_job.h"
 
 using vespalib::system_clock;
-using fastos::TimeStamp;
 
 namespace proton {
 
 namespace {
 
 IMaintenanceJob::UP
-trackJob(const IJobTracker::SP &tracker,
-         IMaintenanceJob::UP job)
+trackJob(const IJobTracker::SP &tracker, IMaintenanceJob::UP job)
 {
-    return IMaintenanceJob::UP(new JobTrackedMaintenanceJob(tracker, std::move(job)));
+    return std::make_unique<JobTrackedMaintenanceJob>(tracker, std::move(job));
 }
 
 void
@@ -62,8 +60,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IDiskMemUsageNotifier &diskMemUsageNotifier,
                     const BlockableMaintenanceJobConfig &blockableConfig)
 {
-    IMaintenanceJob::UP bmj;
-    bmj.reset(new BucketMoveJob(calc,
+    auto bmj = std::make_unique<BucketMoveJob>(calc,
                                 moveHandler,
                                 bucketModifiedHandler,
                                 controller.getReadySubDB(),
@@ -74,9 +71,8 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 bucketStateChangedNotifier,
                                 diskMemUsageNotifier,
                                 blockableConfig,
-                                docTypeName, bucketSpace));
-    controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(),
-                                                  std::move(bmj)));
+                                docTypeName, bucketSpace);
+    controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
 
 }
@@ -104,15 +100,14 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IAttributeManagerSP readyAttributeManager,
                                     IAttributeManagerSP notReadyAttributeManager,
                                     AttributeUsageFilter &attributeUsageFilter) {
-    typedef IMaintenanceJob::UP MUP;
-    controller.registerJobInMasterThread(MUP(new HeartBeatJob(hbHandler, config.getHeartBeatConfig())));
-    controller.registerJobInDefaultPool(MUP(new PruneSessionCacheJob(scPruner, config.getSessionCachePruneInterval())));
+    controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
+    controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
     if (config.hasVisibilityDelay()) {
-        controller.registerJobInMasterThread(MUP(new DocumentDBCommitJob(commit, config.getVisibilityDelay())));
+        controller.registerJobInMasterThread(std::make_unique<DocumentDBCommitJob>(commit, config.getVisibilityDelay()));
     }
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
-    MUP pruneRDjob(new PruneRemovedDocumentsJob(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
-                                                mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler));
+    auto pruneRDjob = std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
+                                                mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);
     controller.registerJobInMasterThread(
             trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {

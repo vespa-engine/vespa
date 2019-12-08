@@ -40,7 +40,6 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace vespalib;
 
-using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using searchcorespi::IndexSearchable;
 using searchcorespi::index::IThreadingService;

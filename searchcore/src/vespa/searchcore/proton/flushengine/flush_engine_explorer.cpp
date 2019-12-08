@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/fastos/timestamp.h>
 
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
@@ -21,8 +22,7 @@ convertToSlime(const FlushEngine::FlushMetaSet &flushingTargets, Cursor &array)
         Cursor &object = array.addObject();
         object.setString("name", target.getName());
         object.setString("startTime", fastos::TimeStamp::asString(target.getStart()));
-        fastos::TimeStamp elapsedTime = target.elapsed();
-        object.setDouble("elapsedTime", elapsedTime.sec());
+        object.setDouble("elapsedTime", vespalib::to_s(target.elapsed()));
     }
 }
 

@@ -45,7 +45,6 @@ using proton::matching::SessionManager;
 using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::documentmetastore::LidReuseDelayer;
-using fastos::TimeStamp;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
 
