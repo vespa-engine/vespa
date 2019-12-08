@@ -52,10 +52,6 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         op.deserialize(is, _handler.getDeserializeRepo());
         _handler.replay(op);
         break;
-    } case FeedOperation::WIPE_HISTORY: {
-        WipeHistoryOperation op;
-        replay(op, is, entry);
-        break;
     } case FeedOperation::DELETE_BUCKET: {
         DeleteBucketOperation op;
         replay(op, is, entry);
@@ -86,8 +82,7 @@ ReplayPacketDispatcher::replayEntry(const Packet::Entry &entry)
         break;
     } default:
         throw IllegalStateException
-            (make_string("Got packet entry with unknown type id '%u' from TLS",
-                         entry.type()));
+            (make_string("Got packet entry with unknown type id '%u' from TLS", entry.type()));
     }
     if (is.size() > 0) {
         throw document::DeserializeException

@@ -11,7 +11,6 @@ class RemoveOperation;
 class UpdateOperation;
 struct NoopOperation;
 class NewConfigOperation;
-class WipeHistoryOperation;
 class DeleteBucketOperation;
 class SplitBucketOperation;
 class JoinBucketsOperation;
@@ -34,7 +33,6 @@ struct IReplayPacketHandler
     virtual void replay(const UpdateOperation &op) = 0;
     virtual void replay(const NoopOperation &op) = 0;
     virtual void replay(const NewConfigOperation &op) = 0;
-    virtual void replay(const WipeHistoryOperation &op) = 0;
     virtual void replay(const DeleteBucketOperation &op) = 0;
     virtual void replay(const SplitBucketOperation &op) = 0;
     virtual void replay(const JoinBucketsOperation &op) = 0;

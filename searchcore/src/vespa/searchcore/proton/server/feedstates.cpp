@@ -10,7 +10,6 @@
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/vespalib/util/closuretask.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 
 #include <vespa/log/log.h>
@@ -20,7 +19,6 @@ using search::transactionlog::Packet;
 using search::transactionlog::RPC;
 using search::SerialNum;
 using vespalib::Executor;
-using vespalib::IllegalStateException;
 using vespalib::makeClosure;
 using vespalib::makeTask;
 using vespalib::make_string;
@@ -56,7 +54,7 @@ handlePacket(PacketWrapper::SP wrap, EntryHandler entryHandler)
         Packet::Entry entry;
         entry.deserialize(handle);
         entryHandler->call(entry);
-        if (wrap->progress != NULL) {
+        if (wrap->progress != nullptr) {
             handleProgress(*wrap->progress, entry.serial());
         }
     }
@@ -70,8 +68,6 @@ class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
     IReplayConfig &_replay_config;
     FeedConfigStore &_config_store;
 
-    void handleTransactionLogEntry(const Packet::Entry &entry);
-
 public:
     TransactionLogReplayPacketHandler(IFeedView *& feed_view_ptr,
                                       IBucketDBHandler &bucketDBHandler,
@@ -83,53 +79,51 @@ public:
           _config_store(config_store) {
     }
 
-    virtual void replay(const PutOperation &op) override {
+    void replay(const PutOperation &op) override {
         _feed_view_ptr->handlePut(FeedToken(), op);
     }
-    virtual void replay(const RemoveOperation &op) override {
+    void replay(const RemoveOperation &op) override {
         _feed_view_ptr->handleRemove(FeedToken(), op);
     }
-    virtual void replay(const UpdateOperation &op) override {
+    void replay(const UpdateOperation &op) override {
         _feed_view_ptr->handleUpdate(FeedToken(), op);
     }
-    virtual void replay(const NoopOperation &) override {} // ignored
-    virtual void replay(const NewConfigOperation &op) override {
+    void replay(const NoopOperation &) override {} // ignored
+    void replay(const NewConfigOperation &op) override {
         _replay_config.replayConfig(op.getSerialNum());
     }
-    virtual void replay(const WipeHistoryOperation &) override {
-    }
-    virtual void replay(const DeleteBucketOperation &op) override {
+
+    void replay(const DeleteBucketOperation &op) override {
         _feed_view_ptr->handleDeleteBucket(op);
     }
-    virtual void replay(const SplitBucketOperation &op) override {
+    void replay(const SplitBucketOperation &op) override {
         _bucketDBHandler.handleSplit(op.getSerialNum(), op.getSource(),
                                      op.getTarget1(), op.getTarget2());
     }
-    virtual void replay(const JoinBucketsOperation &op) override {
+    void replay(const JoinBucketsOperation &op) override {
         _bucketDBHandler.handleJoin(op.getSerialNum(), op.getSource1(),
                                     op.getSource2(), op.getTarget());
     }
-    virtual void replay(const PruneRemovedDocumentsOperation &op) override {
+    void replay(const PruneRemovedDocumentsOperation &op) override {
         _feed_view_ptr->handlePruneRemovedDocuments(op);
     }
-    virtual void replay(const MoveOperation &op) override {
+    void replay(const MoveOperation &op) override {
         _feed_view_ptr->handleMove(op, search::IDestructorCallback::SP());
     }
-    virtual void replay(const CreateBucketOperation &) override {
+    void replay(const CreateBucketOperation &) override {
     }
-    virtual void replay(const CompactLidSpaceOperation &op) override {
+    void replay(const CompactLidSpaceOperation &op) override {
         _feed_view_ptr->handleCompactLidSpace(op);
     }
-    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
+    NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _config_store;
     }
-    virtual const document::DocumentTypeRepo &getDeserializeRepo() override {
+    const document::DocumentTypeRepo &getDeserializeRepo() override {
         return *_feed_view_ptr->getDocumentTypeRepo();
     }
 };
 
-void startDispatch(IReplayPacketHandler *packet_handler,
-                   const Packet::Entry &entry) {
+void startDispatch(IReplayPacketHandler *packet_handler, const Packet::Entry &entry) {
     // Called by handlePacket() in executor thread.
     LOG(spam,
         "replay packet entry: entrySerial(%" PRIu64 "), entryType(%u)",
@@ -154,8 +148,7 @@ ReplayTransactionLogState::ReplayTransactionLogState(
                       replay_config, config_store)) {
 }
 
-void ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap,
-                                        Executor &executor) {
+void ReplayTransactionLogState::receive(const PacketWrapper::SP &wrap, Executor &executor) {
     EntryHandler closure = makeClosure(&startDispatch, _packet_handler.get());
     executor.execute(makeTask(makeClosure(&handlePacket, wrap, std::move(closure))));
 }
