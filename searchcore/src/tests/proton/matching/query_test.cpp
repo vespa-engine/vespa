@@ -157,7 +157,6 @@ const string phrase_term = "quux";
 const Range range_term = Range(32, 47);
 const int doc_count = 100;
 const int field_id = 154;
-const uint32_t term_index = 23;
 const uint32_t term_count = 8;
 
 fef_test::IndexEnvironment plain_index_env;
