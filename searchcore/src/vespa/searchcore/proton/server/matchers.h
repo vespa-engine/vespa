@@ -12,7 +12,7 @@ namespace proton {
 namespace matching {
     class Matcher;
     class QueryLimiter;
-    class IConstantValueRepo;
+    struct IConstantValueRepo;
 }
 
 class Matchers {

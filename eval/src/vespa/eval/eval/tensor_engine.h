@@ -18,7 +18,7 @@ namespace eval {
 struct Value;
 class ValueType;
 class TensorSpec;
-class TensorFunction;
+struct TensorFunction;
 
 /**
  * Top-level API for a tensor implementation. All Tensor operations
