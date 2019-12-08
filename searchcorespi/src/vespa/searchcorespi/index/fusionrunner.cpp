@@ -107,7 +107,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskFusionStart(sources, fusion_dir);
     }
-    fastos::StopWatch stopWatch;
+    vespalib::Timer timer;
 
     const string selector_name = IndexDiskLayout::getSelectorFileName(_diskLayout.getFlushDir(fusion_id));
     SelectorArray selector_array;
@@ -124,7 +124,7 @@ FusionRunner::fuse(const FusionSpec &fusion_spec,
     }
 
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskFusionComplete(fusion_dir, stopWatch.elapsed().ms());
+        EventLogger::diskFusionComplete(fusion_dir, vespalib::count_ms(timer.elapsed()));
     }
     return fusion_id;
 }

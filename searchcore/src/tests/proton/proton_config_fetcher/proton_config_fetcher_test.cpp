@@ -170,9 +170,9 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
     VarHolder<std::shared_ptr<ProtonConfigSnapshot>> _config;
 
     ProtonConfigOwner() : _configured(false), _config() { }
-    bool waitUntilConfigured(int64_t timeout) {
-        fastos::StopWatch timer;
-        while (timer.elapsed().ms() < timeout) {
+    bool waitUntilConfigured(vespalib::duration timeout) {
+        vespalib::Timer timer;
+        while (timer.elapsed() < timeout) {
             if (getConfigured())
                 return true;
             std::this_thread::sleep_for(100ms);
@@ -290,14 +290,14 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60s)) {
     f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f2._configured = false;
     f1.protonBuilder.rpcport = 9010;
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(120000));
+    ASSERT_TRUE(f2.waitUntilConfigured(120s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f3.close();
 }
@@ -305,19 +305,19 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60s)) {
     f3.start();
 
     f2._configured = false;
     f1.addDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
 
     f2._configured = false;
     f1.removeDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f3.close();
 }
@@ -325,7 +325,7 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60s)) {
     f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
@@ -333,7 +333,7 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
     f2._configured = false;
     f1.addDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     ASSERT_TRUE(static_cast<bool>(f2.getDocumentDBConfig("typea")));
     ASSERT_TRUE(f1.configEqual("typea", f2.getDocumentDBConfig("typea")));
@@ -342,7 +342,7 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
     f2._configured = false;
     f1.removeDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
     f3.close();
 }

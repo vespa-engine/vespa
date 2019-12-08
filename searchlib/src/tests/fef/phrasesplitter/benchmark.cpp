@@ -1,12 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/testapp.h>
-
-#include <iomanip>
-#include <iostream>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/fef/phrasesplitter.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
-#include <vespa/fastos/timestamp.h>
+#include <iomanip>
+#include <iostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("phrasesplitter_test");
@@ -16,10 +14,10 @@ namespace search::fef {
 class Benchmark : public vespalib::TestApp
 {
 private:
-    fastos::StopWatch _timer;
-    fastos::TimeStamp _sample;
+    vespalib::Timer _timer;
+    vespalib::duration _sample;
 
-    void start() { _timer.restart(); }
+    void start() { _timer = vespalib::Timer(); }
     void sample() { _sample = _timer.elapsed(); }
     void run(size_t numRuns, size_t numPositions);
 
@@ -74,8 +72,8 @@ Benchmark::Main()
 
     run(numRuns, numPositions);
 
-    std::cout << "TET:  " << _sample.ms() << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << _sample.ms() / numRuns << " (ms)" << std::endl;
+    std::cout << "TET:  " << vespalib::count_ms(_sample) << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << vespalib::count_ms(_sample) / numRuns << " (ms)" << std::endl;
 
     TEST_DONE();
 }

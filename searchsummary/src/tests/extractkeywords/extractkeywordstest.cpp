@@ -3,7 +3,7 @@
 #include "extractkeywordstest.h"
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include <vespa/searchlib/parsequery/simplequerystack.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 #define NUMTESTS 5
 
@@ -97,7 +97,7 @@ ExtractKeywordsTest::Main()
     _extractor = new search::docsummary::KeywordExtractor(nullptr);
     _extractor->AddLegalIndexSpec("*");
 
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
 
     // Actually run the tests that we wanted.
     for (int j = 0; j < multiplier; j++)
@@ -109,7 +109,7 @@ ExtractKeywordsTest::Main()
             }
 
     // Print time taken
-    double timeTaken = timer.elapsed().ms();
+    double timeTaken = vespalib::count_ms(timer.elapsed());
 
     printf("Time taken : %f ms\n", timeTaken);
     printf("Number of tests run: %d\n", testCnt);

@@ -112,7 +112,7 @@ App::Main()
     // let the system 'warm up'
     std::this_thread::sleep_for(5s);
 
-    fastos::StopWatch stopWatch;
+    vespalib::Timer timer;
     uint32_t okBefore   = 0;
     uint32_t okAfter    = 0;
     uint32_t failBefore = 0;
@@ -120,9 +120,9 @@ App::Main()
 
     client.sample(okBefore, failBefore);
     std::this_thread::sleep_for(10s); // Benchmark time
-    fastos::TimeStamp elapsed = stopWatch.elapsed();
+    vespalib::duration elapsed = timer.elapsed();
     client.sample(okAfter, failAfter);
-    double time = elapsed.ms();
+    double time = vespalib::count_ms(elapsed);
     double msgCnt = (double)(okAfter - okBefore);
     double throughput = (msgCnt / time) * 1000.0;
     fprintf(stdout, "CPP-CLIENT: %g msg/s\n", throughput);

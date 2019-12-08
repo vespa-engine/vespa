@@ -16,7 +16,7 @@
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 #include <openssl/sha.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
@@ -364,7 +364,7 @@ writeField(FakeWordSet &wordSet,
         namepref.c_str(),
         dynamicKStr,
         bool_to_str(encode_interleaved_features));
-    fastos::StopWatch tv;
+    vespalib::Timer tv;
     WrappedFieldWriter ostate(namepref,
                               dynamicK, encode_interleaved_features,
                               wordSet.getNumWords(), docIdLimit);
@@ -388,7 +388,7 @@ writeField(FakeWordSet &wordSet,
         namepref.c_str(),
         dynamicKStr,
         bool_to_str(encode_interleaved_features),
-        tv.elapsed().sec());
+        vespalib::to_s(tv.elapsed()));
 }
 
 
@@ -406,7 +406,7 @@ readField(FakeWordSet &wordSet,
     LOG(info, "enter readField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
 
-    fastos::StopWatch tv;
+    vespalib::Timer tv;
     istate.open();
     if (istate._fieldReader->isValid())
         istate._fieldReader->read();
@@ -432,7 +432,7 @@ readField(FakeWordSet &wordSet,
     LOG(info, "leave readField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s elapsed=%10.6f",
         namepref.c_str(), dynamicKStr,
         bool_to_str(decode_interleaved_features),
-        tv.elapsed().sec());
+        vespalib::to_s(tv.elapsed()));
 }
 
 
@@ -450,13 +450,12 @@ randReadField(FakeWordSet &wordSet,
     LOG(info, "enter randReadField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
 
-    fastos::StopWatch tv;
+    vespalib::Timer tv;
 
     std::string cname = dirprefix + namepref;
     cname += "dictionary";
 
-    std::unique_ptr<search::index::DictionaryFileRandRead> dictFile;
-    dictFile.reset(new PageDict4RandRead);
+    auto dictFile = std::make_unique<PageDict4RandRead>();
 
     search::index::PostingListFileRandRead *postingFile = nullptr;
     if (dynamicK)
@@ -529,7 +528,7 @@ randReadField(FakeWordSet &wordSet,
         namepref.c_str(),
         dynamicKStr,
         bool_to_str(decode_interleaved_features),
-        tv.elapsed().sec());
+        vespalib::to_s(tv.elapsed()));
 }
 
 
@@ -558,7 +557,7 @@ fusionField(uint32_t numWordIds,
     WrappedFieldWriter ostate(opref, dynamicK, encode_interleaved_features, numWordIds, docIdLimit);
     WrappedFieldReader istate(ipref, numWordIds, docIdLimit);
 
-    fastos::StopWatch tv;
+    vespalib::Timer tv;
 
     ostate.open();
     istate.open();
@@ -587,7 +586,7 @@ fusionField(uint32_t numWordIds,
         opref.c_str(),
         rawStr,
         dynamicKStr, bool_to_str(encode_interleaved_features),
-        tv.elapsed().sec());
+        vespalib::to_s(tv.elapsed()));
 }
 
 

@@ -14,9 +14,9 @@
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/time.h>
 
 #include <vespa/fastos/app.h>
-#include <vespa/fastos/timestamp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("iteratespeed");
@@ -83,7 +83,7 @@ IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
     assert(numEntries == tree.size());
     assert(tree.isValid());
     for (int l = 0; l < loops; ++l) {
-        fastos::StopWatch stopWatch;
+        vespalib::Timer timer;
         uint64_t sum = 0;
         for (size_t innerl = 0; innerl < numInnerLoops; ++innerl) {
             if (iterateMethod == IterateMethod::FORWARD) {
@@ -106,7 +106,7 @@ IterateSpeed::workLoop(int loops, bool enableForward, bool enableBackwards,
                                                 [&](int key) { sum += key; } );
             }
         }
-        double used = stopWatch.elapsed().sec();
+        double used = vespalib::to_s(timer.elapsed());
         printf("Elapsed time for iterating %ld steps is %8.5f, "
                "direction=%s, fanout=%u,%u, sum=%" PRIu64 "\n",
                numEntries * numInnerLoops,

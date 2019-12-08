@@ -145,12 +145,12 @@ TEST_F("verify that config generation can be obtained from config fetcher", Conf
         f1.builder.myField = "bar";
         cb._configured = false;
         f1.context->reload();
-        fastos::StopWatch timer;
-        while (timer.elapsed().ms() < 120000) {
+        vespalib::Timer timer;
+        while (timer.elapsed() < 120s) {
             if (cb._configured) {
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));;
+            std::this_thread::sleep_for(10ms);;
         }
         EXPECT_EQUAL(2, fetcher.getGeneration());
         EXPECT_EQUAL("bar", cb._config.get()->myField);

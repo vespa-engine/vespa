@@ -47,12 +47,12 @@ TEST_F("slime -> json speed", FeatureFixture()) {
     double minTime = 1000000.0;
     MyBuffer buffer;
     for (size_t i = 0; i < 16; ++i) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         for (size_t j = 0; j < 256; ++j) {
             buffer.used = 0;
             slime::JsonFormat::encode(f1.slime, buffer, true);
         }
-        minTime = std::min(minTime, timer.elapsed().ms() / 256.0);
+        minTime = std::min(minTime, vespalib::count_ms(timer.elapsed()) / 256.0);
         size = buffer.used;
     }
     fprintf(stderr, "time: %g ms (size: %zu bytes)\n", minTime, size);
@@ -63,12 +63,12 @@ TEST_F("slime -> binary speed", FeatureFixture()) {
     double minTime = 1000000.0;
     MyBuffer buffer;
     for (size_t i = 0; i < 16; ++i) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         for (size_t j = 0; j < 256; ++j) {
             buffer.used = 0;
             slime::BinaryFormat::encode(f1.slime, buffer);
         }
-        minTime = std::min(minTime, timer.elapsed().ms() / 256.0);
+        minTime = std::min(minTime, vespalib::count_ms(timer.elapsed()) / 256.0);
         size = buffer.used;
     }
     fprintf(stderr, "time: %g ms (size: %zu bytes)\n", minTime, size);

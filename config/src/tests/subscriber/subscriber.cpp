@@ -274,10 +274,10 @@ TEST_FFF("requireThatCorrectConfigIsReturnedAfterTimestampUpdate", MyManager, AP
 
 TEST_MT_FFF("requireThatConfigIsReturnedWhenUpdatedDuringNextConfig", 2, MyManager, APIFixture(f1), StandardFixture(f1, f2)) {
     if (thread_id == 0) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         ASSERT_TRUE(f3.s.nextConfig(10000ms));
-        ASSERT_TRUE(timer.elapsed().ms() > 250);
-        ASSERT_TRUE(timer.elapsed().ms() <= 5000);
+        ASSERT_TRUE(timer.elapsed() > 250ms);
+        ASSERT_TRUE(timer.elapsed() <= 5s);
         verifyConfig("foo2", f3.h1->getConfig());
         verifyConfig("bar", f3.h2->getConfig());
     } else {
@@ -289,14 +289,14 @@ TEST_MT_FFF("requireThatConfigIsReturnedWhenUpdatedDuringNextConfig", 2, MyManag
 }
 
 TEST_FFF("requireThatConfigIsReturnedWhenUpdatedBeforeNextConfig", MyManager, APIFixture(f1), StandardFixture(f1, f2)) {
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     ASSERT_FALSE(f3.s.nextConfig(1000ms));
-    ASSERT_TRUE(timer.elapsed().ms() > 850);
+    ASSERT_TRUE(timer.elapsed() > 850ms);
     f1.updateGeneration(0, 2);
     f1.updateGeneration(1, 2);
-    timer.restart();
+    timer = vespalib::Timer();
     ASSERT_TRUE(f3.s.nextGeneration(10000ms));
-    ASSERT_TRUE(timer.elapsed().ms() <= 5000);
+    ASSERT_TRUE(timer.elapsed() <= 5s);
     verifyConfig("foo", f3.h1->getConfig());
     verifyConfig("bar", f3.h2->getConfig());
 }
@@ -324,10 +324,10 @@ TEST_FFF("requireThatNothingCanBeCalledAfterClose", MyManager, APIFixture(f1), S
 
 TEST_MT_FFF("requireThatNextConfigIsInterruptedOnClose", 2, MyManager, APIFixture(f1), StandardFixture(f1, f2)) {
     if (thread_id == 0) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         ASSERT_FALSE(f3.s.nextConfig(5000ms));
-        ASSERT_TRUE(timer.elapsed().ms() >= 500.0);
-        ASSERT_TRUE(timer.elapsed().ms() < 60000.0);
+        ASSERT_TRUE(timer.elapsed() >= 500ms);
+        ASSERT_TRUE(timer.elapsed() < 60s);
     } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         f3.s.close();

@@ -185,7 +185,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                ISearchContext &searchContext, IAttributeContext &attrContext, SessionManager &sessionMgr,
                const search::IDocumentMetaStore &metaStore, SearchSession::OwnershipBundle &&owned_objects)
 {
-    fastos::StopWatch total_matching_time;
+    vespalib::Timer total_matching_time;
     MatchingStats my_stats;
     SearchReply::UP reply = std::make_unique<SearchReply>();
     size_t covered = 0;
@@ -286,7 +286,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount,
             request.ranking.c_str());
     }
-    my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
+    my_stats.queryCollateralTime(vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg());
     {
         vespalib::duration duration = request.getTimeUsed();
         std::lock_guard<std::mutex> guard(_statsLock);
