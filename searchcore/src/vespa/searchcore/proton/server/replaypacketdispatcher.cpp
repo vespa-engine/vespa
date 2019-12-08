@@ -2,7 +2,6 @@
 
 #include "replaypacketdispatcher.h"
 #include <vespa/searchcore/proton/feedoperation/operations.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/util/serializableexceptions.h>
 
 using vespalib::make_string;

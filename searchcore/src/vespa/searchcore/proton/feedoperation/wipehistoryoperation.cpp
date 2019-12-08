@@ -15,7 +15,7 @@ WipeHistoryOperation::WipeHistoryOperation()
 }
 
 WipeHistoryOperation::WipeHistoryOperation(SerialNum serialNum,
-                                           fastos::TimeStamp wipeTimeLimit)
+                                           int64_t wipeTimeLimit)
     : FeedOperation(FeedOperation::WIPE_HISTORY),
       _wipeTimeLimit(wipeTimeLimit)
 {
@@ -26,14 +26,12 @@ void WipeHistoryOperation::serialize(vespalib::nbostream &str) const {
     str << _wipeTimeLimit;
 }
 void WipeHistoryOperation::deserialize(vespalib::nbostream &str, const document::DocumentTypeRepo &) {
-    fastos::TimeStamp::TimeT t;
-    str >> t;
-    _wipeTimeLimit = t;
+    str >> _wipeTimeLimit;
 }
 
 vespalib::string WipeHistoryOperation::toString() const {
     return make_string("WipeHistory(wipeTimeLimit=%" PRIu64 ", serialNum=%" PRIu64 ")",
-                       _wipeTimeLimit.ns(), getSerialNum());
+                       _wipeTimeLimit, getSerialNum());
 }
 
 } // namespace proton
