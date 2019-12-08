@@ -36,7 +36,7 @@ public:
 
     NearestNeighborImpl(Params params_in)
         : NearestNeighborIterator(params_in),
-          _lhs(params().queryTensor.cellsRef().typify<LCT>()),
+          _lhs(params().queryTensor.cellsRef().template typify<LCT>()),
           _fieldTensor(params().tensorAttribute.getTensorType()),
           _lastScore(0.0)
     {
@@ -84,7 +84,7 @@ private:
 
     double computeDistance(uint32_t docId, double limit) {
         params().tensorAttribute.getTensor(docId, _fieldTensor);
-        return computeSum(_lhs, _fieldTensor.cellsRef().typify<RCT>(), limit);
+        return computeSum(_lhs, _fieldTensor.cellsRef().template typify<RCT>(), limit);
     }
 
     ConstArrayRef<LCT>     _lhs;
