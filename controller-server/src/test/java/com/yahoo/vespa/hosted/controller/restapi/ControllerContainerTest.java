@@ -79,6 +79,7 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
                "    <binding>http://*/deployment/v1/*</binding>\n" +
+               "    <binding>http://*/api/deployment/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>\n" +
                "    <binding>http://*/badge/v1/*</binding>\n" +

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -70,6 +69,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller())));
         tester.assertResponse(authenticatedRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/api/deployment/v1/"), new File("root.json"));
     }
 
     private VersionStatus censorConfigServers(VersionStatus versionStatus) {

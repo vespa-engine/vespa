@@ -8,14 +8,14 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
+import com.yahoo.restapi.SlimeJsonResponse;
+import com.yahoo.restapi.Uri;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
-import com.yahoo.restapi.Uri;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -31,8 +31,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
-import static java.util.Comparator.comparing;
-
 /**
  * This implements the deployment/v1 API which provides information about the status of Vespa platform and
  * application deployments.
@@ -41,6 +39,8 @@ import static java.util.Comparator.comparing;
  */
 @SuppressWarnings("unused") // Injected
 public class DeploymentApiHandler extends LoggingRequestHandler {
+
+    private static final String OPTIONAL_PREFIX = "/api";
 
     private final Controller controller;
 
@@ -68,7 +68,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri());
+        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
         if (path.matches("/deployment/v1/")) return root(request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
