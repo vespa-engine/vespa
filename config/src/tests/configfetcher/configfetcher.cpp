@@ -65,8 +65,8 @@ TEST("requireThatConfigUpdatesArePerformed") {
         writeFile("test1.cfg", "bar");
 
         cb._configured = false;
-        fastos::StopWatch timer;
-        while (!cb._configured && timer.elapsed().ms() < 20000.0) {
+        vespalib::Timer timer;
+        while (!cb._configured && timer.elapsed() < 20s) {
             if (cb._configured)
                 break;
             std::this_thread::sleep_for(1s);

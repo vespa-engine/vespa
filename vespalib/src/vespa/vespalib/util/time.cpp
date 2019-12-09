@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "time.h"
+#include <thread>
 
 namespace vespalib {
 
@@ -12,5 +13,17 @@ to_utc(steady_time ts) {
 }
 
 Timer::~Timer() = default;
+
+void
+Timer::waitAtLeast(duration dur, bool busyWait) {
+    if (busyWait) {
+        steady_clock::time_point deadline = steady_clock::now() + dur;
+        while (steady_clock::now() < deadline) {
+            for (int i = 0; i < 1000; i++) { }
+        }
+    } else {
+        std::this_thread::sleep_for(dur);
+    }
+}
 
 }

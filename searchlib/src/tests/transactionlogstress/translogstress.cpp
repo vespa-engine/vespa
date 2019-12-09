@@ -254,7 +254,7 @@ FeederThread::doRun()
 
     while (!_done) {
         if (_feedRate != 0) {
-            _timer.restart();
+            _timer = vespalib::Timer();
             for (uint32_t i = 0; i < _feedRate; ++i) {
                 Packet::Entry entry = _generator.getRandomEntry(_current++);
                 if (!addEntry(entry)) {

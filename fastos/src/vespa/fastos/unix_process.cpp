@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "process.h"
 #include "unix_ipc.h"
-#include "timestamp.h"
 #include "ringbuffer.h"
 #include <vector>
 #include <cstring>
@@ -41,6 +40,7 @@ extern char **environ;
 #endif
 
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 static pid_t safe_fork ()
 {
@@ -1600,7 +1600,7 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
 
     bool timeOutKillAttempted = false;
 
-    fastos::StopWatch timer;
+    steady_clock::time_point start = steady_clock::now();
 
     if (pollStillRunning != nullptr)
         *pollStillRunning = true;
@@ -1625,7 +1625,7 @@ FastOS_UNIX_ProcessStarter::Wait(FastOS_UNIX_Process *process,
 
         if ((timeOutSeconds != -1) && !timeOutKillAttempted) {
 
-            if (timer.elapsed().ms() >= (timeOutSeconds * 1000)) {
+            if ((steady_clock::now() - start) >= seconds(timeOutSeconds)) {
                 process->Kill();
                 timeOutKillAttempted = true;
             }

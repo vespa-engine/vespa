@@ -16,13 +16,6 @@ public:
     static const TimeT MICRO = 1000*MILLI;
     static const TimeT NANO = 1000*MICRO;
     static const TimeT SEC = NANO;
-    class Seconds {
-    public:
-        explicit Seconds(double v) : _v(v * NANO) {}
-        TimeT val() const { return _v; }
-    private:
-        TimeT _v;
-    };
     TimeStamp() : _time(0)            { }
     TimeStamp(const timeval & tv) : _time(tv.tv_sec*SEC + tv.tv_usec*MILLI) { }
     TimeStamp(int v) : _time(v)   { }
@@ -31,7 +24,6 @@ public:
     TimeStamp(unsigned long v) : _time(v)  { }
     TimeStamp(long long v) : _time(v)     { }
     TimeStamp(unsigned long long v) : _time(v)  { }
-    TimeStamp(Seconds v) : _time(v.val())    { }
     TimeT val()                      const { return _time; }
     operator TimeT ()                const { return val(); }
     TimeStamp & operator += (TimeStamp b)  { _time += b._time; return *this; }
@@ -52,48 +44,6 @@ inline TimeStamp operator +(TimeStamp a, TimeStamp b) { return TimeStamp(a.val()
 inline TimeStamp operator -(TimeStamp a, TimeStamp b) { return TimeStamp(a.val() - b.val()); }
 inline TimeStamp operator *(long a, TimeStamp b) { return TimeStamp(a * b.val()); }
 inline TimeStamp operator *(double a, TimeStamp b) { return TimeStamp(static_cast<int64_t>(a * b.val())); }
-
-class SteadyTimeStamp {
-public:
-    SteadyTimeStamp() : _timeStamp() { }
-    explicit SteadyTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
-
-    friend TimeStamp operator -(SteadyTimeStamp a, SteadyTimeStamp b) {
-        return a._timeStamp - b._timeStamp;
-    }
-    friend SteadyTimeStamp operator -(SteadyTimeStamp a, TimeStamp b) {
-        return SteadyTimeStamp(a._timeStamp - b);
-    }
-    friend SteadyTimeStamp operator +(SteadyTimeStamp a, TimeStamp b) {
-        return SteadyTimeStamp(a._timeStamp + b);
-    }
-    friend bool operator != (SteadyTimeStamp a, SteadyTimeStamp b) {
-        return a._timeStamp != b._timeStamp;
-    }
-    friend bool operator == (SteadyTimeStamp a, SteadyTimeStamp b) {
-        return a._timeStamp == b._timeStamp;
-    }
-    friend bool operator < (SteadyTimeStamp a, SteadyTimeStamp b) {
-        return a._timeStamp < b._timeStamp;
-    }
-    friend bool operator > (SteadyTimeStamp a, SteadyTimeStamp b) {
-        return a._timeStamp > b._timeStamp;
-    }
-    std::string toString() const { return _timeStamp.toString(); };
-private:
-    TimeStamp _timeStamp;
-};
-
-class StopWatch
-{
-public:
-    StopWatch();
-    void restart();
-    TimeStamp elapsed() const;
-    static void waitAtLeast(std::chrono::microseconds us, bool busyWait);
-private:
-    SteadyTimeStamp _startTime;
-};
 
 time_t time();
 

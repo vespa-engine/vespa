@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "tests.h"
 #include <vespa/fastos/process.h>
-#include <vespa/fastos/timestamp.h>
 
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 class MyListener : public FastOS_ProcessRedirectListener
 {
@@ -213,7 +213,7 @@ public:
             if(waitKill)
                timeOut = 1;
 
-            fastos::StopWatch timer;
+            steady_clock::time_point start = steady_clock::now();
 
             int returnCode;
             if(!xproc->Wait(&returnCode, timeOut))
@@ -228,11 +228,11 @@ public:
             }
 
             if (waitKill) {
-               double milliSecs = timer.elapsed().ms();
-               if((milliSecs < 900) ||
-                  (milliSecs > 3500))
+               nanoseconds elapsed = steady_clock::now() - start;
+               if((elapsed < 900ms) ||
+                  (elapsed > 3500ms))
                {
-                  Progress(false, "WaitKill time = %d", int(milliSecs));
+                  Progress(false, "WaitKill time = %d", duration_cast<milliseconds>(elapsed).count());
                }
             }
 

@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "timestamp.h"
 #include <cmath>
-#include <thread>
 #include <sys/time.h>
 
 using std::chrono::system_clock;
@@ -42,41 +41,6 @@ TimeStamp::asString(std::chrono::system_clock::time_point ns) {
 time_t
 time() {
     return system_clock::to_time_t(system_clock::now());
-}
-
-namespace {
-
-SteadyTimeStamp
-steady_now() {
-    return SteadyTimeStamp(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
-}
-
-}
-
-StopWatch::StopWatch()
-    : _startTime(steady_now())
-{ }
-
-void
-StopWatch::restart() {
-    _startTime = steady_now();
-}
-
-TimeStamp
-StopWatch::elapsed() const {
-    return (steady_now() - _startTime);
-}
-
-void
-StopWatch::waitAtLeast(std::chrono::microseconds us, bool busyWait) {
-    if (busyWait) {
-        steady_clock::time_point deadline = steady_clock::now() + us;
-        while (steady_clock::now() < deadline) {
-            for (int i = 0; i < 1000; i++) { }
-        }
-    } else {
-        std::this_thread::sleep_for(us);
-    }
 }
 
 }

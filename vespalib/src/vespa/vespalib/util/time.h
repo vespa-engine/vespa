@@ -73,6 +73,7 @@ public:
     Timer() : _start(steady_clock::now()) {}
     ~Timer();
     duration elapsed() const { return (steady_clock::now() - _start); }
+    static void waitAtLeast(duration dur, bool busyWait);
 };
 
 }

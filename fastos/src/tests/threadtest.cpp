@@ -3,12 +3,14 @@
 #include "tests.h"
 #include "job.h"
 #include "thread_test_base.hpp"
-#include <vespa/fastos/timestamp.h>
 #include <cstdlib>
 #include <chrono>
 
 #define MUTEX_TEST_THREADS 6
 #define MAX_THREADS 7
+
+using namespace std::chrono;
+using namespace std::chrono_literals;
 
 class ThreadTest : public ThreadTestBase
 {
@@ -202,7 +204,7 @@ class ThreadTest : public ThreadTestBase
       Job *jobs = new Job[count];
 
       threadsok = 0;
-      fastos::StopWatch timer;
+      steady_clock::time_point start = steady_clock::now();
       for (i = 0; i < count; i++) {
         jobs[i].code = SILENTNOP;
         jobs[i].ownThread = pool->NewThread(this, &jobs[i]);
@@ -225,13 +227,13 @@ class ThreadTest : public ThreadTestBase
         if (jobs[i].ownThread != nullptr)
           jobs[i].ownThread->Join();
       }
-      fastos::TimeStamp used = timer.elapsed();
+      nanoseconds used = steady_clock::now() - start;
 
       if (!silent) {
-        Progress(true, "Used time: %2.3f", used.sec());
+          double timeused = used.count() / 1000000000.0;
 
-        double timeused = used.sec();
-        ProgressFloat(true, "Threads/s: %6.1f",
+          Progress(true, "Used time: %2.3f", timeused);
+          ProgressFloat(true, "Threads/s: %6.1f",
                       static_cast<float>(static_cast<double>(threadsok) / timeused));
       }
       if (threadsok != ((outercount + 1) * count))
@@ -517,12 +519,13 @@ class ThreadTest : public ThreadTestBase
 
       std::mutex **mutexes = new std::mutex*[allocCount];
 
-      fastos::StopWatch timer;
+      steady_clock::time_point start = steady_clock::now();
 
       for (i=0; i<allocCount; i++)
           mutexes[i] = new std::mutex;
 
-      Progress(true, "Allocated %d mutexes at time: %ld ms", allocCount, timer.elapsed().ms());
+      nanoseconds elapsed = steady_clock::now() - start;
+      Progress(true, "Allocated %d mutexes at time: %ld ms", allocCount, duration_cast<milliseconds>(elapsed).count());
 
       for (int e=0; e<4; e++) {
          for(i=0; i<allocCount; i++)
@@ -531,12 +534,14 @@ class ThreadTest : public ThreadTestBase
          for(i=0; i<allocCount; i++)
             mutexes[i]->unlock();
 
-         Progress(true, "Tested %d mutexes at time: %d ms", allocCount, timer.elapsed().ms());
+         elapsed = steady_clock::now() - start;
+         Progress(true, "Tested %d mutexes at time: %d ms", allocCount, duration_cast<milliseconds>(elapsed).count());
       }
       for (i=0; i<allocCount; i++)
          delete mutexes[i];
 
-      Progress(true, "Deleted %d mutexes at time: %d ms", allocCount, timer.elapsed().ms());
+      elapsed = steady_clock::now() - start;
+      Progress(true, "Deleted %d mutexes at time: %d ms", allocCount, duration_cast<milliseconds>(elapsed).count());
 
       delete [] mutexes;
 

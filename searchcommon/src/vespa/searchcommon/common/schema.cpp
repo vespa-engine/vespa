@@ -72,33 +72,26 @@ const uint32_t Schema::UNKNOWN_FIELD_ID(std::numeric_limits<uint32_t>::max());
 Schema::Field::Field(vespalib::stringref n, DataType dt)
     : _name(n),
       _dataType(dt),
-      _collectionType(schema::CollectionType::SINGLE),
-      _timestamp(0)
+      _collectionType(schema::CollectionType::SINGLE)
 {
 }
 
-Schema::Field::Field(vespalib::stringref n,
-                     DataType dt, CollectionType ct)
+Schema::Field::Field(vespalib::stringref n, DataType dt, CollectionType ct)
     : _name(n),
       _dataType(dt),
-      _collectionType(ct),
-      _timestamp(0)
+      _collectionType(ct)
 {
 }
 
 // XXX: Resource leak if exception is thrown.
 Schema::Field::Field(const std::vector<vespalib::string> & lines)
     : _name(ConfigParser::parse<vespalib::string>("name", lines)),
-      _dataType(schema::dataTypeFromName(ConfigParser::parse<vespalib::string>(
-                              "datatype", lines))),
-      _collectionType(
-              schema::collectionTypeFromName(ConfigParser::parse<vespalib::string>(
-                              "collectiontype", lines))),
-      _timestamp(ConfigParser::parse<int64_t>("timestamp", lines, 0))
+      _dataType(schema::dataTypeFromName(ConfigParser::parse<vespalib::string>("datatype", lines))),
+      _collectionType(schema::collectionTypeFromName(ConfigParser::parse<vespalib::string>("collectiontype", lines)))
 {
 }
 
-Schema::Field::~Field() { }
+Schema::Field::~Field() = default;
 
 void
 Schema::Field::write(vespalib::asciistream & os, vespalib::stringref prefix) const
@@ -106,27 +99,22 @@ Schema::Field::write(vespalib::asciistream & os, vespalib::stringref prefix) con
     os << prefix << "name " << _name << "\n";
     os << prefix << "datatype " << getTypeName(_dataType) << "\n";
     os << prefix << "collectiontype " << getTypeName(_collectionType) << "\n";
-    if (_timestamp) {
-        os << prefix << "timestamp " << _timestamp.val() << "\n";
-    }
 }
 
 bool
 Schema::Field::operator==(const Field &rhs) const
 {
     return _name == rhs._name &&
-       _dataType == rhs._dataType &&
- _collectionType == rhs._collectionType &&
-      _timestamp == rhs._timestamp;
+           _dataType == rhs._dataType &&
+           _collectionType == rhs._collectionType;
 }
 
 bool
 Schema::Field::operator!=(const Field &rhs) const
 {
     return _name != rhs._name ||
-       _dataType != rhs._dataType ||
- _collectionType != rhs._collectionType ||
-      _timestamp != rhs._timestamp;
+           _dataType != rhs._dataType ||
+           _collectionType != rhs._collectionType;
 }
 
 Schema::IndexField::IndexField(vespalib::stringref name, DataType dt)
@@ -488,8 +476,7 @@ struct IntersectHelper {
 };
 
 template <>
-bool IntersectHelper::is_matching(const Schema::FieldSet &f1,
-                                  const Schema::FieldSet &f2) {
+bool IntersectHelper::is_matching(const Schema::FieldSet &f1, const Schema::FieldSet &f2) {
     if (f1.getFields() != f2.getFields())
         return false;
     const std::vector<vespalib::string> fields = f1.getFields();
@@ -503,21 +490,7 @@ bool IntersectHelper::is_matching(const Schema::FieldSet &f1,
 }
 
 template <typename T, typename Map>
-void addOldEntries(const std::vector<T> &entries,
-                   fastos::TimeStamp limit_timestamp,
-                   std::vector<T> &v, Map &name2id_map) {
-    for (typename std::vector<T>::const_iterator
-             it = entries.begin(); it != entries.end(); ++it) {
-        if (it->getTimestamp() < limit_timestamp) {
-            name2id_map[it->getName()] = v.size();
-            v.push_back(*it);
-        }
-    }
-}
-
-template <typename T, typename Map>
-void addEntries(const std::vector<T> &entries, std::vector<T> &v,
-                Map &name2id_map) {
+void addEntries(const std::vector<T> &entries, std::vector<T> &v, Map &name2id_map) {
     for (typename std::vector<T>::const_iterator
              it = entries.begin(); it != entries.end(); ++it) {
         if (name2id_map.find(it->getName()) == name2id_map.end()) {
@@ -539,19 +512,6 @@ void difference(const std::vector<T> &minuend, const Map &subtrahend_map,
     }
 }
 }  // namespace
-
-Schema::UP
-Schema::getOldFields(fastos::TimeStamp limit_timestamp)
-{
-    Schema::UP schema(new Schema);
-    addOldEntries(_indexFields, limit_timestamp,
-                  schema->_indexFields, schema->_indexIds);
-    addOldEntries(_attributeFields, limit_timestamp,
-                  schema->_attributeFields, schema->_attributeIds);
-    addOldEntries(_summaryFields, limit_timestamp,
-                  schema->_summaryFields, schema->_summaryIds);
-    return schema;
-}
 
 Schema::UP
 Schema::intersect(const Schema &lhs, const Schema &rhs)
