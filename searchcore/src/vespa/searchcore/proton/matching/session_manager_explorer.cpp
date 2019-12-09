@@ -31,8 +31,8 @@ public:
             for (const auto &session: sessions) {
                 Cursor &entry = array.addObject();
                 entry.setString("id", session.id);
-                entry.setString("created", fastos::TimeStamp::asString(vespalib::to_utc(session.created)));
-                entry.setString("doom", fastos::TimeStamp::asString(vespalib::to_utc(session.doom)));
+                entry.setString("created", vespalib::to_string(vespalib::to_utc(session.created)));
+                entry.setString("doom", vespalib::to_string(vespalib::to_utc(session.doom)));
             }
         }
     }

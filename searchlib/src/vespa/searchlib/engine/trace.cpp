@@ -39,10 +39,11 @@ Trace::Trace(const RelativeTime & relativeTime, uint32_t level)
 void
 Trace::start(int level, bool useUTC) {
     if (shouldTrace(level) && !hasTrace()) {
-        vespalib::duration since_epoch = useUTC
-                ? vespalib::to_utc(_relativeTime.timeOfDawn()).time_since_epoch()
-                : _relativeTime.timeOfDawn().time_since_epoch();
-        root().setString("start_time", fastos::TimeStamp::asString(vespalib::to_s(since_epoch)));
+        if (useUTC) {
+            root().setString("start_time", vespalib::to_string(vespalib::to_utc(_relativeTime.timeOfDawn())));
+        } else {
+            root().setString("start_time", vespalib::to_string(_relativeTime.timeOfDawn()));
+        }
     }
 }
 

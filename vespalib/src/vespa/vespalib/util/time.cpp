@@ -12,6 +12,30 @@ to_utc(steady_time ts) {
     return system_time(nowUtc.time_since_epoch() - nowSteady.time_since_epoch() + ts.time_since_epoch());
 }
 
+string
+to_string(duration dur)
+{
+    time_t timeStamp = std::chrono::duration_cast<std::chrono::seconds>(dur).count();
+    struct tm timeStruct;
+    gmtime_r(&timeStamp, &timeStruct);
+    char timeString[128];
+    strftime(timeString, sizeof(timeString), "%F %T", &timeStruct);
+    char retval[160];
+    uint32_t milliSeconds = count_ms(dur)%1000;
+    snprintf(retval, sizeof(retval), "%s.%03u UTC", timeString, milliSeconds);
+    return std::string(retval);
+}
+
+string
+to_string(system_time time) {
+    return to_string(time.time_since_epoch());
+}
+
+string
+to_string(steady_time time) {
+    return to_string(time.time_since_epoch());
+}
+
 Timer::~Timer() = default;
 
 void

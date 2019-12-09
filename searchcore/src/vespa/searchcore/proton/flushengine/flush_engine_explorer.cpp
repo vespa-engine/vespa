@@ -21,7 +21,7 @@ convertToSlime(const FlushEngine::FlushMetaSet &flushingTargets, Cursor &array)
     for (const auto &target : flushingTargets) {
         Cursor &object = array.addObject();
         object.setString("name", target.getName());
-        object.setString("startTime", fastos::TimeStamp::asString(target.getStart()));
+        object.setString("startTime", vespalib::to_string(target.getStart()));
         object.setDouble("elapsedTime", vespalib::to_s(target.elapsed()));
     }
 }
@@ -48,7 +48,7 @@ convertToSlime(const FlushContext::List &allTargets,
         object.setLong("flushedSerialNum", target->getFlushedSerialNum());
         object.setLong("memoryGain", target->getApproxMemoryGain().gain());
         object.setLong("diskGain", target->getApproxDiskGain().gain());
-        object.setString("lastFlushTime", fastos::TimeStamp::asString(target->getLastFlushTime()));
+        object.setString("lastFlushTime", vespalib::to_string(target->getLastFlushTime()));
         vespalib::duration timeSinceLastFlush = now - target->getLastFlushTime();
         object.setDouble("timeSinceLastFlush", vespalib::to_s(timeSinceLastFlush));
         object.setBool("needUrgentFlush", target->needUrgentFlush());

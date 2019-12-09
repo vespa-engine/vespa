@@ -224,7 +224,7 @@ Schema::Schema(const Schema & rhs) = default;
 Schema & Schema::operator=(const Schema & rhs) = default;
 Schema::Schema(Schema && rhs) = default;
 Schema & Schema::operator=(Schema && rhs) = default;
-Schema::~Schema() { }
+Schema::~Schema() = default;
 
 bool
 Schema::loadFromFile(const vespalib::string & fileName)
@@ -479,10 +479,8 @@ template <>
 bool IntersectHelper::is_matching(const Schema::FieldSet &f1, const Schema::FieldSet &f2) {
     if (f1.getFields() != f2.getFields())
         return false;
-    const std::vector<vespalib::string> fields = f1.getFields();
-    for (std::vector<vespalib::string>::const_iterator
-             i = fields.begin(), ie = fields.end(); i != ie; ++i) {
-        if (schema->getIndexFieldId(*i) == Schema::UNKNOWN_FIELD_ID) {
+    for (const vespalib::string & field : f1.getFields()) {
+        if (schema->getIndexFieldId(field) == Schema::UNKNOWN_FIELD_ID) {
             return false;
         }
     }
@@ -491,11 +489,10 @@ bool IntersectHelper::is_matching(const Schema::FieldSet &f1, const Schema::Fiel
 
 template <typename T, typename Map>
 void addEntries(const std::vector<T> &entries, std::vector<T> &v, Map &name2id_map) {
-    for (typename std::vector<T>::const_iterator
-             it = entries.begin(); it != entries.end(); ++it) {
-        if (name2id_map.find(it->getName()) == name2id_map.end()) {
-            name2id_map[it->getName()] = v.size();
-            v.push_back(*it);
+    for (const T & key : entries) {
+        if (name2id_map.find(key.getName()) == name2id_map.end()) {
+            name2id_map[key.getName()] = v.size();
+            v.push_back(key);
         }
     }
 }
@@ -503,11 +500,10 @@ void addEntries(const std::vector<T> &entries, std::vector<T> &v, Map &name2id_m
 template <typename T, typename Map>
 void difference(const std::vector<T> &minuend, const Map &subtrahend_map,
                 std::vector<T> &diff, Map &diff_map) {
-    for (typename std::vector<T>::const_iterator
-             it = minuend.begin(); it != minuend.end(); ++it) {
-        if (subtrahend_map.find(it->getName()) == subtrahend_map.end()) {
-            diff_map[it->getName()] = diff.size();
-            diff.push_back(*it);
+    for (const T & key : minuend){
+        if (subtrahend_map.find(key.getName()) == subtrahend_map.end()) {
+            diff_map[key.getName()] = diff.size();
+            diff.push_back(key);
         }
     }
 }

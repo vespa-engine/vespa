@@ -1896,7 +1896,7 @@ Test::testNanSorting()
     EXPECT_FALSE(0.2 < myNan);
     EXPECT_FALSE(0.2 > myNan);
 
-    fastos::Timer timer;
+    vespalib::Timer timer;
     std::vector<double> groups;
     while (timer.elapsed() < 60s) {
         std::vector<double> vec;
