@@ -220,7 +220,7 @@ public class VespaZooKeeperServerImplTest {
                "ssl.quorum.clientAuth=NEED\n" +
                "ssl.quorum.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
                "ssl.quorum.enabledProtocols=TLSv1.2\n" +
-               "ssl.quorum.protocol=TLS\n";
+               "ssl.quorum.protocol=TLSv1.2\n";
     }
 
     private String commonTlsClientServerConfig() {
@@ -228,7 +228,7 @@ public class VespaZooKeeperServerImplTest {
                "ssl.clientAuth=NEED\n" +
                "ssl.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
                "ssl.enabledProtocols=TLSv1.2\n" +
-               "ssl.protocol=TLS\n";
+               "ssl.protocol=TLSv1.2\n";
     }
 
     private void validateConfigFileMultipleHosts(File cfgFile) throws IOException {
