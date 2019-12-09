@@ -509,7 +509,7 @@ public class ProvisioningTest {
                                                   new com.yahoo.component.Version(4, 5, 6),
                                                   false);
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).nonretired().size());
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
 
         // Mark the nodes as want to retire
@@ -518,7 +518,7 @@ public class ProvisioningTest {
         tester.activate(application, tester.prepare(application, cluster, capacityFORCED, 1));
 
         // Nodes are not retired since that is unsafe when we cannot fail
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).nonretired().size());
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(0, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
         // ... but we still want to
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> assertTrue(node.status().wantToRetire()));
@@ -526,7 +526,7 @@ public class ProvisioningTest {
         // redeploy with allowing failing
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
         // ... old nodes are now retired
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).nonretired().size());
+        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
         assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
     }
 
