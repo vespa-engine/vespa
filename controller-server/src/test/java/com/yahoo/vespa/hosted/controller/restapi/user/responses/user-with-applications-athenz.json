@@ -13,8 +13,14 @@
         "reader"
       ],
       "applications": {
+        "app1": {
+          "instances": [
+            "default"
+          ]
+        },
         "app2": {
           "instances": [
+            "default",
             "dev"
           ]
         }
