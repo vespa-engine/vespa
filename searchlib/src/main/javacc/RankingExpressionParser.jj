@@ -18,6 +18,7 @@ PARSER_BEGIN(RankingExpressionParser)
 package com.yahoo.searchlib.rankingexpression.parser;
 
 import com.yahoo.searchlib.rankingexpression.rule.*;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.evaluation.StringValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.*;
@@ -247,7 +248,7 @@ ExpressionNode value() :
                    ( <LBRACE> value = expression() <RBRACE> { value = new EmbracedNode(value); } ) )
 
       )
-      [ LOOKAHEAD(2) valueAddress = valueAddress() { value = new TensorFunctionNode(new Value(TensorFunctionNode.wrap(value), valueAddress)); } ]
+      [ LOOKAHEAD(2) valueAddress = valueAddress() { value = new TensorFunctionNode(new Slice(TensorFunctionNode.wrap(value), valueAddress)); } ]
     {
         value = not ? new NotNode(value) : value;
         value = neg ? new NegativeNode(value) : value;
@@ -818,17 +819,17 @@ ConstantNode constantPrimitive() :
     ( <INTEGER> { value = token.image; } |
       <FLOAT> { value = token.image; } |
       <STRING> { value = token.image; } )
-    { return new ConstantNode(com.yahoo.searchlib.rankingexpression.evaluation.Value.parse(sign + value),sign + value); }
+    { return new ConstantNode(Value.parse(sign + value),sign + value); }
 }
 
-com.yahoo.searchlib.rankingexpression.evaluation.Value primitiveValue() :
+Value primitiveValue() :
 {
     String sign = "";
 }
 {
     ( <SUB> { sign = "-";} ) ?
     ( <INTEGER> | <FLOAT> | <STRING> )
-    { return com.yahoo.searchlib.rankingexpression.evaluation.Value.parse(sign + token.image); }
+    { return Value.parse(sign + token.image); }
 }
 
 TensorFunctionNode tensorValueBody(TensorType type) :
@@ -894,7 +895,7 @@ void labelAndDimension(TensorAddress.Builder addressBuilder) :
 void labelAndDimensionValues(List addressValues) :
 {
     String dimension;
-    Value.DimensionValue dimensionValue;
+    Slice.DimensionValue dimensionValue;
 }
 {
     dimension = identifier() <COLON> dimensionValue = dimensionValue(Optional.of(dimension))
@@ -906,11 +907,11 @@ List valueAddress() :
 {
     List dimensionValues = new ArrayList();
     ExpressionNode valueExpression;
-    Value.DimensionValue dimensionValue;
+    Slice.DimensionValue dimensionValue;
 }
 {
     (
-    ( <LSQUARE> ( valueExpression = expression() { dimensionValues.add(new Value.DimensionValue(TensorFunctionNode.wrapScalar(valueExpression))); } ) <RSQUARE> )
+    ( <LSQUARE> ( valueExpression = expression() { dimensionValues.add(new Slice.DimensionValue(TensorFunctionNode.wrapScalar(valueExpression))); } ) <RSQUARE> )
     |
     LOOKAHEAD(3) ( <LCURLY>
       (         labelAndDimensionValues(dimensionValues))+
@@ -923,16 +924,16 @@ List valueAddress() :
     { return dimensionValues;}
 }
 
-Value.DimensionValue dimensionValue(Optional dimensionName) :
+Slice.DimensionValue dimensionValue(Optional dimensionName) :
 {
     ExpressionNode value;
 }
 {
     value = expression()
     {
-        if (value instanceof ReferenceNode && ((ReferenceNode)value).reference().isIdentifier())
-            return new Value.DimensionValue(dimensionName, ((ReferenceNode)value).reference().name());
-        else
-            return new Value.DimensionValue(dimensionName, TensorFunctionNode.wrapScalar(value));
-    }
+    if (value instanceof ReferenceNode && ((ReferenceNode)value).reference().isIdentifier())
+        return new Slice.DimensionValue(dimensionName, ((ReferenceNode)value).reference().name());
+    else
+        return new Slice.DimensionValue(dimensionName, TensorFunctionNode.wrapScalar(value));
+}
 }
