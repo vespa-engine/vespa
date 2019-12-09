@@ -94,7 +94,7 @@ class IndexMaintainer : public IIndexManager,
     bool                 _flush_empty_current_index;
     SerialNum            _current_serial_num;// Protected by IUL
     SerialNum            _flush_serial_num;  // Protected by SL
-    fastos::UTCTimeStamp _lastFlushTime; // Protected by SL
+    vespalib::system_time _lastFlushTime; // Protected by SL
     // Extra frozen memory indexes.  This list is empty unless new
     // memory index has been added by force (due to config change or
     // data structure limitations).
@@ -335,7 +335,7 @@ public:
     uint32_t getNumFrozenMemoryIndexes() const;
     uint32_t getMaxFrozenMemoryIndexes() const { return _maxFrozen; }
 
-    fastos::UTCTimeStamp getLastFlushTime() const { return _lastFlushTime; }
+    vespalib::system_time getLastFlushTime() const { return _lastFlushTime; }
 
     // Implements IIndexManager
     void putDocument(uint32_t lid, const Document &doc, SerialNum serialNum) override;

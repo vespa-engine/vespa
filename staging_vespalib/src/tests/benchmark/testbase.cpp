@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "testbase.h"
 #include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -165,12 +166,12 @@ size_t ReturnByValueMultiVectorString::onRun()
 
 size_t ClockSystem::onRun()
 {
-    fastos::UTCTimeStamp start(fastos::ClockSystem::now());
-    fastos::UTCTimeStamp end(start);
+    vespalib::system_time start(vespalib::system_clock::now());
+    vespalib::system_time end(start);
     for (size_t i=0; i < 1000; i++) {
-        end = fastos::ClockSystem::now();
+        end = vespalib::system_clock::now();
     }
-    return (start - end).ns();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(start - end).count();
 }
 
 size_t ClockREALTIME::onRun()

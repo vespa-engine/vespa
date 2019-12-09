@@ -2,6 +2,7 @@
 
 #include "shrink_lid_space_flush_target.h"
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
+#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 
@@ -31,7 +32,7 @@ void
 ShrinkLidSpaceFlushTarget::Flusher::run()
 {
     _target._flushedSerialNum = _flushSerialNum;
-    _target._lastFlushTime = fastos::ClockSystem::now();
+    _target._lastFlushTime = vespalib::system_clock::now();
 }
 
 search::SerialNum
@@ -90,11 +91,11 @@ IFlushTarget::Task::UP
 ShrinkLidSpaceFlushTarget::initFlush(SerialNum currentSerial)
 {
     if (currentSerial < _flushedSerialNum) {
-        _lastFlushTime = fastos::ClockSystem::now();
+        _lastFlushTime = vespalib::system_clock::now();
         return IFlushTarget::Task::UP();
     } else if (!_target->canShrinkLidSpace()) {
         _flushedSerialNum = currentSerial;
-        _lastFlushTime = fastos::ClockSystem::now();
+        _lastFlushTime = vespalib::system_clock::now();
         return IFlushTarget::Task::UP();
     } else {
         return std::make_unique<Flusher>(*this, currentSerial);

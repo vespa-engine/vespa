@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/time.h>
 #include <vector>
 
 namespace vespalib { class DataBuffer; }
@@ -145,7 +146,7 @@ public:
      * or 0 if no flush has been performed yet.
      * @return Time of last flush.
      **/
-    virtual fastos::UTCTimeStamp getLastFlushTime() const = 0;
+    virtual vespalib::system_time getLastFlushTime() const = 0;
 
     /**
      * Visit all data found in data store.

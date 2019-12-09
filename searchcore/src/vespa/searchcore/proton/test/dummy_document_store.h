@@ -28,7 +28,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     void compact(uint64_t) override {}
     uint64_t lastSyncToken() const override { return 0; }
     uint64_t tentativeLastSyncToken() const override { return 0; }
-    fastos::UTCTimeStamp getLastFlushTime() const override { return fastos::UTCTimeStamp::ZERO; }
+    vespalib::system_time getLastFlushTime() const override { return vespalib::system_time(); }
     uint32_t getDocIdLimit() const override { return 0; }
     size_t memoryUsed() const override { return 0; }
     size_t memoryMeta() const override { return 0; }

@@ -20,7 +20,7 @@ convertToSlime(const FlushEngine::FlushMetaSet &flushingTargets, Cursor &array)
     for (const auto &target : flushingTargets) {
         Cursor &object = array.addObject();
         object.setString("name", target.getName());
-        object.setString("startTime", target.getStart().toString());
+        object.setString("startTime", fastos::TimeStamp::asString(target.getStart()));
         fastos::TimeStamp elapsedTime = target.elapsed();
         object.setDouble("elapsedTime", elapsedTime.sec());
     }
@@ -38,7 +38,7 @@ sortTargetList(FlushContext::List &allTargets)
 
 void
 convertToSlime(const FlushContext::List &allTargets,
-               const fastos::UTCTimeStamp &now,
+               const vespalib::system_time &now,
                Cursor &array)
 {
     for (const auto &ctx : allTargets) {
@@ -48,9 +48,9 @@ convertToSlime(const FlushContext::List &allTargets,
         object.setLong("flushedSerialNum", target->getFlushedSerialNum());
         object.setLong("memoryGain", target->getApproxMemoryGain().gain());
         object.setLong("diskGain", target->getApproxDiskGain().gain());
-        object.setString("lastFlushTime", target->getLastFlushTime().toString());
-        fastos::TimeStamp timeSinceLastFlush = now - target->getLastFlushTime();
-        object.setDouble("timeSinceLastFlush", timeSinceLastFlush.sec());
+        object.setString("lastFlushTime", fastos::TimeStamp::asString(target->getLastFlushTime()));
+        vespalib::duration timeSinceLastFlush = now - target->getLastFlushTime();
+        object.setDouble("timeSinceLastFlush", vespalib::to_s(timeSinceLastFlush));
         object.setBool("needUrgentFlush", target->needUrgentFlush());
     }
 }
@@ -67,7 +67,7 @@ FlushEngineExplorer::get_state(const Inserter &inserter, bool full) const
 {
     Cursor &object = inserter.insertObject();
     if (full) {
-        fastos::UTCTimeStamp now = fastos::ClockSystem::now();
+        vespalib::system_time now = vespalib::system_clock::now();
         convertToSlime(_engine.getCurrentlyFlushingSet(), object.setArray("flushingTargets"));
         FlushContext::List allTargets = _engine.getTargetList(true);
         sortTargetList(allTargets);

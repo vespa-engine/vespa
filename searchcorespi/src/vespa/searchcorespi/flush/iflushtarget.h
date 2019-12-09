@@ -3,7 +3,7 @@
 
 #include "flushstats.h"
 #include "flushtask.h"
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 #include <vector>
 
 namespace searchcorespi {
@@ -60,7 +60,7 @@ public:
     using MemoryGain = Gain<int64_t>;
     using DiskGain = Gain<int64_t>;
     using SerialNum = search::SerialNum;
-    using Time = fastos::UTCTimeStamp;
+    using Time = vespalib::system_time;
 
     /**
      * Convenience typedefs.

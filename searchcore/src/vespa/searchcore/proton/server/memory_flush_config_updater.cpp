@@ -147,9 +147,7 @@ MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &confi
                                config.diskbloatfactor,
                                eachMaxMemory,
                                config.each.diskbloatfactor,
-                               static_cast<long>
-                               (config.maxage.time) *
-                               fastos::TimeStamp::NANO);
+                               vespalib::from_s(config.maxage.time));
 }
 
 } // namespace proton

@@ -20,6 +20,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/time.h>
 #include <set>
 #include <thread>
 
@@ -50,11 +51,11 @@ using std::string;
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::ThreadStackExecutor;
 using vespalib::makeLambdaTask;
+using std::chrono::duration_cast;
 
 using namespace proton;
 using namespace searchcorespi;
 using namespace searchcorespi::index;
-using namespace std::chrono_literals;
 
 namespace {
 
@@ -266,6 +267,7 @@ readDiskIds(const string &dir, const string &type)
 
 TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
 {
+    using seconds = std::chrono::seconds;
     FastOS_StatInfo stat;
     {
         addDocument(docid);
@@ -275,12 +277,12 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
         EXPECT_EQ(1u, sources->getSourceId(0));
 
         IndexFlushTarget target(_index_manager->getMaintainer());
-        EXPECT_EQ(fastos::UTCTimeStamp::ZERO, target.getLastFlushTime());
+        EXPECT_EQ(vespalib::system_time(), target.getLastFlushTime());
         vespalib::Executor::Task::UP flushTask;
         runAsMaster([&]() { flushTask = target.initFlush(1); });
         flushTask->run();
         EXPECT_TRUE(FastOS_File::Stat("test_data/index.flush.1", &stat));
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().time_since_epoch().time());
+        EXPECT_EQ(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
 
         sources = get_source_collection();
         EXPECT_EQ(2u, sources->getSourceCount());
@@ -298,17 +300,17 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
     { // verify last flush time when loading disk index
         resetIndexManager();
         IndexFlushTarget target(_index_manager->getMaintainer());
-        EXPECT_EQ(stat._modifiedTime, target.getLastFlushTime().time_since_epoch().time());
+        EXPECT_EQ(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
 
         // updated serial number & flush time when nothing to flush
         std::this_thread::sleep_for(8s);
-        fastos::TimeStamp now = fastos::ClockSystem::now().time_since_epoch();
+        std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
         vespalib::Executor::Task::UP task;
         runAsMaster([&]() { task = target.initFlush(2); });
-        EXPECT_TRUE(task.get() == nullptr);
+        EXPECT_FALSE(task);
         EXPECT_EQ(2u, target.getFlushedSerialNum());
-        EXPECT_LT(stat._modifiedTime, target.getLastFlushTime().time_since_epoch().time());
-        EXPECT_NEAR(now.time(), target.getLastFlushTime().time_since_epoch().time(), 8);
+        EXPECT_LT(seconds(stat._modifiedTime), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()));
+        EXPECT_NEAR(now.count(), duration_cast<seconds>(target.getLastFlushTime().time_since_epoch()).count(), 8);
     }
 }
 

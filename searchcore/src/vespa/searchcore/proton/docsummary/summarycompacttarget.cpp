@@ -64,7 +64,7 @@ SummaryCompactTarget::getApproxDiskGain() const
 IFlushTarget::Time
 SummaryCompactTarget::getLastFlushTime() const
 {
-    return fastos::ClockSystem::now();
+    return vespalib::system_clock::now();
 }
 
 SerialNum

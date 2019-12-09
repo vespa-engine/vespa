@@ -4,7 +4,10 @@
 #include <thread>
 #include <sys/time.h>
 
-using namespace std::chrono;
+using std::chrono::system_clock;
+using std::chrono::steady_clock;
+using std::chrono::nanoseconds;
+using std::chrono::duration_cast;
 
 namespace fastos {
 
@@ -15,6 +18,8 @@ const TimeStamp::TimeT TimeStamp::US;
 const TimeStamp::TimeT TimeStamp::MS;
 const TimeStamp::TimeT TimeStamp::SEC;
 const TimeStamp::TimeT TimeStamp::MINUTE;
+
+using seconds = std::chrono::duration<double>;
 
 std::string
 TimeStamp::asString(double timeInSeconds)
@@ -32,15 +37,9 @@ TimeStamp::asString(double timeInSeconds)
     return std::string(retval);
 }
 
-UTCTimeStamp
-ClockSystem::now()
-{
-    struct timeval timeNow;
-    gettimeofday(&timeNow, nullptr);
-    int64_t ns = timeNow.tv_sec;
-    ns *= TimeStamp::NANO;
-    ns += timeNow.tv_usec*1000;
-    return UTCTimeStamp(ns);
+std::string
+TimeStamp::asString(std::chrono::system_clock::time_point ns) {
+    return asString(seconds(ns.time_since_epoch()).count());
 }
 
 time_t
@@ -58,11 +57,6 @@ steady_now() {
 }
 
 std::ostream &
-operator << (std::ostream & os, UTCTimeStamp ts) {
-    return os << ts.toString();
-}
-
-std::ostream &
 operator << (std::ostream & os, SteadyTimeStamp ts) {
     return os << ts.toString();
 }
@@ -75,13 +69,12 @@ ClockSteady::now()
 
 const SteadyTimeStamp SteadyTimeStamp::ZERO;
 const SteadyTimeStamp SteadyTimeStamp::FUTURE(TimeStamp::FUTURE);
-const UTCTimeStamp UTCTimeStamp::ZERO;
 
-UTCTimeStamp
+system_clock::time_point
 SteadyTimeStamp::toUTC() const {
-    UTCTimeStamp nowUtc = ClockSystem::now();
+    system_clock::time_point nowUtc = system_clock::now();
     SteadyTimeStamp nowSteady = ClockSteady::now();
-    return nowUtc - (nowSteady - *this);
+    return system_clock::time_point (std::chrono::nanoseconds(nowUtc.time_since_epoch().count() - (nowSteady - *this).ns()));
 }
 
 StopWatch::StopWatch()

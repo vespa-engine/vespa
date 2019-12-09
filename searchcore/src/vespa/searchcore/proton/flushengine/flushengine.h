@@ -6,6 +6,8 @@
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <vespa/fastos/thread.h>
 #include <set>
 #include <mutex>
@@ -23,7 +25,7 @@ public:
         FlushMeta(const vespalib::string & name, uint32_t id);
         ~FlushMeta();
         const vespalib::string & getName() const { return _name; }
-        fastos::UTCTimeStamp getStart() const { return fastos::ClockSystem::now() - elapsed(); }
+        vespalib::system_time getStart() const { return vespalib::system_clock::now() - vespalib::duration(elapsed()); }
         fastos::TimeStamp elapsed() const { return _stopWatch.elapsed(); }
         uint32_t getId() const { return _id; }
         bool operator < (const FlushMeta & rhs) const { return _id < rhs._id; }

@@ -5,6 +5,7 @@
 #include "ifrozenbuckethandler.h"
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
+#include <vespa/vespalib/util/time.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.pruneremoveddocumentsjob");
@@ -65,9 +66,9 @@ bool
 PruneRemovedDocumentsJob::run()
 {
     uint64_t tshz = 1000000;
-    fastos::UTCTimeStamp now = fastos::ClockSystem::now();
+    vespalib::system_time now = vespalib::system_clock::now();
     const Timestamp ageLimit(static_cast<Timestamp::Type>
-                             ((now.time_since_epoch().sec() - _cfgAgeLimit) * tshz));
+                             ((vespalib::to_s(now.time_since_epoch()) - _cfgAgeLimit) * tshz));
     DocId lid(_nextLid);
     const DocId olid(lid);
     const DocId docIdLimit(_metaStore.getCommittedDocIdLimit());

@@ -5,9 +5,10 @@
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchcore/proton/server/memoryflush.h>
+#include <vespa/fastos/timestamp.h>
 
 using fastos::TimeStamp;
-using fastos::UTCTimeStamp;
+using vespalib::system_time;
 using fastos::SteadyTimeStamp;
 using search::SerialNum;
 using namespace proton;
@@ -44,12 +45,12 @@ private:
     MemoryGain    _memoryGain;
     DiskGain      _diskGain;
     SerialNum     _flushedSerial;
-    UTCTimeStamp  _lastFlushTime;
+    system_time  _lastFlushTime;
     bool          _urgentFlush;
 public:
     MyFlushTarget(const vespalib::string &name, MemoryGain memoryGain,
                   DiskGain diskGain, SerialNum flushedSerial,
-                  UTCTimeStamp lastFlushTime, bool urgentFlush) :
+                  system_time lastFlushTime, bool urgentFlush) :
         test::DummyFlushTarget(name),
         _memoryGain(memoryGain),
         _diskGain(diskGain),
@@ -62,7 +63,7 @@ public:
     virtual MemoryGain getApproxMemoryGain() const override { return _memoryGain; }
     virtual DiskGain getApproxDiskGain() const override { return _diskGain; }
     virtual SerialNum getFlushedSerialNum() const override { return _flushedSerial; }
-    virtual UTCTimeStamp getLastFlushTime() const override { return _lastFlushTime; }
+    virtual system_time getLastFlushTime() const override { return _lastFlushTime; }
     virtual bool needUrgentFlush() const override { return _urgentFlush; }
 };
 
@@ -113,6 +114,8 @@ public:
     }
 };
 
+using minutes = std::chrono::minutes;
+using seconds = std::chrono::seconds;
 
 ContextBuilder::ContextBuilder()
     : _list(), _handler(new MyFlushHandler("myhandler"))
@@ -122,23 +125,23 @@ ContextBuilder::~ContextBuilder() = default;
 MyFlushTarget::SP
 createTargetM(const vespalib::string &name, MemoryGain memoryGain)
 {
-    return std::make_shared<MyFlushTarget>(name, memoryGain, DiskGain(),SerialNum(), UTCTimeStamp::ZERO, false);
+    return std::make_shared<MyFlushTarget>(name, memoryGain, DiskGain(),SerialNum(), system_time(), false);
 }
 
 MyFlushTarget::SP
 createTargetD(const vespalib::string &name, DiskGain diskGain, SerialNum serial = 0)
 {
-    return std::make_shared<MyFlushTarget>(name, MemoryGain(), diskGain, serial, UTCTimeStamp::ZERO, false);
+    return std::make_shared<MyFlushTarget>(name, MemoryGain(), diskGain, serial, system_time(), false);
 }
 
 MyFlushTarget::SP
-createTargetS(const vespalib::string &name, SerialNum serial, UTCTimeStamp timeStamp = UTCTimeStamp::ZERO)
+createTargetS(const vespalib::string &name, SerialNum serial, system_time timeStamp = system_time())
 {
     return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), serial, timeStamp, false);
 }
 
 MyFlushTarget::SP
-createTargetT(const vespalib::string &name, UTCTimeStamp lastFlushTime, SerialNum serial = 0)
+createTargetT(const vespalib::string &name, system_time lastFlushTime, SerialNum serial = 0)
 {
     return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), serial, lastFlushTime, false);
 }
@@ -146,7 +149,7 @@ createTargetT(const vespalib::string &name, UTCTimeStamp lastFlushTime, SerialNu
 MyFlushTarget::SP
 createTargetF(const vespalib::string &name, bool urgentFlush)
 {
-    return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), SerialNum(), UTCTimeStamp::ZERO, urgentFlush);
+    return std::make_shared<MyFlushTarget>(name, MemoryGain(), DiskGain(), SerialNum(), system_time(), urgentFlush);
 }
 
 bool
@@ -169,12 +172,12 @@ requireThatWeCanOrderByMemoryGain()
       .add(createTargetM("t4", MemoryGain(20, 0)))
       .add(createTargetM("t3", MemoryGain(15, 0)));
     { // target t4 has memoryGain >= maxMemoryGain
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 20, 1.0, TimeStamp(TimeStamp::MINUTE)});
+        MemoryFlush flush({1000, 20 * gibi, 1.0, 20, 1.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // trigger totalMemoryGain >= globalMaxMemory
-        MemoryFlush flush({50, 20 * gibi, 1.0, 1000, 1.0, TimeStamp(TimeStamp::MINUTE)});
+        MemoryFlush flush({50, 20 * gibi, 1.0, 1000, 1.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
@@ -193,13 +196,13 @@ requireThatWeCanOrderByDiskGainWithLargeValues()
       .add(createTargetD("t3", DiskGain(before, 50 * milli))); // gain 50M
     { // target t4 has diskGain > bloatValue
         // t4 gain: 55M / 100M = 0.55 -> bloat factor 0.54 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 10.0, 1000, 0.54, TimeStamp(TimeStamp::MINUTE)});
+        MemoryFlush flush({1000, 20 * gibi, 10.0, 1000, 0.54, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // trigger totalDiskGain > totalBloatValue
         // total gain: 160M / 4 * 100M = 0.4 -> bloat factor 0.39 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 0.39, 1000, 10.0, TimeStamp(TimeStamp::MINUTE)});
+        MemoryFlush flush({1000, 20 * gibi, 0.39, 1000, 10.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
@@ -217,13 +220,13 @@ requireThatWeCanOrderByDiskGainWithSmallValues()
     // target bloat value calculation uses min 100M disk size
     { // target t4 has diskGain > bloatValue
         // t4 gain: 55 / 100M = 0.0000055 -> bloat factor 0.0000054 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 10.0, 1000, 0.00000054, TimeStamp(TimeStamp::MINUTE)});
+        MemoryFlush flush({1000, 20 * gibi, 10.0, 1000, 0.00000054, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // trigger totalDiskGain > totalBloatValue
         // total gain: 160 / 100M = 0.0000016 -> bloat factor 0.0000015 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 0.0000015, 1000, 10.0, TimeStamp(TimeStamp::MINUTE)});
+        MemoryFlush flush({1000, 20 * gibi, 0.0000015, 1000, 10.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
@@ -232,21 +235,21 @@ requireThatWeCanOrderByDiskGainWithSmallValues()
 void
 requireThatWeCanOrderByAge()
 {
-    UTCTimeStamp now(fastos::ClockSystem::now());
-    UTCTimeStamp start(now - TimeStamp(20 * TimeStamp::SEC));
+    system_time now(vespalib::system_clock::now());
+    system_time start(now - seconds(20));
     ContextBuilder cb;
-    cb.add(createTargetT("t2", now - TimeStamp(10 * TimeStamp::SEC)))
-      .add(createTargetT("t1", now - TimeStamp(5 * TimeStamp::SEC)))
-      .add(createTargetT("t4", UTCTimeStamp::ZERO))
-      .add(createTargetT("t3", now - TimeStamp(15 * TimeStamp::SEC)));
+    cb.add(createTargetT("t2", now - seconds(10)))
+      .add(createTargetT("t1", now - seconds(5)))
+      .add(createTargetT("t4", system_time()))
+      .add(createTargetT("t3", now - seconds(15)));
 
     { // all targets have timeDiff >= maxTimeGain
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, TimeStamp(2 * TimeStamp::SEC)}, start);
+        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, seconds(2)}, start);
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // no targets have timeDiff >= maxTimeGain
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, TimeStamp(30 * TimeStamp::SEC)}, start);
+        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, seconds(30)}, start);
         EXPECT_TRUE(assertOrder(StringList(), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
 }
@@ -254,24 +257,24 @@ requireThatWeCanOrderByAge()
 void
 requireThatWeCanOrderByTlsSize()
 {
-    UTCTimeStamp now(fastos::ClockSystem::now());
-    UTCTimeStamp start = now - TimeStamp(20 * TimeStamp::SEC);
+    system_time now(vespalib::system_clock::now());
+    system_time start = now - seconds(20);
     ContextBuilder cb;
     IFlushHandler::SP handler1(std::make_shared<MyFlushHandler>("handler1"));
     IFlushHandler::SP handler2(std::make_shared<MyFlushHandler>("handler2"));
     cb.addTls("handler1", {20 * gibi, 1001, 2000 });
     cb.addTls("handler2", { 5 * gibi, 1001, 2000 });
-    cb.add(std::make_shared<FlushContext>(handler1, createTargetT("t2", now - TimeStamp(10 * TimeStamp::SEC), 1900), 2000)).
-        add(std::make_shared<FlushContext>(handler2, createTargetT("t1", now - TimeStamp(5 * TimeStamp::SEC), 1000), 2000)).
-        add(std::make_shared<FlushContext>(handler1, createTargetT("t4", UTCTimeStamp::ZERO, 1000), 2000)).
-        add(std::make_shared<FlushContext>(handler2, createTargetT("t3", now - TimeStamp(15 * TimeStamp::SEC), 1900), 2000));
+    cb.add(std::make_shared<FlushContext>(handler1, createTargetT("t2", now - seconds(10), 1900), 2000)).
+        add(std::make_shared<FlushContext>(handler2, createTargetT("t1", now - seconds(5), 1000), 2000)).
+        add(std::make_shared<FlushContext>(handler1, createTargetT("t4", system_time(), 1000), 2000)).
+        add(std::make_shared<FlushContext>(handler2, createTargetT("t3", now - seconds(15), 1900), 2000));
     { // sum of tls sizes above limit, trigger sort order based on tls size
-        MemoryFlush flush({1000, 3 * gibi, 1.0, 1000, 1.0, TimeStamp(2 * TimeStamp::SEC)}, start);
+        MemoryFlush flush({1000, 3 * gibi, 1.0, 1000, 1.0, seconds(2)}, start);
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t1").add("t2").add("t3"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // sum of tls sizes below limit
-        MemoryFlush flush({1000, 30 * gibi, 1.0, 1000, 1.0, TimeStamp(30 * TimeStamp::SEC)}, start);
+        MemoryFlush flush({1000, 30 * gibi, 1.0, 1000, 1.0, seconds(30)}, start);
         EXPECT_TRUE(assertOrder(StringList(), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
 }
@@ -284,38 +287,38 @@ requireThatWeHandleLargeSerialNumbersWhenOrderingByTlsSize()
     SerialNum firstSerial = 10;
     SerialNum lastSerial = uint32_max + 10;
     builder.addTls("myhandler", {uint32_max, firstSerial, lastSerial});
-    builder.add(createTargetT("t1", UTCTimeStamp::ZERO, uint32_max + 5), lastSerial);
-    builder.add(createTargetT("t2", UTCTimeStamp::ZERO, uint32_max - 5), lastSerial);
+    builder.add(createTargetT("t1", system_time(), uint32_max + 5), lastSerial);
+    builder.add(createTargetT("t2", system_time(), uint32_max - 5), lastSerial);
     uint64_t maxMemoryGain = 10;
-    MemoryFlush flush({maxMemoryGain, 1000, 0, maxMemoryGain, 0, TimeStamp()}, UTCTimeStamp::ZERO);
+    MemoryFlush flush({maxMemoryGain, 1000, 0, maxMemoryGain, 0, vespalib::duration(0)}, system_time());
     EXPECT_TRUE(assertOrder(StringList().add("t2").add("t1"), flush.getFlushTargets(builder.list(), builder.tlsStats())));
 }
 
 void
 requireThatOrderTypeIsPreserved()
 {
-    UTCTimeStamp now(fastos::ClockSystem::now());
-    UTCTimeStamp ts2 = now - TimeStamp(20 * TimeStamp::SEC);
+    system_time now(vespalib::system_clock::now());
+    system_time ts2 = now - seconds(20);
 
     { // MAXAGE VS DISKBLOAT
         ContextBuilder cb;
         cb.add(createTargetT("t2", ts2, 5), 14)
           .add(createTargetD("t1", DiskGain(100 * milli, 80 * milli), 5));
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 0.19, TimeStamp(30 * TimeStamp::SEC)});
+        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 0.19, seconds(30)});
         EXPECT_TRUE(assertOrder(StringList().add("t1").add("t2"), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // DISKBLOAT VS MEMORY
         ContextBuilder cb;
         cb.add(createTargetD("t2", DiskGain(100 * milli, 80 * milli)))
           .add(createTargetM("t1", MemoryGain(100, 80)));
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 20, 0.19, TimeStamp(30 * TimeStamp::SEC)});
+        MemoryFlush flush({1000, 20 * gibi, 1.0, 20, 0.19, seconds(30)});
         EXPECT_TRUE(assertOrder(StringList().add("t1").add("t2"), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // urgent flush
         ContextBuilder cb;
         cb.add(createTargetF("t2", false))
           .add(createTargetF("t1", true));
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, TimeStamp(30 * TimeStamp::SEC)});
+        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, seconds(30)});
         EXPECT_TRUE(assertOrder(StringList().add("t1").add("t2"), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/fastos/timestamp.h>
@@ -26,7 +27,7 @@ public:
 private:
     std::weak_ptr<AttributeDiskLayout> _diskLayout;
     const vespalib::string  _name;
-    fastos::UTCTimeStamp    _lastFlushTime;
+    vespalib::system_time    _lastFlushTime;
     Writer                 *_writer; // current writer
     mutable std::mutex      _mutex;
     std::condition_variable _cv;
@@ -34,7 +35,7 @@ private:
 
     void saveSnapInfo();
     vespalib::string getSnapshotDir(SerialNum serialNum);
-    void setLastFlushTime(fastos::UTCTimeStamp lastFlushTime);
+    void setLastFlushTime(vespalib::system_time lastFlushTime);
     void createInvalidSnapshot(SerialNum serialNum);
     void markValidSnapshot(SerialNum serialNum);
     void invalidateOldSnapshots(SerialNum serialNum);
@@ -64,7 +65,7 @@ public:
         ~Writer();
 
         // methods called when saving an attribute.
-        void setLastFlushTime(fastos::UTCTimeStamp lastFlushTime) { _dir.setLastFlushTime(lastFlushTime); }
+        void setLastFlushTime(vespalib::system_time lastFlushTime) { _dir.setLastFlushTime(lastFlushTime); }
         void createInvalidSnapshot(SerialNum serialNum) { _dir.createInvalidSnapshot(serialNum); }
         void markValidSnapshot(SerialNum serialNum) { _dir.markValidSnapshot(serialNum); }
         vespalib::string getSnapshotDir(SerialNum serialNum) { return _dir.getSnapshotDir(serialNum); }
@@ -80,7 +81,7 @@ public:
     std::unique_ptr<Writer> getWriter();
     std::unique_ptr<Writer> tryGetWriter();
     SerialNum getFlushedSerialNum() const;
-    fastos::UTCTimeStamp getLastFlushTime() const;
+    vespalib::system_time getLastFlushTime() const;
     bool empty() const;
     vespalib::string getAttributeFileName(SerialNum serialNum);
 };

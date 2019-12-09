@@ -31,6 +31,7 @@ typedef search::attribute::BasicType AVBasicType;
 typedef search::attribute::CollectionType AVCollectionType;
 using searchcorespi::IFlushTarget;
 using searchcorespi::FlushStats;
+using std::chrono::duration_cast;
 using namespace std::literals;
 
 typedef std::shared_ptr<Gate> GateSP;
@@ -500,37 +501,38 @@ Test::requireThatOnlyOneFlusherCanRunAtTheSameTime()
 void
 Test::requireThatLastFlushTimeIsReported()
 {
+    using seconds = std::chrono::seconds;
     BaseFixture f;
     FastOS_StatInfo stat;
     { // no meta info file yet
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addAttribute("a9");
-        EXPECT_EQUAL(fastos::UTCTimeStamp::ZERO, am.getFlushable("a9")->getLastFlushTime());
+        EXPECT_EQUAL(vespalib::system_time(), am.getFlushable("a9")->getLastFlushTime());
     }
     { // no snapshot flushed yet
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         AttributeVector::SP av = amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQUAL(fastos::UTCTimeStamp::ZERO, ft->getLastFlushTime());
+        EXPECT_EQUAL(vespalib::system_time(), ft->getLastFlushTime());
         ft->initFlush(200)->run();
         EXPECT_TRUE(FastOS_File::Stat("flush/a9/snapshot-200", &stat));
-        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().time_since_epoch().time());
+        EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
     }
     { // snapshot flushed
         AttributeManagerFixture amf(f);
         AttributeManager &am = amf._m;
         amf.addAttribute("a9");
         IFlushTarget::SP ft = am.getFlushable("a9");
-        EXPECT_EQUAL(stat._modifiedTime, ft->getLastFlushTime().time_since_epoch().time());
+        EXPECT_EQUAL(seconds(stat._modifiedTime), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()));
         { // updated flush time after nothing to flush
             std::this_thread::sleep_for(8000ms);
-            fastos::TimeStamp now = fastos::ClockSystem::now().time_since_epoch();
+            std::chrono::seconds now = duration_cast<seconds>(vespalib::system_clock::now().time_since_epoch());
             Executor::Task::UP task = ft->initFlush(200);
-            EXPECT_TRUE(task.get() == NULL);
-            EXPECT_LESS(stat._modifiedTime, ft->getLastFlushTime().time_since_epoch().time());
-            EXPECT_APPROX(now.time(), ft->getLastFlushTime().time_since_epoch().time(), 8);
+            EXPECT_FALSE(task);
+            EXPECT_LESS(seconds(stat._modifiedTime), ft->getLastFlushTime().time_since_epoch());
+            EXPECT_APPROX(now.count(), duration_cast<seconds>(ft->getLastFlushTime().time_since_epoch()).count(), 8);
         }
     }
 }

@@ -74,7 +74,7 @@ IndexFusionTarget::needUrgentFlush() const
 IFlushTarget::Time
 IndexFusionTarget::getLastFlushTime() const
 {
-    return fastos::ClockSystem::now();
+    return vespalib::system_clock::now();
 }
 
 IFlushTarget::SerialNum

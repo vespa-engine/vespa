@@ -274,7 +274,7 @@ DocumentStore::tentativeLastSyncToken() const
     return _backingStore.tentativeLastSyncToken();
 }
 
-fastos::UTCTimeStamp
+vespalib::system_time
 DocumentStore::getLastFlushTime() const
 {
     return _backingStore.getLastFlushTime();
