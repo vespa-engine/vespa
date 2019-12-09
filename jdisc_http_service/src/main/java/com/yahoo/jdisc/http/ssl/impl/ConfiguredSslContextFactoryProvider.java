@@ -2,16 +2,14 @@
 package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.KeyUtils;
-import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.tls.AutoReloadingX509KeyManager;
+import com.yahoo.security.tls.DefaultTlsContext;
+import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -19,21 +17,16 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledCipherSuites;
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledProtocols;
 
 /**
  * An implementation of {@link SslContextFactoryProvider} that uses the {@link ConnectorConfig} to construct a {@link SslContextFactory}.
  *
  * @author bjorncs
  */
-public class ConfiguredSslContextFactoryProvider implements SslContextFactoryProvider {
+public class ConfiguredSslContextFactoryProvider extends TlsContextBasedProvider {
 
-    private volatile AutoReloadingX509KeyManager keyManager;
     private final ConnectorConfig connectorConfig;
 
     public ConfiguredSslContextFactoryProvider(ConnectorConfig connectorConfig) {
@@ -42,50 +35,17 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
     }
 
     @Override
-    public SslContextFactory getInstance(String containerId, int port) {
+    protected TlsContext getTlsContext(String containerId, int port) {
         ConnectorConfig.Ssl sslConfig = connectorConfig.ssl();
         if (!sslConfig.enabled()) throw new IllegalStateException();
 
-        SslContextBuilder builder = new SslContextBuilder();
-        if (sslConfig.certificateFile().isBlank() || sslConfig.privateKeyFile().isBlank()) {
-            PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
-            List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(getCertificate(sslConfig));
-            builder.withKeyStore(privateKey, certificates);
-        } else {
-            keyManager = AutoReloadingX509KeyManager.fromPemFiles(Paths.get(sslConfig.privateKeyFile()), Paths.get(sslConfig.certificateFile()));
-            builder.withKeyManager(keyManager);
-        }
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(getPrivateKey(sslConfig));
+        List<X509Certificate> certificates = X509CertificateUtils.certificateListFromPem(getCertificate(sslConfig));
         List<X509Certificate> caCertificates = getCaCertificates(sslConfig)
                 .map(X509CertificateUtils::certificateListFromPem)
                 .orElse(List.of());
-        builder.withTrustStore(caCertificates);
-
-        SSLContext sslContext = builder.build();
-
-        SslContextFactory.Server factory = new SslContextFactory.Server();
-        factory.setSslContext(sslContext);
-
-        factory.setNeedClientAuth(sslConfig.clientAuth() == ClientAuth.Enum.NEED_AUTH);
-        factory.setWantClientAuth(sslConfig.clientAuth() == ClientAuth.Enum.WANT_AUTH);
-
-        List<String> protocols = !sslConfig.enabledProtocols().isEmpty()
-                ? sslConfig.enabledProtocols()
-                : new ArrayList<>(TlsContext.ALLOWED_PROTOCOLS);
-        setEnabledProtocols(factory, sslContext, protocols);
-
-        List<String> ciphers = !sslConfig.enabledCipherSuites().isEmpty()
-                ? sslConfig.enabledCipherSuites()
-                : new ArrayList<>(TlsContext.ALLOWED_CIPHER_SUITES);
-        setEnabledCipherSuites(factory, sslContext, ciphers);
-
-        return factory;
-    }
-
-    @Override
-    public void close() {
-        if (keyManager != null) {
-            keyManager.close();
-        }
+        PeerAuthentication peerAuthentication = toPeerAuthentication(sslConfig.clientAuth());
+        return new DefaultTlsContext(certificates, privateKey, caCertificates, null, null, peerAuthentication);
     }
 
     private static void validateConfig(ConnectorConfig.Ssl config) {
@@ -102,6 +62,19 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
 
         if(hasNeither(config.privateKey(), config.privateKeyFile()))
             throw new IllegalArgumentException("Specified neither private key or private key file.");
+    }
+
+    private static PeerAuthentication toPeerAuthentication(ConnectorConfig.Ssl.ClientAuth.Enum clientAuth) {
+        switch (clientAuth) {
+            case DISABLED:
+                return PeerAuthentication.DISABLED;
+            case NEED_AUTH:
+                return PeerAuthentication.NEED;
+            case WANT_AUTH:
+                return PeerAuthentication.WANT;
+            default:
+                throw new IllegalArgumentException("Unknown client auth: " + clientAuth);
+        }
     }
 
     private static boolean hasBoth(String a, String b) { return !a.isBlank() && !b.isBlank(); }
