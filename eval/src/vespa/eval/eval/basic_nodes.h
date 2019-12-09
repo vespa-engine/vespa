@@ -124,7 +124,9 @@ public:
     double get_const_value() const override { return hash(); }
     const vespalib::string &value() const { return _value; }
     uint32_t hash() const { return hash_code(_value.data(), _value.size()); }
-    vespalib::string dump(DumpContext &ctx) const override;
+    vespalib::string dump(DumpContext &) const override {
+        return as_quoted_string(_value);
+    }
     void accept(NodeVisitor &visitor) const override;
 };
 

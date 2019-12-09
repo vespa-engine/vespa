@@ -168,14 +168,14 @@ void op_tensor_peek(State &state, uint64_t param) {
             addr.emplace(pos->first, std::get<TensorSpec::Label>(pos->second));
         } else {
             assert(std::holds_alternative<TensorFunction::Child>(pos->second));
-            size_t index(state.peek(child_cnt++).as_double());
+            double index = round(state.peek(child_cnt++).as_double());
             size_t dim_idx = self.param_type().dimension_index(pos->first);
             assert(dim_idx != ValueType::Dimension::npos);
             const auto &param_dim = self.param_type().dimensions()[dim_idx];
             if (param_dim.is_mapped()) {
-                addr.emplace(pos->first, vespalib::make_string("%zu", index));
+                addr.emplace(pos->first, vespalib::make_string("%ld", int64_t(index)));
             } else {
-                addr.emplace(pos->first, index);
+                addr.emplace(pos->first, size_t(index));
             }
         }
     }

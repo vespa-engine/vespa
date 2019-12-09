@@ -363,8 +363,7 @@ int unhex(char c) {
     return -1;
 }
 
-void parse_string(ParseContext &ctx) {
-    vespalib::string &str = ctx.scratch();
+void extract_quoted_string(ParseContext &ctx, vespalib::string &str) {
     ctx.eat('"');
     while (!ctx.eos() && ctx.get() != '"') {
         if (ctx.get() == '\\') {
@@ -395,6 +394,11 @@ void parse_string(ParseContext &ctx) {
         ctx.next();
     }
     ctx.eat('"');
+}
+
+void parse_string(ParseContext &ctx) {
+    vespalib::string &str = ctx.scratch();
+    extract_quoted_string(ctx, str);
     ctx.push_expression(Node_UP(new nodes::String(str)));
 }
 
@@ -445,14 +449,6 @@ bool is_ident(char c, bool first) {
             (c == '$' && !first));
 }
 
-bool is_ident(const vespalib::string &str) {
-    bool result = str.empty() ? false : is_ident(str[0], true);
-    for (size_t i = 1; result && (i < str.size()); ++i) {
-        result &= is_ident(str[i], false);
-    }
-    return result;
-}
-
 vespalib::string get_ident(ParseContext &ctx, bool allow_empty) {
     ctx.skip_spaces();
     vespalib::string ident;
@@ -478,6 +474,28 @@ size_t get_size_t(ParseContext &ctx) {
         ctx.fail("expected number");
     }
     return atoi(num.c_str());
+}
+
+bool is_label_end(char c) {
+    return (isspace(c) || (c == '\0') ||
+            (c == ':') || (c == ',') || (c == '}'));
+}
+
+vespalib::string get_label(ParseContext &ctx) {
+    ctx.skip_spaces();
+    vespalib::string label;
+    if (ctx.get() == '"') {
+        extract_quoted_string(ctx, label);
+    } else {
+        while (!is_label_end(ctx.get())) {
+            label.push_back(ctx.get());
+            ctx.next();
+        }
+    }
+    if (label.empty()) {
+        ctx.fail("missing label");
+    }
+    return label;
 }
 
 void parse_if(ParseContext &ctx) {
@@ -625,7 +643,7 @@ TensorSpec::Address get_tensor_address(ParseContext &ctx, const ValueType &type)
             ctx.skip_spaces();
             ctx.eat(':');
             if (dim.is_mapped()) {
-                addr.emplace(dim_name, get_ident(ctx, false));
+                addr.emplace(dim_name, get_label(ctx));
             } else {
                 size_t idx = get_size_t(ctx);
                 if (idx < dim.size) {
@@ -704,7 +722,7 @@ void parse_tensor_create_convenient(ParseContext &ctx, const ValueType &type,
             }
         }
         if (addr.back().is_mapped()) {
-            addr.back().name = get_ident(ctx, false);
+            addr.back().name = get_label(ctx);
             ctx.skip_spaces();
             ctx.eat(':');
         }
@@ -797,28 +815,16 @@ void parse_tensor_peek(ParseContext &ctx) {
         auto dim_name = get_ident(ctx, false);
         ctx.skip_spaces();
         ctx.eat(':');
-        if (!ctx.failed()) {
-            ParseContext::InputMark before_label = ctx.get_input_mark();
-            auto label = get_ident(ctx, false);
-            bool verbatim = !ctx.failed() && ctx.find_expression_end();
-            if (verbatim) {
-                peek_spec.emplace(dim_name, label);
+        ctx.skip_spaces();
+        if (ctx.get() == '(') {
+            auto expr = get_expression(ctx);
+            if (auto num = nodes::as<nodes::Number>(*expr)) {
+                peek_spec.emplace(dim_name, make_string("%ld", int64_t(round(num->value()))));
             } else {
-                ctx.restore_input_mark(before_label);
-                auto expr = get_expression(ctx);
-                if (auto num = nodes::as<nodes::Number>(*expr)) {
-                    size_t index(num->value());
-                    peek_spec.emplace(dim_name, make_string("%zu", index));
-                } else if (auto str = nodes::as<nodes::String>(*expr)) {
-                    if (is_ident(str->value())) {
-                        peek_spec.emplace(dim_name, str->value());
-                    } else {
-                        ctx.fail(make_string("invalid identifier: '%s'", str->value().c_str()));
-                    }
-                } else {
-                    peek_spec.emplace(dim_name, std::move(expr));
-                }
+                peek_spec.emplace(dim_name, std::move(expr));
             }
+        } else {
+            peek_spec.emplace(dim_name, get_label(ctx));
         }
     }
     ctx.eat('}');

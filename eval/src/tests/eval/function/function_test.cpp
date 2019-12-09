@@ -828,11 +828,15 @@ TEST("require that tensor lambda can use non-dimension symbols") {
 
 TEST("require that verbose tensor create can be parsed") {
     auto dense = Function::parse("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}");
-    auto sparse = Function::parse("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}");
-    auto mixed = Function::parse("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}");
+    auto sparse1 = Function::parse("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}");
+    auto sparse2 = Function::parse("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}");
+    auto mixed1 = Function::parse("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}");
+    auto mixed2 = Function::parse("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}");
     EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense.dump());
-    EXPECT_EQUAL("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}", sparse.dump());
-    EXPECT_EQUAL("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}", mixed.dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1.dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2.dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1.dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2.dump());
 }
 
 TEST("require that verbose tensor create can contain expressions") {
@@ -873,15 +877,24 @@ TEST("require that verbose tensor create detects non-numeric indexes for indexed
                          "[tensor(x[1]):{{x:]...[expected number]...[foo}:1}]"));
 }
 
+TEST("require that verbose tensor create indexes cannot be quoted") {
+    TEST_DO(verify_error("tensor(x[1]):{{x:\"1\"}:1}",
+                         "[tensor(x[1]):{{x:]...[expected number]...[\"1\"}:1}]"));
+}
+
 //-----------------------------------------------------------------------------
 
 TEST("require that convenient tensor create can be parsed") {
     auto dense = Function::parse("tensor(x[3]):[1,2,3]");
-    auto sparse = Function::parse("tensor(x{}):{a:1,b:2,c:3}");
-    auto mixed = Function::parse("tensor(x{},y[2]):{a:[1,2]}");
+    auto sparse1 = Function::parse("tensor(x{}):{a:1,b:2,c:3}");
+    auto sparse2 = Function::parse("tensor(x{}):{\"a\":1,\"b\":2,\"c\":3}");
+    auto mixed1 = Function::parse("tensor(x{},y[2]):{a:[1,2]}");
+    auto mixed2 = Function::parse("tensor(x{},y[2]):{\"a\":[1,2]}");
     EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense.dump());
-    EXPECT_EQUAL("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}", sparse.dump());
-    EXPECT_EQUAL("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}", mixed.dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1.dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2.dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1.dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2.dump());
 }
 
 TEST("require that convenient tensor create can contain expressions") {
@@ -893,11 +906,11 @@ TEST("require that convenient tensor create can contain expressions") {
 
 TEST("require that convenient tensor create handles dimension order") {
     auto mixed = Function::parse("tensor(y{},x[2]):{a:[1,2]}");
-    EXPECT_EQUAL("tensor(x[2],y{}):{{x:0,y:a}:1,{x:1,y:a}:2}", mixed.dump());
+    EXPECT_EQUAL("tensor(x[2],y{}):{{x:0,y:\"a\"}:1,{x:1,y:\"a\"}:2}", mixed.dump());
 }
 
 TEST("require that convenient tensor create can be highly nested") {
-    vespalib::string expect("tensor(a{},b{},c[1],d[1]):{{a:x,b:y,c:0,d:0}:5}");
+    vespalib::string expect("tensor(a{},b{},c[1],d[1]):{{a:\"x\",b:\"y\",c:0,d:0}:5}");
     auto nested1 = Function::parse("tensor(a{},b{},c[1],d[1]):{x:{y:[[5]]}}");
     auto nested2 = Function::parse("tensor(c[1],d[1],a{},b{}):[[{x:{y:5}}]]");
     auto nested3 = Function::parse("tensor(a{},c[1],b{},d[1]): { x : [ { y : [ 5 ] } ] } ");
@@ -907,7 +920,7 @@ TEST("require that convenient tensor create can be highly nested") {
 }
 
 TEST("require that convenient tensor create can have multiple values on multiple levels") {
-    vespalib::string expect("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2,{x:b,y:0}:3,{x:b,y:1}:4}");
+    vespalib::string expect("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2,{x:\"b\",y:0}:3,{x:\"b\",y:1}:4}");
     auto fun1 = Function::parse("tensor(x{},y[2]):{a:[1,2],b:[3,4]}");
     auto fun2 = Function::parse("tensor(y[2],x{}):[{a:1,b:3},{a:2,b:4}]");
     auto fun3 = Function::parse("tensor(x{},y[2]): { a : [ 1 , 2 ] , b : [ 3 , 4 ] } ");
@@ -941,41 +954,44 @@ TEST("require that convenient tensor create detects under-specified cells") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor peek can be parsed") {
-    TEST_DO(verify_parse("t{x:1,y:foo}", "f(t)(t{x:1,y:foo})"));
+    TEST_DO(verify_parse("t{x:\"1\",y:\"foo\"}", "f(t)(t{x:\"1\",y:\"foo\"})"));
+    TEST_DO(verify_parse("t{x:1,y:foo}", "f(t)(t{x:\"1\",y:\"foo\"})"));
 }
 
 TEST("require that tensor peek can contain expressions") {
-    TEST_DO(verify_parse("t{x:1+2,y:foo}", "f(t)(t{x:(1+2),y:foo})"));
-    TEST_DO(verify_parse("t{x:1+bar,y:foo}", "f(t,bar)(t{x:(1+bar),y:foo})"));
-    TEST_DO(verify_parse("t{x:1,y:foo+2}", "f(t,foo)(t{x:1,y:(foo+2)})"));
-    TEST_DO(verify_parse("t{x:1,y:(foo)}", "f(t,foo)(t{x:1,y:(foo)})"));
+    TEST_DO(verify_parse("t{x:(1+2),y:1+2}", "f(t)(t{x:(1+2),y:\"1+2\"})"));
+    TEST_DO(verify_parse("t{x:(foo),y:foo}", "f(t,foo)(t{x:(foo),y:\"foo\"})"));
+    TEST_DO(verify_parse("t{x:(foo+2),y:foo+2}", "f(t,foo)(t{x:(foo+2),y:\"foo+2\"})"));
 }
 
-TEST("require that trivial tensor peek string/number expressions are converted to verbatim labels") {
-    TEST_DO(verify_parse("t{x:\"foo\"}", "f(t)(t{x:foo})"));
-    TEST_DO(verify_parse("t{x:(\"foo\")}", "f(t)(t{x:foo})"));
-    TEST_DO(verify_parse("t{x:5.5}", "f(t)(t{x:5})"));
-    TEST_DO(verify_parse("t{x:(5.5)}", "f(t)(t{x:5})"));
+TEST("require that trivial tensor peek number expressions are converted to verbatim labels") {
+    TEST_DO(verify_parse("t{x:(5.7)}", "f(t)(t{x:\"6\"})"));
+    TEST_DO(verify_parse("t{x:(5.3)}", "f(t)(t{x:\"5\"})"));
+    TEST_DO(verify_parse("t{x:(-5.7)}", "f(t)(t{x:\"-6\"})"));
+    TEST_DO(verify_parse("t{x:(-5.3)}", "f(t)(t{x:\"-5\"})"));
 }
 
 TEST("require that tensor peek can contain extra whitespace") {
-    TEST_DO(verify_parse(" t { x : 1 + bar , y : foo + 2 } ",
+    TEST_DO(verify_parse(" t { x : ( 1 + bar ) , y : ( foo + 2 ) } ",
                          "f(t,bar,foo)(t{x:(1+bar),y:(foo+2)})"));
-}
-
-TEST("require that converted tensor peek string expression must be valid identifier") {
-    TEST_DO(verify_error("x{a:\"5.5\"}", "[x{a:\"5.5\"]...[invalid identifier: '5.5']...[}]"));
+    TEST_DO(verify_parse(" t { x : \"1 + bar\" , y : \"foo + 2\" } ",
+                         "f(t)(t{x:\"1 + bar\",y:\"foo + 2\"})"));
 }
 
 TEST("require that empty tensor peek is not allowed") {
     TEST_DO(verify_error("x{}", "[x{}]...[empty peek spec]...[]"));
 }
 
+TEST("require that tensor peek empty label is not allowed") {
+    TEST_DO(verify_error("x{a:}", "[x{a:]...[missing label]...[}]"));
+    TEST_DO(verify_error("x{a:\"\"}", "[x{a:\"\"]...[missing label]...[}]"));
+}
+
 //-----------------------------------------------------------------------------
 
 TEST("require that nested tensor lambda using tensor peek can be parsed") {
-    vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:0},"
-                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:1}}");
+    vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:\"0\"},"
+                            "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:\"1\"}}");
     EXPECT_EQUAL(Function::parse(expect).dump(), expect);
     auto fun = Function::parse("tensor(x[2])(tensor(y[2])(x+y+a){y:(x)})");
     EXPECT_EQUAL(fun.dump(), expect);

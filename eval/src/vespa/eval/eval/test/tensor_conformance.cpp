@@ -817,10 +817,10 @@ struct TestContext {
     void test_tensor_peek() {
         auto param_double = spec({x({"0", "1"}),y(2)}, Seq({1.0, 2.0, 3.0, 4.0}));
         auto param_float = spec(float_cells({x({"0", "1"}),y(2)}), Seq({1.0, 2.0, 3.0, 4.0}));
-        TEST_DO(test_tensor_peek("tensor(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_double, spec(x(2), Seq({4.0, 1.0}))));
-        TEST_DO(test_tensor_peek("tensor(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_float, spec(x(2), Seq({4.0, 1.0}))));
-        TEST_DO(test_tensor_peek("tensor<float>(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_double, spec(float_cells({x(2)}), Seq({4.0, 1.0}))));
-        TEST_DO(test_tensor_peek("tensor<float>(x[2]):[a{x:1,y:1},a{x:b-1,y:b-1}]", param_float, spec(float_cells({x(2)}), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor(x[2]):[a{x:1,y:1},a{x:(b-1),y:(b-1)}]", param_double, spec(x(2), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor(x[2]):[a{x:1,y:1},a{x:(b-1),y:(b-1)}]", param_float, spec(x(2), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor<float>(x[2]):[a{x:1,y:1},a{x:(b-1),y:(b-1)}]", param_double, spec(float_cells({x(2)}), Seq({4.0, 1.0}))));
+        TEST_DO(test_tensor_peek("tensor<float>(x[2]):[a{x:1,y:1},a{x:(b-1),y:(b-1)}]", param_float, spec(float_cells({x(2)}), Seq({4.0, 1.0}))));
         TEST_DO(test_tensor_peek("a{x:(b)}", param_double, spec(y(2), Seq({3.0, 4.0}))));
         TEST_DO(test_tensor_peek("a{x:(b)}", param_float, spec(float_cells({y(2)}), Seq({3.0, 4.0}))));
         TEST_DO(test_tensor_peek("a{y:(b)}", param_double, spec(x({"0", "1"}), Seq({2.0, 4.0}))));
