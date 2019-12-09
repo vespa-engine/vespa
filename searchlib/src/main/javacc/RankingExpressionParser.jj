@@ -794,6 +794,7 @@ String tag() :
 }
 {
     name = identifier() { return name; } |
+    <SUB> <INTEGER> { return "-" + token.image; } |
     <INTEGER> { return token.image; }
 }
 
