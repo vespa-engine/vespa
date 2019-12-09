@@ -298,10 +298,10 @@ public final class Node {
 
     /** Returns a copy of this node with the current OS version set to the given version at the given instant */
     public Node withCurrentOsVersion(Version version, Instant instant) {
-        var newStatus = status.withOsVersion(version);
+        var newStatus = status.withOsVersion(status.osVersion().withCurrent(Optional.of(version)));
         var newHistory = history();
         // Only update history if version has changed
-        if (status.osVersion().isEmpty() || !status.osVersion().get().equals(version)) {
+        if (status.osVersion().current().isEmpty() || !status.osVersion().current().get().equals(version)) {
             newHistory = history.with(new History.Event(History.Event.Type.osUpgraded, Agent.system, instant));
         }
         return this.with(newStatus).with(newHistory);

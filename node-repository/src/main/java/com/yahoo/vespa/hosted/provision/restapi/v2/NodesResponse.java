@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.hosted.provision.os.OsVersion;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
@@ -168,11 +167,8 @@ class NodesResponse extends HttpResponse {
         });
         object.setLong("rebootGeneration", node.status().reboot().wanted());
         object.setLong("currentRebootGeneration", node.status().reboot().current());
-        node.status().osVersion().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
-        nodeRepository.osVersions().targetFor(node.type())
-                      .filter(OsVersion::active) // Only include wantedOsVersion when active. When active is false, OS upgrades are paused.
-                      .map(OsVersion::version)
-                      .ifPresent(version -> object.setString("wantedOsVersion", version.toFullString()));
+        node.status().osVersion().current().ifPresent(version -> object.setString("currentOsVersion", version.toFullString()));
+        node.status().osVersion().wanted().ifPresent(version -> object.setString("wantedOsVersion", version.toFullString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong("currentFirmwareCheck", instant.toEpochMilli()));
         if (node.type().isDockerHost())
             nodeRepository.firmwareChecks().requiredAfter().ifPresent(after -> object.setLong("wantedFirmwareCheck", after.toEpochMilli()));

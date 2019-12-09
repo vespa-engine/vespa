@@ -22,7 +22,7 @@ public class NodeOsVersionFilter extends NodeFilter {
 
     @Override
     public boolean matches(Node node) {
-        if (!version.isEmpty() && !node.status().osVersion().filter(v -> v.equals(version)).isPresent()) {
+        if (!version.isEmpty() && !node.status().osVersion().matches(version)) {
             return false;
         }
         return nextMatches(node);

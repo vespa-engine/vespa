@@ -39,7 +39,7 @@ public class UpgradeResponse extends HttpResponse {
         infrastructureVersions.getTargetVersions().forEach((nodeType, version) -> versionsObject.setString(nodeType.name(), version.toFullString()));
 
         Cursor osVersionsObject = root.setObject("osVersions");
-        osVersions.targets().forEach((nodeType, osVersion) -> osVersionsObject.setString(nodeType.name(), osVersion.version().toFullString()));
+        osVersions.targets().forEach((nodeType, osVersion) -> osVersionsObject.setString(nodeType.name(), osVersion.toFullString()));
 
 
         Cursor dockerImagesObject = root.setObject("dockerImages");

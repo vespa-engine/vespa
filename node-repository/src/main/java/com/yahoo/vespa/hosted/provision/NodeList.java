@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -19,7 +20,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
 /**
- * A filterable node list
+ * A filterable node list. The result of a filter operation is immutable.
  *
  * @author bratseth
  * @author mpolden
@@ -38,7 +39,7 @@ public class NodeList implements Iterable<Node> {
         this.negate = negate;
     }
 
-    /** Invert the next filter operation. All other methods that return a {@link NodeList} resets the negation. */
+    /** Invert the next filter operation. All other methods that return a {@link NodeList} clears the negation. */
     public NodeList not() {
         return new NodeList(nodes, false, true);
     }
@@ -66,6 +67,16 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.status().vespaVersion().isPresent() &&
                               node.allocation().isPresent() &&
                               !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
+    }
+
+    /** Returns the subset of nodes that are currently changing their OS version */
+    public NodeList changingOsVersion() {
+        return filter(node -> node.status().osVersion().changing());
+    }
+
+    /** Returns the subset of nodes that are currently on the given OS version */
+    public NodeList onOsVersion(Version version) {
+        return filter(node -> node.status().osVersion().matches(version));
     }
 
     /** Returns the subset of nodes assigned to the given cluster */
@@ -123,6 +134,13 @@ public class NodeList implements Iterable<Node> {
                 .flatMap(parentHostname -> nodes.stream()
                         .filter(node -> node.hostname().equals(parentHostname))
                         .findFirst());
+    }
+
+    /** Returns the first n nodes in this */
+    public NodeList first(int n) {
+        n = Math.min(n, nodes.size());
+        return wrap(nodes.subList(negate ? n : 0,
+                                  negate ? nodes.size() : n));
     }
 
     public int size() { return nodes.size(); }
