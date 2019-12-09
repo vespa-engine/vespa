@@ -162,9 +162,6 @@ public class MultigroupProvisioningTest {
         int previousActiveNodeCount = tester.getNodes(application, Node.State.active).resources(nodeResources).size();
 
         tester.activate(application, prepare(application, capacity, wantedGroups, tester));
-
-        System.out.println("Active nodes ---------------");
-        tester.getNodes(application, Node.State.active).forEach(n -> System.out.println("  " + n.hostname() + ": Flavor : " + n.flavor() + " retired " + n.status().wantToRetire()));
         assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
                      Math.max(0, previousActiveNodeCount - capacity.nodeCount()),
                      tester.getNodes(application, Node.State.active).retired().resources(nodeResources).size());
