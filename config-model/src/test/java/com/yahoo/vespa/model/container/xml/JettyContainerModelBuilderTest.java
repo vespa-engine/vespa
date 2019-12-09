@@ -152,14 +152,6 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
                 "                <client-authentication>need</client-authentication>",
                 "            </ssl>",
                 "        </server>",
-                "        <server port='9003' id='with-ciphers-and-protocols'>",
-                "            <ssl>",
-                "                <private-key-file>/foo/key</private-key-file>",
-                "                <certificate-file>/foo/cert</certificate-file>",
-                "                <cipher-suites>TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384</cipher-suites>",
-                "                <protocols>TLSv1.3</protocols>",
-                "            </ssl>",
-                "        </server>",
                 "    </http>",
                 nodesXml,
                 "",
@@ -186,13 +178,6 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         assertThat(needClientAuth.ssl().certificateFile(), is(equalTo("/foo/cert")));
         assertThat(needClientAuth.ssl().caCertificateFile(), is(equalTo("")));
         assertThat(needClientAuth.ssl().clientAuth(), is(equalTo(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH)));
-
-        ConnectorConfig withCiphersAndProtocols = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/with-ciphers-and-protocols/configured-ssl-provider@with-ciphers-and-protocols");
-        assertTrue(withCiphersAndProtocols.ssl().enabled());
-        assertThat(withCiphersAndProtocols.ssl().privateKeyFile(), is(equalTo("/foo/key")));
-        assertThat(withCiphersAndProtocols.ssl().certificateFile(), is(equalTo("/foo/cert")));
-        assertThat(withCiphersAndProtocols.ssl().enabledCipherSuites(), is(equalTo(List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"))));
-        assertThat(withCiphersAndProtocols.ssl().enabledProtocols(), is(equalTo(List.of("TLSv1.3"))));
 
         ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);

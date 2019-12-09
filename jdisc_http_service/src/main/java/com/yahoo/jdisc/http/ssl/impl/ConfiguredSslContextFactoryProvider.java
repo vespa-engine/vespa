@@ -70,12 +70,12 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
 
         List<String> protocols = !sslConfig.enabledProtocols().isEmpty()
                 ? sslConfig.enabledProtocols()
-                : new ArrayList<>(TlsContext.getAllowedProtocols(sslContext));
+                : new ArrayList<>(TlsContext.ALLOWED_PROTOCOLS);
         setEnabledProtocols(factory, sslContext, protocols);
 
         List<String> ciphers = !sslConfig.enabledCipherSuites().isEmpty()
                 ? sslConfig.enabledCipherSuites()
-                : new ArrayList<>(TlsContext.getAllowedCipherSuites(sslContext));
+                : new ArrayList<>(TlsContext.ALLOWED_CIPHER_SUITES);
         setEnabledCipherSuites(factory, sslContext, ciphers);
 
         return factory;
