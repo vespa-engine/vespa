@@ -8,10 +8,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
-import java.util.List;
-
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledCipherSuites;
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledProtocols;
+import java.util.Arrays;
 
 /**
  * A {@link SslContextFactoryProvider} that creates {@link SslContextFactory} instances from {@link TlsContext} instances.
@@ -34,9 +31,24 @@ public abstract class TlsContextBasedProvider extends AbstractComponent implemen
         sslContextFactory.setNeedClientAuth(parameters.getNeedClientAuth());
         sslContextFactory.setWantClientAuth(parameters.getWantClientAuth());
 
-        setEnabledProtocols(sslContextFactory, sslContext, List.of(parameters.getProtocols()));
-        setEnabledCipherSuites(sslContextFactory, sslContext, List.of(parameters.getCipherSuites()));
+        String[] enabledProtocols = parameters.getProtocols();
+        sslContextFactory.setIncludeProtocols(enabledProtocols);
+        String[] supportedProtocols = sslContext.getSupportedSSLParameters().getProtocols();
+        sslContextFactory.setExcludeProtocols(createExclusionList(enabledProtocols, supportedProtocols));
 
+        String[] enabledCiphers = parameters.getCipherSuites();
+        String[] supportedCiphers = sslContext.getSupportedSSLParameters().getCipherSuites();
+        sslContextFactory.setIncludeCipherSuites(enabledCiphers);
+        sslContextFactory.setExcludeCipherSuites(createExclusionList(enabledCiphers, supportedCiphers));
         return sslContextFactory;
     }
+
+    private static String[] createExclusionList(String[] enabledValues, String[] supportedValues) {
+        return Arrays.stream(supportedValues)
+                .filter(supportedValue ->
+                                Arrays.stream(enabledValues)
+                                        .noneMatch(enabledValue -> enabledValue.equals(supportedValue)))
+                .toArray(String[]::new);
+    }
+
 }

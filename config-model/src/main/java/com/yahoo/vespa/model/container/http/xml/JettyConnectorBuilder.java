@@ -8,16 +8,12 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
-import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.CustomSslProvider;
+import com.yahoo.vespa.model.container.http.ssl.ConfiguredFilebasedSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * @author Einar M R Rosenvinge
@@ -43,16 +39,12 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
             String certificateFile = XML.getValue(XML.getChild(sslConfigurator, "certificate-file"));
             Optional<String> caCertificateFile = XmlHelper.getOptionalChildValue(sslConfigurator, "ca-certificates-file");
             Optional<String> clientAuthentication = XmlHelper.getOptionalChildValue(sslConfigurator, "client-authentication");
-            List<String> cipherSuites = extractOptionalCommaSeparatedList(sslConfigurator, "cipher-suites");
-            List<String> protocols = extractOptionalCommaSeparatedList(sslConfigurator, "protocols");
             return new ConfiguredFilebasedSslProvider(
                     serverName,
                     privateKeyFile,
                     certificateFile,
                     caCertificateFile.orElse(null),
-                    clientAuthentication.orElse(null),
-                    cipherSuites,
-                    protocols);
+                    clientAuthentication.orElse(null));
         } else if (sslProviderConfigurator != null) {
             String className = sslProviderConfigurator.getAttribute("class");
             String bundle = sslProviderConfigurator.getAttribute("bundle");
@@ -60,15 +52,5 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
         } else {
             return new DefaultSslProvider(serverName);
         }
-    }
-
-    private static List<String> extractOptionalCommaSeparatedList(Element sslElement, String listElementName) {
-        return XmlHelper.getOptionalChildValue(sslElement, listElementName)
-                .map(element ->
-                             Arrays.stream(element.split(","))
-                                     .filter(listEntry -> !listEntry.isBlank())
-                                     .map(String::trim)
-                                     .collect(toList()))
-                .orElse(List.of());
     }
 }

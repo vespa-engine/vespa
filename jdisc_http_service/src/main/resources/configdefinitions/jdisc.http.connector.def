@@ -81,12 +81,6 @@ ssl.caCertificate                   string default=""
 # Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
 ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
 
-# List of enabled cipher suites. JDisc will use Vespa default if empty.
-ssl.enabledCipherSuites[]           string
-
-# List of enabled TLS protocol versions. JDisc will use Vespa default if empty.
-ssl.enabledProtocols[]              string
-
 # Enforce TLS client authentication for https requests at the http layer.
 # Intended to be used with connectors with optional client authentication enabled.
 # 401 status code is returned for requests from non-authenticated clients.
