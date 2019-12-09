@@ -95,7 +95,9 @@ Ssl = element ssl {
     element private-key-file { string } &
     element certificate-file { string } &
     element ca-certificates-file { string }? &
-    element client-authentication { string "disabled" | string "want" | string "need" }?
+    element client-authentication { string "disabled" | string "want" | string "need" }? &
+    element cipher-suites { string }? &
+    element protocols { string }?
 }
 
 SslProvider = element ssl-provider {

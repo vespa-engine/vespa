@@ -23,6 +23,7 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnectionStatistics;
 import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
@@ -316,11 +317,28 @@ public class JettyHttpServer extends AbstractServerProvider {
     public void start() {
         try {
             server.start();
+            logEffectiveSslConfiguration();
         } catch (final Exception e) {
             if (e instanceof IOException && e.getCause() instanceof BindException) {
                 throw new RuntimeException("Failed to start server due to BindExecption. ListenPorts = " + listenedPorts.toString(), e.getCause());
             }
             throw new RuntimeException("Failed to start server.", e);
+        }
+    }
+
+    private void logEffectiveSslConfiguration() {
+        if (!server.isStarted()) throw new IllegalStateException();
+        for (Connector connector : server.getConnectors()) {
+            ServerConnector serverConnector = (ServerConnector) connector;
+            int localPort = serverConnector.getLocalPort();
+            var sslConnectionFactory = serverConnector.getConnectionFactory(SslConnectionFactory.class);
+            if (sslConnectionFactory != null) {
+                var sslContextFactory = sslConnectionFactory.getSslContextFactory();
+                log.info(String.format("Enabled SSL cipher suites for port '%d': %s",
+                                       localPort, Arrays.toString(sslContextFactory.getSelectedCipherSuites())));
+                log.info(String.format("Enabled SSL protocols for port '%d': %s",
+                                       localPort, Arrays.toString(sslContextFactory.getSelectedProtocols())));
+            }
         }
     }
 
