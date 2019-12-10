@@ -358,12 +358,13 @@ public class DeploymentStatus {
         }
 
         @Override
+        // TODO jonmv: Split in readyAt(change, versions), pausedUntil(), and coolingDownUntil(versions)
         public Optional<Instant> readyAt(Change change, Versions versions) {
             Optional<Instant> readyAt = super.readyAt(change, versions);
             if (readyAt.isEmpty())
                 return Optional.empty();
 
-            Optional<Instant> pausedUntil = status.application.require(job.id().application().instance()).jobPause(job.id().type());
+            Optional<Instant> pausedUntil = status.application().require(job.id().application().instance()).jobPause(job.id().type());
             if (pausedUntil.isPresent() && pausedUntil.get().isAfter(readyAt.get()))
                 return pausedUntil;
 
@@ -454,61 +455,6 @@ public class DeploymentStatus {
         }
 
     }
-
-    /*
-     *  Compute all JobIds to run: test and staging for first instance, unless declared in a parallel instance.
-     *  Create StepStatus for the first two, then
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     *
-     * Prod:        completedAt: change, fullChange
-     * Test:        completedAt: versions?
-     * Delay:       completedAt: change, fullChange
-     * Any:         readyAt: change -> versions
-     * Any:         testedAt: versions
-     *
-     * Start with system and staging for first instance as dependencies.
-     * Declared test jobs replace these for intra-instance dependents.
-     * Test and staging are implicitly parallel. (Well, they already are, if they don't depend on each other.)
-     *
-     * Map JobId to StepStatus:
-     * For each prod JobId: Compute Optional<Versions> to run for current change to be done.
-     * Prod jobs may wait for other prod jobs' to-do runs, but ignores their versions.
-     * Prod jobs may wait for test jobs, considering their versions.
-     * For each prod job, if job already triggered on desired versions, ignore the below.
-     * For each prod job, add other prod job dependencies.
-     * For each prod job, add explicit tests in same instance.
-     * For each prod versions to run, find all prod jobs for which those versions aren't tested (before the job), then
-     *      for each such set of jobs, find the last common dependency instance, and add the test for that, or
-     *      for each such set of jobs, add tests for those versions with the first declared instance; in any case
-     *      add all implicit tests to some structure for tracking.
-     *
-     * Eliminate already running jobs.
-     * Keep set of JobId x Versions for each StepStatus, in topological order, for starting jobs and for display.
-     * DepTri: Needs all jobs to run that are also ready. Test jobs are always ready.
-     * API: Needs all jobs to run, and what they are waiting for, like, delay (until), or other jobs, or pause.
-     *      To find dependency jobs, DFS and sort by topological order.
-     *
-     * anySysTest && anyStaTest || triggeredProd
-     *
-     *
-     *
-     *  Delay after test jobs? Requires test jobs in DAG,
-     *      which requires completeAt, and thus readyAt, to accept Change _and_ Versions. Public with Change only perhaps?
-     *      Careful not to require ALL tests to run with versions for each prod job!
-     *
-     *  readyAt and ordering of test jobs? Use lastSuccess.at for tests? Not quite right, but used today ...
-     *
-     *  Add all possible test jobs to steps. Add them as prerequisites for first job in each instance ... ?
-     *
-     */
 
     public static List<JobId> jobsFor(Application application, SystemName system) {
         if (DeploymentSpec.empty.equals(application.deploymentSpec()))
