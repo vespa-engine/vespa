@@ -58,7 +58,6 @@ public class UserApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
     private static final String optionalPrefix = "/api";
-    private static final TenantName sandboxTenant = TenantName.from("sandbox");
 
     private final UserManagement users;
     private final Controller controller;
@@ -158,12 +157,12 @@ public class UserApiHandler extends LoggingRequestHandler {
                             .forEach(role -> tenantRolesObject.addString(role.definition().name()));
 
                     Cursor tenantApplicationsObject = tenantObject.setObject("applications");
-                    accessibleInstances(snapshot, tenant, userInstance).entrySet().stream()
-                            .sorted(Map.Entry.comparingByKey())
-                            .forEach(appInstances -> {
-                                Cursor applicationObject = tenantApplicationsObject.setObject(appInstances.getKey().value());
+                    snapshot.applications(tenant).stream()
+                            .sorted()
+                            .forEach(application -> {
+                                Cursor applicationObject = tenantApplicationsObject.setObject(application.value());
                                 Cursor applicationInstancesObject = applicationObject.setArray("instances");
-                                appInstances.getValue().stream()
+                                snapshot.instances(tenant, application).stream()
                                         .sorted()
                                         .forEach(instance -> applicationInstancesObject.addString(instance.value()));
                             });
@@ -175,19 +174,6 @@ public class UserApiHandler extends LoggingRequestHandler {
         }
 
         return new SlimeJsonResponse(slime);
-    }
-
-    private Map<ApplicationName, Set<InstanceName>> accessibleInstances(
-            ApplicationIdSnapshot snapshot, TenantName tenant, InstanceName userInstance) {
-        return snapshot.applications(tenant).stream()
-                .filter(application ->      controller.system().isPublic()
-                                       || ! sandboxTenant.equals(tenant)
-                                       ||   snapshot.instances(tenant, application).contains(userInstance))
-                .collect(Collectors.toUnmodifiableMap(
-                        Function.identity(),
-                        application -> controller.system().isPublic() || ! sandboxTenant.equals(tenant) ?
-                                snapshot.instances(tenant, application) :
-                                Set.of(userInstance)));
     }
 
     private HttpResponse listTenantRoleMembers(String tenantName) {
