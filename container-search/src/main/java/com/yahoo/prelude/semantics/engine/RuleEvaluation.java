@@ -41,44 +41,44 @@ public class RuleEvaluation {
     private String currentContext;
 
     /** A list of referencedMatches */
-    private List<ReferencedMatches> referencedMatchesList =new java.util.ArrayList<>();
+    private List<ReferencedMatches> referencedMatchesList = new java.util.ArrayList<>();
 
-    private List<Match> nonreferencedMatches=new java.util.ArrayList<>();
+    private List<Match> nonreferencedMatches = new java.util.ArrayList<>();
 
     /** The evaluation owning this */
     private Evaluation evaluation;
 
     /** The choice points saved in this evaluation */
-    private Stack<Choicepoint> choicepoints=null;
+    private Stack<Choicepoint> choicepoints = null;
 
     /* The last value returned by a condition evaluated in this, may be null */
-    private Object value=null;
+    private Object value = null;
 
     /** True when we are evaluating inside a condition which inverts the truth value */
-    private boolean inNegation=false;
+    private boolean inNegation = false;
 
     /**
      * A label we should use to match candidate terms for.
      * Used to propagate a label from e.g. reference conditions to named conditions
      */
-    private String currentLabel=null;
+    private String currentLabel = null;
 
     public RuleEvaluation(Evaluation owner) {
-        this.evaluation=owner;
+        this.evaluation = owner;
     }
 
-    public void initialize(List<FlattenedItem> list,int startPosition) {
-        this.startPosition=startPosition;
-        items=list;
+    public void initialize(List<FlattenedItem> list, int startPosition) {
+        this.startPosition = startPosition;
+        items = list;
         reinitialize();
     }
 
     void reinitialize() {
-        position=startPosition;
-        currentContext=null;
+        position = startPosition;
+        currentContext = null;
         referencedMatchesList.clear();
         nonreferencedMatches.clear();
-        if (choicepoints!=null)
+        if (choicepoints != null)
             choicepoints.clear();
     }
 
@@ -123,13 +123,13 @@ public class RuleEvaluation {
      * or null if there are no more elements
      */
     public FlattenedItem currentItem() {
-        if (position>=items.size()) return null;
+        if (position >= items.size()) return null;
         return items.get(position);
     }
 
     public FlattenedItem previousItem() {
-        if (position-1<0) return null;
-        return items.get(position-1);
+        if (position-1 < 0) return null;
+        return items.get(position - 1);
     }
 
     /** Returns the position of the current item */
@@ -208,13 +208,13 @@ public class RuleEvaluation {
      * @param item the match to add
      * @param replaceString the string to replace this match by, usually the item.getIndexedValue()
      */
-    public void addMatch(FlattenedItem item,String replaceString) {
+    public void addMatch(FlattenedItem item, String replaceString) {
         evaluation.makeParentMutable(item.getItem());
-        Match match=new Match(item,replaceString);
-        if (currentContext!=null) {
-            ReferencedMatches matches=getReferencedMatches(currentContext);
-            if (matches==null) {
-                matches=new ReferencedMatches(currentContext);
+        Match match = new Match(item,replaceString);
+        if (currentContext != null) {
+            ReferencedMatches matches = getReferencedMatches(currentContext);
+            if (matches == null) {
+                matches = new ReferencedMatches(currentContext);
                 referencedMatchesList.add(matches);
             }
             matches.addMatch(match);
@@ -226,8 +226,8 @@ public class RuleEvaluation {
 
     /** Returns the referenced matches for a context name, or null if none */
     public ReferencedMatches getReferencedMatches(String name) {
-        for (Iterator<ReferencedMatches> i=referencedMatchesList.iterator(); i.hasNext(); ) {
-            ReferencedMatches matches=i.next();
+        for (Iterator<ReferencedMatches> i = referencedMatchesList.iterator(); i.hasNext(); ) {
+            ReferencedMatches matches = i.next();
             if (name.equals(matches.getContextName()))
                 return matches;
         }

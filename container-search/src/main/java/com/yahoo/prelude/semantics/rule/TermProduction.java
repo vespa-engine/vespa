@@ -15,28 +15,28 @@ import com.yahoo.protect.Validator;
 public abstract class TermProduction extends Production {
 
     /** The label of this term, or null if none */
-    private String label=null;
+    private String label = null;
 
     /** The type of term to produce */
     private TermType termType;
 
     /** Creates a produced template term with no label and the default type */
     public TermProduction() {
-        this(null,TermType.DEFAULT);
+        this(null, TermType.DEFAULT);
     }
 
     /** Creates a produced template term with the default term type */
     public TermProduction(String label) {
-        this(label,TermType.DEFAULT);
+        this(label, TermType.DEFAULT);
     }
 
     /** Creates a produced template term with no label */
     public TermProduction(TermType termType) {
-        this(null,termType);
+        this(null, termType);
     }
 
     public TermProduction(String label, TermType termType) {
-        this.label=label;
+        this.label = label;
         setTermType(termType);
     }
 
@@ -52,14 +52,14 @@ public abstract class TermProduction extends Production {
     /** Sets the term type to produce */
     public void setTermType(TermType termType) {
         Validator.ensureNotNull("Type of produced Term",termType);
-        this.termType=termType;
+        this.termType = termType;
     }
 
     /**
      * Inserts newItem at the position of this match
      * TODO: Move to ruleevaluation
      */
-    protected void insertMatch(RuleEvaluation e,Match matched, Item newItem,int offset) {
+    protected void insertMatch(RuleEvaluation e, Match matched, Item newItem, int offset) {
         newItem.setWeight(getWeight());
         int insertPosition=matched.getPosition()+offset;
 
@@ -76,13 +76,13 @@ public abstract class TermProduction extends Production {
     }
 
     protected String getLabelString() {
-        if (label==null) return "";
+        if (label == null) return "";
         return label + ":";
     }
 
     /** All instances of this produces a parseable string output */
     public final String toInnerString() {
-        if (termType==null)
+        if (termType == null)
             return toInnerTermString();
         else
             return termType.toSign() + toInnerTermString();

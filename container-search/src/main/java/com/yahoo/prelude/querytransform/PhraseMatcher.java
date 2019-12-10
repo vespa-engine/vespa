@@ -117,23 +117,23 @@ public class PhraseMatcher {
 
     /** Returns null if this word does not match the automaton, a single-item list if it does */
     private List<Phrase> matchSingleItem(TermItem termItem) {
-        String matchWord=toLowerCase(termItem.stringValue());
-        String replaceWord=null;
+        String matchWord = toLowerCase(termItem.stringValue());
+        String replaceWord = null;
         FSA.State state = phraseFSA.getState();
         if (!matches(state,matchWord)) {
             if (!ignorePluralForm) return null;
-            matchWord=switchForm(matchWord);
-            if (!matches(state,matchWord)) return null;
-            replaceWord=matchWord;
+            matchWord = switchForm(matchWord);
+            if (!matches(state, matchWord)) return null;
+            replaceWord = matchWord;
         }
 
-        List<Phrase> itemList=new java.util.ArrayList<>(1);
-        itemList.add(new Phrase(termItem,replaceWord,state.dataString()));
+        List<Phrase> itemList = new java.util.ArrayList<>(1);
+        itemList.add(new Phrase(termItem, replaceWord, state.dataString()));
         return itemList;
 
     }
 
-    private boolean matches(FSA.State state,String word) {
+    private boolean matches(FSA.State state, String word) {
         state.start();
         state.delta(word);
         return state.isFinal();

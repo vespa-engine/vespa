@@ -17,16 +17,16 @@ public class SequenceCondition extends CompositeCondition {
     }
 
     public boolean doesMatch(RuleEvaluation e) {
-        Choicepoint choicepoint=e.getChoicepoint(this,true);
+        Choicepoint choicepoint = e.getChoicepoint(this, true);
         choicepoint.updateState();
-        boolean matches=allSubConditionsMatches(e);
+        boolean matches = allSubConditionsMatches(e);
         if (!matches)
             choicepoint.backtrack();
         return matches;
     }
 
     protected boolean useParentheses() {
-        return (getParent()!=null
+        return (getParent() != null
                 && ! (getParent() instanceof ChoiceCondition));
     }
 
