@@ -265,7 +265,8 @@ public class DeploymentTrigger {
             status.jobsToRun().forEach((job, versionsList) -> {
                     for (Versions versions : versionsList)
                         status.stepStatus().get(job).readyAt(status.application().change(), versions)
-                              .filter(readyAt -> ! clock.instant().isBefore(readyAt)).ifPresent(readyAt -> {
+                              .filter(readyAt -> ! clock.instant().isBefore(readyAt))
+                              .ifPresent(readyAt -> {
                         if ( ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),
                                                             job.type().zone(controller.system()))
                                 && job.type().environment() == Environment.prod))
@@ -461,22 +462,11 @@ public class DeploymentTrigger {
 
     private Change remainingChange(Application application) {
         Change change = application.change();
-        if (application.deploymentSpec().instances().stream()
-                       .allMatch(spec -> {
-                           DeploymentSteps steps = new DeploymentSteps(spec, controller::system);
-                           return (steps.productionJobs().isEmpty() ? steps.testJobs() : steps.productionJobs())
-                                   .stream().allMatch(job -> isComplete(application.change().withoutApplication(), application.change(), application.require(spec.name()), job, jobs.jobStatus(new JobId(application.id().instance(spec.name()), job))));
-                       }))
+        DeploymentStatus status = jobs.deploymentStatus(application);
+        if (status.jobsToRun(status.application().change().withoutApplication()).isEmpty())
             change = change.withoutPlatform();
-
-        if (application.deploymentSpec().instances().stream()
-                       .allMatch(spec -> {
-                           DeploymentSteps steps = new DeploymentSteps(spec, controller::system);
-                           return (steps.productionJobs().isEmpty() ? steps.testJobs() : steps.productionJobs())
-                                   .stream().allMatch(job -> isComplete(application.change().withoutPlatform(), application.change(), application.require(spec.name()), job, jobs.jobStatus(new JobId(application.id().instance(spec.name()), job))));
-                       }))
+        if (status.jobsToRun(status.application().change().withoutPlatform()).isEmpty())
             change = change.withoutApplication();
-
         return change;
     }
 

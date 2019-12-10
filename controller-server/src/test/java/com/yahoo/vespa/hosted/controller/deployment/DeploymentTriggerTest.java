@@ -30,6 +30,10 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testEuWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -811,8 +815,30 @@ public class DeploymentTriggerTest {
         otherInstance.runJob(productionUsEast3);
         assertEquals(2, app.application().instances().size());
         assertEquals(2, app.application().productionDeployments().values().stream()
-                              .mapToInt(Collection::size)
-                              .sum());
+                           .mapToInt(Collection::size)
+                           .sum());
+    }
+
+    @Test
+    public void testDeclaredProductionTests() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .region("us-east-3")
+                .delay(Duration.ofMinutes(1))
+                .test("us-east-3")
+                .region("us-west-1")
+                .region("us-central-1")
+                .test("us-central-1")
+                .test("us-west-1")
+                .build();
+        var app = tester.newDeploymentContext().submit(applicationPackage);
+
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        app.assertNotRunning(productionUsWest1);
+
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.runJob(testUsEast3)
+           .runJob(productionUsWest1).runJob(productionUsCentral1)
+           .runJob(testUsCentral1).runJob(testUsWest1);
     }
 
 }

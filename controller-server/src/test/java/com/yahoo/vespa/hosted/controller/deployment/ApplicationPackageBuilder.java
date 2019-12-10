@@ -99,6 +99,13 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder test(String regionName) {
+        environmentBody.append("      <test>");
+        environmentBody.append(regionName);
+        environmentBody.append("</test>\n");
+        return this;
+    }
+
     public ApplicationPackageBuilder parallel(String... regionName) {
         environmentBody.append("    <parallel>\n");
         Arrays.stream(regionName).forEach(this::region);

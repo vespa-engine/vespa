@@ -289,15 +289,12 @@ public class JobController {
         return new JobStatus(id, runs(id));
     }
 
-    /** Returns the job status of all declared jobs for the given instance id, indexed by job type. */
+    /** Returns the deployment status of the given application. */
     public DeploymentStatus deploymentStatus(Application application) {
         return new DeploymentStatus(application,
-                                    application.deploymentSpec().instances().stream()
-                                               .flatMap(spec -> new DeploymentSteps(spec, controller::system)
-                                                       .jobs().stream()
-                                                       .map(type -> jobStatus(new JobId(application.id().instance(spec.name()), type))))
-                                               .collect(toUnmodifiableMap(status -> status.id(),
-                                                                          status -> status)),
+                                    DeploymentStatus.jobsFor(application, controller.system()).stream()
+                                                    .collect(toUnmodifiableMap(job -> job,
+                                                                               job -> jobStatus(job))),
                                     controller.system(),
                                     controller.systemVersion());
     }
