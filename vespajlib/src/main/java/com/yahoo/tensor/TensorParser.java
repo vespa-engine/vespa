@@ -189,15 +189,11 @@ class TensorParser {
 
             while (indexes.hasNext()) {
                 indexes.next();
-
                 for (int i = 0; i < indexes.rightDimensionsAtStart() && hasInnerStructure; i++)
                     consume('[');
-
                 consumeNumber();
-
                 for (int i = 0; i < indexes.rightDimensionsAtEnd() && hasInnerStructure; i++)
                     consume(']');
-
                 if (indexes.hasNext())
                     consume(',');
             }
@@ -216,7 +212,7 @@ class TensorParser {
             return firstLeftBracket >= 0 && firstLeftBracket < valueString.indexOf(']');
         }
 
-        private void consumeNumber() {
+        protected void consumeNumber() {
             skipSpace();
 
             int nextNumberEnd = nextStopCharIndex(position, string);
@@ -237,14 +233,14 @@ class TensorParser {
             position = nextNumberEnd;
         }
 
-        private int nextStopCharIndex(int charIndex, String valueString) {
-            while (charIndex < valueString.length()) {
-                if (valueString.charAt(charIndex) == ',') return charIndex;
-                if (valueString.charAt(charIndex) == ']') return charIndex;
-                charIndex++;
+        private int nextStopCharIndex(int position, String valueString) {
+            while (position < valueString.length()) {
+                if (valueString.charAt(position) == ',') return position;
+                if (valueString.charAt(position) == ']') return position;
+                position++;
             }
             throw new IllegalArgumentException("Malformed tensor value '" + valueString +
-                                               "': Expected a ',' or ']' after position " + charIndex);
+                                               "': Expected a ',', ']' or '}' after position " + position);
         }
 
     }
