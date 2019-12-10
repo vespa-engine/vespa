@@ -263,11 +263,12 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         applications().getApplication(id).map(controller.jobController()::deploymentStatus).ifPresent(status -> {
             status.jobsToRun().forEach((job, versionsList) -> {
-                status.stepStatus().get(job).readyAt(status.application().change()).ifPresent(readyAt -> {
                     for (Versions versions : versionsList)
+                        status.stepStatus().get(job).readyAt(status.application().change(), versions)
+                              .filter(readyAt -> ! clock.instant().isBefore(readyAt)).ifPresent(readyAt -> {
                         if ( ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),
                                                             job.type().zone(controller.system()))
-                                && job.type().environment() != Environment.prod))
+                                && job.type().environment() == Environment.prod))
                             jobs.add(deploymentJob(status.application().require(job.application().instance()),
                                                    versions,
                                                    status.application().change(),

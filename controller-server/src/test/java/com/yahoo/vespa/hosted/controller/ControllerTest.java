@@ -103,7 +103,6 @@ public class ControllerTest {
 
         // system and staging test job - succeeding
         context.submit(applicationPackage);
-        applicationVersion = context.application().change().application().get();
         context.runJob(systemTest);
         context.runJob(stagingTest);
 

@@ -610,31 +610,30 @@ public class DeploymentTriggerTest {
         // New application change is deployed and fails in system-test for a while
         app.submit(applicationPackage).runJob(stagingTest).failDeployment(systemTest);
 
-        // Retries immediately in the first minute after failing
-        tester.clock().advance(Duration.ofSeconds(59));
+        // Retries immediately once
         app.failDeployment(systemTest);
         tester.triggerJobs();
         app.assertRunning(systemTest);
 
-        // Stops immediate retry after failing for 1 minute
+        // Stops immediate retry when next triggering is considered after first failure
         tester.clock().advance(Duration.ofSeconds(1));
         app.failDeployment(systemTest);
         tester.triggerJobs();
         app.assertNotRunning(systemTest);
 
-        // Retries after 10 minutes since previous completion as we failed within the last hour
+        // Retries after 10 minutes since previous completion, plus half the time since the first failure
         tester.clock().advance(Duration.ofMinutes(10).plus(Duration.ofSeconds(1)));
         tester.triggerJobs();
         app.assertRunning(systemTest);
 
-        // Retries less frequently after 1 hour of failure
-        tester.clock().advance(Duration.ofMinutes(50));
+        // Retries less frequently as more time passes
         app.failDeployment(systemTest);
+        tester.clock().advance(Duration.ofMinutes(15));
         tester.triggerJobs();
         app.assertNotRunning(systemTest);
 
-        // Retries after two hours pass since last completion
-        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1)));
+        // Retries again when sufficient time has passed
+        tester.clock().advance(Duration.ofSeconds(2));
         tester.triggerJobs();
         app.assertRunning(systemTest);
 
@@ -721,15 +720,12 @@ public class DeploymentTriggerTest {
         assertEquals(List.of(), tester.jobs().active());
 
         tester.readyJobsTrigger().maintain();
-        app2.assertRunning(stagingTest);
         assertEquals(1, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app1.assertRunning(stagingTest);
         assertEquals(2, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app3.assertRunning(stagingTest);
         assertEquals(3, tester.jobs().active().size());
 
         // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
@@ -743,11 +739,9 @@ public class DeploymentTriggerTest {
         assertEquals(1, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app2.assertRunning(stagingTest);
         assertEquals(2, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app1.assertRunning(stagingTest);
         assertEquals(3, tester.jobs().active().size());
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
@@ -758,8 +752,6 @@ public class DeploymentTriggerTest {
 
         tester.controllerTester().upgradeSystem(new Version("6.2"));
         tester.upgrader().maintain();
-        // app1 also gets a new application change, so its time of availability is after the version upgrade.
-        tester.clock().advance(Duration.ofSeconds(1));
         app1.submit(applicationPackage);
         app1.jobAborted(stagingTest);
 
@@ -789,12 +781,12 @@ public class DeploymentTriggerTest {
         assertEquals(2, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app2.assertRunning(stagingTest);
         app1.assertRunning(systemTest);
         assertEquals(4, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
         app3.assertRunning(stagingTest);
+        app2.assertRunning(stagingTest);
         app2.assertRunning(systemTest);
         assertEquals(6, tester.jobs().active().size());
     }
@@ -816,7 +808,7 @@ public class DeploymentTriggerTest {
         var app = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage); // TODO jonmv: support instances in deployment context>
         var otherInstance = tester.newDeploymentContext("tenant1", "application1", "instance2");
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
-        otherInstance.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        otherInstance.runJob(productionUsEast3);
         assertEquals(2, app.application().instances().size());
         assertEquals(2, app.application().productionDeployments().values().stream()
                               .mapToInt(Collection::size)

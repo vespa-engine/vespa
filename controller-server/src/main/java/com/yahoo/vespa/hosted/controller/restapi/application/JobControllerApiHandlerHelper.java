@@ -72,6 +72,12 @@ import static java.util.stream.Collectors.toMap;
  */
 class JobControllerApiHandlerHelper {
 
+    static HttpResponse applicationJobs(Controller controller, TenantAndApplicationId id, URI baseUriForJobs) {
+        DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(id));
+
+        return null;
+    }
+
     /**
      * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
      */
