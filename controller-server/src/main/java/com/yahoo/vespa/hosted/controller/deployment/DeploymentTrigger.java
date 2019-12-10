@@ -248,9 +248,10 @@ public class DeploymentTrigger {
                         status.stepStatus().get(job).readyAt(status.application().change(), versions)
                               .filter(readyAt -> ! clock.instant().isBefore(readyAt))
                               .ifPresent(readyAt -> {
-                        if ( ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),
-                                                            job.type().zone(controller.system()))
-                                && job.type().environment() == Environment.prod))
+                        if (   ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),
+                                                              job.type().zone(controller.system()))
+                                  && job.type().environment() == Environment.prod)
+                            && ! status.jobs().get(job).get().isRunning())
                             jobs.add(deploymentJob(status.application().require(job.application().instance()),
                                                    versions,
                                                    status.application().change(),

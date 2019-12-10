@@ -138,7 +138,8 @@ public class DeploymentStatus {
                     testJobs.merge(test,
                                    versions.stream()
                                            .filter(version -> ! steps.get(test).isRunning(version))
-                                           .filter(version -> allJobs.successOn(version).get(test).isEmpty() && allJobs.triggeredOn(version).get(job).isEmpty())
+                                           .filter(version ->    allJobs.successOn(version).get(test).isEmpty()
+                                                              && allJobs.triggeredOn(version).get(job).isEmpty())
                                            .collect(toUnmodifiableList()),
                                    DeploymentStatus::union);
                 });
@@ -146,7 +147,8 @@ public class DeploymentStatus {
                     testJobs.merge(test,
                                    versions.stream()
                                            .filter(version -> ! steps.get(test).isRunning(version))
-                                           .filter(version -> allJobs.successOn(version).get(test).isEmpty() && allJobs.triggeredOn(version).get(job).isEmpty())
+                                           .filter(version ->    allJobs.successOn(version).get(test).isEmpty()
+                                                              && allJobs.triggeredOn(version).get(job).isEmpty())
                                            .collect(toUnmodifiableList()),
                                    DeploymentStatus::union);
                 });
@@ -157,14 +159,16 @@ public class DeploymentStatus {
                 testJobs.merge(new JobId(job.application(), systemTest),
                                versions.stream()
                                        .filter(version -> steps.keySet().stream().noneMatch(id -> id.type() == systemTest && steps.get(id).isRunning(version)))
-                                       .filter(version -> allJobs.successOn(version).type(systemTest).isEmpty() && allJobs.triggeredOn(version).get(job).isEmpty())
+                                       .filter(version ->    allJobs.successOn(version).type(systemTest).isEmpty()
+                                                          && allJobs.triggeredOn(version).get(job).isEmpty())
                                        .collect(toUnmodifiableList()),
                                DeploymentStatus::union);
             if ( ! job.type().isTest() && ! testedOn(versions, stagingTest, testJobs))
                 testJobs.merge(new JobId(job.application(), stagingTest),
                                versions.stream()
                                        .filter(version -> steps.keySet().stream().noneMatch(id -> id.type() == stagingTest && steps.get(id).isRunning(version)))
-                                       .filter(version -> allJobs.successOn(version).type(stagingTest).isEmpty() && allJobs.triggeredOn(version).get(job).isEmpty())
+                                       .filter(version ->    allJobs.successOn(version).type(stagingTest).isEmpty()
+                                                          && allJobs.triggeredOn(version).get(job).isEmpty())
                                        .collect(toUnmodifiableList()),
                                DeploymentStatus::union);
         });
