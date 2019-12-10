@@ -163,10 +163,10 @@ std::vector<Option> find_order(const ForestParams &params,
                                size_t num_trees)
 {
     std::vector<Result> results;
-    Function forest = make_forest(params, num_trees);
+    auto forest = make_forest(params, num_trees);
     for (size_t i = 0; i < options.size(); ++i) {
-        CompiledFunction compiled_function = options[i].compile(forest);
-        CompiledFunction compiled_function_lazy = options[i].compile_lazy(forest);
+        CompiledFunction compiled_function = options[i].compile(*forest);
+        CompiledFunction compiled_function_lazy = options[i].compile_lazy(*forest);
         std::vector<double> inputs(compiled_function.num_params(), 0.5);
         results.push_back({compiled_function.estimate_cost_us(inputs, budget), i});
         double lazy_time = compiled_function_lazy.estimate_cost_us(inputs, budget);
@@ -184,7 +184,7 @@ std::vector<Option> find_order(const ForestParams &params,
 }
 
 double expected_path(const ForestParams &params, size_t num_trees) {
-    return ForestStats(extract_trees(make_forest(params, num_trees).root())).total_expected_path_length;
+    return ForestStats(extract_trees(make_forest(params, num_trees)->root())).total_expected_path_length;
 }
 
 void explore_segment(const ForestParams &params,

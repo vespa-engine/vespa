@@ -14,12 +14,12 @@ int main(int argc, char **argv) {
         fprintf(stderr, "  quote the expression to make it a single parameter\n");
         return 1;
     }
-    Function function = Function::parse({}, argv[1]);
-    if (function.has_error()) {
-        fprintf(stderr, "expression error: %s\n", function.get_error().c_str());
+    auto function = Function::parse({}, argv[1]);
+    if (function->has_error()) {
+        fprintf(stderr, "expression error: %s\n", function->get_error().c_str());
         return 1;
     }
-    InterpretedFunction interpreted(SimpleTensorEngine::ref(), function, NodeTypes());
+    InterpretedFunction interpreted(SimpleTensorEngine::ref(), *function, NodeTypes());
     InterpretedFunction::Context ctx(interpreted);
     SimpleParams params({});
     const Value &result = interpreted.eval(ctx, params);

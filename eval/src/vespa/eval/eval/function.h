@@ -34,28 +34,33 @@ struct NodeVisitor;
  * AST root and the names of all parameters. A function can only be
  * evaluated using the appropriate number of parameters.
  **/
-class Function
+class Function : public std::enable_shared_from_this<Function>
 {
 private:
     nodes::Node_UP _root;
     std::vector<vespalib::string> _params;
 
+    struct ctor_tag {};
+
 public:
-    Function() : _root(new nodes::Number(0.0)), _params() {}
-    Function(nodes::Node_UP root_in, std::vector<vespalib::string> &&params_in)
+    Function(nodes::Node_UP root_in, std::vector<vespalib::string> params_in, ctor_tag)
         : _root(std::move(root_in)), _params(std::move(params_in)) {}
-    Function(Function &&rhs) : _root(std::move(rhs._root)), _params(std::move(rhs._params)) {}
+    Function(Function &&rhs) = delete;
+    Function(const Function &rhs) = delete;
+    Function &operator=(Function &&rhs) = delete;
+    Function &operator=(const Function &rhs) = delete;
     ~Function() { delete_node(std::move(_root)); }
     size_t num_params() const { return _params.size(); }
     vespalib::stringref param_name(size_t idx) const { return _params[idx]; }
     bool has_error() const;
     vespalib::string get_error() const;
     const nodes::Node &root() const { return *_root; }
-    static Function parse(vespalib::stringref expression);
-    static Function parse(vespalib::stringref expression, const SymbolExtractor &symbol_extractor);
-    static Function parse(const std::vector<vespalib::string> &params, vespalib::stringref expression);
-    static Function parse(const std::vector<vespalib::string> &params, vespalib::stringref expression,
-                          const SymbolExtractor &symbol_extractor);
+    static std::shared_ptr<Function const> create(nodes::Node_UP root_in, std::vector<vespalib::string> params_in);
+    static std::shared_ptr<Function const> parse(vespalib::stringref expression);
+    static std::shared_ptr<Function const> parse(vespalib::stringref expression, const SymbolExtractor &symbol_extractor);
+    static std::shared_ptr<Function const> parse(const std::vector<vespalib::string> &params, vespalib::stringref expression);
+    static std::shared_ptr<Function const> parse(const std::vector<vespalib::string> &params, vespalib::stringref expression,
+                     const SymbolExtractor &symbol_extractor);
     vespalib::string dump() const {
         nodes::DumpContext dump_context(_params);
         return _root->dump(dump_context);

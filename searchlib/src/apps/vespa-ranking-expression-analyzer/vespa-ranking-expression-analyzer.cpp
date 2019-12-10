@@ -237,9 +237,11 @@ bool vmforest_used(const std::vector<Forest::UP> &forests) {
 //-----------------------------------------------------------------------------
 
 struct State {
+    using FunPtr = std::shared_ptr<Function const>;
+
     vespalib::string     name;
     vespalib::string     expression;
-    Function             function;
+    FunPtr               function;
     FunctionInfo         fun_info;
     CompiledFunction::UP compiled_function;
 
@@ -256,7 +258,7 @@ struct State {
         BenchmarkTimer timer(1.0);
         while (timer.has_budget()) {
             timer.before();
-            CompiledFunction::UP new_cf(new CompiledFunction(function, PassParams::ARRAY));
+            CompiledFunction::UP new_cf(new CompiledFunction(*function, PassParams::ARRAY));
             timer.after();
             compiled_function = std::move(new_cf);
         }
@@ -265,12 +267,12 @@ struct State {
 
     void benchmark_option(const vespalib::string &opt_name, Optimize::Chain optimizer_chain) {
         options.push_back(opt_name);
-        options_us.push_back(CompiledFunction(function, PassParams::ARRAY, optimizer_chain).estimate_cost_us(fun_info.params));
+        options_us.push_back(CompiledFunction(*function, PassParams::ARRAY, optimizer_chain).estimate_cost_us(fun_info.params));
         fprintf(stderr, "  option '%s' execute time: %g us\n", opt_name.c_str(), options_us.back());
     }
 
     void maybe_benchmark_fast_forest() {
-        auto ff = FastForest::try_convert(function);
+        auto ff = FastForest::try_convert(*function);
         if (ff) {
             vespalib::string opt_name("ff");
             options.push_back(opt_name);
@@ -313,7 +315,7 @@ State::State(const vespalib::string &file_name, vespalib::string expression_in)
     : name(strip_name(file_name)),
       expression(std::move(expression_in)),
       function(Function::parse(expression, FeatureNameExtractor())),
-      fun_info(function),
+      fun_info(*function),
       compiled_function(),
       llvm_compile_s(0.0),
       llvm_execute_us(0.0),
@@ -355,8 +357,8 @@ MyApp::Main()
         return 1;
     }
     State state(file_name, file.get().make_string());
-    if (state.function.has_error()) {
-        vespalib::string error_message = state.function.get_error();
+    if (state.function->has_error()) {
+        vespalib::string error_message = state.function->get_error();
         fprintf(stderr, "input file (%s) contains an illegal expression:\n%s\n",
                 file_name.c_str(), error_message.c_str());
         return 1;
