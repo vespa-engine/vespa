@@ -185,6 +185,9 @@ public class DeploymentStatus {
 
     /** Returns a DAG of the dependencies between the primitive steps in the spec, with iteration order equal to declaration order. */
     Map<JobId, StepStatus> jobDependencies(DeploymentSpec spec) {
+        if (DeploymentSpec.empty.equals(spec))
+            return Map.of();
+
         Map<JobId, StepStatus> dependencies = new LinkedHashMap<>();
         List<StepStatus> previous = List.of();
         for (DeploymentSpec.Step step : spec.steps())
@@ -196,7 +199,7 @@ public class DeploymentStatus {
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */
     List<StepStatus> fillStep(Map<JobId, StepStatus> dependencies, DeploymentSpec.Step step,
                               List<StepStatus> previous, InstanceName instance) {
-        if (step.steps().isEmpty()) {
+        if (step.steps().isEmpty()) { // TODO jonmv: Throw out empty container steps :(
             if ( ! step.delay().isZero())
                 return List.of(new DelayStatus((DeploymentSpec.Delay) step, previous));
 
@@ -215,12 +218,13 @@ public class DeploymentStatus {
                 stepStatus = JobStepStatus.ofProductionTest((DeclaredTest) step, previous, this, instance, jobType, preType);
                 previous = List.of(stepStatus);
             }
-            else {
+            else if (step.concerns(prod)) {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), ((DeclaredZone) step).region().get())
                                          .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, instance, jobType);
                 previous = List.of(stepStatus);
             }
+            else return previous; // Empty container steps end up here.
             dependencies.put(new JobId(application.id().instance(instance), jobType), stepStatus);
             return previous;
         }

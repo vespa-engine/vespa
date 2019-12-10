@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.DeploymentSpec.Step;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -264,8 +265,9 @@ public class DeploymentTrigger {
             status.jobsToRun().forEach((job, versionsList) -> {
                 status.stepStatus().get(job).readyAt(status.application().change()).ifPresent(readyAt -> {
                     for (Versions versions : versionsList)
-                        if ( ! isSuspendedInAnotherZone(status.application().require(job.application().instance()),
-                                                        job.type().zone(controller.system())))
+                        if ( ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),
+                                                            job.type().zone(controller.system()))
+                                && job.type().environment() != Environment.prod))
                             jobs.add(deploymentJob(status.application().require(job.application().instance()),
                                                    versions,
                                                    status.application().change(),
