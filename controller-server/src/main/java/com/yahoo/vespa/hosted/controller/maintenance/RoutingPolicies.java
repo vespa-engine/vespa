@@ -82,8 +82,8 @@ public class RoutingPolicies {
                                              deploymentSpec);
         try (var lock = db.lockRoutingPolicies()) {
             removeObsoleteEndpointsFromDns(lbs, lock);
-            var writtenPolicies = storePoliciesOf(lbs, lock);
-            removeObsoletePolicies(lbs, writtenPolicies, lock);
+            storePoliciesOf(lbs, lock);
+            removeObsoletePolicies(lbs, lock);
             registerEndpointsInDns(lbs, lock);
         }
     }
@@ -108,7 +108,7 @@ public class RoutingPolicies {
     }
 
     /** Store routing policies for given route. Returns the persisted policies. */
-    private Set<RoutingPolicy> storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
+    private void storePoliciesOf(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var policies = new LinkedHashSet<>(get(loadBalancers.application));
         for (LoadBalancer loadBalancer : loadBalancers.list) {
             var endpointIds = loadBalancers.endpointIdsOf(loadBalancer);
@@ -120,7 +120,6 @@ public class RoutingPolicies {
             }
         }
         db.writeRoutingPolicies(loadBalancers.application, policies);
-        return policies;
     }
 
     /** Create a policy for given load balancer and register a CNAME for it */
@@ -135,13 +134,8 @@ public class RoutingPolicies {
     }
 
     /** Remove obsolete policies for given route and their CNAME records */
-    private void removeObsoletePolicies(AllocatedLoadBalancers loadBalancers, Set<RoutingPolicy> writtenPolicies,
-                                        @SuppressWarnings("unused") Lock lock) {
+    private void removeObsoletePolicies(AllocatedLoadBalancers loadBalancers, @SuppressWarnings("unused") Lock lock) {
         var allPolicies = new LinkedHashSet<>(get(loadBalancers.application));
-        if (!writtenPolicies.equals(allPolicies)) {
-            LOGGER.log(LogLevel.ERROR, String.format("Stale read! This should not happen. Wrote policies %s, but read %s",
-                                                     writtenPolicies, allPolicies));
-        }
         var removalCandidates = new HashSet<>(allPolicies);
         var activeLoadBalancers = loadBalancers.list.stream()
                                                     .map(LoadBalancer::hostname)
