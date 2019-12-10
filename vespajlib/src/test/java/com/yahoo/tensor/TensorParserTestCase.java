@@ -22,6 +22,12 @@ public class TensorParserTestCase {
     }
 
     @Test
+    public void testSingle() {
+        assertDense(Tensor.Builder.of(TensorType.fromSpec("tensor(x[1])")).cell(1.0, 0).build(),
+                    "tensor(x[1]):[1.0]");
+    }
+
+    @Test
     public void testDenseParsing() {
         assertDense(Tensor.Builder.of(TensorType.fromSpec("tensor()")).build(),
                     "tensor():{0.0}");
@@ -55,18 +61,9 @@ public class TensorParserTestCase {
                                    .cell(3.0, 1, 0, 0)
                                    .cell(4.0, 1, 1, 0)
                                    .cell(5.0, 2, 0, 0)
-                                   .cell(6.0, 2, 1, 0).build(),
-                    "tensor(x[3],y[2],z[1]):[[[1.0], [2.0]], [[3.0], [4.0]], [[5.0], [6.0]]]");
-        assertEquals("Messy input",
-                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2],z[1])"))
-                                   .cell( 1.0, 0, 0, 0)
-                                   .cell( 2.0, 0, 1, 0)
-                                   .cell( 3.0, 1, 0, 0)
-                                   .cell( 4.0, 1, 1, 0)
-                                   .cell( 5.0, 2, 0, 0)
                                    .cell(-6.0, 2, 1, 0).build(),
-                     Tensor.from("tensor( x[3],y[2],z[1]) : [  [ [1.0, 2.0, 3.0] , [4.0, 5,-6.0] ]  ]"));
-        assertEquals("Skipping syntactic sugar",
+                    "tensor(x[3],y[2],z[1]):[[[1.0], [2.0]], [[3.0], [4.0]], [[5.0], [-6.0]]]");
+        assertEquals("Skipping structure",
                      Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2],z[1])"))
                                    .cell( 1.0, 0, 0, 0)
                                    .cell( 2.0, 0, 1, 0)
@@ -75,6 +72,16 @@ public class TensorParserTestCase {
                                    .cell( 5.0, 2, 0, 0)
                                    .cell(-6.0, 2, 1, 0).build(),
                      Tensor.from("tensor( x[3],y[2],z[1]) : [1.0, 2.0, 3.0 , 4.0, 5, -6.0]"));
+    }
+
+    @Test
+    public void testMixedParsing() {
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{}, x[2])"))
+                                   .cell(TensorAddress.ofLabels("a", "0"), 1)
+                                   .cell(TensorAddress.ofLabels("a", "1"), 2)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 3)
+                                   .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
+                     Tensor.from("tensor(key{}, x[2]):{a:[1, 2], b:[3, 4]}"));
     }
 
     private void assertDense(Tensor expectedTensor, String denseFormat) {
@@ -92,7 +99,7 @@ public class TensorParserTestCase {
                       "{{\"x\":\"l0\", \"y\":\"l0\"}:1.0, {\"x\":\"l0\", \"y\":\"l1\"}:2.0}");
         assertIllegal("At {x:0}: '1-.0' is not a valid double",
                       "{{x:0}:1-.0}");
-        assertIllegal("At index 0: '1-.0' is not a valid double",
+        assertIllegal("At position 1: '1-.0' is not a valid double",
                       "tensor(x[1]):[1-.0]");
     }
 
@@ -102,7 +109,7 @@ public class TensorParserTestCase {
             fail("Expected an IllegalArgumentException when parsing " + tensor);
         }
         catch (IllegalArgumentException e) {
-            assertEquals(message, e.getMessage());
+            assertEquals(message, e.getCause().getMessage());
         }
     }
 

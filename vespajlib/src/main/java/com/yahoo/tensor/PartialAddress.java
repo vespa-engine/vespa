@@ -122,16 +122,18 @@ public class PartialAddress {
             labels = new Object[size];
         }
 
-        public void add(String dimensionName, long label) {
+        public Builder add(String dimensionName, long label) {
             dimensionNames[index] = dimensionName;
             labels[index] = label;
             index++;
+            return this;
         }
 
-        public void add(String dimensionName, String label) {
+        public Builder add(String dimensionName, String label) {
             dimensionNames[index] = dimensionName;
             labels[index] = label;
             index++;
+            return this;
         }
 
         public PartialAddress build() {

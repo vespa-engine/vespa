@@ -776,15 +776,14 @@
   },
   "com.yahoo.tensor.IndexedTensor$BoundBuilder": {
     "superClass": "com.yahoo.tensor.IndexedTensor$Builder",
-    "interfaces": [],
+    "interfaces": [
+      "com.yahoo.tensor.IndexedTensor$DirectIndexBuilder"
+    ],
     "attributes": [
       "public",
       "abstract"
     ],
-    "methods": [
-      "public abstract void cellByDirectIndex(long, double)",
-      "public abstract void cellByDirectIndex(long, float)"
-    ],
+    "methods": [],
     "fields": []
   },
   "com.yahoo.tensor.IndexedTensor$Builder": {
@@ -813,6 +812,21 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.IndexedTensor$DirectIndexBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.tensor.TensorType type()",
+      "public abstract void cellByDirectIndex(long, double)",
+      "public abstract void cellByDirectIndex(long, float)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.IndexedTensor$Indexes": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -829,7 +843,8 @@
       "public java.util.List toList()",
       "public java.lang.String toString()",
       "public abstract long size()",
-      "public abstract void next()"
+      "public abstract void next()",
+      "public abstract boolean hasNext()"
     ],
     "fields": [
       "protected final long[] indexes"
@@ -943,6 +958,7 @@
     ],
     "methods": [
       "public long denseSubspaceSize()",
+      "public com.yahoo.tensor.IndexedTensor$DirectIndexBuilder denseSubspaceBuilder(com.yahoo.tensor.TensorAddress)",
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, float)",
       "public com.yahoo.tensor.Tensor$Builder cell(com.yahoo.tensor.TensorAddress, double)",
       "public com.yahoo.tensor.Tensor$Builder block(com.yahoo.tensor.TensorAddress, double[])",
@@ -1035,8 +1051,8 @@
     ],
     "methods": [
       "public void <init>(int)",
-      "public void add(java.lang.String, long)",
-      "public void add(java.lang.String, java.lang.String)",
+      "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, long)",
+      "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.PartialAddress build()"
     ],
     "fields": []
@@ -1236,6 +1252,7 @@
     "methods": [
       "public void <init>()",
       "public static com.yahoo.tensor.TensorAddress of(java.lang.String[])",
+      "public static varargs com.yahoo.tensor.TensorAddress ofLabels(java.lang.String[])",
       "public static varargs com.yahoo.tensor.TensorAddress of(long[])",
       "public abstract int size()",
       "public abstract java.lang.String label(int)",
@@ -1395,6 +1412,7 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.tensor.TensorType$Value, java.util.Collection)",
       "public static varargs com.yahoo.tensor.TensorType$Value combinedValueType(com.yahoo.tensor.TensorType[])",
       "public static com.yahoo.tensor.TensorType fromSpec(java.lang.String)",
       "public com.yahoo.tensor.TensorType$Value valueType()",

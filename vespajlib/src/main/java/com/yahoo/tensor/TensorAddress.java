@@ -18,6 +18,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         return new StringTensorAddress(labels);
     }
 
+    public static TensorAddress ofLabels(String ... labels) {
+        return new StringTensorAddress(labels);
+    }
+
     public static TensorAddress of(long ... labels) {
         return new NumericTensorAddress(labels);
     }

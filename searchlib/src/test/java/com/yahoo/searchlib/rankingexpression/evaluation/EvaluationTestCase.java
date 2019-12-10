@@ -402,6 +402,12 @@ public class EvaluationTestCase {
                                "{ {x:0}:7 }", "tensor(x{}):{ {x:0}:2 }");
         tester.assertEvaluates("tensor<float>(d0[1],x[3]):[[1.0, 0.5, 0.25]]",
                                "tensor<float>(d0[1],x[3]):[[one,one_half,a_quarter]]");
+        tester.assertEvaluates("tensor(x[2],y[3]):[[1.0, 0.5, 0.25],[0.25, 0.5, 1.0]]",
+                               "tensor(x[2],y[3]):[[one,one_half,a_quarter],[a_quarter,one_half,one]]");
+        tester.assertEvaluates("tensor(x{},y[2]):{{x:a,y:0}:1.0, {x:a,y:1}:0.5, {x:b,y:0}:0.25, {x:b,y:1}:2.0}",
+                               "tensor(x{},y[2]):{{x:a,y:0}:one, {x:a,y:1}:one_half, {x:b,y:0}:a_quarter, {x:b,y:1}:2}");
+        tester.assertEvaluates("tensor(x{},y[2]):{a:[1.0, 0.5], b:[0.25, 2]}",
+                               "tensor(x{},y[2]):{a:[one, one_half], b:[a_quarter, 2]}");
     }
 
     @Test
