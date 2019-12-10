@@ -13,7 +13,6 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/timestamp.h>
 
 class FastOS_FileInterface;
 

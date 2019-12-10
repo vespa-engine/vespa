@@ -9,7 +9,6 @@
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
-#include <vespa/fastos/timestamp.h>
 #include <vespa/fastos/app.h>
 
 using namespace mbus;

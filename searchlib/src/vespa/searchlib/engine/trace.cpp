@@ -2,7 +2,6 @@
 
 #include "trace.h"
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
 

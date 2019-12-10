@@ -3,7 +3,6 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
-#include <vespa/fastos/timestamp.h>
 #include <config-my.h>
 
 using namespace config;

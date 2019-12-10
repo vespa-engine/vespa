@@ -4,7 +4,6 @@
 #include "output-connection.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/signalhandler.h>
-#include <vespa/fastos/timestamp.h>
 
 #include <csignal>
 #include <unistd.h>
@@ -44,7 +43,7 @@ Service::Service(const SentinelConfig::Service& service, const SentinelConfig::A
       _config(new SentinelConfig::Service(service)),
       _isAutomatic(true),
       _restartPenalty(0),
-      _last_start(0),
+      _last_start(vespalib::steady_time::min()),
       _application(application),
       _outputConnections(ocs),
       _metrics(metrics)
@@ -157,8 +156,7 @@ Service::start()
         LOG(warning, "tried to start '%s' in REMOVING state", name().c_str());
         return;
     }
-    time_t now = fastos::time();
-    _last_start = now;
+    _last_start = vespalib::steady_clock::now();
 
 // make a pipe, close the good ends of it, mark it close-on-exec
 // if exec fails, write a complaint on the fd (which will then be read
@@ -323,8 +321,8 @@ Service::youExited(int status)
 
     if (! expectedDeath) {
         // make sure the service does not restart in a tight loop:
-        time_t now = fastos::time();
-        unsigned int diff = now - _last_start;
+        vespalib::steady_time now = vespalib::steady_clock::now();
+        vespalib::duration diff = now - _last_start;
         if (diff < MAX_RESTART_PENALTY) {
             incrementRestartPenalty();
         }
@@ -332,7 +330,7 @@ Service::youExited(int status)
             resetRestartPenalty();
         }
         if (diff < _restartPenalty) {
-            LOG(info, "%s: will delay start by %u seconds", name().c_str(), _restartPenalty - diff);
+            LOG(info, "%s: will delay start by %2.3f seconds", name().c_str(), vespalib::to_s(_restartPenalty - diff));
         }
     }
     if (_isAutomatic && !stop()) {
@@ -421,8 +419,7 @@ bool
 Service::wantsRestart() const
 {
     if (_state == RESTARTING) {
-        time_t now = fastos::time();
-        if (now > _last_start + _restartPenalty) {
+        if (vespalib::steady_clock::now() > _last_start + _restartPenalty) {
             return true;
         }
     }
@@ -441,12 +438,12 @@ Service::setAutomatic(bool autoStatus)
 void
 Service::incrementRestartPenalty()
 {
-    _restartPenalty += 1;
+    _restartPenalty += 1s;
     _restartPenalty *= 2;
     if (_restartPenalty > MAX_RESTART_PENALTY) {
         _restartPenalty = MAX_RESTART_PENALTY;
     }
-    LOG(info, "%s: incremented restart penalty to %u seconds", name().c_str(), _restartPenalty);
+    LOG(info, "%s: incremented restart penalty to %2.3f seconds", name().c_str(), vespalib::to_s(_restartPenalty));
 }
 
 

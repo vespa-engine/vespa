@@ -3,7 +3,6 @@
 #include "session_manager_explorer.h"
 #include "sessionmanager.h"
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fastos/timestamp.h>
 
 using vespalib::slime::Inserter;
 using vespalib::slime::Cursor;

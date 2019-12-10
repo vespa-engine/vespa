@@ -5,7 +5,6 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/fastos/timestamp.h>
 #include "config-foo.h"
 #include "config-bar.h"
 #include "config-baz.h"

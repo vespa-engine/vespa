@@ -4,15 +4,15 @@
 #include "exceptions.h"
 #include "forwarder.h"
 #include "watcher.h"
-#include <vespa/log/log.h>
 #include <vespa/vespalib/util/sig_catch.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 #include <fcntl.h>
 #include <glob.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <unistd.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("");
 
 namespace logdemon {
@@ -164,7 +164,7 @@ Watcher::watchfile()
 
     vespalib::SigCatch catcher;
     int sleepcount = 0;
-    time_t created = 0;
+    vespalib::system_time created = vespalib::system_time::min();
 
  again:
     // XXX should close and/or check _wfd first ?
@@ -175,7 +175,7 @@ Watcher::watchfile()
     }
 
     bool rotate = false;
-    struct timeval rotStart;
+    vespalib::Timer rotTimer;
     off_t offset = 0;
 
     while (1) {
@@ -184,8 +184,8 @@ Watcher::watchfile()
             LOG(error, "fstat(%s) failed: %s", filename, strerror(errno));
             throw SomethingBad("fstat failed");
         }
-        if (created == 0) {
-            created = sb.st_ctime;
+        if (created == vespalib::system_time::min()) {
+            created = vespalib::system_time(std::chrono::seconds(sb.st_ctime));
         }
         if (already.valid) {
             if (sb.st_dev == already.st_dev &&
@@ -237,19 +237,19 @@ Watcher::watchfile()
         already.st_dev = sb.st_dev;
         already.st_ino = sb.st_ino;
 
-        time_t now = fastos::time();
+        vespalib::system_time now = vespalib::system_clock::now();
         bool wantrotate = (now > created + _confsubscriber.getRotateAge())
                           || (sb.st_size > _confsubscriber.getRotateSize());
 
         if (rotate) {
-            int rotTime = elapsed(rotStart);
-            if (rotTime > 59 || (sb.st_size == offset && rotTime > 4)) {
+            vespalib::duration rotTime = rotTimer.elapsed();
+            if (rotTime > 59s || (sb.st_size == offset && rotTime > 4s)) {
                 removeOldLogs(filename);
                 if (sb.st_size != offset) {
-                    LOG(warning, "logfile rotation incomplete after %d s (dropping %" PRIu64 " bytes)",
-                        rotTime, static_cast<uint64_t>(sb.st_size - offset));
+                    LOG(warning, "logfile rotation incomplete after %2.3f s (dropping %" PRIu64 " bytes)",
+                        vespalib::to_s(rotTime), static_cast<uint64_t>(sb.st_size - offset));
                 } else {
-                    LOG(debug, "logfile rotation complete after %d s", rotTime);
+                    LOG(debug, "logfile rotation complete after %2.3f s", vespalib::to_s(rotTime));
                 }
                 created = now;
                 rotate = false;
@@ -266,13 +266,14 @@ Watcher::watchfile()
             goto again;
         } else if (wantrotate) {
             rotate = true;
-            gettimeofday(&rotStart, 0);
-            LOG(debug, "preparing to rotate logfile, old logfile size %d, age %d seconds",
-                (int)offset, (int)(now-created));
+            rotTimer = vespalib::Timer();
+            LOG(debug, "preparing to rotate logfile, old logfile size %d, age %2.3f seconds",
+                (int)offset, vespalib::to_s(now-created));
             char newfn[FILENAME_MAX];
             int l = strlen(filename);
             strcpy(newfn, filename);
-            struct tm *nowtm = gmtime(&now);
+            time_t seconds = vespalib::to_s(now.time_since_epoch());
+            struct tm *nowtm = gmtime(&seconds);
             if (strftime(newfn+l, FILENAME_MAX-l-1, "-%Y-%m-%d.%H-%M-%S", nowtm) < 10)
             {
                 LOG(error, "could not strftime");
@@ -351,15 +352,13 @@ Watcher::removeOldLogs(const char *prefix)
                 continue;
             }
             if (S_ISREG(sb.st_mode)) {
-                if (sb.st_mtime +
-                    _confsubscriber.getRemoveAge() * 86400 < fastos::time())
-                {
-                    LOG(info, "removing %s, too old (%f days)", fname,
-                        (double)(fastos::time()-sb.st_mtime)/86400.0);
+                vespalib::system_time mtime = vespalib::system_time(std::chrono::seconds(sb.st_mtime));
+                vespalib::system_time now = vespalib::system_clock::now();
+                if ((mtime + _confsubscriber.getRemoveAge()) < now) {
+                    LOG(info, "removing %s, too old (%f days)", fname, vespalib::to_s(now - mtime)/86400.0);
 
                     if (unlink(fname) != 0) {
-                        LOG(warning, "cannot remove %s: %s",
-                            fname, strerror(errno));
+                        LOG(warning, "cannot remove %s: %s", fname, strerror(errno));
                     }
                     continue;
                 }

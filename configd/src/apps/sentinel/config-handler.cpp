@@ -5,7 +5,6 @@
 
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/fastos/timestamp.h>
 #include <string>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -44,24 +43,22 @@ ConfigHandler::ConfigHandler()
       _startMetrics(),
       _stateApi()
 {
-    _startMetrics.startedTime = fastos::time();
+    _startMetrics.startedTime = vespalib::steady_clock::now();
 }
 
 ConfigHandler::~ConfigHandler()
 {
     terminateServices(false);
-    std::list<OutputConnection *>::iterator it;
-    for (it = _outputConnections.begin(); it != _outputConnections.end(); ++it)
-    {
-        delete *it;
+    for (OutputConnection * conn : _outputConnections) {
+        delete conn;
     }
 }
 
 void
 ConfigHandler::terminateServices(bool catchable, bool printDebug)
 {
-    for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        Service *service = it->second.get();
+    for (const auto & entry : _services) {
+        Service *service = entry.second.get();
         if (printDebug && service->isRunning()) {
             LOG(info, "%s: killing", service->name().c_str());
         }
@@ -77,34 +74,10 @@ ConfigHandler::terminate()
     // Give them 58 seconds to exit cleanly, then terminate(false) all
     // of them.
     terminateServices(true);
-    struct timeval endTime;
-    gettimeofday(&endTime, nullptr);
-    endTime.tv_sec += 58;
-    struct timeval tv = {0, 0};
+    vespalib::steady_time endTime = vespalib::steady_clock::now() + 58s;
 
-    while (tv.tv_sec >= 0 && doWork()) {
-        gettimeofday(&tv, nullptr);
-        tv.tv_sec = endTime.tv_sec - tv.tv_sec;
-        tv.tv_usec = endTime.tv_usec - tv.tv_usec;
-
-        if (tv.tv_usec >= 1000000) {
-            tv.tv_usec -= 1000000;
-            tv.tv_sec += 1;
-        } else if (tv.tv_usec < 0) {
-            tv.tv_usec += 100000;
-            tv.tv_sec -= 1;
-        }
-
-        if (tv.tv_sec < 0) {
-            break;
-        }
-
-        if (tv.tv_sec > 0 || tv.tv_usec > 200000) {
-            // Never wait more than 200ms per select regardless
-            tv.tv_sec = 0;
-            tv.tv_usec = 200000;
-        }
-
+    while ((vespalib::steady_clock::now() < endTime) && doWork()) {
+        struct timeval tv {0, 200000};
         // Any child exiting will send SIGCHLD and break this select so
         // we handle the children exiting even quicker..
         select(0, nullptr, nullptr, nullptr, &tv);
@@ -112,8 +85,7 @@ ConfigHandler::terminate()
     for (int retry = 0; retry < 10 && doWork(); ++retry) {
         LOG(warning, "some services refuse to terminate cleanly, sending KILL");
         terminateServices(false, true);
-        tv.tv_sec = 0;
-        tv.tv_usec = 200000;
+        struct timeval tv {0, 200000};
         select(0, nullptr, nullptr, nullptr, &tv);
     }
     return !doWork();
@@ -146,9 +118,9 @@ ConfigHandler::doConfigure()
     for (unsigned int i = 0; i < config.service.size(); ++i) {
         const SentinelConfig::Service& serviceConfig = config.service[i];
         const vespalib::string name(serviceConfig.name);
-        ServiceMap::iterator found(_services.find(name));
+        auto found(_services.find(name));
         if (found == _services.end()) {
-            services[name] = Service::UP(new Service(serviceConfig, config.application, _outputConnections, _startMetrics));
+            services[name] = std::make_unique<Service>(serviceConfig, config.application, _outputConnections, _startMetrics);
         } else {
             found->second->reconfigure(serviceConfig);
             services[name] = std::move(found->second);
@@ -182,8 +154,8 @@ ConfigHandler::doWork()
     _startMetrics.maybeLog();
 
     // Check for active services.
-    for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        if (it->second->isRunning()) {
+    for (const auto & service : _services) {
+        if (service.second->isRunning()) {
             return true;
         }
     }
@@ -227,12 +199,8 @@ ConfigHandler::handleChildDeaths()
 void
 ConfigHandler::updateActiveFdset(fd_set *fds, int *maxNum)
 {
-    std::list<OutputConnection *>::const_iterator
-        src = _outputConnections.begin();
     // ### _Possibly put an assert here if fd is > 1023???
-    while (src != _outputConnections.end()) {
-        OutputConnection *c = *src;
-        ++src;
+    for (OutputConnection *c : _outputConnections) {
         int fd = c->fd();
         if (fd >= 0) {
             FD_SET(fd, fds);
@@ -280,10 +248,9 @@ ConfigHandler::handleCommands()
 Service *
 ConfigHandler::serviceByPid(pid_t pid)
 {
-    for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-        Service *service = it->second.get();
-        if (service->pid() == pid) {
-            return service;
+    for (const auto & service : _services) {
+        if (service.second->pid() == pid) {
+            return service.second.get();
         }
     }
     for (const auto & it : _orphans) {
@@ -298,7 +265,7 @@ ConfigHandler::serviceByPid(pid_t pid)
 Service *
 ConfigHandler::serviceByName(const vespalib::string & name)
 {
-    ServiceMap::iterator found(_services.find(name));
+    auto found(_services.find(name));
     if (found != _services.end()) {
         return found->second.get();
     }
@@ -316,8 +283,8 @@ ConfigHandler::handleCmd(const Cmd& cmd)
             size_t left = 65536;
             size_t pos = 0;
             retbuf[pos] = 0;
-            for (ServiceMap::iterator it(_services.begin()), mt(_services.end()); it != mt; it++) {
-                Service *service = it->second.get();
+            for (const auto & entry : _services) {
+                const Service *service = entry.second.get();
                 const SentinelConfig::Service& config = service->serviceConfig();
                 int sz = snprintf(retbuf + pos, left,
                                   "%s state=%s mode=%s pid=%d exitstatus=%d id=\"%s\"\n",

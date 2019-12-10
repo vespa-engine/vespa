@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/fastos/timestamp.h>
 
 using namespace vespalib;
 using namespace std::literals;

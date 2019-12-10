@@ -8,9 +8,9 @@
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
-#include <vespa/fastos/timestamp.h>
 #include <sstream>
 #include <algorithm>
 
@@ -26,7 +26,7 @@ MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_t
 MetricManager::Timer::getTime() const {
-    return fastos::time();
+    return vespalib::to_s(vespalib::steady_clock::now().time_since_epoch());
 }
 
 void

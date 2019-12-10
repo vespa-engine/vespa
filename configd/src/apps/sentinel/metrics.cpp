@@ -2,7 +2,6 @@
 
 #include "metrics.h"
 #include <vespa/vespalib/metrics/simple_metrics.h>
-#include <vespa/fastos/timestamp.h>
 
 namespace config::sentinel {
 
@@ -14,7 +13,7 @@ StartMetrics::StartMetrics()
       producer(metrics),
       currentlyRunningServices(0),
       totalRestartsCounter(0),
-      startedTime(fastos::time()),
+      startedTime(vespalib::steady_clock::now()),
       sentinel_restarts(metrics->counter("sentinel.restarts",
               "how many times sentinel restarted a service")),
       sentinel_totalRestarts(metrics->gauge("sentinel.totalRestarts",
@@ -33,10 +32,10 @@ StartMetrics::~StartMetrics() = default;
 void
 StartMetrics::maybeLog()
 {
-    uint32_t curTime = fastos::time();
+    vespalib::steady_time curTime = vespalib::steady_clock::now();
     sentinel_totalRestarts.sample(totalRestartsCounter);
     sentinel_running.sample(currentlyRunningServices);
-    sentinel_uptime.sample(curTime - startedTime);
+    sentinel_uptime.sample(vespalib::to_s(curTime - startedTime));
 }
 
 }

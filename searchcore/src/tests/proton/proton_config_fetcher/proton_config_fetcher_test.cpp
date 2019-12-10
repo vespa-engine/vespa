@@ -13,7 +13,6 @@
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fastos/timestamp.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>

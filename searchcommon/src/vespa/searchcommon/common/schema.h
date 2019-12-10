@@ -6,7 +6,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/ptrholder.h>
-#include <vespa/fastos/timestamp.h>
 #include <vector>
 
 namespace vespalib { class asciistream; }

@@ -50,7 +50,7 @@ ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
         LOG(config, "bad rotate.size=%d must be positive", newconf.rotate.size);
     }
     if (newconf.rotate.age > 0) {
-        _rotate_age = newconf.rotate.age;
+        _rotate_age = std::chrono::seconds(newconf.rotate.age);
     } else {
         LOG(config, "bad rotate.age=%d must be positive", newconf.rotate.age);
     }
@@ -60,7 +60,7 @@ ConfigSubscriber::configure(std::unique_ptr<LogdConfig> cfg)
         LOG(config, "bad remove.totalmegabytes=%d must be positive", newconf.remove.totalmegabytes);
     }
     if (newconf.remove.age > 0) {
-        _remove_age = newconf.remove.age;
+        _remove_age = std::chrono::hours(newconf.remove.age * 24);
     } else {
         LOG(config, "bad remove.age=%d must be positive", newconf.remove.age);
     }
@@ -90,9 +90,9 @@ ConfigSubscriber::ConfigSubscriber(const config::ConfigUri& configUri)
       _state_port(0),
       _forward_filter(),
       _rotate_size(INT_MAX),
-      _rotate_age(INT_MAX),
+      _rotate_age(vespalib::duration::max()),
       _remove_meg(INT_MAX),
-      _remove_age(3650),
+      _remove_age(std::chrono::hours(30*24)),
       _use_logserver(true),
       _subscriber(configUri.getContext()),
       _handle(),

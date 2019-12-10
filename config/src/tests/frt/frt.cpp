@@ -14,7 +14,6 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fnet/frt/error.h>
 #include <vespa/config/frt/protocol.h>
-#include <vespa/fastos/timestamp.h>
 #include <lz4.h>
 #include "config-my.h"
 #include "config-bar.h"

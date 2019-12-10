@@ -4,7 +4,6 @@
 
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/fastos/timestamp.h>
 
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;

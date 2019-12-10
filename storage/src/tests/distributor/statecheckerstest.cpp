@@ -1242,8 +1242,8 @@ std::string StateCheckersTest::testGarbageCollection(
     getBucketDatabase().update(e);
 
     GarbageCollectionStateChecker checker;
-    getConfig().setGarbageCollection("music", checkInterval);
-    getConfig().setLastGarbageCollectionChangeTime(lastChangeTime);
+    getConfig().setGarbageCollection("music", std::chrono::seconds(checkInterval));
+    getConfig().setLastGarbageCollectionChangeTime(vespalib::steady_time(std::chrono::seconds(lastChangeTime)));
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker,
                             makeDocumentBucket(e.getBucketId()));
@@ -1315,8 +1315,8 @@ TEST_F(StateCheckersTest, gc_inhibited_when_ideal_node_in_maintenance) {
     getBucketDatabase().update(e);
 
     GarbageCollectionStateChecker checker;
-    getConfig().setGarbageCollection("music", 3600);
-    getConfig().setLastGarbageCollectionChangeTime(0);
+    getConfig().setGarbageCollection("music", 3600s);
+    getConfig().setLastGarbageCollectionChangeTime(vespalib::steady_time(vespalib::duration::zero()));
     NodeMaintenanceStatsTracker statsTracker;
     StateChecker::Context c(getExternalOperationHandler(), getDistributorBucketSpace(), statsTracker,
                             makeDocumentBucket(bucket));
