@@ -129,13 +129,6 @@ public class Flags {
             "preprovisioned is taken, new will be provisioned within next iteration of maintainer.",
             "Takes effect on next iteration of HostProvisionMaintainer.");
 
-    public static final UnboundBooleanFlag USE_ADVERTISED_RESOURCES = defineFeatureFlag(
-            "use-advertised-resources", true,
-            "When enabled, will use advertised host resources rather than actual host resources, ignore host resource " +
-                    "reservation, and fail with exception unless requested resource match advertised host resources exactly.",
-            "Takes effect on next iteration of HostProvisionMaintainer.",
-            APPLICATION_ID);
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             "Node resource memory in Gb for admin cluster nodes",
