@@ -30,7 +30,7 @@ import static com.yahoo.jdisc.Response.Status.OK;
 public class MetricsHandler extends HttpHandlerBase {
 
     public static final String V1_PATH = "/metrics/v1";
-    static final String VALUES_PATH = V1_PATH + "/values";
+    public static final String VALUES_PATH = V1_PATH + "/values";
 
     private final ValuesFetcher valuesFetcher;
 
