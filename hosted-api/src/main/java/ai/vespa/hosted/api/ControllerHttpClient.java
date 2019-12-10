@@ -120,7 +120,7 @@ public abstract class ControllerHttpClient {
         Inspector rootObject = toInspector(send(request(HttpRequest.newBuilder(defaultRegionPath(environment))
                                                                    .timeout(Duration.ofSeconds(10)),
                                                         GET)));
-        return ZoneId.from("dev", rootObject.field("name").asString());
+        return ZoneId.from(environment.value(), rootObject.field("name").asString());
     }
 
     /** Returns the Vespa version to compile against, for a hosted Vespa application. This is its lowest runtime version. */
