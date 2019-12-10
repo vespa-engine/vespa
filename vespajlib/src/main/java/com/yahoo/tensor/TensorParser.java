@@ -93,7 +93,9 @@ class TensorParser {
         try {
             valueString = valueString.trim();
             Tensor.Builder builder = Tensor.Builder.of(type.orElse(typeFromSparseValueString(valueString)));
-            return tensorFromSparseCellString(builder, valueString);
+            SparseValueParser parser = new SparseValueParser(valueString, builder);
+            parser.parse();
+            return builder.build();
         }
         catch (NumberFormatException e) {
             throw new IllegalArgumentException("Excepted a number or a string starting by '{' or 'tensor('");
@@ -115,7 +117,7 @@ class TensorParser {
                 throw new IllegalArgumentException("A mixed tensor must be enclosed in {}");
             // TODO: Check if there is also at least one bound indexed dimension
             MixedTensor.BoundBuilder builder = (MixedTensor.BoundBuilder)Tensor.Builder.of(type.get());
-            MixedParser parser = new MixedParser(valueString, builder);
+            MixedValueParser parser = new MixedValueParser(valueString, builder);
             parser.parse();
             return builder.build();
         }
@@ -133,86 +135,8 @@ class TensorParser {
                                                "only dense dimensions with a given size");
 
         IndexedTensor.BoundBuilder builder = (IndexedTensor.BoundBuilder) IndexedTensor.Builder.of(type.get());
-        new DenseParser(valueString, builder).parse();
+        new DenseValueParser(valueString, builder).parse();
         return builder.build();
-    }
-
-    private static Tensor tensorFromSparseCellString(Tensor.Builder builder, String s) {
-        int index = 1;
-        index = skipSpace(index, s);
-        while (index + 1 < s.length()) {
-            int keyOrTensorEnd = s.indexOf('}', index);
-            TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
-            if (keyOrTensorEnd < s.length() - 1) { // Key end: This has a key - otherwise TensorAddress is empty
-                addLabels(s.substring(index, keyOrTensorEnd + 1), addressBuilder);
-                index = keyOrTensorEnd + 1;
-                index = skipSpace(index, s);
-                if ( s.charAt(index) != ':')
-                    throw new IllegalArgumentException("Expecting a ':' after " + s.substring(index) + ", got '" + s + "'");
-                index++;
-            }
-            int valueEnd = s.indexOf(',', index);
-            if (valueEnd < 0) { // last value
-                valueEnd = s.indexOf('}', index);
-                if (valueEnd < 0)
-                    throw new IllegalArgumentException("A tensor string must end by '}'");
-            }
-
-            TensorAddress address = addressBuilder.build();
-            TensorType.Value cellValueType = builder.type().valueType();
-            String cellValueString = s.substring(index, valueEnd).trim();
-            try {
-                if (cellValueType == TensorType.Value.DOUBLE)
-                    builder.cell(address, Double.parseDouble(cellValueString));
-                else if (cellValueType == TensorType.Value.FLOAT)
-                    builder.cell(address, Float.parseFloat(cellValueString));
-                else
-                    throw new IllegalArgumentException(cellValueType + " is not supported");
-            }
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("At " + address.toString(builder.type()) + ": '" +
-                                                   cellValueString + "' is not a valid " + cellValueType);
-            }
-
-            index = valueEnd+1;
-            index = skipSpace(index, s);
-        }
-        return builder.build();
-    }
-
-    private static int skipSpace(int index, String s) {
-        while (index < s.length() && s.charAt(index) == ' ')
-            index++;
-        return index;
-    }
-
-    private static int nextStopCharIndex(int charIndex, String valueString) {
-        while (charIndex < valueString.length()) {
-            if (valueString.charAt(charIndex) == ',') return charIndex;
-            if (valueString.charAt(charIndex) == ']') return charIndex;
-            charIndex++;
-        }
-        throw new IllegalArgumentException("Malformed tensor value '" + valueString +
-                                           "': Expected a ',' or ']' after position " + charIndex);
-    }
-
-    /** Creates a tenor address from a string on the form {dimension1:label1,dimension2:label2,...} */
-    private static void addLabels(String mapAddressString, TensorAddress.Builder builder) {
-        mapAddressString = mapAddressString.trim();
-        if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
-            throw new IllegalArgumentException("Expecting a tensor address enclosed in {}, got '" + mapAddressString + "'");
-
-        String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
-        if (addressBody.isEmpty()) return;
-
-        for (String elementString : addressBody.split(",")) {
-            String[] pair = elementString.split(":");
-            if (pair.length != 2)
-                throw new IllegalArgumentException("Expecting argument elements on the form dimension:label, " +
-                                                   "got '" + elementString + "'");
-            String dimension = pair[0].trim();
-            builder.add(dimension, pair[1].trim());
-        }
     }
 
     private static abstract class ValueParser {
@@ -244,7 +168,7 @@ class TensorParser {
     }
 
     /** A single-use dense tensor string parser */
-    private static class DenseParser extends ValueParser {
+    private static class DenseValueParser extends ValueParser {
 
         private final IndexedTensor.DirectIndexBuilder builder;
         private final IndexedTensor.Indexes indexes;
@@ -252,7 +176,7 @@ class TensorParser {
 
         private long tensorIndex = 0;
 
-        public DenseParser(String string, IndexedTensor.DirectIndexBuilder builder) {
+        public DenseValueParser(String string, IndexedTensor.DirectIndexBuilder builder) {
             super(string);
             this.builder = builder;
             indexes = IndexedTensor.Indexes.of(builder.type());
@@ -313,13 +237,23 @@ class TensorParser {
             position = nextNumberEnd;
         }
 
+        private int nextStopCharIndex(int charIndex, String valueString) {
+            while (charIndex < valueString.length()) {
+                if (valueString.charAt(charIndex) == ',') return charIndex;
+                if (valueString.charAt(charIndex) == ']') return charIndex;
+                charIndex++;
+            }
+            throw new IllegalArgumentException("Malformed tensor value '" + valueString +
+                                               "': Expected a ',' or ']' after position " + charIndex);
+        }
+
     }
 
-    private static class MixedParser extends ValueParser {
+    private static class MixedValueParser extends ValueParser {
 
         private final MixedTensor.BoundBuilder builder;
 
-        public MixedParser(String string, MixedTensor.BoundBuilder builder) {
+        public MixedValueParser(String string, MixedTensor.BoundBuilder builder) {
             super(string);
             this.builder = builder;
         }
@@ -348,7 +282,7 @@ class TensorParser {
         }
 
         private void parseDenseSubspace(TensorAddress sparseAddress) {
-            DenseParser denseParser = new DenseParser(string.substring(position), builder.denseSubspaceBuilder(sparseAddress));
+            DenseValueParser denseParser = new DenseValueParser(string.substring(position), builder.denseSubspaceBuilder(sparseAddress));
             denseParser.parse();
             position+= denseParser.position();
         }
@@ -365,6 +299,75 @@ class TensorParser {
             return true;
         }
 
+    }
+
+    private static class SparseValueParser extends ValueParser {
+
+        private final Tensor.Builder builder;
+
+        public SparseValueParser(String string, Tensor.Builder builder) {
+            super(string);
+            this.builder = builder;
+        }
+
+        private void parse() {
+            consume('{');
+            skipSpace();
+            while (position + 1 < string.length()) {
+                int keyOrTensorEnd = string.indexOf('}', position);
+                TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
+                if (keyOrTensorEnd < string.length() - 1) { // Key end: This has a key - otherwise TensorAddress is empty
+                    addLabels(string.substring(position, keyOrTensorEnd + 1), addressBuilder);
+                    position = keyOrTensorEnd + 1;
+                    skipSpace();
+                    consume(':');
+                }
+                int valueEnd = string.indexOf(',', position);
+                if (valueEnd < 0) { // last value
+                    valueEnd = string.indexOf('}', position);
+                    if (valueEnd < 0)
+                        throw new IllegalArgumentException("A sparse tensor string must end by '}'");
+                }
+
+                TensorAddress address = addressBuilder.build();
+                TensorType.Value cellValueType = builder.type().valueType();
+                String cellValueString = string.substring(position, valueEnd).trim();
+                try {
+                    if (cellValueType == TensorType.Value.DOUBLE)
+                        builder.cell(address, Double.parseDouble(cellValueString));
+                    else if (cellValueType == TensorType.Value.FLOAT)
+                        builder.cell(address, Float.parseFloat(cellValueString));
+                    else
+                        throw new IllegalArgumentException(cellValueType + " is not supported");
+                }
+                catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("At " + address.toString(builder.type()) + ": '" +
+                                                       cellValueString + "' is not a valid " + cellValueType);
+                }
+
+                position = valueEnd+1;
+                skipSpace();
+            }
+        }
+
+        /** Creates a tensor address from a string on the form {dimension1:label1,dimension2:label2,...} */
+        private static void addLabels(String mapAddressString, TensorAddress.Builder builder) {
+            mapAddressString = mapAddressString.trim();
+            if ( ! (mapAddressString.startsWith("{") && mapAddressString.endsWith("}")))
+                throw new IllegalArgumentException("Expecting a tensor address enclosed in {}, got '" + mapAddressString + "'");
+
+            String addressBody = mapAddressString.substring(1, mapAddressString.length() - 1).trim();
+            if (addressBody.isEmpty()) return;
+
+            for (String elementString : addressBody.split(",")) {
+                String[] pair = elementString.split(":");
+                if (pair.length != 2)
+                    throw new IllegalArgumentException("Expecting argument elements on the form dimension:label, " +
+                                                       "got '" + elementString + "'");
+                String dimension = pair[0].trim();
+                builder.add(dimension, pair[1].trim());
+            }
+        }
 
     }
 
