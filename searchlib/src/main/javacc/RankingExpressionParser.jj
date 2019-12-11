@@ -840,7 +840,8 @@ TensorFunctionNode tensorValueBody(TensorType type) :
     <COLON>
     (
         dynamicTensor = mappedTensorValueBody(type) |
-        dynamicTensor = indexedTensorValueBody(type)
+        dynamicTensor = indexedTensorValueBody(type) |
+        dynamicTensor = mixedTensorValueBody(type)
     )
     { return new TensorFunctionNode(dynamicTensor); }
 }
@@ -857,7 +858,38 @@ DynamicTensor mappedTensorValueBody(TensorType type) :
     { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
 }
 
+DynamicTensor mixedTensorValueBody(TensorType type) :
+{
+    java.util.Map cells = new LinkedHashMap();
+}
+{
+    <LCURLY>
+          mixedBlock(type, cells)
+        ( <COMMA> mixedBlock(type, cells))*
+    <RCURLY>
+    { return DynamicTensor.from(type, cells); }
+}
+
 DynamicTensor indexedTensorValueBody(TensorType type) :
+{
+    List cells;
+}
+{
+    cells = indexedTensorCells()
+    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
+}
+
+void mixedBlock(TensorType type, Map cellMap) :
+{
+    String label;
+    List cells;
+}
+{
+    label = tag() <COLON> cells = indexedTensorCells()
+    { TensorFunctionNode.wrapScalarBlock(label, cells, cellMap); }
+}
+
+List indexedTensorCells() :
 {
     List cells = new ArrayList();
     ExpressionNode value;
@@ -867,7 +899,7 @@ DynamicTensor indexedTensorValueBody(TensorType type) :
         ( (<LSQUARE>)* value = expression() (<RSQUARE>)* { cells.add(value); }  )*
         ( <COMMA> (<LSQUARE>)* value = expression() (<RSQUARE>)* { cells.add(value); } )*
 //    <RSQUARE>
-    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
+    { return cells; }
 }
 
 void tensorCell(TensorType type, java.util.Map cells) :
