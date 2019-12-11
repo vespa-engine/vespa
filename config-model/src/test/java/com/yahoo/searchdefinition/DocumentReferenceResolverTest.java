@@ -69,8 +69,7 @@ public class DocumentReferenceResolverTest {
 
         exceptionRule.expect(IllegalArgumentException.class);
         exceptionRule.expectMessage(
-                "The field 'bar_ref' is an invalid document reference. " +
-                        "Could not find document with 'bar' in any search definitions");
+                "Invalid document reference 'bar_ref': Could not find document type 'bar'");
         resolver.resolveReferences(fooDocument);
     }
 
