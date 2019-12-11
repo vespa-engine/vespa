@@ -15,7 +15,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Integer> rpcPort() {
-        return getInstallVariable("port_configserver_rpc", "services", Integer::parseInt);
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_RPC_PORT"))
+                .or(() -> getRawInstallVariable("services.port_configserver_rpc"))
+                .map(Integer::parseInt);
     }
 
     @Override
