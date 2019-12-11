@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -30,13 +29,11 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -280,10 +277,10 @@ public class DeploymentTriggerTest {
     public void testNoOtherChangesDuringSuspension() {
         // Application is deployed in 3 regions:
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                                                        .environment(Environment.prod)
-                                                        .region("us-central-1")
-                                                        .parallel("us-west-1", "us-east-3")
-                                                        .build();
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .parallel("us-west-1", "us-east-3")
+                .build();
         var application = tester.newDeploymentContext().submit().deploy();
 
         // The first production zone is suspended:
@@ -409,9 +406,9 @@ public class DeploymentTriggerTest {
         tester.upgrader().maintain();
 
         tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsWest1,
-                                                           tester.clock().instant().plus(Duration.ofSeconds(1)));
+                                            tester.clock().instant().plus(Duration.ofSeconds(1)));
         tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsEast3,
-                                                           tester.clock().instant().plus(Duration.ofSeconds(3)));
+                                            tester.clock().instant().plus(Duration.ofSeconds(3)));
 
         // us-west-1 does not trigger when paused.
         app.runJob(systemTest).runJob(stagingTest);
@@ -588,7 +585,7 @@ public class DeploymentTriggerTest {
         assertNotEquals(firstTested, app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetPlatform());
         app.runJob(systemTest).runJob(stagingTest);
 
-         // Finish old run of the aborted production job.
+        // Finish old run of the aborted production job.
         app.jobAborted(productionUsEast3);
 
         // New upgrade is already tested for both jobs.
@@ -839,6 +836,35 @@ public class DeploymentTriggerTest {
         app.runJob(testUsEast3)
            .runJob(productionUsWest1).runJob(productionUsCentral1)
            .runJob(testUsCentral1).runJob(testUsWest1);
+        assertEquals(Change.empty(), app.application().change());
+
+        // Application starts upgrade, but is confidence is broken cancelled after first zone. Tests won't run.
+        Version version0 = app.application().oldestDeployedPlatform().get();
+        Version version1 = Version.fromString("7.7");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.failDeployment(testUsEast3);
+        tester.triggerJobs();
+        app.assertRunning(testUsEast3);
+
+        tester.upgrader().overrideConfidence(version1, VespaVersion.Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        app.failDeployment(testUsEast3);
+        app.assertNotRunning(testUsEast3);
+        assertEquals(Change.empty(), app.application().change());
+
+        // Application is pinned to previous version, and downgrades to that. Tests are re-run.
+        tester.deploymentTrigger().triggerChange(app.application().id(), Change.of(version0).withPin());
+        app.runJob(stagingTest).runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.failDeployment(testUsEast3);
+        tester.clock().advance(Duration.ofMinutes(11)); // Job is cooling down after consecutive failures.
+        app.runJob(testUsEast3);
+        assertEquals(Change.empty().withPin(), app.application().change());
     }
 
 }
