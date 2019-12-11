@@ -16,8 +16,8 @@ public class FlattenedItem {
     private int position;
 
     public FlattenedItem(TermItem item,int position) {
-        this.item=item;
-        this.position=position;
+        this.item = item;
+        this.position = position;
     }
 
     public TermItem getItem() { return item; }

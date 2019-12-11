@@ -115,9 +115,9 @@ public abstract class CompositeCondition extends Condition {
 
     /** Returns whether all the conditions of this matches the current evaluation state */
     protected final boolean allSubConditionsMatches(RuleEvaluation e) {
-        for (Iterator<Condition> i=conditionIterator(); i.hasNext(); ) {
-            Condition subCondition=i.next();
-            if (!subCondition.matches(e))
+        for (Iterator<Condition> i = conditionIterator(); i.hasNext(); ) {
+            Condition subCondition = i.next();
+            if ( ! subCondition.matches(e))
                 return false;
         }
         return true;

@@ -19,7 +19,7 @@ import java.util.Set;
 public class Evaluation {
 
     // TODO: Retrofit query into the namespace construct
-    private ParameterNameSpace parameterNameSpace=null;
+    private ParameterNameSpace parameterNameSpace = null;
 
     private Query query;
 
@@ -36,18 +36,18 @@ public class Evaluation {
      * The amount of context information to collect about this evaluation.
      * 0 means no context information, higher numbers means more context information.
      */
-    private int traceLevel=0;
+    private int traceLevel = 0;
 
-    private String traceIndentation="";
+    private String traceIndentation = "";
 
     /** See RuleEngine */
-    private Set<Integer> matchDigests=new HashSet<>();
+    private Set<Integer> matchDigests = new HashSet<>();
 
     /** The previous size of this query (see RuleEngine), set on matches only */
-    private int previousQuerySize=0;
+    private int previousQuerySize = 0;
 
     /** Should we allow stemmed matches? */
-    private boolean stemming=true;
+    private boolean stemming = true;
 
     public Evaluation(Query query) {
         this(query,0);
@@ -60,44 +60,44 @@ public class Evaluation {
      * @param traceLevel the amount of tracing to do
      */
     public Evaluation(Query query, int traceLevel) {
-        this.query=query;
-        this.traceLevel=traceLevel;
+        this.query = query;
+        this.traceLevel = traceLevel;
         reset();
-        ruleEvaluation=new RuleEvaluation(this);
+        ruleEvaluation = new RuleEvaluation(this);
     }
 
     /** Resets the item iterator to point to the first item */
     public void reset() {
-        if (flattenedItems!=null)
-            previousQuerySize=flattenedItems.size();
-        currentIndex=0;
-        traceIndentation="";
-        flattenedItems=new java.util.ArrayList<>();
-        flatten(query.getModel().getQueryTree().getRoot(),0,flattenedItems);
+        if (flattenedItems != null)
+            previousQuerySize = flattenedItems.size();
+        currentIndex = 0;
+        traceIndentation = "";
+        flattenedItems = new java.util.ArrayList<>();
+        flatten(query.getModel().getQueryTree().getRoot(), 0, flattenedItems);
     }
 
     /** Sets the item iterator to point to the last item: */
-    public void setToLast() { // PGA
-        if (flattenedItems!=null)
-                currentIndex = flattenedItems.size()-1;
+    public void setToLast() {
+        if (flattenedItems != null)
+                currentIndex = flattenedItems.size() - 1;
         else
                 currentIndex = -1;
     }
 
     /** Resets the item iterator to point to the last item: */
-    public void resetToLast() { // PGA
-        if (flattenedItems!=null)
-            previousQuerySize=flattenedItems.size();
-        traceIndentation="";
-        flattenedItems=new java.util.ArrayList<>();
-        flatten(query.getModel().getQueryTree().getRoot(),0,flattenedItems);
-        currentIndex = flattenedItems.size()-1;
+    public void resetToLast() {
+        if (flattenedItems != null)
+            previousQuerySize = flattenedItems.size();
+        traceIndentation = "";
+        flattenedItems = new java.util.ArrayList<>();
+        flatten(query.getModel().getQueryTree().getRoot(), 0, flattenedItems);
+        currentIndex = flattenedItems.size() - 1;
     }
 
     public Query getQuery() { return query; }
 
     /** Set to true to enable stemmed matches. True by default */
-    public void setStemming(boolean stemming) { this.stemming=stemming; }
+    public void setStemming(boolean stemming) { this.stemming = stemming; }
 
     /** Returns whether stemmed matches are allowed. True by default */
     public boolean getStemming() { return stemming; }
@@ -121,13 +121,13 @@ public class Evaluation {
 
     /** Returns the current item, or null if there is no more elements */
     public FlattenedItem currentItem() {
-        if ( (currentIndex>=flattenedItems.size()) || (currentIndex<0)) return null; //PGA
+        if ( (currentIndex >= flattenedItems.size()) || (currentIndex < 0)) return null;
         return flattenedItems.get(currentIndex);
     }
 
     /** Returns a fresh rule evaluation starting at the current position of this */
     public RuleEvaluation freshRuleEvaluation() {
-        ruleEvaluation.initialize(flattenedItems,currentIndex);
+        ruleEvaluation.initialize(flattenedItems, currentIndex);
         return ruleEvaluation;
     }
 
@@ -224,7 +224,7 @@ public class Evaluation {
      * segment phrase, and the original parent's parent is a phrase, the terms
      * from the parent will be moved to the parent's parent.)
      *
-     * @param item The item for which the parent shall be made mutable
+     * @param item the item for which the parent shall be made mutable
      */
     public void makeParentMutable(TermItem item) {
         CompositeItem parent = item.getParent();
@@ -244,7 +244,7 @@ public class Evaluation {
      * @param desiredParentType the desired type of the composite which contains item when this returns
      */
     public void insertItem(Item item, CompositeItem parent, int index, TermType desiredParentType) {
-        if (parent==null) { // TODO: Accommodate for termtype in this case too
+        if (parent == null) { // TODO: Accommodate for termtype in this case too
             query.getModel().getQueryTree().setRoot(item);
 
             return;
@@ -253,24 +253,24 @@ public class Evaluation {
         if (parent.getItemCount()>0 && parent instanceof QueryTree && parent.getItem(0) instanceof CompositeItem) {
             // combine with the existing root instead
             parent=(CompositeItem)parent.getItem(0);
-            if (index==1) { // that means adding it after the existing root
-                index=parent.getItemCount();
+            if (index == 1) { // that means adding it after the existing root
+                index = parent.getItemCount();
             }
         }
 
-        if (( desiredParentType==TermType.DEFAULT || desiredParentType.hasItemClass(parent.getClass()) )
-             && equalIndexNameIfParentIsPhrase(item,parent)) {
+        if (( desiredParentType == TermType.DEFAULT || desiredParentType.hasItemClass(parent.getClass()) )
+             && equalIndexNameIfParentIsPhrase(item, parent)) {
             addItem(parent,index,item,desiredParentType);
         }
         else {
-            insertIncompatibleItem(item,parent,query,desiredParentType);
+            insertIncompatibleItem(item, parent, query, desiredParentType);
         }
     }
 
-    private void addItem(CompositeItem parent,int index,Item item,TermType desiredParentType) {
+    private void addItem(CompositeItem parent, int index, Item item, TermType desiredParentType) {
         if (parent instanceof NotItem) {
-            if (index==0 && parent.getItem(0)==null) { // Case 1: The current positive is null and we are adding a positive
-                parent.setItem(0,item);
+            if (index == 0 && parent.getItem(0) == null) { // Case 1: The current positive is null and we are adding a positive
+                parent.setItem(0, item);
             }
             else if (index<=1 && !(parent.getItem(0) instanceof CompositeItem))  { // Case 2: The positive must become a composite
                 CompositeItem positiveComposite=(CompositeItem)desiredParentType.createItemClass();
@@ -395,27 +395,27 @@ public class Evaluation {
     }
 
     private void flatten(Item item,int position,List<FlattenedItem> toList) {
-        if (item==null) return;
+        if (item == null) return;
         if (item.isFilter()) return;
 
         if (item instanceof TermItem) {  // make eligible for matching
-             toList.add(new FlattenedItem((TermItem)item,position));
+            toList.add(new FlattenedItem((TermItem)item, position));
             return;
         }
 
         if (item instanceof CompositeItem) { // make children eligible for matching
-            CompositeItem composite=(CompositeItem)item;
-            int childPosition=0;
-            for (Iterator<?> i=composite.getItemIterator(); i.hasNext(); ) {
-                flatten((Item)i.next(),childPosition++,toList);
+            CompositeItem composite = (CompositeItem)item;
+            int childPosition = 0;
+            for (Iterator<?> i = composite.getItemIterator(); i.hasNext(); ) {
+                flatten((Item)i.next(), childPosition++, toList);
             }
         }
 
-        // other terms are unmatchable
+        // other terms are inmatchable
     }
 
     public void trace(int level,String message) {
-        if (level>getTraceLevel()) return;
+        if (level > getTraceLevel()) return;
         query.trace(traceIndentation + message,false,1);
     }
 
@@ -427,20 +427,20 @@ public class Evaluation {
     public int getTraceLevel() { return traceLevel; }
 
     public void indentTrace() {
-        traceIndentation=traceIndentation + "   ";
+        traceIndentation  =traceIndentation + "   ";
     }
 
     public void unindentTrace() {
         if (traceIndentation.length()<3)
-            traceIndentation="";
+            traceIndentation  ="";
         else
-            traceIndentation=traceIndentation.substring(3);
+            traceIndentation  =traceIndentation.substring(3);
     }
 
     public NameSpace getNameSpace(String nameSpaceName) {
         if (nameSpaceName.equals("parameter")) {
-            if (parameterNameSpace==null)
-                parameterNameSpace=new ParameterNameSpace();
+            if (parameterNameSpace == null)
+                parameterNameSpace = new ParameterNameSpace();
             return parameterNameSpace;
         }
 

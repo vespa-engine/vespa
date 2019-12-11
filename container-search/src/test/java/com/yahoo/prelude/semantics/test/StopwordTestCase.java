@@ -31,7 +31,7 @@ public class StopwordTestCase extends RuleBaseAbstractTestCase {
     @Test
     public void testStopwordsInPhrase() {
         assertSemantics("AND mlr:\"ve heard\" mlr:beautiful mlr:world",
-                new Query(QueryTestCase.httpEncode("?query=\"i don't know if you've heard\", but it's a beautiful world&default-index=mlr&tracelevel.rules=0")));
+                        new Query(QueryTestCase.httpEncode("?query=\"i don't know if you've heard\", but it's a beautiful world&default-index=mlr&tracelevel.rules=0")));
     }
 
 }

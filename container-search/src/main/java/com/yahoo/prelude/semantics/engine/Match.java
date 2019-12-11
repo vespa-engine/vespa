@@ -31,14 +31,14 @@ public class Match {
      * @param replaceValue the string to replace this match by, usually the item.getIndexedString()
      *        which is what the replace value will be if it is passed as null here
      */
-    public Match(FlattenedItem item,String replaceValue) {
-        this.item=item.getItem();
-        if (replaceValue==null)
-            this.replaceValue=item.getItem().getIndexedString();
+    public Match(FlattenedItem item, String replaceValue) {
+        this.item = item.getItem();
+        if (replaceValue == null)
+            this.replaceValue = item.getItem().getIndexedString();
         else
-            this.replaceValue=replaceValue;
-        this.parent=this.item.getParent();
-        this.position=item.getPosition();
+            this.replaceValue = replaceValue;
+        this.parent = this.item.getParent();
+        this.position = item.getPosition();
     }
 
     public int getPosition() { return position; }
