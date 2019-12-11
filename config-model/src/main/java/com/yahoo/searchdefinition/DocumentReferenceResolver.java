@@ -52,8 +52,8 @@ public class DocumentReferenceResolver {
         Search search = searchMapping.get(targetDocumentName);
         if (search == null) {
             throw new IllegalArgumentException(
-                    String.format("The field '%s' is an invalid document reference. " +
-                                  "Could not find document with '%s' in any search definitions", field.getName(), targetDocumentName));
+                    String.format("Invalid document reference '%s': " +
+                                  "Could not find document type '%s'", field.getName(), targetDocumentName));
         }
         return new DocumentReference(field, search);
     }
