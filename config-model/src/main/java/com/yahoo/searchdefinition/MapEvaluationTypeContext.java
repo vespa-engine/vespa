@@ -96,7 +96,6 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             try {
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
-                System.out.println("Resolving type of " + reference + " bound to " + binding);
                 return new RankingExpression(binding.get()).type(this);
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
