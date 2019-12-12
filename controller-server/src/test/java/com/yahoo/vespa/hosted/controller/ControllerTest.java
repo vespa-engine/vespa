@@ -43,6 +43,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
@@ -707,19 +708,14 @@ public class ControllerTest {
         context1.submit(applicationPackage).deploy();
         var cert = certificate.apply(context1.instance());
         assertTrue("Provisions certificate in " + Environment.prod, cert.isPresent());
-        assertEquals(List.of(
-                "vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
-                "app1.tenant1.global.vespa.oath.cloud",
-                "*.app1.tenant1.global.vespa.oath.cloud",
-                "app1.tenant1.us-east-3.vespa.oath.cloud",
-                "*.app1.tenant1.us-east-3.vespa.oath.cloud",
-                "app1.tenant1.us-west-1.vespa.oath.cloud",
-                "*.app1.tenant1.us-west-1.vespa.oath.cloud",
-                "app1.tenant1.us-central-1.vespa.oath.cloud",
-                "*.app1.tenant1.us-central-1.vespa.oath.cloud",
-                "app1.tenant1.eu-west-1.vespa.oath.cloud",
-                "*.app1.tenant1.eu-west-1.vespa.oath.cloud"
-        ), tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(context1.instanceId()));
+        assertEquals(Stream.concat(Stream.of("vznqtz7a5ygwjkbhhj7ymxvlrekgt4l6g.vespa.oath.cloud",
+                                             "app1.tenant1.global.vespa.oath.cloud",
+                                             "*.app1.tenant1.global.vespa.oath.cloud"),
+                                   tester.controller().zoneRegistry().zones().all().ids().stream()
+                                         .flatMap(zone -> Stream.of("", "*.")
+                                                                .map(prefix -> prefix + "app1.tenant1." + zone.region().value() + ".vespa.oath.cloud")))
+                           .collect(Collectors.toUnmodifiableList()),
+                     tester.controllerTester().serviceRegistry().applicationCertificateMock().dnsNamesOf(context1.instanceId()));
 
         // Next deployment reuses certificate
         context1.submit(applicationPackage).deploy();
