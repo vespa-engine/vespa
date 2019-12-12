@@ -160,7 +160,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     /** Supports building of a tensor address */
     public static class Builder {
 
-        private Pattern labelPattern = Pattern.compile("[-,A-Za-z0-9_@]([A-Z,a-z0-9_@$])*");
+        static final private Pattern labelPattern = Pattern.compile("[-,A-Za-z0-9_@]([A-Z,a-z0-9_@$])*");
 
         private final TensorType type;
         private final String[] labels;
@@ -202,7 +202,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             return TensorAddress.of(labels);
         }
 
-        private void requireIdentifier(String s, String parameterName) {
+        static private void requireIdentifier(String s, String parameterName) {
             if (s == null)
                 throw new IllegalArgumentException(parameterName + " can not be null");
             if ( ! labelPattern.matcher(s).matches())
