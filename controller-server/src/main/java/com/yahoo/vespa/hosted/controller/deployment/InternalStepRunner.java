@@ -700,7 +700,7 @@ public class InternalStepRunner implements StepRunner {
             if (step.concerns(id.type().environment()))
                 return step.zones().get(0).testerFlavor();
 
-        throw new IllegalStateException("No step deploys to the zone this run is for!");
+        return Optional.empty();
     }
 
     /** Returns the generated services.xml content for the tester application. */
