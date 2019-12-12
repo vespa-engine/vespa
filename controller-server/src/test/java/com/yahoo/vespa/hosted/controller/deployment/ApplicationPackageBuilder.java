@@ -50,6 +50,8 @@ public class ApplicationPackageBuilder {
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
+    private boolean explicitSystemTest = false;
+    private boolean explicitStagingTest = false;
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -85,6 +87,16 @@ public class ApplicationPackageBuilder {
             endpointsBody.append("        <region>").append(region).append("</region>\n");
         }
         endpointsBody.append("      </endpoint>\n");
+        return this;
+    }
+
+    public ApplicationPackageBuilder systemTest() {
+        explicitSystemTest = true;
+        return this;
+    }
+
+    public ApplicationPackageBuilder stagingTest() {
+        explicitStagingTest = true;
         return this;
     }
 
@@ -176,6 +188,10 @@ public class ApplicationPackageBuilder {
             xml.append(athenzIdentityAttributes);
         }
         xml.append(">\n");
+        if (explicitSystemTest)
+            xml.append("  <test />\n");
+        if (explicitStagingTest)
+            xml.append("  <staging />\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
         if (upgradePolicy != null) {
             xml.append("    <upgrade policy='");

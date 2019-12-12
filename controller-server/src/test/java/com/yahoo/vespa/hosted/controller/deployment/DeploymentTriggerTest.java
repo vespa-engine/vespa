@@ -182,6 +182,7 @@ public class DeploymentTriggerTest {
     @Test
     public void deploymentSpecWithDelays() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .systemTest()
                 .environment(Environment.prod)
                 .delay(Duration.ofSeconds(30))
                 .region("us-west-1")
@@ -193,15 +194,17 @@ public class DeploymentTriggerTest {
         var app = tester.newDeploymentContext().submit(applicationPackage);
 
         // Test jobs pass
-        app.runJob(systemTest).runJob(stagingTest);
+        app.runJob(systemTest);
+        tester.clock().advance(Duration.ofSeconds(15));
+        app.runJob(stagingTest);
         tester.triggerJobs();
 
         // No jobs have started yet, as 30 seconds have not yet passed.
         assertEquals(0, tester.jobs().active().size());
-        tester.clock().advance(Duration.ofSeconds(30));
+        tester.clock().advance(Duration.ofSeconds(15));
         tester.triggerJobs();
 
-        // 30 seconds later, the first jobs may trigger.
+        // 30 seconds after the declared test, jobs may begin. The implicit test does not affect the delay.
         assertEquals(1, tester.jobs().active().size());
         app.assertRunning(productionUsWest1);
 
