@@ -43,8 +43,7 @@ public class DocumentDatabaseChangeValidatorTest {
                 "field f4 type array<s> { struct-field s1 { indexing: attribute } }");
         f.assertValidation(Arrays.asList(
                 newRestartAction("Field 'f1' changed: add attribute aspect"),
-                newRefeedAction("field-type-change",
-                        "Field 'f4.s1' changed: add attribute aspect"),
+                newRestartAction("Field 'f4.s1' changed: add attribute aspect"),
                 newRefeedAction("indexing-change",
                                 ValidationOverrides.empty,
                                 "Field 'f2' changed: add index aspect, indexing script: '{ input f2 | summary f2; }' -> " +

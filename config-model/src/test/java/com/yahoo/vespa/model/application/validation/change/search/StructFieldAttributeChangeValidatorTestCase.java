@@ -9,7 +9,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRefeedAction;
+import static com.yahoo.vespa.model.application.validation.change.ConfigChangeTestUtils.newRestartAction;
 
 /**
  * @author geirst
@@ -47,24 +47,24 @@ public class StructFieldAttributeChangeValidatorTestCase {
     }
 
     @Test
-    public void adding_attribute_aspect_to_struct_field_requires_refeed() throws Exception {
+    public void adding_attribute_aspect_to_struct_field_requires_restart() throws Exception {
         validate(arrayOfStruct(oneFieldStruct(), ""),
                 arrayOfStruct(oneFieldStruct(), structAttribute("s1")),
-                newRefeedAction("field-type-change", "Field 'f1.s1' changed: add attribute aspect"));
+                newRestartAction("Field 'f1.s1' changed: add attribute aspect"));
 
         validate(mapOfStruct(oneFieldStruct(), ""),
                 mapOfStruct(oneFieldStruct(), structAttribute("key")),
-                newRefeedAction("field-type-change", "Field 'f1.key' changed: add attribute aspect"));
+                newRestartAction("Field 'f1.key' changed: add attribute aspect"));
 
         validate(mapOfStruct(oneFieldStruct(), ""),
                 mapOfStruct(oneFieldStruct(), structAttribute("value.s1")),
-                newRefeedAction("field-type-change", "Field 'f1.value.s1' changed: add attribute aspect"));
+                newRestartAction("Field 'f1.value.s1' changed: add attribute aspect"));
 
         validate(mapOfPrimitive(""), mapOfPrimitive(structAttribute("key")),
-                newRefeedAction("field-type-change", "Field 'f1.key' changed: add attribute aspect"));
+                newRestartAction("Field 'f1.key' changed: add attribute aspect"));
 
         validate(mapOfPrimitive(""), mapOfPrimitive(structAttribute("value")),
-                newRefeedAction("field-type-change", "Field 'f1.value' changed: add attribute aspect"));
+                newRestartAction("Field 'f1.value' changed: add attribute aspect"));
     }
 
     @Test
