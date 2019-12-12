@@ -82,9 +82,6 @@ public class TestOptions implements CloudConfigOptions {
     }
 
     @Override
-    public Optional<String> payloadCompressionType() { return Optional.empty(); }
-
-    @Override
     public Optional<String> environment() { return environment; }
 
     @Override
@@ -95,9 +92,6 @@ public class TestOptions implements CloudConfigOptions {
 
     @Override
     public Optional<Boolean> useVespaVersionInRequest() { return useVespaVersionInRequest; }
-
-    @Override
-    public Optional<Integer> numParallelTenantLoaders() { return Optional.of(4); }
 
     @Override
     public Optional<String> loadBalancerAddress() { return Optional.empty(); }
