@@ -307,6 +307,47 @@ public class RoutingPoliciesTest {
         assertEquals(1, tester.policiesOf(devInstance).size());
         assertEquals(Set.of("c0.user.app1.tenant1.us-east-1.dev.vespa.oath.cloud"), tester.recordNames());
     }
+
+    @Test
+    public void reprovisioning_load_balancer_preserves_cname_record() {
+        var tester = new RoutingPoliciesTester();
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+
+        // Initial load balancer is provisioned
+        tester.provisionLoadBalancers(1, context.instanceId(), zone1);
+        var applicationPackage = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .build();
+
+        // Application is deployed
+        context.submit(applicationPackage).deploy();
+        var expectedRecords = Set.of(
+                "c0.app1.tenant1.us-west-1.vespa.oath.cloud"
+        );
+        assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(1, tester.policiesOf(context.instanceId()).size());
+
+        // Application is removed and the load balancer is deprovisioned
+        tester.controllerTester().controller().applications().deactivate(context.instanceId(), zone1);
+        tester.controllerTester().configServer().removeLoadBalancers(context.instanceId(), zone1);
+
+        // Load balancer for the same application is provisioned again, but with a different hostname
+        var newHostname = HostName.from("new-hostname");
+        var loadBalancer = new LoadBalancer("LB-0-Z-" + zone1.value(),
+                                            context.instanceId(),
+                                            ClusterSpec.Id.from("c0"),
+                                            newHostname,
+                                            LoadBalancer.State.active,
+                                            Optional.of("dns-zone-1"));
+        tester.controllerTester().configServer().addLoadBalancers(zone1, List.of(loadBalancer));
+
+        // Application redeployment preserves DNS record
+        context.submit(applicationPackage).deploy();
+        assertEquals(expectedRecords, tester.recordNames());
+        assertEquals(1, tester.policiesOf(context.instanceId()).size());
+        assertEquals("CNAME points to current load blancer", newHostname.value() + ".",
+                     tester.cnameDataOf(expectedRecords.iterator().next()).get(0));
+    }
     
     private static List<LoadBalancer> createLoadBalancers(ZoneId zone, ApplicationId application, int count) {
         List<LoadBalancer> loadBalancers = new ArrayList<>();
@@ -363,6 +404,13 @@ public class RoutingPoliciesTest {
 
         private List<String> aliasDataOf(String name) {
             return tester.controllerTester().nameService().findRecords(Record.Type.ALIAS, RecordName.from(name)).stream()
+                         .map(Record::data)
+                         .map(RecordData::asString)
+                         .collect(Collectors.toList());
+        }
+
+        private List<String> cnameDataOf(String name) {
+            return tester.controllerTester().nameService().findRecords(Record.Type.CNAME, RecordName.from(name)).stream()
                          .map(Record::data)
                          .map(RecordData::asString)
                          .collect(Collectors.toList());
