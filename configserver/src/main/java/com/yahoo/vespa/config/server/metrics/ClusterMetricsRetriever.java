@@ -11,6 +11,7 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,12 +42,15 @@ public class ClusterMetricsRetriever {
     private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
 
 
-    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder.create()
-            .setDefaultRequestConfig(RequestConfig.custom()
-                    .setConnectTimeout(10 * 1000)
-                    .setSocketTimeout(10 * 1000)
-                    .build())
-            .build();
+
+    private static final CloseableHttpClient httpClient = VespaHttpClientBuilder
+                                                            .create(PoolingHttpClientConnectionManager::new)
+                                                            .setDefaultRequestConfig(
+                                                                    RequestConfig.custom()
+                                                                            .setConnectTimeout(10 * 1000)
+                                                                            .setSocketTimeout(10 * 1000)
+                                                                            .build())
+                                                            .build();
 
     /**
      * Call the metrics API on each host and aggregate the metrics
@@ -60,7 +64,7 @@ public class ClusterMetricsRetriever {
                     getHostMetrics(host, clusterMetricsMap)
                 );
 
-        ForkJoinPool threadPool = new ForkJoinPool(5);
+        ForkJoinPool threadPool = new ForkJoinPool(10);
         threadPool.submit(retrieveMetricsJob);
         threadPool.shutdown();
 
