@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -17,6 +18,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class Tf2OnnxImportTestCase {
 
+    @Ignore  // Ignored because conversion requires python tf2onnx dependencies - tested in system test
     @Test
     public void testConversionFromTensorFlowToOnnx() {
         String modelPath = "src/test/models/tensorflow/mnist_softmax/saved";
