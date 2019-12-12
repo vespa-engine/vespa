@@ -26,7 +26,7 @@ public class CostReportMaintainer extends Maintainer {
 
     public CostReportMaintainer(Controller controller, Duration interval,
                                 JobControl jobControl, CostReportConsumer costReportConsumer) {
-        super(controller, interval, jobControl, "CostReportMaintainer", EnumSet.of(SystemName.main));
+        super(controller, interval, jobControl, null, EnumSet.of(SystemName.main));
         this.consumer = costReportConsumer;
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.clock = controller.clock();

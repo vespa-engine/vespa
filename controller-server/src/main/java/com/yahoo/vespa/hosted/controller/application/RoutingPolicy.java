@@ -14,7 +14,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Represents the DNS routing policy for a load balancer.
+ * Represents the DNS routing policy for a load balancer. A routing policy is uniquely identified by its owner, cluster
+ * and zone.
  *
  * @author mortent
  * @author mpolden
@@ -90,13 +91,15 @@ public class RoutingPolicy {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RoutingPolicy policy = (RoutingPolicy) o;
-        return canonicalName.equals(policy.canonicalName);
+        RoutingPolicy that = (RoutingPolicy) o;
+        return owner.equals(that.owner) &&
+               cluster.equals(that.cluster) &&
+               zone.equals(that.zone);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(canonicalName);
+        return Objects.hash(owner, cluster, zone);
     }
 
     @Override
