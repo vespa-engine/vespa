@@ -23,12 +23,20 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast2;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApSoutheast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionAwsUsEast1a;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testApNortheast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testApNortheast2;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testAwsUsEast1a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsWest1;
@@ -868,6 +876,131 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofMinutes(11)); // Job is cooling down after consecutive failures.
         app.runJob(testUsEast3);
         assertEquals(Change.empty().withPin(), app.application().change());
+    }
+
+    @Test
+    public void testDeployComplicatedDeploymentSpec() {
+        String complicatedDeploymentSpec =
+                "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
+                "    <staging />\n" +
+                "    <parallel>\n" +
+                "        <instance id='instance' athenz-service='in-service'>\n" +
+                "            <prod>\n" +
+                "                <parallel>\n" +
+                "                    <region active='true'>us-west-1</region>\n" +
+                "                    <steps>\n" +
+                "                        <region active='true'>us-east-3</region>\n" +
+                "                        <delay hours='2' />\n" +
+                "                        <region active='true'>eu-west-1</region>\n" +
+                "                        <delay hours='2' />\n" +
+                "                    </steps>\n" +
+                "                    <steps>\n" +
+                "                        <delay hours='3' />\n" +
+                "                        <region active='true'>aws-us-east-1a</region>\n" +
+                "                        <parallel>\n" +
+                "                            <region active='true' athenz-service='no-service'>ap-northeast-1</region>\n" +
+                "                            <region active='true'>ap-northeast-2</region>\n" +
+                "                            <test>aws-us-east-1a</test>\n" +
+                "                        </parallel>\n" +
+                "                    </steps>\n" +
+                "                    <delay hours='3' minutes='30' />\n" +
+                "                </parallel>\n" +
+                "                <parallel>\n" +
+                "                   <test>ap-northeast-2</test>\n" +
+                "                   <test>ap-northeast-1</test>\n" +
+                "                </parallel>\n" +
+                "                <test>us-east-3</test>\n" +
+                "                <region active='true'>ap-southeast-1</region>\n" +
+                "            </prod>\n" +
+                "            <endpoints>\n" +
+                "                <endpoint id='foo' container-id='bar'>\n" +
+                "                    <region>us-east-3</region>\n" +
+                "                </endpoint>\n" +
+                "                <endpoint id='nalle' container-id='frosk' />\n" +
+                "                <endpoint container-id='quux' />\n" +
+                "            </endpoints>\n" +
+                "        </instance>\n" +
+                "        <instance id='other'>\n" +
+                // TODO jonmv: support change per instance — this instance will be upgraded later, but for now this is ignored.
+                "            <upgrade policy='conservative' />\n" +
+                "            <test />\n" +
+                // TODO jonmv: test this when change per instance.
+                // "            <block-change days='sat' hours='10' time-zone='CET' />\n" +
+                "            <prod>\n" +
+                "                <region active='true'>eu-west-1</region>\n" +
+                "                <test>eu-west-1</test>\n" +
+                "            </prod>\n" +
+                "            <notifications when='failing'>\n" +
+                "                <email role='author' />\n" +
+                "                <email address='john@dev' when='failing-commit' />\n" +
+                "                <email address='jane@dev' />\n" +
+                "            </notifications>\n" +
+                "        </instance>\n" +
+                "    </parallel>\n" +
+                "</deployment>\n";
+
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(complicatedDeploymentSpec);
+        var app1 = tester.newDeploymentContext("t", "a", "instance").submit(applicationPackage);
+        var app2 = tester.newDeploymentContext("t", "a", "other").submit(applicationPackage);
+
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        app1.runJob(stagingTest);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app2.runJob(systemTest);
+
+        app1.runJob(productionUsWest1);
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        app1.runJob(productionUsEast3);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+
+        tester.clock().advance(Duration.ofHours(2));
+
+        app1.runJob(productionEuWest1);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app2.assertNotRunning(testEuWest1);
+        app2.runJob(productionEuWest1);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app2.runJob(testEuWest1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+
+        tester.clock().advance(Duration.ofHours(1));
+        app1.runJob(productionAwsUsEast1a);
+        tester.triggerJobs();
+        assertEquals(3, tester.jobs().active().size());
+        app1.runJob(testAwsUsEast1a);
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        app1.runJob(productionApNortheast2);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(productionApNortheast1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+
+        tester.clock().advance(Duration.ofMinutes(30));
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+
+        tester.clock().advance(Duration.ofMinutes(30));
+        app1.runJob(testApNortheast1);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(testApNortheast2);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(testUsEast3);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(productionApSoutheast1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
     }
 
 }
