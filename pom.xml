@@ -30,6 +30,7 @@
         <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
         <module>chain</module>
+        <module>client</module>
         <module>clustercontroller-apps</module>
         <module>clustercontroller-apputil</module>
         <module>clustercontroller-core</module>

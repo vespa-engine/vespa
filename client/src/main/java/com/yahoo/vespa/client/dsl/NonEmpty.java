@@ -1,0 +1,46 @@
+// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.client.dsl;
+
+public class NonEmpty extends QueryChain {
+
+    private Query query;
+
+    NonEmpty(Query query) {
+        this.query = query;
+        this.nonEmpty = true;
+    }
+
+    @Override
+    public Select getSelect() {
+        return sources.select;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("nonEmpty(%s)", query);
+    }
+
+    @Override
+    boolean hasPositiveSearchField(String fieldName) {
+        // TODO: implementation
+        return false;
+    }
+
+    @Override
+    boolean hasPositiveSearchField(String fieldName, Object value) {
+        // TODO: implementation
+        return false;
+    }
+
+    @Override
+    boolean hasNegativeSearchField(String fieldName) {
+        // TODO: implementation
+        return false;
+    }
+
+    @Override
+    boolean hasNegativeSearchField(String fieldName, Object value) {
+        // TODO: implementation
+        return false;
+    }
+}
