@@ -175,8 +175,7 @@ enum PathGroup {
     /** Paths which contain (not very strictly) classified information about, e.g., customers. */
     classifiedInfo("/cost/v1/{*}",
                    "/",
-                   "/d/{*}",
-                   "/statuspage/v1/{*}"),
+                   "/d/{*}"),
 
     /** Same as classifiedInfo, but with optional /api prefix */
     classifiedApiInfo(Optional.of("/api"),
