@@ -16,6 +16,7 @@ maxClientConnections int default=0
 dataDir string default="var/zookeeper"
 
 clientPort int default=2181
+secureClientPort int default=2184
 
 snapshotCount int default=50000
 # Purge interval in hours
