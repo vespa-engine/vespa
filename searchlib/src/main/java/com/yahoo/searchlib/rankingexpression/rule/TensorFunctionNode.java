@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -89,6 +90,33 @@ public class TensorFunctionNode extends CompositeNode {
         for (var entry : nodes.entrySet())
             functions.put(entry.getKey(), wrapScalar(entry.getValue()));
         return functions;
+    }
+
+    public static void wrapScalarBlock(TensorType type,
+                                       String mappedDimensionLabel,
+                                       List<ExpressionNode> nodes,
+                                       Map<TensorAddress, ScalarFunction<Reference>> receivingMap) {
+        TensorType.Dimension sparseDimension = type.dimensions().stream().filter(d -> ! d.isIndexed()).findFirst().get();
+        TensorType denseSubtype = new TensorType(type.valueType(),
+                                                 type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList()));
+
+        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseSubtype);
+        for (ExpressionNode node : nodes) {
+            indexes.next();
+
+            // Insert the mapped dimension into the dense subspace address of indexes
+            String[] labels = new String[type.rank()];
+            int indexedDimensionsIndex = 0;
+            int allDimensionsIndex = 0;
+            for (TensorType.Dimension dimension : type.dimensions()) {
+                if (dimension.isIndexed())
+                    labels[allDimensionsIndex++] = String.valueOf(indexes.indexesForReading()[indexedDimensionsIndex++]);
+                else
+                    labels[allDimensionsIndex++] = mappedDimensionLabel;
+            }
+
+            receivingMap.put(TensorAddress.of(labels), wrapScalar(node));
+        }
     }
 
     public static List<ScalarFunction<Reference>> wrapScalars(List<ExpressionNode> nodes) {
