@@ -157,8 +157,10 @@ public class VespaVersion implements Comparable<VespaVersion> {
             if (!target.equalOrHigherThan(normal)) return true; // Confidence can always change to < normal
 
             var hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
-            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC
-            return hourOfDay >= 5 && hourOfDay <= 11;
+            var dayOfWeek = instant.atZone(ZoneOffset.UTC).getDayOfWeek();
+            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC, and not during weekends.
+            return    hourOfDay >= 5 && hourOfDay <= 11
+                   && dayOfWeek.getValue() < 5;
         }
 
     }

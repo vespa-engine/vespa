@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class UpgraderTest {
 
-    private final DeploymentTester tester = new DeploymentTester().atHourOfDay(5);
+    private final DeploymentTester tester = new DeploymentTester().atMondayMorning();
 
     @Test
     public void testUpgrading() {
