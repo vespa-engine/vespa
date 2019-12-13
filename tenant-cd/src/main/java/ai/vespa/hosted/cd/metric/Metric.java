@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.StringJoiner;
 
 import static java.util.Map.copyOf;
+import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
@@ -58,7 +59,8 @@ public class Metric {
 
     /** Returns a collapsed version of this, with all statistics aggregated. This does not preserve last, 95 and 99 percentile values. */
     public Metric collapse() {
-        return collapse(statistics.keySet().iterator().next().keySet());
+        Map<String, ?> firstStatistic = statistics.keySet().iterator().next();
+        return firstStatistic == null ? this : collapse(firstStatistic.keySet());
     }
 
     /** If this Metric contains a single point, returns the Statistic of that point; otherwise, throws an exception. */
