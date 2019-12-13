@@ -2,6 +2,7 @@
 package com.yahoo.vespa.config.server.metrics;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
+import com.yahoo.log.LogLevel;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -55,6 +56,7 @@ public class ClusterMetricsRetriever {
     public Map<ClusterInfo, MetricsAggregator> requestMetricsGroupedByCluster(Collection<URI> hosts) {
         Map<ClusterInfo, MetricsAggregator> clusterMetricsMap = new ConcurrentHashMap<>();
 
+        long startTime = System.currentTimeMillis();
         Runnable retrieveMetricsJob = () ->
                 hosts.parallelStream().forEach(host ->
                     getHostMetrics(host, clusterMetricsMap)
@@ -69,6 +71,11 @@ public class ClusterMetricsRetriever {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+
+        log.log(LogLevel.DEBUG, () ->
+                String.format("Metric retrieval for %d nodes took %d milliseconds", hosts.size(), System.currentTimeMillis() - startTime)
+        );
+
         return clusterMetricsMap;
     }
 
