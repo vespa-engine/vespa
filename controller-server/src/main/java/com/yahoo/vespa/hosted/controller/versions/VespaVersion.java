@@ -158,7 +158,7 @@ public class VespaVersion implements Comparable<VespaVersion> {
 
             var hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
             var dayOfWeek = instant.atZone(ZoneOffset.UTC).getDayOfWeek();
-            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC, and not during weekends.
+            // Confidence can only be raised between 05:00:00 and 11:59:59 UTC, and not during weekends or Friday.
             return    hourOfDay >= 5 && hourOfDay <= 11
                    && dayOfWeek.getValue() < 5;
         }
