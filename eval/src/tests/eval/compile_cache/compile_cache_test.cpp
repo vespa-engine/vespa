@@ -159,16 +159,13 @@ TEST("require that cache usage works") {
 TEST("require that async cache usage works") {
     ThreadStackExecutor executor(8, 256*1024);
     auto binding = CompileCache::bind(executor);
-    TEST_DO(verify_cache(0, 0));
     CompileCache::Token::UP token_a = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
     EXPECT_EQUAL(5.0, token_a->get().get_function<2>()(2.0, 3.0));
-    TEST_DO(verify_cache(1, 1));
     CompileCache::Token::UP token_b = CompileCache::compile(*Function::parse("x*y"), PassParams::SEPARATE);
     EXPECT_EQUAL(6.0, token_b->get().get_function<2>()(2.0, 3.0));
-    TEST_DO(verify_cache(2, 2));
     CompileCache::Token::UP token_c = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
     EXPECT_EQUAL(5.0, token_c->get().get_function<2>()(2.0, 3.0));
-    TEST_DO(verify_cache(2, 3));
+    EXPECT_EQUAL(CompileCache::num_cached(), 2u);
     executor.sync(); // wait for compile threads to drop all compile cache tokens
     token_a.reset();
     TEST_DO(verify_cache(2, 2));
@@ -273,7 +270,7 @@ struct CompileCheck : test::EvalSpec::EvalTest {
 
 TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec()) {
     f1.add_all_cases();
-    for (size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 2; ++i) {
         CompileCheck test;
         auto t0 = steady_clock::now();
         f1.each_case(test);
@@ -293,7 +290,7 @@ TEST_F("compile concurrently (8 threads), then run all conformance tests", test:
     while (executor.num_idle_workers() < 8) {
         std::this_thread::sleep_for(1ms);
     }
-    for (size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 2; ++i) {
         CompileCheck test;
         auto t0 = steady_clock::now();
         f1.each_case(test);
