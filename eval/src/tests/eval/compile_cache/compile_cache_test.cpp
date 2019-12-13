@@ -191,7 +191,7 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
     }
 }
 
-TEST_FF("compile concurrently (8 threads), then run all conformance tests", test::EvalSpec(), TimeBomb(60)) {
+TEST_F("compile concurrently (8 threads), then run all conformance tests", test::EvalSpec()) {
     f1.add_all_cases();
     ThreadStackExecutor executor(8, 256*1024);
     CompileCache::attach_executor(executor);
