@@ -11,6 +11,21 @@
 using namespace vespalib;
 using namespace vespalib::eval;
 
+struct MyExecutor : public Executor {
+    std::vector<Executor::Task::UP> tasks;
+    Executor::Task::UP execute(Executor::Task::UP task) override {
+        tasks.push_back(std::move(task));
+        return Executor::Task::UP();
+    }
+    void run_tasks() {
+        for (const auto &task: tasks) {
+            task.get()->run();
+        }
+        tasks.clear();
+    }
+    ~MyExecutor() { run_tasks(); }
+};
+
 //-----------------------------------------------------------------------------
 
 TEST("require that parameter passing selection affects function key") {
@@ -141,6 +156,86 @@ TEST("require that cache usage works") {
     TEST_DO(verify_cache(0, 0));
 }
 
+TEST("require that async cache usage works") {
+    ThreadStackExecutor executor(8, 256*1024);
+    auto binding = CompileCache::bind(executor);
+    TEST_DO(verify_cache(0, 0));
+    CompileCache::Token::UP token_a = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
+    EXPECT_EQUAL(5.0, token_a->get().get_function<2>()(2.0, 3.0));
+    TEST_DO(verify_cache(1, 1));
+    CompileCache::Token::UP token_b = CompileCache::compile(*Function::parse("x*y"), PassParams::SEPARATE);
+    EXPECT_EQUAL(6.0, token_b->get().get_function<2>()(2.0, 3.0));
+    TEST_DO(verify_cache(2, 2));
+    CompileCache::Token::UP token_c = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
+    EXPECT_EQUAL(5.0, token_c->get().get_function<2>()(2.0, 3.0));
+    TEST_DO(verify_cache(2, 3));
+    executor.sync(); // wait for compile threads to drop all compile cache tokens
+    token_a.reset();
+    TEST_DO(verify_cache(2, 2));
+    token_b.reset();
+    TEST_DO(verify_cache(1, 1));
+    token_c.reset();
+    TEST_DO(verify_cache(0, 0));
+}
+
+TEST("require that compile tasks are run in the most recently bound executor") {
+    MyExecutor exe1;
+    MyExecutor exe2;
+    auto token0 = CompileCache::compile(*Function::parse("a+b"), PassParams::SEPARATE);
+    EXPECT_EQUAL(CompileCache::num_bound(), 0u);
+    EXPECT_EQUAL(exe1.tasks.size(), 0u);
+    EXPECT_EQUAL(exe2.tasks.size(), 0u);
+    {
+        auto bind1 = CompileCache::bind(exe1);
+        auto token1 = CompileCache::compile(*Function::parse("a-b"), PassParams::SEPARATE);
+        EXPECT_EQUAL(CompileCache::num_bound(), 1u);
+        EXPECT_EQUAL(exe1.tasks.size(), 1u);
+        EXPECT_EQUAL(exe2.tasks.size(), 0u);
+        {
+            auto bind2  = CompileCache::bind(exe2);
+            auto token2 = CompileCache::compile(*Function::parse("a*b"), PassParams::SEPARATE);
+            EXPECT_EQUAL(CompileCache::num_bound(), 2u);
+            EXPECT_EQUAL(exe1.tasks.size(), 1u);
+            EXPECT_EQUAL(exe2.tasks.size(), 1u);
+        }
+        EXPECT_EQUAL(CompileCache::num_bound(), 1u);
+    }
+    EXPECT_EQUAL(CompileCache::num_bound(), 0u);
+}
+
+TEST("require that executors may be unbound in any order") {
+    MyExecutor exe1;
+    MyExecutor exe2;
+    MyExecutor exe3;
+    auto bind1 = CompileCache::bind(exe1);
+    auto bind2 = CompileCache::bind(exe2);
+    auto bind3 = CompileCache::bind(exe3);
+    EXPECT_EQUAL(CompileCache::num_bound(), 3u);
+    bind2.reset();
+    EXPECT_EQUAL(CompileCache::num_bound(), 2u);
+    bind3.reset();
+    EXPECT_EQUAL(CompileCache::num_bound(), 1u);
+    auto token = CompileCache::compile(*Function::parse("a+b"), PassParams::SEPARATE);
+    EXPECT_EQUAL(exe1.tasks.size(), 1u);
+    EXPECT_EQUAL(exe2.tasks.size(), 0u);
+    EXPECT_EQUAL(exe3.tasks.size(), 0u);
+}
+
+TEST("require that the same executor can be bound multiple times") {
+    MyExecutor exe1;
+    auto bind1 = CompileCache::bind(exe1);
+    auto bind2 = CompileCache::bind(exe1);
+    auto bind3 = CompileCache::bind(exe1);
+    EXPECT_EQUAL(CompileCache::num_bound(), 3u);
+    bind2.reset();
+    EXPECT_EQUAL(CompileCache::num_bound(), 2u);
+    bind3.reset();
+    EXPECT_EQUAL(CompileCache::num_bound(), 1u);
+    auto token = CompileCache::compile(*Function::parse("a+b"), PassParams::SEPARATE);
+    EXPECT_EQUAL(CompileCache::num_bound(), 1u);
+    EXPECT_EQUAL(exe1.tasks.size(), 1u);
+}
+
 struct CompileCheck : test::EvalSpec::EvalTest {
     struct Entry {
         CompileCache::Token::UP fun;
@@ -194,7 +289,7 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
 TEST_F("compile concurrently (8 threads), then run all conformance tests", test::EvalSpec()) {
     f1.add_all_cases();
     ThreadStackExecutor executor(8, 256*1024);
-    CompileCache::attach_executor(executor);
+    auto binding = CompileCache::bind(executor);
     while (executor.num_idle_workers() < 8) {
         std::this_thread::sleep_for(1ms);
     }
@@ -210,7 +305,6 @@ TEST_F("compile concurrently (8 threads), then run all conformance tests", test:
         fprintf(stderr, "concurrent (run %zu): setup: %zu ms, wait: %zu ms, verify: %zu us, total: %zu ms\n",
                 i, count_ms(t1 - t0), count_ms(t2 - t1), count_us(t3 - t2), count_ms(t3 - t0));
     }
-    CompileCache::detach_executor();
 }
 
 //-----------------------------------------------------------------------------

@@ -41,9 +41,12 @@ private:
     using Map = std::map<Key,Value>;
     static std::mutex _lock;
     static Map _cached;
-    static Executor *_executor;
+    static uint64_t _executor_tag;
+    static std::vector<std::pair<uint64_t,Executor*>> _executor_stack;
 
     static void release(Map::iterator entry);
+    static uint64_t attach_executor(Executor &executor);
+    static void detach_executor(uint64_t tag);
 
 public:
     class Token
@@ -64,10 +67,27 @@ public:
         ~Token() { CompileCache::release(_entry); }
     };
 
+    class ExecutorBinding {
+    private:
+        friend class CompileCache;
+        uint64_t _tag;
+        struct ctor_tag {};
+    public:
+        ExecutorBinding(ExecutorBinding &&) = delete;
+        ExecutorBinding(const ExecutorBinding &) = delete;
+        ExecutorBinding &operator=(ExecutorBinding &&) = delete;
+        ExecutorBinding &operator=(const ExecutorBinding &) = delete;
+        using UP = std::unique_ptr<ExecutorBinding>;
+        explicit ExecutorBinding(Executor &executor, ctor_tag) : _tag(attach_executor(executor)) {}
+        ~ExecutorBinding() { detach_executor(_tag); }
+    };
+
     static Token::UP compile(const Function &function, PassParams pass_params);
-    static void attach_executor(Executor &executor);
-    static void detach_executor();
+    static ExecutorBinding::UP bind(Executor &executor) {
+        return std::make_unique<ExecutorBinding>(executor, ExecutorBinding::ctor_tag());
+    }
     static size_t num_cached();
+    static size_t num_bound();
     static size_t count_refs();
     static size_t count_pending();
 
