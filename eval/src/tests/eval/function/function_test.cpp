@@ -70,59 +70,59 @@ void verify_operator_binding_order(std::initializer_list<OperatorLayer> layers) 
 
 bool verify_string(const vespalib::string &str, const vespalib::string &expr) {
     bool ok = true;
-    ok &= EXPECT_EQUAL(str, as_string(Function::parse(params, expr)));
-    ok &= EXPECT_EQUAL(expr, Function::parse(params, expr).dump());
+    ok &= EXPECT_EQUAL(str, as_string(*Function::parse(params, expr)));
+    ok &= EXPECT_EQUAL(expr, Function::parse(params, expr)->dump());
     return ok;
 }
 
 void verify_error(const vespalib::string &expr, const vespalib::string &expected_error) {
-    Function function = Function::parse(params, expr);
-    EXPECT_TRUE(function.has_error());
-    EXPECT_EQUAL(expected_error, function.get_error());
+    auto function = Function::parse(params, expr);
+    EXPECT_TRUE(function->has_error());
+    EXPECT_EQUAL(expected_error, function->get_error());
 }
 
 void verify_parse(const vespalib::string &expr, const vespalib::string &expect) {
-    Function function = Function::parse(expr);
-    EXPECT_TRUE(!function.has_error());
-    EXPECT_EQUAL(function.dump_as_lambda(), expect);
+    auto function = Function::parse(expr);
+    EXPECT_TRUE(!function->has_error());
+    EXPECT_EQUAL(function->dump_as_lambda(), expect);
 }
 
 TEST("require that scientific numbers can be parsed") {
-    EXPECT_EQUAL(1.0,     as_number(Function::parse(params, "1")));
-    EXPECT_EQUAL(2.5,     as_number(Function::parse(params, "2.5")));
-    EXPECT_EQUAL(100.0,   as_number(Function::parse(params, "100")));
-    EXPECT_EQUAL(0.01,    as_number(Function::parse(params, "0.01")));
-    EXPECT_EQUAL(1.05e5,  as_number(Function::parse(params, "1.05e5")));
-    EXPECT_EQUAL(3e7,     as_number(Function::parse(params, "3e7")));
-    EXPECT_EQUAL(1.05e5,  as_number(Function::parse(params, "1.05e+5")));
-    EXPECT_EQUAL(3e7,     as_number(Function::parse(params, "3e+7")));
-    EXPECT_EQUAL(1.05e-5, as_number(Function::parse(params, "1.05e-5")));
-    EXPECT_EQUAL(3e-7,    as_number(Function::parse(params, "3e-7")));
-    EXPECT_EQUAL(1.05e5,  as_number(Function::parse(params, "1.05E5")));
-    EXPECT_EQUAL(3e7,     as_number(Function::parse(params, "3E7")));
-    EXPECT_EQUAL(1.05e5,  as_number(Function::parse(params, "1.05E+5")));
-    EXPECT_EQUAL(3e7,     as_number(Function::parse(params, "3E+7")));
-    EXPECT_EQUAL(1.05e-5, as_number(Function::parse(params, "1.05E-5")));
-    EXPECT_EQUAL(3e-7,    as_number(Function::parse(params, "3E-7")));
+    EXPECT_EQUAL(1.0,     as_number(*Function::parse(params, "1")));
+    EXPECT_EQUAL(2.5,     as_number(*Function::parse(params, "2.5")));
+    EXPECT_EQUAL(100.0,   as_number(*Function::parse(params, "100")));
+    EXPECT_EQUAL(0.01,    as_number(*Function::parse(params, "0.01")));
+    EXPECT_EQUAL(1.05e5,  as_number(*Function::parse(params, "1.05e5")));
+    EXPECT_EQUAL(3e7,     as_number(*Function::parse(params, "3e7")));
+    EXPECT_EQUAL(1.05e5,  as_number(*Function::parse(params, "1.05e+5")));
+    EXPECT_EQUAL(3e7,     as_number(*Function::parse(params, "3e+7")));
+    EXPECT_EQUAL(1.05e-5, as_number(*Function::parse(params, "1.05e-5")));
+    EXPECT_EQUAL(3e-7,    as_number(*Function::parse(params, "3e-7")));
+    EXPECT_EQUAL(1.05e5,  as_number(*Function::parse(params, "1.05E5")));
+    EXPECT_EQUAL(3e7,     as_number(*Function::parse(params, "3E7")));
+    EXPECT_EQUAL(1.05e5,  as_number(*Function::parse(params, "1.05E+5")));
+    EXPECT_EQUAL(3e7,     as_number(*Function::parse(params, "3E+7")));
+    EXPECT_EQUAL(1.05e-5, as_number(*Function::parse(params, "1.05E-5")));
+    EXPECT_EQUAL(3e-7,    as_number(*Function::parse(params, "3E-7")));
 }
 
 TEST("require that number parsing does not eat +/- operators") {
-    EXPECT_EQUAL("(((1+2)+3)+4)", Function::parse(params, "1+2+3+4").dump());
-    EXPECT_EQUAL("(((1-2)-3)-4)", Function::parse(params, "1-2-3-4").dump());
-    EXPECT_EQUAL("(((1+x)+3)+y)", Function::parse(params, "1+x+3+y").dump());
-    EXPECT_EQUAL("(((1-x)-3)-y)", Function::parse(params, "1-x-3-y").dump());
+    EXPECT_EQUAL("(((1+2)+3)+4)", Function::parse(params, "1+2+3+4")->dump());
+    EXPECT_EQUAL("(((1-2)-3)-4)", Function::parse(params, "1-2-3-4")->dump());
+    EXPECT_EQUAL("(((1+x)+3)+y)", Function::parse(params, "1+x+3+y")->dump());
+    EXPECT_EQUAL("(((1-x)-3)-y)", Function::parse(params, "1-x-3-y")->dump());
 }
 
 TEST("require that symbols can be parsed") {
-    EXPECT_EQUAL("x", Function::parse(params, "x").dump());
-    EXPECT_EQUAL("y", Function::parse(params, "y").dump());
-    EXPECT_EQUAL("z", Function::parse(params, "z").dump());
+    EXPECT_EQUAL("x", Function::parse(params, "x")->dump());
+    EXPECT_EQUAL("y", Function::parse(params, "y")->dump());
+    EXPECT_EQUAL("z", Function::parse(params, "z")->dump());
 }
 
 TEST("require that parenthesis can be parsed") {
-    EXPECT_EQUAL("x", Function::parse(params, "(x)").dump());
-    EXPECT_EQUAL("x", Function::parse(params, "((x))").dump());
-    EXPECT_EQUAL("x", Function::parse(params, "(((x)))").dump());
+    EXPECT_EQUAL("x", Function::parse(params, "(x)")->dump());
+    EXPECT_EQUAL("x", Function::parse(params, "((x))")->dump());
+    EXPECT_EQUAL("x", Function::parse(params, "(((x)))")->dump());
 }
 
 TEST("require that strings are parsed and dumped correctly") {
@@ -139,31 +139,31 @@ TEST("require that strings are parsed and dumped correctly") {
         vespalib::string raw_expr = vespalib::make_string("\"%c\"", c);
         vespalib::string hex_expr = vespalib::make_string("\"\\x%02x\"", c);
         vespalib::string raw_str = vespalib::make_string("%c", c);
-        EXPECT_EQUAL(raw_str, as_string(Function::parse(params, hex_expr)));
+        EXPECT_EQUAL(raw_str, as_string(*Function::parse(params, hex_expr)));
         if (c != 0 && c != '\"' && c != '\\') {
-            EXPECT_EQUAL(raw_str, as_string(Function::parse(params, raw_expr)));
+            EXPECT_EQUAL(raw_str, as_string(*Function::parse(params, raw_expr)));
         } else {
-            EXPECT_TRUE(Function::parse(params, raw_expr).has_error());
+            EXPECT_TRUE(Function::parse(params, raw_expr)->has_error());
         }
         if (c == '\\') {
-            EXPECT_EQUAL("\"\\\\\"", Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL("\"\\\\\"", Function::parse(params, hex_expr)->dump());
         } else if (c == '\"') {
-            EXPECT_EQUAL("\"\\\"\"", Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL("\"\\\"\"", Function::parse(params, hex_expr)->dump());
         } else if (c == '\t') {
-            EXPECT_EQUAL("\"\\t\"", Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL("\"\\t\"", Function::parse(params, hex_expr)->dump());
         } else if (c == '\n') {
-            EXPECT_EQUAL("\"\\n\"", Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL("\"\\n\"", Function::parse(params, hex_expr)->dump());
         } else if (c == '\r') {
-            EXPECT_EQUAL("\"\\r\"", Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL("\"\\r\"", Function::parse(params, hex_expr)->dump());
         } else if (c == '\f') {
-            EXPECT_EQUAL("\"\\f\"", Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL("\"\\f\"", Function::parse(params, hex_expr)->dump());
         } else if ((c >= 32) && (c <= 126)) {
             if (c >= 'a' && c <= 'z' && c != 't' && c != 'n' && c != 'r' && c != 'f') {
-                EXPECT_TRUE(Function::parse(params, vespalib::make_string("\"\\%c\"", c)).has_error());
+                EXPECT_TRUE(Function::parse(params, vespalib::make_string("\"\\%c\"", c))->has_error());
             }
-            EXPECT_EQUAL(raw_expr, Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL(raw_expr, Function::parse(params, hex_expr)->dump());
         } else {
-            EXPECT_EQUAL(hex_expr, Function::parse(params, hex_expr).dump());
+            EXPECT_EQUAL(hex_expr, Function::parse(params, hex_expr)->dump());
         }
     }
 }
@@ -173,36 +173,36 @@ TEST("require that free arrays cannot be parsed") {
 }
 
 TEST("require that negative values can be parsed") {
-    EXPECT_EQUAL("-1", Function::parse(params, "-1").dump());
-    EXPECT_EQUAL("1", Function::parse(params, "--1").dump());
-    EXPECT_EQUAL("-1", Function::parse(params, " ( - ( - ( - ( (1) ) ) ) )").dump());
-    EXPECT_EQUAL("-2.5", Function::parse(params, "-2.5").dump());
-    EXPECT_EQUAL("-100", Function::parse(params, "-100").dump());
+    EXPECT_EQUAL("-1", Function::parse(params, "-1")->dump());
+    EXPECT_EQUAL("1", Function::parse(params, "--1")->dump());
+    EXPECT_EQUAL("-1", Function::parse(params, " ( - ( - ( - ( (1) ) ) ) )")->dump());
+    EXPECT_EQUAL("-2.5", Function::parse(params, "-2.5")->dump());
+    EXPECT_EQUAL("-100", Function::parse(params, "-100")->dump());
 }
 
 TEST("require that negative symbols can be parsed") {
-    EXPECT_EQUAL("(-x)", Function::parse(params, "-x").dump());
-    EXPECT_EQUAL("(-y)", Function::parse(params, "-y").dump());
-    EXPECT_EQUAL("(-z)", Function::parse(params, "-z").dump());
-    EXPECT_EQUAL("(-(-(-x)))", Function::parse(params, "---x").dump());
+    EXPECT_EQUAL("(-x)", Function::parse(params, "-x")->dump());
+    EXPECT_EQUAL("(-y)", Function::parse(params, "-y")->dump());
+    EXPECT_EQUAL("(-z)", Function::parse(params, "-z")->dump());
+    EXPECT_EQUAL("(-(-(-x)))", Function::parse(params, "---x")->dump());
 }
 
 TEST("require that not can be parsed") {
-    EXPECT_EQUAL("(!x)", Function::parse(params, "!x").dump());
-    EXPECT_EQUAL("(!(!x))", Function::parse(params, "!!x").dump());
-    EXPECT_EQUAL("(!(!(!x)))", Function::parse(params, "!!!x").dump());
+    EXPECT_EQUAL("(!x)", Function::parse(params, "!x")->dump());
+    EXPECT_EQUAL("(!(!x))", Function::parse(params, "!!x")->dump());
+    EXPECT_EQUAL("(!(!(!x)))", Function::parse(params, "!!!x")->dump());
 }
 
 TEST("require that not/neg binds to next value") {
-    EXPECT_EQUAL("((!(!(-(-x))))^z)", Function::parse(params, "!!--x^z").dump());
-    EXPECT_EQUAL("((-(-(!(!x))))^z)", Function::parse(params, "--!!x^z").dump());
-    EXPECT_EQUAL("((!(-(-(!x))))^z)", Function::parse(params, "!--!x^z").dump());
-    EXPECT_EQUAL("((-(!(!(-x))))^z)", Function::parse(params, "-!!-x^z").dump());
+    EXPECT_EQUAL("((!(!(-(-x))))^z)", Function::parse(params, "!!--x^z")->dump());
+    EXPECT_EQUAL("((-(-(!(!x))))^z)", Function::parse(params, "--!!x^z")->dump());
+    EXPECT_EQUAL("((!(-(-(!x))))^z)", Function::parse(params, "!--!x^z")->dump());
+    EXPECT_EQUAL("((-(!(!(-x))))^z)", Function::parse(params, "-!!-x^z")->dump());
 }
 
 TEST("require that parenthesis resolves before not/neg") {
-    EXPECT_EQUAL("(!(x^z))", Function::parse(params, "!(x^z)").dump());
-    EXPECT_EQUAL("(-(x^z))", Function::parse(params, "-(x^z)").dump());
+    EXPECT_EQUAL("(!(x^z))", Function::parse(params, "!(x^z)")->dump());
+    EXPECT_EQUAL("(-(x^z))", Function::parse(params, "-(x^z)")->dump());
 }
 
 TEST("require that operators have appropriate binding order") {
@@ -216,48 +216,48 @@ TEST("require that operators have appropriate binding order") {
 
 TEST("require that operators binding left are calculated left to right") {
     EXPECT_TRUE(create_op("+")->order() == Operator::Order::LEFT);
-    EXPECT_EQUAL("((x+y)+z)", Function::parse(params, "x+y+z").dump());
+    EXPECT_EQUAL("((x+y)+z)", Function::parse(params, "x+y+z")->dump());
 }
 
 TEST("require that operators binding right are calculated right to left") {
     EXPECT_TRUE(create_op("^")->order() == Operator::Order::RIGHT);
-    EXPECT_EQUAL("(x^(y^z))", Function::parse(params, "x^y^z").dump());
+    EXPECT_EQUAL("(x^(y^z))", Function::parse(params, "x^y^z")->dump());
 }
 
 TEST("require that operators with higher precedence are resolved first") {
     EXPECT_TRUE(create_op("*")->priority() > create_op("+")->priority());
-    EXPECT_EQUAL("(x+(y*z))", Function::parse(params, "x+y*z").dump());
-    EXPECT_EQUAL("((x*y)+z)", Function::parse(params, "x*y+z").dump());
+    EXPECT_EQUAL("(x+(y*z))", Function::parse(params, "x+y*z")->dump());
+    EXPECT_EQUAL("((x*y)+z)", Function::parse(params, "x*y+z")->dump());
 }
 
 TEST("require that multi-level operator precedence resolving works") {
     EXPECT_TRUE(create_op("^")->priority() > create_op("*")->priority());
     EXPECT_TRUE(create_op("*")->priority() > create_op("+")->priority());
-    EXPECT_EQUAL("(x+(y*(z^w)))", Function::parse(params, "x+y*z^w").dump());
-    EXPECT_EQUAL("(x+((y^z)*w))", Function::parse(params, "x+y^z*w").dump());
-    EXPECT_EQUAL("((x*y)+(z^w))", Function::parse(params, "x*y+z^w").dump());
-    EXPECT_EQUAL("((x*(y^z))+w)", Function::parse(params, "x*y^z+w").dump());
-    EXPECT_EQUAL("((x^y)+(z*w))", Function::parse(params, "x^y+z*w").dump());
-    EXPECT_EQUAL("(((x^y)*z)+w)", Function::parse(params, "x^y*z+w").dump());
+    EXPECT_EQUAL("(x+(y*(z^w)))", Function::parse(params, "x+y*z^w")->dump());
+    EXPECT_EQUAL("(x+((y^z)*w))", Function::parse(params, "x+y^z*w")->dump());
+    EXPECT_EQUAL("((x*y)+(z^w))", Function::parse(params, "x*y+z^w")->dump());
+    EXPECT_EQUAL("((x*(y^z))+w)", Function::parse(params, "x*y^z+w")->dump());
+    EXPECT_EQUAL("((x^y)+(z*w))", Function::parse(params, "x^y+z*w")->dump());
+    EXPECT_EQUAL("(((x^y)*z)+w)", Function::parse(params, "x^y*z+w")->dump());
 }
 
 TEST("require that expressions are combined when parenthesis are closed") {
-    EXPECT_EQUAL("((x+(y+z))+w)", Function::parse(params, "x+(y+z)+w").dump());
+    EXPECT_EQUAL("((x+(y+z))+w)", Function::parse(params, "x+(y+z)+w")->dump());
 }
 
 TEST("require that operators can not bind out of parenthesis") {
     EXPECT_TRUE(create_op("*")->priority() > create_op("+")->priority());
-    EXPECT_EQUAL("((x+y)*(x+z))", Function::parse(params, "(x+y)*(x+z)").dump());
+    EXPECT_EQUAL("((x+y)*(x+z))", Function::parse(params, "(x+y)*(x+z)")->dump());
 }
 
 TEST("require that set membership constructs can be parsed") {
-    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x in [1,2,3]").dump());
-    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x  in  [ 1 , 2 , 3 ] ").dump());
-    EXPECT_EQUAL("(x in [-1,-2,-3])", Function::parse(params, "x in [-1,-2,-3]").dump());
-    EXPECT_EQUAL("(x in [-1,-2,-3])", Function::parse(params, "x in [ - 1 , - 2 , - 3 ]").dump());
-    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x  in[1,2,3]").dump());
-    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "(x)in[1,2,3]").dump());
-    EXPECT_EQUAL("(x in [\"a\",2,\"c\"])", Function::parse(params, "x in [\"a\",2,\"c\"]").dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x in [1,2,3]")->dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x  in  [ 1 , 2 , 3 ] ")->dump());
+    EXPECT_EQUAL("(x in [-1,-2,-3])", Function::parse(params, "x in [-1,-2,-3]")->dump());
+    EXPECT_EQUAL("(x in [-1,-2,-3])", Function::parse(params, "x in [ - 1 , - 2 , - 3 ]")->dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "x  in[1,2,3]")->dump());
+    EXPECT_EQUAL("(x in [1,2,3])", Function::parse(params, "(x)in[1,2,3]")->dump());
+    EXPECT_EQUAL("(x in [\"a\",2,\"c\"])", Function::parse(params, "x in [\"a\",2,\"c\"]")->dump());
 }
 
 TEST("require that set membership entries must be array of strings/numbers") {
@@ -270,88 +270,88 @@ TEST("require that set membership entries must be array of strings/numbers") {
 }
 
 TEST("require that set membership binds to the next value") {
-    EXPECT_EQUAL("((x in [1,2,3])^2)", Function::parse(params, "x in [1,2,3]^2").dump());
+    EXPECT_EQUAL("((x in [1,2,3])^2)", Function::parse(params, "x in [1,2,3]^2")->dump());
 }
 
 TEST("require that set membership binds to the left with appropriate precedence") {
-    EXPECT_EQUAL("((x<y) in [1,2,3])", Function::parse(params, "x < y in [1,2,3]").dump());
-    EXPECT_EQUAL("(x&&(y in [1,2,3]))", Function::parse(params, "x && y in [1,2,3]").dump());
+    EXPECT_EQUAL("((x<y) in [1,2,3])", Function::parse(params, "x < y in [1,2,3]")->dump());
+    EXPECT_EQUAL("(x&&(y in [1,2,3]))", Function::parse(params, "x && y in [1,2,3]")->dump());
 }
 
 TEST("require that function calls can be parsed") {
-    EXPECT_EQUAL("min(max(x,y),sqrt(z))", Function::parse(params, "min(max(x,y),sqrt(z))").dump());
+    EXPECT_EQUAL("min(max(x,y),sqrt(z))", Function::parse(params, "min(max(x,y),sqrt(z))")->dump());
 }
 
 TEST("require that if expressions can be parsed") {
-    EXPECT_EQUAL("if(x,y,z)", Function::parse(params, "if(x,y,z)").dump());
-    EXPECT_EQUAL("if(x,y,z)", Function::parse(params, "if (x,y,z)").dump());
-    EXPECT_EQUAL("if(x,y,z)", Function::parse(params, " if ( x , y , z ) ").dump());
-    EXPECT_EQUAL("if(((x>1)&&(y<3)),(y+1),(z-1))", Function::parse(params, "if(x>1&&y<3,y+1,z-1)").dump());
-    EXPECT_EQUAL("if(if(x,y,z),if(x,y,z),if(x,y,z))", Function::parse(params, "if(if(x,y,z),if(x,y,z),if(x,y,z))").dump());
-    EXPECT_EQUAL("if(x,y,z,0.25)", Function::parse(params, "if(x,y,z,0.25)").dump());
-    EXPECT_EQUAL("if(x,y,z,0.75)", Function::parse(params, "if(x,y,z,0.75)").dump());
+    EXPECT_EQUAL("if(x,y,z)", Function::parse(params, "if(x,y,z)")->dump());
+    EXPECT_EQUAL("if(x,y,z)", Function::parse(params, "if (x,y,z)")->dump());
+    EXPECT_EQUAL("if(x,y,z)", Function::parse(params, " if ( x , y , z ) ")->dump());
+    EXPECT_EQUAL("if(((x>1)&&(y<3)),(y+1),(z-1))", Function::parse(params, "if(x>1&&y<3,y+1,z-1)")->dump());
+    EXPECT_EQUAL("if(if(x,y,z),if(x,y,z),if(x,y,z))", Function::parse(params, "if(if(x,y,z),if(x,y,z),if(x,y,z))")->dump());
+    EXPECT_EQUAL("if(x,y,z,0.25)", Function::parse(params, "if(x,y,z,0.25)")->dump());
+    EXPECT_EQUAL("if(x,y,z,0.75)", Function::parse(params, "if(x,y,z,0.75)")->dump());
 }
 
 TEST("require that if probability can be inspected") {
-    Function fun_1 = Function::parse("if(x,y,z,0.25)");
-    auto if_1 = as<If>(fun_1.root());
+    auto fun_1 = Function::parse("if(x,y,z,0.25)");
+    auto if_1 = as<If>(fun_1->root());
     ASSERT_TRUE(if_1);
     EXPECT_EQUAL(0.25, if_1->p_true());
-    Function fun_2 = Function::parse("if(x,y,z,0.75)");
-    auto if_2 = as<If>(fun_2.root());
+    auto fun_2 = Function::parse("if(x,y,z,0.75)");
+    auto if_2 = as<If>(fun_2->root());
     ASSERT_TRUE(if_2);
     EXPECT_EQUAL(0.75, if_2->p_true());
 }
 
 TEST("require that symbols can be implicit") {
-    EXPECT_EQUAL("x", Function::parse("x").dump());
-    EXPECT_EQUAL("y", Function::parse("y").dump());
-    EXPECT_EQUAL("z", Function::parse("z").dump());
+    EXPECT_EQUAL("x", Function::parse("x")->dump());
+    EXPECT_EQUAL("y", Function::parse("y")->dump());
+    EXPECT_EQUAL("z", Function::parse("z")->dump());
 }
 
 TEST("require that implicit parameters are picket up left to right") {
-    Function fun1 = Function::parse("x+y+y");
-    Function fun2 = Function::parse("y+y+x");
-    EXPECT_EQUAL("((x+y)+y)", fun1.dump());
-    EXPECT_EQUAL("((y+y)+x)", fun2.dump());
-    ASSERT_EQUAL(2u, fun1.num_params());
-    ASSERT_EQUAL(2u, fun2.num_params());
-    EXPECT_EQUAL("x", fun1.param_name(0));
-    EXPECT_EQUAL("x", fun2.param_name(1));
-    EXPECT_EQUAL("y", fun1.param_name(1));
-    EXPECT_EQUAL("y", fun2.param_name(0));
+    auto fun1 = Function::parse("x+y+y");
+    auto fun2 = Function::parse("y+y+x");
+    EXPECT_EQUAL("((x+y)+y)", fun1->dump());
+    EXPECT_EQUAL("((y+y)+x)", fun2->dump());
+    ASSERT_EQUAL(2u, fun1->num_params());
+    ASSERT_EQUAL(2u, fun2->num_params());
+    EXPECT_EQUAL("x", fun1->param_name(0));
+    EXPECT_EQUAL("x", fun2->param_name(1));
+    EXPECT_EQUAL("y", fun1->param_name(1));
+    EXPECT_EQUAL("y", fun2->param_name(0));
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that leaf nodes have no children") {
-    EXPECT_TRUE(Function::parse("123").root().is_leaf());
-    EXPECT_TRUE(Function::parse("x").root().is_leaf());
-    EXPECT_TRUE(Function::parse("\"abc\"").root().is_leaf());
-    EXPECT_EQUAL(0u, Function::parse("123").root().num_children());
-    EXPECT_EQUAL(0u, Function::parse("x").root().num_children());
-    EXPECT_EQUAL(0u, Function::parse("\"abc\"").root().num_children());
+    EXPECT_TRUE(Function::parse("123")->root().is_leaf());
+    EXPECT_TRUE(Function::parse("x")->root().is_leaf());
+    EXPECT_TRUE(Function::parse("\"abc\"")->root().is_leaf());
+    EXPECT_EQUAL(0u, Function::parse("123")->root().num_children());
+    EXPECT_EQUAL(0u, Function::parse("x")->root().num_children());
+    EXPECT_EQUAL(0u, Function::parse("\"abc\"")->root().num_children());
 }
 
 TEST("require that Neg child can be accessed") {
-    Function f = Function::parse("-x");
-    const Node &root = f.root();
+    auto f = Function::parse("-x");
+    const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(1u, root.num_children());
     EXPECT_TRUE(root.get_child(0).is_param());
 }
 
 TEST("require that Not child can be accessed") {
-    Function f = Function::parse("!1");
-    const Node &root = f.root();
+    auto f = Function::parse("!1");
+    const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(1u, root.num_children());
     EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
 }
 
 TEST("require that If children can be accessed") {
-    Function f = Function::parse("if(1,2,3)");
-    const Node &root = f.root();
+    auto f = Function::parse("if(1,2,3)");
+    const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(3u, root.num_children());
     EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
@@ -360,8 +360,8 @@ TEST("require that If children can be accessed") {
 }
 
 TEST("require that Operator children can be accessed") {
-    Function f = Function::parse("1+2");
-    const Node &root = f.root();
+    auto f = Function::parse("1+2");
+    const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(2u, root.num_children());
     EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
@@ -369,8 +369,8 @@ TEST("require that Operator children can be accessed") {
 }
 
 TEST("require that Call children can be accessed") {
-    Function f = Function::parse("max(1,2)");
-    const Node &root = f.root();
+    auto f = Function::parse("max(1,2)");
+    const Node &root = f->root();
     EXPECT_TRUE(!root.is_leaf());
     ASSERT_EQUAL(2u, root.num_children());
     EXPECT_EQUAL(1.0, root.get_child(0).get_const_value());
@@ -388,8 +388,8 @@ struct MyNodeHandler : public NodeHandler {
 
 size_t detach_from_root(const vespalib::string &expr) {
     MyNodeHandler handler;
-    Function function = Function::parse(expr);
-    nodes::Node &mutable_root = const_cast<nodes::Node&>(function.root());
+    auto function = Function::parse(expr);
+    nodes::Node &mutable_root = const_cast<nodes::Node&>(function->root());
     mutable_root.detach_children(handler);
     return handler.nodes.size();
 }
@@ -444,15 +444,15 @@ struct MyTraverser : public NodeTraverser {
 };
 
 size_t verify_traversal(size_t open_true_cnt, const vespalib::string &expression) {
-    Function function = Function::parse(expression);
-    if (!EXPECT_TRUE(!function.has_error())) {
-        fprintf(stderr, "--> %s\n", function.get_error().c_str());
+    auto function = Function::parse(expression);
+    if (!EXPECT_TRUE(!function->has_error())) {
+        fprintf(stderr, "--> %s\n", function->get_error().c_str());
     }
     MyTraverser traverser(open_true_cnt);
-    function.root().traverse(traverser);
+    function->root().traverse(traverser);
     size_t offset = 0;
     size_t open_cnt = open_true_cnt;
-    traverser.verify(function.root(), offset, open_cnt);
+    traverser.verify(function->root(), offset, open_cnt);
     EXPECT_EQUAL(offset, traverser.history.size());
     return offset;
 }
@@ -476,112 +476,112 @@ TEST("require that traversal works as expected") {
 //-----------------------------------------------------------------------------
 
 TEST("require that node types can be checked") {
-    EXPECT_TRUE(nodes::check_type<nodes::Add>(Function::parse("1+2").root()));
-    EXPECT_TRUE(!nodes::check_type<nodes::Add>(Function::parse("1-2").root()));
-    EXPECT_TRUE(!nodes::check_type<nodes::Add>(Function::parse("1*2").root()));
-    EXPECT_TRUE(!nodes::check_type<nodes::Add>(Function::parse("1/2").root()));
-    EXPECT_TRUE((nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1+2").root())));
-    EXPECT_TRUE((nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1-2").root())));
-    EXPECT_TRUE((nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1*2").root())));
-    EXPECT_TRUE((!nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1/2").root())));
+    EXPECT_TRUE(nodes::check_type<nodes::Add>(Function::parse("1+2")->root()));
+    EXPECT_TRUE(!nodes::check_type<nodes::Add>(Function::parse("1-2")->root()));
+    EXPECT_TRUE(!nodes::check_type<nodes::Add>(Function::parse("1*2")->root()));
+    EXPECT_TRUE(!nodes::check_type<nodes::Add>(Function::parse("1/2")->root()));
+    EXPECT_TRUE((nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1+2")->root())));
+    EXPECT_TRUE((nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1-2")->root())));
+    EXPECT_TRUE((nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1*2")->root())));
+    EXPECT_TRUE((!nodes::check_type<nodes::Add, nodes::Sub, nodes::Mul>(Function::parse("1/2")->root())));
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that parameter is param, but not const") {
-    EXPECT_TRUE(Function::parse("x").root().is_param());
-    EXPECT_TRUE(!Function::parse("x").root().is_const());
+    EXPECT_TRUE(Function::parse("x")->root().is_param());
+    EXPECT_TRUE(!Function::parse("x")->root().is_const());
 }
 
 TEST("require that inverted parameter is not param") {
-    EXPECT_TRUE(!Function::parse("-x").root().is_param());
+    EXPECT_TRUE(!Function::parse("-x")->root().is_param());
 }
 
 TEST("require that number is const, but not param") {
-    EXPECT_TRUE(Function::parse("123").root().is_const());
-    EXPECT_TRUE(!Function::parse("123").root().is_param());
+    EXPECT_TRUE(Function::parse("123")->root().is_const());
+    EXPECT_TRUE(!Function::parse("123")->root().is_param());
 }
 
 TEST("require that string is const") {
-    EXPECT_TRUE(Function::parse("\"x\"").root().is_const());
+    EXPECT_TRUE(Function::parse("\"x\"")->root().is_const());
 }
 
 TEST("require that neg is const if sub-expression is const") {
-    EXPECT_TRUE(Function::parse("-123").root().is_const());
-    EXPECT_TRUE(!Function::parse("-x").root().is_const());
+    EXPECT_TRUE(Function::parse("-123")->root().is_const());
+    EXPECT_TRUE(!Function::parse("-x")->root().is_const());
 }
 
 TEST("require that not is const if sub-expression is const") {
-    EXPECT_TRUE(Function::parse("!1").root().is_const());
-    EXPECT_TRUE(!Function::parse("!x").root().is_const());
+    EXPECT_TRUE(Function::parse("!1")->root().is_const());
+    EXPECT_TRUE(!Function::parse("!x")->root().is_const());
 }
 
 TEST("require that operators are cost if both children are const") {
-    EXPECT_TRUE(!Function::parse("x+y").root().is_const());
-    EXPECT_TRUE(!Function::parse("1+y").root().is_const());
-    EXPECT_TRUE(!Function::parse("x+2").root().is_const());
-    EXPECT_TRUE(Function::parse("1+2").root().is_const());
+    EXPECT_TRUE(!Function::parse("x+y")->root().is_const());
+    EXPECT_TRUE(!Function::parse("1+y")->root().is_const());
+    EXPECT_TRUE(!Function::parse("x+2")->root().is_const());
+    EXPECT_TRUE(Function::parse("1+2")->root().is_const());
 }
 
 TEST("require that set membership is never tagged as const (NB: avoids jit recursion)") {
-    EXPECT_TRUE(!Function::parse("x in [x,y,z]").root().is_const());
-    EXPECT_TRUE(!Function::parse("1 in [x,y,z]").root().is_const());
-    EXPECT_TRUE(!Function::parse("1 in [1,y,z]").root().is_const());
-    EXPECT_TRUE(!Function::parse("1 in [1,2,3]").root().is_const());
+    EXPECT_TRUE(!Function::parse("x in [x,y,z]")->root().is_const());
+    EXPECT_TRUE(!Function::parse("1 in [x,y,z]")->root().is_const());
+    EXPECT_TRUE(!Function::parse("1 in [1,y,z]")->root().is_const());
+    EXPECT_TRUE(!Function::parse("1 in [1,2,3]")->root().is_const());
 }
 
 TEST("require that calls are cost if all parameters are const") {
-    EXPECT_TRUE(!Function::parse("max(x,y)").root().is_const());
-    EXPECT_TRUE(!Function::parse("max(1,y)").root().is_const());
-    EXPECT_TRUE(!Function::parse("max(x,2)").root().is_const());
-    EXPECT_TRUE(Function::parse("max(1,2)").root().is_const());
+    EXPECT_TRUE(!Function::parse("max(x,y)")->root().is_const());
+    EXPECT_TRUE(!Function::parse("max(1,y)")->root().is_const());
+    EXPECT_TRUE(!Function::parse("max(x,2)")->root().is_const());
+    EXPECT_TRUE(Function::parse("max(1,2)")->root().is_const());
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that feature less than constant is tree if children are trees or constants") {
-    EXPECT_TRUE(Function::parse("if (foo < 2, 3, 4)").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo < 2, if(bar < 3, 4, 5), 6)").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo < 2, if(bar < 3, 4, 5), if(baz < 6, 7, 8))").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo < 2, 3, if(baz < 4, 5, 6))").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo < max(1,2), 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (2 < foo, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo < bar, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (1 < 2, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo <= 2, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo == 2, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo > 2, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo >= 2, 3, 4)").root().is_tree());
-    EXPECT_TRUE(!Function::parse("if (foo ~= 2, 3, 4)").root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo < 2, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo < 2, if(bar < 3, 4, 5), 6)")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo < 2, if(bar < 3, 4, 5), if(baz < 6, 7, 8))")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo < 2, 3, if(baz < 4, 5, 6))")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo < max(1,2), 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (2 < foo, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (foo < bar, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (1 < 2, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (foo <= 2, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (foo == 2, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (foo > 2, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (foo >= 2, 3, 4)")->root().is_tree());
+    EXPECT_TRUE(!Function::parse("if (foo ~= 2, 3, 4)")->root().is_tree());
 }
 
 TEST("require that feature in set of constants is tree if children are trees or constants") {
-    EXPECT_TRUE(Function::parse("if (foo in [1, 2], 3, 4)").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo in [1, 2], if(bar < 3, 4, 5), 6)").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo in [1, 2], if(bar < 3, 4, 5), if(baz < 6, 7, 8))").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo in [1, 2], 3, if(baz < 4, 5, 6))").root().is_tree());
-    EXPECT_TRUE(Function::parse("if (foo in [1, 2], min(1,3), max(1,4))").root().is_tree());    
-    EXPECT_TRUE(!Function::parse("if (1 in [1, 2], 3, 4)").root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo in [1, 2], 3, 4)")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo in [1, 2], if(bar < 3, 4, 5), 6)")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo in [1, 2], if(bar < 3, 4, 5), if(baz < 6, 7, 8))")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo in [1, 2], 3, if(baz < 4, 5, 6))")->root().is_tree());
+    EXPECT_TRUE(Function::parse("if (foo in [1, 2], min(1,3), max(1,4))")->root().is_tree());    
+    EXPECT_TRUE(!Function::parse("if (1 in [1, 2], 3, 4)")->root().is_tree());
 }
 
 TEST("require that sums of trees and forests are forests") {
-    EXPECT_TRUE(Function::parse("if(foo<1,2,3) + if(bar<4,5,6)").root().is_forest());
-    EXPECT_TRUE(Function::parse("if(foo<1,2,3) + if(bar<4,5,6) + if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + 10").root().is_forest());
-    EXPECT_TRUE(!Function::parse("10 + if(bar<4,5,6)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) - if(bar<4,5,6)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) * if(bar<4,5,6)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) / if(bar<4,5,6)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) ^ if(bar<4,5,6)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) - if(bar<4,5,6) + if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) * if(bar<4,5,6) + if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) / if(bar<4,5,6) + if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) ^ if(bar<4,5,6) + if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) - if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) * if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) / if(bar<7,8,9)").root().is_forest());
-    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) ^ if(bar<7,8,9)").root().is_forest());
+    EXPECT_TRUE(Function::parse("if(foo<1,2,3) + if(bar<4,5,6)")->root().is_forest());
+    EXPECT_TRUE(Function::parse("if(foo<1,2,3) + if(bar<4,5,6) + if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + 10")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("10 + if(bar<4,5,6)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) - if(bar<4,5,6)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) * if(bar<4,5,6)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) / if(bar<4,5,6)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) ^ if(bar<4,5,6)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) - if(bar<4,5,6) + if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) * if(bar<4,5,6) + if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) / if(bar<4,5,6) + if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) ^ if(bar<4,5,6) + if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) - if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) * if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) / if(bar<7,8,9)")->root().is_forest());
+    EXPECT_TRUE(!Function::parse("if(foo<1,2,3) + if(bar<4,5,6) ^ if(bar<7,8,9)")->root().is_forest());
 }
 
 //-----------------------------------------------------------------------------
@@ -657,53 +657,53 @@ struct MySymbolExtractor : SymbolExtractor {
 };
 
 TEST("require that custom symbol extractor may be used") {
-    EXPECT_EQUAL("[x+]...[missing value]...[*y]", Function::parse(params, "x+*y").dump());
-    EXPECT_EQUAL("[x+]...[missing value]...[*y]", Function::parse(params, "x+*y", MySymbolExtractor()).dump());
-    EXPECT_EQUAL("[x+]...[unknown symbol: 'x+']...[*y]", Function::parse(params, "x+*y", MySymbolExtractor({'+'})).dump());
-    EXPECT_EQUAL("[x+*y]...[unknown symbol: 'x+*y']...[]", Function::parse(params, "x+*y", MySymbolExtractor({'+', '*'})).dump());
+    EXPECT_EQUAL("[x+]...[missing value]...[*y]", Function::parse(params, "x+*y")->dump());
+    EXPECT_EQUAL("[x+]...[missing value]...[*y]", Function::parse(params, "x+*y", MySymbolExtractor())->dump());
+    EXPECT_EQUAL("[x+]...[unknown symbol: 'x+']...[*y]", Function::parse(params, "x+*y", MySymbolExtractor({'+'}))->dump());
+    EXPECT_EQUAL("[x+*y]...[unknown symbol: 'x+*y']...[]", Function::parse(params, "x+*y", MySymbolExtractor({'+', '*'}))->dump());
 }
 
 TEST("require that unknown function works as expected  with custom symbol extractor") {
-    EXPECT_EQUAL("[bogus(]...[unknown function: 'bogus']...[x)+y]", Function::parse(params, "bogus(x)+y").dump());    
-    EXPECT_EQUAL("[bogus]...[unknown symbol: 'bogus']...[(x)+y]", Function::parse(params, "bogus(x)+y", MySymbolExtractor()).dump());
-    EXPECT_EQUAL("[bogus(x)]...[unknown symbol: 'bogus(x)']...[+y]", Function::parse(params, "bogus(x)+y", MySymbolExtractor({'(', ')'})).dump());
+    EXPECT_EQUAL("[bogus(]...[unknown function: 'bogus']...[x)+y]", Function::parse(params, "bogus(x)+y")->dump());    
+    EXPECT_EQUAL("[bogus]...[unknown symbol: 'bogus']...[(x)+y]", Function::parse(params, "bogus(x)+y", MySymbolExtractor())->dump());
+    EXPECT_EQUAL("[bogus(x)]...[unknown symbol: 'bogus(x)']...[+y]", Function::parse(params, "bogus(x)+y", MySymbolExtractor({'(', ')'}))->dump());
 }
 
 TEST("require that unknown function that is valid parameter works as expected with custom symbol extractor") {
-    EXPECT_EQUAL("[z(]...[unknown function: 'z']...[x)+y]", Function::parse(params, "z(x)+y").dump());
-    EXPECT_EQUAL("[z]...[invalid operator: '(']...[(x)+y]", Function::parse(params, "z(x)+y", MySymbolExtractor()).dump());
-    EXPECT_EQUAL("[z(x)]...[unknown symbol: 'z(x)']...[+y]", Function::parse(params, "z(x)+y", MySymbolExtractor({'(', ')'})).dump());
+    EXPECT_EQUAL("[z(]...[unknown function: 'z']...[x)+y]", Function::parse(params, "z(x)+y")->dump());
+    EXPECT_EQUAL("[z]...[invalid operator: '(']...[(x)+y]", Function::parse(params, "z(x)+y", MySymbolExtractor())->dump());
+    EXPECT_EQUAL("[z(x)]...[unknown symbol: 'z(x)']...[+y]", Function::parse(params, "z(x)+y", MySymbolExtractor({'(', ')'}))->dump());
 }
 
 TEST("require that custom symbol extractor is not invoked for known function call") {
     MySymbolExtractor extractor;
     EXPECT_EQUAL(extractor.invoke_count, 0u);
-    EXPECT_EQUAL("[bogus]...[unknown symbol: 'bogus']...[(1,2)]", Function::parse(params, "bogus(1,2)", extractor).dump());
+    EXPECT_EQUAL("[bogus]...[unknown symbol: 'bogus']...[(1,2)]", Function::parse(params, "bogus(1,2)", extractor)->dump());
     EXPECT_EQUAL(extractor.invoke_count, 1u);
-    EXPECT_EQUAL("max(1,2)", Function::parse(params, "max(1,2)", extractor).dump());
+    EXPECT_EQUAL("max(1,2)", Function::parse(params, "max(1,2)", extractor)->dump());
     EXPECT_EQUAL(extractor.invoke_count, 1u);
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that valid function does not report parse error") {
-    Function function = Function::parse(params, "x + y");
-    EXPECT_TRUE(!function.has_error());
-    EXPECT_EQUAL("", function.get_error());    
+    auto function = Function::parse(params, "x + y");
+    EXPECT_TRUE(!function->has_error());
+    EXPECT_EQUAL("", function->get_error());    
 }
 
 TEST("require that an invalid function with explicit paramers retain its parameters") {
-    Function function = Function::parse({"x", "y"}, "x & y");
-    EXPECT_TRUE(function.has_error());
-    ASSERT_EQUAL(2u, function.num_params());
-    ASSERT_EQUAL("x", function.param_name(0));
-    ASSERT_EQUAL("y", function.param_name(1));
+    auto function = Function::parse({"x", "y"}, "x & y");
+    EXPECT_TRUE(function->has_error());
+    ASSERT_EQUAL(2u, function->num_params());
+    ASSERT_EQUAL("x", function->param_name(0));
+    ASSERT_EQUAL("y", function->param_name(1));
 }
 
 TEST("require that an invalid function with implicit paramers has no parameters") {
-    Function function = Function::parse("x & y");
-    EXPECT_TRUE(function.has_error());
-    EXPECT_EQUAL(0u, function.num_params());
+    auto function = Function::parse("x & y");
+    EXPECT_TRUE(function->has_error());
+    EXPECT_EQUAL(0u, function->num_params());
 }
 
 TEST("require that unknown operator gives parse error") {
@@ -725,23 +725,23 @@ TEST("require that missing value gives parse error") {
 
 TEST("require that tensor operations can be nested") {
     EXPECT_EQUAL("reduce(reduce(reduce(a,sum),sum),sum,dim)",
-                 Function::parse("reduce(reduce(reduce(a,sum),sum),sum,dim)").dump());
+                 Function::parse("reduce(reduce(reduce(a,sum),sum),sum,dim)")->dump());
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor map can be parsed") {
-    EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse("map(a,f(x)(x+1))").dump());
-    EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse(" map ( a , f ( x ) ( x + 1 ) ) ").dump());
+    EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse("map(a,f(x)(x+1))")->dump());
+    EXPECT_EQUAL("map(a,f(x)(x+1))", Function::parse(" map ( a , f ( x ) ( x + 1 ) ) ")->dump());
 }
 
 TEST("require that tensor join can be parsed") {
-    EXPECT_EQUAL("join(a,b,f(x,y)(x+y))", Function::parse("join(a,b,f(x,y)(x+y))").dump());
-    EXPECT_EQUAL("join(a,b,f(x,y)(x+y))", Function::parse(" join ( a , b , f ( x , y ) ( x + y ) ) ").dump());
+    EXPECT_EQUAL("join(a,b,f(x,y)(x+y))", Function::parse("join(a,b,f(x,y)(x+y))")->dump());
+    EXPECT_EQUAL("join(a,b,f(x,y)(x+y))", Function::parse(" join ( a , b , f ( x , y ) ( x + y ) ) ")->dump());
 }
 
 TEST("require that parenthesis are added around lambda expression when needed") {
-    EXPECT_EQUAL("f(x)(sin(x))", Function::parse("sin(x)").dump_as_lambda());
+    EXPECT_EQUAL("f(x)(sin(x))", Function::parse("sin(x)")->dump_as_lambda());
 }
 
 TEST("require that parse error inside a lambda fails the enclosing expression") {
@@ -755,16 +755,16 @@ TEST("require that outer parameters are hidden within a lambda") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor reduce can be parsed") {
-    EXPECT_EQUAL("reduce(x,sum,a,b)", Function::parse({"x"}, "reduce(x,sum,a,b)").dump());
-    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, "reduce(x,sum,a,b,c)").dump());
-    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, " reduce ( x , sum , a , b , c ) ").dump());
-    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)").dump());
-    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce(x,avg)").dump());
-    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce( x , avg )").dump());
-    EXPECT_EQUAL("reduce(x,count)", Function::parse({"x"}, "reduce(x,count)").dump());
-    EXPECT_EQUAL("reduce(x,prod)", Function::parse({"x"}, "reduce(x,prod)").dump());
-    EXPECT_EQUAL("reduce(x,min)", Function::parse({"x"}, "reduce(x,min)").dump());
-    EXPECT_EQUAL("reduce(x,max)", Function::parse({"x"}, "reduce(x,max)").dump());
+    EXPECT_EQUAL("reduce(x,sum,a,b)", Function::parse({"x"}, "reduce(x,sum,a,b)")->dump());
+    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, "reduce(x,sum,a,b,c)")->dump());
+    EXPECT_EQUAL("reduce(x,sum,a,b,c)", Function::parse({"x"}, " reduce ( x , sum , a , b , c ) ")->dump());
+    EXPECT_EQUAL("reduce(x,sum)", Function::parse({"x"}, "reduce(x,sum)")->dump());
+    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce(x,avg)")->dump());
+    EXPECT_EQUAL("reduce(x,avg)", Function::parse({"x"}, "reduce( x , avg )")->dump());
+    EXPECT_EQUAL("reduce(x,count)", Function::parse({"x"}, "reduce(x,count)")->dump());
+    EXPECT_EQUAL("reduce(x,prod)", Function::parse({"x"}, "reduce(x,prod)")->dump());
+    EXPECT_EQUAL("reduce(x,min)", Function::parse({"x"}, "reduce(x,min)")->dump());
+    EXPECT_EQUAL("reduce(x,max)", Function::parse({"x"}, "reduce(x,max)")->dump());
 }
 
 TEST("require that tensor reduce with unknown aggregator fails") {
@@ -778,14 +778,14 @@ TEST("require that tensor reduce with duplicate dimensions fails") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor rename can be parsed") {
-    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,b)").dump());
-    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),(b))").dump());
-    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,(b))").dump());
-    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),b)").dump());
-    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename(x,(a,b),(b,a))").dump());
-    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , a , b )").dump());
-    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , ( a ) , ( b ) )").dump());
-    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename( x , ( a , b ) , ( b , a ) )").dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,b)")->dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),(b))")->dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,a,(b))")->dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename(x,(a),b)")->dump());
+    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename(x,(a,b),(b,a))")->dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , a , b )")->dump());
+    EXPECT_EQUAL("rename(x,a,b)", Function::parse({"x"}, "rename( x , ( a ) , ( b ) )")->dump());
+    EXPECT_EQUAL("rename(x,(a,b),(b,a))", Function::parse({"x"}, "rename( x , ( a , b ) , ( b , a ) )")->dump());
 }
 
 TEST("require that tensor rename dimension lists cannot be empty") {
@@ -808,9 +808,9 @@ TEST("require that tensor rename dimension lists must have equal size") {
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor lambda can be parsed") {
-    EXPECT_EQUAL("tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}", Function::parse({}, "tensor(x[3])(x)").dump());
+    EXPECT_EQUAL("tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}", Function::parse({}, "tensor(x[3])(x)")->dump());
     EXPECT_EQUAL("tensor(x[2],y[2]):{{x:0,y:0}:(0==0),{x:0,y:1}:(0==1),{x:1,y:0}:(1==0),{x:1,y:1}:(1==1)}",
-                 Function::parse({}, " tensor ( x [ 2 ] , y [ 2 ] ) ( x == y ) ").dump());
+                 Function::parse({}, " tensor ( x [ 2 ] , y [ 2 ] ) ( x == y ) ")->dump());
 }
 
 TEST("require that tensor lambda requires appropriate tensor type") {
@@ -821,7 +821,7 @@ TEST("require that tensor lambda requires appropriate tensor type") {
 
 TEST("require that tensor lambda can use non-dimension symbols") {
     EXPECT_EQUAL("tensor(x[2]):{{x:0}:(0==a),{x:1}:(1==a)}",
-                 Function::parse({"a"}, "tensor(x[2])(x==a)").dump());
+                 Function::parse({"a"}, "tensor(x[2])(x==a)")->dump());
 }
 
 //-----------------------------------------------------------------------------
@@ -832,24 +832,24 @@ TEST("require that verbose tensor create can be parsed") {
     auto sparse2 = Function::parse("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}");
     auto mixed1 = Function::parse("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}");
     auto mixed2 = Function::parse("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}");
-    EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense.dump());
-    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1.dump());
-    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2.dump());
-    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1.dump());
-    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2.dump());
+    EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense->dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1->dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2->dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1->dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2->dump());
 }
 
 TEST("require that verbose tensor create can contain expressions") {
     auto fun = Function::parse("tensor(x[2]):{{x:0}:1,{x:1}:2+a}");
-    EXPECT_EQUAL("tensor(x[2]):{{x:0}:1,{x:1}:(2+a)}", fun.dump());
-    ASSERT_EQUAL(fun.num_params(), 1u);
-    EXPECT_EQUAL(fun.param_name(0), "a");
+    EXPECT_EQUAL("tensor(x[2]):{{x:0}:1,{x:1}:(2+a)}", fun->dump());
+    ASSERT_EQUAL(fun->num_params(), 1u);
+    EXPECT_EQUAL(fun->param_name(0), "a");
 }
 
 TEST("require that verbose tensor create handles spaces and reordering of various elements") {
     auto fun = Function::parse(" tensor ( y [ 2 ] , x [ 2 ] ) : { { x : 0 , y : 1 } : 2 , "
                                "{ y : 0 , x : 0 } : 1 , { y : 0 , x : 1 } : 3 , { x : 1 , y : 1 } : 4 } ");
-    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:0,y:0}:1,{x:0,y:1}:2,{x:1,y:0}:3,{x:1,y:1}:4}", fun.dump());
+    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:0,y:0}:1,{x:0,y:1}:2,{x:1,y:0}:3,{x:1,y:1}:4}", fun->dump());
 }
 
 TEST("require that verbose tensor create detects invalid tensor type") {
@@ -890,23 +890,23 @@ TEST("require that convenient tensor create can be parsed") {
     auto sparse2 = Function::parse("tensor(x{}):{\"a\":1,\"b\":2,\"c\":3}");
     auto mixed1 = Function::parse("tensor(x{},y[2]):{a:[1,2]}");
     auto mixed2 = Function::parse("tensor(x{},y[2]):{\"a\":[1,2]}");
-    EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense.dump());
-    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1.dump());
-    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2.dump());
-    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1.dump());
-    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2.dump());
+    EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense->dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1->dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2->dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1->dump());
+    EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2->dump());
 }
 
 TEST("require that convenient tensor create can contain expressions") {
     auto fun = Function::parse("tensor(x[2]):[1,2+a]");
-    EXPECT_EQUAL("tensor(x[2]):{{x:0}:1,{x:1}:(2+a)}", fun.dump());
-    ASSERT_EQUAL(fun.num_params(), 1u);
-    EXPECT_EQUAL(fun.param_name(0), "a");
+    EXPECT_EQUAL("tensor(x[2]):{{x:0}:1,{x:1}:(2+a)}", fun->dump());
+    ASSERT_EQUAL(fun->num_params(), 1u);
+    EXPECT_EQUAL(fun->param_name(0), "a");
 }
 
 TEST("require that convenient tensor create handles dimension order") {
     auto mixed = Function::parse("tensor(y{},x[2]):{a:[1,2]}");
-    EXPECT_EQUAL("tensor(x[2],y{}):{{x:0,y:\"a\"}:1,{x:1,y:\"a\"}:2}", mixed.dump());
+    EXPECT_EQUAL("tensor(x[2],y{}):{{x:0,y:\"a\"}:1,{x:1,y:\"a\"}:2}", mixed->dump());
 }
 
 TEST("require that convenient tensor create can be highly nested") {
@@ -914,9 +914,9 @@ TEST("require that convenient tensor create can be highly nested") {
     auto nested1 = Function::parse("tensor(a{},b{},c[1],d[1]):{x:{y:[[5]]}}");
     auto nested2 = Function::parse("tensor(c[1],d[1],a{},b{}):[[{x:{y:5}}]]");
     auto nested3 = Function::parse("tensor(a{},c[1],b{},d[1]): { x : [ { y : [ 5 ] } ] } ");
-    EXPECT_EQUAL(expect, nested1.dump());
-    EXPECT_EQUAL(expect, nested2.dump());
-    EXPECT_EQUAL(expect, nested3.dump());
+    EXPECT_EQUAL(expect, nested1->dump());
+    EXPECT_EQUAL(expect, nested2->dump());
+    EXPECT_EQUAL(expect, nested3->dump());
 }
 
 TEST("require that convenient tensor create can have multiple values on multiple levels") {
@@ -925,15 +925,15 @@ TEST("require that convenient tensor create can have multiple values on multiple
     auto fun2 = Function::parse("tensor(y[2],x{}):[{a:1,b:3},{a:2,b:4}]");
     auto fun3 = Function::parse("tensor(x{},y[2]): { a : [ 1 , 2 ] , b : [ 3 , 4 ] } ");
     auto fun4 = Function::parse("tensor(y[2],x{}): [ { a : 1 , b : 3 } , { a : 2 , b : 4 } ] ");
-    EXPECT_EQUAL(expect, fun1.dump());
-    EXPECT_EQUAL(expect, fun2.dump());
-    EXPECT_EQUAL(expect, fun3.dump());
-    EXPECT_EQUAL(expect, fun4.dump());
+    EXPECT_EQUAL(expect, fun1->dump());
+    EXPECT_EQUAL(expect, fun2->dump());
+    EXPECT_EQUAL(expect, fun3->dump());
+    EXPECT_EQUAL(expect, fun4->dump());
 }
 
 TEST("require that convenient tensor create allows under-specified tensors") {
     auto fun = Function::parse("tensor(x[2],y[2]):[[],[5]]");
-    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:1,y:0}:5}", fun.dump());
+    EXPECT_EQUAL("tensor(x[2],y[2]):{{x:1,y:0}:5}", fun->dump());
 }
 
 TEST("require that convenient tensor create detects invalid tensor type") {
@@ -992,16 +992,16 @@ TEST("require that tensor peek empty label is not allowed") {
 TEST("require that nested tensor lambda using tensor peek can be parsed") {
     vespalib::string expect("tensor(x[2]):{{x:0}:tensor(y[2]):{{y:0}:((0+0)+a),{y:1}:((0+1)+a)}{y:\"0\"},"
                             "{x:1}:tensor(y[2]):{{y:0}:((1+0)+a),{y:1}:((1+1)+a)}{y:\"1\"}}");
-    EXPECT_EQUAL(Function::parse(expect).dump(), expect);
+    EXPECT_EQUAL(Function::parse(expect)->dump(), expect);
     auto fun = Function::parse("tensor(x[2])(tensor(y[2])(x+y+a){y:(x)})");
-    EXPECT_EQUAL(fun.dump(), expect);
+    EXPECT_EQUAL(fun->dump(), expect);
 }
 
 //-----------------------------------------------------------------------------
 
 TEST("require that tensor concat can be parsed") {
-    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, "concat(a,b,d)").dump());
-    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, " concat ( a , b , d ) ").dump());
+    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, "concat(a,b,d)")->dump());
+    EXPECT_EQUAL("concat(a,b,d)", Function::parse({"a", "b"}, " concat ( a , b , d ) ")->dump());
 }
 
 //-----------------------------------------------------------------------------
@@ -1012,10 +1012,10 @@ struct CheckExpressions : test::EvalSpec::EvalTest {
     virtual void next_expression(const std::vector<vespalib::string> &param_names,
                                  const vespalib::string &expression) override
     {
-        Function function = Function::parse(param_names, expression);
-        if (function.has_error()) {
+        auto function = Function::parse(param_names, expression);
+        if (function->has_error()) {
             failed = true;
-            fprintf(stderr, "parse error: %s\n", function.get_error().c_str());
+            fprintf(stderr, "parse error: %s\n", function->get_error().c_str());
         }
         ++seen_cnt;
     }

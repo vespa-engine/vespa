@@ -49,8 +49,6 @@ private:
     std::vector<gbdt::Forest::UP>          _forests;
     std::vector<PluginState::UP>           _plugin_state;
 
-    static std::recursive_mutex _global_llvm_lock;
-
     void compile(llvm::raw_ostream * dumpStream);
 public:
     LLVMWrapper();

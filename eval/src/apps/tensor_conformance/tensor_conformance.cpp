@@ -89,20 +89,20 @@ std::vector<ValueType> get_types(const std::vector<Value::UP> &param_values) {
 }
 
 TensorSpec eval_expr(const Inspector &test, const TensorEngine &engine, bool typed) {
-    Function fun = Function::parse(test["expression"].asString().make_string());
+    auto fun = Function::parse(test["expression"].asString().make_string());
     std::vector<Value::UP> param_values;
     std::vector<Value::CREF> param_refs;
-    for (size_t i = 0; i < fun.num_params(); ++i) {
-        param_values.emplace_back(engine.from_spec(extract_value(test["inputs"][fun.param_name(i)])));
+    for (size_t i = 0; i < fun->num_params(); ++i) {
+        param_values.emplace_back(engine.from_spec(extract_value(test["inputs"][fun->param_name(i)])));
         param_refs.emplace_back(*param_values.back());
     }
-    NodeTypes types = typed ? NodeTypes(fun, get_types(param_values)) : NodeTypes();
-    InterpretedFunction ifun(engine, fun, types);
+    NodeTypes types = typed ? NodeTypes(*fun, get_types(param_values)) : NodeTypes();
+    InterpretedFunction ifun(engine, *fun, types);
     InterpretedFunction::Context ctx(ifun);
     SimpleObjectParams params(param_refs);
     const Value &result = ifun.eval(ctx, params);
     if (typed) {
-        ASSERT_EQUAL(result.type(), types.get_type(fun.root()));
+        ASSERT_EQUAL(result.type(), types.get_type(fun->root()));
     }
     return engine.to_spec(result);
 }
@@ -236,12 +236,12 @@ struct TestSpec {
         const auto &my_expression = test["expression"];
         ASSERT_TRUE(my_expression.valid());
         expression = my_expression.asString().make_string();
-        Function fun = Function::parse(expression);
-        ASSERT_TRUE(!fun.has_error());
-        ASSERT_EQUAL(fun.num_params(), test["inputs"].fields());
-        for (size_t i = 0; i < fun.num_params(); ++i) {
+        auto fun = Function::parse(expression);
+        ASSERT_TRUE(!fun->has_error());
+        ASSERT_EQUAL(fun->num_params(), test["inputs"].fields());
+        for (size_t i = 0; i < fun->num_params(); ++i) {
             TEST_STATE(make_string("input #%zu", i).c_str());
-            const auto &my_input = test["inputs"][fun.param_name(i)];
+            const auto &my_input = test["inputs"][fun->param_name(i)];
             ASSERT_TRUE(my_input.valid());
             inputs.push_back(extract_value(my_input));
         }

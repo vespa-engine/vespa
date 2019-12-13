@@ -167,8 +167,8 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         for (size_t i = 0; i < node.num_entries(); ++i) {
             my_in->add_entry(std::make_unique<Number>(node.get_entry(i).get_const_value()));
         }
-        Function my_fun(std::move(my_in), {"x"});
-        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(my_fun, PassParams::SEPARATE));
+        auto my_fun = Function::create(std::move(my_in), {"x"});
+        const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(*my_fun, PassParams::SEPARATE));
         make_map(node, token.get()->get().get_function<1>());
     }
     void visit(const Neg &node) override {

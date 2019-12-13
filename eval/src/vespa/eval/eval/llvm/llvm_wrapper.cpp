@@ -643,6 +643,7 @@ FunctionBuilder::~FunctionBuilder() { }
 
 struct InitializeNativeTarget {
     InitializeNativeTarget() {
+        assert(llvm::llvm_is_multithreaded());
         llvm::InitializeNativeTarget();
         llvm::InitializeNativeTargetAsmPrinter();
         llvm::InitializeNativeTargetAsmParser();
@@ -658,8 +659,6 @@ struct InitializeNativeTarget {
     }
 } initialize_native_target;
 
-std::recursive_mutex LLVMWrapper::_global_llvm_lock;
-
 LLVMWrapper::LLVMWrapper()
     : _context(),
       _module(),
@@ -668,17 +667,14 @@ LLVMWrapper::LLVMWrapper()
       _forests(),
       _plugin_state()
 {
-    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     _context = std::make_unique<llvm::LLVMContext>();
-    _module = std::make_unique< llvm::Module>("LLVMWrapper", *_context);
+    _module = std::make_unique<llvm::Module>("LLVMWrapper", *_context);
 }
-
 
 size_t
 LLVMWrapper::make_function(size_t num_params, PassParams pass_params, const Node &root,
                            const gbdt::Optimize::Chain &forest_optimizers)
 {
-    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     size_t function_id = _functions.size();
     FunctionBuilder builder(*_context, *_module,
                             vespalib::make_string("f%zu", function_id),
@@ -692,7 +688,6 @@ LLVMWrapper::make_function(size_t num_params, PassParams pass_params, const Node
 size_t
 LLVMWrapper::make_forest_fragment(size_t num_params, const std::vector<const Node *> &fragment)
 {
-    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     size_t function_id = _functions.size();
     FunctionBuilder builder(*_context, *_module,
                             vespalib::make_string("f%zu", function_id),
@@ -706,7 +701,6 @@ LLVMWrapper::make_forest_fragment(size_t num_params, const std::vector<const Nod
 void
 LLVMWrapper::compile(llvm::raw_ostream * dumpStream)
 {
-    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     if (dumpStream) {
         _module->print(*dumpStream, nullptr);
     }
@@ -718,12 +712,10 @@ LLVMWrapper::compile(llvm::raw_ostream * dumpStream)
 void *
 LLVMWrapper::get_function_address(size_t function_id)
 {
-    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     return _engine->getPointerToFunction(_functions[function_id]);
 }
 
 LLVMWrapper::~LLVMWrapper() {
-    std::lock_guard<std::recursive_mutex> guard(_global_llvm_lock);
     _plugin_state.clear();
     _forests.clear();
     _functions.clear();

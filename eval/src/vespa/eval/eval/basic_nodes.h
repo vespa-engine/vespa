@@ -61,7 +61,7 @@ struct Node {
     virtual ~Node() {}
 };
 
-typedef std::unique_ptr<Node> Node_UP;
+using Node_UP = std::unique_ptr<Node>;
 
 /**
  * Simple typecasting utility. Intended usage:

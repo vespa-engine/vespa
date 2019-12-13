@@ -31,17 +31,17 @@ void run_fast_forest_bench() {
                     for (size_t invert_percent: std::vector<size_t>({50})) {
                         fprintf(stderr, "\n=== features: %zu, num leafs: %zu, num trees: %zu\n", max_features, tree_size, num_trees);
                         vespalib::string expression = Model().max_features(max_features).less_percent(less_percent).invert_percent(invert_percent).make_forest(num_trees, tree_size);
-                        Function function = Function::parse(expression);
+                        auto function = Function::parse(expression);
                         for (size_t min_bits = std::max(size_t(8), tree_size); true; min_bits *= 2) {
-                            auto forest = FastForest::try_convert(function, min_bits, 64);
+                            auto forest = FastForest::try_convert(*function, min_bits, 64);
                             if (forest) {
-                                estimate_cost(function.num_params(), forest->impl_name().c_str(), *forest);
+                                estimate_cost(function->num_params(), forest->impl_name().c_str(), *forest);
                             }
                             if (min_bits > 64) {
                                 break;
                             }
                         }
-                        estimate_cost(function.num_params(), "vm forest", CompiledFunction(function, PassParams::ARRAY, VMForest::optimize_chain));
+                        estimate_cost(function->num_params(), "vm forest", CompiledFunction(*function, PassParams::ARRAY, VMForest::optimize_chain));
                     }
                 }
             }

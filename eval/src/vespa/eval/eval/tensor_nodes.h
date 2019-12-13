@@ -17,18 +17,18 @@ namespace nodes {
 
 class TensorMap : public Node {
 private:
-    Node_UP  _child;
-    Function _lambda;
+    Node_UP _child;
+    std::shared_ptr<Function const> _lambda;
 public:
-    TensorMap(Node_UP child, Function lambda)
+    TensorMap(Node_UP child, std::shared_ptr<Function const> lambda)
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
-    const Function &lambda() const { return _lambda; }
+    const Function &lambda() const { return *_lambda; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "map(";
         str += _child->dump(ctx);
         str += ",";
-        str += _lambda.dump_as_lambda();
+        str += _lambda->dump_as_lambda();
         str += ")";
         return str;
     }
@@ -46,13 +46,13 @@ public:
 
 class TensorJoin : public Node {
 private:
-    Node_UP  _lhs;
-    Node_UP  _rhs;
-    Function _lambda;
+    Node_UP _lhs;
+    Node_UP _rhs;
+    std::shared_ptr<Function const> _lambda;
 public:
-    TensorJoin(Node_UP lhs, Node_UP rhs, Function lambda)
+    TensorJoin(Node_UP lhs, Node_UP rhs, std::shared_ptr<Function const> lambda)
         : _lhs(std::move(lhs)), _rhs(std::move(rhs)), _lambda(std::move(lambda)) {}
-    const Function &lambda() const { return _lambda; }
+    const Function &lambda() const { return *_lambda; }
     vespalib::string dump(DumpContext &ctx) const override {
         vespalib::string str;
         str += "join(";
@@ -60,7 +60,7 @@ public:
         str += ",";
         str += _rhs->dump(ctx);
         str += ",";
-        str += _lambda.dump_as_lambda();
+        str += _lambda->dump_as_lambda();
         str += ")";
         return str;
     }

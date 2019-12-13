@@ -565,7 +565,7 @@ std::vector<vespalib::string> get_idents(ParseContext &ctx) {
     return list;
 }
 
-Function parse_lambda(ParseContext &ctx, size_t num_params) {
+auto parse_lambda(ParseContext &ctx, size_t num_params) {
     ctx.skip_spaces();
     ctx.eat('f');
     auto param_names = get_ident_list(ctx, true);
@@ -581,13 +581,13 @@ Function parse_lambda(ParseContext &ctx, size_t num_params) {
         ctx.fail(make_string("expected lambda with %zu parameter(s), was %zu",
                              num_params, param_names.size()));
     }
-    return Function(std::move(lambda_root), std::move(param_names));
+    return Function::create(std::move(lambda_root), std::move(param_names));
 }
 
 void parse_tensor_map(ParseContext &ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
-    Function lambda = parse_lambda(ctx, 1);
+    auto lambda = parse_lambda(ctx, 1);
     ctx.push_expression(std::make_unique<nodes::TensorMap>(std::move(child), std::move(lambda)));
 }
 
@@ -596,7 +596,7 @@ void parse_tensor_join(ParseContext &ctx) {
     ctx.eat(',');
     Node_UP rhs = get_expression(ctx);
     ctx.eat(',');
-    Function lambda = parse_lambda(ctx, 2);
+    auto lambda = parse_lambda(ctx, 2);
     ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
 }
 
@@ -994,15 +994,15 @@ void parse_expression(ParseContext &ctx) {
     }
 }
 
-Function parse_function(const Params &params, vespalib::stringref expression,
-                        const SymbolExtractor *symbol_extractor)
+auto parse_function(const Params &params, vespalib::stringref expression,
+                    const SymbolExtractor *symbol_extractor)
 {
     ParseContext ctx(params, expression.data(), expression.size(), symbol_extractor);
     parse_expression(ctx);
     if (ctx.failed() && params.implicit()) {
-        return Function(ctx.get_result(), std::vector<vespalib::string>());
+        return Function::create(ctx.get_result(), std::vector<vespalib::string>());
     }
-    return Function(ctx.get_result(), params.extract());
+    return Function::create(ctx.get_result(), params.extract());
 }
 
 } // namespace vespalib::<unnamed>
@@ -1023,25 +1023,31 @@ Function::get_error() const
     return error ? error->message() : "";
 }
 
-Function
+std::shared_ptr<Function const>
+Function::create(nodes::Node_UP root_in, std::vector<vespalib::string> params_in)
+{
+    return std::make_shared<Function const>(std::move(root_in), std::move(params_in), ctor_tag());
+}
+
+std::shared_ptr<Function const>
 Function::parse(vespalib::stringref expression)
 {
     return parse_function(ImplicitParams(), expression, nullptr);
 }
 
-Function
+std::shared_ptr<Function const>
 Function::parse(vespalib::stringref expression, const SymbolExtractor &symbol_extractor)
 {
     return parse_function(ImplicitParams(), expression, &symbol_extractor);
 }
 
-Function
+std::shared_ptr<Function const>
 Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref expression)
 {
     return parse_function(ExplicitParams(params), expression, nullptr);
 }
 
-Function
+std::shared_ptr<Function const>
 Function::parse(const std::vector<vespalib::string> &params, vespalib::stringref expression,
                 const SymbolExtractor &symbol_extractor)
 {

@@ -177,6 +177,13 @@ ThreadStackExecutorBase::internalSetTaskLimit(uint32_t taskLimit)
     }
 }
 
+size_t
+ThreadStackExecutorBase::num_idle_workers() const
+{
+    LockGuard lock(_monitor);
+    return _workers.size();
+}
+
 ThreadStackExecutorBase::Stats
 ThreadStackExecutorBase::getStats()
 {

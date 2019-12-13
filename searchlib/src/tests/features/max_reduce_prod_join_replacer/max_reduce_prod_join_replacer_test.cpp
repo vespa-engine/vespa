@@ -46,11 +46,11 @@ struct MyBlueprint : Blueprint {
 bool replaced(const vespalib::string &expr) {
     bool was_used = false;
     ExpressionReplacer::UP replacer = MaxReduceProdJoinReplacer::create(std::make_unique<MyBlueprint>(was_used));
-    Function rank_function = Function::parse(expr, FeatureNameExtractor());
-    if (!EXPECT_TRUE(!rank_function.has_error())) {
-        fprintf(stderr, "parse error: %s\n", rank_function.dump().c_str());
+    auto rank_function = Function::parse(expr, FeatureNameExtractor());
+    if (!EXPECT_TRUE(!rank_function->has_error())) {
+        fprintf(stderr, "parse error: %s\n", rank_function->dump().c_str());
     }
-    auto result = replacer->maybe_replace(rank_function, IndexEnvironment());    
+    auto result = replacer->maybe_replace(*rank_function, IndexEnvironment());    
     EXPECT_EQUAL(bool(result), was_used);
     return was_used;
 }
