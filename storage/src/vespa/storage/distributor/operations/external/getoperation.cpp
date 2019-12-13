@@ -243,6 +243,9 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             const BucketCopy& copy = e->getNodeRef(i);
 
+            // TODO this could ideally be a set
+            _replicas_in_db.emplace_back(e.getBucketId(), copy.getNode());
+
             if (!copy.valid()) {
                 _responses[GroupId(e.getBucketId(), copy.getChecksum(), copy.getNode())].push_back(copy);
             } else if (!copy.empty()) {

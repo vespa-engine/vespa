@@ -41,7 +41,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     _updateDocBucketId = idFactory.getBucketId(_updateCmd->getDocumentId());
 }
 
-TwoPhaseUpdateOperation::~TwoPhaseUpdateOperation() {}
+TwoPhaseUpdateOperation::~TwoPhaseUpdateOperation() = default;
 
 namespace {
 
@@ -183,6 +183,7 @@ TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
             _manager, _bucketSpace, _bucketSpace.getBucketDatabase().acquire_read_guard(), get, _getMetric);
     GetOperation & op = *getOperation;
     IntermediateMessageSender intermediate(_sentMessageMap, std::move(getOperation), sender);
+    _replicas_at_get_send_time = op.replicas_in_db(); // Populated at construction time, not at start()-time
     op.start(intermediate, _manager.getClock().getTimeInMillis());
     transitionTo(SendState::GETS_SENT);
 
@@ -408,7 +409,23 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sen
 bool TwoPhaseUpdateOperation::may_restart_with_fast_path(const api::GetReply& reply) {
     return (_manager.getDistributor().getConfig().update_fast_path_restart_enabled() &&
             reply.wasFound() &&
-            reply.had_consistent_replicas());
+            reply.had_consistent_replicas() &&
+            replica_set_unchanged_after_get_operation());
+}
+
+bool TwoPhaseUpdateOperation::replica_set_unchanged_after_get_operation() const {
+    std::vector<BucketDatabase::Entry> entries;
+    _bucketSpace.getBucketDatabase().getParents(_updateDocBucketId, entries);
+
+    std::vector<std::pair<document::BucketId, uint16_t>> replicas_in_db_now;
+    for (uint32_t j = 0; j < entries.size(); ++j) {
+        const auto& e = entries[j];
+        for (uint32_t i = 0; i < e->getNodeCount(); i++) {
+            const auto& copy = e->getNodeRef(i);
+            replicas_in_db_now.emplace_back(e.getBucketId(), copy.getNode());
+        }
+    }
+    return (replicas_in_db_now == _replicas_at_get_send_time);
 }
 
 void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender) {

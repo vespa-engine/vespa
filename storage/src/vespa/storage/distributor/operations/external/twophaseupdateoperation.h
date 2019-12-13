@@ -122,6 +122,7 @@ private:
     void replyWithTasFailure(DistributorMessageSender& sender,
                              vespalib::stringref message);
     bool may_restart_with_fast_path(const api::GetReply& reply);
+    bool replica_set_unchanged_after_get_operation() const;
     void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender);
 
     UpdateMetricSet& _updateMetric;
@@ -136,6 +137,7 @@ private:
     Mode _mode;
     mbus::TraceNode _trace;
     document::BucketId _updateDocBucketId;
+    std::vector<std::pair<document::BucketId, uint16_t>> _replicas_at_get_send_time;
     bool _replySent;
 };
 
