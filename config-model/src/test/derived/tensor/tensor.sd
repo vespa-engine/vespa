@@ -93,7 +93,7 @@ search tensor {
   rank-profile profile8 {
 
     first-phase {
-      expression: sum(tensor(d0[1])(attribute{x:(functionNotLabel)}))
+      expression: sum(tensor(d0[1])(attribute{x:functionNotLabel()}))
     }
 
     function functionNotLabel() {
