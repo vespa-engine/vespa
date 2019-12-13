@@ -6,7 +6,6 @@
  */
 options {
     CACHE_TOKENS       = true;
-    STATIC             = false;
     DEBUG_PARSER       = false;
     USER_TOKEN_MANAGER = false;
     ERROR_REPORTING    = true;
