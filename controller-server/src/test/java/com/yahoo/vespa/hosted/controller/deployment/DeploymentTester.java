@@ -26,10 +26,13 @@ import com.yahoo.vespa.hosted.controller.maintenance.OutstandingChangeDeployer;
 import com.yahoo.vespa.hosted.controller.maintenance.ReadyJobsTrigger;
 import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 import java.util.logging.Logger;
 
@@ -116,11 +119,11 @@ public class DeploymentTester {
         return nameServiceDispatcher;
     }
 
-    public DeploymentTester atHourOfDay(int hour) {
-        var dateTime = tester.clock().instant().atZone(ZoneOffset.UTC);
-        return at(LocalDateTime.of(dateTime.getYear(), dateTime.getMonth(), dateTime.getDayOfMonth(), hour,
-                                   dateTime.getMinute(), dateTime.getSecond())
-                               .toInstant(ZoneOffset.UTC));
+    public DeploymentTester atMondayMorning() {
+        return at(tester.clock().instant().atZone(ZoneOffset.UTC)
+                        .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                        .withHour(5)
+                        .toInstant());
     }
 
     public DeploymentTester at(Instant instant) {

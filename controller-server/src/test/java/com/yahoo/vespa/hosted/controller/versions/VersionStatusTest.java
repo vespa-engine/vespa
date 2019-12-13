@@ -177,7 +177,7 @@ public class VersionStatusTest {
     
     @Test
     public void testVersionConfidence() {
-        DeploymentTester tester = new DeploymentTester().atHourOfDay(5);
+        DeploymentTester tester = new DeploymentTester().atMondayMorning();
         Version version0 = new Version("6.2");
         tester.controllerTester().upgradeSystem(version0);
         tester.upgrader().maintain();
@@ -420,7 +420,7 @@ public class VersionStatusTest {
 
     @Test
     public void testConfidenceChangeRespectsTimeWindow() {
-        DeploymentTester tester = new DeploymentTester().atHourOfDay(5);
+        DeploymentTester tester = new DeploymentTester().atMondayMorning();
         // Canaries and normal application deploys on initial version
         Version version0 = Version.fromString("7.1");
         tester.controllerTester().upgradeSystem(version0);
