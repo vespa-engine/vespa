@@ -240,7 +240,7 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
                      renderStartTime,
                      commitStartTime,
                      endTime,
-                     jdiscRequest.getUri().toString(),
+                     getUri(jdiscRequest),
                      extendedResponse.getParsedQuery(),
                      extendedResponse.getTiming());
 
@@ -271,6 +271,16 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
             httpResponse.populateAccessLogEntry(accessLogEntry);
 
             accessLog.log(accessLogEntry);
+        }
+
+        private String getUri(com.yahoo.jdisc.http.HttpRequest jdiscRequest) {
+            URI uri = jdiscRequest.getUri();
+            StringBuilder builder = new StringBuilder(uri.getPath());
+            String query = uri.getQuery();
+            if (query != null && !query.isBlank()) {
+                builder.append('?').append(query);
+            }
+            return builder.toString();
         }
     }
 
