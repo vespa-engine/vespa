@@ -246,31 +246,27 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
 
             Optional<AccessLogEntry> jdiscRequestAccessLogEntry =
                     AccessLoggingRequestHandler.getAccessLogEntry(jdiscRequest);
-
+            AccessLogEntry entry;
             if (jdiscRequestAccessLogEntry.isPresent()) {
-                // This means we are running with Jetty, not Netty.
+                // The request is created by JDisc http layer (Jetty)
                 // Actual logging will be done by the Jetty integration; here, we just need to populate.
-                httpResponse.populateAccessLogEntry(jdiscRequestAccessLogEntry.get());
-                return;
+                entry = jdiscRequestAccessLogEntry.get();
+            } else {
+                // Not running on JDisc http layer (Jetty), e.g unit tests
+                AccessLogEntry accessLogEntry = new AccessLogEntry();
+                populateAccessLogEntryNotCreatedByHttpServer(
+                        accessLogEntry,
+                        jdiscRequest,
+                        extendedResponse.getTiming(),
+                        httpRequest.getUri().toString(),
+                        commitStartTime,
+                        startTime,
+                        rendererWiring.written(),
+                        httpResponse.getStatus());
+                accessLog.log(accessLogEntry);
+                entry = accessLogEntry;
             }
-
-            // We are running without Jetty. No access logging will be done at container level, so we do it here.
-            // TODO: Remove when netty support is removed.
-
-            AccessLogEntry accessLogEntry = new AccessLogEntry();
-
-            populateAccessLogEntryNotCreatedByHttpServer(
-                    accessLogEntry,
-                    jdiscRequest,
-                    extendedResponse.getTiming(),
-                    httpRequest.getUri().toString(),
-                    commitStartTime,
-                    startTime,
-                    rendererWiring.written(),
-                    httpResponse.getStatus());
-            httpResponse.populateAccessLogEntry(accessLogEntry);
-
-            accessLog.log(accessLogEntry);
+            httpResponse.populateAccessLogEntry(entry);
         }
 
         private String getUri(com.yahoo.jdisc.http.HttpRequest jdiscRequest) {
