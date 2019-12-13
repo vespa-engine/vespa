@@ -875,7 +875,7 @@ public class UpgraderTest {
         tester.triggerJobs();
         assertEquals(3, tester.jobs().active().size()); // Just the running upgrade, and tests for the new revision.
 
-        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1).runJob(productionUsEast3);
+        app.runJob(productionUsCentral1).runJob(productionUsEast3).runJob(systemTest).runJob(stagingTest);
         assertEquals(List.of(), tester.jobs().active()); // No jobs left.
 
         tester.outstandingChangeDeployer().run();

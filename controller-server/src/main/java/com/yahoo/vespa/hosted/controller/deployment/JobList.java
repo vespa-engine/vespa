@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 
 import java.time.Instant;
@@ -35,6 +37,11 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
 
     // ----------------------------------- Basic filters
 
+    /** Returns the status of the job of the given type, if it is contained in this. */
+    public Optional<JobStatus> get(JobId id) {
+        return asList().stream().filter(job -> job.id().equals(id)).findAny();
+    }
+
     /** Returns the subset of jobs which are currently upgrading */
     public JobList upgrading() {
         return matching(job ->    job.isRunning()
@@ -56,22 +63,27 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         return matching(JobList::failingApplicationChange);
     }
 
-    /** Returns the subset of jobs which are failing with the given run status */
+    /** Returns the subset of jobs which are failing with the given run status. */
     public JobList withStatus(RunStatus status) {
         return matching(job -> job.lastStatus().map(status::equals).orElse(false));
     }
 
-    /** Returns the subset of jobs of the given type -- most useful when negated */
+    /** Returns the subset of jobs of the given type -- most useful when negated. */
     public JobList type(Collection<? extends JobType> types) {
         return matching(job -> types.contains(job.id().type()));
     }
 
-    /** Returns the subset of jobs of the given type -- most useful when negated */
+    /** Returns the subset of jobs of the given type -- most useful when negated. */
     public JobList type(JobType... types) {
         return type(List.of(types));
     }
 
-    /** Returns the subset of jobs of which are production jobs */
+    /** Returns the subset of jobs run for the given instance. */
+    public JobList instance(InstanceName instance) {
+        return matching(job -> job.id().application().instance().equals(instance));
+    }
+
+    /** Returns the subset of jobs of which are production jobs. */
     public JobList production() {
         return matching(job -> job.id().type().isProduction());
     }

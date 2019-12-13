@@ -63,57 +63,13 @@ public class DeploymentSpec {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<AthenzService> athenzService,
                           String xmlForm) {
-        this.steps = List.copyOf(completeSteps(steps));
+        this.steps = List.copyOf(steps);
         this.majorVersion = majorVersion;
         this.athenzDomain = athenzDomain;
         this.athenzService = athenzService;
         this.xmlForm = xmlForm;
         validateTotalDelay(steps);
         validateUpgradePoliciesOfIncreasingConservativeness(steps);
-    }
-
-    /** Adds missing required steps and reorders steps to a permissible order */
-    private static List<DeploymentSpec.Step> completeSteps(List<DeploymentSpec.Step> inputSteps) {
-        List<Step> steps = new ArrayList<>(inputSteps);
-
-        // Add staging if required and missing
-        if (steps.stream().anyMatch(step -> step.concerns(Environment.prod)) &&
-            steps.stream().noneMatch(step -> step.concerns(Environment.staging))) {
-            steps.add(new DeploymentSpec.DeclaredZone(Environment.staging));
-        }
-
-        // Add test if required and missing
-        if (steps.stream().anyMatch(step -> step.concerns(Environment.staging)) &&
-            steps.stream().noneMatch(step -> step.concerns(Environment.test))) {
-            steps.add(new DeploymentSpec.DeclaredZone(Environment.test));
-        }
-
-        // Enforce order test, staging, prod
-        DeploymentSpec.DeclaredZone testStep = remove(Environment.test, steps);
-        if (testStep != null)
-            steps.add(0, testStep);
-        DeploymentSpec.DeclaredZone stagingStep = remove(Environment.staging, steps);
-        if (stagingStep != null)
-            steps.add(1, stagingStep);
-
-        return steps;
-    }
-
-    /**
-     * Removes the first occurrence of a deployment step to the given environment and returns it.
-     *
-     * @return the removed step, or null if it is not present
-     */
-    private static DeploymentSpec.DeclaredZone remove(Environment environment, List<DeploymentSpec.Step> steps) {
-        for (int i = 0; i < steps.size(); i++) {
-            if ( ! (steps.get(i) instanceof DeploymentSpec.DeclaredZone)) continue;
-            DeploymentSpec.DeclaredZone zoneStep = (DeploymentSpec.DeclaredZone)steps.get(i);
-            if (zoneStep.environment() == environment) {
-                steps.remove(i);
-                return zoneStep;
-            }
-        }
-        return null;
     }
 
     /** Throw an IllegalArgumentException if the total delay exceeds 24 hours */

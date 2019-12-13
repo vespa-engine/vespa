@@ -302,10 +302,12 @@ public class DeploymentContext {
         var job = jobId(type);
         triggerJobs();
         doDeploy(job);
-        doUpgrade(job);
-        doConverge(job);
-        if (job.type().environment().isManuallyDeployed())
-            return this;
+        if ( ! job.type().isTest()) {
+            doUpgrade(job);
+            doConverge(job);
+            if (job.type().environment().isManuallyDeployed())
+                return this;
+        }
         doInstallTester(job);
         doTests(job);
         doTeardown(job);
@@ -514,7 +516,8 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
 
         // All installation is complete and endpoints are ready, so tests may begin.
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
+        if ( ! job.type().isTest())
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
         assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installTester));
         assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.startTests));
 

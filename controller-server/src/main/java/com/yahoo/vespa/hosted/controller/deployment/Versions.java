@@ -110,6 +110,15 @@ public class Versions {
                             deployment.map(Deployment::applicationVersion));
     }
 
+    public static Versions from(Change change, Deployment deployment) {
+        return new Versions(change.platform().filter(version -> change.isPinned() || deployment.version().isBefore(version))
+                                  .orElse(deployment.version()),
+                            change.application().filter(version -> deployment.applicationVersion().compareTo(version) < 0)
+                                  .orElse(deployment.applicationVersion()),
+                            Optional.of(deployment.version()),
+                            Optional.of(deployment.applicationVersion()));
+    }
+
     private static Version targetPlatform(Application application, Change change, Optional<Deployment> deployment,
                                           Version defaultVersion) {
         if (change.isPinned() && change.platform().isPresent())

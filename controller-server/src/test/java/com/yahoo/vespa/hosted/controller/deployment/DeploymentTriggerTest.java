@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -24,15 +23,25 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApNortheast2;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionApSoutheast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionAwsUsEast1a;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionEuWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testApNortheast1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testApNortheast2;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testAwsUsEast1a;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testEuWest1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsEast3;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsWest1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
-import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -181,6 +190,7 @@ public class DeploymentTriggerTest {
     @Test
     public void deploymentSpecWithDelays() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .systemTest()
                 .environment(Environment.prod)
                 .delay(Duration.ofSeconds(30))
                 .region("us-west-1")
@@ -192,15 +202,17 @@ public class DeploymentTriggerTest {
         var app = tester.newDeploymentContext().submit(applicationPackage);
 
         // Test jobs pass
-        app.runJob(systemTest).runJob(stagingTest);
+        app.runJob(systemTest);
+        tester.clock().advance(Duration.ofSeconds(15));
+        app.runJob(stagingTest);
         tester.triggerJobs();
 
         // No jobs have started yet, as 30 seconds have not yet passed.
         assertEquals(0, tester.jobs().active().size());
-        tester.clock().advance(Duration.ofSeconds(30));
+        tester.clock().advance(Duration.ofSeconds(15));
         tester.triggerJobs();
 
-        // 30 seconds later, the first jobs may trigger.
+        // 30 seconds after the declared test, jobs may begin. The implicit test does not affect the delay.
         assertEquals(1, tester.jobs().active().size());
         app.assertRunning(productionUsWest1);
 
@@ -276,10 +288,10 @@ public class DeploymentTriggerTest {
     public void testNoOtherChangesDuringSuspension() {
         // Application is deployed in 3 regions:
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                                                        .environment(Environment.prod)
-                                                        .region("us-central-1")
-                                                        .parallel("us-west-1", "us-east-3")
-                                                        .build();
+                .environment(Environment.prod)
+                .region("us-central-1")
+                .parallel("us-west-1", "us-east-3")
+                .build();
         var application = tester.newDeploymentContext().submit().deploy();
 
         // The first production zone is suspended:
@@ -405,9 +417,9 @@ public class DeploymentTriggerTest {
         tester.upgrader().maintain();
 
         tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsWest1,
-                                                           tester.clock().instant().plus(Duration.ofSeconds(1)));
+                                            tester.clock().instant().plus(Duration.ofSeconds(1)));
         tester.deploymentTrigger().pauseJob(app.instanceId(), productionUsEast3,
-                                                           tester.clock().instant().plus(Duration.ofSeconds(3)));
+                                            tester.clock().instant().plus(Duration.ofSeconds(3)));
 
         // us-west-1 does not trigger when paused.
         app.runJob(systemTest).runJob(stagingTest);
@@ -584,7 +596,7 @@ public class DeploymentTriggerTest {
         assertNotEquals(firstTested, app.instanceJobs().get(stagingTest).lastTriggered().get().versions().targetPlatform());
         app.runJob(systemTest).runJob(stagingTest);
 
-         // Finish old run of the aborted production job.
+        // Finish old run of the aborted production job.
         app.jobAborted(productionUsEast3);
 
         // New upgrade is already tested for both jobs.
@@ -610,31 +622,30 @@ public class DeploymentTriggerTest {
         // New application change is deployed and fails in system-test for a while
         app.submit(applicationPackage).runJob(stagingTest).failDeployment(systemTest);
 
-        // Retries immediately in the first minute after failing
-        tester.clock().advance(Duration.ofSeconds(59));
+        // Retries immediately once
         app.failDeployment(systemTest);
         tester.triggerJobs();
         app.assertRunning(systemTest);
 
-        // Stops immediate retry after failing for 1 minute
+        // Stops immediate retry when next triggering is considered after first failure
         tester.clock().advance(Duration.ofSeconds(1));
         app.failDeployment(systemTest);
         tester.triggerJobs();
         app.assertNotRunning(systemTest);
 
-        // Retries after 10 minutes since previous completion as we failed within the last hour
+        // Retries after 10 minutes since previous completion, plus half the time since the first failure
         tester.clock().advance(Duration.ofMinutes(10).plus(Duration.ofSeconds(1)));
         tester.triggerJobs();
         app.assertRunning(systemTest);
 
-        // Retries less frequently after 1 hour of failure
-        tester.clock().advance(Duration.ofMinutes(50));
+        // Retries less frequently as more time passes
         app.failDeployment(systemTest);
+        tester.clock().advance(Duration.ofMinutes(15));
         tester.triggerJobs();
         app.assertNotRunning(systemTest);
 
-        // Retries after two hours pass since last completion
-        tester.clock().advance(Duration.ofHours(2).plus(Duration.ofSeconds(1)));
+        // Retries again when sufficient time has passed
+        tester.clock().advance(Duration.ofSeconds(2));
         tester.triggerJobs();
         app.assertRunning(systemTest);
 
@@ -721,15 +732,12 @@ public class DeploymentTriggerTest {
         assertEquals(List.of(), tester.jobs().active());
 
         tester.readyJobsTrigger().maintain();
-        app2.assertRunning(stagingTest);
         assertEquals(1, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app1.assertRunning(stagingTest);
         assertEquals(2, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app3.assertRunning(stagingTest);
         assertEquals(3, tester.jobs().active().size());
 
         // Remove the jobs for app1 and app2, and then let app3 fail with outOfCapacity.
@@ -743,11 +751,9 @@ public class DeploymentTriggerTest {
         assertEquals(1, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app2.assertRunning(stagingTest);
         assertEquals(2, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app1.assertRunning(stagingTest);
         assertEquals(3, tester.jobs().active().size());
 
         // Finish deployment for apps 2 and 3, then release a new version, leaving only app1 with an application upgrade.
@@ -758,8 +764,6 @@ public class DeploymentTriggerTest {
 
         tester.controllerTester().upgradeSystem(new Version("6.2"));
         tester.upgrader().maintain();
-        // app1 also gets a new application change, so its time of availability is after the version upgrade.
-        tester.clock().advance(Duration.ofSeconds(1));
         app1.submit(applicationPackage);
         app1.jobAborted(stagingTest);
 
@@ -789,12 +793,12 @@ public class DeploymentTriggerTest {
         assertEquals(2, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
-        app2.assertRunning(stagingTest);
         app1.assertRunning(systemTest);
         assertEquals(4, tester.jobs().active().size());
 
         tester.readyJobsTrigger().maintain();
         app3.assertRunning(stagingTest);
+        app2.assertRunning(stagingTest);
         app2.assertRunning(systemTest);
         assertEquals(6, tester.jobs().active().size());
     }
@@ -816,11 +820,187 @@ public class DeploymentTriggerTest {
         var app = tester.newDeploymentContext("tenant1", "application1", "instance1").submit(applicationPackage); // TODO jonmv: support instances in deployment context>
         var otherInstance = tester.newDeploymentContext("tenant1", "application1", "instance2");
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
-        otherInstance.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        otherInstance.runJob(productionUsEast3);
         assertEquals(2, app.application().instances().size());
         assertEquals(2, app.application().productionDeployments().values().stream()
-                              .mapToInt(Collection::size)
-                              .sum());
+                           .mapToInt(Collection::size)
+                           .sum());
+    }
+
+    @Test
+    public void testDeclaredProductionTests() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .region("us-east-3")
+                .delay(Duration.ofMinutes(1))
+                .test("us-east-3")
+                .region("us-west-1")
+                .region("us-central-1")
+                .test("us-central-1")
+                .test("us-west-1")
+                .build();
+        var app = tester.newDeploymentContext().submit(applicationPackage);
+
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        app.assertNotRunning(productionUsWest1);
+
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.runJob(testUsEast3)
+           .runJob(productionUsWest1).runJob(productionUsCentral1)
+           .runJob(testUsCentral1).runJob(testUsWest1);
+        assertEquals(Change.empty(), app.application().change());
+
+        // Application starts upgrade, but is confidence is broken cancelled after first zone. Tests won't run.
+        Version version0 = app.application().oldestDeployedPlatform().get();
+        Version version1 = Version.fromString("7.7");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.failDeployment(testUsEast3);
+        tester.triggerJobs();
+        app.assertRunning(testUsEast3);
+
+        tester.upgrader().overrideConfidence(version1, VespaVersion.Confidence.broken);
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        app.failDeployment(testUsEast3);
+        app.assertNotRunning(testUsEast3);
+        assertEquals(Change.empty(), app.application().change());
+
+        // Application is pinned to previous version, and downgrades to that. Tests are re-run.
+        tester.deploymentTrigger().triggerChange(app.application().id(), Change.of(version0).withPin());
+        app.runJob(stagingTest).runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofMinutes(1));
+        app.failDeployment(testUsEast3);
+        tester.clock().advance(Duration.ofMinutes(11)); // Job is cooling down after consecutive failures.
+        app.runJob(testUsEast3);
+        assertEquals(Change.empty().withPin(), app.application().change());
+    }
+
+    @Test
+    public void testDeployComplicatedDeploymentSpec() {
+        String complicatedDeploymentSpec =
+                "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
+                "    <staging />\n" +
+                "    <parallel>\n" +
+                "        <instance id='instance' athenz-service='in-service'>\n" +
+                "            <prod>\n" +
+                "                <parallel>\n" +
+                "                    <region active='true'>us-west-1</region>\n" +
+                "                    <steps>\n" +
+                "                        <region active='true'>us-east-3</region>\n" +
+                "                        <delay hours='2' />\n" +
+                "                        <region active='true'>eu-west-1</region>\n" +
+                "                        <delay hours='2' />\n" +
+                "                    </steps>\n" +
+                "                    <steps>\n" +
+                "                        <delay hours='3' />\n" +
+                "                        <region active='true'>aws-us-east-1a</region>\n" +
+                "                        <parallel>\n" +
+                "                            <region active='true' athenz-service='no-service'>ap-northeast-1</region>\n" +
+                "                            <region active='true'>ap-northeast-2</region>\n" +
+                "                            <test>aws-us-east-1a</test>\n" +
+                "                        </parallel>\n" +
+                "                    </steps>\n" +
+                "                    <delay hours='3' minutes='30' />\n" +
+                "                </parallel>\n" +
+                "                <parallel>\n" +
+                "                   <test>ap-northeast-2</test>\n" +
+                "                   <test>ap-northeast-1</test>\n" +
+                "                </parallel>\n" +
+                "                <test>us-east-3</test>\n" +
+                "                <region active='true'>ap-southeast-1</region>\n" +
+                "            </prod>\n" +
+                "            <endpoints>\n" +
+                "                <endpoint id='foo' container-id='bar'>\n" +
+                "                    <region>us-east-3</region>\n" +
+                "                </endpoint>\n" +
+                "                <endpoint id='nalle' container-id='frosk' />\n" +
+                "                <endpoint container-id='quux' />\n" +
+                "            </endpoints>\n" +
+                "        </instance>\n" +
+                "        <instance id='other'>\n" +
+                // TODO jonmv: support change per instance — this instance will be upgraded later, but for now this is ignored.
+                "            <upgrade policy='conservative' />\n" +
+                "            <test />\n" +
+                // TODO jonmv: test this when change per instance.
+                // "            <block-change days='sat' hours='10' time-zone='CET' />\n" +
+                "            <prod>\n" +
+                "                <region active='true'>eu-west-1</region>\n" +
+                "                <test>eu-west-1</test>\n" +
+                "            </prod>\n" +
+                "            <notifications when='failing'>\n" +
+                "                <email role='author' />\n" +
+                "                <email address='john@dev' when='failing-commit' />\n" +
+                "                <email address='jane@dev' />\n" +
+                "            </notifications>\n" +
+                "        </instance>\n" +
+                "    </parallel>\n" +
+                "</deployment>\n";
+
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(complicatedDeploymentSpec);
+        var app1 = tester.newDeploymentContext("t", "a", "instance").submit(applicationPackage);
+        var app2 = tester.newDeploymentContext("t", "a", "other").submit(applicationPackage);
+
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        app1.runJob(stagingTest);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app2.runJob(systemTest);
+
+        app1.runJob(productionUsWest1);
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        app1.runJob(productionUsEast3);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+
+        tester.clock().advance(Duration.ofHours(2));
+
+        app1.runJob(productionEuWest1);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app2.assertNotRunning(testEuWest1);
+        app2.runJob(productionEuWest1);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app2.runJob(testEuWest1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+
+        tester.clock().advance(Duration.ofHours(1));
+        app1.runJob(productionAwsUsEast1a);
+        tester.triggerJobs();
+        assertEquals(3, tester.jobs().active().size());
+        app1.runJob(testAwsUsEast1a);
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        app1.runJob(productionApNortheast2);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(productionApNortheast1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+
+        tester.clock().advance(Duration.ofMinutes(30));
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+
+        tester.clock().advance(Duration.ofMinutes(30));
+        app1.runJob(testApNortheast1);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(testApNortheast2);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(testUsEast3);
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app1.runJob(productionApSoutheast1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
     }
 
 }
