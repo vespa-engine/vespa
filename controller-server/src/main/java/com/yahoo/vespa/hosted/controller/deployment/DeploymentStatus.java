@@ -256,6 +256,7 @@ public class DeploymentStatus {
             return previous;
         }
 
+        // TODO jonmv: Make instance status as well, to keep track of change; set it equal to application's when dependencies are completed.
         Optional<InstanceName> stepInstance = Optional.of(step)
                                                       .filter(DeploymentInstanceSpec.class::isInstance)
                                                       .map(DeploymentInstanceSpec.class::cast)
@@ -324,6 +325,10 @@ public class DeploymentStatus {
 
         /** The time at which this is complete on the given versions. */
         public abstract Optional<Instant> completedAt(Change change, Versions versions);
+
+        // TODO jonmv: dependenciesCompletedAt
+
+        // TODO jonmv: pausedUntil and coolingDownUntil
 
         /** The time at which all dependencies completed on the given version. */
         public Optional<Instant> readyAt(Change change, Versions versions) {
