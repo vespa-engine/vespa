@@ -136,6 +136,10 @@ public class TensorParserTestCase {
                       "{{x:0}:1-.0}");
         assertIllegal("At value position 1: '1-.0' is not a valid double",
                       "tensor(x[1]):[1-.0]");
+        assertIllegal("At value position 5: Expected a ',' but got ']'",
+                      "tensor(x[3]):[1, 2]");
+        assertIllegal("At value position 8: Expected a ']' but got ','",
+                      "tensor(x[3]):[1, 2, 3, 4]");
     }
 
     private void assertIllegal(String message, String tensor) {
