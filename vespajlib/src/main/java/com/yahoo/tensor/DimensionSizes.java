@@ -71,6 +71,7 @@ public final class DimensionSizes {
      */
     public final static class Builder {
 
+        private int dimensionIndex = 0;
         private long[] sizes;
 
         public Builder(int dimensions) {
@@ -79,6 +80,11 @@ public final class DimensionSizes {
 
         public Builder set(int dimensionIndex, long size) {
             sizes[dimensionIndex] = size;
+            return this;
+        }
+
+        public Builder add(long size) {
+            sizes[dimensionIndex++] = size;
             return this;
         }
 

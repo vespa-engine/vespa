@@ -693,6 +693,7 @@
     "methods": [
       "public void <init>(int)",
       "public com.yahoo.tensor.DimensionSizes$Builder set(int, long)",
+      "public com.yahoo.tensor.DimensionSizes$Builder add(long)",
       "public long size(int)",
       "public int dimensions()",
       "public com.yahoo.tensor.DimensionSizes build()"
@@ -836,10 +837,12 @@
     ],
     "methods": [
       "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.TensorType, java.util.List)",
       "public static com.yahoo.tensor.IndexedTensor$Indexes of(com.yahoo.tensor.DimensionSizes)",
       "public com.yahoo.tensor.TensorAddress toAddress()",
       "public long[] indexesCopy()",
       "public long[] indexesForReading()",
+      "public long toSourceValueIndex()",
       "public java.util.List toList()",
       "public java.lang.String toString()",
       "public abstract long size()",

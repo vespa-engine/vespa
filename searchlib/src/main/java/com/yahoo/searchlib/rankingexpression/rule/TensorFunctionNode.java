@@ -19,6 +19,7 @@ import com.yahoo.tensor.functions.ScalarFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -93,14 +94,15 @@ public class TensorFunctionNode extends CompositeNode {
     }
 
     public static void wrapScalarBlock(TensorType type,
+                                       List<String> dimensionOrder,
                                        String mappedDimensionLabel,
                                        List<ExpressionNode> nodes,
                                        Map<TensorAddress, ScalarFunction<Reference>> receivingMap) {
-        TensorType.Dimension sparseDimension = type.dimensions().stream().filter(d -> ! d.isIndexed()).findFirst().get();
         TensorType denseSubtype = new TensorType(type.valueType(),
                                                  type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList()));
-
-        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseSubtype);
+        List<String> denseDimensionOrder = new ArrayList<>(dimensionOrder);
+        denseDimensionOrder.retainAll(denseSubtype.dimensionNames());
+        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseSubtype, denseDimensionOrder);
         for (ExpressionNode node : nodes) {
             indexes.next();
 
@@ -119,7 +121,15 @@ public class TensorFunctionNode extends CompositeNode {
         }
     }
 
-    public static List<ScalarFunction<Reference>> wrapScalars(List<ExpressionNode> nodes) {
+    public static List<ScalarFunction<Reference>> wrapScalars(TensorType type,
+                                                              List<String> dimensionOrder,
+                                                              List<ExpressionNode> nodes) {
+        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(type, dimensionOrder);
+        List<ScalarFunction<Reference>> wrapped = new ArrayList<>();
+        while (indexes.hasNext()) {
+            indexes.next();
+            wrapped.add(wrapScalar(nodes.get((int)indexes.toSourceValueIndex())));
+        }
         return nodes.stream().map(node -> wrapScalar(node)).collect(Collectors.toList());
     }
 

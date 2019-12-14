@@ -75,6 +75,19 @@ public class TensorParserTestCase {
     }
 
     @Test
+    public void testDenseWrongOrder() {
+        assertEquals("Opposite order of dimensions",
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(x[3],y[2])"))
+                                   .cell(1, 0, 0)
+                                   .cell(4, 0, 1)
+                                   .cell(2, 1, 0)
+                                   .cell(5, 1, 1)
+                                   .cell(3, 2, 0)
+                                   .cell(6, 2, 1).build(),
+                     Tensor.from("tensor(y[2],x[3]):[[1,2,3],[4,5,6]]"));
+    }
+
+    @Test
     public void testMixedParsing() {
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{}, x[2])"))
                                    .cell(TensorAddress.ofLabels("a", "0"), 1)
@@ -82,6 +95,28 @@ public class TensorParserTestCase {
                                    .cell(TensorAddress.ofLabels("b", "0"), 3)
                                    .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
                      Tensor.from("tensor(key{}, x[2]):{a:[1, 2], b:[3, 4]}"));
+    }
+
+    @Test
+    public void testMixedWrongOrder() {
+        assertEquals("Opposite order of dimensions",
+                     Tensor.Builder.of(TensorType.fromSpec("tensor(key{},x[3],y[2])"))
+                                   .cell(TensorAddress.ofLabels("key1", "0", "0"), 1)
+                                   .cell(TensorAddress.ofLabels("key1", "0", "1"), 4)
+                                   .cell(TensorAddress.ofLabels("key1", "1", "0"), 2)
+                                   .cell(TensorAddress.ofLabels("key1", "1", "1"), 5)
+                                   .cell(TensorAddress.ofLabels("key1", "2", "0"), 3)
+                                   .cell(TensorAddress.ofLabels("key1", "2", "1"), 6)
+                                   .cell(TensorAddress.ofLabels("key2", "0", "0"), 7)
+                                   .cell(TensorAddress.ofLabels("key2", "0", "1"), 10)
+                                   .cell(TensorAddress.ofLabels("key2", "1", "0"), 8)
+                                   .cell(TensorAddress.ofLabels("key2", "1", "1"), 11)
+                                   .cell(TensorAddress.ofLabels("key2", "2", "0"), 9)
+                                   .cell(TensorAddress.ofLabels("key2", "2", "1"), 12).build(),
+                     Tensor.from("tensor(key{},y[2],x[3]):{key1:[[1,2,3],[4,5,6]], key2:[[7,8,9],[10,11,12]]}"));
+        assertEquals("Opposite order of dimensions",
+                     Tensor.from("tensor(key{},x[3],y[2]):{key1:[[1,4],[2,5],[3,6]], key2:[[7,10],[8,11],[9,12]]}"),
+                     Tensor.from("tensor(key{},y[2],x[3]):{key1:[[1,2,3],[4,5,6]], key2:[[7,8,9],[10,11,12]]}"));
     }
 
     private void assertDense(Tensor expectedTensor, String denseFormat) {
@@ -99,7 +134,7 @@ public class TensorParserTestCase {
                       "{{\"x\":\"l0\", \"y\":\"l0\"}:1.0, {\"x\":\"l0\", \"y\":\"l1\"}:2.0}");
         assertIllegal("At {x:0}: '1-.0' is not a valid double",
                       "{{x:0}:1-.0}");
-        assertIllegal("At position 1: '1-.0' is not a valid double",
+        assertIllegal("At value position 1: '1-.0' is not a valid double",
                       "tensor(x[1]):[1-.0]");
     }
 

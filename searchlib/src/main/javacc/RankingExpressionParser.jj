@@ -475,13 +475,14 @@ TensorFunctionNode tensorConcat() :
 TensorFunctionNode tensorGenerate() :
 {
     TensorType type;
+    List dimensionOrder = new ArrayList();
     TensorFunctionNode expression;
 }
 {
-    <TENSOR> type = tensorType()
+    <TENSOR> type = tensorType(dimensionOrder)
     (
         expression = tensorGenerateBody(type) |
-        expression = tensorValueBody(type)
+        expression = tensorValueBody(type, dimensionOrder)
     )
     { return expression; }
 }
@@ -500,7 +501,7 @@ TensorFunctionNode tensorRange() :
     TensorType type;
 }
 {
-    <RANGE> type = tensorType()
+    <RANGE> type = tensorType(null)
     { return new TensorFunctionNode(new Range(type)); }
 }
 
@@ -509,7 +510,7 @@ TensorFunctionNode tensorDiag() :
     TensorType type;
 }
 {
-    <DIAG> type = tensorType()
+    <DIAG> type = tensorType(null)
     { return new TensorFunctionNode(new Diag(type)); }
 }
 
@@ -518,7 +519,7 @@ TensorFunctionNode tensorRandom() :
     TensorType type;
 }
 {
-    <RANDOM> type = tensorType()
+    <RANDOM> type = tensorType(null)
     { return new TensorFunctionNode(new Random(type)); }
 }
 
@@ -618,7 +619,7 @@ Reduce.Aggregator tensorReduceAggregator() :
     { return Reduce.Aggregator.valueOf(token.image); }
 }
 
-TensorType tensorType() :
+TensorType tensorType(List dimensionOrder) :
 {
     TensorType.Builder builder;
     TensorType.Value valueType;
@@ -627,8 +628,8 @@ TensorType tensorType() :
     valueType = optionalTensorValueTypeParameter()
     { builder = new TensorType.Builder(valueType); }
     <LBRACE>
-    ( tensorTypeDimension(builder) ) ?
-    ( <COMMA> tensorTypeDimension(builder) ) *
+    ( tensorTypeDimension(builder, dimensionOrder) ) ?
+    ( <COMMA> tensorTypeDimension(builder, dimensionOrder) ) *
     <RBRACE>
     { return builder.build(); }
 }
@@ -642,13 +643,17 @@ TensorType.Value optionalTensorValueTypeParameter() :
     { return TensorType.Value.fromId(valueType); }
 }
 
-void tensorTypeDimension(TensorType.Builder builder) :
+void tensorTypeDimension(TensorType.Builder builder, List dimensionOrder) :
 {
     String name;
     int size;
 }
 {
     name = identifier()
+    {   // Keep track of the order in which dimensions are written, if necessary
+        if (dimensionOrder != null)
+            dimensionOrder.add(name);
+    }
     (
       ( <LCURLY> <RCURLY> { builder.mapped(name); } ) |
       LOOKAHEAD(2) ( <LSQUARE> <RSQUARE> { builder.indexed(name); } ) |
@@ -831,16 +836,16 @@ Value primitiveValue() :
     { return Value.parse(sign + token.image); }
 }
 
-TensorFunctionNode tensorValueBody(TensorType type) :
+TensorFunctionNode tensorValueBody(TensorType type, List dimensionOrder) :
 {
     DynamicTensor dynamicTensor;
 }
 {
     <COLON>
     (
-        LOOKAHEAD(2) dynamicTensor = mixedTensorValueBody(type) |
+        LOOKAHEAD(2) dynamicTensor = mixedTensorValueBody(type, dimensionOrder) |
         dynamicTensor = mappedTensorValueBody(type) |
-        dynamicTensor = indexedTensorValueBody(type)
+        dynamicTensor = indexedTensorValueBody(type, dimensionOrder)
     )
     { return new TensorFunctionNode(dynamicTensor); }
 }
@@ -857,35 +862,35 @@ DynamicTensor mappedTensorValueBody(TensorType type) :
     { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
 }
 
-DynamicTensor mixedTensorValueBody(TensorType type) :
+DynamicTensor mixedTensorValueBody(TensorType type, List dimensionOrder) :
 {
     java.util.Map cells = new LinkedHashMap();
 }
 {
     <LCURLY>
-        mixedBlock(type, cells)
-        ( <COMMA> mixedBlock(type, cells))*
+        mixedBlock(type, dimensionOrder, cells)
+        ( <COMMA> mixedBlock(type, dimensionOrder, cells))*
     <RCURLY>
     { return DynamicTensor.from(type, cells); }
 }
 
-DynamicTensor indexedTensorValueBody(TensorType type) :
+DynamicTensor indexedTensorValueBody(TensorType type, List dimensionOrder) :
 {
     List cells;
 }
 {
     cells = indexedTensorCells()
-    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells)); }
+    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells, type, dimensionOrder)); }
 }
 
-void mixedBlock(TensorType type, java.util.Map cellMap) :
+void mixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) :
 {
     String label;
     List cells;
 }
 {
     label = tag() <COLON> cells = indexedTensorCells()
-    { TensorFunctionNode.wrapScalarBlock(type, label, cells, cellMap); }
+    { TensorFunctionNode.wrapScalarBlock(type, dimensionOrder, label, cells, cellMap); }
 }
 
 List indexedTensorCells() :
