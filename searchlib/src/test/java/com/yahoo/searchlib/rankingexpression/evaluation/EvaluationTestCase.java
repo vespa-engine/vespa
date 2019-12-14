@@ -14,6 +14,7 @@ import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests expression evaluation
@@ -431,6 +432,21 @@ public class EvaluationTestCase {
                                "                                       key2:[[1.0, 2.0, 3.00],[4.00, 5.0, 6.0]]}",
                                "tensor(key{},x[3],y[2]):{key1:[[one,a_quarter],[one_half,one_half],[a_quarter,one]]," +
                                "                                        key2:[[1,4],[2,5],[3,6]]}");
+
+        try {
+            new RankingExpression("tensor(x{},y[2]):{a:[one, one_half], b:[a_quarter]}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At 'b': Need 2 values to fill a dense subspace of tensor(x{},y[2]) but got 1", e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(x[2],y[3]):[[1,2,3,4],[4,5,6]]");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("Need 6 values to fill tensor(x[2],y[3]) but got 7", e.getMessage());
+        }
     }
 
     @Test

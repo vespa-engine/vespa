@@ -103,6 +103,9 @@ public class TensorFunctionNode extends CompositeNode {
         List<String> denseDimensionOrder = new ArrayList<>(dimensionOrder);
         denseDimensionOrder.retainAll(denseSubtype.dimensionNames());
         IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseSubtype, denseDimensionOrder);
+        if (indexes.size() != nodes.size())
+            throw new IllegalArgumentException("At '" + mappedDimensionLabel + "': Need " + indexes.size() +
+                                               " values to fill a dense subspace of " + type + " but got " + nodes.size());
         for (ExpressionNode node : nodes) {
             indexes.next();
 
@@ -125,12 +128,15 @@ public class TensorFunctionNode extends CompositeNode {
                                                               List<String> dimensionOrder,
                                                               List<ExpressionNode> nodes) {
         IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(type, dimensionOrder);
-        List<ScalarFunction<Reference>> wrapped = new ArrayList<>();
+        if (indexes.size() != nodes.size())
+            throw new IllegalArgumentException("Need " + indexes.size() + " values to fill " + type + " but got " + nodes.size());
+
+        List<ScalarFunction<Reference>> wrapped = new ArrayList<>(nodes.size());
         while (indexes.hasNext()) {
             indexes.next();
             wrapped.add(wrapScalar(nodes.get((int)indexes.toSourceValueIndex())));
         }
-        return nodes.stream().map(node -> wrapScalar(node)).collect(Collectors.toList());
+        return wrapped;
     }
 
     public static ScalarFunction<Reference> wrapScalar(ExpressionNode node) {

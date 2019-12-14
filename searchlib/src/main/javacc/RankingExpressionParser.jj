@@ -880,7 +880,7 @@ DynamicTensor indexedTensorValueBody(TensorType type, List dimensionOrder) :
 }
 {
     cells = indexedTensorCells()
-    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(cells, type, dimensionOrder)); }
+    { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(type, dimensionOrder, cells)); }
 }
 
 void mixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) :
