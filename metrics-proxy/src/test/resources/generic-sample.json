@@ -44,7 +44,15 @@
       "status": {
         "code": "unknown",
         "description": "Unable to fetch metrics from service 'slobrok'"
-      }
+      },
+      "metrics": [
+        {
+          "values": {},
+          "dimensions": {
+            "instance": "slobrok0"
+          }
+        }
+      ]
     }
   ]
 }
