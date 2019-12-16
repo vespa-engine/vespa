@@ -413,6 +413,7 @@ public class EvaluationTestCase {
                                "                                       key2:[[1.0, 2.0, 3.00],[4.00, 5.0, 6.0]]}",
                                "tensor(key{},x[2],y[3]):{key1:[[one,one_half,a_quarter],[a_quarter,one_half,one]]," +
                                "                                        key2:[[1,2,3],[4,5,6]]}");
+        tester.assertEvaluates("tensor(x{}):{{x:a}:1, {x:b}:-2, {x:cee}:0.5}", "tensor(x{}):{a:1, b:-2, cee:one_half}");
 
         // Opposite order in the expression:
         // - indexed

@@ -868,8 +868,8 @@ DynamicTensor mixedTensorValueBody(TensorType type, List dimensionOrder) :
 }
 {
     <LCURLY>
-        mixedBlock(type, dimensionOrder, cells)
-        ( <COMMA> mixedBlock(type, dimensionOrder, cells))*
+        keyValueOrMixedBlock(type, dimensionOrder, cells)
+        ( <COMMA> keyValueOrMixedBlock(type, dimensionOrder, cells))*
     <RCURLY>
     { return DynamicTensor.from(type, cells); }
 }
@@ -881,6 +881,21 @@ DynamicTensor indexedTensorValueBody(TensorType type, List dimensionOrder) :
 {
     cells = indexedTensorCells()
     { return DynamicTensor.from(type, TensorFunctionNode.wrapScalars(type, dimensionOrder, cells)); }
+}
+
+void keyValueOrMixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) : {}
+{
+    LOOKAHEAD(3) mixedBlock(type, dimensionOrder, cellMap) | keyValue(type, cellMap)
+}
+
+void keyValue(TensorType type, java.util.Map cellMap) :
+{
+    String label;
+    ExpressionNode value;
+}
+{
+    label = tag() <COLON> value = expression()
+    { cellMap.put(TensorAddress.ofLabels(label), TensorFunctionNode.wrapScalar(value)); }
 }
 
 void mixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) :

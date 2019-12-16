@@ -914,6 +914,8 @@
       "public final com.yahoo.tensor.functions.DynamicTensor mappedTensorValueBody(com.yahoo.tensor.TensorType)",
       "public final com.yahoo.tensor.functions.DynamicTensor mixedTensorValueBody(com.yahoo.tensor.TensorType, java.util.List)",
       "public final com.yahoo.tensor.functions.DynamicTensor indexedTensorValueBody(com.yahoo.tensor.TensorType, java.util.List)",
+      "public final void keyValueOrMixedBlock(com.yahoo.tensor.TensorType, java.util.List, java.util.Map)",
+      "public final void keyValue(com.yahoo.tensor.TensorType, java.util.Map)",
       "public final void mixedBlock(com.yahoo.tensor.TensorType, java.util.List, java.util.Map)",
       "public final java.util.List indexedTensorCells()",
       "public final void indexedTensorCellSubspaceList(java.util.List)",
