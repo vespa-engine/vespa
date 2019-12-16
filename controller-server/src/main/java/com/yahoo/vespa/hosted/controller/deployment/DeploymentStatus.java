@@ -203,11 +203,6 @@ public class DeploymentStatus {
             return Map.of();
 
         Map<JobId, StepStatus> dependencies = new LinkedHashMap<>();
-        for (InstanceName instance : spec.instanceNames())
-            for (JobType test : List.of(systemTest, stagingTest))
-                dependencies.put(new JobId(application.id().instance(instance), test),
-                                 JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
-                                                                this, instance, test, false));
         List<StepStatus> previous = List.of();
         for (DeploymentSpec.Step step : spec.steps())
             previous = fillStep(dependencies, allSteps, step, previous, spec.instanceNames().get(0));
@@ -254,21 +249,26 @@ public class DeploymentStatus {
             return previous;
         }
 
-        // TODO jonmv: Make instance status as well, to keep track of change; set it equal to application's when dependencies are completed.
-        Optional<InstanceName> stepInstance = Optional.of(step)
-                                                      .filter(DeploymentInstanceSpec.class::isInstance)
-                                                      .map(DeploymentInstanceSpec.class::cast)
-                                                      .map(DeploymentInstanceSpec::name);
+        // TODO jonmv: Make instance status as well, including block-change and upgrade policy, to keep track of change;
+        //             set it equal to application's when dependencies are completed.
+        if (step instanceof DeploymentInstanceSpec) {
+            instance = ((DeploymentInstanceSpec) step).name();
+            for (JobType test : List.of(systemTest, stagingTest))
+                dependencies.putIfAbsent(new JobId(application.id().instance(instance), test),
+                                         JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
+                                                                        this, instance, test, false));
+        }
+
         if (step.isOrdered()) {
             for (DeploymentSpec.Step nested : step.steps())
-                previous = fillStep(dependencies, allSteps, nested, previous, stepInstance.orElse(instance));
+                previous = fillStep(dependencies, allSteps, nested, previous, instance);
 
             return previous;
         }
 
         List<StepStatus> parallel = new ArrayList<>();
         for (DeploymentSpec.Step nested : step.steps())
-            parallel.addAll(fillStep(dependencies, allSteps, nested, previous, stepInstance.orElse(instance)));
+            parallel.addAll(fillStep(dependencies, allSteps, nested, previous, instance));
 
         return List.copyOf(parallel);
     }
