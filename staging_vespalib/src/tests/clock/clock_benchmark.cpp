@@ -123,7 +123,7 @@ void benchmark(const char * desc, FastOS_ThreadPool & pool, uint64_t samples, ui
             count[i] += sampler->_count[i];
         }
     }
-    printf("%s: Took %ld clock samples in %2.3f with [%ld, %ld, %ld] counts\n", desc, samples, to_s(steady_clock ::now() - start), count[0], count[1], count[2]);
+    printf("%s: Took %ld clock samples in %2.3f with [%ld, %ld, %ld] counts\n", desc, samples, to_s(steady_clock::now() - start), count[0], count[1], count[2]);
 }
 
 int

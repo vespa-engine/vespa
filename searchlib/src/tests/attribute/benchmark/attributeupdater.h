@@ -70,17 +70,19 @@ public:
         std::cout << "<avg-value-update-time>" << avgValueUpdateTime() << "</avg-value-update-time>" << std::endl;
     }
     double documentUpdateThroughput() const {
-        return _numDocumentUpdates * 1000 / vespalib::count_ms(_totalUpdateTime);
+        return _numDocumentUpdates * 1000 / as_ms();
     }
     double avgDocumentUpdateTime() const {
-        return vespalib::count_ms(_totalUpdateTime) / _numDocumentUpdates;
+        return as_ms() / _numDocumentUpdates;
     }
     double valueUpdateThroughput() const {
-        return _numValueUpdates * 1000 / vespalib::count_ms(_totalUpdateTime);
+        return _numValueUpdates * 1000 / as_ms();
     }
     double avgValueUpdateTime() const {
-        return vespalib::count_ms(_totalUpdateTime) / _numValueUpdates;
+        return as_ms() / _numValueUpdates;
     }
+private:
+    double as_ms() const { return vespalib::count_ms(_totalUpdateTime);}
 };
 
 // AttributeVectorInstance, AttributeVectorType, AttributeVectorBufferType
@@ -148,7 +150,7 @@ AttributeUpdater<Vector, T, BT>::AttributeUpdater(const AttributePtr & attrPtr, 
 {}
 
 template <typename Vector, typename T, typename BT>
-AttributeUpdater<Vector, T, BT>::~AttributeUpdater() {}
+AttributeUpdater<Vector, T, BT>::~AttributeUpdater() = default;
 
 template <typename Vector, typename T, typename BT>
 class AttributeUpdaterThread : public AttributeUpdater<Vector, T, BT>, public Runnable
@@ -173,7 +175,7 @@ AttributeUpdaterThread<Vector, T, BT>::AttributeUpdaterThread(const AttributePtr
       Runnable()
 {}
 template <typename Vector, typename T, typename BT>
-AttributeUpdaterThread<Vector, T, BT>::~AttributeUpdaterThread() { }
+AttributeUpdaterThread<Vector, T, BT>::~AttributeUpdaterThread() = default;
 
 
 template <typename Vector, typename T, typename BT>
@@ -312,6 +314,4 @@ AttributeUpdaterThread<Vector, T, BT>::doRun()
     this->_status._totalUpdateTime += this->_timer.elapsed();
 }
 
-
 } // search
-

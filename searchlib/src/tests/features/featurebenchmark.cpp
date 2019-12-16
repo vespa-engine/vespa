@@ -649,7 +649,7 @@ Benchmark::Main()
     }
 
     std::cout << "TET:  " << vespalib::count_ms(_sample) << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << vespalib::count_ms(_sample) / cfg.getNumRuns() << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << double(vespalib::count_ms(_sample)) / cfg.getNumRuns() << " (ms)" << std::endl;
     std::cout << "**** '" << cfg.getFeature() << "' ****" << std::endl;
 
     TEST_DONE();
