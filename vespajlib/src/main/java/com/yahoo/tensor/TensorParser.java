@@ -125,8 +125,7 @@ class TensorParser {
             valueString = valueString.trim();
             if ( ! valueString.startsWith("{") && valueString.endsWith("}"))
                 throw new IllegalArgumentException("A mixed tensor must be enclosed in {}");
-            // TODO: Check if there is also at least one bound indexed dimension
-            MixedTensor.BoundBuilder builder = (MixedTensor.BoundBuilder)Tensor.Builder.of(type.get());
+            Tensor.Builder builder = Tensor.Builder.of(type.get());
             MixedValueParser parser = new MixedValueParser(valueString, dimensionOrder, builder);
             parser.parse();
             return builder.build();
@@ -177,6 +176,40 @@ class TensorParser {
             position++;
         }
 
+        protected Number consumeNumber(TensorType.Value cellValueType) {
+            skipSpace();
+
+            int nextNumberEnd = nextStopCharIndex(position, string);
+            try {
+                String cellValueString = string.substring(position, nextNumberEnd);
+                try {
+                    if (cellValueType == TensorType.Value.DOUBLE)
+                        return Double.parseDouble(cellValueString);
+                    else if (cellValueType == TensorType.Value.FLOAT)
+                        return Float.parseFloat(cellValueString);
+                    else
+                        throw new IllegalArgumentException(cellValueType + " is not supported");
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("At value position " + position + ": '" +
+                                                       cellValueString + "' is not a valid " + cellValueType);
+                }
+            }
+            finally {
+                position = nextNumberEnd;
+            }
+        }
+
+        protected int nextStopCharIndex(int position, String valueString) {
+            while (position < valueString.length()) {
+                if (valueString.charAt(position) == ',') return position;
+                if (valueString.charAt(position) == ']') return position;
+                if (valueString.charAt(position) == '}') return position;
+                position++;
+            }
+            throw new IllegalArgumentException("Malformed tensor value '" + valueString +
+                                               "': Expected a ',', ']' or '}' after position " + position);
+        }
+
     }
 
     /** A single-use dense tensor string parser */
@@ -185,8 +218,6 @@ class TensorParser {
         private final IndexedTensor.DirectIndexBuilder builder;
         private final IndexedTensor.Indexes indexes;
         private final boolean hasInnerStructure;
-
-        private long tensorIndex = 0;
 
         public DenseValueParser(String string,
                                 List<String> dimensionOrder,
@@ -227,44 +258,24 @@ class TensorParser {
         }
 
         protected void consumeNumber() {
-            skipSpace();
-
-            int nextNumberEnd = nextStopCharIndex(position, string);
-            TensorType.Value cellValueType = builder.type().valueType();
-            String cellValueString = string.substring(position, nextNumberEnd);
-            try {
-                if (cellValueType == TensorType.Value.DOUBLE)
-                    builder.cellByDirectIndex(indexes.toSourceValueIndex(), Double.parseDouble(cellValueString));
-                else if (cellValueType == TensorType.Value.FLOAT)
-                    builder.cellByDirectIndex(indexes.toSourceValueIndex(), Float.parseFloat(cellValueString));
-                else
-                    throw new IllegalArgumentException(cellValueType + " is not supported");
-            }
-            catch (NumberFormatException e) {
-                throw new IllegalArgumentException("At value position " + position + ": '" +
-                                                   cellValueString + "' is not a valid " + cellValueType);
-            }
-            position = nextNumberEnd;
-        }
-
-        private int nextStopCharIndex(int position, String valueString) {
-            while (position < valueString.length()) {
-                if (valueString.charAt(position) == ',') return position;
-                if (valueString.charAt(position) == ']') return position;
-                position++;
-            }
-            throw new IllegalArgumentException("Malformed tensor value '" + valueString +
-                                               "': Expected a ',', ']' or '}' after position " + position);
+            Number number = consumeNumber(builder.type().valueType());
+            if (builder.type().valueType() == TensorType.Value.DOUBLE)
+                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Double)number);
+            else if (builder.type().valueType() == TensorType.Value.FLOAT)
+                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
         }
 
     }
 
+    /**
+     * Parses mixed tensor short forms {a:[1,2], ...} AND 1d mapped tensor short form {a:b, ...}.
+     */
     private static class MixedValueParser extends ValueParser {
 
-        private final MixedTensor.BoundBuilder builder;
+        private final Tensor.Builder builder;
         private List<String> dimensionOrder;
 
-        public MixedValueParser(String string, List<String> dimensionOrder, MixedTensor.BoundBuilder builder) {
+        public MixedValueParser(String string, List<String> dimensionOrder, Tensor.Builder builder) {
             super(string);
             this.dimensionOrder = dimensionOrder;
             this.builder = builder;
@@ -282,13 +293,16 @@ class TensorParser {
             while (position + 1 < string.length()) {
                 int labelEnd = string.indexOf(':', position);
                 if (labelEnd <= position)
-                    throw new IllegalArgumentException("A mixed tensor value must be on the form {sparse-label:[dense subspace], ...} ");
+                    throw new IllegalArgumentException("A mixed tensor value must be on the form {sparse-label:[dense subspace], ...}, or {sparse-label:value, ...}");
                 String label = string.substring(position, labelEnd);
                 position = labelEnd + 1;
                 skipSpace();
 
                 TensorAddress mappedAddress = new TensorAddress.Builder(mappedSubtype).add(mappedDimension.name(), label).build();
-                parseDenseSubspace(mappedAddress, dimensionOrder);
+                if (builder.type().rank() > 1)
+                    parseDenseSubspace(mappedAddress, dimensionOrder);
+                else
+                    consumeNumber(mappedAddress);
                 if ( ! consumeOptional(','))
                     consume('}');
                 skipSpace();
@@ -298,7 +312,7 @@ class TensorParser {
         private void parseDenseSubspace(TensorAddress sparseAddress, List<String> denseDimensionOrder) {
             DenseValueParser denseParser = new DenseValueParser(string.substring(position),
                                                                 denseDimensionOrder,
-                                                                builder.denseSubspaceBuilder(sparseAddress));
+                                                                ((MixedTensor.BoundBuilder)builder).denseSubspaceBuilder(sparseAddress));
             denseParser.parse();
             position+= denseParser.position();
         }
@@ -313,6 +327,14 @@ class TensorParser {
 
             position++;
             return true;
+        }
+
+        private void consumeNumber(TensorAddress address) {
+            Number number = consumeNumber(builder.type().valueType());
+            if (builder.type().valueType() == TensorType.Value.DOUBLE)
+                builder.cell(address, (Double)number);
+            else if (builder.type().valueType() == TensorType.Value.FLOAT)
+                builder.cell(address, (Float)number);
         }
 
     }

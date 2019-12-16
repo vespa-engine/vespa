@@ -98,6 +98,14 @@ public class TensorParserTestCase {
     }
 
     @Test
+    public void testSparseShortFormParsing() {
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{})"))
+                                   .cell(TensorAddress.ofLabels("a"), 1)
+                                   .cell(TensorAddress.ofLabels("b"), 2).build(),
+                     Tensor.from("tensor(key{}):{a:1, b:2}"));
+    }
+
+    @Test
     public void testMixedWrongOrder() {
         assertEquals("Opposite order of dimensions",
                      Tensor.Builder.of(TensorType.fromSpec("tensor(key{},x[3],y[2])"))
