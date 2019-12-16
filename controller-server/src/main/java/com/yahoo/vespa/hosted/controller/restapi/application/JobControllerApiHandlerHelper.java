@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -83,13 +84,19 @@ class JobControllerApiHandlerHelper {
      */
     static HttpResponse jobTypeResponse(Controller controller, ApplicationId id, URI baseUriForJobs) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
+        DeploymentStatus deploymentStatus = controller.jobController().deploymentStatus(application);
         Instance instance = application.require(id.instance());
         Change change = application.change();
         Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(id.instance());
         Optional<DeploymentSteps> steps = spec.map(s -> new DeploymentSteps(s, controller::system));
-        List<JobType> productionJobs = steps.map(DeploymentSteps::productionJobs).orElse(List.of());
-        List<JobType> jobs = steps.map(DeploymentSteps::jobs).orElse(List.of());
-        Map<JobType, JobStatus> status = controller.jobController().deploymentStatus(application).instanceJobs(id.instance());
+        List<JobType> jobs = deploymentStatus.stepStatus().keySet().stream()
+                                             .filter(jobId -> id.equals(jobId.application()))
+                                             .map(JobId::type)
+                                             .collect(Collectors.toUnmodifiableList());
+        List<JobType> productionJobs = jobs.stream()
+                                           .filter(JobType::isProduction)
+                                           .collect(Collectors.toUnmodifiableList());
+        Map<JobType, JobStatus> status = deploymentStatus.instanceJobs(id.instance());
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
         Map<JobType, Versions> pendingProduction =
@@ -127,6 +134,7 @@ class JobControllerApiHandlerHelper {
 
         Cursor deploymentsArray = responseObject.setArray("deployments");
         steps.ifPresent(deploymentSteps -> deploymentSteps.production().forEach(step -> {
+            if (step.isTest()) return;
             Cursor deploymentsObject = deploymentsArray.addObject();
             deploymentSteps.toJobs(step).forEach(type -> {
                 ZoneId zone = type.zone(controller.system());
@@ -144,7 +152,7 @@ class JobControllerApiHandlerHelper {
         }));
 
         Cursor jobsObject = responseObject.setObject("jobs");
-        steps.ifPresent(deploymentSteps -> deploymentSteps.jobs().forEach(type -> {
+        steps.ifPresent(deploymentSteps -> jobs.forEach(type -> {
             jobTypeToSlime(jobsObject.setObject(shortNameOf(type, controller.system())),
                            controller,
                            application,
@@ -189,11 +197,14 @@ class JobControllerApiHandlerHelper {
         Version lastPlatform = lastVespa.versionNumber();
         lastPlatformObject.setString("platform", lastPlatform.toString());
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
-        long completed = productionJobs.stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type, status.get(type))).count();
+        long completed = productionJobs.stream()
+                                       .filter(type -> ! type.isTest())
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type, status.get(type)))
+                                       .count();
         if (Optional.of(lastPlatform).equals(change.platform()))
-            lastPlatformObject.setString("deploying", completed + " of " + productionJobs.size() + " complete");
+            lastPlatformObject.setString("deploying", completed + " of " + productionJobs.stream().filter(type -> ! type.isTest()).count() + " complete");
         else if (completed == productionJobs.size())
-            lastPlatformObject.setString("completed", completed + " of " + productionJobs.size() + " complete");
+            lastPlatformObject.setString("completed", completed + " of " + productionJobs.stream().filter(type -> ! type.isTest()).count() + " complete");
         else if ( ! application.deploymentSpec().instances().stream()
                                .allMatch(spec -> spec.canUpgradeAt(controller.clock().instant()))) {
             lastPlatformObject.setString("blocked", application.deploymentSpec().instances().stream()
@@ -214,11 +225,14 @@ class JobControllerApiHandlerHelper {
         ApplicationVersion lastApplication = application.latestVersion().get();
         applicationVersionToSlime(lastApplicationObject.setObject("application"), lastApplication);
         lastApplicationObject.setLong("at", lastApplication.buildTime().get().toEpochMilli());
-        completed = productionJobs.stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type, status.get(type))).count();
+        completed = productionJobs.stream()
+                                  .filter(type -> ! type.isTest())
+                                  .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type, status.get(type)))
+                                  .count();
         if (Optional.of(lastApplication).equals(change.application()))
-            lastApplicationObject.setString("deploying", completed + " of " + productionJobs.size() + " complete");
+            lastApplicationObject.setString("deploying", completed + " of " + productionJobs.stream().filter(type -> ! type.isTest()).count() + " complete");
         else if (completed == productionJobs.size())
-            lastApplicationObject.setString("completed", completed + " of " + productionJobs.size() + " complete");
+            lastApplicationObject.setString("completed", completed + " of " + productionJobs.stream().filter(type -> ! type.isTest()).count() + " complete");
         else if ( ! application.deploymentSpec().instances().stream()
                                .allMatch(spec -> spec.canChangeRevisionAt(controller.clock().instant()))) {
             lastApplicationObject.setString("blocked", application.deploymentSpec().instances().stream()
@@ -343,7 +357,7 @@ class JobControllerApiHandlerHelper {
     }
 
     private static String shortNameOf(JobType type, SystemName system) {
-        return type.isProduction() ? type.zone(system).region().value() : type.jobName();
+        return type.jobName().replaceFirst("production-", "");
     }
 
     private static String taskStatusOf(Run run) {

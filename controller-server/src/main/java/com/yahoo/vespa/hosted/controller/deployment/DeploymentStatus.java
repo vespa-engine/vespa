@@ -203,16 +203,14 @@ public class DeploymentStatus {
             return Map.of();
 
         Map<JobId, StepStatus> dependencies = new LinkedHashMap<>();
+        for (InstanceName instance : spec.instanceNames())
+            for (JobType test : List.of(systemTest, stagingTest))
+                dependencies.put(new JobId(application.id().instance(instance), test),
+                                 JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
+                                                                this, instance, test, false));
         List<StepStatus> previous = List.of();
         for (DeploymentSpec.Step step : spec.steps())
             previous = fillStep(dependencies, allSteps, step, previous, spec.instanceNames().get(0));
-        for (InstanceName instance : spec.instanceNames())
-            for (JobType test : List.of(systemTest, stagingTest)) {
-                JobId job = new JobId(application.id().instance(instance), test);
-                if ( ! dependencies.containsKey(job))
-                    dependencies.put(job, JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
-                                                                         this, instance, test, false));
-            }
 
         return ImmutableMap.copyOf(dependencies);
     }
