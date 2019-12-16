@@ -4,7 +4,6 @@
 
 package ai.vespa.metricsproxy.http.application;
 
-import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
 import com.yahoo.yolean.Exceptions;
@@ -13,7 +12,6 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 
 import java.io.IOException;
-import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -74,26 +72,6 @@ public class NodeMetricsClient {
 
     long snapshotsRetrieved() {
         return snapshotsRetrieved;
-    }
-
-    // TODO: move to separate file
-    static class Node {
-        final String configId;
-        final String host;
-        final int port;
-        final URI metricsUri;
-
-        public Node(String configId, String host, int port) {
-            this.configId = configId;
-            this.host = host;
-            this.port = port;
-            metricsUri = getMetricsUri(host, port);
-        }
-
-        private static URI getMetricsUri(String host, int port) {
-          return URI.create("http://" + host + ":" + port + MetricsHandler.VALUES_PATH);
-        }
-
     }
 
 }

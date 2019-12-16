@@ -4,7 +4,7 @@
 
 package ai.vespa.metricsproxy.http.application;
 
-import ai.vespa.metricsproxy.http.application.NodeMetricsClient.Node;
+import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.yahoo.test.ManualClock;
@@ -48,7 +48,7 @@ public class NodeMetricsClientTest {
 
     @BeforeClass
     public static void setupWireMock() {
-        node = new Node("id", "localhost", wireMockRule.port());
+        node = new Node("id", "localhost", wireMockRule.port(), MetricsHandler.VALUES_PATH);
         wireMockRule.stubFor(get(urlEqualTo(node.metricsUri.getPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
     }
