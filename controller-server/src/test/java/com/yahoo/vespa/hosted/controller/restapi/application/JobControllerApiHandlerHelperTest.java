@@ -180,7 +180,6 @@ public class JobControllerApiHandlerHelperTest {
     private void compare(HttpResponse response, String expected) throws JSONException, IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
-        System.err.println(baos);
         JSONObject actualJSON = new JSONObject(new String(baos.toByteArray()));
         JSONObject expectedJSON = new JSONObject(expected);
         assertEquals(expectedJSON.toString(), actualJSON.toString());
