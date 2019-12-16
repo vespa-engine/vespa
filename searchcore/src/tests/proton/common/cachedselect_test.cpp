@@ -617,7 +617,7 @@ TEST_F("Test performance when using attributes", TestFixture)
     uint32_t i;
     const uint32_t loopcnt = 30000;
     LOG(info, "Starting minibm loop, %u ierations of 4 docs each", loopcnt);
-    fastos::StopWatch sw;
+    vespalib::Timer sw;
     for (i = 0; i < loopcnt; ++i) {
         ctx._docId = 1u;
         if (sel->contains(ctx) != Result::False)
@@ -632,11 +632,11 @@ TEST_F("Test performance when using attributes", TestFixture)
         if (sel->contains(ctx) != Result::Invalid)
             break;
     }
-    fastos::TimeStamp elapsed = sw.elapsed();
+    vespalib::duration elapsed = sw.elapsed();
     EXPECT_EQUAL(loopcnt, i);
     LOG(info,
         "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc",
-        i, elapsed.ns(), static_cast<double>(elapsed.ns()) / ( 4 * i));
+        i, vespalib::count_ns(elapsed), static_cast<double>(vespalib::count_ns(elapsed)) / ( 4 * i));
     
 }
 

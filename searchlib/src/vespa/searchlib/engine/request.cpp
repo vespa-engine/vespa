@@ -6,7 +6,7 @@ namespace search::engine {
 
 Request::Request(RelativeTime relativeTime)
     : _relativeTime(std::move(relativeTime)),
-      _timeOfDoom(fastos::TimeStamp(fastos::TimeStamp::FUTURE)),
+      _timeOfDoom(vespalib::steady_time::max()),
       dumpFeatures(false),
       ranking(),
       location(),
@@ -19,17 +19,17 @@ Request::Request(RelativeTime relativeTime)
 
 Request::~Request() = default;
 
-void Request::setTimeout(const fastos::TimeStamp & timeout)
+void Request::setTimeout(vespalib::duration timeout)
 {
     _timeOfDoom = getStartTime() + timeout;
 }
 
-fastos::TimeStamp Request::getTimeUsed() const
+vespalib::duration Request::getTimeUsed() const
 {
     return _relativeTime.timeSinceDawn();
 }
 
-fastos::TimeStamp Request::getTimeLeft() const
+vespalib::duration Request::getTimeLeft() const
 {
     return _timeOfDoom - _relativeTime.now();
 }

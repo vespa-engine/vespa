@@ -74,7 +74,7 @@ private:
         bool isBelowLimit() const { return matches < _matches_limit; }
         bool    isAtLimit() const { return matches == _matches_limit; }
         bool   atSoftDoom() const { return _doom.soft_doom(); }
-        fastos::TimeStamp timeLeft() const { return _doom.soft_left(); }
+        vespalib::duration timeLeft() const { return _doom.soft_left(); }
         uint32_t        matches;
     private:
         uint32_t        _matches_limit;

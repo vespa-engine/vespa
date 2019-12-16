@@ -94,8 +94,7 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         MyMinimalFeedViewBase(),
         StoreOnlyFeedView(StoreOnlyFeedView::Context(summaryAdapter,
                           search::index::Schema::SP(),
-                          DocumentMetaStoreContext::SP(
-                                  new DocumentMetaStoreContext(metaStore)),
+                          std::make_shared<DocumentMetaStoreContext>(metaStore),
                                                      *gidToLidChangeHandler,
                                                      myGetDocumentTypeRepo(),
                                                      writeService,
@@ -109,23 +108,19 @@ struct MyMinimalFeedView : public MyMinimalFeedViewBase, public StoreOnlyFeedVie
         outstandingMoveOps(outstandingMoveOps_)
     {
     }
-    virtual void removeAttributes(SerialNum s, const LidVector &l,
-                                  bool immediateCommit, OnWriteDoneType onWriteDone) override {
+    void removeAttributes(SerialNum s, const LidVector &l, bool immediateCommit, OnWriteDoneType onWriteDone) override {
         StoreOnlyFeedView::removeAttributes(s, l, immediateCommit, onWriteDone);
         ++removeMultiAttributesCount;
     }
-    virtual void removeIndexedFields(SerialNum s, const LidVector &l,
-                                     bool immediateCommit,
-                                     OnWriteDoneType onWriteDone) override {
-        StoreOnlyFeedView::removeIndexedFields(s, l,
-                                               immediateCommit, onWriteDone);
+    void removeIndexedFields(SerialNum s, const LidVector &l, bool immediateCommit, OnWriteDoneType onWriteDone) override {
+        StoreOnlyFeedView::removeIndexedFields(s, l, immediateCommit, onWriteDone);
         ++removeMultiIndexFieldsCount;
     }
-    virtual void heartBeatIndexedFields(SerialNum s) override {
+    void heartBeatIndexedFields(SerialNum s) override {
         StoreOnlyFeedView::heartBeatIndexedFields(s);
         ++heartBeatIndexedFieldsCount;
     }
-    virtual void heartBeatAttributes(SerialNum s) override {
+    void heartBeatAttributes(SerialNum s) override {
         StoreOnlyFeedView::heartBeatAttributes(s);
         ++heartBeatAttributesCount;
     }
@@ -154,26 +149,23 @@ struct MoveOperationFeedView : public MyMinimalFeedView {
             removeIndexFieldsCount(0),
             onWriteDoneContexts()
     {}
-    virtual void putAttributes(SerialNum, search::DocumentIdT, const document::Document &,
-                               bool, OnPutDoneType onWriteDone) override {
+    void putAttributes(SerialNum, search::DocumentIdT, const document::Document &, bool, OnPutDoneType onWriteDone) override {
         ++putAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    virtual void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
-                                  bool, OnOperationDoneType onWriteDone) override {
+     void putIndexedFields(SerialNum, search::DocumentIdT, const document::Document::SP &,
+                           bool, OnOperationDoneType onWriteDone) override {
         ++putIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    virtual void removeAttributes(SerialNum, search::DocumentIdT,
-                                  bool, OnRemoveDoneType onWriteDone) override {
+    void removeAttributes(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType onWriteDone) override {
         ++removeAttributesCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
     }
-    virtual void removeIndexedFields(SerialNum, search::DocumentIdT,
-                                     bool, OnRemoveDoneType onWriteDone) override {
+    void removeIndexedFields(SerialNum, search::DocumentIdT, bool, OnRemoveDoneType onWriteDone) override {
         ++removeIndexFieldsCount;
         EXPECT_EQUAL(1, outstandingMoveOps);
         onWriteDoneContexts.push_back(onWriteDone);
@@ -186,7 +178,7 @@ struct MoveOperationCallback : public IDestructorCallback {
     MoveOperationCallback(int &outstandingMoveOps_) : outstandingMoveOps(outstandingMoveOps_) {
         ++outstandingMoveOps;
     }
-    virtual ~MoveOperationCallback() {
+    ~MoveOperationCallback() override {
         ASSERT_GREATER(outstandingMoveOps, 0);
         --outstandingMoveOps;
     }
@@ -220,7 +212,7 @@ struct FixtureBase {
           sharedExecutor(1, 0x10000),
           writeService(sharedExecutor),
           lidReuseDelayer(writeService, *metaStore),
-          commitTimeTracker(fastos::TimeStamp()),
+          commitTimeTracker(vespalib::duration::zero()),
           feedview()
     {
         StoreOnlyFeedView::PersistentParams params(0, 0, DocTypeName("foo"), subdb_id, subDbType);

@@ -4,7 +4,6 @@
 
 #include "propertiesmap.h"
 #include "trace.h"
-#include <vespa/fastos/timestamp.h>
 
 namespace search::engine {
 
@@ -15,14 +14,14 @@ public:
     Request(const Request &) = delete;
     Request & operator =(const Request &) = delete;
     virtual ~Request();
-    void setTimeout(const fastos::TimeStamp & timeout);
-    fastos::SteadyTimeStamp getStartTime() const { return _relativeTime.timeOfDawn(); }
-    fastos::SteadyTimeStamp getTimeOfDoom() const { return _timeOfDoom; }
-    fastos::TimeStamp getTimeout() const { return _timeOfDoom - getStartTime(); }
-    fastos::TimeStamp getTimeUsed() const;
-    fastos::TimeStamp getTimeLeft() const;
+    void setTimeout(vespalib::duration timeout);
+    vespalib::steady_time getStartTime() const { return _relativeTime.timeOfDawn(); }
+    vespalib::steady_time getTimeOfDoom() const { return _timeOfDoom; }
+    vespalib::duration getTimeout() const { return _timeOfDoom - getStartTime(); }
+    vespalib::duration getTimeUsed() const;
+    vespalib::duration getTimeLeft() const;
     const RelativeTime & getRelativeTime() const { return _relativeTime; }
-    bool expired() const { return getTimeLeft() <= 0l; }
+    bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
     const vespalib::stringref getStackRef() const {
         return vespalib::stringref(&stackDump[0], stackDump.size());
@@ -37,8 +36,8 @@ public:
 
     Trace & trace() const { return _trace; }
 private:
-    RelativeTime             _relativeTime;
-    fastos::SteadyTimeStamp  _timeOfDoom;
+    RelativeTime           _relativeTime;
+    vespalib::steady_time  _timeOfDoom;
 public:
     /// Everything here should move up to private section and have accessors
     bool               dumpFeatures;

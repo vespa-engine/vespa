@@ -33,20 +33,20 @@ RUsage::RUsage() :
 RUsage
 RUsage::createSelf()
 {
-    return createSelf(fastos::SteadyTimeStamp());
+    return createSelf(vespalib::steady_time());
 }
 
 RUsage
 RUsage::createChildren()
 {
-    return createChildren(fastos::SteadyTimeStamp());
+    return createChildren(vespalib::steady_time());
 }
 
 RUsage
-RUsage::createSelf(fastos::SteadyTimeStamp since)
+RUsage::createSelf(vespalib::steady_time since)
 {
     RUsage r;
-    r._time = fastos::ClockSteady::now() - since;
+    r._time = vespalib::steady_clock::now() - since;
     if (getrusage(RUSAGE_SELF, &r) != 0) {
         throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
@@ -54,10 +54,10 @@ RUsage::createSelf(fastos::SteadyTimeStamp since)
 }
 
 RUsage
-RUsage::createChildren(fastos::SteadyTimeStamp since)
+RUsage::createChildren(vespalib::steady_time since)
 {
     RUsage r;
-    r._time = fastos::ClockSteady::now() - since;
+    r._time = vespalib::steady_clock::now() - since;
     if (getrusage(RUSAGE_CHILDREN, &r) != 0) {
         throw std::runtime_error(vespalib::make_string("getrusage failed with errno = %d", errno).c_str());
     }
@@ -68,9 +68,9 @@ vespalib::string
 RUsage::toString()
 {
     vespalib::string s;
-    if (_time.sec() != 0.0) s += make_string("duration = %1.6f\n", _time.sec());
-    if (fastos::TimeStamp(ru_utime).sec() != 0.0) s += make_string("user time = %1.6f\n", fastos::TimeStamp(ru_utime).sec());
-    if (fastos::TimeStamp(ru_stime).sec() != 0.0) s += make_string("system time = %1.6f\n", fastos::TimeStamp(ru_stime).sec());
+    if (_time != duration::zero()) s += make_string("duration = %1.6f\n", vespalib::to_s(_time));
+    if (from_timeval(ru_utime) > duration::zero()) s += make_string("user time = %1.6f\n", to_s(from_timeval(ru_utime)));
+    if (from_timeval(ru_stime) > duration::zero()) s += make_string("system time = %1.6f\n", to_s(from_timeval(ru_stime)));
     if (ru_maxrss != 0) s += make_string("ru_maxrss = %ld\n", ru_maxrss);
     if (ru_ixrss != 0) s += make_string("ru_ixrss = %ld\n", ru_ixrss);
     if (ru_idrss != 0) s += make_string("ru_idrss = %ld\n", ru_idrss);

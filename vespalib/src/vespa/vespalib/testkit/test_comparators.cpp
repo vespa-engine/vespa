@@ -8,7 +8,11 @@ ostream & operator << (ostream & os, system_clock::time_point ts) {
     return os << ts.time_since_epoch() << "ns";
 }
 
+ostream & operator << (ostream & os, steady_clock::time_point ts) {
+    return os << ts.time_since_epoch() << "ns";
+}
+
 }
 namespace vespalib {
 
-} // namespace vespalib
+}

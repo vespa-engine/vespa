@@ -39,6 +39,8 @@ constexpr double to_s(duration d) {
     return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
 }
 
+system_time to_utc(steady_time ts);
+
 constexpr duration from_s(double seconds) {
     return std::chrono::duration_cast<duration>(std::chrono::duration<double>(seconds));
 }
@@ -53,6 +55,10 @@ constexpr int64_t count_us(duration d) {
 
 constexpr int64_t count_ns(duration d) {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
+}
+
+constexpr duration from_timeval(const timeval & tv) {
+    return duration(tv.tv_sec*1000000000L + tv.tv_usec*1000L);
 }
 
 /**

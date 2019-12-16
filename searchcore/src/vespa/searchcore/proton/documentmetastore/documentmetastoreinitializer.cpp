@@ -44,14 +44,14 @@ DocumentMetaStoreInitializer::run()
             vespalib::string attrFileName = _baseDir + "/" + snap.dirName + "/" + name;
             _dms->setBaseFileName(attrFileName);
             assert(_dms->hasLoadData());
-            fastos::StopWatch stopWatch;
+            vespalib::Timer stopWatch;
             EventLogger::loadDocumentMetaStoreStart(_subDbName);
             if (!_dms->load()) {
                 throw IllegalStateException(failedMsg(_docTypeName.c_str()));
             } else {
                 _dms->commit(snap.syncToken, snap.syncToken);
             }
-            EventLogger::loadDocumentMetaStoreComplete(_subDbName, stopWatch.elapsed().ms());
+            EventLogger::loadDocumentMetaStoreComplete(_subDbName, vespalib::count_ms(stopWatch.elapsed()));
         }
     } else {
         vespalib::mkdir(_baseDir, false);

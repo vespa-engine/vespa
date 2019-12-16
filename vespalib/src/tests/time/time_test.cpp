@@ -29,6 +29,16 @@ TEST(TimeTest, double_conversion_works_as_expected) {
     EXPECT_EQ(10ms, from_s(0.010));
 }
 
+TEST(TimeTest, timeval_conversion_works_as_expected) {
+    timeval tv1;
+    tv1.tv_sec = 7;
+    tv1.tv_usec = 342356;
+    EXPECT_EQ(from_timeval(tv1), 7342356us);
+    tv1.tv_sec = 7;
+    tv1.tv_usec = 1342356;
+    EXPECT_EQ(from_timeval(tv1), 8342356us);
+}
+
 TEST(TimeTest, unit_counting_works_as_expected) {
     auto d = 3ms + 5us + 7ns;
     EXPECT_EQ(count_ns(d), 3005007);
