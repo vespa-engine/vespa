@@ -4,6 +4,7 @@ package com.yahoo.vespa.http.client.core.communication;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
 import com.yahoo.vespa.http.client.config.FeedParams;
@@ -400,10 +401,22 @@ class ApacheGatewayConnection implements GatewayConnection {
                 clientBuilder = VespaHttpClientBuilder.create();
             } else {
                 clientBuilder = HttpClientBuilder.create();
-                if (useSsl && connectionParams.getSslContext() != null) {
+                if (connectionParams.getSslContext() != null) {
                     clientBuilder.setSslcontext(connectionParams.getSslContext());
+                } else {
+                    SslContextBuilder builder = new SslContextBuilder();
+                    if (connectionParams.getPrivateKey() != null && connectionParams.getCertificate() != null) {
+                        builder.withKeyStore(connectionParams.getPrivateKey(), connectionParams.getCertificate());
+                    }
+                    if (connectionParams.getCaCertificates() != null) {
+                        builder.withTrustStore(connectionParams.getCaCertificates());
+                    }
+                    clientBuilder.setSslcontext(builder.build());
+                }
+                if (connectionParams.getHostnameVerifier() != null) {
                     clientBuilder.setSSLHostnameVerifier(connectionParams.getHostnameVerifier());
                 }
+                clientBuilder.setUserTokenHandler(context -> null); // https://stackoverflow.com/a/42112034/1615280
             }
             clientBuilder.setMaxConnPerRoute(1);
             clientBuilder.setMaxConnTotal(1);
