@@ -40,6 +40,10 @@ public:
     // Exposed for unit testing. TODO feels a bit dirty :I
     const DistributorBucketSpace& bucketSpace() const noexcept { return _bucketSpace; }
 
+    const std::vector<std::pair<document::BucketId, uint16_t>>& replicas_in_db() const noexcept {
+        return _replicas_in_db;
+    }
+
 private:
     class GroupId {
     public:
@@ -88,6 +92,7 @@ private:
 
     PersistenceOperationMetricSet& _metric;
     framework::MilliSecTimer _operationTimer;
+    std::vector<std::pair<document::BucketId, uint16_t>> _replicas_in_db;
     bool _has_replica_inconsistency;
 
     void sendReply(DistributorMessageSender& sender);
