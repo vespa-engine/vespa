@@ -1,10 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
+import com.yahoo.text.Ascii7BitMatcher;
+
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -159,8 +162,8 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Supports building of a tensor address */
     public static class Builder {
-
-        static final private Pattern labelPattern = Pattern.compile("[-,A-Za-z0-9_@]([A-Z,a-z0-9_@$])*");
+        static private final Ascii7BitMatcher labelMatcher = new Ascii7BitMatcher("-_@" + charsAndNumbers(),
+                                                                        "_@$" + charsAndNumbers());
 
         private final TensorType type;
         private final String[] labels;
@@ -205,7 +208,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         static private void requireIdentifier(String s, String parameterName) {
             if (s == null)
                 throw new IllegalArgumentException(parameterName + " can not be null");
-            if ( ! labelPattern.matcher(s).matches())
+            if ( ! labelMatcher.matches(s))
                 throw new IllegalArgumentException(parameterName + " must be an identifier or integer, not '" + s + "'");
         }
 
