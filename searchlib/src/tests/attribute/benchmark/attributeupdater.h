@@ -73,16 +73,16 @@ public:
         return _numDocumentUpdates * 1000 / as_ms();
     }
     double avgDocumentUpdateTime() const {
-        return as_ms() / _numDocumentUpdates;
+        return vespalib::count_ms(_totalUpdateTime  / _numDocumentUpdates);
     }
     double valueUpdateThroughput() const {
         return _numValueUpdates * 1000 / as_ms();
     }
     double avgValueUpdateTime() const {
-        return as_ms() / _numValueUpdates;
+        return vespalib::count_ms(_totalUpdateTime / _numValueUpdates);
     }
 private:
-    double as_ms() const { return vespalib::count_ms(_totalUpdateTime);}
+    double as_ms() const { return vespalib::count_ns(_totalUpdateTime)/1000000.0;}
 };
 
 // AttributeVectorInstance, AttributeVectorType, AttributeVectorBufferType

@@ -46,13 +46,13 @@ public:
         std::cout << "<avg-hit-count>" << avgHitCount() << "</avg-hit-count>" << std::endl;
     }
     double avgSearchTime() const {
-        return double(vespalib::count_ms(_totalSearchTime)) / _numQueries;
+        return vespalib::count_ms(_totalSearchTime/_numQueries);
     }
     double searchThroughout() const {
-        return _numClients * 1000 * _numQueries / double(vespalib::count_ms(_totalSearchTime));
+        return _numClients * 1000 * _numQueries / (vespalib::count_ns(_totalSearchTime)/1000000.0);
     }
     double avgHitCount() const {
-        return _totalHitCount / static_cast<double>(_numQueries);
+        return _totalHitCount / double(_numQueries);
     }
 };
 
