@@ -8,10 +8,12 @@ import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -97,6 +99,11 @@ public class JobRunner extends Maintainer {
                 jobs.active(id).ifPresent(run -> { // The run may have become inactive, so we bail out.
                     if ( ! run.readySteps().contains(step))
                         return; // Someone may have updated the run status, making this step obsolete, so we bail out.
+
+                    StepInfo stepInfo = run.stepInfo(lockedStep.get()).orElseThrow();
+                    if (stepInfo.startTime().isEmpty()) {
+                        jobs.setStartTimestamp(run.id(), Instant.now(), lockedStep);
+                    }
 
                     runner.run(lockedStep, run.id()).ifPresent(status -> {
                         jobs.update(run.id(), status, lockedStep);

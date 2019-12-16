@@ -67,7 +67,7 @@ public class RunSerializerTest {
         // The purpose of this serialised data is to ensure a new format does not break everything, so keep it up to date!
         Run run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
         for (Step step : Step.values())
-            assertTrue(run.steps().containsKey(step));
+            assertTrue(run.stepStatuses().containsKey(step));
 
         assertEquals(id, run.id());
         assertEquals(start, run.start());
@@ -112,7 +112,7 @@ public class RunSerializerTest {
                              .put(endTests, unfinished)
                              .put(report, failed)
                              .build(),
-                     run.steps());
+                     run.stepStatuses());
 
         run = run.with(1L << 50)
                  .with(Instant.now().truncatedTo(MILLIS))
@@ -129,7 +129,7 @@ public class RunSerializerTest {
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
-        assertEquals(run.steps(), phoenix.steps());
+        assertEquals(run.stepStatuses(), phoenix.stepStatuses());
 
         Run initial = Run.initial(id, run.versions(), run.start());
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));

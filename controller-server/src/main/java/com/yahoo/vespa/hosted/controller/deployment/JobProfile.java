@@ -7,7 +7,18 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 
-import static com.yahoo.vespa.hosted.controller.deployment.Step.*;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
 
 /**
  * Static profiles defining the {@link Step}s of a deployment job.

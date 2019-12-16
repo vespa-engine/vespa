@@ -68,6 +68,7 @@ public enum Step {
         this.prerequisites = ImmutableList.copyOf(prerequisites);
     }
 
+    /** Returns the prerequisite steps that must be successfully completed before this, assuming the job contains these steps. */
     public List<Step> prerequisites() { return prerequisites; }
 
 

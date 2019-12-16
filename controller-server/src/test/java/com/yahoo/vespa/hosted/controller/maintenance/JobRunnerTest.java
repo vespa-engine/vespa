@@ -96,14 +96,14 @@ public class JobRunnerTest {
         catch (IllegalStateException e) { }
         jobs.start(id, stagingTest, versions);
 
-        assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(unfinished::equals));
+        assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
-        assertTrue(jobs.last(id, stagingTest).get().steps().values().stream().allMatch(unfinished::equals));
+        assertTrue(jobs.last(id, stagingTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, stagingTest).get().hasEnded());
         runner.maintain();
 
         phaser.arriveAndAwaitAdvance();
-        assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(succeeded::equals));
+        assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(succeeded::equals));
         assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
     }
@@ -124,9 +124,9 @@ public class JobRunnerTest {
         jobs.start(id, systemTest, versions);
         RunId first = run.get().id();
 
-        Map<Step, Status> steps = run.get().steps();
+        Map<Step, Status> steps = run.get().stepStatuses();
         runner.maintain();
-        assertEquals(steps, run.get().steps());
+        assertEquals(steps, run.get().stepStatuses());
         assertEquals(List.of(deployTester), run.get().readySteps());
 
         outcomes.put(deployTester, running);
@@ -182,9 +182,9 @@ public class JobRunnerTest {
         assertTrue(run.get().hasEnded());
         assertTrue(run.get().hasFailed());
         assertFalse(run.get().status() == aborted);
-        assertEquals(failed, run.get().steps().get(deployTester));
-        assertEquals(unfinished, run.get().steps().get(installTester));
-        assertEquals(succeeded, run.get().steps().get(report));
+        assertEquals(failed, run.get().stepStatuses().get(deployTester));
+        assertEquals(unfinished, run.get().stepStatuses().get(installTester));
+        assertEquals(succeeded, run.get().stepStatuses().get(report));
 
         assertEquals(2, jobs.runs(id, systemTest).size());
 

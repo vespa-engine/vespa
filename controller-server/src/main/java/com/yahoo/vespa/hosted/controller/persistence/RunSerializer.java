@@ -9,14 +9,15 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.deployment.Step.Status;
+import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 
 import java.time.Instant;
@@ -24,16 +25,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.outOfCapacity;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
-import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.testFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -44,12 +44,12 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static java.util.Comparator.comparing;
 
 /**
@@ -66,7 +66,10 @@ class RunSerializer {
     //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
+    // TODO: Remove "steps" when there are no traces of it in the controllers
     private static final String stepsField = "steps";
+    private static final String steps2Field = "steps2";
+    private static final String startTimeField = "startTime";
     private static final String applicationField = "id";
     private static final String jobTypeField = "type";
     private static final String numberField = "number";
@@ -102,10 +105,22 @@ class RunSerializer {
     }
 
     private Run runFromSlime(Inspector runObject) {
-        EnumMap<Step, Status> steps = new EnumMap<>(Step.class);
-        runObject.field(stepsField).traverse((ObjectTraverser) (step, status) -> {
-            steps.put(stepOf(step), stepStatusOf(status.asString()));
-        });
+        var steps = new EnumMap<Step, StepInfo>(Step.class);
+        runObject.field(steps2Field).traverse(((ObjectTraverser) (step, info) -> {
+            Inspector startTimeValue = info.field(startTimeField);
+            Optional<Instant> startTime = startTimeValue.valid() ?
+                    Optional.of(instantOf(startTimeValue.asLong())) :
+                    Optional.empty();
+            Step typedStep = stepOf(step);
+            steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(info.field(statusField).asString()), startTime));
+        }));
+        if (steps.isEmpty()) {
+            // backward compatibility - until all runs in zk contains steps2 field
+            runObject.field(stepsField).traverse((ObjectTraverser) (step, status) -> {
+                Step typedStep = stepOf(step);
+                steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), Optional.empty()));
+            });
+        }
         return new Run(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
                                  JobType.fromJobName(runObject.field(jobTypeField).asString()),
                                  runObject.field(numberField).asLong()),
@@ -182,7 +197,17 @@ class RunSerializer {
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);
-        run.steps().forEach((step, status) -> stepsObject.setString(valueOf(step), valueOf(status)));
+        Cursor steps2Object = runObject.setObject(steps2Field);
+        run.steps().forEach((step, stepInfo) -> {
+            String stepString = valueOf(step);
+            String statusString = valueOf(stepInfo.status());
+            Cursor step2Object = steps2Object.setObject(stepString);
+            step2Object.setString(statusField, statusString);
+            stepInfo.startTime().ifPresent(startTime -> step2Object.setLong(startTimeField, valueOf(startTime)));
+
+            // backward compatibility - until all controllers have been upgraded
+            stepsObject.setString(stepString, statusString);
+        });
 
         Cursor versionsObject = runObject.setObject(versionsField);
         toSlime(run.versions().targetPlatform(), run.versions().targetApplication(), versionsObject);
@@ -263,6 +288,14 @@ class RunSerializer {
 
             default: throw new IllegalArgumentException("No status defined by '" + status + "'!");
         }
+    }
+
+    static Long valueOf(Instant instant) {
+        return instant.toEpochMilli();
+    }
+
+    static Instant instantOf(Long epochMillis) {
+        return Instant.ofEpochMilli(epochMillis);
     }
 
     static String valueOf(RunStatus status) {

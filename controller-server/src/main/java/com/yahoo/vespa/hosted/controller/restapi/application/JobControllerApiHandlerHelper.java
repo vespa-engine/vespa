@@ -236,7 +236,7 @@ class JobControllerApiHandlerHelper {
                                                                      && run.targetApplication().equals(deployment.applicationVersion()))
                                                       .isPresent());
         if (running.containsKey(type))
-            deploymentObject.setString("status", running.get(type).steps().get(deployReal) == unfinished ? "deploying" : "verifying");
+            deploymentObject.setString("status", running.get(type).stepStatus(deployReal).equals(Optional.of(unfinished)) ? "deploying" : "verifying");
         else if (change.hasTargets())
             deploymentObject.setString("status", pendingProduction.containsKey(type) ? "pending" : "completed");
     }
@@ -356,7 +356,7 @@ class JobControllerApiHandlerHelper {
         versionsToSlime(runObject, run.versions());
 
         Cursor stepsObject = runObject.setObject("steps");
-        run.steps().forEach((step, status) -> stepsObject.setString(step.name(), status.name()));
+        run.steps().forEach((step, info) -> stepsObject.setString(step.name(), info.status().name()));
         Cursor tasksObject = runObject.setObject("tasks");
         taskStatus(deployReal, run).ifPresent(status -> tasksObject.setString("deploy", status));
         taskStatus(Step.installReal, run).ifPresent(status -> tasksObject.setString("install", status));
@@ -369,8 +369,8 @@ class JobControllerApiHandlerHelper {
     private static Optional<String> taskStatus(Step step, Run run) {
         return run.readySteps().contains(step) ? Optional.of("running")
                                                : Optional.ofNullable(run.steps().get(step))
-                                                         .filter(status -> status != unfinished)
-                                                         .map(Step.Status::name);
+                                                         .filter(info -> info.status() != unfinished)
+                                                         .map(info -> info.status().name());
     }
 
     /** Returns a response with the runs for the given job type. */
