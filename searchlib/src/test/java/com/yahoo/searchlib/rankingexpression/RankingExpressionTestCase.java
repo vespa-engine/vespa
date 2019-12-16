@@ -191,7 +191,7 @@ public class RankingExpressionTestCase {
 
         // Accessing a function in a dynamic tensor, short form
         assertSerialization(List.of("tensor(x[2]):{{x:0}:rankingExpression(scalarFunction),{x:1}:rankingExpression(scalarFunction)}"),
-                            "tensor(x[2]):[scalarFunction(), scalarFunction()]]",
+                            "tensor(x[2]):[scalarFunction(), scalarFunction()]",
                             functions, false);
 
         // Accessing a function in a dynamic tensor, long form

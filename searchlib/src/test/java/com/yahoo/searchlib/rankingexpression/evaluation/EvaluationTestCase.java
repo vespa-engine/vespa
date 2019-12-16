@@ -14,6 +14,7 @@ import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests expression evaluation
@@ -402,6 +403,51 @@ public class EvaluationTestCase {
                                "{ {x:0}:7 }", "tensor(x{}):{ {x:0}:2 }");
         tester.assertEvaluates("tensor<float>(d0[1],x[3]):[[1.0, 0.5, 0.25]]",
                                "tensor<float>(d0[1],x[3]):[[one,one_half,a_quarter]]");
+        tester.assertEvaluates("tensor(x[2],y[3]):[[1.0, 0.5, 0.25],[0.25, 0.5, 1.0]]",
+                               "tensor(x[2],y[3]):[[one,one_half,a_quarter],[a_quarter,one_half,one]]");
+        tester.assertEvaluates("tensor(x{},y[2]):{{x:a,y:0}:1.0, {x:a,y:1}:0.5, {x:b,y:0}:0.25, {x:b,y:1}:2.0}",
+                               "tensor(x{},y[2]):{{x:a,y:0}:one, {x:a,y:1}:one_half, {x:b,y:0}:a_quarter, {x:b,y:1}:2}");
+        tester.assertEvaluates("tensor(x{},y[2]):{a:[1.0, 0.5], b:[0.25, 2]}",
+                               "tensor(x{},y[2]):{a:[one, one_half], b:[a_quarter, 2]}");
+        tester.assertEvaluates("tensor(key{},x[2],y[3]):{key1:[[1.0, 0.5, 0.25],[0.25, 0.5, 1.0]]," +
+                               "                                       key2:[[1.0, 2.0, 3.00],[4.00, 5.0, 6.0]]}",
+                               "tensor(key{},x[2],y[3]):{key1:[[one,one_half,a_quarter],[a_quarter,one_half,one]]," +
+                               "                                        key2:[[1,2,3],[4,5,6]]}");
+        tester.assertEvaluates("tensor(x{}):{{x:a}:1, {x:b}:-2, {x:cee}:0.5}", "tensor(x{}):{a:1, b:-2, cee:one_half}");
+
+        // Opposite order in the expression:
+        // - indexed
+        tester.assertEvaluates("tensor(x[3],y[2]):[[1.0, 0.25], [0.5,0.5], [0.25, 1.0]]",
+                               "tensor(y[2],x[3]):[[one,one_half,a_quarter],[a_quarter,one_half,one]]");
+        // - mixed
+        tester.assertEvaluates("tensor(key{},x[3],y[2]):{key1:[[1.0, 0.25], [0.5,0.5], [0.25, 1.0]]," +
+                               "                                       key2:[[1.0, 4.00], [2.0,5.0], [3.00, 6.0]]}",
+                               "tensor(key{},y[2],x[3]):{key1:[[one,one_half,a_quarter],[a_quarter,one_half,one]]," +
+                               "                                        key2:[[1,2,3],[4,5,6]]}");
+        // Opposite order in literal parsing:
+        // - indexed
+        tester.assertEvaluates("tensor(y[2],x[3]):[[1,0.25,0.5],[0.5,0.25,1]]",
+                               "tensor(x[3],y[2]):[[one,one_half], [a_quarter,a_quarter], [one_half,one]]");
+        // - mixed
+        tester.assertEvaluates("tensor(key{},y[2],x[3]):{key1:[[1.0, 0.5, 0.25],[0.25, 0.5, 1.0]]," +
+                               "                                       key2:[[1.0, 2.0, 3.00],[4.00, 5.0, 6.0]]}",
+                               "tensor(key{},x[3],y[2]):{key1:[[one,a_quarter],[one_half,one_half],[a_quarter,one]]," +
+                               "                                        key2:[[1,4],[2,5],[3,6]]}");
+
+        try {
+            new RankingExpression("tensor(x{},y[2]):{a:[one, one_half], b:[a_quarter]}");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("At 'b': Need 2 values to fill a dense subspace of tensor(x{},y[2]) but got 1", e.getMessage());
+        }
+        try {
+            new RankingExpression("tensor(x[2],y[3]):[[1,2,3,4],[4,5,6]]");
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals("Need 6 values to fill tensor(x[2],y[3]) but got 7", e.getMessage());
+        }
     }
 
     @Test

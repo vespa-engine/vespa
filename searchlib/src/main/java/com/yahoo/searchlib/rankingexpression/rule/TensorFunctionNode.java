@@ -8,6 +8,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
@@ -18,6 +19,7 @@ import com.yahoo.tensor.functions.ScalarFunction;
 import com.yahoo.tensor.functions.TensorFunction;
 import com.yahoo.tensor.functions.ToStringContext;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashMap;
@@ -91,8 +93,50 @@ public class TensorFunctionNode extends CompositeNode {
         return functions;
     }
 
-    public static List<ScalarFunction<Reference>> wrapScalars(List<ExpressionNode> nodes) {
-        return nodes.stream().map(node -> wrapScalar(node)).collect(Collectors.toList());
+    public static void wrapScalarBlock(TensorType type,
+                                       List<String> dimensionOrder,
+                                       String mappedDimensionLabel,
+                                       List<ExpressionNode> nodes,
+                                       Map<TensorAddress, ScalarFunction<Reference>> receivingMap) {
+        TensorType denseSubtype = new TensorType(type.valueType(),
+                                                 type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList()));
+        List<String> denseDimensionOrder = new ArrayList<>(dimensionOrder);
+        denseDimensionOrder.retainAll(denseSubtype.dimensionNames());
+        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseSubtype, denseDimensionOrder);
+        if (indexes.size() != nodes.size())
+            throw new IllegalArgumentException("At '" + mappedDimensionLabel + "': Need " + indexes.size() +
+                                               " values to fill a dense subspace of " + type + " but got " + nodes.size());
+        for (ExpressionNode node : nodes) {
+            indexes.next();
+
+            // Insert the mapped dimension into the dense subspace address of indexes
+            String[] labels = new String[type.rank()];
+            int indexedDimensionsIndex = 0;
+            int allDimensionsIndex = 0;
+            for (TensorType.Dimension dimension : type.dimensions()) {
+                if (dimension.isIndexed())
+                    labels[allDimensionsIndex++] = String.valueOf(indexes.indexesForReading()[indexedDimensionsIndex++]);
+                else
+                    labels[allDimensionsIndex++] = mappedDimensionLabel;
+            }
+
+            receivingMap.put(TensorAddress.of(labels), wrapScalar(node));
+        }
+    }
+
+    public static List<ScalarFunction<Reference>> wrapScalars(TensorType type,
+                                                              List<String> dimensionOrder,
+                                                              List<ExpressionNode> nodes) {
+        IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(type, dimensionOrder);
+        if (indexes.size() != nodes.size())
+            throw new IllegalArgumentException("Need " + indexes.size() + " values to fill " + type + " but got " + nodes.size());
+
+        List<ScalarFunction<Reference>> wrapped = new ArrayList<>(nodes.size());
+        while (indexes.hasNext()) {
+            indexes.next();
+            wrapped.add(wrapScalar(nodes.get((int)indexes.toSourceValueIndex())));
+        }
+        return wrapped;
     }
 
     public static ScalarFunction<Reference> wrapScalar(ExpressionNode node) {

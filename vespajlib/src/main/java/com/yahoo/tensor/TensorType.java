@@ -82,7 +82,7 @@ public class TensorType {
 
     private final TensorType mappedSubtype;
 
-    private TensorType(Value valueType, Collection<Dimension> dimensions) {
+    public TensorType(Value valueType, Collection<Dimension> dimensions) {
         this.valueType = valueType;
         List<Dimension> dimensionList = new ArrayList<>(dimensions);
         Collections.sort(dimensionList);

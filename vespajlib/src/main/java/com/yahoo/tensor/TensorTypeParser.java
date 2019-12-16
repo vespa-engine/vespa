@@ -24,6 +24,13 @@ public class TensorTypeParser {
     private static final Pattern mappedPattern = Pattern.compile("(\\w+)\\{\\}");
 
     public static TensorType fromSpec(String specString) {
+        return fromSpec(specString, null);
+    }
+
+    /**
+     * @param dimensionOrder if not null, this will be populated with the dimension names in the order they are written
+     */
+    static TensorType fromSpec(String specString, List<String> dimensionOrder) {
         specString = specString.trim();
         if ( ! specString.startsWith(START_STRING) || ! specString.endsWith(END_STRING))
             throw formatException(specString);
@@ -48,10 +55,14 @@ public class TensorTypeParser {
         List<TensorType.Dimension> dimensions = new ArrayList<>();
         for (String element : dimensionsSpec.split(",")) {
             String trimmedElement = element.trim();
-            boolean success = tryParseIndexedDimension(trimmedElement, dimensions) ||
-                              tryParseMappedDimension(trimmedElement, dimensions);
-            if ( ! success)
+            TensorType.Dimension dimension = tryParseIndexedDimension(trimmedElement);
+            if (dimension == null)
+                dimension = tryParseMappedDimension(trimmedElement);
+            if (dimension == null)
                 throw formatException(specString, "Dimension '" + element + "' is on the wrong format");
+            dimensions.add(dimension);
+            if (dimensionOrder != null)
+                dimensionOrder.add(dimension.name());
         }
         return new TensorType.Builder(valueType, dimensions).build();
     }
@@ -68,29 +79,26 @@ public class TensorTypeParser {
         }
     }
 
-    private static boolean tryParseIndexedDimension(String element, List<TensorType.Dimension> dimensions) {
+    private static TensorType.Dimension tryParseIndexedDimension(String element) {
         Matcher matcher = indexedPattern.matcher(element);
         if (matcher.matches()) {
             String dimensionName = matcher.group(1);
             String dimensionSize = matcher.group(2);
-            if (dimensionSize.isEmpty()) {
-                dimensions.add(TensorType.Dimension.indexed(dimensionName));
-            } else {
-                dimensions.add(TensorType.Dimension.indexed(dimensionName, Integer.valueOf(dimensionSize)));
-            }
-            return true;
+            if (dimensionSize.isEmpty())
+                return TensorType.Dimension.indexed(dimensionName);
+            else
+                return TensorType.Dimension.indexed(dimensionName, Integer.valueOf(dimensionSize));
         }
-        return false;
+        return null;
     }
 
-    private static boolean tryParseMappedDimension(String element, List<TensorType.Dimension> dimensions) {
+    private static TensorType.Dimension tryParseMappedDimension(String element) {
         Matcher matcher = mappedPattern.matcher(element);
         if (matcher.matches()) {
             String dimensionName = matcher.group(1);
-            dimensions.add(TensorType.Dimension.mapped(dimensionName));
-            return true;
+            return TensorType.Dimension.mapped(dimensionName);
         }
-        return false;
+        return null;
     }
 
 

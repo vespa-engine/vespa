@@ -217,25 +217,34 @@ public class MixedTensor implements Tensor {
     public static class BoundBuilder extends Builder {
 
         /** For each sparse partial address, hold a dense subspace */
-        final private Map<TensorAddress, double[]> denseSubspaceMap = new HashMap<>();
-        final private Index.Builder indexBuilder;
-        final private Index index;
+        private final Map<TensorAddress, double[]> denseSubspaceMap = new HashMap<>();
+        private final Index.Builder indexBuilder;
+        private final Index index;
+        private final TensorType denseSubtype;
 
         private BoundBuilder(TensorType type) {
             super(type);
             indexBuilder = new Index.Builder(type);
             index = indexBuilder.index();
+            denseSubtype = new TensorType(type.valueType(),
+                                          type.dimensions().stream().filter(d -> d.isIndexed()).collect(Collectors.toList()));
         }
 
         public long denseSubspaceSize() {
             return index.denseSubspaceSize();
         }
 
-        private double[] denseSubspace(TensorAddress sparsePartial) {
-            if (!denseSubspaceMap.containsKey(sparsePartial)) {
-                denseSubspaceMap.put(sparsePartial, new double[(int)denseSubspaceSize()]);
+        private double[] denseSubspace(TensorAddress sparseAddress) {
+            if (!denseSubspaceMap.containsKey(sparseAddress)) {
+                denseSubspaceMap.put(sparseAddress, new double[(int)denseSubspaceSize()]);
             }
-            return denseSubspaceMap.get(sparsePartial);
+            return denseSubspaceMap.get(sparseAddress);
+        }
+
+        public IndexedTensor.DirectIndexBuilder denseSubspaceBuilder(TensorAddress sparseAddress) {
+            double[] values = new double[(int)denseSubspaceSize()];
+            denseSubspaceMap.put(sparseAddress, values);
+            return new DenseSubspaceBuilder(denseSubtype, values);
         }
 
         @Override
@@ -279,7 +288,6 @@ public class MixedTensor implements Tensor {
         }
 
     }
-
 
     /**
      * Temporarily stores all cells to find bounds of indexed dimensions,
@@ -487,6 +495,31 @@ public class MixedTensor implements Tensor {
         @Override
         public String toString() {
             return "indexes into " + type;
+        }
+
+    }
+
+    private static class DenseSubspaceBuilder implements IndexedTensor.DirectIndexBuilder {
+
+        private final TensorType type;
+        private final double[] values;
+
+        public DenseSubspaceBuilder(TensorType type, double[] values) {
+            this.type = type;
+            this.values = values;
+        }
+
+        @Override
+        public TensorType type() { return type; }
+
+        @Override
+        public void cellByDirectIndex(long index, double value) {
+            values[(int)index] = value;
+        }
+
+        @Override
+        public void cellByDirectIndex(long index, float value) {
+            values[(int)index] = value;
         }
 
     }

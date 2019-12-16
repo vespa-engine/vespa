@@ -56,7 +56,8 @@ public class TensorTestCase {
             fail("Expected parse error");
         }
         catch (IllegalArgumentException expected) {
-            assertEquals("Excepted a number or a string starting by {, [ or tensor(...):, got '--'", expected.getMessage());
+            assertEquals("Excepted a number or a string starting by {, [ or tensor(...):, got '--'",
+                         expected.getCause().getMessage());
         }
     }
 
@@ -259,9 +260,9 @@ public class TensorTestCase {
         assertLargest("{d1:l1,d2:l1}:6.0, {d1:l1,d2:l2}:6.0",
                       "tensor(d1{},d2{}):{{d1:l1,d2:l1}:6.0,{d1:l1,d2:l3}:5.0,{d1:l1,d2:l2}:6.0}");
         assertLargest("{x:1,y:1}:4.0",
-                      "tensor(x[2],y[2]):[[1,2],[3,4]");
+                      "tensor(x[2],y[2]):[[1,2],[3,4]]");
         assertLargest("{x:0,y:0}:4.0, {x:1,y:1}:4.0",
-                      "tensor(x[2],y[2]):[[4,2],[3,4]");
+                      "tensor(x[2],y[2]):[[4,2],[3,4]]");
     }
 
     @Test
@@ -273,9 +274,9 @@ public class TensorTestCase {
         assertSmallest("{d1:l1,d2:l1}:5.0, {d1:l1,d2:l2}:5.0",
                        "tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l3}:6.0,{d1:l1,d2:l2}:5.0}");
         assertSmallest("{x:0,y:0}:1.0",
-                       "tensor(x[2],y[2]):[[1,2],[3,4]");
+                       "tensor(x[2],y[2]):[[1,2],[3,4]]");
         assertSmallest("{x:0,y:1}:2.0",
-                       "tensor(x[2],y[2]):[[4,2],[3,4]");
+                       "tensor(x[2],y[2]):[[4,2],[3,4]]");
     }
 
     private void assertLargest(String expectedCells, String tensorString) {

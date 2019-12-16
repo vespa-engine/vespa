@@ -218,7 +218,7 @@ public abstract class IndexedTensor implements Tensor {
             indexes.next();
 
             // start brackets
-            for (int i = 0; i < indexes.rightDimensionsWhichAreAtStart(); i++)
+            for (int i = 0; i < indexes.nextDimensionsAtStart(); i++)
                 b.append("[");
 
             // value
@@ -230,7 +230,7 @@ public abstract class IndexedTensor implements Tensor {
                 throw new IllegalStateException("Unexpected value type " + type.valueType());
 
             // end bracket and comma
-            for (int i = 0; i < indexes.rightDimensionsWhichAreAtEnd(); i++)
+            for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
                 b.append("]");
             if (index < size() - 1)
                 b.append(", ");
@@ -375,8 +375,22 @@ public abstract class IndexedTensor implements Tensor {
 
     }
 
+    public interface DirectIndexBuilder {
+
+        TensorType type();
+
+
+
+        /** Sets a value by its <i>standard value order</i> index */
+        void cellByDirectIndex(long index, double value);
+
+        /** Sets a value by its <i>standard value order</i> index */
+        void cellByDirectIndex(long index, float value);
+
+    }
+
     /** A bound builder can create the double array directly */
-    public static abstract class BoundBuilder extends Builder {
+    public static abstract class BoundBuilder extends Builder implements DirectIndexBuilder {
 
         private DimensionSizes sizes;
 
@@ -393,14 +407,16 @@ public abstract class IndexedTensor implements Tensor {
                 throw new IllegalArgumentException("Must have a dimension size entry for each dimension in " + type);
             this.sizes = sizes;
         }
-        BoundBuilder fill(float [] values) {
+
+        BoundBuilder fill(float[] values) {
             long index = 0;
             for (float value : values) {
                 cellByDirectIndex(index++, value);
             }
             return this;
         }
-        BoundBuilder fill(double [] values) {
+
+        BoundBuilder fill(double[] values) {
             long index = 0;
             for (double value : values) {
                 cellByDirectIndex(index++, value);
@@ -409,12 +425,6 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         DimensionSizes sizes() { return sizes; }
-
-        /** Sets a value by its <i>standard value order</i> index */
-        public abstract void cellByDirectIndex(long index, double value);
-
-        /** Sets a value by its <i>standard value order</i> index */
-        public abstract void cellByDirectIndex(long index, float value);
 
     }
 
@@ -767,6 +777,10 @@ public abstract class IndexedTensor implements Tensor {
             return of(DimensionSizes.of(type));
         }
 
+        public static Indexes of(TensorType type, List<String> iterateDimensionOrder) {
+            return of(DimensionSizes.of(type), toIterationOrder(iterateDimensionOrder, type));
+        }
+
         public static Indexes of(DimensionSizes sizes) {
             return of(sizes, sizes);
         }
@@ -777,6 +791,10 @@ public abstract class IndexedTensor implements Tensor {
 
         private static Indexes of(DimensionSizes sourceSizes, DimensionSizes iterateSizes, long size) {
             return of(sourceSizes, iterateSizes, completeIterationOrder(iterateSizes.dimensions()), size);
+        }
+
+        private static Indexes of(DimensionSizes sizes, List<Integer> iterateDimensions) {
+            return of(sizes, sizes, iterateDimensions);
         }
 
         private static Indexes of(DimensionSizes sourceSizes, DimensionSizes iterateSizes, List<Integer> iterateDimensions) {
@@ -812,6 +830,16 @@ public abstract class IndexedTensor implements Tensor {
             }
         }
 
+        private static List<Integer> toIterationOrder(List<String> dimensionNames, TensorType type) {
+            if (dimensionNames == null) return completeIterationOrder(type.rank());
+
+            List<Integer> iterationDimensions = new ArrayList<>(type.rank());
+            for (int i = 0; i < type.rank(); i++)
+                iterationDimensions.add(type.rank() - 1 - type.indexOfDimension(dimensionNames.get(i)).get());
+            return iterationDimensions;
+        }
+
+        /** Since the right dimensions binds closest, iteration order is the opposite of the tensor order */
         private static List<Integer> completeIterationOrder(int length) {
             List<Integer> iterationDimensions = new ArrayList<>(length);
             for (int i = 0; i < length; i++)
@@ -844,7 +872,7 @@ public abstract class IndexedTensor implements Tensor {
         /** Returns a copy of the indexes of this which must not be modified */
         public long[] indexesForReading() { return indexes; }
 
-        long toSourceValueIndex() {
+        public long toSourceValueIndex() {
             return IndexedTensor.toValueIndex(indexes, sourceSizes);
         }
 
@@ -869,27 +897,15 @@ public abstract class IndexedTensor implements Tensor {
 
         public abstract void next();
 
-        /** Returns the number of dimensions from the right which are currently at the start position (0) */
-        int rightDimensionsWhichAreAtStart() {
-            int dimension = indexes.length - 1;
-            int atStartCount = 0;
-            while (dimension >= 0 && indexes[dimension] == 0) {
-                atStartCount++;
-                dimension--;
-            }
-            return atStartCount;
-        }
+        /** Returns whether further values are available by calling next() */
+        public abstract boolean hasNext();
 
-        /** Returns the number of dimensions from the right which are currently at the end position */
-        int rightDimensionsWhichAreAtEnd() {
-            int dimension = indexes.length - 1;
-            int atEndCount = 0;
-            while (dimension >= 0 && indexes[dimension] == dimensionSizes().size(dimension) - 1) {
-                atEndCount++;
-                dimension--;
-            }
-            return atEndCount;
-        }
+        /** Returns the number of dimensions in iteration order which are currently at the start position (0) */
+        abstract int nextDimensionsAtStart();
+
+        /** Returns the number of dimensions in iteration order which are currently at their end position */
+        abstract int nextDimensionsAtEnd();
+
     }
 
     private final static class EmptyIndexes extends Indexes {
@@ -904,9 +920,20 @@ public abstract class IndexedTensor implements Tensor {
         @Override
         public void next() {}
 
+        @Override
+        public boolean hasNext() { return false; }
+
+        @Override
+        int nextDimensionsAtStart() { return 0; }
+
+        @Override
+        int nextDimensionsAtEnd() { return 0; }
+
     }
 
     private final static class SingleValueIndexes extends Indexes {
+
+        private boolean exhausted = false;
 
         private SingleValueIndexes(DimensionSizes sourceSizes, DimensionSizes iterateSizes, long[] indexes) {
             super(sourceSizes, iterateSizes, indexes);
@@ -916,7 +943,16 @@ public abstract class IndexedTensor implements Tensor {
         public long size() { return 1; }
 
         @Override
-        public void next() {}
+        public void next() { exhausted = true; }
+
+        @Override
+        public boolean hasNext() { return ! exhausted; }
+
+        @Override
+        int nextDimensionsAtStart() { return 1; }
+
+        @Override
+        int nextDimensionsAtEnd() { return 1; }
 
     }
 
@@ -945,7 +981,7 @@ public abstract class IndexedTensor implements Tensor {
          * Advances this to the next cell in the standard indexed tensor cell order.
          * The first call to this will put it at the first position.
          *
-         * @throws RuntimeException if this is called more times than its size
+         * @throws RuntimeException if this is called when hasNext returns false
          */
         @Override
         public void next() {
@@ -955,6 +991,31 @@ public abstract class IndexedTensor implements Tensor {
                 iterateDimensionsIndex++;
             }
             indexes[iterateDimensions.get(iterateDimensionsIndex)]++;
+        }
+
+        @Override
+        public boolean hasNext() {
+            for (int iterateDimension : iterateDimensions) {
+                if (indexes[iterateDimension] + 1 < dimensionSizes().size(iterateDimension))
+                    return true; // some dimension is not at the end
+            }
+            return false;
+        }
+
+        @Override
+        int nextDimensionsAtStart() {
+            int dimension = 0;
+            while (dimension < iterateDimensions.size()  && indexes[iterateDimensions.get(dimension)] == 0)
+                dimension++;
+            return dimension;
+        }
+
+        @Override
+        int nextDimensionsAtEnd() {
+            int dimension = 0;
+            while (dimension < iterateDimensions.size() && indexes[iterateDimensions.get(dimension)] == dimensionSizes().size(iterateDimensions.get(dimension)) - 1)
+                dimension++;
+            return dimension;
         }
 
     }
@@ -969,7 +1030,7 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         @Override
-        long toSourceValueIndex() {
+        public long toSourceValueIndex() {
             return lastComputedSourceValueIndex = super.toSourceValueIndex();
         }
 
@@ -1016,7 +1077,7 @@ public abstract class IndexedTensor implements Tensor {
          * Advances this to the next cell in the standard indexed tensor cell order.
          * The first call to this will put it at the first position.
          *
-         * @throws RuntimeException if this is called more times than its size
+         * @throws RuntimeException if this is called when hasNext returns false
          */
         @Override
         public void next() {
@@ -1026,10 +1087,21 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         @Override
-        long toSourceValueIndex() { return currentSourceValueIndex; }
+        public long toSourceValueIndex() { return currentSourceValueIndex; }
 
         @Override
         long toIterationValueIndex() { return currentIterationValueIndex; }
+
+        @Override
+        public boolean hasNext() {
+            return indexes[iterateDimension] + 1 < size;
+        }
+
+        @Override
+        int nextDimensionsAtStart() { return currentSourceValueIndex == 0 ? 1 : 0; }
+
+        @Override
+        int nextDimensionsAtEnd() { return currentSourceValueIndex == size - 1 ? 1 : 0; }
 
     }
 
@@ -1068,7 +1140,7 @@ public abstract class IndexedTensor implements Tensor {
          * Advances this to the next cell in the standard indexed tensor cell order.
          * The first call to this will put it at the first position.
          *
-         * @throws RuntimeException if this is called more times than its size
+         * @throws RuntimeException if this is called when hasNext returns false
          */
         @Override
         public void next() {
@@ -1077,10 +1149,21 @@ public abstract class IndexedTensor implements Tensor {
         }
 
         @Override
-        long toSourceValueIndex() { return currentValueIndex; }
+        public boolean hasNext() {
+            return indexes[iterateDimension] + 1 < size;
+        }
+
+        @Override
+        public long toSourceValueIndex() { return currentValueIndex; }
 
         @Override
         long toIterationValueIndex() { return currentValueIndex; }
+
+        @Override
+        int nextDimensionsAtStart() { return currentValueIndex == 0 ? 1 : 0; }
+
+        @Override
+        int nextDimensionsAtEnd() { return currentValueIndex == size - 1 ? 1 : 0; }
 
     }
 
