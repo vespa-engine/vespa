@@ -744,13 +744,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         if (deploymentSpec.instance(instance.name()).isPresent()) {
             // Jobs sorted according to deployment spec
-            List<com.yahoo.vespa.hosted.controller.deployment.JobStatus> jobStatus = controller.applications().deploymentTrigger()
+            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
                                                   .steps(deploymentSpec.requireInstance(instance.name()))
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
 
 
             Cursor deploymentJobsArray = object.setArray("deploymentJobs");
-            for (com.yahoo.vespa.hosted.controller.deployment.JobStatus job : jobStatus) {
+            for (JobStatus job : jobStatus) {
                 Cursor jobObject = deploymentJobsArray.addObject();
                 jobObject.setString("type", job.id().type().jobName());
                 jobObject.setBool("success", job.isSuccess());
@@ -860,9 +860,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         if (application.deploymentSpec().instance(instance.name()).isPresent()) {
             // Jobs sorted according to deployment spec
-            List<com.yahoo.vespa.hosted.controller.deployment.JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                                                                                               .steps(application.deploymentSpec().requireInstance(instance.name()))
-                                                                                               .sortedJobs(status.instanceJobs(instance.name()).values());
+            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
+                                                  .steps(application.deploymentSpec().requireInstance(instance.name()))
+                                                  .sortedJobs(status.instanceJobs(instance.name()).values());
 
             Cursor deploymentsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {

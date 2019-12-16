@@ -12,7 +12,7 @@ import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
+import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -65,11 +65,9 @@ public class StructFieldAttributeChangeValidator {
         return next.structFieldAttributes.stream()
                 .filter(nextAttr -> current.hasFieldForStructFieldAttribute(nextAttr) &&
                         !current.hasStructFieldAttribute(nextAttr))
-                .map(nextAttr -> VespaRefeedAction.of("field-type-change",
-                        overrides,
+                .map(nextAttr -> new VespaRestartAction(
                         new ChangeMessageBuilder(nextAttr.getName())
-                                .addChange("add attribute aspect").build(),
-                        now))
+                                .addChange("add attribute aspect").build()))
                 .collect(Collectors.toList());
     }
 

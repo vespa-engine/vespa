@@ -82,7 +82,7 @@
           "instance": "i2",
           "url": "http://localhost:8080/application/v4/tenant/tenant2/application/application2",
           "upgradePolicy": "default",
-          "running": "staging-test"
+          "running": "production-us-west-1"
         }
       ]
     }

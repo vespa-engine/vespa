@@ -77,9 +77,8 @@ public class DeploymentSpecTest {
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(2, spec.steps().size());
+        assertEquals(1, spec.steps().size());
         assertEquals(1, spec.requireInstance("default").steps().size());
-        assertTrue(spec.steps().get(0).concerns(Environment.test));
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.staging));
         assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
         assertTrue(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
@@ -101,12 +100,8 @@ public class DeploymentSpecTest {
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(3, spec.steps().size());
+        assertEquals(1, spec.steps().size());
         assertEquals(2, spec.requireInstance("default").steps().size());
-
-        assertTrue(spec.steps().get(0).concerns(Environment.test));
-
-        assertTrue(spec.steps().get(1).concerns(Environment.staging));
 
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
         assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(0)).active());
@@ -500,6 +495,7 @@ public class DeploymentSpecTest {
     public void testNestedParallelAndSteps() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain'>" +
+                "   <staging />" +
                 "   <instance id='instance' athenz-service='in-service'>" +
                 "      <prod>" +
                 "         <parallel>" +
@@ -516,6 +512,7 @@ public class DeploymentSpecTest {
                 "               <parallel>" +
                 "                  <region active='true' athenz-service='no-service'>ap-northeast-1</region>" +
                 "                  <region active='true'>ap-southeast-2</region>" +
+                "                  <test>aws-us-east-1a</test>" +
                 "               </parallel>" +
                 "            </steps>" +
                 "            <delay hours='3' minutes='30' />" +
@@ -528,13 +525,12 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         List<DeploymentSpec.Step> steps = spec.steps();
-        assertEquals(3, steps.size());
-        assertEquals("test", steps.get(0).toString());
-        assertEquals("staging", steps.get(1).toString());
-        assertEquals("instance 'instance'", steps.get(2).toString());
-        assertEquals(Duration.ofHours(4), steps.get(2).delay());
+        assertEquals(2, steps.size());
+        assertEquals("staging", steps.get(0).toString());
+        assertEquals("instance 'instance'", steps.get(1).toString());
+        assertEquals(Duration.ofHours(4), steps.get(1).delay());
 
-        List<DeploymentSpec.Step> instanceSteps = steps.get(2).steps();
+        List<DeploymentSpec.Step> instanceSteps = steps.get(1).steps();
         assertEquals(2, instanceSteps.size());
         assertEquals("4 parallel steps", instanceSteps.get(0).toString());
         assertEquals("prod.us-north-7", instanceSteps.get(1).toString());
@@ -557,14 +553,15 @@ public class DeploymentSpecTest {
         assertEquals(3, secondSerialSteps.size());
         assertEquals("delay PT3H", secondSerialSteps.get(0).toString());
         assertEquals("prod.aws-us-east-1a", secondSerialSteps.get(1).toString());
-        assertEquals("2 parallel steps", secondSerialSteps.get(2).toString());
+        assertEquals("3 parallel steps", secondSerialSteps.get(2).toString());
 
         List<DeploymentSpec.Step> innerParallelSteps = secondSerialSteps.get(2).steps();
-        assertEquals(2, innerParallelSteps.size());
+        assertEquals(3, innerParallelSteps.size());
         assertEquals("prod.ap-northeast-1", innerParallelSteps.get(0).toString());
         assertEquals("no-service", spec.requireInstance("instance").athenzService(Environment.prod, RegionName.from("ap-northeast-1")).get().value());
         assertEquals("prod.ap-southeast-2", innerParallelSteps.get(1).toString());
         assertEquals("in-service", spec.requireInstance("instance").athenzService(Environment.prod, RegionName.from("ap-southeast-2")).get().value());
+        assertEquals("tests for prod.aws-us-east-1a", innerParallelSteps.get(2).toString());
     }
 
     @Test
@@ -588,12 +585,10 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         List<DeploymentSpec.Step> steps = spec.steps();
-        assertEquals(3, steps.size());
-        assertEquals("test", steps.get(0).toString());
-        assertEquals("staging", steps.get(1).toString());
-        assertEquals("2 parallel steps", steps.get(2).toString());
+        assertEquals(1, steps.size());
+        assertEquals("2 parallel steps", steps.get(0).toString());
 
-        List<DeploymentSpec.Step> parallelSteps = steps.get(2).steps();
+        List<DeploymentSpec.Step> parallelSteps = steps.get(0).steps();
         assertEquals("instance 'instance0'", parallelSteps.get(0).toString());
         assertEquals("instance 'instance1'", parallelSteps.get(1).toString());
     }
@@ -618,12 +613,10 @@ public class DeploymentSpecTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         List<DeploymentSpec.Step> steps = spec.steps();
-        assertEquals(5, steps.size());
-        assertEquals("test", steps.get(0).toString());
-        assertEquals("staging", steps.get(1).toString());
-        assertEquals("instance 'instance0'", steps.get(2).toString());
-        assertEquals("delay PT12H", steps.get(3).toString());
-        assertEquals("instance 'instance1'", steps.get(4).toString());
+        assertEquals(3, steps.size());
+        assertEquals("instance 'instance0'", steps.get(0).toString());
+        assertEquals("delay PT12H", steps.get(1).toString());
+        assertEquals("instance 'instance1'", steps.get(2).toString());
     }
 
     @Test

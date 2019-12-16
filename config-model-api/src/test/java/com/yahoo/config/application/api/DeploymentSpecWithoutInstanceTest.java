@@ -71,9 +71,8 @@ public class DeploymentSpecWithoutInstanceTest {
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(2, spec.steps().size());
+        assertEquals(1, spec.steps().size());
         assertEquals(1, spec.requireInstance("default").steps().size());
-        assertTrue(spec.steps().get(0).concerns(Environment.test));
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.staging));
         assertFalse(spec.requireInstance("default").deploysTo(Environment.test, Optional.empty()));
         assertTrue(spec.requireInstance("default").deploysTo(Environment.staging, Optional.empty()));
@@ -93,12 +92,8 @@ public class DeploymentSpecWithoutInstanceTest {
         );
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(3, spec.steps().size());
+        assertEquals(1, spec.steps().size());
         assertEquals(2, spec.requireInstance("default").steps().size());
-
-        assertTrue(spec.steps().get(0).concerns(Environment.test));
-
-        assertTrue(spec.steps().get(1).concerns(Environment.staging));
 
         assertTrue(spec.requireInstance("default").steps().get(0).concerns(Environment.prod, Optional.of(RegionName.from("us-east1"))));
         assertFalse(((DeploymentSpec.DeclaredZone)spec.requireInstance("default").steps().get(0)).active());
@@ -352,6 +347,7 @@ public class DeploymentSpecWithoutInstanceTest {
     public void testNestedParallelAndSteps() {
         StringReader r = new StringReader(
                 "<deployment athenz-domain='domain' athenz-service='service'>" +
+                "   <staging />" +
                 "   <prod>" +
                 "      <parallel>" +
                 "         <region active='true'>us-west-1</region>" +
@@ -367,6 +363,7 @@ public class DeploymentSpecWithoutInstanceTest {
                 "            <parallel>" +
                 "               <region active='true' athenz-service='no-service'>ap-northeast-1</region>" +
                 "               <region active='true'>ap-southeast-2</region>" +
+                "               <test>aws-us-east-1a</test>" +
                 "            </parallel>" +
                 "         </steps>" +
                 "         <delay hours='3' minutes='30' />" +
@@ -378,18 +375,17 @@ public class DeploymentSpecWithoutInstanceTest {
 
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
         List<DeploymentSpec.Step> steps = spec.steps();
-        assertEquals(3, steps.size());
-        assertEquals("test", steps.get(0).toString());
-        assertEquals("staging", steps.get(1).toString());
-        assertEquals("instance 'default'", steps.get(2).toString());
-        assertEquals(Duration.ofHours(4), steps.get(2).delay());
+        assertEquals(1, steps.size());
+        assertEquals("instance 'default'", steps.get(0).toString());
+        assertEquals(Duration.ofHours(4), steps.get(0).delay());
 
-        List<DeploymentSpec.Step> instanceSteps = steps.get(2).steps();
-        assertEquals(2, instanceSteps.size());
-        assertEquals("4 parallel steps", instanceSteps.get(0).toString());
-        assertEquals("prod.us-north-7", instanceSteps.get(1).toString());
+        List<DeploymentSpec.Step> instanceSteps = steps.get(0).steps();
+        assertEquals(3, instanceSteps.size());
+        assertEquals("staging", instanceSteps.get(0).toString());
+        assertEquals("4 parallel steps", instanceSteps.get(1).toString());
+        assertEquals("prod.us-north-7", instanceSteps.get(2).toString());
 
-        List<DeploymentSpec.Step> parallelSteps = instanceSteps.get(0).steps();
+        List<DeploymentSpec.Step> parallelSteps = instanceSteps.get(1).steps();
         assertEquals(4, parallelSteps.size());
         assertEquals("prod.us-west-1", parallelSteps.get(0).toString());
         assertEquals("4 steps", parallelSteps.get(1).toString());
@@ -407,14 +403,15 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(3, secondSerialSteps.size());
         assertEquals("delay PT3H", secondSerialSteps.get(0).toString());
         assertEquals("prod.aws-us-east-1a", secondSerialSteps.get(1).toString());
-        assertEquals("2 parallel steps", secondSerialSteps.get(2).toString());
+        assertEquals("3 parallel steps", secondSerialSteps.get(2).toString());
 
         List<DeploymentSpec.Step> innerParallelSteps = secondSerialSteps.get(2).steps();
-        assertEquals(2, innerParallelSteps.size());
+        assertEquals(3, innerParallelSteps.size());
         assertEquals("prod.ap-northeast-1", innerParallelSteps.get(0).toString());
         assertEquals("no-service", spec.requireInstance("default").athenzService(Environment.prod, RegionName.from("ap-northeast-1")).get().value());
         assertEquals("prod.ap-southeast-2", innerParallelSteps.get(1).toString());
         assertEquals("service", spec.requireInstance("default").athenzService(Environment.prod, RegionName.from("ap-southeast-2")).get().value());
+        assertEquals("tests for prod.aws-us-east-1a", innerParallelSteps.get(2).toString());
     }
 
     @Test

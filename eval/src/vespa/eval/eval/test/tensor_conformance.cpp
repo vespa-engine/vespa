@@ -119,12 +119,12 @@ struct Expr_V : Eval {
     const vespalib::string &expr;
     Expr_V(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine) const override {
-        Function fun = Function::parse(expr);
-        NodeTypes types(fun, {});
-        InterpretedFunction ifun(engine, fun, types);
+        auto fun = Function::parse(expr);
+        NodeTypes types(*fun, {});
+        InterpretedFunction ifun(engine, *fun, types);
         InterpretedFunction::Context ctx(ifun);
         SimpleObjectParams params({});
-        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
+        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun->root())));
     }
 };
 
@@ -133,14 +133,14 @@ struct Expr_T : Eval {
     const vespalib::string &expr;
     Expr_T(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a) const override {
-        Function fun = Function::parse(expr);
+        auto fun = Function::parse(expr);
         auto a_type = ValueType::from_spec(a.type());
-        NodeTypes types(fun, {a_type});
-        InterpretedFunction ifun(engine, fun, types);
+        NodeTypes types(*fun, {a_type});
+        InterpretedFunction ifun(engine, *fun, types);
         InterpretedFunction::Context ctx(ifun);
         Value::UP va = engine.from_spec(a);
         SimpleObjectParams params({*va});
-        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
+        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun->root())));
     }
 };
 
@@ -149,16 +149,16 @@ struct Expr_TT : Eval {
     vespalib::string expr;
     Expr_TT(const vespalib::string &expr_in) : expr(expr_in) {}
     Result eval(const TensorEngine &engine, const TensorSpec &a, const TensorSpec &b) const override {
-        Function fun = Function::parse(expr);
+        auto fun = Function::parse(expr);
         auto a_type = ValueType::from_spec(a.type());
         auto b_type = ValueType::from_spec(b.type());
-        NodeTypes types(fun, {a_type, b_type});
-        InterpretedFunction ifun(engine, fun, types);
+        NodeTypes types(*fun, {a_type, b_type});
+        InterpretedFunction ifun(engine, *fun, types);
         InterpretedFunction::Context ctx(ifun);
         Value::UP va = engine.from_spec(a);
         Value::UP vb = engine.from_spec(b);
         SimpleObjectParams params({*va,*vb});
-        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun.root())));
+        return Result(engine, check_type(ifun.eval(ctx, params), types.get_type(fun->root())));
     }
 };
 

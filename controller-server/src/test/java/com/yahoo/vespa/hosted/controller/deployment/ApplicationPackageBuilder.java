@@ -50,6 +50,8 @@ public class ApplicationPackageBuilder {
     private String globalServiceId = null;
     private String athenzIdentityAttributes = null;
     private String searchDefinition = "search test { }";
+    private boolean explicitSystemTest = false;
+    private boolean explicitStagingTest = false;
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -88,6 +90,16 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    public ApplicationPackageBuilder systemTest() {
+        explicitSystemTest = true;
+        return this;
+    }
+
+    public ApplicationPackageBuilder stagingTest() {
+        explicitStagingTest = true;
+        return this;
+    }
+
     public ApplicationPackageBuilder region(RegionName regionName) {
         return region(regionName.value());
     }
@@ -96,6 +108,13 @@ public class ApplicationPackageBuilder {
         environmentBody.append("      <region active='true'>");
         environmentBody.append(regionName);
         environmentBody.append("</region>\n");
+        return this;
+    }
+
+    public ApplicationPackageBuilder test(String regionName) {
+        environmentBody.append("      <test>");
+        environmentBody.append(regionName);
+        environmentBody.append("</test>\n");
         return this;
     }
 
@@ -169,6 +188,10 @@ public class ApplicationPackageBuilder {
             xml.append(athenzIdentityAttributes);
         }
         xml.append(">\n");
+        if (explicitSystemTest)
+            xml.append("  <test />\n");
+        if (explicitStagingTest)
+            xml.append("  <staging />\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
         if (upgradePolicy != null) {
             xml.append("    <upgrade policy='");
@@ -208,7 +231,7 @@ public class ApplicationPackageBuilder {
         return searchDefinition.getBytes(UTF_8);
     }
 
-    private byte[] buildMeta() {
+    private static byte[] buildMeta() {
         return "{\"compileVersion\":\"6.1\",\"buildTime\":1000}".getBytes(UTF_8);
     }
 
@@ -246,6 +269,21 @@ public class ApplicationPackageBuilder {
 
     private static String asIso8601Date(Instant instant) {
         return new SimpleDateFormat("yyyy-MM-dd").format(Date.from(instant));
+    }
+
+    public static ApplicationPackage fromDeploymentXml(String deploymentXml) {
+        ByteArrayOutputStream zip = new ByteArrayOutputStream();
+        try (ZipOutputStream out = new ZipOutputStream(zip)) {
+            out.putNextEntry(new ZipEntry("deployment.xml"));
+            out.write(deploymentXml.getBytes(UTF_8));
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("build-meta.json"));
+            out.write(buildMeta());
+            out.closeEntry();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return new ApplicationPackage(zip.toByteArray());
     }
 
 }

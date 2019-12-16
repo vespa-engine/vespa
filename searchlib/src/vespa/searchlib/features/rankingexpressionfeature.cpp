@@ -256,12 +256,12 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         LOG(error, "No expression given.");
         return false;
     }
-    Function rank_function = Function::parse(script, rankingexpression::FeatureNameExtractor());
-    if (rank_function.has_error()) {
-        LOG(error, "Failed to parse expression '%s': %s", script.c_str(), rank_function.get_error().c_str());
+    auto rank_function = Function::parse(script, rankingexpression::FeatureNameExtractor());
+    if (rank_function->has_error()) {
+        LOG(error, "Failed to parse expression '%s': %s", script.c_str(), rank_function->get_error().c_str());
         return false;
     }
-    _intrinsic_expression = _expression_replacer->maybe_replace(rank_function, env);
+    _intrinsic_expression = _expression_replacer->maybe_replace(*rank_function, env);
     if (_intrinsic_expression) {
         LOG(info, "%s replaced with %s", getName().c_str(), _intrinsic_expression->describe_self().c_str());
         describeOutput("out", "result of intrinsic expression", _intrinsic_expression->result_type());
@@ -269,8 +269,8 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
     }
     bool do_compile = true;
     std::vector<ValueType> input_types;
-    for (size_t i = 0; i < rank_function.num_params(); ++i) {
-        const FeatureType &input = defineInput(rank_function.param_name(i), AcceptInput::ANY);
+    for (size_t i = 0; i < rank_function->num_params(); ++i) {
+        const FeatureType &input = defineInput(rank_function->param_name(i), AcceptInput::ANY);
         _input_is_object.push_back(char(input.is_object()));
         if (input.is_object()) {
             do_compile = false;
@@ -279,17 +279,17 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
             input_types.push_back(ValueType::double_type());
         }
     }
-    NodeTypes node_types(rank_function, input_types);
+    NodeTypes node_types(*rank_function, input_types);
     if (!node_types.all_types_are_double()) {
         do_compile = false;
     }
-    ValueType root_type = node_types.get_type(rank_function.root());
+    ValueType root_type = node_types.get_type(rank_function->root());
     if (root_type.is_error()) {
         LOG(error, "rank expression contains type errors: %s\n", script.c_str());
         return false;
     }
-    auto compile_issues = CompiledFunction::detect_issues(rank_function);
-    auto interpret_issues = InterpretedFunction::detect_issues(rank_function);
+    auto compile_issues = CompiledFunction::detect_issues(*rank_function);
+    auto interpret_issues = InterpretedFunction::detect_issues(*rank_function);
     if (do_compile && compile_issues && !interpret_issues) {
         LOG(warning, "rank expression compilation disabled: %s\n%s",
             script.c_str(), list_issues(compile_issues.list).c_str());
@@ -306,18 +306,18 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         if (do_compile) {
             // fast forest evaluation is a possible replacement for compiled tree models
             if (fef::indexproperties::eval::UseFastForest::check(env.getProperties())) {
-                _fast_forest = FastForest::try_convert(rank_function);
+                _fast_forest = FastForest::try_convert(*rank_function);
             }
             if (!_fast_forest) {
-                bool suggest_lazy = CompiledFunction::should_use_lazy_params(rank_function);
+                bool suggest_lazy = CompiledFunction::should_use_lazy_params(*rank_function);
                 if (fef::indexproperties::eval::LazyExpressions::check(env.getProperties(), suggest_lazy)) {
-                    _compile_token = CompileCache::compile(rank_function, PassParams::LAZY);
+                    _compile_token = CompileCache::compile(*rank_function, PassParams::LAZY);
                 } else {
-                    _compile_token = CompileCache::compile(rank_function, PassParams::ARRAY);
+                    _compile_token = CompileCache::compile(*rank_function, PassParams::ARRAY);
                 }
             }
         } else {
-            _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), rank_function, node_types));
+            _interpreted_function.reset(new InterpretedFunction(DefaultTensorEngine::ref(), *rank_function, node_types));
         }
     }
     FeatureType output_type = do_compile

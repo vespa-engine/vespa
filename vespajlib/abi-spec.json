@@ -2683,6 +2683,20 @@
       "public static final char ESCAPE_CHAR"
     ]
   },
+  "com.yahoo.text.Ascii7BitMatcher": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public boolean matches(java.lang.String)",
+      "public static java.lang.String charsAndNumbers()"
+    ],
+    "fields": []
+  },
   "com.yahoo.text.BooleanParser": {
     "superClass": "java.lang.Object",
     "interfaces": [],

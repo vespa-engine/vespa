@@ -95,12 +95,20 @@ public class JobControllerApiHandlerHelperTest {
         assertEquals(running, tester.jobs().last(app.instanceId(), productionUsCentral1).get().status());
         assertEquals(running, tester.jobs().last(app.instanceId(), stagingTest).get().status());
 
-        // Staging deployment expires, the job fails, and won't be retried immediately.
+        // Staging deployment expires and the job fails, and is immediately retried.
         tester.controller().applications().deactivate(app.instanceId(), stagingTest.zone(tester.controller().system()));
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), stagingTest).get().status());
 
-        tester.clock().advance(Duration.ofMillis(100_000)); // More than the minute within which there are immediate retries.
+        // Staging deployment expires again, the job fails for the second time, and won't be retried immediately.
+        tester.clock().advance(Duration.ofMillis(100_000)); // Advance time to avoid immediate retry
+        tester.triggerJobs();
+        tester.runner().run();
+        assertEquals(running, tester.jobs().last(app.instanceId(), stagingTest).get().status());
+        tester.controller().applications().deactivate(app.instanceId(), stagingTest.zone(tester.controller().system()));
+        tester.runner().run();
+        assertEquals(installationFailed, tester.jobs().last(app.instanceId(), stagingTest).get().status());
+
         tester.triggerJobs();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), stagingTest).get().status());
 
@@ -113,8 +121,8 @@ public class JobControllerApiHandlerHelperTest {
         // us-central-1 has started, deployed, and is installing. Deployment is not yet verified.
         // us-east-3 is waiting for the failed staging test and us-central-1, while us-west-1 is waiting only for us-central-1.
         // Only us-east-3 is verified, on revision1.
-        // staging-test has 4 runs: one success without sources on revision1, one success from revision1 to revision2,
-        // one success from revision2 to revision3 and one failure from revision1 to revision3.
+        // staging-test has 5 runs: one success without sources on revision1, one success from revision1 to revision2,
+        // one success from revision2 to revision3 and two failures from revision1 to revision3.
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(app.instanceId(), stagingTest), URI.create("https://some.url:43/root")), "staging-runs.json");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), productionUsEast3).get().id(), "0"), "us-east-3-log-without-first.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root/")), "overview.json");

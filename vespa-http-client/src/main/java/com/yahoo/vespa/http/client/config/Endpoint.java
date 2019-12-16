@@ -29,7 +29,6 @@ public final class Endpoint implements Serializable {
      * @param port the port
      * @param useSsl true if SSL is to be used
      * @return an Endpoint instance
-     * @see com.yahoo.vespa.http.client.config.ConnectionParams#getSslContext() needs to be set as well for SSL
      */
     public static Endpoint create(String hostname, int port, boolean useSsl) {
         return new Endpoint(hostname, port, useSsl);

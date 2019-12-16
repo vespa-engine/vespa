@@ -50,7 +50,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         var appWithoutDeployments = deploymentTester.newDeploymentContext("tenant3", "application3", "default");
         failingApp.submit(applicationPackage).deploy();
         productionApp.submit(multiInstancePackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
-        otherProductionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
+        otherProductionApp.runJob(JobType.productionUsWest1);
 
         // Deploy once so that job information is stored, then remove the deployment
         appWithoutDeployments.submit(applicationPackage).deploy();

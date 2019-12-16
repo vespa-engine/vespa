@@ -176,6 +176,7 @@ public class VespaZooKeeperServerImplTest {
                "snapCount=50000\n" +
                "dataDir=" + getDefaults().underVespaHome("var/zookeeper") + "\n" +
                "clientPort=2181\n" +
+               "secureClientPort=2184\n" +
                "autopurge.purgeInterval=1\n" +
                "autopurge.snapRetainCount=15\n" +
                "4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs\n" +

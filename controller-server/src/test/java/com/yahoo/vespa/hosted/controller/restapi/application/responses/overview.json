@@ -239,6 +239,48 @@
           "reason": "Testing for productionUsEast3"
         },
         {
+          "id": 5,
+          "status": "installationFailed",
+          "start": 102000,
+          "end": 102000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "succeeded",
+            "deployInitialReal": "succeeded",
+            "installInitialReal": "failed",
+            "deployReal": "unfinished",
+            "installTester": "unfinished",
+            "installReal": "unfinished",
+            "startTests": "unfinished",
+            "endTests": "unfinished",
+            "copyVespaLogs": "succeeded",
+            "deactivateReal": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
+          "tasks": {},
+          "log": "https://some.url:43/root/staging-test/run/5"
+        },
+        {
           "id": 4,
           "status": "installationFailed",
           "start": 2000,

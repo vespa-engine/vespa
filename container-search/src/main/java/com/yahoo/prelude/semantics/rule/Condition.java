@@ -114,20 +114,20 @@ public abstract class Condition {
 
             if (!matchesStartAnchor(e)) return false;
 
-            String higherLabel=e.getCurrentLabel();
-            if (getLabel()!=null)
+            String higherLabel = e.getCurrentLabel();
+            if (getLabel() != null)
                 e.setCurrentLabel(getLabel());
 
-            boolean matches=doesMatch(e);
-            while (!matches && hasOpenChoicepoint(e)) {
-                matches=doesMatch(e);
+            boolean matches = doesMatch(e);
+            while ( ! matches && hasOpenChoicepoint(e)) {
+                matches = doesMatch(e);
             }
 
             e.setCurrentLabel(higherLabel);
 
-            if (!matchesEndAnchor(e)) return false;
+            if ( ! matchesEndAnchor(e)) return false;
 
-            traceResult(matches,e);
+            traceResult(matches, e);
             return matches;
         }
         finally {

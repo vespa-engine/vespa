@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.JobList;
@@ -70,6 +71,12 @@ import static java.util.stream.Collectors.toMap;
  * @author jonmv
  */
 class JobControllerApiHandlerHelper {
+
+    static HttpResponse applicationJobs(Controller controller, TenantAndApplicationId id, URI baseUriForJobs) {
+        DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(id));
+
+        return null;
+    }
 
     /**
      * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
@@ -248,7 +255,7 @@ class JobControllerApiHandlerHelper {
         int runs = 0;
         Cursor runArray = jobObject.setArray("runs");
         JobList jobList = JobList.from(status.values());
-        if (type.isTest()) {
+        if (type.environment().isTest()) {
             Deque<List<JobType>> pending = new ArrayDeque<>();
             pendingProduction.entrySet().stream()
                              .filter(typeVersions -> jobList.type(type).successOn(typeVersions.getValue()).isEmpty())

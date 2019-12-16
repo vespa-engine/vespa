@@ -41,19 +41,19 @@ public:
     };
 
 private:
-    const TensorEngine           &_engine;
-    Stash                         _stash;
-    Function                      _function;
-    NodeTypes                     _node_types;
-    std::set<size_t>              _mutable_set;
-    const TensorFunction         &_plain_tensor_function;
-    const TensorFunction         &_patched_tensor_function;
-    const TensorFunction         &_tensor_function;
-    InterpretedFunction           _ifun;
-    InterpretedFunction::Context  _ictx;
-    std::vector<Value::UP>        _param_values;
-    SimpleObjectParams            _params;
-    TensorSpec                    _result;
+    const TensorEngine             &_engine;
+    Stash                           _stash;
+    std::shared_ptr<Function const> _function;
+    NodeTypes                       _node_types;
+    std::set<size_t>                _mutable_set;
+    const TensorFunction           &_plain_tensor_function;
+    const TensorFunction           &_patched_tensor_function;
+    const TensorFunction           &_tensor_function;
+    InterpretedFunction             _ifun;
+    InterpretedFunction::Context    _ictx;
+    std::vector<Value::UP>          _param_values;
+    SimpleObjectParams              _params;
+    TensorSpec                      _result;
 
     template <typename T>
     void find_all(const TensorFunction &node, std::vector<const T *> &list) {

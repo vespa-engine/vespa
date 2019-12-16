@@ -99,6 +99,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Runna
         sb.append("snapCount=").append(config.snapshotCount()).append("\n");
         sb.append("dataDir=").append(getDefaults().underVespaHome(config.dataDir())).append("\n");
         sb.append("clientPort=").append(config.clientPort()).append("\n");
+        sb.append("secureClientPort=").append(config.secureClientPort()).append("\n");
         sb.append("autopurge.purgeInterval=").append(config.autopurge().purgeInterval()).append("\n");
         sb.append("autopurge.snapRetainCount=").append(config.autopurge().snapRetainCount()).append("\n");
         // See http://zookeeper.apache.org/doc/r3.5.5/zookeeperAdmin.html#sc_zkCommands

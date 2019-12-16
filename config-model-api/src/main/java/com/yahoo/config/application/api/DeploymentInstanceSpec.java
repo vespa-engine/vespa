@@ -52,7 +52,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         this.athenzService = athenzService;
         this.notifications = notifications;
         this.endpoints = List.copyOf(validateEndpoints(endpoints, steps()));
-        validateZones(new HashSet<>(), this);
+        validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(steps(), globalServiceId, this.endpoints);
         validateAthenz();
     }
@@ -64,33 +64,32 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
      * or if any production test is declared not after its corresponding deployment.
      *
      * @param deployments previously seen deployments
+     * @param tests previously seen tests
      * @param step step whose members to validate
-     * @return all contained tests
      */
-    private static Set<RegionName> validateZones(Set<RegionName> deployments, DeploymentSpec.Step step) {
+    private static void validateZones(Set<RegionName> deployments, Set<RegionName> tests, DeploymentSpec.Step step) {
         if ( ! step.steps().isEmpty()) {
             Set<RegionName> oldDeployments = Set.copyOf(deployments);
-            Set<RegionName> tests = new HashSet<>();
             for (DeploymentSpec.Step nested : step.steps()) {
-                for (RegionName test : validateZones(deployments, nested)) {
-                    if ( ! (step.isOrdered() ? deployments : oldDeployments).contains(test))
-                        throw new IllegalArgumentException("tests for prod." + test + " must be after the corresponding deployment in deployment.xml");
-
-                    if ( ! tests.add(test))
-                        throw new IllegalArgumentException("tests for prod." + test + " arelisted twice in deployment.xml");
-                }
+                Set<RegionName> seenDeployments = new HashSet<>(step.isOrdered() ? deployments : oldDeployments);
+                validateZones(seenDeployments, tests, nested);
+                deployments.addAll(seenDeployments);
             }
-            return tests;
         }
-        if (step.concerns(Environment.prod)) {
-            if (step.isTest())
-                return Set.of(((DeploymentSpec.DeclaredTest) step).region());
-
-            RegionName region = ((DeploymentSpec.DeclaredZone) step).region().get();
-            if ( ! deployments.add(region))
-                throw new IllegalArgumentException("prod." + region + " is listed twice in deployment.xml");
+        else if (step.concerns(Environment.prod)) {
+            if (step.isTest()) {
+                RegionName region = ((DeploymentSpec.DeclaredTest) step).region();
+                if ( ! deployments.contains(region))
+                    throw new IllegalArgumentException("tests for prod." + region + " must be after the corresponding deployment in deployment.xml");
+                if ( ! tests.add(region))
+                    throw new IllegalArgumentException("tests for prod." + region + " are listed twice in deployment.xml");
+            }
+            else {
+                RegionName region = ((DeploymentSpec.DeclaredZone) step).region().get();
+                if ( ! deployments.add(region))
+                    throw new IllegalArgumentException("prod." + region + " is listed twice in deployment.xml");
+            }
         }
-        return Set.of();
     }
 
     /** Validates the endpoints and makes sure default values are respected */

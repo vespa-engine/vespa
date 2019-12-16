@@ -416,13 +416,13 @@ ElementSimilarityBlueprint::setup(const fef::IIndexEnvironment &env, const fef::
             return false;
         }
         std::vector<vespalib::string> args({"p", "o", "q", "f", "w"});
-        vespalib::eval::Function function = vespalib::eval::Function::parse(args, expr);
-        if (function.has_error()) {
+        auto function = vespalib::eval::Function::parse(args, expr);
+        if (function->has_error()) {
             LOG(warning, "'%s': per-element expression parse error: %s",
-                fnb.buildName().c_str(), function.get_error().c_str());
+                fnb.buildName().c_str(), function->get_error().c_str());
             return false;
         }
-        _outputs.push_back(OutputContext_UP(new OutputContext(function, std::move(aggr))));
+        _outputs.push_back(OutputContext_UP(new OutputContext(*function, std::move(aggr))));
     }
     env.hintFieldAccess(field->id());
     return true;

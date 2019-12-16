@@ -19,27 +19,27 @@ struct TypeSpecExtractor : public vespalib::eval::SymbolExtractor {
 };
 
 void verify(const vespalib::string &type_expr, const vespalib::string &type_spec) {
-    Function function = Function::parse(type_expr, TypeSpecExtractor());
-    if (!EXPECT_TRUE(!function.has_error())) {
-        fprintf(stderr, "parse error: %s\n", function.get_error().c_str());
+    auto function = Function::parse(type_expr, TypeSpecExtractor());
+    if (!EXPECT_TRUE(!function->has_error())) {
+        fprintf(stderr, "parse error: %s\n", function->get_error().c_str());
         return;
     }
     std::vector<ValueType> input_types;
-    for (size_t i = 0; i < function.num_params(); ++i) {
-        input_types.push_back(ValueType::from_spec(function.param_name(i)));
+    for (size_t i = 0; i < function->num_params(); ++i) {
+        input_types.push_back(ValueType::from_spec(function->param_name(i)));
     }
-    NodeTypes types(function, input_types);
+    NodeTypes types(*function, input_types);
     ValueType expected_type = ValueType::from_spec(type_spec);
-    ValueType actual_type = types.get_type(function.root());
+    ValueType actual_type = types.get_type(function->root());
     EXPECT_EQUAL(expected_type, actual_type);
 }
 
 TEST("require that error nodes have error type") {
-    Function function = Function::parse("1 2 3 4 5", TypeSpecExtractor());
-    EXPECT_TRUE(function.has_error());
-    NodeTypes types(function, std::vector<ValueType>());
+    auto function = Function::parse("1 2 3 4 5", TypeSpecExtractor());
+    EXPECT_TRUE(function->has_error());
+    NodeTypes types(*function, std::vector<ValueType>());
     ValueType expected_type = ValueType::from_spec("error");
-    ValueType actual_type = types.get_type(function.root());
+    ValueType actual_type = types.get_type(function->root());
     EXPECT_EQUAL(expected_type, actual_type);
 }
 
@@ -252,21 +252,21 @@ TEST("require that tensor concat resolves correct type") {
 }
 
 TEST("require that double only expressions can be detected") {
-    Function plain_fun = Function::parse("1+2");
-    Function complex_fun = Function::parse("reduce(a,sum)");
-    NodeTypes plain_types(plain_fun, {});
-    NodeTypes complex_types(complex_fun, {ValueType::tensor_type({{"x"}})});
-    EXPECT_TRUE(plain_types.get_type(plain_fun.root()).is_double());
-    EXPECT_TRUE(complex_types.get_type(complex_fun.root()).is_double());
+    auto plain_fun = Function::parse("1+2");
+    auto complex_fun = Function::parse("reduce(a,sum)");
+    NodeTypes plain_types(*plain_fun, {});
+    NodeTypes complex_types(*complex_fun, {ValueType::tensor_type({{"x"}})});
+    EXPECT_TRUE(plain_types.get_type(plain_fun->root()).is_double());
+    EXPECT_TRUE(complex_types.get_type(complex_fun->root()).is_double());
     EXPECT_TRUE(plain_types.all_types_are_double());
     EXPECT_FALSE(complex_types.all_types_are_double());
 }
 
 TEST("require that empty type repo works as expected") {
     NodeTypes types;
-    Function function = Function::parse("1+2");
-    EXPECT_FALSE(function.has_error());
-    EXPECT_TRUE(types.get_type(function.root()).is_error());
+    auto function = Function::parse("1+2");
+    EXPECT_FALSE(function->has_error());
+    EXPECT_TRUE(types.get_type(function->root()).is_error());
     EXPECT_FALSE(types.all_types_are_double());
 }
 

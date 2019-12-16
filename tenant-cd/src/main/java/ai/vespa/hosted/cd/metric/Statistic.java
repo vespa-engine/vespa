@@ -1,6 +1,7 @@
 package ai.vespa.hosted.cd.metric;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringJoiner;
@@ -22,6 +23,10 @@ public class Statistic {
     }
 
     public static Statistic of(Map<Type, Double> data) {
+        for (Type type : List.of(Type.count, Type.rate, Type.average))
+            if ( ! data.containsKey(type))
+                throw new IllegalArgumentException("Required data type '" + type + "' not present in '" + data + "'");
+
         return new Statistic(copyOf(data));
     }
 
@@ -40,7 +45,7 @@ public class Statistic {
 
     Statistic mergedWith(Statistic other) {
         if (data.keySet().equals(other.data.keySet()))
-            throw new IllegalArgumentException("Incompatible key sets '" + data.keySet() + "' and '" + other.data.keySet() + "'.");
+            throw new IllegalArgumentException("Unequal key sets '" + data.keySet() + "' and '" + other.data.keySet() + "'.");
 
         Map<Type, Double> merged = new HashMap<>();
         double n1 = get(Type.count), n2 = other.get(Type.count);

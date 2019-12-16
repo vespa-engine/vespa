@@ -113,7 +113,7 @@ struct ForestParams {
 
 //-----------------------------------------------------------------------------
 
-Function make_forest(const ForestParams &params, size_t num_trees) {
+auto make_forest(const ForestParams &params, size_t num_trees) {
     return Function::parse(Model(params.model_seed)
                            .less_percent(params.less_percent)
                            .make_forest(num_trees, params.tree_size));

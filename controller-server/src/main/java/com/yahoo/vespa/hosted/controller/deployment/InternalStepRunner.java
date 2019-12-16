@@ -654,7 +654,7 @@ public class InternalStepRunner implements StepRunner {
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
         ZoneId zone = id.type().zone(controller.system());
-        boolean useTesterCertificate = controller.system().isPublic() && id.type().isTest();
+        boolean useTesterCertificate = controller.system().isPublic() && id.type().environment().isTest();
 
         byte[] servicesXml = servicesXml(controller.zoneRegistry().accessControlDomain(),
                                          ! controller.system().isPublic(),
@@ -700,7 +700,7 @@ public class InternalStepRunner implements StepRunner {
             if (step.concerns(id.type().environment()))
                 return step.zones().get(0).testerFlavor();
 
-        throw new IllegalStateException("No step deploys to the zone this run is for!");
+        return Optional.empty();
     }
 
     /** Returns the generated services.xml content for the tester application. */

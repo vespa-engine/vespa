@@ -10,10 +10,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAlloca
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import java.text.SimpleDateFormat;
 import java.time.Clock;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -34,7 +34,7 @@ public class CostCalculator {
                                                       Map<Property, ResourceAllocation> fixedAllocations,
                                                       CloudName cloudName) {
 
-        var date = new SimpleDateFormat("yyyy-MM-dd").format(Date.from(clock.instant()));
+        var date = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.of("UTC")).format(clock.instant());
 
         // Group properties by tenant name
         Map<TenantName, Property> propertyByTenantName = controller.tenants().asList().stream()

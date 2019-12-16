@@ -6,6 +6,7 @@ import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -46,8 +47,21 @@ public class DynamicTensorTestCase {
                    new Constant(5));
         values.put(new TensorAddress.Builder(sparse).add("x", "a").add("y", "c").build(),
                    new Constant(7));
-        DynamicTensor<Name>  t2 = DynamicTensor.from(sparse, values);
+        DynamicTensor<Name> t2 = DynamicTensor.from(sparse, values);
         assertEquals(Tensor.from(sparse, "{{x:a,y:b}:5, {x:a,y:c}:7}"), t2.evaluate());
+    }
+
+    @Ignore // Enable for benchmarking
+    public void benchMarkTensorAddressBuilder() {
+        long start = System.nanoTime();
+        TensorType sparse = TensorType.fromSpec("tensor(x{})");
+        for (int i=0; i < 10000; i++) {
+            TensorAddress.Builder builder = new TensorAddress.Builder(sparse);
+            for (int j=0; j < 1000; j++) {
+                builder.add("x", String.valueOf(j));
+            }
+        }
+        System.out.println("Took " + (System.nanoTime() - start) + " ns");
     }
 
     private static class Constant implements ScalarFunction<Name> {

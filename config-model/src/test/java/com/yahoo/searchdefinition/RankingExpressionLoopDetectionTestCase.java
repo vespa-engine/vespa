@@ -194,4 +194,53 @@ public class RankingExpressionLoopDetectionTestCase {
         builder.build();
     }
 
+    @Test
+    public void testNoLoopWithTheSameNestedIdentifierWhichIsUnbound() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        builder.importString(
+                "search test {\n" +
+                "    document test { \n" +
+                "    }\n" +
+                "    rank-profile test {\n" +
+                "        first-phase {\n" +
+                "            expression: foo()\n" +
+                "        }\n" +
+                "        function foo() {\n" +
+                "            expression: bar(x)\n" +
+                "        }\n" +
+                "        function bar(x) {\n" +
+                "            expression: x + x\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n");
+        builder.build();
+    }
+
+    @Test
+    public void testNoLoopWithTheSameAlternatingNestedIdentifierWhichIsUnbound() throws ParseException {
+        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+        SearchBuilder builder = new SearchBuilder(rankProfileRegistry);
+        builder.importString(
+                "search test {\n" +
+                "    document test { \n" +
+                "    }\n" +
+                "    rank-profile test {\n" +
+                "        first-phase {\n" +
+                "            expression: foo()\n" +
+                "        }\n" +
+                "        function foo() {\n" +
+                "            expression: bar(x)\n" +
+                "        }\n" +
+                "        function bar(y) {\n" +
+                "            expression: baz(y)\n" +
+                "        }\n" +
+                "        function baz(x) {\n" +
+                "            expression: x + x\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n");
+        builder.build();
+    }
+
 }

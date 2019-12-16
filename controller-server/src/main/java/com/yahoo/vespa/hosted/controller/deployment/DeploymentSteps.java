@@ -73,7 +73,7 @@ public class DeploymentSteps {
 
     /** Returns test jobs to run for this spec */
     public List<JobType> testJobs() {
-        return jobs().stream().filter(JobType::isTest).collect(Collectors.toUnmodifiableList());
+        return jobs().stream().filter(type -> type.environment().isTest()).collect(Collectors.toUnmodifiableList());
     }
 
     /** Returns declared production jobs in this */

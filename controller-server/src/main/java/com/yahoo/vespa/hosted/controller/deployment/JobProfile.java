@@ -49,6 +49,13 @@ public enum JobProfile {
                EnumSet.of(deactivateTester,
                           report)),
 
+    productionTest(EnumSet.of(deployTester,
+                              installTester,
+                              startTests,
+                              endTests),
+                   EnumSet.of(deactivateTester,
+                              report)),
+
     development(EnumSet.of(deployReal,
                            installReal),
                 EnumSet.of(copyVespaLogs));
@@ -67,7 +74,7 @@ public enum JobProfile {
         switch (type.environment()) {
             case test: return systemTest;
             case staging: return stagingTest;
-            case prod: return production;
+            case prod: return type.isTest() ? productionTest : production;
             case perf:
             case dev: return development;
             default: throw new AssertionError("Unexpected environment '" + type.environment() + "'!");

@@ -39,7 +39,7 @@ double big_gcc_function(double p, double o, double q, double f, double w) {
 //-----------------------------------------------------------------------------
 
 struct Fixture {
-    Function function;
+    std::shared_ptr<Function const> function;
     InterpretedFunction interpreted_simple;
     InterpretedFunction interpreted;
     CompiledFunction separate;
@@ -47,12 +47,12 @@ struct Fixture {
     CompiledFunction lazy;
     Fixture(const vespalib::string &expr)
         : function(Function::parse(expr)),
-          interpreted_simple(SimpleTensorEngine::ref(), function, NodeTypes()),
-          interpreted(DefaultTensorEngine::ref(), function,
-                      NodeTypes(function, std::vector<ValueType>(function.num_params(), ValueType::double_type()))),
-          separate(function, PassParams::SEPARATE),
-          array(function, PassParams::ARRAY),
-          lazy(function, PassParams::LAZY) {}
+          interpreted_simple(SimpleTensorEngine::ref(), *function, NodeTypes()),
+          interpreted(DefaultTensorEngine::ref(), *function,
+                      NodeTypes(*function, std::vector<ValueType>(function->num_params(), ValueType::double_type()))),
+          separate(*function, PassParams::SEPARATE),
+          array(*function, PassParams::ARRAY),
+          lazy(*function, PassParams::LAZY) {}
 };
 
 //-----------------------------------------------------------------------------

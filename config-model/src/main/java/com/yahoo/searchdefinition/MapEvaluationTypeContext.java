@@ -89,9 +89,10 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-        // A reference to a function argument?
+
+        // Bound toi a function argument, and not to a same-named identifier (which would lead to a loop)?
         Optional<String> binding = boundIdentifier(reference);
-        if (binding.isPresent()) {
+        if (binding.isPresent() && ! binding.get().equals(reference.toString())) {
             try {
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
@@ -125,8 +126,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 return featureTensorType.get();
             }
 
-            // We do not know what this is - since we do not have complete knowledge abut the match features
-            // in Java we must assume this is a match feature and return the double type - which is the type of all
+            // We do not know what this is - since we do not have complete knowledge about the match features
+            // in Java we must assume this is a match feature and return the double type - which is the type of
             // all match features
             return TensorType.empty;
         }

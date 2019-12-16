@@ -198,6 +198,12 @@ protected:
 public:
     ThreadStackExecutorBase(const ThreadStackExecutorBase &) = delete;
     ThreadStackExecutorBase & operator = (const ThreadStackExecutorBase &) = delete;
+
+    /**
+     * Returns the number of idle workers. This is mostly useful for testing.
+     **/
+    size_t num_idle_workers() const;
+
     /**
      * Observe and reset stats for this object.
      *

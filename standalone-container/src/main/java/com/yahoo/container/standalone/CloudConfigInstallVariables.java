@@ -15,7 +15,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Integer> rpcPort() {
-        return getInstallVariable("port_configserver_rpc", "services", Integer::parseInt);
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_RPC_PORT"))
+                .or(() -> getRawInstallVariable("services.port_configserver_rpc"))
+                .map(Integer::parseInt);
     }
 
     @Override
@@ -72,12 +74,6 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
         return getInstallVariable("zookeeper_electionPort", Integer::parseInt);
     }
 
-    // TODO: Remove when 7.146 is the oldest version in use
-    @Override
-    public Optional<String> payloadCompressionType() {
-        return getInstallVariable("payload_compression_type", Function.identity());
-    }
-
     @Override
     public Optional<String> environment() {
         return Optional.ofNullable(System.getenv("VESPA_ENVIRONMENT"))
@@ -104,12 +100,6 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     @Override
     public Optional<Boolean> hostedVespa() {
         return getInstallVariable("hosted_vespa", Boolean::parseBoolean);
-    }
-
-    // TODO: Remove when 7.146 is the oldest version in use
-    @Override
-    public Optional<Integer> numParallelTenantLoaders() {
-        return getInstallVariable("num_parallel_tenant_loaders", Integer::parseInt);
     }
 
     @Override

@@ -31,12 +31,10 @@ public interface CloudConfigOptions {
     Optional<Long> zookeeperBarrierTimeout(); //in seconds
     Optional<Integer> zookeeperElectionPort();
     Optional<Integer> zookeeperQuorumPort();
-    Optional<String> payloadCompressionType(); // TODO: Remove when 7.146 is the oldest version in use
     Optional<String> environment();
     Optional<String> region();
     Optional<String> system();
     Optional<Boolean> useVespaVersionInRequest();
-    Optional<Integer> numParallelTenantLoaders(); // TODO: Remove when 7.146 is the oldest version in use
     Optional<String> loadBalancerAddress();
     Optional<String> athenzDnsSuffix();
     Optional<String> ztsUrl();
