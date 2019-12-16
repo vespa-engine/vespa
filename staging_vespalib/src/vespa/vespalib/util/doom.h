@@ -11,7 +11,7 @@ public:
     Doom(const Clock &clock, steady_time doom)
         : Doom(clock, doom, doom, false)
     {}
-    Doom(const Clock &clock, vespalib::steady_time softDoom,
+    Doom(const Clock &clock, steady_time softDoom,
          steady_time hardDoom, bool explicitSoftDoom);
 
     bool soft_doom() const { return (_clock.getTimeNSAssumeRunning() > _softDoom); }

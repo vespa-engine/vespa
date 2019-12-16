@@ -479,18 +479,18 @@ TEST_F("test session timeout", DoomFixture()) {
     GroupingSession::UP s2(new GroupingSession(id2, initContext2, world.attributeContext));
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
-    mgr.pruneTimedOutSessions(steady_time(duration(5)));
+    mgr.pruneTimedOutSessions(steady_time(5ns));
     SessionManager::Stats stats(mgr.getGroupingStats());
     ASSERT_EQUAL(2u, stats.numCached);
-    mgr.pruneTimedOutSessions(steady_time(duration(10)));
+    mgr.pruneTimedOutSessions(steady_time(10ns));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(2u, stats.numCached);
 
-    mgr.pruneTimedOutSessions(steady_time(duration(11)));
+    mgr.pruneTimedOutSessions(steady_time(11ns));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(1u, stats.numCached);
 
-    mgr.pruneTimedOutSessions(steady_time(duration(21)));
+    mgr.pruneTimedOutSessions(steady_time(21ns));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(0u, stats.numCached);
 }

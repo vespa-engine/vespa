@@ -125,7 +125,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _subDbType(cfg._subDbType),
       _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
       _lidReuseDelayer(),
-      _commitTimeTracker(vespalib::from_s(3600)),
+      _commitTimeTracker(3600s),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
     vespalib::mkdir(_baseDir, false); // Assume parent is created.
