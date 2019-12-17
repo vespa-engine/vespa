@@ -5,7 +5,23 @@
 
 using namespace vespalib;
 
-TEST("testRUsage")
+class Test : public TestApp
+{
+public:
+    int Main() override;
+    void testRUsage();
+};
+
+int
+Test::Main()
+{
+    TEST_INIT("rusage_test");
+    testRUsage();
+    TEST_DONE();
+}
+
+void
+Test::testRUsage()
 {
     RUsage r1;
     EXPECT_EQUAL("", r1.toString());
@@ -14,12 +30,12 @@ TEST("testRUsage")
     RUsage diff = r2-r1;
     EXPECT_EQUAL(diff.toString(), r2.toString());
     {
-        RUsage then = RUsage::createSelf(steady_time(7ns));
+        RUsage then = RUsage::createSelf(fastos::SteadyTimeStamp(7));
         RUsage now = RUsage::createSelf();
         EXPECT_NOT_EQUAL(now.toString(), then.toString());
     }
     {
-        RUsage then = RUsage::createChildren(steady_time(1337583ns));
+        RUsage then = RUsage::createChildren(fastos::SteadyTimeStamp(1337583));
         RUsage now = RUsage::createChildren();
         EXPECT_NOT_EQUAL(now.toString(), then.toString());
     }
@@ -54,4 +70,4 @@ TEST("testRUsage")
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_APPHOOK(Test)

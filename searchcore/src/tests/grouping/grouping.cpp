@@ -22,8 +22,7 @@ using namespace search::grouping;
 using namespace search;
 using search::attribute::test::MockAttributeContext;
 using proton::matching::SessionManager;
-using vespalib::steady_time;
-using vespalib::duration;
+using fastos::SteadyTimeStamp;
 
 //-----------------------------------------------------------------------------
 
@@ -112,8 +111,8 @@ private:
 
 struct DoomFixture {
     vespalib::Clock clock;
-    steady_time timeOfDoom;
-    DoomFixture() : clock(), timeOfDoom(steady_time::max()) {}
+    fastos::SteadyTimeStamp timeOfDoom;
+    DoomFixture() : clock(), timeOfDoom(fastos::SteadyTimeStamp::FUTURE) {}
 };
 
 //-----------------------------------------------------------------------------
@@ -473,24 +472,24 @@ TEST_F("test session timeout", DoomFixture()) {
     SessionId id1("foo");
     SessionId id2("bar");
 
-    GroupingContext initContext1(f1.clock, steady_time(duration(10)));
-    GroupingContext initContext2(f1.clock, steady_time(duration(20)));
+    GroupingContext initContext1(f1.clock, SteadyTimeStamp(10));
+    GroupingContext initContext2(f1.clock, SteadyTimeStamp(20));
     GroupingSession::UP s1(new GroupingSession(id1, initContext1, world.attributeContext));
     GroupingSession::UP s2(new GroupingSession(id2, initContext2, world.attributeContext));
     mgr.insert(std::move(s1));
     mgr.insert(std::move(s2));
-    mgr.pruneTimedOutSessions(steady_time(5ns));
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(5));
     SessionManager::Stats stats(mgr.getGroupingStats());
     ASSERT_EQUAL(2u, stats.numCached);
-    mgr.pruneTimedOutSessions(steady_time(10ns));
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(10));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(2u, stats.numCached);
 
-    mgr.pruneTimedOutSessions(steady_time(11ns));
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(11));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(1u, stats.numCached);
 
-    mgr.pruneTimedOutSessions(steady_time(21ns));
+    mgr.pruneTimedOutSessions(SteadyTimeStamp(21));
     stats = mgr.getGroupingStats();
     ASSERT_EQUAL(0u, stats.numCached);
 }

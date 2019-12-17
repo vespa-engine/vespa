@@ -646,7 +646,7 @@ Test::requireThatSummariesTimeout()
            1);
 
     DocsumRequest req;
-    req.setTimeout(vespalib::duration::zero());
+    req.setTimeout(0);
     EXPECT_TRUE(req.expired());
     req.resultClassName = "class2";
     req.hits.push_back(DocsumRequest::Hit(gid1));

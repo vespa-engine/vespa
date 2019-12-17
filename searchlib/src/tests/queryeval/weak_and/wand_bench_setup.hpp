@@ -187,21 +187,22 @@ struct FilterFactory : WandFactory {
 
 struct Setup {
     Stats    stats;
-    vespalib::duration  minTime;
-    Setup() : stats(), minTime(10000s) {}
+    double   minTimeMs;
+    Setup() : stats(), minTimeMs(10000000.0) {}
     virtual ~Setup() {}
     virtual std::string name() const = 0;
     virtual SearchIterator::UP create() = 0;
     void perform() {
         SearchIterator::UP search = create();
         SearchIterator &sb = *search;
-        vespalib::Timer timer;
+        fastos::StopWatch timer;
         for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
             stats.hit();
             sb.unpack(sb.getDocId());
         }
-        if (timer.elapsed() < minTime) {
-            minTime = timer.elapsed();
+        double ms = timer.elapsed().ms();
+        if (ms < minTimeMs) {
+            minTimeMs = ms;
         }
     }
     void benchmark() {
@@ -212,7 +213,7 @@ struct Setup {
                 stats.print();
             }
         }
-        fprintf(stderr, "time (ms): %ld\n", vespalib::count_ms(minTime));
+        fprintf(stderr, "time (ms): %g\n", minTimeMs);
     }
 };
 

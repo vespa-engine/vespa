@@ -14,7 +14,10 @@ namespace fastos {
 const TimeStamp::TimeT TimeStamp::MILLI;
 const TimeStamp::TimeT TimeStamp::MICRO;
 const TimeStamp::TimeT TimeStamp::NANO;
+const TimeStamp::TimeT TimeStamp::US;
+const TimeStamp::TimeT TimeStamp::MS;
 const TimeStamp::TimeT TimeStamp::SEC;
+const TimeStamp::TimeT TimeStamp::MINUTE;
 
 using seconds = std::chrono::duration<double>;
 
@@ -51,6 +54,27 @@ steady_now() {
     return SteadyTimeStamp(duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
 }
 
+}
+
+std::ostream &
+operator << (std::ostream & os, SteadyTimeStamp ts) {
+    return os << ts.toString();
+}
+
+SteadyTimeStamp
+ClockSteady::now()
+{
+    return steady_now();
+}
+
+const SteadyTimeStamp SteadyTimeStamp::ZERO;
+const SteadyTimeStamp SteadyTimeStamp::FUTURE(TimeStamp::FUTURE);
+
+system_clock::time_point
+SteadyTimeStamp::toUTC() const {
+    system_clock::time_point nowUtc = system_clock::now();
+    SteadyTimeStamp nowSteady = ClockSteady::now();
+    return system_clock::time_point (std::chrono::nanoseconds(nowUtc.time_since_epoch().count() - (nowSteady - *this).ns()));
 }
 
 StopWatch::StopWatch()

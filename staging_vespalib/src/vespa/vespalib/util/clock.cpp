@@ -80,7 +80,7 @@ Clock::~Clock()
 
 void Clock::setTime() const
 {
-    _timeNS.store(count_ns(steady_clock::now().time_since_epoch()), std::memory_order_relaxed);
+    _timeNS.store(fastos::ClockSteady::now() - fastos::SteadyTimeStamp::ZERO, std::memory_order_relaxed);
 }
 
 void

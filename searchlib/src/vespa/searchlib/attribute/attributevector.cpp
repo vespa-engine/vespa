@@ -136,9 +136,9 @@ AttributeVector::~AttributeVector() = default;
 void AttributeVector::updateStat(bool force) {
     if (force) {
         onUpdateStat();
-    } else if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
+    } else if (_nextStatUpdateTime < fastos::ClockSteady::now()) {
         onUpdateStat();
-        _nextStatUpdateTime = vespalib::steady_clock::now() + 5s;
+        _nextStatUpdateTime = fastos::ClockSteady::now() + fastos::TimeStamp(5ul * fastos::TimeStamp::SEC);
     }
 }
 

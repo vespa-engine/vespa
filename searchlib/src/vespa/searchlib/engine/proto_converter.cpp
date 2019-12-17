@@ -52,7 +52,7 @@ ProtoConverter::search_request_from_proto(const ProtoSearchRequest &proto, Searc
 {
     request.offset = proto.offset();
     request.maxhits = proto.hits();
-    request.setTimeout(1ms * proto.timeout());
+    request.setTimeout(fastos::TimeStamp::Seconds(0.001 * proto.timeout()));
     request.setTraceLevel(proto.trace_level());
     request.sortSpec = make_sort_spec(proto.sorting());
     request.sessionId.assign(proto.session_key().begin(), proto.session_key().end());
@@ -111,7 +111,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
 void
 ProtoConverter::docsum_request_from_proto(const ProtoDocsumRequest &proto, DocsumRequest &request)
 {
-    request.setTimeout(1ms * proto.timeout());
+    request.setTimeout(fastos::TimeStamp::Seconds(0.001 * proto.timeout()));
     request.sessionId.assign(proto.session_key().begin(), proto.session_key().end());
     request.propertiesMap.lookupCreate(MapNames::MATCH).add("documentdb.searchdoctype", proto.document_type());
     request.resultClassName = proto.summary_class();

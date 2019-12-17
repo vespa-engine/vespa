@@ -26,7 +26,7 @@ performSearch(queryeval::SearchIterator & sb, uint32_t numDocs)
 class AttributeSearcherStatus
 {
 public:
-    vespalib::duration _totalSearchTime;
+    double _totalSearchTime;
     uint64_t _totalHitCount;
     uint64_t _numQueries;
     uint64_t _numClients;
@@ -39,20 +39,20 @@ public:
         _numClients += status._numClients;
     }
     void printXML() const {
-        std::cout << "<total-search-time>" << vespalib::count_ms(_totalSearchTime) << "</total-search-time>" << std::endl; // ms
+        std::cout << "<total-search-time>" << _totalSearchTime << "</total-search-time>" << std::endl; // ms
         std::cout << "<avg-search-time>" << avgSearchTime() << "</avg-search-time>" << std::endl; // ms
         std::cout << "<search-throughput>" << searchThroughout() << "</search-throughput>" << std::endl; // per/sec
         std::cout << "<total-hit-count>" << _totalHitCount << "</total-hit-count>" << std::endl;
         std::cout << "<avg-hit-count>" << avgHitCount() << "</avg-hit-count>" << std::endl;
     }
     double avgSearchTime() const {
-        return vespalib::count_ms(_totalSearchTime/_numQueries);
+        return _totalSearchTime / _numQueries;
     }
     double searchThroughout() const {
-        return _numClients * 1000 * _numQueries / (vespalib::count_ns(_totalSearchTime)/1000000.0);
+        return _numClients * 1000 * _numQueries / _totalSearchTime;
     }
     double avgHitCount() const {
-        return _totalHitCount / double(_numQueries);
+        return _totalHitCount / static_cast<double>(_numQueries);
     }
 };
 
@@ -62,8 +62,8 @@ class AttributeSearcher : public Runnable
 protected:
     typedef AttributeVector::SP AttributePtr;
 
-    const AttributePtr    & _attrPtr;
-    vespalib::Timer         _timer;
+    const AttributePtr & _attrPtr;
+    fastos::StopWatch _timer;
     AttributeSearcherStatus _status;
 
 public:
@@ -121,7 +121,7 @@ template <typename T>
 void
 AttributeFindSearcher<T>::doRun()
 {
-    _timer = vespalib::Timer();
+    _timer.restart();
     for (uint32_t i = 0; i < _status._numQueries; ++i) {
         // build simple term query
         vespalib::asciistream ss;
@@ -139,7 +139,7 @@ AttributeFindSearcher<T>::doRun()
 
         _status._totalHitCount += results->getNumHits();
     }
-    _status._totalSearchTime += _timer.elapsed();
+    _status._totalSearchTime += _timer.elapsed().ms();
 }
 
 
@@ -198,7 +198,7 @@ public:
 void
 AttributeRangeSearcher::doRun()
 {
-    _timer = vespalib::Timer();
+    _timer.restart();
     RangeIterator iter(_spec);
     for (uint32_t i = 0; i < _status._numQueries; ++i, ++iter) {
         // build simple range term query
@@ -217,7 +217,7 @@ AttributeRangeSearcher::doRun()
 
         _status._totalHitCount += results->getNumHits();
     }
-    _status._totalSearchTime += _timer.elapsed();
+    _status._totalSearchTime += _timer.elapsed().ms();
 }
 
 
@@ -240,7 +240,7 @@ public:
 void
 AttributePrefixSearcher::doRun()
 {
-    _timer = vespalib::Timer();
+    _timer.restart();
     for (uint32_t i = 0; i < _status._numQueries; ++i) {
         // build simple prefix term query
         buildTermQuery(_query, _attrPtr->getName(), _values[i % _values.size()].c_str(), true);
@@ -256,7 +256,7 @@ AttributePrefixSearcher::doRun()
 
         _status._totalHitCount += results->getNumHits();
     }
-    _status._totalSearchTime += _timer.elapsed();
+    _status._totalSearchTime += _timer.elapsed().ms();
 }
 
 } // search

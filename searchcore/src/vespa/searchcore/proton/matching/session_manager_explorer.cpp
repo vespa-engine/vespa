@@ -3,7 +3,6 @@
 #include "session_manager_explorer.h"
 #include "sessionmanager.h"
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/fastos/timestamp.h>
 
 using vespalib::slime::Inserter;
 using vespalib::slime::Cursor;
@@ -31,8 +30,8 @@ public:
             for (const auto &session: sessions) {
                 Cursor &entry = array.addObject();
                 entry.setString("id", session.id);
-                entry.setString("created", fastos::TimeStamp::asString(vespalib::to_utc(session.created)));
-                entry.setString("doom", fastos::TimeStamp::asString(vespalib::to_utc(session.doom)));
+                entry.setString("created", fastos::TimeStamp::asString(session.created.toUTC()));
+                entry.setString("doom", fastos::TimeStamp::asString(session.doom.toUTC()));
             }
         }
     }

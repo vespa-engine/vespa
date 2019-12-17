@@ -17,8 +17,8 @@ class FakeRequestContext : public IRequestContext
 {
 public:
     FakeRequestContext(attribute::IAttributeContext * context = nullptr,
-                       vespalib::steady_time soft=vespalib::steady_time::max(),
-                       vespalib::steady_time hard=vespalib::steady_time::max());
+                       fastos::SteadyTimeStamp soft=fastos::SteadyTimeStamp::FUTURE,
+                       fastos::SteadyTimeStamp hard=fastos::SteadyTimeStamp::FUTURE);
     ~FakeRequestContext();
     const vespalib::Doom & getDoom() const override { return _doom; }
     const attribute::IAttributeVector *getAttribute(const vespalib::string &name) const override {

@@ -127,7 +127,7 @@ ViewSet::ViewSet()
       _dmsc(),
       _gidToLidChangeHandler(),
       _lidReuseDelayer(),
-      _commitTimeTracker(vespalib::duration::zero()),
+      _commitTimeTracker(TimeStamp()),
       searchView(),
       feedView(),
       _hwInfo()
@@ -256,7 +256,7 @@ struct MyFastAccessFeedView
           _dmsc(),
           _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
           _lidReuseDelayer(),
-          _commitTimeTracker(vespalib::duration::zero()),
+          _commitTimeTracker(TimeStamp()),
           _feedView()
     {
         init();

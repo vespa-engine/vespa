@@ -20,9 +20,9 @@ QueryLimiter::grabToken(const Doom & doom)
 {
     std::unique_lock<std::mutex> guard(_lock);
     while ((_maxThreads > 0) && (_activeThreads >= _maxThreads) && !doom.hard_doom()) {
-        vespalib::duration left = doom.hard_left();
-        if (left > vespalib::duration::zero()) {
-            _cond.wait_for(guard, left);
+        int left = doom.hard_left().ms();
+        if (left > 0) {
+            _cond.wait_for(guard, std::chrono::milliseconds(left));
         }
     }
     _activeThreads++;

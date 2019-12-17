@@ -31,7 +31,7 @@ private:
     GroupingLevelList        _levels;     // grouping parameters per level
     Group                    _root;       // the grouping tree
     const vespalib::Clock   *_clock;      // An optional clock to be used for timeout handling.
-    vespalib::steady_time    _timeOfDoom; // Used if clock is specified. This is time when request expires.
+    fastos::SteadyTimeStamp  _timeOfDoom; // Used if clock is specified. This is time when request expires.
 
     bool hasExpired() const { return _clock->getTimeNS() > _timeOfDoom; }
     void aggregateWithoutClock(const RankedHit * rankedHit, unsigned int len);
@@ -59,7 +59,7 @@ public:
     Grouping &addLevel(GroupingLevel && level)  { _levels.push_back(std::move(level)); return *this; }
     Grouping &setRoot(const Group &root_)       { _root = root_;            return *this; }
     Grouping &setClock(const vespalib::Clock * clock) { _clock = clock; return *this; }
-    Grouping &setTimeOfDoom(vespalib::steady_time timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }
+    Grouping &setTimeOfDoom(fastos::SteadyTimeStamp timeOfDoom) { _timeOfDoom = timeOfDoom; return *this; }
 
     unsigned int getId()     const { return _id; }
     bool valid()             const { return _valid; }

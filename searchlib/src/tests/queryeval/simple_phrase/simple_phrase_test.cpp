@@ -170,7 +170,7 @@ public:
 };
 
 PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
-    : _requestContext(nullptr, expiredDoom ? vespalib::steady_time(): vespalib::steady_time::max()),
+    : _requestContext(nullptr, expiredDoom ? fastos::SteadyTimeStamp::ZERO : fastos::SteadyTimeStamp::FUTURE),
       _index(),
       _phrase_fs(field, fieldId, phrase_handle),
       _phrase(_phrase_fs, _requestContext, false),
@@ -199,7 +199,7 @@ void Test::requireThatIteratorHonorsFutureDoom() {
 
     test.fetchPostings(false);
     vespalib::Clock clock;
-    vespalib::Doom futureDoom(clock, vespalib::steady_time::max());
+    vespalib::Doom futureDoom(clock, fastos::SteadyTimeStamp::FUTURE);
     unique_ptr<SearchIterator> search(test.createSearch(false));
     static_cast<SimplePhraseSearch &>(*search).setDoom(&futureDoom);
     EXPECT_TRUE(!search->seek(1u));
@@ -213,7 +213,7 @@ void Test::requireThatIteratorHonorsDoom() {
 
     test.fetchPostings(false);
     vespalib::Clock clock;
-    vespalib::Doom futureDoom(clock, vespalib::steady_time());
+    vespalib::Doom futureDoom(clock, fastos::SteadyTimeStamp::ZERO);
     unique_ptr<SearchIterator> search(test.createSearch(false));
     static_cast<SimplePhraseSearch &>(*search).setDoom(&futureDoom);
     EXPECT_TRUE(!search->seek(1u));

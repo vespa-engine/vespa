@@ -75,7 +75,7 @@ public:
     }
 
     IndexCollection::UP create_warmup(const IndexCollection::SP& prev, const IndexCollection::SP& next) {
-        return std::make_unique<WarmupIndexCollection>(WarmupConfig(1s, false), prev, next, *_warmup, _executor, *this);
+        return std::make_unique<WarmupIndexCollection>(WarmupConfig(1.0, false), prev, next, *_warmup, _executor, *this);
     }
 
     virtual void warmupDone(ISearchableIndexCollection::SP current) override {
@@ -90,7 +90,7 @@ public:
           _executor(1, 128*1024),
           _warmup(new FakeIndexSearchable)
     {}
-    ~IndexCollectionTest() = default;
+    ~IndexCollectionTest() {}
 };
 
 

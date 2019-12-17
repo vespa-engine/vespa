@@ -20,7 +20,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <cmath>
 #include <mutex>
 #include <shared_mutex>
@@ -587,7 +587,7 @@ private:
     uint64_t                              _compactLidSpaceGeneration;
     bool                                  _hasEnum;
     bool                                  _loaded;
-    vespalib::steady_time                 _nextStatUpdateTime;
+    fastos::SteadyTimeStamp               _nextStatUpdateTime;
 
 ////// Locking strategy interface. only available from the Guards.
     /**
