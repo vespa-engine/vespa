@@ -19,6 +19,10 @@ public class TensorParserTestCase {
         assertEquals("If the type is specified, a dense tensor can be created from the sparse text form",
                      Tensor.Builder.of(TensorType.fromSpec("tensor(x[1])")).cell(1.0, 0).build(),
                      Tensor.from("tensor(x[1]):{{x:0}:1.0}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x{})")).cell().label("x", "..\",]}:..").value(1.0).build(),
+                     Tensor.from("{{x:'..\",]}:..'}:1.0}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x{})")).cell().label("x", "..'..").value(1.0).build(),
+                     Tensor.from("{{x:\"..'..\"}:1.0}"));
     }
 
     @Test
@@ -95,6 +99,12 @@ public class TensorParserTestCase {
                                    .cell(TensorAddress.ofLabels("b", "0"), 3)
                                    .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
                      Tensor.from("tensor(key{}, x[2]):{a:[1, 2], b:[3, 4]}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{}, x[2])"))
+                                   .cell(TensorAddress.ofLabels(",:", "0"), 1)
+                                   .cell(TensorAddress.ofLabels(",:", "1"), 2)
+                                   .cell(TensorAddress.ofLabels("b", "0"), 3)
+                                   .cell(TensorAddress.ofLabels("b", "1"), 4).build(),
+                     Tensor.from("tensor(key{}, x[2]):{',:':[1, 2], b:[3, 4]}"));
     }
 
     @Test
@@ -103,6 +113,14 @@ public class TensorParserTestCase {
                                    .cell(TensorAddress.ofLabels("a"), 1)
                                    .cell(TensorAddress.ofLabels("b"), 2).build(),
                      Tensor.from("tensor(key{}):{a:1, b:2}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{})"))
+                                   .cell(TensorAddress.ofLabels("..\",}]:.."), 1)
+                                   .cell(TensorAddress.ofLabels("b"), 2).build(),
+                     Tensor.from("tensor(key{}):{'..\",}]:..':1, b:2}"));
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(key{})"))
+                                   .cell(TensorAddress.ofLabels("..'.."), 1)
+                                   .cell(TensorAddress.ofLabels("b"), 2).build(),
+                     Tensor.from("tensor(key{}):{\"..'..\":1, b:2}"));
     }
 
     @Test
@@ -134,11 +152,9 @@ public class TensorParserTestCase {
 
     @Test
     public void testIllegalStrings() {
-        assertIllegal("label must be an identifier or integer, not '\"l0\"'",
-                      "{{x:\"l0\"}:1.0}");
-        assertIllegal("dimension must be an identifier or integer, not ''x''",
+        assertIllegal("A dimension name must be an identifier or integer, not ''x''",
                       "{{'x':\"l0\"}:1.0}");
-        assertIllegal("dimension must be an identifier or integer, not '\"x\"'",
+        assertIllegal("A dimension name must be an identifier or integer, not '\"x\"'",
                       "{{\"x\":\"l0\", \"y\":\"l0\"}:1.0, {\"x\":\"l0\", \"y\":\"l1\"}:2.0}");
         assertIllegal("At {x:0}: '1-.0' is not a valid double",
                       "{{x:0}:1-.0}");
