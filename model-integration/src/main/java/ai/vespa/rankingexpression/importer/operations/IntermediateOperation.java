@@ -153,7 +153,7 @@ public abstract class IntermediateOperation {
 
     /** Retrieve the valid Vespa name of this node */
     public String vespaName() { return vespaName(name); }
-    public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_') : null; }
+    public String vespaName(String name) { return name != null ? namePartOf(name).replace('/', '_').replace('.', '_') : null; }
 
     /** Retrieve the valid Vespa name of this node if it is a ranking expression function */
     public String rankingExpressionFunctionName() {
