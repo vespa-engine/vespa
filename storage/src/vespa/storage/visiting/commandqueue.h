@@ -16,7 +16,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/vespalib/util/printable.h>
-#include <vespa/vespalib//util/time.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/timestamp.h>
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <list>
