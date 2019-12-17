@@ -231,22 +231,22 @@ public class DeploymentStatus {
             StepStatus stepStatus;
             if (step.concerns(test) || step.concerns(staging)) { // SKIP?
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), null)
-                                 .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofTestDeployment((DeclaredZone) step, List.of(), this, instance, jobType, true);
                 previous = new ArrayList<>(previous);
                 previous.add(stepStatus);
             }
             else if (step.isTest()) {
                 jobType = JobType.testFrom(system, ((DeclaredTest) step).region())
-                                          .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 JobType preType = JobType.from(system, prod, ((DeclaredTest) step).region())
-                                         .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                         .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofProductionTest((DeclaredTest) step, previous, this, instance, jobType, preType);
                 previous = List.of(stepStatus);
             }
             else if (step.concerns(prod)) {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), ((DeclaredZone) step).region().get())
-                                         .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, instance, jobType);
                 previous = List.of(stepStatus);
             }
