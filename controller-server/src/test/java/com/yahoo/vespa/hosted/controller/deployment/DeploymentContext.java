@@ -394,7 +394,7 @@ public class DeploymentContext {
         setEndpoints(JobType.systemTest.zone(tester.controller().system()));
         setTesterEndpoints(JobType.systemTest.zone(tester.controller().system()));
         runner.run();
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
         return id;
     }
 
@@ -418,13 +418,13 @@ public class DeploymentContext {
         runner.advance(currentRun(job));
 
         if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
-            assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installInitialReal));
+            assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
             Versions versions = currentRun(job).versions();
             tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), versions.sourcePlatform().orElse(versions.targetPlatform()));
             configServer().convergeServices(id.application(), zone);
             setEndpoints(zone);
             runner.advance(currentRun(job));
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installInitialReal));
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
         }
     }
 
@@ -434,7 +434,7 @@ public class DeploymentContext {
         ZoneId zone = zone(job);
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
         configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), currentRun(job).versions().targetPlatform());
         runner.advance(currentRun(job));
     }
@@ -482,16 +482,16 @@ public class DeploymentContext {
         RunId id = currentRun(job).id();
         ZoneId zone = zone(job);
 
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installReal));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
         configServer().convergeServices(id.application(), zone);
         setEndpoints(zone);
         runner.advance(currentRun(job));
         if (job.type().environment().isManuallyDeployed()) {
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
             assertTrue(jobs.run(id).get().hasEnded());
             return;
         }
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
+        assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
     }
 
     /** Installs tester and starts tests. */
@@ -499,13 +499,13 @@ public class DeploymentContext {
         RunId id = currentRun(job).id();
         ZoneId zone = zone(job);
 
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), currentRun(job).versions().targetPlatform());
         runner.advance(currentRun(job));
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().convergeServices(TesterId.of(id.application()).id(), zone);
         runner.advance(currentRun(job));
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.installTester));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         setTesterEndpoints(zone);
         runner.advance(currentRun(job));
     }
@@ -517,11 +517,11 @@ public class DeploymentContext {
 
         // All installation is complete and endpoints are ready, so tests may begin.
         if ( ! job.type().isTest())
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installReal));
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.installTester));
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().steps().get(Step.startTests));
+            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
+        assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.startTests));
 
-        assertEquals(unfinished, jobs.run(id).get().steps().get(Step.endTests));
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
         cloud.set(TesterCloud.Status.SUCCESS);
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());

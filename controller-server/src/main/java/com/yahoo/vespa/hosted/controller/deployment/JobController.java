@@ -2,9 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -33,7 +31,6 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -48,7 +45,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.google.common.collect.ImmutableList.copyOf;
@@ -148,7 +144,7 @@ public class JobController {
     /** Fetches any new Vespa log entries, and records the timestamp of the last of these, for continuation. */
     public void updateVespaLog(RunId id) {
         locked(id, run -> {
-            if ( ! run.steps().containsKey(copyVespaLogs))
+            if ( ! run.hasStep(copyVespaLogs))
                 return run;
 
             ZoneId zone = id.type().zone(controller.system());
@@ -309,6 +305,11 @@ public class JobController {
     /** Changes the status of the given step, for the given run, provided it is still active. */
     public void update(RunId id, RunStatus status, LockedStep step) {
         locked(id, run -> run.with(status, step));
+    }
+
+    /** Invoked when starting the step */
+    public void setStartTimestamp(RunId id, Instant timestamp, LockedStep step) {
+        locked(id, run -> run.with(timestamp, step));
     }
 
     /** Changes the status of the given run to inactive, and stores it as a historic run. */
