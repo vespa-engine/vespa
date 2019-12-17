@@ -17,6 +17,7 @@
 #include "dense/dense_inplace_map_function.h"
 #include "dense/vector_from_doubles_function.h"
 #include "dense/dense_tensor_create_function.h"
+#include "dense/dense_tensor_peek_function.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -260,6 +261,7 @@ DefaultTensorEngine::optimize(const TensorFunction &expr, Stash &stash) const
         const Child &child = nodes.back();
         child.set(VectorFromDoublesFunction::optimize(child.get(), stash));
         child.set(DenseTensorCreateFunction::optimize(child.get(), stash));
+        child.set(DenseTensorPeekFunction::optimize(child.get(), stash));
         child.set(DenseDotProductFunction::optimize(child.get(), stash));
         child.set(DenseXWProductFunction::optimize(child.get(), stash));
         child.set(DenseFastRenameOptimizer::optimize(child.get(), stash));
