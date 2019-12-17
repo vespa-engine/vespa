@@ -131,8 +131,8 @@ int Plot::_plots = 0;
 
 //-----------------------------------------------------------------------------
 
-constexpr uint32_t default_weight = 100;
-constexpr vespalib::duration max_time = 1000s;
+uint32_t default_weight = 100;
+double max_time = 1000000.0;
 
 //-----------------------------------------------------------------------------
 
@@ -312,20 +312,20 @@ struct NegativeFilterAfterStrategy : FilterStrategy {
 //-----------------------------------------------------------------------------
 
 struct Result {
-    vespalib::duration time;
+    double time_ms;
     uint32_t num_hits;
-    Result() : time(max_time), num_hits(0) {}
-    Result(vespalib::duration t, uint32_t n) : time(t), num_hits(n) {}
+    Result() : time_ms(max_time), num_hits(0) {}
+    Result(double t, uint32_t n) : time_ms(t), num_hits(n) {}
     void combine(const Result &r) {
-        if (time == max_time) {
+        if (time_ms == max_time) {
             *this = r;
         } else {
             assert(num_hits == r.num_hits);
-            time = std::min(time, r.time);
+            time_ms = std::min(time_ms, r.time_ms);
         }
     }
     std::string toString() const {
-        return vespalib::make_string("%u hits, %ld ms", num_hits, vespalib::count_ms(time));
+        return vespalib::make_string("%u hits, %g ms", num_hits, time_ms);
     }
 };
 
@@ -333,12 +333,12 @@ Result run_single_benchmark(FilterStrategy &filterStrategy, SparseVectorFactory 
     SearchIterator::UP search(filterStrategy.createRoot(vectorFactory, childFactory, childCnt, limit));
     SearchIterator &sb = *search;
     uint32_t num_hits = 0;
-    vespalib::Timer timer;
+    fastos::StopWatch timer;
     for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
         ++num_hits;
         sb.unpack(sb.getDocId());
     }
-    return Result(timer.elapsed(), num_hits);
+    return Result(timer.elapsed().ms(), num_hits);
 }
 
 //-----------------------------------------------------------------------------
@@ -371,7 +371,7 @@ public:
             for (int j = 0; j < 5; ++j) {
                 result.combine(run_single_benchmark(_filterStrategy, svf, _childFactory, childCnt, _limit));
             }
-            graph->addValue(childCnt, vespalib::count_ms(result.time));
+            graph->addValue(childCnt, result.time_ms);
             fprintf(stderr, "    %u children => %s\n", childCnt, result.toString().c_str());
         }
     }

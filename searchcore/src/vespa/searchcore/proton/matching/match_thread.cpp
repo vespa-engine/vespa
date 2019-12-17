@@ -34,12 +34,12 @@ namespace {
 
 struct WaitTimer {
     double &wait_time_s;
-    vespalib::Timer wait_time;
+    fastos::StopWatch wait_time;
     WaitTimer(double &wait_time_s_in)
         : wait_time_s(wait_time_s_in), wait_time()
     { }
     void done() {
-        wait_time_s += vespalib::to_s(wait_time.elapsed());
+        wait_time_s += wait_time.elapsed().sec();
     }
 };
 
@@ -184,7 +184,7 @@ MatchThread::match_loop(MatchTools &tools, HitCollector &hits)
 {
     bool softDoomed = false;
     uint32_t docsCovered = 0;
-    vespalib::duration overtime(vespalib::duration::zero());
+    fastos::TimeStamp overtime(0);
     Context context(matchParams.rankDropLimit, tools, hits, num_threads);
     for (DocidRange docid_range = scheduler.first_range(thread_id);
          !docid_range.empty();
@@ -425,12 +425,12 @@ MatchThread::MatchThread(size_t thread_id_in,
 void
 MatchThread::run()
 {
-    vespalib::Timer total_time;
-    vespalib::Timer match_time(total_time);
+    fastos::StopWatch total_time;
+    fastos::StopWatch match_time;
     trace->addEvent(4, "Start MatchThread::run");
     MatchTools::UP matchTools = matchToolsFactory.createMatchTools();
     search::ResultSet::UP result = findMatches(*matchTools);
-    match_time_s = vespalib::to_s(match_time.elapsed());
+    match_time_s = match_time.elapsed().sec();
     resultContext = resultProcessor.createThreadContext(matchTools->getDoom(), thread_id, _distributionKey);
     {
         trace->addEvent(5, "Wait for result processing token");
@@ -445,7 +445,7 @@ MatchThread::run()
         trace->addEvent(5, "Start result processing");
         processResult(matchTools->getDoom(), std::move(result), *resultContext);
     }
-    total_time_s = vespalib::to_s(total_time.elapsed());
+    total_time_s = total_time.elapsed().sec();
     thread_stats.active_time(total_time_s - wait_time_s).wait_time(wait_time_s);
     trace->addEvent(4, "Start thread merge");
     mergeDirector.dualMerge(thread_id, *resultContext->result, resultContext->groupingSource);

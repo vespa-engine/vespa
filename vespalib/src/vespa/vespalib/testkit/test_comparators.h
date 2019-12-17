@@ -14,7 +14,7 @@ ostream & operator << (ostream & os, duration<rep, period> ts) {
 }
 
 ostream & operator << (ostream & os, system_clock::time_point ts);
-ostream & operator << (ostream & os, steady_clock::time_point ts);
+
 
 }
 

@@ -5,8 +5,8 @@
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/time.h>
 #include <memory>
+#include <vespa/fastos/timestamp.h>
 
 namespace search::fef { class Properties; }
 
@@ -34,16 +34,16 @@ public:
 private:
     typedef vespalib::string SessionId;
 
-    SessionId             _session_id;
-    vespalib::steady_time _create_time;
-    vespalib::steady_time _time_of_doom;
-    OwnershipBundle       _owned_objects;
+    SessionId               _session_id;
+    fastos::SteadyTimeStamp _create_time;
+    fastos::SteadyTimeStamp _time_of_doom;
+    OwnershipBundle         _owned_objects;
     std::unique_ptr<MatchToolsFactory> _match_tools_factory;
 
 public:
     typedef std::shared_ptr<SearchSession> SP;
 
-    SearchSession(const SessionId &id, vespalib::steady_time create_time, vespalib::steady_time time_of_doom,
+    SearchSession(const SessionId &id, fastos::SteadyTimeStamp create_time, fastos::SteadyTimeStamp time_of_doom,
                   std::unique_ptr<MatchToolsFactory> match_tools_factory,
                   OwnershipBundle &&owned_objects);
     ~SearchSession();
@@ -54,12 +54,12 @@ public:
     /**
      * Gets this session's create time.
      */
-    vespalib::steady_time getCreateTime() const { return _create_time; }
+    fastos::SteadyTimeStamp getCreateTime() const { return _create_time; }
 
     /**
      * Gets this session's timeout.
      */
-    vespalib::steady_time getTimeOfDoom() const { return _time_of_doom; }
+    fastos::SteadyTimeStamp getTimeOfDoom() const { return _time_of_doom; }
 
     MatchToolsFactory &getMatchToolsFactory() { return *_match_tools_factory; }
 };

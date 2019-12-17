@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <atomic>
 #include <memory>
 
@@ -31,14 +31,14 @@ public:
     Clock(double timePeriod=0.100);
     ~Clock();
 
-    vespalib::steady_time getTimeNS() const {
+    fastos::SteadyTimeStamp getTimeNS() const {
         if (!_running) {
             setTime();
         }
         return getTimeNSAssumeRunning();
     }
-    vespalib::steady_time getTimeNSAssumeRunning() const {
-        return vespalib::steady_time(std::chrono::nanoseconds(_timeNS.load(std::memory_order_relaxed)));
+    fastos::SteadyTimeStamp getTimeNSAssumeRunning() const {
+        return fastos::SteadyTimeStamp(_timeNS.load(std::memory_order_relaxed));
     }
 
     void stop();

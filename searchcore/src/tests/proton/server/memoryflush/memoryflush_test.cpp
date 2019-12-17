@@ -9,6 +9,7 @@
 
 using fastos::TimeStamp;
 using vespalib::system_time;
+using fastos::SteadyTimeStamp;
 using search::SerialNum;
 using namespace proton;
 using namespace searchcorespi;

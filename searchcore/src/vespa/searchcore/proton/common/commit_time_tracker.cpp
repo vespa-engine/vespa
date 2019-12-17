@@ -4,9 +4,9 @@
 
 namespace proton {
 
-CommitTimeTracker::CommitTimeTracker(vespalib::duration visibilityDelay)
+CommitTimeTracker::CommitTimeTracker(fastos::TimeStamp visibilityDelay)
     : _visibilityDelay(visibilityDelay),
-      _nextCommit(vespalib::steady_clock::now()),
+      _nextCommit(fastos::ClockSteady::now()),
       _replayDone(false)
 {
     _nextCommit = _nextCommit + visibilityDelay;
@@ -15,11 +15,11 @@ CommitTimeTracker::CommitTimeTracker(vespalib::duration visibilityDelay)
 bool
 CommitTimeTracker::needCommit() const
 {
-    if (hasVisibilityDelay()) {
+    if (_visibilityDelay > 0) {
         if (_replayDone) {
             return false; // maintenance job will do forced commits now
         }
-        vespalib::steady_time now(vespalib::steady_clock::now());
+        fastos::SteadyTimeStamp now(fastos::ClockSteady::now());
         if (now > _nextCommit) {
             _nextCommit = now + _visibilityDelay;
             return true;
@@ -30,13 +30,13 @@ CommitTimeTracker::needCommit() const
 }
 
 void
-CommitTimeTracker::setVisibilityDelay(vespalib::duration visibilityDelay)
+CommitTimeTracker::setVisibilityDelay(fastos::TimeStamp visibilityDelay)
 {
-    vespalib::steady_time nextCommit = vespalib::steady_clock::now() + visibilityDelay;
+    fastos::SteadyTimeStamp nextCommit = fastos::ClockSteady::now() + visibilityDelay;
     if (nextCommit < _nextCommit) {
         _nextCommit = nextCommit;
     }
     _visibilityDelay = visibilityDelay;
 }
 
-}
+} // namespace proton

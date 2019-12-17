@@ -12,6 +12,7 @@ LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 
 namespace searchcorespi {
 
+using fastos::ClockSteady;
 using fastos::TimeStamp;
 using index::IDiskIndex;
 using search::fef::MatchDataLayout;
@@ -41,7 +42,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     _warmup(warmup),
     _executor(executor),
     _warmupDone(warmupDone),
-    _warmupEndTime(vespalib::steady_clock::now() + warmupConfig.getDuration()),
+    _warmupEndTime(ClockSteady::now() + TimeStamp::Seconds(warmupConfig.getDuration())),
     _handledTerms(std::make_unique<FieldTermMap>())
 {
     if (next->valid()) {
@@ -49,7 +50,7 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
     } else {
         LOG(warning, "Next index is not valid, Dangerous !! : %s", next->toString().c_str());
     }
-    LOG(debug, "For %g seconds I will warm up '%s' %s unpack.", vespalib::to_s(warmupConfig.getDuration()), typeid(_warmup).name(), warmupConfig.getUnpack() ? "with" : "without");
+    LOG(debug, "For %g seconds I will warm up '%s' %s unpack.", warmupConfig.getDuration(), typeid(_warmup).name(), warmupConfig.getUnpack() ? "with" : "without");
     LOG(debug, "%s", toString().c_str());
 }
 
@@ -80,7 +81,7 @@ WarmupIndexCollection::toString() const
 
 WarmupIndexCollection::~WarmupIndexCollection()
 {
-    if (_warmupEndTime != vespalib::steady_time()) {
+    if (_warmupEndTime != fastos::SteadyTimeStamp::ZERO) {
         LOG(info, "Warmup aborted due to new state change or application shutdown");
     }
    _executor.sync();
@@ -113,13 +114,13 @@ WarmupIndexCollection::getSourceId(uint32_t i) const
 void
 WarmupIndexCollection::fireWarmup(Task::UP task)
 {
-    vespalib::steady_time now(vespalib::steady_clock::now());
+    fastos::SteadyTimeStamp now(fastos::ClockSteady::now());
     if (now < _warmupEndTime) {
         _executor.execute(std::move(task));
     } else {
         std::unique_lock<std::mutex> guard(_lock);
-        if (_warmupEndTime != vespalib::steady_time()) {
-            _warmupEndTime = vespalib::steady_time();
+        if (_warmupEndTime != fastos::SteadyTimeStamp::ZERO) {
+            _warmupEndTime = fastos::SteadyTimeStamp::ZERO;
             guard.unlock();
             LOG(info, "Done warming up. Posting WarmupDoneTask");
             _warmupDone.warmupDone(shared_from_this());
@@ -154,7 +155,7 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
                                        const FieldSpecList &fields,
                                        const Node &term)
 {
-    if ( _warmupEndTime == vespalib::steady_time()) {
+    if ( _warmupEndTime == fastos::SteadyTimeStamp::ZERO) {
         // warmup done
         return _next->createBlueprint(requestContext, fields, term);
     }
@@ -223,7 +224,7 @@ WarmupIndexCollection::getSearchableSP(uint32_t i) const
 void
 WarmupIndexCollection::WarmupTask::run()
 {
-    if (_warmup._warmupEndTime != vespalib::steady_time()) {
+    if (_warmup._warmupEndTime != fastos::SteadyTimeStamp::ZERO) {
         LOG(debug, "Warming up %s", _bluePrint->asString().c_str());
         _bluePrint->fetchPostings(true);
         SearchIterator::UP it(_bluePrint->createSearch(*_matchData, true));

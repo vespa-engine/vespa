@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "summaryengine.h"
-#include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.summaryengine");
+#include <vespa/vespalib/data/slime/slime.h>
 
 using namespace search::engine;
 using namespace proton;
@@ -137,7 +137,7 @@ SummaryEngine::getDocsums(DocsumRequest::UP req)
                 reply = snapshot->get()->getDocsums(*req); // use the first handler
             }
         }
-        updateDocsumMetrics(vespalib::to_s(req->getTimeUsed()), getNumDocs(*reply));
+        updateDocsumMetrics(req->getTimeUsed().sec(), getNumDocs(*reply));
     }
     reply->request = std::move(req);
 

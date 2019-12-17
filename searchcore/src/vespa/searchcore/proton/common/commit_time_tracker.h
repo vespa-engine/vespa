@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 
@@ -11,18 +11,18 @@ namespace proton {
 class CommitTimeTracker
 {
 private:
-    vespalib::duration             _visibilityDelay;
-    mutable vespalib::steady_time  _nextCommit;
-    bool                           _replayDone;
+    fastos::TimeStamp                _visibilityDelay;
+    mutable fastos::SteadyTimeStamp  _nextCommit;
+    bool                             _replayDone;
 
 public:
-    CommitTimeTracker(vespalib::duration visibilityDelay);
+    CommitTimeTracker(fastos::TimeStamp visibilityDelay);
 
     bool needCommit() const;
 
-    void setVisibilityDelay(vespalib::duration visibilityDelay);
+    void setVisibilityDelay(fastos::TimeStamp visibilityDelay);
 
-    bool hasVisibilityDelay() const { return _visibilityDelay != vespalib::duration::zero(); }
+    bool hasVisibilityDelay() const { return _visibilityDelay != 0; }
 
     void setReplayDone() { _replayDone = true; }
 };

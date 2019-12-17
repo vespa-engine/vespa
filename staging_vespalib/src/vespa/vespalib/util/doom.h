@@ -8,22 +8,22 @@ namespace vespalib {
 
 class Doom {
 public:
-    Doom(const Clock &clock, steady_time doom)
+    Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp doom)
         : Doom(clock, doom, doom, false)
     {}
-    Doom(const Clock &clock, steady_time softDoom,
-         steady_time hardDoom, bool explicitSoftDoom);
+    Doom(const vespalib::Clock &clock, fastos::SteadyTimeStamp softDoom,
+         fastos::SteadyTimeStamp hardDoom, bool explicitSoftDoom);
 
     bool soft_doom() const { return (_clock.getTimeNSAssumeRunning() > _softDoom); }
     bool hard_doom() const { return (_clock.getTimeNSAssumeRunning() > _hardDoom); }
-    duration soft_left() const { return _softDoom - _clock.getTimeNS(); }
-    duration hard_left() const { return _hardDoom - _clock.getTimeNS(); }
+    fastos::TimeStamp soft_left() const { return _softDoom - _clock.getTimeNS(); }
+    fastos::TimeStamp hard_left() const { return _hardDoom - _clock.getTimeNS(); }
     bool isExplicitSoftDoom() const { return _isExplicitSoftDoom; }
 private:
-    const Clock   &_clock;
-    steady_time    _softDoom;
-    steady_time    _hardDoom;
-    bool           _isExplicitSoftDoom;
+    const vespalib::Clock   &_clock;
+    fastos::SteadyTimeStamp  _softDoom;
+    fastos::SteadyTimeStamp  _hardDoom;
+    bool                     _isExplicitSoftDoom;
 };
 
 }

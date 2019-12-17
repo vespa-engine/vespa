@@ -15,7 +15,10 @@ public:
     static const TimeT MILLI = 1000LL;
     static const TimeT MICRO = 1000*MILLI;
     static const TimeT NANO = 1000*MICRO;
+    static const TimeT US = MILLI;
+    static const TimeT MS = MICRO;
     static const TimeT SEC = NANO;
+    static const TimeT MINUTE = 60*SEC;
     class Seconds {
     public:
         explicit Seconds(double v) : _v(v * NANO) {}
@@ -23,8 +26,10 @@ public:
     private:
         TimeT _v;
     };
+    enum Special { FUTURE };
     TimeStamp() : _time(0)            { }
     TimeStamp(const timeval & tv) : _time(tv.tv_sec*SEC + tv.tv_usec*MILLI) { }
+    TimeStamp(Special s) : _time(std::numeric_limits<TimeT>::max()) { (void) s; }
     TimeStamp(int v) : _time(v)   { }
     TimeStamp(unsigned int v) : _time(v)  { }
     TimeStamp(long v) : _time(v)   { }
@@ -43,7 +48,8 @@ public:
     double sec()                     const { return val()/1000000000.0; }
     std::string toString()           const { return asString(sec()); }
     static std::string asString(double timeInSeconds);
-    static std::string asString(std::chrono::system_clock::time_point time);
+    static std::string asString(std::chrono::system_clock::time_point duration);
+    static TimeStamp fromSec(double sec) { return Seconds(sec); }
 private:
     TimeT _time;
 };
@@ -55,6 +61,8 @@ inline TimeStamp operator *(double a, TimeStamp b) { return TimeStamp(static_cas
 
 class SteadyTimeStamp {
 public:
+    static const SteadyTimeStamp ZERO;
+    static const SteadyTimeStamp FUTURE;
     SteadyTimeStamp() : _timeStamp() { }
     explicit SteadyTimeStamp(TimeStamp timeStamp) : _timeStamp(timeStamp) { }
 
@@ -79,9 +87,18 @@ public:
     friend bool operator > (SteadyTimeStamp a, SteadyTimeStamp b) {
         return a._timeStamp > b._timeStamp;
     }
+    std::chrono::system_clock::time_point toUTC() const;
     std::string toString() const { return _timeStamp.toString(); };
 private:
     TimeStamp _timeStamp;
+};
+
+std::ostream & operator << (std::ostream & os, SteadyTimeStamp ts);
+
+class ClockSteady
+{
+public:
+    static SteadyTimeStamp now();
 };
 
 class StopWatch

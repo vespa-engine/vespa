@@ -694,9 +694,9 @@ TEST("testDebugFunction") {
         DebugWaitFunctionNode n(std::move(add), 1.3, false);
         n.prepare(false);
 
-        vespalib::Timer timer;
+        fastos::StopWatch timer;
         n.execute();
-        EXPECT_TRUE(timer.elapsed() > 1s);
+        EXPECT_TRUE(timer.elapsed().ms() > 1000.0);
         EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
     }
     {
@@ -706,9 +706,9 @@ TEST("testDebugFunction") {
         DebugWaitFunctionNode n(std::move(add), 1.3, true);
         n.prepare(false);
 
-        vespalib::Timer timer;
+        fastos::StopWatch timer;
         n.execute();
-        EXPECT_TRUE(timer.elapsed() > 1s);
+        EXPECT_TRUE(timer.elapsed().ms() > 1000.0);
         EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
     }
 }

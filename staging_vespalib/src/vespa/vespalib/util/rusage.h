@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/time.h>
+#include <vespa/fastos/timestamp.h>
 #include <sys/resource.h>
 
 namespace vespalib {
@@ -17,19 +17,19 @@ public:
      * Will create an RUsage and initialize member with RUSAGE_SELF
      **/
     static RUsage createSelf();
-    static RUsage createSelf(vespalib::steady_time since);
+    static RUsage createSelf(fastos::SteadyTimeStamp since);
     /**
      * Will create an RUsage and initialize member with RUSAGE_CHILDREN
      **/
     static RUsage createChildren();
-    static RUsage createChildren(vespalib::steady_time since);
+    static RUsage createChildren(fastos::SteadyTimeStamp since);
     /**
      * Will create an RUsage and initialize member with RUSAGE_CHILDREN
      **/
     vespalib::string toString();
     RUsage & operator -= (const RUsage & rhs);
 private:
-    vespalib::duration _time;
+    fastos::TimeStamp _time;
 };
 
 RUsage operator -(const RUsage & a, const RUsage & b);
