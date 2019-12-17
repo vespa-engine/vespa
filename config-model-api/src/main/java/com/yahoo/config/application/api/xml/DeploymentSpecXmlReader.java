@@ -92,6 +92,9 @@ public class DeploymentSpecXmlReader {
 
     /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
+        if (DeploymentSpec.empty.xmlForm().equals(xmlForm))
+            return DeploymentSpec.empty;
+
         Element root = XML.getDocument(xmlForm).getDocumentElement();
 
         List<Step> steps = new ArrayList<>();

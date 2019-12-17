@@ -317,9 +317,9 @@ public class DeploymentSpecWithoutInstanceTest {
 
     @Test
     public void testEmpty() {
-        assertFalse(DeploymentSpec.empty.requireInstance("default").globalServiceId().isPresent());
-        assertEquals(1, DeploymentSpec.empty.steps().size());
-        assertTrue(DeploymentSpec.empty.requireInstance("default").steps().isEmpty());
+        assertEquals(0, DeploymentSpec.empty.steps().size());
+        assertTrue(DeploymentSpec.empty.athenzDomain().isEmpty());
+        assertTrue(DeploymentSpec.empty.athenzService().isEmpty());
         assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
     }
 
