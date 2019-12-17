@@ -6,6 +6,7 @@ import ai.vespa.hosted.api.Signatures;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
@@ -718,11 +719,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "");
 
+        // POST an application package with an empty deployment spec, to allow removal of production instances.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
+                                      .screwdriverIdentity(SCREWDRIVER_ID)
+                                      .data(createApplicationSubmissionData(new ApplicationPackageBuilder()
+                                                                                    .allow(ValidationId.deploymentRemoval)
+                                                                                    .build(), 1000)),
+                              "{\"message\":\"Application package version: 1.0.5-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
         // DELETE all instances under an application to delete the application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", DELETE)
-                                      .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"message\":\"Deleted instance tenant1.application1.default\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
@@ -735,8 +739,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               "{\"message\":\"Deleted instance tenant1.application1.instance2\"}");
-
-        // DELETE a tenant
+        // DELETE the application which now only has one instance
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
+                                      .userIdentity(USER_ID)
+                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
+                              "{\"message\":\"Deleted application tenant1.application1\"}");
+        // DELETE an empty tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               new File("tenant-without-applications.json"));

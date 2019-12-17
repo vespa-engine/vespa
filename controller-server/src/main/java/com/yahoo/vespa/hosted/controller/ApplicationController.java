@@ -718,6 +718,7 @@ public class ApplicationController {
         if (instances.size() > 1)
             throw new IllegalArgumentException("Could not delete application; more than one instance present: " + instances);
 
+        lockApplicationOrThrow(id, application -> store(application.with(DeploymentSpec.empty)));
         for (ApplicationId instance : instances)
             deleteInstance(instance);
 
@@ -744,6 +745,9 @@ public class ApplicationController {
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments in: " +
                                                    application.get().require(instanceId.instance()).deployments().keySet().stream().map(ZoneId::toString)
                                                               .sorted().collect(Collectors.joining(", ")));
+            if (   ! application.get().deploymentSpec().equals(DeploymentSpec.empty)
+                &&   application.get().deploymentSpec().instanceNames().contains(instanceId.instance()))
+                throw new IllegalArgumentException("Can not delete '" + instanceId + "', which is specified in 'deployment.xml'; remove it there instead");
 
             Instance instance = application.get().require(instanceId.instance());
             instance.rotations().forEach(assignedRotation -> {
