@@ -261,7 +261,7 @@ struct MyWorld {
     static SearchRequest::SP createRequest(const vespalib::string &stack_dump)
     {
         SearchRequest::SP request(new SearchRequest);
-        request->setTimeout(60 * fastos::TimeStamp::SEC);
+        request->setTimeout(60s);
         setStackDump(*request, stack_dump);
         request->maxhits = 10;
         return request;
@@ -768,8 +768,7 @@ TEST("require that getSummaryFeatures prefers cached query setup") {
     ASSERT_EQUAL(0u, fs->numDocs());  // "spread" has no hits
 
     // Empty cache
-    auto pruneTime = fastos::ClockSteady::now() +
-                     fastos::TimeStamp::MINUTE * 10;
+    auto pruneTime = vespalib::steady_clock::now() + 600s;
     world.sessionManager->pruneTimedOutSessions(pruneTime);
 
     fs = world.getSummaryFeatures(req);

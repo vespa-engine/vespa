@@ -277,7 +277,7 @@ Test::Main()
     LOG(info, "sizeof(CountAggregationResult) = %ld", sizeof(CountAggregationResult));
     LOG(info, "sizeof(Int64ResultNode) = %ld", sizeof(Int64ResultNode));
 
-    fastos::SteadyTimeStamp start(fastos::ClockSteady::now());
+    vespalib::steady_time start(vespalib::steady_clock::now());
     if (idType == "int") {
         if (aggrType == "sum") {
             benchmarkIntegerSum(useEngine, numDocs, numQueries, maxGroups);

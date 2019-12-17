@@ -87,7 +87,7 @@ makeSubDBConfig(const ProtonConfig::Distribution & distCfg, const Allocation & a
 
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {
-    return index::IndexConfig(WarmupConfig(cfg.warmup.time, cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
+    return index::IndexConfig(WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), cfg.maxflushed, cfg.cache.size);
 }
 
 ProtonConfig::Documentdb _G_defaultProtonDocumentDBConfig;

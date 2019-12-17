@@ -197,7 +197,7 @@ struct MySessionCachePruner : public ISessionCachePruner
 {
     bool isInvoked;
     MySessionCachePruner() : isInvoked(false) { }
-    void pruneTimedOutSessions(fastos::SteadyTimeStamp current) override {
+    void pruneTimedOutSessions(vespalib::steady_time current) override {
         (void) current;
         isInvoked = true;
     }

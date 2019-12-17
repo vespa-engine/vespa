@@ -9,7 +9,7 @@
 
 namespace proton::matching {
 
-typedef vespalib::string SessionId;
+using SessionId = vespalib::string;
 
 struct GroupingSessionCache;
 struct SearchSessionCache;
@@ -33,11 +33,11 @@ public:
 
     struct SearchSessionInfo {
         vespalib::string id;
-        fastos::SteadyTimeStamp created;
-        fastos::SteadyTimeStamp doom;
+        vespalib::steady_time created;
+        vespalib::steady_time doom;
         SearchSessionInfo(const vespalib::string &id_in,
-                          fastos::SteadyTimeStamp created_in,
-                          fastos::SteadyTimeStamp doom_in)
+                          vespalib::steady_time created_in,
+                          vespalib::steady_time doom_in)
             : id(id_in), created(created_in), doom(doom_in) {}
     };
 
@@ -62,7 +62,7 @@ public:
     size_t getNumSearchSessions() const;
     std::vector<SearchSessionInfo> getSortedSearchSessionInfo() const;
 
-    void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) override;
+    void pruneTimedOutSessions(vespalib::steady_time currentTime) override;
     void close();
 };
 

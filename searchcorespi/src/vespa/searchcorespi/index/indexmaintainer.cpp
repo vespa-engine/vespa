@@ -391,8 +391,8 @@ IndexMaintainer::swapInNewIndex(LockGuard & guard,
 {
     assert(indexes->valid());
     (void) guard;
-    if (_warmupConfig.getDuration() > 0) {
-        if (dynamic_cast<const IDiskIndex *>(&source) != NULL) {
+    if (_warmupConfig.getDuration() > vespalib::duration::zero()) {
+        if (dynamic_cast<const IDiskIndex *>(&source) != nullptr) {
             LOG(debug, "Warming up a disk index.");
             indexes = std::make_shared<WarmupIndexCollection>
                       (_warmupConfig, getLeaf(guard, _source_list, true), indexes,
