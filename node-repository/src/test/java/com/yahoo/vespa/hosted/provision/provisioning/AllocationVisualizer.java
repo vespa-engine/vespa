@@ -62,7 +62,6 @@ public class AllocationVisualizer extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        System.out.println("PAINTING");
         if (steps.size() == 0) return;
 
         int nodeX = 40;

@@ -162,14 +162,11 @@ public class MultigroupProvisioningTest {
         int previousActiveNodeCount = tester.getNodes(application, Node.State.active).resources(nodeResources).size();
 
         tester.activate(application, prepare(application, capacity, wantedGroups, tester));
-
-        System.out.println("Active nodes ---------------");
-        tester.getNodes(application, Node.State.active).forEach(n -> System.out.println("  " + n.hostname() + ": Flavor : " + n.flavor() + " retired " + n.status().wantToRetire()));
         assertEquals("Superfluous nodes are retired, but no others - went from " + previousActiveNodeCount + " to " + nodeCount + " nodes",
                      Math.max(0, previousActiveNodeCount - capacity.nodeCount()),
                      tester.getNodes(application, Node.State.active).retired().resources(nodeResources).size());
         assertEquals("Other flavors are retired",
-                     0, tester.getNodes(application, Node.State.active).nonretired().notResources(nodeResources).size());
+                     0, tester.getNodes(application, Node.State.active).not().retired().not().resources(nodeResources).size());
 
         // Check invariants for all nodes
         Set<Integer> allIndexes = new HashSet<>();
@@ -185,7 +182,7 @@ public class MultigroupProvisioningTest {
         // Count unretired nodes and groups of the requested flavor
         Set<Integer> indexes = new HashSet<>();
         Map<ClusterSpec.Group, Integer> nonretiredGroups = new HashMap<>();
-        for (Node node : tester.getNodes(application, Node.State.active).nonretired().resources(nodeResources)) {
+        for (Node node : tester.getNodes(application, Node.State.active).not().retired().resources(nodeResources)) {
             indexes.add(node.allocation().get().membership().index());
 
             ClusterSpec.Group group = node.allocation().get().membership().cluster().group().get();
