@@ -5,6 +5,7 @@
 package ai.vespa.metricsproxy.http.application;
 
 import java.net.URI;
+import java.util.Objects;
 
 /**
  * Represents a node to retrieve metrics from.
@@ -20,6 +21,10 @@ public class Node {
 
     final URI metricsUri;
 
+    public Node(VespaNodesConfig.Node nodeConfig) {
+        this(nodeConfig.configId(), nodeConfig.hostname(), nodeConfig.port() ,nodeConfig.path());
+    }
+
     public Node(String configId, String host, int port, String path) {
         this.configId = configId;
         this.host = host;
@@ -32,4 +37,18 @@ public class Node {
         return URI.create("http://" + host + ":" + port + path);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Node node = (Node) o;
+        return port == node.port &&
+                configId.equals(node.configId) &&
+                host.equals(node.host);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(configId, host, port);
+    }
 }

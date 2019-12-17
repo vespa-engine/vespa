@@ -33,8 +33,8 @@ public class NodeMetricsClient {
 
     static final Duration METRICS_TTL = Duration.ofSeconds(30);
 
+    final Node node;
     private final HttpClient httpClient;
-    private final Node node;
     private final Clock clock;
 
     private List<MetricsPacket.Builder> metrics = emptyList();
