@@ -115,7 +115,7 @@ public class Application {
 
     /** Returns the instance with the given name, or throws. */
     public Instance require(InstanceName instance) {
-        return get(instance).orElseThrow(() -> new IllegalArgumentException("Unknown instance '" + instance + "'"));
+        return get(instance).orElseThrow(() -> new IllegalArgumentException("Unknown instance '" + instance + "' in '" + id + "'"));
     }
 
     /**
