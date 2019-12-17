@@ -55,8 +55,8 @@ public class BufferedLogStore {
         for (LogEntry entry : entries)
             stepEntries.add(new LogEntry(++lastEntryId, entry.at(), entry.type(), entry.message()));
 
-        buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
         buffer.writeLastLogEntryId(id, type, lastEntryId);
+        buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
     }
 
     /** Reads all log entries after the given threshold, from the buffered log, i.e., for an active run. */
