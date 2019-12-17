@@ -894,7 +894,7 @@ void keyValue(TensorType type, java.util.Map cellMap) :
     ExpressionNode value;
 }
 {
-    label = tag() <COLON> value = expression()
+    label = label() <COLON> value = expression()
     { cellMap.put(TensorAddress.ofLabels(label), TensorFunctionNode.wrapScalar(value)); }
 }
 
@@ -904,7 +904,7 @@ void mixedBlock(TensorType type, List dimensionOrder, java.util.Map cellMap) :
     List cells;
 }
 {
-    label = tag() <COLON> cells = indexedTensorCells()
+    label = label() <COLON> cells = indexedTensorCells()
     { TensorFunctionNode.wrapScalarBlock(type, dimensionOrder, label, cells, cellMap); }
 }
 
@@ -952,7 +952,7 @@ void labelAndDimension(TensorAddress.Builder addressBuilder) :
     String dimension, label;
 }
 {
-    dimension = identifier() <COLON> label = tag()
+    dimension = identifier() <COLON> label = label()
     { addressBuilder.add(dimension, label); }
 }
 
@@ -1000,4 +1000,18 @@ Slice.DimensionValue dimensionValue(Optional dimensionName) :
     else
         return new Slice.DimensionValue(dimensionName, TensorFunctionNode.wrapScalar(value));
 }
+}
+
+String label() :
+{
+    String label;
+}
+{
+    ( label = tag() | label = string() )
+    { return label; }
+}
+
+String string() : {}
+{
+    <STRING> { return token.image.substring(1, token.image.length() - 1); }
 }
