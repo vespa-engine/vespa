@@ -143,7 +143,7 @@ class TensorParser {
         }
 
         protected void skipSpace() {
-            while (position < string.length() && string.charAt(position) == ' ')
+            while (position < string.length() && Character.isWhitespace(string.charAt(position)))
                 position++;
         }
 
@@ -227,6 +227,7 @@ class TensorParser {
 
         protected int nextStopCharIndex(int position, String valueString) {
             while (position < valueString.length()) {
+                if (Character.isWhitespace(valueString.charAt(position))) return position;
                 if (valueString.charAt(position) == ',') return position;
                 if (valueString.charAt(position) == ']') return position;
                 if (valueString.charAt(position) == '}') return position;
@@ -365,6 +366,8 @@ class TensorParser {
                 TensorAddress address = consumeLabels();
                 if ( ! address.isEmpty())
                     consume(':');
+                else
+                    consumeOptional(':');
 
                 int valueEnd = string.indexOf(',', position);
                 if (valueEnd < 0) { // last value

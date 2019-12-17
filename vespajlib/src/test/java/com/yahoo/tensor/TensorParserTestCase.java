@@ -9,6 +9,11 @@ import static org.junit.Assert.fail;
 public class TensorParserTestCase {
 
     @Test
+    public void testEmpty() {
+        assertEquals(Tensor.Builder.of(TensorType.empty).cell(1).build(), Tensor.from("tensor():{{}:1}"));
+    }
+
+    @Test
     public void testSparseParsing() {
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor()")).build(),
                      Tensor.from("{}"));
@@ -18,7 +23,7 @@ public class TensorParserTestCase {
                      Tensor.from("{{x:l0}:1.0}"));
         assertEquals("If the type is specified, a dense tensor can be created from the sparse text form",
                      Tensor.Builder.of(TensorType.fromSpec("tensor(x[1])")).cell(1.0, 0).build(),
-                     Tensor.from("tensor(x[1]):{{x:0}:1.0}"));
+                     Tensor.from("tensor(x[1]):{{x:0 }:1.0}"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x{})")).cell().label("x", "..\",]}:..").value(1.0).build(),
                      Tensor.from("{{x:'..\",]}:..'}:1.0}"));
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor(x{})")).cell().label("x", "..'..").value(1.0).build(),
