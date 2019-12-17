@@ -146,8 +146,16 @@ public class ApplicationController {
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = clock.instant();
             int count = 0;
-            for (Application application : curator.readApplications()) {
-                lockApplicationIfPresent(application.id(), this::store);
+            for (TenantAndApplicationId id: curator.readApplicationIds()) {
+                lockApplicationIfPresent(id, application -> {
+                    if (id.tenant().value().startsWith("by-"))
+                        application = application.with(DeploymentSpec.empty);
+                    else
+                        for (InstanceName instance : application.get().deploymentSpec().instanceNames())
+                            if ( ! application.get().instances().keySet().contains(instance))
+                                application = application.withNewInstance(instance);
+                    store(application);
+                });
                 count++;
             }
             log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
