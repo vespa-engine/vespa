@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -60,9 +61,15 @@ public class LoadBalancerExpirerTest {
         // Expirer defers removal while nodes are still allocated to application
         expirer.maintain();
         assertEquals(3, tester.loadBalancerService().instances().size());
+        assertEquals(2, tester.loadBalancerService().instances().get(lb1).reals().size());
         dirtyNodesOf(app1, cluster1);
 
-        // Expirer defers removal until expiration time passes
+        // Expirer prunes reals before expiration time of load balancer itself
+        expirer.maintain();
+        assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
+        assertEquals(Set.of(), tester.nodeRepository().loadBalancers().owner(lb1.application()).asList().get(0).instance().reals());
+
+        // Expirer defers removal of load balancer until expiration time passes
         expirer.maintain();
         assertTrue("Inactive load balancer not removed", tester.loadBalancerService().instances().containsKey(lb1));
 
