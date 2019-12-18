@@ -27,8 +27,10 @@ import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.functions.ScalarFunctions;
 import onnx.Onnx;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -123,6 +125,7 @@ class GraphImporter {
 
         IntermediateGraph intermediateGraph = new IntermediateGraph(modelName);
         importOperations(onnxGraph, intermediateGraph);
+        verifyNoWarnings(intermediateGraph);
         verifyOutputTypes(onnxGraph, intermediateGraph);
 
         return intermediateGraph;
@@ -234,6 +237,16 @@ class GraphImporter {
                 .collect(Collectors.toList());
     }
 
+    private static void verifyNoWarnings(IntermediateGraph intermediateGraph) {
+        for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(intermediateGraph.defaultSignature()).entrySet()) {
+            IntermediateOperation operation = intermediateGraph.get(output.getValue());
+            Set<String> warnings = getWarnings(operation);
+            if (warnings.size() > 0) {
+                throw new IllegalArgumentException("Could not import " + intermediateGraph.name() + ": " + String.join("\n", warnings));
+            }
+        }
+    }
+
     private static void verifyOutputTypes(Onnx.GraphProto onnxGraph, IntermediateGraph intermediateGraph) {
         for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(intermediateGraph.defaultSignature()).entrySet()) {
             IntermediateOperation operation = intermediateGraph.get(output.getValue());
@@ -282,6 +295,14 @@ class GraphImporter {
             return node.getOutput(0);
         throw new IllegalArgumentException("Unable to find a suitable name for node '" + node.toString() + "'. " +
                 "Either no explicit name given or no single output name.");
+    }
+
+    private static Set<String> getWarnings(IntermediateOperation op) {
+        Set<String> warnings = new HashSet<>(op.warnings());
+        for (IntermediateOperation input : op.inputs()) {
+            warnings.addAll(getWarnings(input));
+        }
+        return warnings;
     }
 
 }
