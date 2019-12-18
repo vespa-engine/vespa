@@ -132,7 +132,7 @@ public class DockerImpl implements Docker {
             if (timeoutSeconds.isPresent()) {
                 if (!callback.awaitCompletion(timeoutSeconds.getAsLong(), TimeUnit.SECONDS))
                     throw new DockerExecTimeoutException(String.format(
-                            "Command '%s' did not finish within %s seconds.", command[0], timeoutSeconds));
+                            "Command '%s' did not finish within %d seconds.", command[0], timeoutSeconds.getAsLong()));
             } else {
                 // Wait for completion no timeout
                 callback.awaitCompletion();
