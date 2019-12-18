@@ -1,4 +1,4 @@
 {
-  "message": "Deployment started in run 1 of dev-us-east-1 for tenant1.application1.otheruser. This may take about 15 minutes the first time.",
+  "message": "Deployment started in run 1 of dev-us-east-1 for tenant1.application1.myuser. This may take about 15 minutes the first time.",
   "run": 1
 }
