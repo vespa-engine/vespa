@@ -151,7 +151,7 @@ class GraphImporter {
             OrderedTensorType type = TypeConverter.typeFrom(valueInfoProto.getType());
             operation = new Argument(intermediateGraph.name(), valueInfoProto.getName(), type);
 
-            intermediateGraph.inputs(IntermediateGraph.defaultSignature())
+            intermediateGraph.inputs(intermediateGraph.defaultSignature())
                     .put(IntermediateOperation.namePartOf(name), operation.vespaName());
 
         } else if (isConstantTensor(name, onnxGraph)) {
@@ -171,7 +171,7 @@ class GraphImporter {
             }
 
             if (isOutputNode(name, onnxGraph)) {
-                intermediateGraph.outputs(IntermediateGraph.defaultSignature())
+                intermediateGraph.outputs(intermediateGraph.defaultSignature())
                         .put(IntermediateOperation.namePartOf(name), operation.name());
             }
         }
@@ -238,7 +238,7 @@ class GraphImporter {
     }
 
     private static void verifyNoWarnings(IntermediateGraph intermediateGraph) {
-        for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(IntermediateGraph.defaultSignature()).entrySet()) {
+        for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(intermediateGraph.defaultSignature()).entrySet()) {
             IntermediateOperation operation = intermediateGraph.get(output.getValue());
             Set<String> warnings = getWarnings(operation);
             if (warnings.size() > 0) {
@@ -248,7 +248,7 @@ class GraphImporter {
     }
 
     private static void verifyOutputTypes(Onnx.GraphProto onnxGraph, IntermediateGraph intermediateGraph) {
-        for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(IntermediateGraph.defaultSignature()).entrySet()) {
+        for (java.util.Map.Entry<String, String> output : intermediateGraph.outputs(intermediateGraph.defaultSignature()).entrySet()) {
             IntermediateOperation operation = intermediateGraph.get(output.getValue());
             Onnx.ValueInfoProto onnxNode = getOutputNode(output.getKey(), onnxGraph);
             OrderedTensorType type = operation.type().orElseThrow(

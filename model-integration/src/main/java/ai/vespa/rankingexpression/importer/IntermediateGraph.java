@@ -58,7 +58,7 @@ public class IntermediateGraph {
         return signatures.computeIfAbsent(signature, (k) -> new GraphSignature()).outputs;
     }
 
-    public static String defaultSignature() {
+    public String defaultSignature() {
         return "default";
     }
 
