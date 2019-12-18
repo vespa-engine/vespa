@@ -408,8 +408,7 @@ public class SearchCluster implements NodeManager<Node> {
             activeDocuments += n.getActiveDocuments();
         }
         long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
-        boolean sufficient = isGroupCoverageSufficient(nodes.size(), nodesInGroup, activeDocuments, averageDocumentsInOtherGroups);
-        return sufficient;
+        return isGroupCoverageSufficient(nodes.size(), nodesInGroup, activeDocuments, averageDocumentsInOtherGroups);
     }
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
