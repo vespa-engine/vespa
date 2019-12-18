@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace vespalib { class Slime; }
 namespace vespalib::slime { struct Cursor; }
@@ -13,21 +13,21 @@ namespace search::engine {
 class Clock {
 public:
     virtual ~Clock() = default;
-    virtual fastos::SteadyTimeStamp now() const = 0;
+    virtual vespalib::steady_time now() const = 0;
 };
 
 class SteadyClock : public Clock {
 public:
-    fastos::SteadyTimeStamp now() const override;
+    vespalib::steady_time now() const override;
 };
 
 class CountingClock : public Clock {
 public:
     CountingClock(int64_t start, int64_t increment) : _increment(increment), _nextTime(start) { }
-    fastos::SteadyTimeStamp now() const override {
+    vespalib::steady_time now() const override {
         int64_t prev = _nextTime;
         _nextTime += _increment;
-        return fastos::SteadyTimeStamp(prev);
+        return vespalib::steady_time(vespalib::duration(prev));
     }
 private:
     const int64_t   _increment;
@@ -37,11 +37,11 @@ private:
 class RelativeTime {
 public:
     RelativeTime(std::unique_ptr<Clock> clock);
-    fastos::SteadyTimeStamp timeOfDawn() const { return _start; }
-    fastos::TimeStamp timeSinceDawn() const { return _clock->now() - _start; }
-    fastos::SteadyTimeStamp now() const { return _clock->now(); }
+    vespalib::steady_time timeOfDawn() const { return _start; }
+    vespalib::duration timeSinceDawn() const { return _clock->now() - _start; }
+    vespalib::steady_time now() const { return _clock->now(); }
 private:
-    fastos::SteadyTimeStamp _start;
+    vespalib::steady_time _start;
     std::unique_ptr<Clock>  _clock;
 };
 
@@ -60,7 +60,7 @@ public:
      * Will add start timestamp if level is high enough
      * @param level
      */
-    void start(int level);
+    void start(int level, bool useUTC=true);
 
     /**
      * Will give you a trace entry. It will also add a timestamp relative to the creation of the trace.

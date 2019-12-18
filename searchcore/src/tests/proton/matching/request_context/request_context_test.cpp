@@ -42,7 +42,7 @@ private:
 public:
     RequestContextTest()
         : _clock(),
-          _doom(_clock, fastos::SteadyTimeStamp::ZERO, fastos::SteadyTimeStamp::ZERO, false),
+          _doom(_clock, vespalib::steady_time(), vespalib::steady_time(), false),
           _attr_ctx(),
           _props(),
           _request_ctx(_doom, _attr_ctx, _props),

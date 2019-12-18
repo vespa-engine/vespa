@@ -46,7 +46,7 @@ TEST_F(SearchRequestTest, require_that_hits_is_converted) {
 TEST_F(SearchRequestTest, require_that_timeout_is_converted) {
     proto.set_timeout(500);
     convert();
-    EXPECT_EQ(request.getTimeout().ms(), 500);
+    EXPECT_EQ(request.getTimeout(), 500ms);
 }
 
 TEST_F(SearchRequestTest, require_that_trace_level_is_converted) {
@@ -317,7 +317,7 @@ TEST_F(DocsumRequestTest, require_that_root_slime_is_used) {
 TEST_F(DocsumRequestTest, require_that_timeout_is_converted) {
     proto.set_timeout(500);
     convert();
-    EXPECT_EQ(request.getTimeout().ms(), 500);
+    EXPECT_EQ(request.getTimeout(), 500ms);
 }
 
 TEST_F(DocsumRequestTest, require_that_session_key_is_converted) {

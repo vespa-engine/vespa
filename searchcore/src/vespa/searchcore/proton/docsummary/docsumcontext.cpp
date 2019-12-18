@@ -78,7 +78,7 @@ DocsumContext::createReply()
             Slime slime(Slime::Params(std::move(symbols)));
             vespalib::slime::SlimeInserter inserter(slime);
             if (_request.expired()) {
-                inserter.insertString(make_string("Timed out with %" PRId64 "us left.", _request.getTimeLeft().us()));
+                inserter.insertString(make_string("Timed out with %" PRId64 "us left.", vespalib::count_us(_request.getTimeLeft())));
             } else {
                 _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, slime, inserter);
             }
@@ -129,7 +129,7 @@ DocsumContext::createSlimeReply()
         Cursor & timeout = errors.addObject();
         timeout.setString(TYPE, TIMEOUT);
         timeout.setString(MESSAGE, make_string("Timed out %d summaries with %" PRId64 "us left.",
-                                               numTimedOut, _request.getTimeLeft().us()));
+                                               numTimedOut, vespalib::count_us(_request.getTimeLeft())));
     }
     return response;
 }

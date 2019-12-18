@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/time.h>
 #include <vector>
 #include <memory>
 
@@ -21,10 +22,10 @@ public:
     using GroupingList = std::vector<GroupingPtr>;
 
 private:
-    const vespalib::Clock     & _clock;
-    fastos::SteadyTimeStamp     _timeOfDoom;
-    vespalib::nbostream         _os;
-    GroupingList                _groupingList;
+    const vespalib::Clock & _clock;
+    vespalib::steady_time   _timeOfDoom;
+    vespalib::nbostream     _os;
+    GroupingList            _groupingList;
 public:
 
     /**
@@ -40,14 +41,14 @@ public:
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, fastos::SteadyTimeStamp timeOfDoom, const char *groupSpec, uint32_t groupSpecLen);
+    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom, const char *groupSpec, uint32_t groupSpecLen);
 
     /**
      * Create a new grouping context from a byte buffer.
      * @param groupSpec The grouping specification to use for initialization.
      * @param groupSpecLen The length of the grouping specification, in bytes.
      **/
-    GroupingContext(const vespalib::Clock & clock, fastos::SteadyTimeStamp timeOfDoom);
+    GroupingContext(const vespalib::Clock & clock, vespalib::steady_time timeOfDoom);
 
     /**
      * Shallow copy of references
@@ -105,7 +106,7 @@ public:
     /**
      * Obtain the time of doom.
      */
-    fastos::SteadyTimeStamp getTimeOfDoom() const { return _timeOfDoom; }
+    vespalib::steady_time getTimeOfDoom() const { return _timeOfDoom; }
     /**
      * Figure out if ranking is necessary for any of the grouping requests here.
      * @return true if ranking is required.

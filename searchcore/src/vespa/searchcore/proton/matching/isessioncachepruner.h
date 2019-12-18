@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace proton::matching {
 
 struct ISessionCachePruner {
     virtual ~ISessionCachePruner() {}
 
-    virtual void pruneTimedOutSessions(fastos::SteadyTimeStamp currentTime) = 0;
+    virtual void pruneTimedOutSessions(vespalib::steady_time currentTime) = 0;
 };
 
 }

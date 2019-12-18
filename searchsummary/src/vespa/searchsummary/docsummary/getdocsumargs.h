@@ -14,14 +14,14 @@ public:
     typedef engine::PropertiesMap PropsMap;
 
 private:
-    vespalib::string  _ranking;
-    vespalib::string  _resultClassName;
-    bool              _dumpFeatures;
-    uint32_t          _stackItems;
-    std::vector<char> _stackDump;
-    vespalib::string  _location;
-    fastos::TimeStamp _timeout;
-    PropsMap          _propertiesMap;
+    vespalib::string   _ranking;
+    vespalib::string   _resultClassName;
+    bool               _dumpFeatures;
+    uint32_t           _stackItems;
+    std::vector<char>  _stackDump;
+    vespalib::string   _location;
+    vespalib::duration _timeout;
+    PropsMap           _propertiesMap;
 public:
     GetDocsumArgs();
     ~GetDocsumArgs();
@@ -35,8 +35,8 @@ public:
         _location = location;
     }
 
-    void setTimeout(const fastos::TimeStamp & timeout);
-    fastos::TimeStamp getTimeout() const;
+    void setTimeout(vespalib::duration timeout) { _timeout = timeout; }
+    vespalib::duration getTimeout() const { return _timeout; }
 
     const vespalib::string & getResultClassName()      const { return _resultClassName; }
     const vespalib::string & getLocation()             const { return _location; }

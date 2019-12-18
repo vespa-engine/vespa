@@ -3,7 +3,7 @@
 
 #include "sessionid.h"
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 #include <vector>
 #include <map>
 
@@ -30,7 +30,7 @@ private:
     std::unique_ptr<GroupingContext> _mgrContext;
     std::unique_ptr<GroupingManager> _groupingManager;
     GroupingMap                      _groupingMap;
-    fastos::SteadyTimeStamp          _timeOfDoom;
+    vespalib::steady_time            _timeOfDoom;
 
 public:
     typedef std::unique_ptr<GroupingSession> UP;
@@ -108,7 +108,7 @@ public:
     /**
      * Get this sessions timeout.
      */
-    fastos::SteadyTimeStamp getTimeOfDoom() const { return _timeOfDoom; }
+    vespalib::steady_time getTimeOfDoom() const { return _timeOfDoom; }
 };
 
 }

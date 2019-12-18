@@ -115,8 +115,8 @@ Grouping::Grouping()
       _lastLevel(0),
       _levels(),
       _root(),
-      _clock(NULL),
-      _timeOfDoom(0)
+      _clock(nullptr),
+      _timeOfDoom(vespalib::duration::zero())
 {
 }
 

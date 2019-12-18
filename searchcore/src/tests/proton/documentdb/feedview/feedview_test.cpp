@@ -707,7 +707,7 @@ FixtureBase::FixtureBase(vespalib::duration visibilityDelay)
       _writeServiceReal(_sharedExecutor),
       _writeService(_writeServiceReal),
       _lidReuseDelayer(_writeService, _dmsc->get()),
-      _commitTimeTracker(vespalib::count_ns(visibilityDelay)),
+      _commitTimeTracker(visibilityDelay),
       serial(0),
       _gidToLidChangeHandler(std::make_shared<MyGidToLidChangeHandler>())
 {

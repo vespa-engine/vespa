@@ -165,16 +165,16 @@ LoadAttribute::Main()
     c.setFastSearch(doFastSearch);
     c.setHuge(doHuge);
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     load(ptr);
-    std::cout << "load time: " << timer.elapsed().sec() << " seconds " << std::endl;
+    std::cout << "load time: " << vespalib::to_s(timer.elapsed()) << " seconds " << std::endl;
 
     std::cout << "numDocs: " << ptr->getNumDocs() << std::endl;
 
     if (doApplyUpdate) {
-        timer.restart();
+        timer = vespalib::Timer();
         applyUpdate(ptr);
-        std::cout << "update time: " << timer.elapsed().sec() << " seconds " << std::endl;
+        std::cout << "update time: " << vespalib::to_s(timer.elapsed()) << " seconds " << std::endl;
     }
 
     if (doPrintContent) {
@@ -191,9 +191,9 @@ LoadAttribute::Main()
     if (doSave) {
         vespalib::string saveFile = fileName + ".save";
         std::cout << "saving attribute: " << saveFile << std::endl;
-        timer.restart();
+        timer = vespalib::Timer();
         ptr->save(saveFile);
-        std::cout << "save time: " << timer.elapsed().sec() << " seconds " << std::endl;
+        std::cout << "save time: " << vespalib::to_s(timer.elapsed()) << " seconds " << std::endl;
     }
 
     return 0;
