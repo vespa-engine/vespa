@@ -2,9 +2,9 @@
 package com.yahoo.tensor;
 
 import com.google.common.collect.ImmutableList;
+import com.yahoo.text.Ascii7BitMatcher;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -15,6 +15,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
+
 /**
  * A tensor type with its dimensions. This is immutable.
  * <p>
@@ -24,6 +26,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class TensorType {
+
+    static Ascii7BitMatcher labelMatcher = new Ascii7BitMatcher("-_@" + charsAndNumbers(), "_@$" + charsAndNumbers());
 
     /** The permissible cell value types. Default is double. */
     public enum Value {
@@ -292,8 +296,7 @@ public class TensorType {
         private final String name;
 
         private Dimension(String name) {
-            Objects.requireNonNull(name, "A tensor name cannot be null");
-            this.name = name;
+            this.name = requireIdentifier(name);
         }
 
         public final String name() { return name; }
@@ -359,6 +362,14 @@ public class TensorType {
 
         public static Dimension mapped(String name) {
             return new MappedDimension(name);
+        }
+
+        static private String requireIdentifier(String name) {
+            if (name == null)
+                throw new IllegalArgumentException("A dimension name cannot be null");
+            if ( ! TensorType.labelMatcher.matches(name))
+                throw new IllegalArgumentException("A dimension name must be an identifier or integer, not '" + name + "'");
+            return name;
         }
 
     }

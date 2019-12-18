@@ -81,11 +81,15 @@ search tensor {
   rank-profile profile7 {
 
     first-phase {
-      expression: sum(reshaped())
+      expression: sum(reshaped() * literal())
     }
 
     function reshaped() {
       expression: tensor<float>(d0[1],x[2])(attribute(f2){x:1-x, y:d0})
+    }
+
+    function literal() {
+      expression: tensor<float>(key{}):{ 'foo':0.5, bar:1.2, "han's":3.1}
     }
 
   }

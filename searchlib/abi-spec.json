@@ -925,6 +925,8 @@
       "public final void labelAndDimensionValues(java.util.List)",
       "public final java.util.List valueAddress()",
       "public final com.yahoo.tensor.functions.Slice$DimensionValue dimensionValue(java.util.Optional)",
+      "public final java.lang.String label()",
+      "public final java.lang.String string()",
       "public void <init>(java.io.InputStream)",
       "public void <init>(java.io.InputStream, java.lang.String)",
       "public void ReInit(java.io.InputStream)",
