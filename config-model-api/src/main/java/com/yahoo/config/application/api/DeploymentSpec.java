@@ -35,15 +35,7 @@ import java.util.stream.Stream;
 public class DeploymentSpec {
 
     /** The empty deployment spec, specifying no zones or rotation, and defaults for all settings */
-    public static final DeploymentSpec empty = new DeploymentSpec(List.of(new DeploymentInstanceSpec(InstanceName.from("default"),
-                                                                                                     Collections.emptyList(),
-                                                                                                     UpgradePolicy.defaultPolicy,
-                                                                                                     Collections.emptyList(),
-                                                                                                     Optional.empty(),
-                                                                                                     Optional.empty(),
-                                                                                                     Optional.empty(),
-                                                                                                     Notifications.none(),
-                                                                                                     List.of())),
+    public static final DeploymentSpec empty = new DeploymentSpec(List.of(),
                                                                   Optional.empty(),
                                                                   Optional.empty(),
                                                                   Optional.empty(),

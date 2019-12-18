@@ -422,14 +422,6 @@ public class DeploymentSpecTest {
     }
 
     @Test
-    public void testEmpty() {
-        assertFalse(DeploymentSpec.empty.requireInstance("default").globalServiceId().isPresent());
-        assertTrue(DeploymentSpec.empty.requireInstance("default").steps().isEmpty());
-        assertEquals(1, DeploymentSpec.empty.steps().size());
-        assertEquals("<deployment version='1.0'/>", DeploymentSpec.empty.xmlForm());
-    }
-
-    @Test
     public void productionSpecWithParallelDeployments() {
         StringReader r = new StringReader(
                 "<deployment>" +
