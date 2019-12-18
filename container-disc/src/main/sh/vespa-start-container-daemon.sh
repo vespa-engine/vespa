@@ -76,13 +76,10 @@ configure_memory() {
         fi
 
         jvm_heapsize=$((available * jvm_heapSizeAsPercentageOfPhysicalMemory / 100))
-        if (( jvm_heapsize < 1024 )); then
-            jvm_heapsize=1024
-        fi
         jvm_minHeapsize=${jvm_heapsize}
     fi
 
-    # Safety measure against bad of min vs max heapsize.
+    # Safety measure against bad min vs max heapsize.
    if ((jvm_minHeapsize > jvm_heapsize)); then
         jvm_minHeapsize=${jvm_heapsize}
         echo "Misconfigured heap size, jvm_minHeapsize(${jvm_minHeapsize} is larger than jvm_heapsize(${jvm_heapsize}). It has been capped."
