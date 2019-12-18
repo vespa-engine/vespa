@@ -128,6 +128,20 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     @Test
+    public void testOnnxReferenceWithSpecifiedOutput() {
+        RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
+                "onnx('mnist_softmax.onnx', 'add')");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+    }
+
+    @Test
+    public void testOnnxReferenceWithSpecifiedOutputAndSignature() {
+        RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
+                "onnx('mnist_softmax.onnx', 'default.add')");
+        search.assertFirstPhaseExpression(vespaExpression, "my_profile");
+    }
+
+    @Test
     public void testOnnxReferenceMissingFunction() throws ParseException {
         try {
             RankProfileSearchFixture search = new RankProfileSearchFixture(
@@ -171,7 +185,7 @@ public class RankingExpressionWithOnnxTestCase {
     @Test
     public void testOnnxReferenceSpecifyingNonExistingOutput() {
         try {
-            RankProfileSearchFixture search = fixtureWith("tensor(d0[2],d1[784])(0.0)",
+            RankProfileSearchFixture search = fixtureWith("tensor<float>(d0[2],d1[784])(0.0)",
                     "onnx('mnist_softmax.onnx', 'y')");
             search.assertFirstPhaseExpression(vespaExpression, "my_profile");
             fail("Expecting exception");

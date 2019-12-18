@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
+import ai.vespa.rankingexpression.importer.IntermediateGraph;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlFunction;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.collections.Pair;
@@ -160,13 +161,16 @@ public class ConvertedModel {
         ExpressionFunction expression = expressions.get(arguments.toName());
         if (expression != null) return expression;
 
-        if ( ! arguments.signature().isPresent()) {
+        expression = expressions.get(IntermediateGraph.defaultSignature() + "." + arguments.toName());
+        if (expression != null) return expression;
+
+        if (arguments.signature().isEmpty()) {
             if (expressions.size() > 1)
                 throw new IllegalArgumentException("Multiple candidate expressions " + missingExpressionMessageSuffix());
             return expressions.values().iterator().next();
         }
 
-        if ( ! arguments.output().isPresent()) {
+        if (arguments.output().isEmpty()) {
             List<Map.Entry<String, ExpressionFunction>> entriesWithTheRightPrefix =
                     expressions.entrySet().stream().filter(entry -> entry.getKey().startsWith(arguments.signature().get() + ".")).collect(Collectors.toList());
             if (entriesWithTheRightPrefix.size() < 1)

@@ -391,7 +391,7 @@ public class OnnxOperationsTestCase {
     private TensorFunction optimizeAndRename(String opName, IntermediateOperation op) {
         IntermediateGraph graph = new IntermediateGraph(modelName);
         graph.put(opName, op);
-        graph.outputs(graph.defaultSignature()).put(opName, opName);
+        graph.outputs(IntermediateGraph.defaultSignature()).put(opName, opName);
         graph.optimize();
         return op.function().get();
     }
