@@ -92,10 +92,9 @@ public class DeploymentSpecXmlReader {
 
     /** Reads a deployment spec from XML */
     public DeploymentSpec read(String xmlForm) {
-        if (DeploymentSpec.empty.xmlForm().equals(xmlForm))
-            return DeploymentSpec.empty;
-
         Element root = XML.getDocument(xmlForm).getDocumentElement();
+        if (isEmptySpec(root))
+            return DeploymentSpec.empty;
 
         List<Step> steps = new ArrayList<>();
         if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
@@ -419,6 +418,13 @@ public class DeploymentSpecXmlReader {
         throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
                                            "to control whether the region should receive production traffic");
     }
+
+    private static boolean isEmptySpec(Element root) {
+        if ( ! XML.getChildren(root).isEmpty()) return false;
+        return    root.getAttributes().getLength() == 0
+               || root.getAttributes().getLength() == 1 && root.hasAttribute("version");
+    }
+
 
     private static class MutableOptional<T> {
 
