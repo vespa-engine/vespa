@@ -123,6 +123,8 @@ public class DeploymentStatus {
 
     public Map<JobId, StepStatus> stepStatus() { return jobSteps; }
 
+    public List<StepStatus> allSteps() { return allSteps; }
+
     private void addProductionJobs(Map<JobId, List<Versions>> jobs, Change change) {
         jobSteps.forEach((job, step) -> {
             Versions versions = Versions.from(change, application, deploymentFor(job), systemVersion);
@@ -321,6 +323,8 @@ public class DeploymentStatus {
         /** The instance of this, if any. */
         public final Optional<InstanceName> instance() { return instance; }
 
+        public Optional<JobId> job() { return Optional.empty(); }
+
         /** The time at which this is complete on the given versions. */
         public abstract Optional<Instant> completedAt(Change change, Versions versions);
 
@@ -376,6 +380,9 @@ public class DeploymentStatus {
             this.job = requireNonNull(job);
             this.status = requireNonNull(status);
         }
+
+        @Override
+        public Optional<JobId> job() { return Optional.of(job.id()); }
 
         @Override
         public boolean isRunning(Versions versions) {

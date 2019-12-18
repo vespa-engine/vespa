@@ -111,7 +111,7 @@ public class RotationRepository {
         }
 
         // Only allow one kind of configuration syntax
-        if (deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent()
+        if (     deploymentSpec.requireInstance(instance.name()).globalServiceId().isPresent()
             && ! deploymentSpec.requireInstance(instance.name()).endpoints().isEmpty()) {
             throw new IllegalArgumentException("Cannot provision rotations with both global-service-id and 'endpoints'");
         }

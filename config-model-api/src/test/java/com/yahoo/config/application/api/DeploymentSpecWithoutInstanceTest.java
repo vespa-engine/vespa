@@ -21,6 +21,7 @@ import static com.yahoo.config.application.api.Notifications.When.failing;
 import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -575,9 +576,15 @@ public class DeploymentSpecWithoutInstanceTest {
     }
 
     @Test
-    public void noNotifications() {
-        assertEquals(Notifications.none(),
-                     DeploymentSpec.fromXml("<deployment />").requireInstance("default").notifications());
+    public void emptySpecs() {
+        assertEquals(DeploymentSpec.empty, DeploymentSpec.fromXml("<deployment>\n" +
+                                                                  "</deployment>"));
+        assertEquals(DeploymentSpec.empty, DeploymentSpec.fromXml("<deployment />"));
+        assertEquals(DeploymentSpec.empty, DeploymentSpec.fromXml("<deployment version=\"1.0\" />"));
+
+        assertNotEquals(DeploymentSpec.empty, DeploymentSpec.fromXml("<deployment version=\"1.0\" athenz-domain=\"domain\" athenz-service=\"service\"/>"));
+        assertNotEquals(DeploymentSpec.empty, DeploymentSpec.fromXml("<deployment athenz-domain=\"domain\" athenz-service=\"service\">\n" +
+                                                                     "</deployment>"));
     }
 
     @Test
@@ -615,11 +622,6 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(Optional.of("d-1-4-20"), spec.requireInstance("default").steps().get(0).zones().get(0).testerFlavor());
         assertEquals(Optional.empty(), spec.requireInstance("default").steps().get(1).zones().get(0).testerFlavor());
         assertEquals(Optional.of("d-2-8-50"), spec.requireInstance("default").steps().get(2).zones().get(0).testerFlavor());
-    }
-
-    @Test
-    public void noEndpoints() {
-        assertEquals(Collections.emptyList(), DeploymentSpec.fromXml("<deployment />").requireInstance("default").endpoints());
     }
 
     @Test

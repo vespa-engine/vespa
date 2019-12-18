@@ -49,22 +49,40 @@ public class ApplicationPackage {
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
     private final List<X509Certificate> trustedCertificates;
-    
-    /** 
+
+    /**
      * Creates an application package from its zipped content.
      * This <b>assigns ownership</b> of the given byte array to this class;
      * it must not be further changed by the caller.
      */
     public ApplicationPackage(byte[] zippedContent) {
+        this(zippedContent, false);
+    }
+
+    /**
+     * Creates an application package from its zipped content.
+     * This <b>assigns ownership</b> of the given byte array to this class;
+     * it must not be further changed by the caller.
+     * If 'requireFiles' is true, files needed by deployment orchestration must be present.
+     */
+    public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
-
         Files files = Files.extract(Set.of("deployment.xml", "validation-overrides.xml", "build-meta.json", trustedCertificatesFile), zippedContent);
-        this.deploymentSpec = files.getAsReader("deployment.xml").map(DeploymentSpec::fromXml).orElse(DeploymentSpec.empty);
+
+        Optional<DeploymentSpec> deploymentSpec = files.getAsReader("deployment.xml").map(DeploymentSpec::fromXml);
+        if (requireFiles && deploymentSpec.isEmpty())
+            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+        this.deploymentSpec = deploymentSpec.orElse(DeploymentSpec.empty);
+
         this.validationOverrides = files.getAsReader("validation-overrides.xml").map(ValidationOverrides::fromXml).orElse(ValidationOverrides.empty);
+
         Optional<Inspector> buildMetaObject = files.get("build-meta.json").map(SlimeUtils::jsonToSlime).map(Slime::get);
+        if (requireFiles && buildMetaObject.isEmpty())
+            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
+
         this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
     }
 
@@ -109,9 +127,10 @@ public class ApplicationPackage {
     }
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
+        if ( ! buildMetaObject.field(fieldName).valid())
+            throw new IllegalArgumentException("Missing value '" + fieldName + "' in 'build-meta.json'");
         try {
-            return buildMetaObject.field(fieldName).valid() ? Optional.of(mapper.apply(buildMetaObject.field(fieldName)))
-                                                            : Optional.empty();
+            return Optional.of(mapper.apply(buildMetaObject.field(fieldName)));
         }
         catch (RuntimeException e) {
             throw new IllegalArgumentException("Failed parsing \"" + fieldName + "\" in 'build-meta.json': " + Exceptions.toMessageString(e));
