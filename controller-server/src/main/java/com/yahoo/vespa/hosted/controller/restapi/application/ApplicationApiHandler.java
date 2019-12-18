@@ -1942,9 +1942,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
-        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
-        if (DeploymentSpec.empty.equals(applicationPackage.deploymentSpec()))
-            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          applicationPackage,
