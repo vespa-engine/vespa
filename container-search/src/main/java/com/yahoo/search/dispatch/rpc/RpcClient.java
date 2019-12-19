@@ -86,7 +86,9 @@ class RpcClient implements Client {
 
         @Override
         public void close() {
-            target.close();
+            if (target != null) {
+                target.close();
+            }
         }
 
         @Override

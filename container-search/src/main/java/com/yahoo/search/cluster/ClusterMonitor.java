@@ -140,11 +140,11 @@ public class ClusterMonitor<T> {
             ExecutorService pingExecutor=Executors.newCachedThreadPool(ThreadFactoryFactory.getDaemonThreadFactory("search.ping"));
             while (!closed.get()) {
                 try {
+                    log.finest("Activating ping");
+                    ping(pingExecutor);
                     synchronized (nodeManager) {
                         nodeManager.wait(configuration.getCheckInterval());
                     }
-                    log.finest("Activating ping");
-                    ping(pingExecutor);
                 }
                 catch (Throwable e) {
                     if (closed.get() && e instanceof InterruptedException) {

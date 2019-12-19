@@ -3,6 +3,8 @@ package com.yahoo.prelude.fastsearch.test;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.protect.Error;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.fastsearch.ClusterParams;
@@ -12,6 +14,8 @@ import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.dispatch.Dispatcher;
+import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
 import com.yahoo.search.grouping.request.AllOperation;
@@ -30,6 +34,7 @@ import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -134,6 +139,23 @@ public class FastSearcherTestCase {
                      expected, operation.getForceSinglePass());
         for (GroupingOperation child : operation.getChildren())
             assertForceSinglePassIs(expected, child);
+    }
+
+    @Test
+    public void testDispatchReconfig() {
+        String clusterName = "a";
+        var b = new QrSearchersConfig.Builder();
+        var searchClusterB = new QrSearchersConfig.Searchcluster.Builder();
+        searchClusterB.name(clusterName);
+        b.searchcluster(searchClusterB);
+        VipStatus vipStatus = new VipStatus(b.build());
+        List<Node> nodes_1 = ImmutableList.of(new Node(0, "host0", 0));
+        RpcResourcePool rpcPool_1 = new RpcResourcePool(MockDispatcher.toDispatchConfig(nodes_1));
+        Dispatcher dispatch_1 = MockDispatcher.create(nodes_1, rpcPool_1, 1, vipStatus);
+        vipStatus.addToRotation(clusterName);
+        assertTrue(vipStatus.isInRotation());
+        dispatch_1.deconstruct();
+        assertTrue(vipStatus.isInRotation()); //Verify that deconstruct does not touch vipstatus
     }
 
 }
