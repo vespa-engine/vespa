@@ -56,6 +56,11 @@ public class LoadBalancerInstance {
         return reals;
     }
 
+    /** Returns a copy of this with reals set to given reals */
+    public LoadBalancerInstance withReals(Set<Real> reals) {
+        return new LoadBalancerInstance(hostname, dnsZone, ports, networks, reals);
+    }
+
     private static Set<Integer> requirePorts(Set<Integer> ports) {
         Objects.requireNonNull(ports, "ports must be non-null");
         if (ports.isEmpty()) {

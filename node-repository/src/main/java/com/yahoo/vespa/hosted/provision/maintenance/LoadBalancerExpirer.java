@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.log.LogLevel;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer.State;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -44,8 +46,10 @@ public class LoadBalancerExpirer extends Maintainer {
     protected void maintain() {
         expireReserved();
         removeInactive();
+        pruneReals();
     }
 
+    /** Move reserved load balancer that have expired to inactive */
     private void expireReserved() {
         try (var lock = db.lockLoadBalancers()) {
             var now = nodeRepository().clock().instant();
@@ -57,8 +61,9 @@ public class LoadBalancerExpirer extends Maintainer {
         }
     }
 
+    /** Deprovision inactive load balancers that have expired */
     private void removeInactive() {
-        List<LoadBalancerId> failed = new ArrayList<>();
+        var failed = new ArrayList<LoadBalancerId>();
         Exception lastException = null;
         try (var lock = db.lockLoadBalancers()) {
             var now = nodeRepository().clock().instant();
@@ -67,9 +72,7 @@ public class LoadBalancerExpirer extends Maintainer {
                                           .in(State.inactive)
                                           .changedBefore(expirationTime);
             for (var lb : expired) {
-                if (hasNodes(lb.id())) { // Defer removal if there are still nodes allocated
-                    continue;
-                }
+                if (!allocatedNodes(lb.id()).isEmpty()) continue; // Defer removal if there are still nodes allocated to application
                 try {
                     service.remove(lb.id().application(), lb.id().cluster());
                     db.removeLoadBalancer(lb.id());
@@ -90,8 +93,39 @@ public class LoadBalancerExpirer extends Maintainer {
         }
     }
 
-    private boolean hasNodes(LoadBalancerId loadBalancer) {
-        return nodeRepository().list().owner(loadBalancer.application()).cluster(loadBalancer.cluster()).size() > 0;
+    /** Remove reals from inactive load balancers */
+    private void pruneReals() {
+        var failed = new ArrayList<LoadBalancerId>();
+        Exception lastException = null;
+        try (var lock = db.lockLoadBalancers()) {
+            var deactivated = nodeRepository().loadBalancers().in(State.inactive);
+            for (var lb : deactivated) {
+                var allocatedNodes = allocatedNodes(lb.id()).stream().map(Node::hostname).collect(Collectors.toSet());
+                var reals = new LinkedHashSet<>(lb.instance().reals());
+                // Remove any real no longer allocated to this application
+                reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
+                try {
+                    service.create(lb.id().application(), lb.id().cluster(), reals, true);
+                    db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
+                } catch (Exception e) {
+                    failed.add(lb.id());
+                    lastException = e;
+                }
+            }
+        }
+        if (!failed.isEmpty()) {
+            log.log(LogLevel.WARNING, String.format("Failed to remove reals from %d load balancers: %s, retrying in %s",
+                                                    failed.size(),
+                                                    failed.stream()
+                                                          .map(LoadBalancerId::serializedForm)
+                                                          .collect(Collectors.joining(", ")),
+                                                    interval()),
+                    lastException);
+        }
+    }
+
+    private List<Node> allocatedNodes(LoadBalancerId loadBalancer) {
+        return nodeRepository().list().owner(loadBalancer.application()).cluster(loadBalancer.cluster()).asList();
     }
 
 }

@@ -20,7 +20,7 @@ public class LoadBalancerList implements Iterable<LoadBalancer> {
 
     private final List<LoadBalancer> loadBalancers;
 
-    public LoadBalancerList(Collection<LoadBalancer> loadBalancers) {
+    private LoadBalancerList(Collection<LoadBalancer> loadBalancers) {
         this.loadBalancers = List.copyOf(Objects.requireNonNull(loadBalancers, "loadBalancers must be non-null"));
     }
 
@@ -45,6 +45,10 @@ public class LoadBalancerList implements Iterable<LoadBalancer> {
 
     private static LoadBalancerList of(Stream<LoadBalancer> stream) {
         return new LoadBalancerList(stream.collect(Collectors.toUnmodifiableList()));
+    }
+
+    public static LoadBalancerList copyOf(Collection<LoadBalancer> loadBalancers) {
+        return new LoadBalancerList(loadBalancers);
     }
 
     @Override
