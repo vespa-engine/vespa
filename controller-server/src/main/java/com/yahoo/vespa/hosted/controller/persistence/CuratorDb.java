@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
@@ -52,7 +51,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.collectingAndThen;
@@ -341,7 +339,7 @@ public class CuratorDb {
     }
 
     public Optional<Application> readApplication(TenantAndApplicationId application) {
-        return readSlime(applicationPath(application)).map(applicationSerializer::fromSlime);
+        return read(applicationPath(application), applicationSerializer::fromSlime);
     }
 
     public List<Application> readApplications() {
