@@ -30,14 +30,16 @@ EvalFixture::ParamRepo make_params() {
         .add("x3f", spec(float_cells({x(3)}), N()))
         .add("x3y2", spec({x(3),y(2)}, N()))
         .add("x3y2f", spec(float_cells({x(3),y(2)}), N()))
-        .add("xm", spec(x({"1","2","3"}), N()))
+        .add("xm", spec(x({"1","2","3","-1","-2","-3"}), N()))
         .add("xmy2", spec({x({"1","2","3"}), y(2)}, N()));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify(const vespalib::string &expr, double expect, size_t expect_optimized_cnt, size_t expect_not_optimized_cnt) {
     EvalFixture fixture(prod_engine, expr, param_repo, true);
-    EXPECT_EQUAL(fixture.result(), TensorSpec("double").add({}, expect));
+    auto expect_spec = TensorSpec("double").add({}, expect);
+    EXPECT_EQUAL(EvalFixture::ref(expr, param_repo), expect_spec);
+    EXPECT_EQUAL(fixture.result(), expect_spec);
     auto info = fixture.find_all<DenseTensorPeekFunction>();
     EXPECT_EQUAL(info.size(), expect_optimized_cnt);
     for (size_t i = 0; i < info.size(); ++i) {
@@ -53,6 +55,7 @@ TEST("require that tensor peek can be optimized for dense tensors") {
     TEST_DO(verify("x3{x:(a)}", 2.0, 1, 0));
     TEST_DO(verify("x3f{x:(c-1)}", 3.0, 1, 0));
     TEST_DO(verify("x3{x:(c+5)}", 0.0, 1, 0));
+    TEST_DO(verify("x3{x:(a-2)}", 0.0, 1, 0));
     TEST_DO(verify("x3y2{x:(a),y:(a-1)}", 3.0, 1, 0));
     TEST_DO(verify("x3y2f{x:1,y:(a)}", 4.0, 1, 0));
     TEST_DO(verify("x3y2f{x:(a-1),y:(b)}", 0.0, 1, 0));
@@ -68,6 +71,15 @@ TEST("require that tensor peek is not optimized for mixed tensor") {
     TEST_DO(verify("xmy2{x:3,y:1}", 6.0, 0, 1));
     TEST_DO(verify("xmy2{x:(c),y:(a)}", 6.0, 0, 1));
     TEST_DO(verify("xmy2{x:(a),y:(b)}", 0.0, 0, 1));
+}
+
+TEST("require that indexes are rounded to nearest integer") {
+    TEST_DO(verify("x3{x:(a-0.3)}", 2.0, 1, 0));
+    TEST_DO(verify("x3{x:(a+0.3)}", 2.0, 1, 0));
+    TEST_DO(verify("xm{x:(a-0.3)}", 1.0, 0, 1));
+    TEST_DO(verify("xm{x:(a+0.3)}", 1.0, 0, 1));
+    TEST_DO(verify("xm{x:(-a-0.3)}", 4.0, 0, 1));
+    TEST_DO(verify("xm{x:(-a+0.3)}", 4.0, 0, 1));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
