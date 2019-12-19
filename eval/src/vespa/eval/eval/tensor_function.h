@@ -84,6 +84,16 @@ struct TensorFunction
      **/
     virtual void push_children(std::vector<Child::CREF> &children) const = 0;
 
+    std::vector<Child> copy_children() const {
+        std::vector<Child::CREF> child_refs;
+        std::vector<Child> children_copy;
+        push_children(child_refs);
+        for (const auto &child_ref: child_refs) {
+            children_copy.emplace_back(child_ref.get().get());
+        }
+        return children_copy;
+    }
+
     /**
      * Compile this node into a single instruction that can be run by
      * an interpreted function. Sub-expressions are compiled as
