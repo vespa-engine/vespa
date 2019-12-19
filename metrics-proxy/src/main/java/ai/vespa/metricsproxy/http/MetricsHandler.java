@@ -32,12 +32,15 @@ public class MetricsHandler extends HttpHandlerBase {
     public static final String V1_PATH = "/metrics/v1";
     static final String VALUES_PATH = V1_PATH + "/values";
 
+    private final ValuesFetcher valuesFetcher;
+
     @Inject
     public MetricsHandler(Executor executor,
                           MetricsManager metricsManager,
                           VespaServices vespaServices,
                           MetricsConsumers metricsConsumers) {
-        super(executor, metricsManager, vespaServices, metricsConsumers);
+        super(executor);
+        valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
     }
 
     @Override

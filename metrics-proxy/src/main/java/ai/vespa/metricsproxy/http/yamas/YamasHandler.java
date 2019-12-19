@@ -3,6 +3,7 @@ package ai.vespa.metricsproxy.http.yamas;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
+import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.node.NodeMetricGatherer;
 import ai.vespa.metricsproxy.http.ErrorResponse;
 import ai.vespa.metricsproxy.http.HttpHandlerBase;
@@ -34,6 +35,7 @@ public class YamasHandler extends HttpHandlerBase {
     public static final String V1_PATH = "/yamas/v1";
     private static final String VALUES_PATH = V1_PATH + "/values";
 
+    private final ValuesFetcher valuesFetcher;
     private final NodeMetricGatherer nodeMetricGatherer;
 
     @Inject
@@ -43,7 +45,8 @@ public class YamasHandler extends HttpHandlerBase {
                         MetricsConsumers metricsConsumers,
                         ApplicationDimensions applicationDimensions,
                         NodeDimensions nodeDimensions) {
-        super(executor, metricsManager, vespaServices, metricsConsumers);
+        super(executor);
+        valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
         this.nodeMetricGatherer = new NodeMetricGatherer(metricsManager, vespaServices, applicationDimensions, nodeDimensions);
     }
 
