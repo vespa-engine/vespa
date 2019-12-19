@@ -67,8 +67,6 @@ constexpr duration from_timeval(const timeval & tv) {
 }
 
 vespalib::string to_string(system_time time);
-vespalib::string to_string(steady_time time);
-vespalib::string to_string(duration time);
 
 /**
  * Simple utility class used to measure how much time has elapsed
