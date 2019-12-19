@@ -40,10 +40,11 @@ TEST(TimeTest, timeval_conversion_works_as_expected) {
 }
 
 TEST(TimeTest, unit_counting_works_as_expected) {
-    auto d = 3ms + 5us + 7ns;
-    EXPECT_EQ(count_ns(d), 3005007);
-    EXPECT_EQ(count_us(d), 3005);
-    EXPECT_EQ(count_ms(d), 3);
+    auto d = 7s + 3ms + 5us + 7ns;
+    EXPECT_EQ(count_ns(d), 7003005007);
+    EXPECT_EQ(count_us(d), 7003005);
+    EXPECT_EQ(count_ms(d), 7003);
+    EXPECT_EQ(count_s(d), 7);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -28,8 +28,8 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
       _tuneFile(tuneFile),
       _fileHeaderContext(fileHeaderContext),
       _tlSyncer(tlSyncer),
-      _bucketizer(bucketizer),
-      _result(result)
+      _bucketizer(std::move(bucketizer)),
+      _result(std::move(result))
 { }
 
 SummaryManagerInitializer::~SummaryManagerInitializer() = default;

@@ -29,7 +29,7 @@ StateApiAdapter::getTotalMetrics(const vespalib::string &consumer)
     _manager.updateMetrics(true);
     metrics::MetricLockGuard guard(_manager.getMetricLock());
     _manager.checkMetricsAltered(guard);
-    time_t currentTime = vespalib::to_s(vespalib::steady_clock::now().time_since_epoch());
+    time_t currentTime = vespalib::count_s(vespalib::steady_clock::now().time_since_epoch());
    auto generated = std::make_unique<metrics::MetricSnapshot>(
            "Total metrics from start until current time", 0,
            _manager.getTotalMetricSnapshot(guard).getMetrics(),

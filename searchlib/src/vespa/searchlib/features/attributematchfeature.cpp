@@ -30,7 +30,7 @@ bool hasAttribute(const IQueryEnvironment &env, const ITermData &term_data)
 
     for (FRA iter(term_data); iter.valid(); iter.next()) {
         const FieldInfo *info = env.getIndexEnvironment().getField(iter.get().getFieldId());
-        if (info != 0 && info->type() == FieldType::ATTRIBUTE) {
+        if (info != nullptr && info->type() == FieldType::ATTRIBUTE) {
             return true;
         }
     }
@@ -38,8 +38,7 @@ bool hasAttribute(const IQueryEnvironment &env, const ITermData &term_data)
 }
 }  // namespace
 
-namespace search {
-namespace features {
+namespace search::features {
 
 template <typename T>
 AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, AttributeMatchParams params) :
@@ -70,7 +69,7 @@ AttributeMatchExecutor<T>::Computer::Computer(const IQueryEnvironment & env, Att
             _numAttrTerms++;
             _totalAttrTermWeight += qt.termData()->getWeight().percent();
             const ITermFieldData *field = qt.termData()->lookupField(_params.attrInfo->id());
-            if (field != 0) {
+            if (field != nullptr) {
                 qt.fieldHandle(field->getHandle());
                 _queryTerms.push_back(qt);
             }
@@ -338,7 +337,7 @@ FeatureExecutor &
 AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib::Stash &stash) const
 {
     const IAttributeVector * attribute = env.getAttributeContext().getAttribute(_params.attrInfo->name());
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         LOG(error, "The attribute vector '%s' was not found in the attribute manager.", _params.attrInfo->name().c_str());
         std::vector<feature_t> values;
         values.push_back(0.0); // completeness
@@ -368,6 +367,4 @@ AttributeMatchBlueprint::createExecutor(const IQueryEnvironment & env, vespalib:
     }
 }
 
-
-} // namespace features
-} // namespace search
+}

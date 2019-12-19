@@ -26,7 +26,7 @@ MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_t
 MetricManager::Timer::getTime() const {
-    return vespalib::to_s(vespalib::steady_clock::now().time_since_epoch());
+    return vespalib::count_s(vespalib::steady_clock::now().time_since_epoch());
 }
 
 void
@@ -70,9 +70,9 @@ MetricManager::MetricManager(std::unique_ptr<Timer> timer)
       _consumerConfig(),
       _logPeriod(5 * 60, 0),
       _snapshots(),
-      _totalMetrics(MetricSnapshot::SP(new MetricSnapshot(
+      _totalMetrics(std::make_shared<MetricSnapshot>(
                 "Empty metrics before init", 0, _activeMetrics.getMetrics(),
-                false))),
+                false)),
       _timer(std::move(timer)),
       _lastProcessedTime(0),
       _forceEventLogging(false),

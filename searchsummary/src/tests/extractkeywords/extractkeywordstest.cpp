@@ -109,7 +109,7 @@ ExtractKeywordsTest::Main()
             }
 
     // Print time taken
-    double timeTaken = vespalib::count_ms(timer.elapsed());
+    double timeTaken = vespalib::to_s(timer.elapsed())*1000.0;
 
     printf("Time taken : %f ms\n", timeTaken);
     printf("Number of tests run: %d\n", testCnt);

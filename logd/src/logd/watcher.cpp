@@ -6,10 +6,10 @@
 #include "watcher.h"
 #include <vespa/vespalib/util/sig_catch.h>
 #include <vespa/vespalib/util/time.h>
+#include <thread>
 #include <fcntl.h>
 #include <glob.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -19,42 +19,14 @@ namespace logdemon {
 namespace {
 
 // wait until 1 second has passed since "start"
-void snooze(const struct timeval &start)
+void snooze(vespalib::Timer & timer)
 {
-    struct timeval sincestart;
-    gettimeofday(&sincestart, 0);
-    // compute time elapsed since start:
-    sincestart.tv_sec  -= start.tv_sec;
-    sincestart.tv_usec -= start.tv_usec;
-
-    // how many microseconds to wait:
-    long wait_usecs = (1000000 - sincestart.tv_usec);
-    wait_usecs     -= (1000000 * sincestart.tv_sec);
-
-    if (wait_usecs <= 0) {
+    if (timer.elapsed() > 1000ms) {
         // already used enough time, no sleep
         return;
     }
 
-    struct timespec tsp;
-    tsp.tv_sec  = (wait_usecs / 1000000);
-    tsp.tv_nsec = (wait_usecs % 1000000) * 1000;
-
-    if (nanosleep(&tsp, nullptr) != 0 && errno != EINTR) {
-        LOG(error, "nanosleep %ld s %ld ns failed: %s",
-            (long)tsp.tv_sec, (long)tsp.tv_nsec, strerror(errno));
-        throw SomethingBad("nanosleep failed");
-    }
-}
-
-int elapsed(struct timeval &start) {
-    struct timeval now;
-    gettimeofday(&now, 0);
-    int diffsecs = now.tv_sec - start.tv_sec;
-    if (now.tv_usec < start.tv_usec) {
-        --diffsecs;
-    }
-    return diffsecs;
+    std::this_thread::sleep_for(1000ms - timer.elapsed());
 }
 
 constexpr size_t G_BUFSIZE = 1024*1024;
@@ -178,7 +150,7 @@ Watcher::watchfile()
     vespalib::Timer rotTimer;
     off_t offset = 0;
 
-    while (1) {
+    while (true) {
         struct stat sb;
         if (fstat(_wfd, &sb) != 0) {
             LOG(error, "fstat(%s) failed: %s", filename, strerror(errno));
@@ -204,8 +176,7 @@ Watcher::watchfile()
             return;
         }
 
-        struct timeval tickStart;
-        gettimeofday(&tickStart, 0);
+        vespalib::Timer timer;
 
         if (sb.st_size > offset) {
             lseek(_wfd, offset, SEEK_SET);
@@ -219,7 +190,7 @@ Watcher::watchfile()
                     LOG(error, "no newline in %ld bytes, skipping", static_cast<long>(rsize));
                     offset += rsize;
                 }
-                while (nnl != nullptr && elapsed(tickStart) < 1) {
+                while (nnl != nullptr && (timer.elapsed() < 1000ms)) {
                     ++nnl;
                     _forwarder.forwardLine(std::string_view(l, (nnl - l) - 1));
                     ssize_t wsize = nnl - l;
@@ -272,7 +243,7 @@ Watcher::watchfile()
             char newfn[FILENAME_MAX];
             int l = strlen(filename);
             strcpy(newfn, filename);
-            time_t seconds = vespalib::to_s(now.time_since_epoch());
+            time_t seconds = vespalib::count_s(now.time_since_epoch());
             struct tm *nowtm = gmtime(&seconds);
             if (strftime(newfn+l, FILENAME_MAX-l-1, "-%Y-%m-%d.%H-%M-%S", nowtm) < 10)
             {
@@ -299,7 +270,7 @@ Watcher::watchfile()
         if (catcher.receivedStopSignal()) {
             throw SigTermException("caught signal");
         }
-        snooze(tickStart);
+        snooze(timer);
         if (catcher.receivedStopSignal()) {
             throw SigTermException("caught signal");
         }

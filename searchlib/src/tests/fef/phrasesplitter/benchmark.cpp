@@ -73,7 +73,7 @@ Benchmark::Main()
     run(numRuns, numPositions);
 
     std::cout << "TET:  " << vespalib::count_ms(_sample) << " (ms)" << std::endl;
-    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << vespalib::count_ms(_sample) / numRuns << " (ms)" << std::endl;
+    std::cout << "ETPD: " << std::fixed << std::setprecision(10) << (vespalib::count_ns(_sample) / (numRuns * 1000000.0)) << " (ms)" << std::endl;
 
     TEST_DONE();
 }

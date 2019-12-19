@@ -46,6 +46,10 @@ constexpr duration from_s(double seconds) {
     return std::chrono::duration_cast<duration>(std::chrono::duration<double>(seconds));
 }
 
+constexpr int64_t count_s(duration d) {
+    return std::chrono::duration_cast<std::chrono::seconds>(d).count();
+}
+
 constexpr int64_t count_ms(duration d) {
     return std::chrono::duration_cast<std::chrono::milliseconds>(d).count();
 }

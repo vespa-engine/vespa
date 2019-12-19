@@ -9,7 +9,7 @@ using search::feature_t;
 namespace search::features {
 
 QueryTerm::QueryTerm() :
-    _termData(NULL),
+    _termData(nullptr),
     _handle(IllegalHandle),
     _significance(0),
     _connectedness(0)
