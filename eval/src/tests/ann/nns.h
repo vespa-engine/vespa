@@ -6,23 +6,28 @@
 #include "nns-l2.h"
 #include <memory>
 
+struct SqDist {
+    double distance;
+    explicit SqDist(double d) : distance(d) {}
+};
+
 struct NnsHit {
     uint32_t docid;
-    double sqDistance;
-    NnsHit(uint32_t di, double sqD)
-        : docid(di), sqDistance(sqD) {}
+    SqDist sq;
+    NnsHit(uint32_t di, SqDist sqD)
+        : docid(di), sq(sqD) {}
 };
 struct NnsHitComparatorLessDistance {
     bool operator() (const NnsHit &lhs, const NnsHit& rhs) const {
-        if (lhs.sqDistance > rhs.sqDistance) return false;
-        if (lhs.sqDistance < rhs.sqDistance) return true;
+        if (lhs.sq.distance > rhs.sq.distance) return false;
+        if (lhs.sq.distance < rhs.sq.distance) return true;
         return (lhs.docid > rhs.docid);
     }
 };
 struct NnsHitComparatorGreaterDistance {
     bool operator() (const NnsHit &lhs, const NnsHit& rhs) const {
-        if (lhs.sqDistance < rhs.sqDistance) return false;
-        if (lhs.sqDistance > rhs.sqDistance) return true;
+        if (lhs.sq.distance < rhs.sq.distance) return false;
+        if (lhs.sq.distance > rhs.sq.distance) return true;
         return (lhs.docid > rhs.docid);
     }
 };
@@ -58,3 +63,7 @@ make_annoy_nns(uint32_t numDims, const DocVectorAccess<float> &dva);
 extern
 std::unique_ptr<NNS<float>>
 make_rplsh_nns(uint32_t numDims, const DocVectorAccess<float> &dva);
+
+extern
+std::unique_ptr<NNS<float>>
+make_hnsw_nns(uint32_t numDims, const DocVectorAccess<float> &dva);

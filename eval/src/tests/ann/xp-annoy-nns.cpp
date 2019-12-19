@@ -11,6 +11,12 @@ using V = vespalib::ConstArrayRef<float>;
 class AnnoyLikeNns;
 struct Node;
 
+static uint64_t plane_dist_cnt = 0;
+static uint64_t w_cen_dist_cnt = 0;
+static uint64_t leaf_split_cnt = 0;
+static uint64_t find_top_k_cnt = 0;
+static uint64_t find_cand_cnt = 0;
+
 using QueueNode = std::pair<double, Node *>;
 using NodeQueue = std::priority_queue<QueueNode>;
 
@@ -20,6 +26,7 @@ struct Node {
     virtual Node *addDoc(uint32_t docid, V vector, AnnoyLikeNns &meta) = 0;
     virtual int remove(uint32_t docid, V vector) = 0;
     virtual void findCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist) const = 0;
+    virtual void stats(std::vector<uint32_t> &depths) = 0;
 };
 
 struct LeafNode : public Node {
@@ -32,6 +39,7 @@ struct LeafNode : public Node {
     void findCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist) const override;
 
     Node *split(AnnoyLikeNns &meta);
+    virtual void stats(std::vector<uint32_t> &depths) override { depths.push_back(1); }
 };
 
 struct SplitNode : public Node {
@@ -48,6 +56,12 @@ struct SplitNode : public Node {
     void findCandidates(std::set<uint32_t> &cands, V vector, NodeQueue &queue, double minDist) const override;
 
     double planeDistance(V vector) const;
+    virtual void stats(std::vector<uint32_t> &depths) override {
+        size_t i = depths.size();
+        leftChildren->stats(depths);
+        rightChildren->stats(depths);
+        while (i < depths.size()) { ++depths[i++]; }
+    }
 };
 
 class AnnoyLikeNns : public NNS<float>
@@ -67,7 +81,10 @@ public:
         }
     }
 
+    void dumpStats();
+
     ~AnnoyLikeNns() {
+        dumpStats();
         for (Node *root : _roots) {
             delete root;
         }
@@ -97,11 +114,9 @@ public:
 double
 SplitNode::planeDistance(V vector) const
 {
+    ++plane_dist_cnt;
     assert(vector.size() == hyperPlane.size());
-    double dp = 0.0;
-    for (size_t i = 0; i < vector.size(); ++i) {
-        dp += vector[i] * hyperPlane[i];
-    }
+    double dp = l2distCalc.product(&vector[0], &hyperPlane[0], vector.size());
     return dp - offsetFromOrigo;
 }
 
@@ -167,6 +182,7 @@ struct WeightedCentroid {
         return r;
     }
     double weightedDistance(V vector) {
+        ++w_cen_dist_cnt;
         size_t sz = vector.size();
         for (size_t i = 0; i < sz; ++i) {
             tmp_vector[i] = vector[i] * cnt;
@@ -179,6 +195,7 @@ struct WeightedCentroid {
 Node *
 LeafNode::split(AnnoyLikeNns &meta)
 {
+    ++leaf_split_cnt;
     uint32_t dims = meta.dims();
     uint32_t retries = 3;
 retry:
@@ -232,6 +249,8 @@ retry:
 
     std::vector<uint32_t> leftDs;
     std::vector<uint32_t> rightDs;
+    leftDs.reserve(128);
+    rightDs.reserve(128);
 
     for (uint32_t docid : docids) {
         V vector = meta.getVector(docid);
@@ -260,9 +279,9 @@ retry:
 #endif
 
     LeafNode *newRightNode = new LeafNode();
-    newRightNode->docids = rightDs;
+    newRightNode->docids = std::move(rightDs);
     s->rightChildren = newRightNode;
-    this->docids = leftDs;
+    this->docids = std::move(leftDs);
     s->leftChildren = this;
     return s;
 }
@@ -327,6 +346,7 @@ SplitNode::findCandidates(std::set<uint32_t> &, V vector, NodeQueue &queue, doub
 std::vector<NnsHit>
 AnnoyLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k)
 {
+    ++find_top_k_cnt;
     std::vector<float> tmp;
     tmp.resize(_numDims);
     vespalib::ArrayRef<float> tmpArr(tmp);
@@ -347,6 +367,7 @@ AnnoyLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k)
         Node *n = top.second;
         queue.pop();
         n->findCandidates(candidates, vector, queue, md);
+        ++find_cand_cnt;
     }
 #if 0
     while (queue.size() > 0) {
@@ -357,12 +378,36 @@ AnnoyLikeNns::topK(uint32_t k, Vector vector, uint32_t search_k)
 #endif
     for (uint32_t docid : candidates) {
         double dist = l2distCalc.l2sq_dist(vector, _dva.get(docid), tmpArr);
-        NnsHit hit(docid, dist);
+        NnsHit hit(docid, SqDist(dist));
         r.push_back(hit);
     }
     std::sort(r.begin(), r.end(), NnsHitComparatorLessDistance());
     while (r.size() > k) r.pop_back();
     return r;
+}
+
+void
+AnnoyLikeNns::dumpStats() {
+    fprintf(stderr, "stats for AnnoyLikeNns:\n");
+    fprintf(stderr, "planeDistance() calls: %zu\n", plane_dist_cnt);
+    fprintf(stderr, "weightedDistance() calls: %zu\n", w_cen_dist_cnt);
+    fprintf(stderr, "leaf split() calls: %zu\n", leaf_split_cnt);
+    fprintf(stderr, "topK() calls: %zu\n", find_top_k_cnt);
+    fprintf(stderr, "findCandidates() calls: %zu\n", find_cand_cnt);
+    std::vector<uint32_t> depths;
+    _roots[0]->stats(depths);
+    std::vector<uint32_t> counts;
+    for (uint32_t deep : depths) {
+        while (counts.size() <= deep) counts.push_back(0);
+        counts[deep]++;
+    }
+    fprintf(stderr, "depths for %zu leaves [\n", depths.size());
+    for (uint32_t deep = 0; deep < counts.size(); ++deep) {
+        if (counts[deep] > 0) {
+            fprintf(stderr, "%u deep count %u\n", deep, counts[deep]);
+        }
+    }
+    fprintf(stderr, "]\n");
 }
 
 std::unique_ptr<NNS<float>>
