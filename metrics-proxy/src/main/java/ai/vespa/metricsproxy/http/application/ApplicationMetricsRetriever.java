@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.http.application;
 
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.google.inject.Inject;
@@ -23,6 +24,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
+import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
@@ -63,9 +65,13 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     }
 
     public Map<Node, List<MetricsPacket.Builder>> getMetrics() {
+        return getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+    }
+
+    public Map<Node, List<MetricsPacket.Builder>> getMetrics(ConsumerId consumer) {
         log.info(() -> "Retrieving metrics from " + clients.size() + " nodes.");
         var forkJoinTask = forkJoinPool.submit(() -> clients.parallelStream()
-                .map(this::getNodeMetrics)
+                .map(client -> getNodeMetrics(client, consumer))
                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue)));
 
         try {
@@ -82,11 +88,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         }
     }
 
-    private Map.Entry<Node, List<MetricsPacket.Builder>> getNodeMetrics(NodeMetricsClient client) {
+    private Map.Entry<Node, List<MetricsPacket.Builder>> getNodeMetrics(NodeMetricsClient client, ConsumerId consumer) {
         try {
-            return new AbstractMap.SimpleEntry<>(client.node, client.getMetrics());
+            return new AbstractMap.SimpleEntry<>(client.node, client.getMetrics(consumer));
         } catch (Exception e) {
-            log.warning("Could not retrieve metrics from " + client.node.metricsUri);
+            log.warning("Could not retrieve metrics from " + client.node.metricsUri(consumer));
         }
         return new AbstractMap.SimpleEntry<>(client.node, emptyList());
     }

@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.http.application;
 
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
 import com.yahoo.yolean.Exceptions;
@@ -18,6 +19,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.logging.Logger;
 
+import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.yahoo.log.LogLevel.DEBUG;
 import static java.util.Collections.emptyList;
 
@@ -48,24 +50,29 @@ public class NodeMetricsClient {
     }
 
     public List<MetricsPacket.Builder> getMetrics() {
+        return getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
+    }
+
+    public List<MetricsPacket.Builder> getMetrics(ConsumerId consumer) {
         if (Instant.now(clock).isAfter(metricsTimestamp.plus(METRICS_TTL))) {
-            retrieveMetrics();
+            retrieveMetrics(consumer);
         }
         return metrics;
     }
 
-    private void retrieveMetrics() {
-        log.log(DEBUG, () -> "Retrieving metrics from host " + node.metricsUri);
+    private void retrieveMetrics(ConsumerId consumer) {
+        String metricsUri = node.metricsUri(consumer).toString();
+        log.log(DEBUG, () -> "Retrieving metrics from host " + metricsUri);
 
         try {
-            String metricsJson = httpClient.execute(new HttpGet(node.metricsUri), new BasicResponseHandler());
+            String metricsJson = httpClient.execute(new HttpGet(metricsUri), new BasicResponseHandler());
             metrics = GenericJsonUtil.toMetricsPackets(metricsJson);
             metricsTimestamp = Instant.now(clock);
             snapshotsRetrieved ++;
-            log.log(DEBUG, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + node.metricsUri);
+            log.log(DEBUG, () -> "Successfully retrieved " + metrics.size() + " metrics packets from " + metricsUri);
 
         } catch (IOException e) {
-            log.warning("Unable to retrieve metrics from " + node.metricsUri + ": " + Exceptions.toMessageString(e));
+            log.warning("Unable to retrieve metrics from " + metricsUri + ": " + Exceptions.toMessageString(e));
             metrics = emptyList();
         }
     }

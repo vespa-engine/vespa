@@ -4,6 +4,8 @@
 
 package ai.vespa.metricsproxy.http.application;
 
+import ai.vespa.metricsproxy.metric.model.ConsumerId;
+
 import java.net.URI;
 import java.util.Objects;
 
@@ -19,7 +21,7 @@ public class Node {
     final int port;
     final String path;
 
-    final URI metricsUri;
+    private final String metricsUriBase;
 
     public Node(VespaNodesConfig.Node nodeConfig) {
         this(nodeConfig.configId(), nodeConfig.hostname(), nodeConfig.port() ,nodeConfig.path());
@@ -30,11 +32,11 @@ public class Node {
         this.host = host;
         this.port = port;
         this.path = path;
-        metricsUri = getMetricsUri(host, port, path);
+        metricsUriBase = "http://" + host + ":" + port + path;
     }
 
-    private static URI getMetricsUri(String host, int port, String path) {
-        return URI.create("http://" + host + ":" + port + path);
+    URI metricsUri(ConsumerId consumer) {
+        return URI.create(metricsUriBase + "?consumer=" + consumer.id);
     }
 
     @Override

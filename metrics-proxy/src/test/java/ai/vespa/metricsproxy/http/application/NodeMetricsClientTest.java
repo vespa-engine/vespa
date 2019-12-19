@@ -15,12 +15,14 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import java.net.URI;
 import java.util.List;
 
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
+import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static org.junit.Assert.assertEquals;
 
@@ -49,7 +51,8 @@ public class NodeMetricsClientTest {
     @BeforeClass
     public static void setupWireMock() {
         node = new Node("id", "localhost", wireMockRule.port(), MetricsHandler.VALUES_PATH);
-        wireMockRule.stubFor(get(urlEqualTo(node.metricsUri.getPath()))
+        URI metricsUri = node.metricsUri(DEFAULT_PUBLIC_CONSUMER_ID);
+        wireMockRule.stubFor(get(urlPathEqualTo(metricsUri.getPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
     }
 

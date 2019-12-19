@@ -16,7 +16,7 @@ import java.util.concurrent.TimeoutException;
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.options;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -51,7 +51,7 @@ public class ApplicationMetricsRetrieverTest {
     }
 
     private void verifyRetrievingMetricsFromSingleNode(VespaNodesConfig config, Node node) {
-        wireMockRule.stubFor(get(urlEqualTo(config.node(0).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
@@ -66,9 +66,9 @@ public class ApplicationMetricsRetrieverTest {
         Node node0 = new Node(config.node(0));
         Node node1 = new Node(config.node(1));
 
-        wireMockRule.stubFor(get(urlEqualTo(config.node(0).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
-        wireMockRule.stubFor(get(urlEqualTo(config.node(1).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(1).path()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
@@ -96,7 +96,7 @@ public class ApplicationMetricsRetrieverTest {
         Node node0 = new Node(config.node(0));
         Node node1 = new Node(config.node(1));
 
-        wireMockRule.stubFor(get(urlEqualTo(config.node(1).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(1).path()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
@@ -110,7 +110,7 @@ public class ApplicationMetricsRetrieverTest {
     public void an_exception_is_thrown_when_retrieving_times_out() {
         var config = nodesConfig("/node0");
 
-        wireMockRule.stubFor(get(urlEqualTo(config.node(0).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
                                      .willReturn(aResponse()
                                                          .withBody(RESPONSE)
                                                          .withFixedDelay(10)));
@@ -131,7 +131,7 @@ public class ApplicationMetricsRetrieverTest {
         var config = nodesConfig("/node0");
         Node node = new Node(config.node(0));
 
-        var delayedStub = wireMockRule.stubFor(get(urlEqualTo(config.node(0).path()))
+        var delayedStub = wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
                                                        .willReturn(aResponse()
                                                                            .withBody(RESPONSE)
                                                                            .withFixedDelay(10)));
