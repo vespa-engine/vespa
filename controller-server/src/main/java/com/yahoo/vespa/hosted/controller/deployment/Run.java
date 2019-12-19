@@ -62,8 +62,8 @@ public class Run {
     /** Returns a new Run with the status of the given completed step set accordingly. */
     public Run with(RunStatus status, LockedStep step) {
         requireActive();
-        StepInfo stepInfo = steps.get(step.get());
-        if (stepInfo == null || stepInfo.status() != unfinished)
+        StepInfo stepInfo = getRequiredStepInfo(step.get());
+        if (stepInfo.status() != unfinished)
             throw new IllegalStateException("Step '" + step.get() + "' can't be set to '" + status + "'" +
                                      " -- it already completed with status '" + stepInfo.status() + "'!");
 
@@ -76,8 +76,8 @@ public class Run {
     /** Returns a new Run with a new start time*/
     public Run with(Instant startTime, LockedStep step) {
         requireActive();
-        StepInfo stepInfo = steps.get(step.get());
-        if (stepInfo == null || stepInfo.status() != unfinished)
+        StepInfo stepInfo = getRequiredStepInfo(step.get());
+        if (stepInfo.status() != unfinished)
             throw new IllegalStateException("Unable to set start timestamp of step " + step.get() +
                     ": it has already completed with status " + stepInfo.status() + "!");
 
@@ -130,6 +130,10 @@ public class Run {
     /** Returns info on step. */
     public Optional<StepInfo> stepInfo(Step step) {
         return Optional.ofNullable(steps.get(step));
+    }
+
+    private StepInfo getRequiredStepInfo(Step step) {
+        return stepInfo(step).orElseThrow(() -> new IllegalArgumentException("There is no such step " + step + " for run " + id));
     }
 
     /** Returns status of step. */

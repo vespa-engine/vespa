@@ -68,7 +68,7 @@ class RunSerializer {
 
     // TODO: Remove "steps" when there are no traces of it in the controllers
     private static final String stepsField = "steps";
-    private static final String steps2Field = "steps2";
+    private static final String stepDetailsField = "stepDetails";
     private static final String startTimeField = "startTime";
     private static final String applicationField = "id";
     private static final String jobTypeField = "type";
@@ -106,21 +106,19 @@ class RunSerializer {
 
     private Run runFromSlime(Inspector runObject) {
         var steps = new EnumMap<Step, StepInfo>(Step.class);
-        runObject.field(steps2Field).traverse(((ObjectTraverser) (step, info) -> {
-            Inspector startTimeValue = info.field(startTimeField);
+        Inspector detailsField = runObject.field(stepDetailsField);
+        runObject.field(stepsField).traverse((ObjectTraverser) (step, status) -> {
+            Step typedStep = stepOf(step);
+
+            // For historical reasons are the step details stored in a separate JSON structure from the step statuses.
+            Inspector stepDetailsField = detailsField.field(step);
+            Inspector startTimeValue = stepDetailsField.field(startTimeField);
             Optional<Instant> startTime = startTimeValue.valid() ?
                     Optional.of(instantOf(startTimeValue.asLong())) :
                     Optional.empty();
-            Step typedStep = stepOf(step);
-            steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(info.field(statusField).asString()), startTime));
-        }));
-        if (steps.isEmpty()) {
-            // backward compatibility - until all runs in zk contains steps2 field
-            runObject.field(stepsField).traverse((ObjectTraverser) (step, status) -> {
-                Step typedStep = stepOf(step);
-                steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), Optional.empty()));
-            });
-        }
+
+            steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), startTime));
+        });
         return new Run(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
                                  JobType.fromJobName(runObject.field(jobTypeField).asString()),
                                  runObject.field(numberField).asLong()),
@@ -197,17 +195,13 @@ class RunSerializer {
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));
 
         Cursor stepsObject = runObject.setObject(stepsField);
-        Cursor steps2Object = runObject.setObject(steps2Field);
-        run.steps().forEach((step, stepInfo) -> {
-            String stepString = valueOf(step);
-            String statusString = valueOf(stepInfo.status());
-            Cursor step2Object = steps2Object.setObject(stepString);
-            step2Object.setString(statusField, statusString);
-            stepInfo.startTime().ifPresent(startTime -> step2Object.setLong(startTimeField, valueOf(startTime)));
+        run.steps().forEach((step, statusInfo) -> stepsObject.setString(valueOf(step), valueOf(statusInfo.status())));
 
-            // backward compatibility - until all controllers have been upgraded
-            stepsObject.setString(stepString, statusString);
-        });
+        // For historical reasons are the step details stored in a different field from the step statuses.
+        Cursor stepDetailsObject = runObject.setObject(stepDetailsField);
+        run.steps().forEach((step, statusInfo) ->
+                statusInfo.startTime().ifPresent(startTime ->
+                        stepDetailsObject.setString(valueOf(step), valueOf(statusInfo.status()))));
 
         Cursor versionsObject = runObject.setObject(versionsField);
         toSlime(run.versions().targetPlatform(), run.versions().targetApplication(), versionsObject);
