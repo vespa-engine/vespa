@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -32,4 +33,28 @@ public class StepInfo {
 
     /** Returns a copy of this, but with the given start timestamp. */
     public StepInfo with(Instant startTimestamp) { return new StepInfo(step, status, Optional.of(startTimestamp)); }
+
+    @Override
+    public String toString() {
+        return "StepInfo{" +
+                "step=" + step +
+                ", status=" + status +
+                ", startTime=" + startTime +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        StepInfo stepInfo = (StepInfo) o;
+        return step == stepInfo.step &&
+                status == stepInfo.status &&
+                Objects.equals(startTime, stepInfo.startTime);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(step, status, startTime);
+    }
 }

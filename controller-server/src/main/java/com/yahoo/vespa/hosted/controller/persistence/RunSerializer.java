@@ -201,7 +201,7 @@ class RunSerializer {
         Cursor stepDetailsObject = runObject.setObject(stepDetailsField);
         run.steps().forEach((step, statusInfo) ->
                 statusInfo.startTime().ifPresent(startTime ->
-                        stepDetailsObject.setString(valueOf(step), valueOf(statusInfo.status()))));
+                        stepDetailsObject.setObject(valueOf(step)).setLong(startTimeField, valueOf(startTime))));
 
         Cursor versionsObject = runObject.setObject(versionsField);
         toSlime(run.versions().targetPlatform(), run.versions().targetApplication(), versionsObject);

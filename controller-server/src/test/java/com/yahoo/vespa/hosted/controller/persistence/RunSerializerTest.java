@@ -6,13 +6,14 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.config.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -21,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -67,7 +69,7 @@ public class RunSerializerTest {
         // The purpose of this serialised data is to ensure a new format does not break everything, so keep it up to date!
         Run run = serializer.runsFromSlime(SlimeUtils.jsonToSlime(Files.readAllBytes(runFile))).get(id);
         for (Step step : Step.values())
-            assertTrue(run.stepStatuses().containsKey(step));
+            assertTrue(run.steps().containsKey(step));
 
         assertEquals(id, run.id());
         assertEquals(start, run.start());
@@ -98,21 +100,21 @@ public class RunSerializerTest {
                                                   "5MyyPSoCIBltOcmaPfdN03L3zqbqZ6PgUBWsvAHgiBzL3hrtJ+iy\n" +
                                                   "-----END CERTIFICATE-----"),
                      run.testerCertificate().get());
-        assertEquals(ImmutableMap.<Step, Step.Status>builder()
-                             .put(deployInitialReal, unfinished)
-                             .put(installInitialReal, failed)
-                             .put(deployReal, succeeded)
-                             .put(installReal, unfinished)
-                             .put(deactivateReal, failed)
-                             .put(deployTester, succeeded)
-                             .put(installTester, unfinished)
-                             .put(deactivateTester, failed)
-                             .put(copyVespaLogs, succeeded)
-                             .put(startTests, succeeded)
-                             .put(endTests, unfinished)
-                             .put(report, failed)
-                             .build(),
-                     run.stepStatuses());
+        assertEquals(ImmutableMap.<Step, StepInfo>builder()
+                        .put(deployInitialReal, new StepInfo(deployInitialReal, unfinished, Optional.empty()))
+                        .put(installInitialReal, new StepInfo(installInitialReal, failed, Optional.of(Instant.ofEpochMilli(1196676940000L))))
+                        .put(deployReal, new StepInfo(deployReal, succeeded, Optional.empty()))
+                        .put(installReal, new StepInfo(installReal, unfinished, Optional.empty()))
+                        .put(deactivateReal, new StepInfo(deactivateReal, failed, Optional.empty()))
+                        .put(deployTester, new StepInfo(deployTester, succeeded, Optional.empty()))
+                        .put(installTester, new StepInfo(installTester, unfinished, Optional.of(Instant.ofEpochMilli(1196677940000L))))
+                        .put(deactivateTester, new StepInfo(deactivateTester, failed, Optional.empty()))
+                        .put(copyVespaLogs, new StepInfo(copyVespaLogs, succeeded, Optional.empty()))
+                        .put(startTests, new StepInfo(startTests, succeeded, Optional.empty()))
+                        .put(endTests, new StepInfo(endTests, unfinished, Optional.empty()))
+                        .put(report, new StepInfo(report, failed, Optional.empty()))
+                        .build(),
+                run.steps());
 
         run = run.with(1L << 50)
                  .with(Instant.now().truncatedTo(MILLIS))
@@ -129,7 +131,7 @@ public class RunSerializerTest {
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
-        assertEquals(run.stepStatuses(), phoenix.stepStatuses());
+        assertEquals(run.steps(), phoenix.steps());
 
         Run initial = Run.initial(id, run.versions(), run.start());
         assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));

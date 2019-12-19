@@ -395,6 +395,7 @@ public class DeploymentContext {
         setTesterEndpoints(JobType.systemTest.zone(tester.controller().system()));
         runner.run();
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
+        assertTrue(jobs.run(id).get().steps().get(Step.endTests).startTime().isPresent());
         return id;
     }
 
