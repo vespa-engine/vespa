@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.querytransform.test;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -11,10 +12,7 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -87,15 +85,13 @@ public class LiteralBoostSearcherTestCase {
         Map<String, List<String>> clusters = new LinkedHashMap<>();
         clusters.put("cluster1", Arrays.asList("type1", "type2", "type3"));
         clusters.put("cluster2", Arrays.asList("type4", "type5"));
-        Map<String, SearchDefinition> searchDefs = new LinkedHashMap<>();
-        searchDefs.put("type1", createSearchDefinitionWithFields("type1", true));
-        searchDefs.put("type2", createSearchDefinitionWithFields("type2", false));
-        searchDefs.put("type3", new SearchDefinition("type3"));
-        searchDefs.put("type3", new SearchDefinition("type3"));
-        searchDefs.put("type4", new SearchDefinition("type4"));
-        searchDefs.put("type5", new SearchDefinition("type5"));
-        SearchDefinition union = new SearchDefinition("union");
-        return new IndexFacts(new IndexModel(clusters, searchDefs, union));
+        Collection<SearchDefinition> searchDefs = ImmutableList.of(
+                createSearchDefinitionWithFields("type1", true),
+                createSearchDefinitionWithFields("type2", false),
+                new SearchDefinition("type3"),
+                new SearchDefinition("type4"),
+                new SearchDefinition("type5"));
+        return new IndexFacts(new IndexModel(clusters, searchDefs));
     }
 
     private SearchDefinition createSearchDefinitionWithFields(String name, boolean literalBoost) {

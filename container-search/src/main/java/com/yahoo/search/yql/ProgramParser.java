@@ -1375,8 +1375,9 @@ final class ProgramParser {
             case yqlplusParser.STRING:
                 return StringUnescaper.unquote(text);
             case yqlplusParser.TRUE:
+                return Boolean.valueOf(true);
             case yqlplusParser.FALSE:
-                return new Boolean(text);
+                return Boolean.valueOf(false);
             case yqlplusParser.LONG_INT:
                 return Long.parseLong(text.substring(0, text.length()-1));
             default:

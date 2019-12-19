@@ -6,6 +6,7 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.search.query.textserialize.serializer.DispatchForm;
 import com.yahoo.search.query.textserialize.serializer.ItemIdMapper;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ListIterator;
 
 /**
@@ -42,8 +43,8 @@ public class CompositeConverter<T extends CompositeItem> implements ItemFormConv
 
     private T newInstance() {
         try {
-            return itemClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return itemClass.getDeclaredConstructor().newInstance();
+        } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

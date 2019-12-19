@@ -43,7 +43,7 @@ public class RawBufferTestCase {
     @Test
     public void requireThatToStringWorks() {
         assertToString(Arrays.asList("a".getBytes()[0], "b".getBytes()[0]), "{97,98}");
-        assertToString(Arrays.asList(new Byte((byte)2), new Byte((byte)6)), "{2,6}");
+        assertToString(Arrays.asList((byte)2, (byte)6), "{2,6}");
     }
 
     public void assertToString(List<Byte> data, String expected) {
