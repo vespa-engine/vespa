@@ -87,6 +87,7 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
+    private static final String versionField = "version";
 
     // Instance fields
     private static final String instanceNameField = "instanceName";
@@ -120,15 +121,6 @@ public class ApplicationSerializer {
     // JobStatus field
     private static final String jobTypeField = "jobType";
     private static final String pausedUntilField = "pausedUntil";
-
-    // JobRun fields
-    private static final String jobRunIdField = "id";
-    private static final String versionField = "version";
-    private static final String revisionField = "revision";
-    private static final String sourceVersionField = "sourceVersion";
-    private static final String sourceApplicationField = "sourceRevision";
-    private static final String reasonField = "reason";
-    private static final String atField = "at";
 
     // ClusterInfo fields
     private static final String clusterInfoField = "clusterInfo";
