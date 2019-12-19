@@ -31,7 +31,7 @@ class UnicodePropertyDump {
             end = Integer.valueOf(arg[1]).intValue();
         }
         if (arg.length > 2) {
-            debug = new Boolean(arg[2]).booleanValue();
+            debug = Boolean.valueOf(arg[2]).booleanValue();
         }
         dumpProperties(start, end, debug, System.out);
     }

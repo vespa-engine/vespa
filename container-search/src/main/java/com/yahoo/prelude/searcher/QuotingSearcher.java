@@ -54,7 +54,7 @@ public class QuotingSearcher extends Searcher {
                 QrQuotetableConfig.Character character = (QrQuotetableConfig.Character)i.next();
                 if (character.ordinal() > 256) {
                     newIsEmpty = false;
-                    newQuoteMap.put(new Character((char)character.ordinal()), character.quoting());
+                    newQuoteMap.put((char)character.ordinal(), character.quoting());
                     newUseMap = true;
                     if (minOrd == 0 || character.ordinal() < minOrd)
                         minOrd = character.ordinal();
@@ -77,7 +77,7 @@ public class QuotingSearcher extends Searcher {
         public String get(char c) {
             if (isEmpty) return null;
 
-            int ord = (int)c;
+            int ord = c;
             if (ord < 256) {
                 return lowerTable[ord];
             }
@@ -85,7 +85,7 @@ public class QuotingSearcher extends Searcher {
                 if ((!useMap) || ord < lowerUncachedBound || ord > upperUncachedBound)
                     return null;
                 else
-                    return quoteMap.get(new Character(c));
+                    return quoteMap.get(c);
             }
         }
         public boolean isEmpty() {

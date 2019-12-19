@@ -2,9 +2,10 @@
 package com.yahoo.prelude.searcher.test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
@@ -23,6 +24,7 @@ import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,11 +85,8 @@ public class JuniperSearcherTestCase {
 
     private Execution createExecution(Chain<Searcher> chain) {
         Map<String, List<String>> clusters = new LinkedHashMap<>();
-        Map<String, SearchDefinition> searchDefs = new LinkedHashMap<>();
-        searchDefs.put("one", createSearchDefinitionOne());
-        searchDefs.put("two", createSearchDefinitionTwo());
-        SearchDefinition union = new SearchDefinition("union");
-        IndexModel indexModel = new IndexModel(clusters, searchDefs, union);
+        Collection<SearchDefinition> searchDefs = ImmutableList.of(createSearchDefinitionOne(), createSearchDefinitionTwo());
+        IndexModel indexModel = new IndexModel(clusters, searchDefs);
         return new Execution(chain, Execution.Context.createContextStub(new IndexFacts(indexModel)));
     }
 
@@ -110,8 +109,7 @@ public class JuniperSearcherTestCase {
     }
 
     private SearchDefinition createSearchDefinitionTwo() {
-        SearchDefinition two = new SearchDefinition("two");
-        return two;
+        return new SearchDefinition("two");
     }
 
     @Test
@@ -140,7 +138,7 @@ public class JuniperSearcherTestCase {
 
     @Test
     public void testBoldingEquals() {
-        assertFalse(new Query("?query=12").equals(new Query("?query=12&bolding=false")));
+        assertNotEquals(new Query("?query=12"), new Query("?query=12&bolding=false"));
     }
 
     @Test
