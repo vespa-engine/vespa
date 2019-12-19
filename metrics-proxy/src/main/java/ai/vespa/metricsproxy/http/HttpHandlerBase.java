@@ -4,9 +4,6 @@
 
 package ai.vespa.metricsproxy.http;
 
-import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.core.MetricsManager;
-import ai.vespa.metricsproxy.service.VespaServices;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
