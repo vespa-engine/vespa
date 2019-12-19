@@ -39,9 +39,15 @@ public class ClusterMonitor<T> {
     private final Map<T, TrafficNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
     public ClusterMonitor(NodeManager<T> manager) {
+        this(manager, true);
+    }
+
+    public ClusterMonitor(NodeManager<T> manager, boolean startPingThread) {
         nodeManager = manager;
         monitorThread = new MonitorThread("search.clustermonitor");
-        monitorThread.start();
+        if (startPingThread) {
+            monitorThread.start();
+        }
     }
 
     /** Returns the configuration of this cluster monitor */
@@ -121,7 +127,9 @@ public class ClusterMonitor<T> {
             nodeManager.notifyAll();
         }
         try {
-            monitorThread.join();
+            if (monitorThread.isAlive()) {
+                monitorThread.join();
+            }
         } catch (InterruptedException e) {}
     }
 
