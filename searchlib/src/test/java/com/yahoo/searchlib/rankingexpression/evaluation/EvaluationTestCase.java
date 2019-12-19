@@ -324,7 +324,7 @@ public class EvaluationTestCase {
                                                                                 "{y:1}:((1+1)+a)}{y:1}" +
                                                            "}");
 
-        // tensor value
+        // tensor slice
         tester.assertEvaluates("3.0", "tensor0{x:1}", "{ {x:0}:1, {x:1}:3 }");
         tester.assertEvaluates("1.2", "tensor0{key:foo,x:0}", true, "{ {key:foo,x:0}:1.2, {key:bar,x:0}:3 }");
         tester.assertEvaluates("3.0", "tensor0{bar}", true, "{ {x:foo}:1, {x:bar}:3 }");
