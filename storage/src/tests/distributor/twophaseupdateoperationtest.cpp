@@ -1072,6 +1072,22 @@ TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_alter
     ASSERT_EQ("Put => 1,Put => 2,Put => 0", sender.getCommands(true, false, 2));
 }
 
+TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_document_not_found_on_a_replica_node) {
+    setupDistributor(2, 2, "storage:2 distributor:1");
+    getConfig().set_update_fast_path_restart_enabled(true);
+
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
+    DistributorMessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
+
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
+    replyToGet(*cb, sender, 0, Timestamp(0), false);
+    replyToGet(*cb, sender, 1, Timestamp(500));
+
+    // Should _not_ send Update operations!
+    ASSERT_EQ("Put => 1,Put => 0", sender.getCommands(true, false, 2));
+}
+
 // XXX currently differs in behavior from content nodes in that updates for
 // document IDs without explicit doctypes will _not_ be auto-failed on the
 // distributor.
