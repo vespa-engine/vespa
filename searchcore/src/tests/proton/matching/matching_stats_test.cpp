@@ -320,6 +320,16 @@ TEST("requireThatSoftDoomFacorIsComputedCorrectlyForUpAdjustment") {
     EXPECT_EQUAL(0.105, stats.softDoomFactor());
 }
 
+TEST("requireThatFactor is capped at minimum 1%") {
+    MatchingStats stats;
+    stats.softDoomFactor(0.01001);
+    EXPECT_EQUAL(0.01001, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(1s, 500ms, 900ms);
+    EXPECT_EQUAL(0.01, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(1s, 900ms, 1ms);
+    EXPECT_EQUAL(0.0105, stats.softDoomFactor());
+}
+
 TEST_MAIN() {
     TEST_RUN_ALL();
 }
