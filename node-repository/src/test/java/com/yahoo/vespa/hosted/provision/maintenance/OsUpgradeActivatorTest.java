@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.os.OsVersion;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
@@ -92,7 +91,7 @@ public class OsUpgradeActivatorTest {
     private boolean isOsVersionActive(NodeType... types) {
         var active = true;
         for (var type : types) {
-            active &= tester.nodeRepository().osVersions().targetFor(type).map(OsVersion::active).orElse(false);
+            active &= tester.nodeRepository().list().nodeType(type).changingOsVersion().size() > 0;
         }
         return active;
     }

@@ -168,6 +168,11 @@ TEST("require that strings are parsed and dumped correctly") {
     }
 }
 
+TEST("require that strings with single quotes can be parsed") {
+    EXPECT_EQUAL(Function::parse("'foo'")->dump(), "\"foo\"");
+    EXPECT_EQUAL(Function::parse("'fo\\'o'")->dump(), "\"fo'o\"");
+}
+
 TEST("require that free arrays cannot be parsed") {
     verify_error("[1,2,3]", "[]...[missing value]...[[1,2,3]]");
 }
@@ -830,11 +835,13 @@ TEST("require that verbose tensor create can be parsed") {
     auto dense = Function::parse("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}");
     auto sparse1 = Function::parse("tensor(x{}):{{x:a}:1,{x:b}:2,{x:c}:3}");
     auto sparse2 = Function::parse("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}");
+    auto sparse3 = Function::parse("tensor(x{}):{{x:'a'}:1,{x:'b'}:2,{x:'c'}:3}");
     auto mixed1 = Function::parse("tensor(x{},y[2]):{{x:a,y:0}:1,{x:a,y:1}:2}");
     auto mixed2 = Function::parse("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}");
     EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense->dump());
     EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1->dump());
     EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2->dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse3->dump());
     EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1->dump());
     EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2->dump());
 }
@@ -880,6 +887,8 @@ TEST("require that verbose tensor create detects non-numeric indexes for indexed
 TEST("require that verbose tensor create indexes cannot be quoted") {
     TEST_DO(verify_error("tensor(x[1]):{{x:\"1\"}:1}",
                          "[tensor(x[1]):{{x:]...[expected number]...[\"1\"}:1}]"));
+    TEST_DO(verify_error("tensor(x[1]):{{x:'1'}:1}",
+                         "[tensor(x[1]):{{x:]...[expected number]...['1'}:1}]"));
 }
 
 //-----------------------------------------------------------------------------
@@ -888,11 +897,13 @@ TEST("require that convenient tensor create can be parsed") {
     auto dense = Function::parse("tensor(x[3]):[1,2,3]");
     auto sparse1 = Function::parse("tensor(x{}):{a:1,b:2,c:3}");
     auto sparse2 = Function::parse("tensor(x{}):{\"a\":1,\"b\":2,\"c\":3}");
+    auto sparse3 = Function::parse("tensor(x{}):{'a':1,'b':2,'c':3}");
     auto mixed1 = Function::parse("tensor(x{},y[2]):{a:[1,2]}");
     auto mixed2 = Function::parse("tensor(x{},y[2]):{\"a\":[1,2]}");
     EXPECT_EQUAL("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}", dense->dump());
     EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse1->dump());
     EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse2->dump());
+    EXPECT_EQUAL("tensor(x{}):{{x:\"a\"}:1,{x:\"b\"}:2,{x:\"c\"}:3}", sparse3->dump());
     EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed1->dump());
     EXPECT_EQUAL("tensor(x{},y[2]):{{x:\"a\",y:0}:1,{x:\"a\",y:1}:2}", mixed2->dump());
 }
@@ -955,6 +966,7 @@ TEST("require that convenient tensor create detects under-specified cells") {
 
 TEST("require that tensor peek can be parsed") {
     TEST_DO(verify_parse("t{x:\"1\",y:\"foo\"}", "f(t)(t{x:\"1\",y:\"foo\"})"));
+    TEST_DO(verify_parse("t{x:'1',y:'foo'}", "f(t)(t{x:\"1\",y:\"foo\"})"));
     TEST_DO(verify_parse("t{x:1,y:foo}", "f(t)(t{x:\"1\",y:\"foo\"})"));
 }
 

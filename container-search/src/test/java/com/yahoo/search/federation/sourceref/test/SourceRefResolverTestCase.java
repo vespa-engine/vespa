@@ -20,10 +20,11 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import static com.yahoo.search.federation.sourceref.test.SearchChainResolverTestCase.emptySourceToProviderMap;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import static org.junit.matchers.JUnitMatchers.hasItems;
 
 
 /**
@@ -45,9 +46,9 @@ public class SourceRefResolverTestCase {
     private static SourceRefResolver createSourceRefResolver() {
         SearchChainResolver.Builder builder = new SearchChainResolver.Builder();
         builder.addSearchChain(ComponentId.fromString(cluster1), new FederationOptions().setUseByDefault(true),
-                Collections.<String>emptyList());
+                Collections.emptyList());
         builder.addSearchChain(ComponentId.fromString(cluster2), new FederationOptions().setUseByDefault(true),
-                Collections.<String>emptyList());
+                Collections.emptyList());
 
         return new SourceRefResolver(builder.build());
     }
@@ -57,7 +58,7 @@ public class SourceRefResolverTestCase {
         masterClusters.put(cluster1, Arrays.asList("document1", "document2"));
         masterClusters.put(cluster2, Arrays.asList("document1"));
         masterClusters.put(cluster3, Arrays.asList("document3"));
-        indexFacts = new IndexFacts(new IndexModel(masterClusters, null, null));
+        indexFacts = new IndexFacts(new IndexModel(masterClusters, Collections.emptyList()));
     }
 
     @Test
@@ -69,7 +70,7 @@ public class SourceRefResolverTestCase {
     public void lookup_search_chain() throws Exception {
         Set<SearchChainInvocationSpec> searchChains = resolve(cluster1);
         assertThat(searchChains.size(), is(1));
-        assertThat(searchChainIds(searchChains), hasItems(cluster1));
+        assertThat(searchChainIds(searchChains), hasItem(cluster1));
     }
 
     @Test

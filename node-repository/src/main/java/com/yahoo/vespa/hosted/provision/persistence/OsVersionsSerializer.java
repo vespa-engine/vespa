@@ -6,7 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.config.SlimeUtils;
-import com.yahoo.vespa.hosted.provision.os.OsVersion;
+import com.yahoo.vespa.hosted.provision.node.OsVersion;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -18,6 +18,7 @@ import java.util.TreeMap;
  *
  * @author mpolden
  */
+// TODO(mpolden): Remove this and replaces usages with NodeTypeVersionsSerializer after January 2020
 public class OsVersionsSerializer {
 
     private static final String VERSION_FIELD = "version";
@@ -25,13 +26,13 @@ public class OsVersionsSerializer {
 
     private OsVersionsSerializer() {}
 
-    public static byte[] toJson(Map<NodeType, OsVersion> versions) {
+    public static byte[] toJson(Map<NodeType, Version> versions) {
         var slime = new Slime();
         var object = slime.setObject();
         versions.forEach((nodeType, osVersion) -> {
             var versionObject = object.setObject(NodeSerializer.toString(nodeType));
-            versionObject.setString(VERSION_FIELD, osVersion.version().toFullString());
-            versionObject.setBool(ACTIVE_FIELD, osVersion.active());
+            versionObject.setString(VERSION_FIELD, osVersion.toFullString());
+            versionObject.setBool(ACTIVE_FIELD, true);
         });
         try {
             return SlimeUtils.toJsonBytes(slime);
@@ -40,13 +41,12 @@ public class OsVersionsSerializer {
         }
     }
 
-    public static Map<NodeType, OsVersion> fromJson(byte[] data) {
-        var versions = new TreeMap<NodeType, OsVersion>(); // Use TreeMap to sort by node type
+    public static Map<NodeType, Version> fromJson(byte[] data) {
+        var versions = new TreeMap<NodeType, Version>(); // Use TreeMap to sort by node type
         var inspector = SlimeUtils.jsonToSlime(data).get();
         inspector.traverse((ObjectTraverser) (key, value) -> {
             var version = Version.fromString(value.field(VERSION_FIELD).asString());
-            var active = value.field(ACTIVE_FIELD).asBool();
-            versions.put(NodeSerializer.nodeTypeFromString(key), new OsVersion(version, active));
+            versions.put(NodeSerializer.nodeTypeFromString(key), version);
         });
         return versions;
     }

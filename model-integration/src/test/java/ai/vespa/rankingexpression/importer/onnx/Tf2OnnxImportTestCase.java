@@ -39,7 +39,7 @@ public class Tf2OnnxImportTestCase extends TestableModel {
     @Ignore
     public void testOnnxConversionAndImport() {
         Report report = new Report();
-        for (int i = 11; i < 12; ++i) {
+        for (int i = 1; i < 12; ++i) {
             testModelsWithOpset(report, i);
         }
         System.out.println(report);

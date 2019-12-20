@@ -116,23 +116,15 @@ public class NodeRebooterTest {
         var wantedOsVersion = tester.nodeRepository.osVersions().targetFor(NodeType.host);
         if (wantedOsVersion.isEmpty()) return;
         for (Node node : tester.nodeRepository.getNodes(Node.State.ready, Node.State.active)) {
-            if (wantedOsVersion.get().version().isAfter(node.status().osVersion().orElse(Version.emptyVersion)))
-                tester.nodeRepository.write(node.withCurrentOsVersion(wantedOsVersion.get().version(),
-                                                                      tester.clock.instant()), () -> {
-                });
+            if (wantedOsVersion.get().isAfter(node.status().osVersion().current().orElse(Version.emptyVersion)))
+                tester.nodeRepository.write(node.withCurrentOsVersion(wantedOsVersion.get(), tester.clock.instant()),
+                                            () -> {});
         }
     }
     
     /** Returns the subset of the given nodes which have the given current reboot generation */
     private List<Node> withCurrentRebootGeneration(long generation, List<Node> nodes) {
         return nodes.stream().filter(n -> n.status().reboot().current() == generation).collect(Collectors.toList());
-    }
-
-    /** Returns the subset of the given nodes which have the given current OS version */
-    private List<Node> withOsVersion(Version version, List<Node> nodes) {
-        return nodes.stream().filter(n -> n.status().osVersion().isPresent() &&
-                                          n.status().osVersion().get().equals(version))
-                    .collect(Collectors.toList());
     }
 
 }

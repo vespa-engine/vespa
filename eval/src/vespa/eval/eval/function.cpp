@@ -363,9 +363,9 @@ int unhex(char c) {
     return -1;
 }
 
-void extract_quoted_string(ParseContext &ctx, vespalib::string &str) {
-    ctx.eat('"');
-    while (!ctx.eos() && ctx.get() != '"') {
+void extract_quoted_string(ParseContext &ctx, vespalib::string &str, char quote) {
+    ctx.eat(quote);
+    while (!ctx.eos() && (ctx.get() != quote)) {
         if (ctx.get() == '\\') {
             ctx.next();
             if (ctx.get() == 'x') {
@@ -380,6 +380,7 @@ void extract_quoted_string(ParseContext &ctx, vespalib::string &str) {
             } else {
                 switch(ctx.get()) {
                 case '"':  str.push_back('"');  break;
+                case '\'':  str.push_back('\'');  break;
                 case '\\': str.push_back('\\'); break;
                 case 'f':  str.push_back('\f'); break;
                 case 'n':  str.push_back('\n'); break;
@@ -393,12 +394,12 @@ void extract_quoted_string(ParseContext &ctx, vespalib::string &str) {
         }
         ctx.next();
     }
-    ctx.eat('"');
+    ctx.eat(quote);
 }
 
-void parse_string(ParseContext &ctx) {
+void parse_string(ParseContext &ctx, char quote) {
     vespalib::string &str = ctx.scratch();
-    extract_quoted_string(ctx, str);
+    extract_quoted_string(ctx, str, quote);
     ctx.push_expression(Node_UP(new nodes::String(str)));
 }
 
@@ -485,7 +486,9 @@ vespalib::string get_label(ParseContext &ctx) {
     ctx.skip_spaces();
     vespalib::string label;
     if (ctx.get() == '"') {
-        extract_quoted_string(ctx, label);
+        extract_quoted_string(ctx, label, '"');
+    } else if (ctx.get() == '\'') {
+        extract_quoted_string(ctx, label, '\'');
     } else {
         while (!is_label_end(ctx.get())) {
             label.push_back(ctx.get());
@@ -945,7 +948,9 @@ void parse_value(ParseContext &ctx) {
         parse_expression(ctx);
         ctx.eat(')');
     } else if (ctx.get() == '"') {
-        parse_string(ctx);
+        parse_string(ctx, '"');
+    } else if (ctx.get() == '\'') {
+        parse_string(ctx, '\'');
     } else if (isdigit(ctx.get())) {
         parse_number(ctx);
     } else {

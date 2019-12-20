@@ -8,6 +8,7 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.http.HttpHandlerBase;
 import ai.vespa.metricsproxy.http.TextResponse;
+import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.google.inject.Inject;
@@ -32,12 +33,15 @@ public class PrometheusHandler extends HttpHandlerBase {
     public static final String V1_PATH = "/prometheus/v1";
     static final String VALUES_PATH = V1_PATH + "/values";
 
+    private final ValuesFetcher valuesFetcher;
+
     @Inject
     public PrometheusHandler(Executor executor,
                              MetricsManager metricsManager,
                              VespaServices vespaServices,
                              MetricsConsumers metricsConsumers) {
-        super(executor, metricsManager, vespaServices, metricsConsumers);
+        super(executor);
+        valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
     }
 
     @Override

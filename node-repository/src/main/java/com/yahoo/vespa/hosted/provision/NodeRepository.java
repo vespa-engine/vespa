@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision;
 import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
@@ -112,7 +113,7 @@ public class NodeRepository extends AbstractComponent {
         this.clock = clock;
         this.flavors = flavors;
         this.nameResolver = nameResolver;
-        this.osVersions = new OsVersions(db);
+        this.osVersions = new OsVersions(this);
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.dockerImages = new DockerImages(db, dockerImage);
@@ -192,7 +193,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
-        return new LoadBalancerList(database().readLoadBalancers().values());
+        return LoadBalancerList.copyOf(database().readLoadBalancers().values());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }
@@ -643,7 +644,8 @@ public class NodeRepository extends AbstractComponent {
 
     /**
      * Increases the restart generation of the active nodes matching the filter.
-     * Returns the nodes in their new state.
+     *
+     * @return the nodes in their new state.
      */
     public List<Node> restart(NodeFilter filter) {
         return performOn(StateFilter.from(Node.State.active, filter), (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()), lock));
@@ -651,10 +653,22 @@ public class NodeRepository extends AbstractComponent {
 
     /**
      * Increases the reboot generation of the nodes matching the filter.
-     * Returns the nodes in their new state.
+     * @return the nodes in their new state.
      */
     public List<Node> reboot(NodeFilter filter) {
         return performOn(filter, (node, lock) -> write(node.withReboot(node.status().reboot().withIncreasedWanted()), lock));
+    }
+
+    /**
+     * Set target OS version of all nodes matching given filter.
+     *
+     * @return the nodes in their new state.
+     */
+    public List<Node> upgradeOs(NodeFilter filter, Optional<Version> version) {
+        return performOn(filter, (node, lock) -> {
+            var newStatus = node.status().withOsVersion(node.status().osVersion().withWanted(version));
+            return write(node.with(newStatus), lock);
+        });
     }
 
     /**

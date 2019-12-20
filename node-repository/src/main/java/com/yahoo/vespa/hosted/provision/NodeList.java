@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision;
 
-import com.google.common.collect.ImmutableList;
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
@@ -13,7 +13,6 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,7 +20,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.collectingAndThen;
 
 /**
- * A filterable node list
+ * A filterable node list. The result of a filter operation is immutable.
  *
  * @author bratseth
  * @author mpolden
@@ -29,13 +28,20 @@ import static java.util.stream.Collectors.collectingAndThen;
 public class NodeList implements Iterable<Node> {
 
     private final List<Node> nodes;
+    private final boolean negate;
 
     public NodeList(List<Node> nodes) {
-        this(nodes, true);
+        this(nodes, true, false);
     }
 
-    private NodeList(List<Node> nodes, boolean copy) {
-        this.nodes = copy ? ImmutableList.copyOf(nodes) : Collections.unmodifiableList(nodes);
+    private NodeList(List<Node> nodes, boolean copy, boolean negate) {
+        this.nodes = copy ? List.copyOf(nodes) : Collections.unmodifiableList(nodes);
+        this.negate = negate;
+    }
+
+    /** Invert the next filter operation. All other methods that return a {@link NodeList} clears the negation. */
+    public NodeList not() {
+        return new NodeList(nodes, false, true);
     }
 
     /** Returns the subset of nodes which are retired */
@@ -43,25 +49,12 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.allocation().get().membership().retired());
     }
 
-    /** Returns the subset of nodes which are not retired */
-    public NodeList nonretired() {
-        return filter(node -> ! node.allocation().get().membership().retired());
-    }
-
     /** Returns the subset of nodes having exactly the given resources */
     public NodeList resources(NodeResources resources) { return filter(node -> node.flavor().resources().equals(resources)); }
-
-    /** Returns the subset of nodes not having exactly the given resources */
-    public NodeList notResources(NodeResources resources) { return filter(node ->  ! node.flavor().resources().equals(resources)); }
 
     /** Returns the subset of nodes of the given flavor */
     public NodeList flavor(String flavor) {
         return filter(node -> node.flavor().name().equals(flavor));
-    }
-
-    /** Returns the subset of nodes which does not have the given flavor */
-    public NodeList notFlavor(String flavor) {
-        return filter(node ->  ! node.flavor().name().equals(flavor));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */
@@ -74,6 +67,16 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.status().vespaVersion().isPresent() &&
                               node.allocation().isPresent() &&
                               !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
+    }
+
+    /** Returns the subset of nodes that are currently changing their OS version */
+    public NodeList changingOsVersion() {
+        return filter(node -> node.status().osVersion().changing());
+    }
+
+    /** Returns the subset of nodes that are currently on the given OS version */
+    public NodeList onOsVersion(Version version) {
+        return filter(node -> node.status().osVersion().matches(version));
     }
 
     /** Returns the subset of nodes assigned to the given cluster */
@@ -133,6 +136,13 @@ public class NodeList implements Iterable<Node> {
                         .findFirst());
     }
 
+    /** Returns the first n nodes in this */
+    public NodeList first(int n) {
+        n = Math.min(n, nodes.size());
+        return wrap(nodes.subList(negate ? n : 0,
+                                  negate ? nodes.size() : n));
+    }
+
     public int size() { return nodes.size(); }
 
     /** Returns the immutable list of nodes in this */
@@ -142,7 +152,8 @@ public class NodeList implements Iterable<Node> {
     public Stream<Node> stream() { return asList().stream(); }
 
     public NodeList filter(Predicate<Node> predicate) {
-        return nodes.stream().filter(predicate).collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
+        return nodes.stream().filter(negate ? predicate.negate() : predicate)
+                    .collect(collectingAndThen(Collectors.toList(), NodeList::wrap));
     }
 
     @Override
@@ -150,7 +161,9 @@ public class NodeList implements Iterable<Node> {
         return nodes.iterator();
     }
 
+    /** Create a new list containing the given nodes, without copying */
     private static NodeList wrap(List<Node> nodes) {
-        return new NodeList(nodes, false);
+        return new NodeList(nodes, false, false);
     }
+
 }

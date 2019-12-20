@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.cluster;
 
+import com.google.common.collect.ImmutableList;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -28,6 +29,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -69,15 +71,14 @@ public class ClusterSearcherTestCase {
         clusters.put("cluster1", Arrays.asList("type1", "type2", "type3"));
         clusters.put("cluster2", Arrays.asList("type4", "type5"));
         clusters.put("type1", Arrays.asList("type6"));
-        Map<String, SearchDefinition> searchDefs = new LinkedHashMap<>();
-        searchDefs.put("type1", new SearchDefinition("type1"));
-        searchDefs.put("type2", new SearchDefinition("type2"));
-        searchDefs.put("type3", new SearchDefinition("type3"));
-        searchDefs.put("type4", new SearchDefinition("type4"));
-        searchDefs.put("type5", new SearchDefinition("type5"));
-        searchDefs.put("type6", new SearchDefinition("type6"));
-        SearchDefinition union = new SearchDefinition("union");
-        return new IndexFacts(new IndexModel(clusters, searchDefs, union));
+        Collection<SearchDefinition> searchDefs = ImmutableList.of(
+                new SearchDefinition("type1"),
+                new SearchDefinition("type2"),
+                new SearchDefinition("type3"),
+                new SearchDefinition("type4"),
+                new SearchDefinition("type5"),
+                new SearchDefinition("type6"));
+        return new IndexFacts(new IndexModel(clusters, searchDefs));
     }
 
     private Set<String> resolve(ClusterSearcher searcher, String query) {

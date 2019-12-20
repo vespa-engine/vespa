@@ -98,6 +98,10 @@ import java.util.stream.Stream;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
 import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * A singleton owned by the Controller which contains the methods and state for controlling applications.
@@ -146,8 +150,16 @@ public class ApplicationController {
         Once.after(Duration.ofMinutes(1), () -> {
             Instant start = clock.instant();
             int count = 0;
-            for (Application application : curator.readApplications()) {
-                lockApplicationIfPresent(application.id(), this::store);
+            for (TenantAndApplicationId id: curator.readApplicationIds()) {
+                lockApplicationIfPresent(id, application -> {
+                    if (id.tenant().value().startsWith("by-"))
+                        application = application.with(DeploymentSpec.empty);
+                    else
+                        for (InstanceName instance : application.get().deploymentSpec().instanceNames())
+                            if ( ! application.get().instances().keySet().contains(instance))
+                                application = application.withNewInstance(instance);
+                    store(application);
+                });
                 count++;
             }
             log.log(Level.INFO, String.format("Wrote %d applications in %s", count,
@@ -608,7 +620,7 @@ public class ApplicationController {
                                                       .filter(zone ->      deploymentSpec.instance(instance).isEmpty()
                                                                       || ! deploymentSpec.requireInstance(instance).deploysTo(zone.environment(),
                                                                                                                               zone.region()))
-                                                      .collect(Collectors.toList());
+                                                      .collect(toList());
 
         if (deploymentsToRemove.isEmpty())
             return application;
@@ -618,7 +630,7 @@ public class ApplicationController {
                                                " is deployed in " +
                                                deploymentsToRemove.stream()
                                                                   .map(zone -> zone.region().value())
-                                                                  .collect(Collectors.joining(", ")) +
+                                                                  .collect(joining(", ")) +
                                                ", but does not include " +
                                                (deploymentsToRemove.size() > 1 ? "these zones" : "this zone") +
                                                " in deployment.xml. " +
@@ -703,22 +715,31 @@ public class ApplicationController {
         if (tenant.type() != Tenant.Type.user && credentials.isEmpty())
             throw new IllegalArgumentException("Could not delete application '" + id + "': No credentials provided");
 
-        // Find all instances of the application
-        List<ApplicationId> instances = requireApplication(id).instances().keySet().stream()
-                                                              .map(id::instance)
-                                                              .collect(Collectors.toUnmodifiableList());
-        if (instances.size() > 1)
-            throw new IllegalArgumentException("Could not delete application; more than one instance present: " + instances);
+        lockApplicationOrThrow(id, application -> {
+            var deployments = application.get().instances().values().stream()
+                                         .filter(instance -> ! instance.deployments().isEmpty())
+                                         .collect(toMap(instance -> instance.name(),
+                                                        instance -> instance.deployments().keySet().stream()
+                                                                            .map(ZoneId::toString)
+                                                                            .collect(joining(", "))));
+            if ( ! deployments.isEmpty())
+                throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments: " + deployments);
 
-        for (ApplicationId instance : instances)
-            deleteInstance(instance);
+            for (Instance instance : application.get().instances().values()) {
+                removeEndpoints(instance);
+                application = application.without(instance.name());
+            }
 
-        applicationStore.removeAll(id.tenant(), id.application());
-        applicationStore.removeAllTesters(id.tenant(), id.application());
+            applicationStore.removeAll(id.tenant(), id.application());
+            applicationStore.removeAllTesters(id.tenant(), id.application());
 
-        if (tenant.type() != Tenant.Type.user)
-            accessControl.deleteApplication(id, credentials.get());
-        curator.removeApplication(id);
+            if (tenant.type() != Tenant.Type.user)
+                accessControl.deleteApplication(id, credentials.get());
+            curator.removeApplication(id);
+
+            controller.jobController().collectGarbage();
+            log.info("Deleted " + id);
+        });
     }
 
     /**
@@ -735,21 +756,27 @@ public class ApplicationController {
             if ( ! application.get().require(instanceId.instance()).deployments().isEmpty())
                 throw new IllegalArgumentException("Could not delete '" + application + "': It has active deployments in: " +
                                                    application.get().require(instanceId.instance()).deployments().keySet().stream().map(ZoneId::toString)
-                                                              .sorted().collect(Collectors.joining(", ")));
+                                                              .sorted().collect(joining(", ")));
 
-            Instance instance = application.get().require(instanceId.instance());
-            instance.rotations().forEach(assignedRotation -> {
-                var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId());
-                endpoints.asList().stream()
-                         .map(Endpoint::dnsName)
-                         .forEach(name -> {
-                             controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
-                         });
-            });
+            if (   ! application.get().deploymentSpec().equals(DeploymentSpec.empty)
+                &&   application.get().deploymentSpec().instanceNames().contains(instanceId.instance()))
+                throw new IllegalArgumentException("Can not delete '" + instanceId + "', which is specified in 'deployment.xml'; remove it there first");
+
+            removeEndpoints(application.get().require(instanceId.instance()));
             curator.writeApplication(application.without(instanceId.instance()).get());
             controller.jobController().collectGarbage();
-
             log.info("Deleted " + instanceId);
+        });
+    }
+
+    private void removeEndpoints(Instance instance) {
+        instance.rotations().forEach(assignedRotation -> {
+            var endpoints = instance.endpointsIn(controller.system(), assignedRotation.endpointId());
+            endpoints.asList().stream()
+                     .map(Endpoint::dnsName)
+                     .forEach(name -> {
+                         controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(name), Priority.normal);
+                     });
         });
     }
 

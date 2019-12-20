@@ -4,17 +4,15 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.DockerImage;
 
-import javax.annotation.concurrent.Immutable;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Information about current status of a node
+ * Information about current status of a node. This is immutable.
  *
  * @author bratseth
  */
-@Immutable
 public class Status {
 
     private final Generation reboot;
@@ -23,7 +21,7 @@ public class Status {
     private final int failCount;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
-    private final Optional<Version> osVersion;
+    private final OsVersion osVersion;
     private final Optional<Instant> firmwareVerifiedAt;
 
     public Status(Generation generation,
@@ -32,7 +30,7 @@ public class Status {
                   int failCount,
                   boolean wantToRetire,
                   boolean wantToDeprovision,
-                  Optional<Version> osVersion,
+                  OsVersion osVersion,
                   Optional<Instant> firmwareVerifiedAt) {
         this.reboot = Objects.requireNonNull(generation, "Generation must be non-null");
         this.vespaVersion = Objects.requireNonNull(vespaVersion, "Vespa version must be non-null").filter(v -> !Version.emptyVersion.equals(v));
@@ -96,13 +94,13 @@ public class Status {
         return wantToDeprovision;
     }
 
-    /** Returns a copy of this with the current OS version set to version */
-    public Status withOsVersion(Version version) {
-        return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, Optional.of(version), firmwareVerifiedAt);
+    /** Returns a copy of this with the OS version set to given version */
+    public Status withOsVersion(OsVersion version) {
+        return new Status(reboot, vespaVersion, dockerImage, failCount, wantToRetire, wantToDeprovision, version, firmwareVerifiedAt);
     }
 
-    /** Returns the current OS version of this node, if any */
-    public Optional<Version> osVersion() {
+    /** Returns the OS version of this node */
+    public OsVersion osVersion() {
         return osVersion;
     }
 
@@ -119,6 +117,7 @@ public class Status {
     /** Returns the initial status of a newly provisioned node */
     public static Status initial() {
         return new Status(Generation.initial(), Optional.empty(), Optional.empty(), 0, false,
-                          false, Optional.empty(), Optional.empty());
+                          false, OsVersion.EMPTY, Optional.empty());
     }
+
 }

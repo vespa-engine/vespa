@@ -9,10 +9,6 @@ import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -28,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -51,7 +46,7 @@ public class LoadBalancerProvisioner {
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
 
-    public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
+    public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;
@@ -118,7 +113,7 @@ public class LoadBalancerProvisioner {
         }
     }
 
-    /** Returns load balancers of given application that are no longer referenced by wantedClusters */
+    /** Returns load balancers of given application that are no longer referenced by given clusters */
     private List<LoadBalancer> surplusLoadBalancersOf(ApplicationId application, Set<ClusterSpec.Id> activeClusters) {
         var activeLoadBalancersByCluster = nodeRepository.loadBalancers()
                                                          .owner(application)
@@ -165,13 +160,12 @@ public class LoadBalancerProvisioner {
     }
 
     private LoadBalancerInstance create(ApplicationId application, ClusterSpec.Id cluster, List<Node> nodes, boolean force) {
-        Map<HostName, Set<String>> hostnameToIpAdresses = nodes.stream()
-                                                               .collect(Collectors.toMap(node -> HostName.from(node.hostname()),
-                                                                                         this::reachableIpAddresses));
-        Set<Real> reals = new LinkedHashSet<>();
-        hostnameToIpAdresses.forEach((hostname, ipAddresses) -> {
-            ipAddresses.forEach(ipAddress -> reals.add(new Real(hostname, ipAddress)));
-        });
+        var reals = new LinkedHashSet<Real>();
+        for (var node : nodes) {
+            for (var ip : reachableIpAddresses(node)) {
+                reals.add(new Real(HostName.from(node.hostname()), ip));
+            }
+        }
         log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
                                ", targeting: " + reals);
         try {

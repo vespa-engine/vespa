@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
+import com.yahoo.vespa.hosted.provision.node.OsVersion;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -72,6 +73,7 @@ public class NodeSerializer {
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
     private static final String osVersionKey = "osVersion";
+    private static final String wantedOsVersionKey = "wantedOsVersion";
     private static final String firmwareCheckKey = "firmwareCheck";
     private static final String reportsKey = "reports";
     private static final String modelNameKey = "modelName";
@@ -142,7 +144,8 @@ public class NodeSerializer {
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
-        node.status().osVersion().ifPresent(version -> object.setString(osVersionKey, version.toString()));
+        node.status().osVersion().current().ifPresent(version -> object.setString(osVersionKey, version.toString()));
+        node.status().osVersion().wanted().ifPresent(version -> object.setString(wantedOsVersionKey, version.toFullString()));
         node.status().firmwareVerifiedAt().ifPresent(instant -> object.setLong(firmwareCheckKey, instant.toEpochMilli()));
         node.reports().toSlime(object, reportsKey);
         node.modelName().ifPresent(modelName -> object.setString(modelNameKey, modelName));
@@ -226,10 +229,11 @@ public class NodeSerializer {
         return new Status(generationFromSlime(object, rebootGenerationKey, currentRebootGenerationKey),
                           versionFromSlime(object.field(vespaVersionKey)),
                           dockerImageFromSlime(object.field(currentDockerImageKey)),
-                          (int)object.field(failCountKey).asLong(),
+                          (int) object.field(failCountKey).asLong(),
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
-                          versionFromSlime(object.field(osVersionKey)),
+                          new OsVersion(versionFromSlime(object.field(osVersionKey)),
+                                        versionFromSlime(object.field(wantedOsVersionKey))),
                           instantFromSlime(object.field(firmwareCheckKey)));
     }
 
@@ -360,6 +364,7 @@ public class NodeSerializer {
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
+
     private String toString(History.Event.Type nodeEventType) {
         switch (nodeEventType) {
             case provisioned : return "provisioned";

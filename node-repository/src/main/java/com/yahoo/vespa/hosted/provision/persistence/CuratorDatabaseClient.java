@@ -24,7 +24,6 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.os.OsVersion;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -418,11 +417,11 @@ public class CuratorDatabaseClient {
 
 
     // OS versions
-    public Map<NodeType, OsVersion> readOsVersions() {
+    public Map<NodeType, Version> readOsVersions() {
         return read(osVersionsPath(), OsVersionsSerializer::fromJson).orElseGet(TreeMap::new);
     }
 
-    public void writeOsVersions(Map<NodeType, OsVersion> versions) {
+    public void writeOsVersions(Map<NodeType, Version> versions) {
         NestedTransaction transaction = new NestedTransaction();
         CuratorTransaction curatorTransaction = curatorDatabase.newCuratorTransactionIn(transaction);
         curatorTransaction.add(CuratorOperations.setData(osVersionsPath().getAbsolute(),

@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <vespa/vespalib/stllike/string.h>
+#include <sys/time.h>
 
 // Guidelines:
 //

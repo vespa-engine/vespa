@@ -1,13 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.text.Ascii7BitMatcher;
-
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 
 /**
  * An immutable address to a tensor cell. This simply supplies a value to each dimension
@@ -85,13 +82,19 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     public final String toString(TensorType type) {
         StringBuilder b = new StringBuilder("{");
         for (int i = 0; i < size(); i++) {
-            b.append(type.dimensions().get(i).name()).append(":").append(label(i));
+            b.append(type.dimensions().get(i).name()).append(":").append(labelToString(label(i)));
             b.append(",");
         }
         if (b.length() > 1)
             b.setLength(b.length() - 1);
         b.append("}");
         return b.toString();
+    }
+
+    private String labelToString(String label) {
+        if (TensorType.labelMatcher.matches(label)) return label; // no quoting
+        if (label.contains("'")) return "\"" + label + "\"";
+        return "'" + label + "'";
     }
 
     private static final class StringTensorAddress extends TensorAddress {
@@ -166,8 +169,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     /** Supports building of a tensor address */
     public static class Builder {
-        static private final Ascii7BitMatcher labelMatcher = new Ascii7BitMatcher("-_@" + charsAndNumbers(),
-                                                                        "_@$" + charsAndNumbers());
 
         private final TensorType type;
         private final String[] labels;
@@ -187,10 +188,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
          * @return this for convenience
          */
         public Builder add(String dimension, String label) {
-            requireIdentifier(dimension, "dimension");
-            requireIdentifier(label, "label");
+            Objects.requireNonNull(dimension, "dimension cannot be null");
+            Objects.requireNonNull(label, "label cannot be null");
             Optional<Integer> labelIndex = type.indexOfDimension(dimension);
-            if ( ! labelIndex.isPresent())
+            if ( labelIndex.isEmpty())
                 throw new IllegalArgumentException(type + " does not contain dimension '" + dimension + "'");
             labels[labelIndex.get()] = label;
             return this;
@@ -207,13 +208,6 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                     throw new IllegalArgumentException("Missing a value for dimension " +
                                                        type.dimensions().get(i).name() + " for " + type);
             return TensorAddress.of(labels);
-        }
-
-        static private void requireIdentifier(String s, String parameterName) {
-            if (s == null)
-                throw new IllegalArgumentException(parameterName + " can not be null");
-            if ( ! labelMatcher.matches(s))
-                throw new IllegalArgumentException(parameterName + " must be an identifier or integer, not '" + s + "'");
         }
 
     }

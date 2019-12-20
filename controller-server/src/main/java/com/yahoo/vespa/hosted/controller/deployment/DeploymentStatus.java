@@ -123,6 +123,8 @@ public class DeploymentStatus {
 
     public Map<JobId, StepStatus> stepStatus() { return jobSteps; }
 
+    public List<StepStatus> allSteps() { return allSteps; }
+
     private void addProductionJobs(Map<JobId, List<Versions>> jobs, Change change) {
         jobSteps.forEach((job, step) -> {
             Versions versions = Versions.from(change, application, deploymentFor(job), systemVersion);
@@ -206,13 +208,6 @@ public class DeploymentStatus {
         List<StepStatus> previous = List.of();
         for (DeploymentSpec.Step step : spec.steps())
             previous = fillStep(dependencies, allSteps, step, previous, spec.instanceNames().get(0));
-        for (InstanceName instance : spec.instanceNames())
-            for (JobType test : List.of(systemTest, stagingTest)) {
-                JobId job = new JobId(application.id().instance(instance), test);
-                if ( ! dependencies.containsKey(job))
-                    dependencies.put(job, JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
-                                                                         this, instance, test, false));
-            }
 
         return ImmutableMap.copyOf(dependencies);
     }
@@ -231,22 +226,22 @@ public class DeploymentStatus {
             StepStatus stepStatus;
             if (step.concerns(test) || step.concerns(staging)) { // SKIP?
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), null)
-                                 .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofTestDeployment((DeclaredZone) step, List.of(), this, instance, jobType, true);
                 previous = new ArrayList<>(previous);
                 previous.add(stepStatus);
             }
             else if (step.isTest()) {
                 jobType = JobType.testFrom(system, ((DeclaredTest) step).region())
-                                          .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 JobType preType = JobType.from(system, prod, ((DeclaredTest) step).region())
-                                         .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                         .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofProductionTest((DeclaredTest) step, previous, this, instance, jobType, preType);
                 previous = List.of(stepStatus);
             }
             else if (step.concerns(prod)) {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), ((DeclaredZone) step).region().get())
-                                         .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, instance, jobType);
                 previous = List.of(stepStatus);
             }
@@ -256,20 +251,26 @@ public class DeploymentStatus {
             return previous;
         }
 
-        Optional<InstanceName> stepInstance = Optional.of(step)
-                                                      .filter(DeploymentInstanceSpec.class::isInstance)
-                                                      .map(DeploymentInstanceSpec.class::cast)
-                                                      .map(DeploymentInstanceSpec::name);
+        // TODO jonmv: Make instance status as well, including block-change and upgrade policy, to keep track of change;
+        //             set it equal to application's when dependencies are completed.
+        if (step instanceof DeploymentInstanceSpec) {
+            instance = ((DeploymentInstanceSpec) step).name();
+            for (JobType test : List.of(systemTest, stagingTest))
+                dependencies.putIfAbsent(new JobId(application.id().instance(instance), test),
+                                         JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
+                                                                        this, instance, test, false));
+        }
+
         if (step.isOrdered()) {
             for (DeploymentSpec.Step nested : step.steps())
-                previous = fillStep(dependencies, allSteps, nested, previous, stepInstance.orElse(instance));
+                previous = fillStep(dependencies, allSteps, nested, previous, instance);
 
             return previous;
         }
 
         List<StepStatus> parallel = new ArrayList<>();
         for (DeploymentSpec.Step nested : step.steps())
-            parallel.addAll(fillStep(dependencies, allSteps, nested, previous, stepInstance.orElse(instance)));
+            parallel.addAll(fillStep(dependencies, allSteps, nested, previous, instance));
 
         return List.copyOf(parallel);
     }
@@ -322,8 +323,14 @@ public class DeploymentStatus {
         /** The instance of this, if any. */
         public final Optional<InstanceName> instance() { return instance; }
 
+        public Optional<JobId> job() { return Optional.empty(); }
+
         /** The time at which this is complete on the given versions. */
         public abstract Optional<Instant> completedAt(Change change, Versions versions);
+
+        // TODO jonmv: dependenciesCompletedAt
+
+        // TODO jonmv: pausedUntil and coolingDownUntil
 
         /** The time at which all dependencies completed on the given version. */
         public Optional<Instant> readyAt(Change change, Versions versions) {
@@ -373,6 +380,9 @@ public class DeploymentStatus {
             this.job = requireNonNull(job);
             this.status = requireNonNull(status);
         }
+
+        @Override
+        public Optional<JobId> job() { return Optional.of(job.id()); }
 
         @Override
         public boolean isRunning(Versions versions) {

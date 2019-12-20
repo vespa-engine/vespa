@@ -353,27 +353,4 @@ public class ApplicationRepositoryTest {
         return applicationRepository.getMetadataFromSession(tenant, sessionId);
     }
 
-    private static class MockLogRetriever extends LogRetriever {
-
-        @Override
-        public HttpResponse getLogs(String logServerHostname) {
-            return new MockHttpResponse();
-        }
-
-        private static class MockHttpResponse extends HttpResponse {
-
-            private MockHttpResponse() {
-                super(200);
-            }
-
-            @Override
-            public void render(OutputStream outputStream) throws IOException {
-                outputStream.write("log line".getBytes(StandardCharsets.UTF_8));
-            }
-
-        }
-
-
-    }
-
 }

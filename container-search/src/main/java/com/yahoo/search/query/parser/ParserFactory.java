@@ -25,6 +25,7 @@ public final class ParserFactory {
      * @param environment the environment settings to attach to the Parser
      * @return the created Parser
      */
+    @SuppressWarnings("deprecation")
     public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
         switch (type) {
             case ALL:

@@ -86,9 +86,9 @@ public class FieldComparator extends ChainableComparator {
                 case BOOL:
                     return (sub.asBool() ? Boolean.TRUE : Boolean.FALSE);
                 case LONG:
-                    return new Long(sub.asLong());
+                    return sub.asLong();
                 case DOUBLE:
-                    return new Double(sub.asDouble());
+                    return sub.asDouble();
                 case STRING:
                     return sub.asString();
                 }
