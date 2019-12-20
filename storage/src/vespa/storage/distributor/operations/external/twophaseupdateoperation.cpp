@@ -35,6 +35,7 @@ TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
     _bucketSpace(bucketSpace),
     _sendState(SendState::NONE_SENT),
     _mode(Mode::FAST_PATH),
+    _fast_path_repair_source_node(0xffff),
     _replySent(false)
 {
     document::BucketIdFactory idFactory;
@@ -52,7 +53,7 @@ struct IntermediateMessageSender : DistributorMessageSender {
     std::shared_ptr<api::StorageReply> _reply;
 
     IntermediateMessageSender(SentMessageMap& mm, std::shared_ptr<Operation> cb, DistributorMessageSender & fwd);
-    ~IntermediateMessageSender();
+    ~IntermediateMessageSender() override;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
         msgMap.insert(cmd->getMsgId(), callback);
@@ -312,11 +313,12 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
                 LOG(debug, "Update(%s) fast path: was inconsistent!", _updateCmd->getDocumentId().toString().c_str());
 
                 _updateReply = intermediate._reply;
+                _fast_path_repair_source_node = bestNode.second;
                 document::Bucket bucket(_updateCmd->getBucket().getBucketSpace(), bestNode.first);
                 auto cmd = std::make_shared<api::GetCommand>(bucket, _updateCmd->getDocumentId(), "[all]");
                 copyMessageSettings(*_updateCmd, *cmd);
 
-                sender.sendToNode(lib::NodeType::STORAGE, bestNode.second, cmd);
+                sender.sendToNode(lib::NodeType::STORAGE, _fast_path_repair_source_node, cmd);
                 transitionTo(SendState::GETS_SENT);
             }
         }
@@ -325,6 +327,8 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
             // PUTs are done.
             addTraceFromReply(*intermediate._reply);
             sendReplyWithResult(sender, intermediate._reply->getResult());
+            LOG(warning, "Forced convergence of '%s' using document from node %u",
+                _updateCmd->getDocumentId().toString().c_str(), _fast_path_repair_source_node);
         }
     }
 }
