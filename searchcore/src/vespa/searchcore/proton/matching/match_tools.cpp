@@ -5,6 +5,7 @@
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
+#include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/attribute/diversity.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
@@ -150,6 +151,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const vespalib::Doom       & doom,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
+                  search::engine::Trace      & trace,
                   vespalib::stringref          queryStack,
                   const vespalib::string     & location,
                   const ViewResolver         & viewResolver,
@@ -169,22 +171,28 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _diversityParams(),
       _valid(false)
 {
+    trace.addEvent(4, "MTF: Start");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
+    trace.addEvent(5, "MTF: Build query");
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
                               rankSetup.split_unpacking_iterators(),
                               rankSetup.delay_unpacking_iterators());
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
+        trace.addEvent(5, "MTF: reserve handles");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         _query.optimize();
+        trace.addEvent(4, "MTF: Fetch Postings");
         _query.fetchPostings();
         _query.freeze();
+        trace.addEvent(5, "MTF: prepareSharedState");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, rankProperties);
 
         if (degradationParams.enabled()) {
+            trace.addEvent(5, "MTF: Build MatchPhaseLimiter");
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
                                                                  _requestContext, degradationParams, _diversityParams);
         }
@@ -192,6 +200,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     if ( ! _match_limiter) {
         _match_limiter = std::make_unique<NoMatchPhaseLimiter>();
     }
+    trace.addEvent(4, "MTF: Complete");
 }
 
 MatchToolsFactory::~MatchToolsFactory() = default;
