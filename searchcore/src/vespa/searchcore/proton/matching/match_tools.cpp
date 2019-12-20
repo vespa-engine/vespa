@@ -173,26 +173,26 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
 {
     trace.addEvent(4, "MTF: Start");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
-    trace.addEvent(5,"MTF: Build query");
+    trace.addEvent(5, "MTF: Build query");
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
                               rankSetup.split_unpacking_iterators(),
                               rankSetup.delay_unpacking_iterators());
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
-        trace.addEvent(5,"MTF: reserve handles");
+        trace.addEvent(5, "MTF: reserve handles");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
         _query.optimize();
-        trace.addEvent(4,"MTF: Fetch Postings");
+        trace.addEvent(4, "MTF: Fetch Postings");
         _query.fetchPostings();
         _query.freeze();
-        trace.addEvent(5,"MTF: prepareSharedState");
+        trace.addEvent(5, "MTF: prepareSharedState");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, rankProperties);
 
         if (degradationParams.enabled()) {
-            trace.addEvent(5,"MTF: Build MatchPhaseLimiter");
+            trace.addEvent(5, "MTF: Build MatchPhaseLimiter");
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
                                                                  _requestContext, degradationParams, _diversityParams);
         }
@@ -200,7 +200,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     if ( ! _match_limiter) {
         _match_limiter = std::make_unique<NoMatchPhaseLimiter>();
     }
-    trace.addEvent(4,"MTF: Complete");
+    trace.addEvent(4, "MTF: Complete");
 }
 
 MatchToolsFactory::~MatchToolsFactory() = default;
