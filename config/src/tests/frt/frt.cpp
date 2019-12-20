@@ -14,7 +14,6 @@
 #include <vespa/fnet/frt/frt.h>
 #include <vespa/fnet/frt/error.h>
 #include <vespa/config/frt/protocol.h>
-#include <vespa/fastos/timestamp.h>
 #include <lz4.h>
 #include "config-my.h"
 #include "config-bar.h"
@@ -43,10 +42,10 @@ namespace {
         bool poll() override { return notified; }
         void interrupt() override { }
 
-        bool waitUntilResponse(int timeoutInMillis)
+        bool waitUntilResponse(vespalib::duration timeout)
         {
-            fastos::StopWatch timer;
-            while (timer.elapsed().ms() < timeoutInMillis) {
+            vespalib::Timer timer;
+            while (timer.elapsed() < timeout) {
                 if (notified)
                     break;
                 std::this_thread::sleep_for(100ms);
@@ -255,8 +254,8 @@ TEST_FF("require that request is config task is scheduled", SourceFixture(), FRT
     f2.src.getConfig();
     ASSERT_TRUE(f2.result.notified);
     f2.result.notified = false;
-    fastos::StopWatch timer;
-    while (timer.elapsed().ms() < 10000) {
+    vespalib::Timer timer;
+    while (timer.elapsed() < 10s) {
         f1.conn.scheduler.CheckTasks();
         if (f2.result.notified)
             break;

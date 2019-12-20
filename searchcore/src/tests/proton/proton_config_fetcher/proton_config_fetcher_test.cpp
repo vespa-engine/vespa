@@ -13,7 +13,6 @@
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fastos/timestamp.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
@@ -170,9 +169,9 @@ struct ProtonConfigOwner : public proton::IProtonConfigurer
     VarHolder<std::shared_ptr<ProtonConfigSnapshot>> _config;
 
     ProtonConfigOwner() : _configured(false), _config() { }
-    bool waitUntilConfigured(int64_t timeout) {
-        fastos::StopWatch timer;
-        while (timer.elapsed().ms() < timeout) {
+    bool waitUntilConfigured(vespalib::duration timeout) {
+        vespalib::Timer timer;
+        while (timer.elapsed() < timeout) {
             if (getConfigured())
                 return true;
             std::this_thread::sleep_for(100ms);
@@ -290,14 +289,14 @@ TEST_FF("require that documentdb config manager builds schema with imported attr
 TEST_FFF("require that proton config fetcher follows changes to bootstrap",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60s)) {
     f3.start();
     ASSERT_TRUE(f2._configured);
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f2._configured = false;
     f1.protonBuilder.rpcport = 9010;
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(120000));
+    ASSERT_TRUE(f2.waitUntilConfigured(120s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f3.close();
 }
@@ -305,19 +304,19 @@ TEST_FFF("require that proton config fetcher follows changes to bootstrap",
 TEST_FFF("require that proton config fetcher follows changes to doctypes",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60s)) {
     f3.start();
 
     f2._configured = false;
     f1.addDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
 
     f2._configured = false;
     f1.removeDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     f3.close();
 }
@@ -325,7 +324,7 @@ TEST_FFF("require that proton config fetcher follows changes to doctypes",
 TEST_FFF("require that proton config fetcher reconfigures dbowners",
          ConfigTestFixture("search"),
          ProtonConfigOwner(),
-         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60000ms)) {
+         ProtonConfigFetcher(ConfigUri(f1.configId, f1.context), f2, 60s)) {
     f3.start();
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
 
@@ -333,7 +332,7 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
     f2._configured = false;
     f1.addDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_TRUE(f1.configEqual(f2.getBootstrapConfig()));
     ASSERT_TRUE(static_cast<bool>(f2.getDocumentDBConfig("typea")));
     ASSERT_TRUE(f1.configEqual("typea", f2.getDocumentDBConfig("typea")));
@@ -342,7 +341,7 @@ TEST_FFF("require that proton config fetcher reconfigures dbowners",
     f2._configured = false;
     f1.removeDocType("typea");
     f1.reload();
-    ASSERT_TRUE(f2.waitUntilConfigured(60000));
+    ASSERT_TRUE(f2.waitUntilConfigured(60s));
     ASSERT_FALSE(f2.getDocumentDBConfig("typea"));
     f3.close();
 }
@@ -364,7 +363,7 @@ TEST_FF("require that prune removed documents interval can be set based on age",
     f1.protonBuilder.pruneremoveddocumentsinterval = 0;
     f1.addDocType("test");
     auto config = getDocumentDBConfig(f1, f2);
-    EXPECT_EQUAL(20, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
+    EXPECT_EQUAL(20s, config->getMaintenanceConfigSP()->getPruneRemovedDocumentsConfig().getInterval());
 }
 
 TEST_FF("require that docstore config computes cachesize automatically if unset",

@@ -3,6 +3,7 @@
 
 #include "metrics.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/config-sentinel.h>
 #include <list>
 
@@ -27,9 +28,9 @@ private:
     SentinelConfig::Service *_config;
     bool _isAutomatic;
 
-    static const unsigned int MAX_RESTART_PENALTY = 1800;
-    unsigned int _restartPenalty;
-    time_t _last_start;
+    static constexpr vespalib::duration MAX_RESTART_PENALTY = 1800s;
+    vespalib::duration _restartPenalty;
+    vespalib::steady_time _last_start;
 
     void runChild(int pipes[2]) __attribute__((noreturn));
     void ensureChildRuns(int fd);
@@ -67,7 +68,7 @@ public:
     const SentinelConfig::Service& serviceConfig() const { return *_config; }
     void setAutomatic(bool autoStatus);
     bool isAutomatic() const { return _isAutomatic; }
-    void resetRestartPenalty() { _restartPenalty = 0; }
+    void resetRestartPenalty() { _restartPenalty = vespalib::duration::zero(); }
     void incrementRestartPenalty();
 };
 

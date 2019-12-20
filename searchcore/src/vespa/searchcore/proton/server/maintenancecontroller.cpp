@@ -179,8 +179,8 @@ MaintenanceController::addJobsToPeriodicTimer()
     for (const auto &jw : _jobs) {
         const IMaintenanceJob &job = jw->getJob();
         LOG(debug, "addJobsToPeriodicTimer(): docType='%s', job.name='%s', job.delay=%f, job.interval=%f",
-                _docTypeName.getName().c_str(), job.getName().c_str(), job.getDelay(), job.getInterval());
-        if (job.getInterval() == 0.0) {
+                _docTypeName.getName().c_str(), job.getName().c_str(), vespalib::to_s(job.getDelay()), vespalib::to_s(job.getInterval()));
+        if (job.getInterval() == vespalib::duration::zero()) {
             jw->run();
             continue;
         }

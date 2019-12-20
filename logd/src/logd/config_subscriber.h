@@ -5,6 +5,7 @@
 #include <logd/config-logd.h>
 #include <vespa/config/config.h>
 #include <vespa/fnet/frt/supervisor.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace logdemon {
 
@@ -20,9 +21,9 @@ private:
     int _state_port;
     ForwardMap _forward_filter;
     int _rotate_size;
-    int _rotate_age;
+    vespalib::duration  _rotate_age;
     int _remove_meg;
-    int _remove_age;
+    vespalib::duration _remove_age;
     bool _use_logserver;
     config::ConfigSubscriber _subscriber;
     config::ConfigHandle<cloud::config::log::LogdConfig>::UP _handle;
@@ -39,9 +40,9 @@ public:
 
     int getStatePort() const { return _state_port; }
     int getRotateSize() const { return _rotate_size; }
-    int getRotateAge() const { return _rotate_age; }
+    vespalib::duration getRotateAge() const { return _rotate_age; }
     int getRemoveMegabytes() const { return _remove_meg; }
-    int getRemoveAge() const { return _remove_age; }
+    vespalib::duration getRemoveAge() const { return _remove_age; }
 
     bool need_new_forwarder() const { return _need_new_forwarder; }
     std::unique_ptr<Forwarder> make_forwarder(Metrics& metrics);

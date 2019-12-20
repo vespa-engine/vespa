@@ -1,11 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "debug_attribute_wait.h"
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 using search::attribute::IAttributeVector;
 using namespace search::fef;
-using namespace std::chrono;
 
 namespace search::features {
 
@@ -42,9 +41,9 @@ DebugAttributeWaitExecutor::execute(uint32_t docId)
         _buf.fill(*_attribute, docId);
         waitTime = _buf[0];
     }
-    fastos::StopWatch timer;
-    fastos::StopWatch::waitAtLeast(microseconds(long(waitTime * 1000000)), _params.busyWait);
-    outputs().set_number(0, timer.elapsed().sec());
+    vespalib::Timer timer;
+    vespalib::Timer::waitAtLeast(vespalib::from_s(waitTime), _params.busyWait);
+    outputs().set_number(0, vespalib::to_s(timer.elapsed()));
 }
 
 //-----------------------------------------------------------------------------

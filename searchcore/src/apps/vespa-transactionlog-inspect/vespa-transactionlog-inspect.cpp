@@ -177,11 +177,11 @@ public:
           _counter(0)
     {
     }
-    virtual void replay(const PutOperation &op) override { print(op); }
-    virtual void replay(const RemoveOperation &op) override { print(op); }
-    virtual void replay(const UpdateOperation &op) override { print(op); }
-    virtual void replay(const NoopOperation &op) override { print(op); }
-    virtual void replay(const NewConfigOperation &op) override
+    void replay(const PutOperation &op) override { print(op); }
+    void replay(const RemoveOperation &op) override { print(op); }
+    void replay(const UpdateOperation &op) override { print(op); }
+    void replay(const NoopOperation &op) override { print(op); }
+    void replay(const NewConfigOperation &op) override
     {
         print(op);
         typedef std::map<std::string, ConfigFile>::const_iterator I;
@@ -191,18 +191,17 @@ public:
         }
     }
 
-    virtual void replay(const WipeHistoryOperation &op) override { print(op); }
-    virtual void replay(const DeleteBucketOperation &op) override { print(op); }
-    virtual void replay(const SplitBucketOperation &op) override { print(op); }
-    virtual void replay(const JoinBucketsOperation &op) override { print(op); }
-    virtual void replay(const PruneRemovedDocumentsOperation &op) override { print(op); }
-    virtual void replay(const MoveOperation &op) override { print(op); }
-    virtual void replay(const CreateBucketOperation &op) override { print(op); }
-    virtual void replay(const CompactLidSpaceOperation &op) override { print(op); }
-    virtual NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
+    void replay(const DeleteBucketOperation &op) override { print(op); }
+    void replay(const SplitBucketOperation &op) override { print(op); }
+    void replay(const JoinBucketsOperation &op) override { print(op); }
+    void replay(const PruneRemovedDocumentsOperation &op) override { print(op); }
+    void replay(const MoveOperation &op) override { print(op); }
+    void replay(const CreateBucketOperation &op) override { print(op); }
+    void replay(const CompactLidSpaceOperation &op) override { print(op); }
+    NewConfigOperation::IStreamHandler &getNewConfigStreamHandler() override {
         return _streamHandler;
     }
-    virtual document::DocumentTypeRepo &getDeserializeRepo() override {
+    document::DocumentTypeRepo &getDeserializeRepo() override {
         return _repo;
     }
 };
@@ -272,7 +271,6 @@ public:
     }
     virtual void replay(const NoopOperation &) override { }
     virtual void replay(const NewConfigOperation &) override { }
-    virtual void replay(const WipeHistoryOperation &) override { }
     virtual void replay(const DeleteBucketOperation &) override { }
     virtual void replay(const SplitBucketOperation &) override { }
     virtual void replay(const JoinBucketsOperation &) override { }

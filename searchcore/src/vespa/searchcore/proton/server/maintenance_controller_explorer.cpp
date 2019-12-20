@@ -28,8 +28,8 @@ convertAllJobsToSlime(const std::vector<MaintenanceJobRunner::SP> &jobs, Cursor 
         Cursor &object = array.addObject();
         const IMaintenanceJob &job = jobRunner->getJob();
         object.setString("name", job.getName());
-        object.setDouble("delay", job.getDelay());
-        object.setDouble("interval", job.getInterval());
+        object.setDouble("delay", vespalib::to_s(job.getDelay()));
+        object.setDouble("interval", vespalib::to_s(job.getInterval()));
         object.setBool("blocked", job.isBlocked());
     }
 }

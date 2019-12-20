@@ -175,7 +175,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
                                     search::SerialNum serialNum) const
 {
     assert(attr->hasLoadData());
-    fastos::StopWatch stopWatch;
+    vespalib::Timer timer;
     EventLogger::loadAttributeStart(_documentSubDbName, attr->getName());
     if (!attr->load()) {
         LOG(warning, "Could not load attribute vector '%s' from disk. Returning empty attribute vector",
@@ -183,7 +183,7 @@ AttributeInitializer::loadAttribute(const AttributeVectorSP &attr,
         return false;
     } else {
         attr->commit(serialNum, serialNum);
-        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), stopWatch.elapsed().ms());
+        EventLogger::loadAttributeComplete(_documentSubDbName, attr->getName(), vespalib::count_ms(timer.elapsed()));
     }
     return true;
 }

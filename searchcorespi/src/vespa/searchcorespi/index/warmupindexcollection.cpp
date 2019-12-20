@@ -12,7 +12,6 @@ LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 
 namespace searchcorespi {
 
-using fastos::TimeStamp;
 using index::IDiskIndex;
 using search::fef::MatchDataLayout;
 using search::index::FieldLengthInfo;
@@ -36,18 +35,18 @@ WarmupIndexCollection::WarmupIndexCollection(const WarmupConfig & warmupConfig,
                                              vespalib::SyncableThreadExecutor & executor,
                                              IWarmupDone & warmupDone) :
     _warmupConfig(warmupConfig),
-    _prev(prev),
-    _next(next),
+    _prev(std::move(prev)),
+    _next(std::move(next)),
     _warmup(warmup),
     _executor(executor),
     _warmupDone(warmupDone),
     _warmupEndTime(vespalib::steady_clock::now() + warmupConfig.getDuration()),
     _handledTerms(std::make_unique<FieldTermMap>())
 {
-    if (next->valid()) {
-        setCurrentIndex(next->getCurrentIndex());
+    if (_next->valid()) {
+        setCurrentIndex(_next->getCurrentIndex());
     } else {
-        LOG(warning, "Next index is not valid, Dangerous !! : %s", next->toString().c_str());
+        LOG(warning, "Next index is not valid, Dangerous !! : %s", _next->toString().c_str());
     }
     LOG(debug, "For %g seconds I will warm up '%s' %s unpack.", vespalib::to_s(warmupConfig.getDuration()), typeid(_warmup).name(), warmupConfig.getUnpack() ? "with" : "without");
     LOG(debug, "%s", toString().c_str());

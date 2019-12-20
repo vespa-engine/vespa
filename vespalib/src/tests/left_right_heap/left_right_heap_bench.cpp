@@ -3,7 +3,6 @@
 #include <vespa/vespalib/util/left_right_heap.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/inline.h>
-#include <vespa/fastos/timestamp.h>
 
 using vespalib::RightArrayHeap;
 using vespalib::RightHeap;
@@ -41,11 +40,11 @@ struct MyInvCmp {
 
 struct Timer {
     double minTime;
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     Timer() : minTime(1.0e10), timer() {}
-    void start() { timer.restart(); }
+    void start() { timer = vespalib::Timer(); }
     void stop() {
-        double ms = timer.elapsed().ms();
+        double ms = vespalib::count_ms(timer.elapsed());
         minTime = std::min(minTime, ms);
     }
 };

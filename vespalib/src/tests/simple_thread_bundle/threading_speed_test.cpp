@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/box.h>
-#include <vespa/fastos/timestamp.h>
 
 using namespace vespalib;
 
@@ -57,11 +56,11 @@ TEST("estimate cost of thread bundle fork/join") {
                 }
                 double minTime = 1000000.0;
                 for (size_t samples = 0; samples < 32; ++samples) {
-                    fastos::StopWatch timer;
+                    vespalib::Timer timer;
                     for (size_t n = 0; n < fork; ++n) {
                         threadBundle.run(targets);
                     }
-                    double time = timer.elapsed().ms();
+                    double time = vespalib::count_ms(timer.elapsed());
                     if (time < minTime) {
                         minTime = time;
                     }

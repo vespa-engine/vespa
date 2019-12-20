@@ -13,7 +13,6 @@
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchlib/query/base.h>
 #include <persistence/spi/types.h>
 #include <vespa/document/base/documentid.h>
@@ -218,10 +217,6 @@ TEST("require that toString() on derived classes are meaningful")
                  "prevDbdId=(subDbId=0, lid=0), prevMarkedAsRemoved=false, prevTimestamp=0, serialNum=0)",
                  UpdateOperation(bucket_id1, timestamp, update).toString());
 
-    EXPECT_EQUAL("WipeHistory(wipeTimeLimit=0, serialNum=0)",
-                 WipeHistoryOperation().toString());
-    EXPECT_EQUAL("WipeHistory(wipeTimeLimit=20, serialNum=10)",
-                 WipeHistoryOperation(10, 20).toString());
     EXPECT_EQUAL("CompactLidSpace(subDbId=2, lidLimit=99, serialNum=0)",
                  CompactLidSpaceOperation(2, 99).toString());
 }

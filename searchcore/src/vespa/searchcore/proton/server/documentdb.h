@@ -100,7 +100,6 @@ private:
     InitializeThreads             _initializeThreads;
 
     typedef search::SerialNum      SerialNum;
-    typedef fastos::TimeStamp      TimeStamp;
     typedef vespalib::Closure      Closure;
     typedef search::index::Schema  Schema;
     using lock_guard = std::lock_guard<std::mutex>;

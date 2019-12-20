@@ -13,7 +13,6 @@
 #include "maintenance_jobs_injector.h"
 #include "reconfig_params.h"
 #include <vespa/document/repo/documenttyperepo.h>
-#include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
@@ -26,12 +25,10 @@
 #include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/document_db_reference_resolver.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_registry.h>
-#include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/engine/docsumreply.h>
 #include <vespa/searchlib/engine/searchreply.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/exceptions.h>
 
@@ -42,7 +39,6 @@ LOG_SETUP(".proton.server.documentdb");
 
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::core::ProtonConfig;
-using search::index::SchemaBuilder;
 using vespalib::JSONStringer;
 using vespalib::Executor;
 using vespalib::IllegalStateException;
@@ -212,9 +208,9 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _lidSpaceCompactionHandlers.push_back(std::make_unique<LidSpaceCompactionHandler>(_maintenanceController.getNotReadySubDB(), _docTypeName.getName()));
 
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
-    fastos::TimeStamp visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
+    vespalib::duration visibilityDelay = loaded_config->getMaintenanceConfigSP()->getVisibilityDelay();
     _visibility.setVisibilityDelay(visibilityDelay);
-    if (_visibility.getVisibilityDelay() > 0) {
+    if (_visibility.hasVisibilityDelay()) {
         _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
     }
 }
@@ -453,11 +449,11 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         // Flush changes to attributes and memory index, cf. visibilityDelay
         _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1);
         _writeService.sync();
-        fastos::TimeStamp visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
+        vespalib::duration visibilityDelay = configSnapshot->getMaintenanceConfigSP()->getVisibilityDelay();
         hasVisibilityDelayChanged = (visibilityDelay != _visibility.getVisibilityDelay());
         _visibility.setVisibilityDelay(visibilityDelay);
     }
-    if (_visibility.getVisibilityDelay() > 0) {
+    if (_visibility.hasVisibilityDelay()) {
         _writeService.setTaskLimit(_writeServiceConfig.semiUnboundTaskLimit(), _writeServiceConfig.defaultTaskLimit());
     } else {
         _writeService.setTaskLimit(_writeServiceConfig.defaultTaskLimit(), _writeServiceConfig.defaultTaskLimit());

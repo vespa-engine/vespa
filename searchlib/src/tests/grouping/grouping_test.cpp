@@ -1896,11 +1896,11 @@ Test::testNanSorting()
     EXPECT_FALSE(0.2 < myNan);
     EXPECT_FALSE(0.2 > myNan);
 
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     std::vector<double> groups;
-    while (timer.elapsed().ms() < 60000.0) {
+    while (timer.elapsed() < 60s) {
         std::vector<double> vec;
-        srand((unsigned int)timer.elapsed().us());
+        srand((unsigned int)count_us(timer.elapsed()));
         size_t limit = 2345678;
         size_t mod = rand() % limit;
         for (size_t i = 0; i < limit; i++) {

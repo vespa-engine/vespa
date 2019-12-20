@@ -3,12 +3,11 @@
 
 #include "bucketcopy.h"
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage {
 
-namespace distributor {
-    class DistributorTestUtil;
-}
+namespace distributor { class DistributorTestUtil; }
 
 enum class TrustedUpdate {
     UPDATE,
@@ -190,10 +189,6 @@ public:
     */
     bool removeNode(uint16_t node, TrustedUpdate update = TrustedUpdate::UPDATE);
 
-    void clearTrusted(uint16_t nodeIdx) {
-        getNodeInternal(nodeIdx)->clearTrusted();
-    }
-
     /**
        Clears all nodes from the bucket information.
     */
@@ -206,10 +201,6 @@ private:
      * Returns the bucket copy struct for the given node, null if nonexisting
      */
     BucketCopy* getNodeInternal(uint16_t node);
-
-    const BucketCopy& getNodeRefInternal(uint16_t idx) const {
-        return _nodes[idx];
-    }
 
     void addNodeManual(const BucketCopy& newCopy) { _nodes.push_back(newCopy); }
 };

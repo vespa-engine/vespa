@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/storage/config/config-stor-distributormanager.h>
-#include <vespa/storage/config/config-stor-visitordispatcher.h>
+#include "config-stor-distributormanager.h"
+#include "config-stor-visitordispatcher.h"
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/storage/common/storagecomponent.h>
-#include <chrono>
+#include <vespa/vespalib/util/time.h>
 
 namespace storage {
 
-namespace distributor {
-struct DistributorTest;
-}
+namespace distributor { struct DistributorTest; }
 
 class DistributorConfiguration {
 public: 
@@ -40,33 +38,22 @@ public:
     void configure(const DistrConfig& config);
 
     void configure(const vespa::config::content::core::StorVisitordispatcherConfig& config);
-        
-    void setIdealStateChunkSize(uint32_t chunkSize) {
-        _idealStateChunkSize = chunkSize;
-    }
-    
-    uint32_t getIdealStateChunkSize() { 
-        return _idealStateChunkSize;
-    }
 
-    uint32_t lastGarbageCollectionChangeTime() const {
-        return _lastGarbageCollectionChange;
-    }
 
     const std::string& getGarbageCollectionSelection() const {
         return _garbageCollectionSelection;
     }
 
-    uint32_t getGarbageCollectionInterval() const {
+    vespalib::duration getGarbageCollectionInterval() const {
         return _garbageCollectionInterval;
     }
 
-    void setGarbageCollection(const std::string& selection, uint32_t interval) {
+    void setGarbageCollection(const std::string& selection, vespalib::duration interval) {
         _garbageCollectionSelection = selection;
         _garbageCollectionInterval = interval;
     }
 
-    void setLastGarbageCollectionChangeTime(uint32_t lastChangeTime) {
+    void setLastGarbageCollectionChangeTime(vespalib::steady_time lastChangeTime) {
         _lastGarbageCollectionChange = lastChangeTime;
     }
 
@@ -124,20 +111,6 @@ public:
     */
     void setMinimalBucketSplit(int splitBits) { _minimalBucketSplit = splitBits; };
 
-    /**
-       Sets the maximum number of ideal state operations a distributor should
-       schedule to each storage node.
-
-       @param numOps The number of operations to schedule.
-    */
-    void setMaxIdealStateOperations(uint32_t numOps) { 
-        _maxIdealStateOperations = numOps; 
-    };
-
-    uint32_t getMaxIdealStateOperations() {
-        return _maxIdealStateOperations;
-    }
-
     void setMaintenancePriorities(const MaintenancePriorities& mp) {
         _maintenancePriorities = mp;
     }
@@ -191,13 +164,6 @@ public:
         return _minBucketsPerVisitor;
     }
 
-    void setMaxVisitorsPerNodePerClientVisitor(uint32_t n) {
-        _maxVisitorsPerNodePerClientVisitor = n;
-    }
-    void setMinBucketsPerVisitor(uint32_t n) {
-        _minBucketsPerVisitor = n;
-    }
-
     uint32_t getMaxNodesPerMerge() const {
         return _maxNodesPerMerge;
     }
@@ -213,9 +179,7 @@ public:
     }
 
     using ReplicaCountingMode = DistrConfig::MinimumReplicaCountingMode;
-    void setMinimumReplicaCountingMode(ReplicaCountingMode mode) noexcept {
-        _minimumReplicaCountingMode = mode;
-    }
+
     ReplicaCountingMode getMinimumReplicaCountingMode() const noexcept {
         return _minimumReplicaCountingMode;
     }
@@ -276,8 +240,8 @@ private:
 
     std::string _garbageCollectionSelection;
 
-    uint32_t _lastGarbageCollectionChange;
-    uint32_t _garbageCollectionInterval;
+    vespalib::steady_time _lastGarbageCollectionChange;
+    vespalib::duration    _garbageCollectionInterval;
 
     uint32_t _minPendingMaintenanceOps;
     uint32_t _maxPendingMaintenanceOps;

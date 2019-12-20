@@ -70,8 +70,7 @@ StateChecker::Context::Context(const DistributorComponent& c,
       distributorConfig(c.getDistributor().getConfig()),
       distribution(distributorBucketSpace.getDistribution()),
       gcTimeCalculator(c.getDistributor().getBucketIdHasher(),
-                       std::chrono::seconds(distributorConfig
-                            .getGarbageCollectionInterval())),
+                       std::chrono::duration_cast<std::chrono::seconds>(distributorConfig.getGarbageCollectionInterval())),
       component(c),
       db(distributorBucketSpace.getBucketDatabase()),
       stats(statsTracker)

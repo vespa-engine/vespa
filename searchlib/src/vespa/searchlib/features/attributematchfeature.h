@@ -9,7 +9,7 @@ namespace search::features {
 
 struct AttributeMatchParams {
     AttributeMatchParams() :
-        attrInfo(NULL), attribute(NULL), weightedSet(false), maxWeight(256), fieldCompletenessImportance(0.05f) {}
+        attrInfo(nullptr), attribute(nullptr), weightedSet(false), maxWeight(256), fieldCompletenessImportance(0.05f) {}
     const fef::FieldInfo * attrInfo;
     const attribute::IAttributeVector * attribute;
     bool weightedSet;

@@ -26,7 +26,6 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 
 using document::DocumentTypeRepo;
-using fastos::TimeStamp;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
@@ -105,7 +104,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
     typedef ProtonConfig::Documentdb DdbConfig;
     ProtonConfig &proton(bootstrapConfig->getProtonConfig());
 
-    TimeStamp visibilityDelay;
+    vespalib::duration visibilityDelay = vespalib::duration::zero();
     bool isDocumentTypeGlobal = false;
     // Use document type to find document db config in proton config
     uint32_t index;
@@ -114,13 +113,14 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
         if (docTypeName == ddbConfig.inputdoctypename)
             break;
     }
-    double pruneRemovedDocumentsAge = proton.pruneremoveddocumentsage;
-    double pruneRemovedDocumentsInterval = (proton.pruneremoveddocumentsinterval == 0) ?
-                                           (pruneRemovedDocumentsAge / 100) : proton.pruneremoveddocumentsinterval;
+    vespalib::duration pruneRemovedDocumentsAge = vespalib::from_s(proton.pruneremoveddocumentsage);
+    vespalib::duration pruneRemovedDocumentsInterval = (proton.pruneremoveddocumentsinterval == 0)
+            ? (pruneRemovedDocumentsAge / 100)
+            : vespalib::from_s(proton.pruneremoveddocumentsinterval);
 
     if (index < proton.documentdb.size()) {
         const DdbConfig &ddbConfig = proton.documentdb[index];
-        visibilityDelay = TimeStamp::Seconds(std::min(proton.maxvisibilitydelay, ddbConfig.visibilitydelay));
+        visibilityDelay = vespalib::from_s(std::min(proton.maxvisibilitydelay, ddbConfig.visibilitydelay));
         isDocumentTypeGlobal = ddbConfig.global;
     }
     return std::make_shared<DocumentDBMaintenanceConfig>(
@@ -128,18 +128,18 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     pruneRemovedDocumentsInterval,
                     pruneRemovedDocumentsAge),
             DocumentDBHeartBeatConfig(),
-            proton.grouping.sessionmanager.pruning.interval,
+            vespalib::from_s(proton.grouping.sessionmanager.pruning.interval),
             visibilityDelay,
             DocumentDBLidSpaceCompactionConfig(
-                    proton.lidspacecompaction.interval,
+                    vespalib::from_s(proton.lidspacecompaction.interval),
                     proton.lidspacecompaction.allowedlidbloat,
                     proton.lidspacecompaction.allowedlidbloatfactor,
-                    proton.lidspacecompaction.removebatchblockdelay,
+                    vespalib::from_s(proton.lidspacecompaction.removebatchblockdelay),
                     isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
                     proton.writefilter.attribute.enumstorelimit,
                     proton.writefilter.attribute.multivaluelimit),
-            proton.writefilter.sampleinterval,
+            vespalib::from_s(proton.writefilter.sampleinterval),
             BlockableMaintenanceJobConfig(
                     proton.maintenancejobs.resourcelimitfactor,
                     proton.maintenancejobs.maxoutstandingmoveops),

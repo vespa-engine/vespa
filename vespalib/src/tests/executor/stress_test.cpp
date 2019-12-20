@@ -4,7 +4,6 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/locale/c.h>
-#include <vespa/fastos/timestamp.h>
 
 using namespace vespalib;
 using namespace std::literals;
@@ -60,28 +59,28 @@ uint32_t
 Test::calibrate(double wanted_ms)
 {
     uint32_t n = 0;
-    fastos::StopWatch t0;
-    fastos::StopWatch t1;
+    vespalib::Timer t0;
+    vespalib::Timer t1;
     { // calibration of calibration loop
         uint32_t result = 0;
-        double ms;
+        vespalib::duration dur;
         do {
             result += doStuff(++n);
-            t1.restart();
-            ms = (t1.elapsed().ms() - t0.elapsed().ms());
-        } while (ms < 1000.0);
+            t1 = vespalib::Timer();
+            dur = (t1.elapsed() - t0.elapsed());
+        } while (dur < 1s);
         _result += result;
     }
     { // calibrate loop
-        t0.restart();
+        t0 = vespalib::Timer();
         uint32_t result = 0;
         for (uint32_t i = 0; i < n; ++i) {
             result += doStuff(i);
         }
         _result += result;
-        t1.restart();
+        t1 = vespalib::Timer();
     }
-    double ms = (t1.elapsed().ms() - t0.elapsed().ms());
+    double ms = vespalib::count_ms(t1.elapsed() - t0.elapsed());
     double size = (((double)n) / ms) * wanted_ms;
     return (uint32_t) std::round(size);
 }
@@ -121,7 +120,7 @@ Test::Main()
             fprintf(stderr, "all threads have been accounted for...\n");
         }
         {
-            fastos::StopWatch t0;
+            vespalib::Timer t0;
             fprintf(stderr, "starting task submission...\n");
             uint32_t result = 0;
             for (uint32_t i = 0; i < tasks; ++i) {
@@ -133,7 +132,7 @@ Test::Main()
                 }
             }
             executor.sync();
-            double ms = t0.elapsed().ms();
+            double ms = vespalib::count_ms(t0.elapsed());
             fprintf(stderr, "total execution wall time: %g ms\n", ms);
             _result += result;
         }

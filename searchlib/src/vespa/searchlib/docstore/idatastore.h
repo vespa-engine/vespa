@@ -3,7 +3,6 @@
 #pragma once
 
 #include "data_store_file_chunk_stats.h"
-#include <vespa/fastos/timestamp.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/memoryusage.h>

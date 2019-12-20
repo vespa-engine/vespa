@@ -12,8 +12,6 @@
 #include <config-bar.h>
 #include <config-foobar.h>
 #include <vespa/log/log.h>
-#include <vespa/fastos/timestamp.h>
-
 LOG_SETUP(".filesubscription_test");
 
 using namespace config;
@@ -103,8 +101,8 @@ TEST("requireThatReconfigIsCalledWhenConfigChanges") {
         writeFile("my.cfg", "bar");
         context->reload();
         bool correctValue = false;
-        fastos::StopWatch timer;
-        while (!correctValue && timer.elapsed().ms() < 20000.0) {
+        vespalib::Timer timer;
+        while (!correctValue && timer.elapsed() < 20s) {
             LOG(info, "Testing value...");
             if (s.nextConfig(1000ms)) {
                 break;

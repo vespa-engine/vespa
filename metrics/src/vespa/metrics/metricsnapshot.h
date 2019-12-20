@@ -11,6 +11,7 @@
 #include <map>
 #include <vespa/metrics/metric.h>
 #include <vespa/metrics/metricset.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace metrics {
 

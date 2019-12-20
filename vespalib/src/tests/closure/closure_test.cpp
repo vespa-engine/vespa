@@ -6,7 +6,6 @@
 
 using std::shared_ptr;
 using std::unique_ptr;
-using std::string;
 using namespace vespalib;
 
 namespace {

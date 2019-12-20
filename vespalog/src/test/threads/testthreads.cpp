@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/fastos/app.h>
-#include <vespa/fastos/timestamp.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/log/bufferedlogger.h>
 #include <array>
@@ -13,6 +12,7 @@
 
 using std::string;
 using namespace std::chrono_literals;
+using namespace std::chrono;
 
 LOG_SETUP(".threadtest");
 
@@ -104,10 +104,10 @@ ThreadTester::Main()
         pool.NewThread(loggers[i].get());
     }
 
-    fastos::StopWatch timer;
+    steady_clock::time_point start = steady_clock::now();
     // Reduced runtime to half as the test now repeats itself to test with
     // buffering. (To avoid test taking a minute)
-    while (timer.elapsed().ms() < 15 * 1000) {
+    while ((steady_clock::now() - start) < 15s) {
         unlink(_argv[1]);
         std::this_thread::sleep_for(1ms);
     }
@@ -115,8 +115,8 @@ ThreadTester::Main()
     for (int i = 0; i < numLoggers; i++) {
         loggers[i]->_useLogBuffer = true;
     }
-    timer.restart();
-    while (timer.elapsed().ms() < 15 * 1000) {
+    start = steady_clock::now();
+    while ((steady_clock::now() - start) < 15s) {
         unlink(_argv[1]);
         std::this_thread::sleep_for(1ms);
     }

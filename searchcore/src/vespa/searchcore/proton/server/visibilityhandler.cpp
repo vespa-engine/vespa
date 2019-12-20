@@ -15,7 +15,7 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
     : _serial(serial),
       _writeService(writeService),
       _feedView(feedView),
-      _visibilityDelay(0),
+      _visibilityDelay(vespalib::duration::zero()),
       _lastCommitSerialNum(0),
       _lock()
 {
@@ -23,7 +23,7 @@ VisibilityHandler::VisibilityHandler(const IGetSerialNum & serial,
 
 void VisibilityHandler::commit()
 {
-    if (_visibilityDelay != 0) {
+    if (hasVisibilityDelay()) {
         if (_writeService.master().isCurrentThread()) {
             performCommit(true);
         } else {
@@ -35,7 +35,7 @@ void VisibilityHandler::commit()
 
 void VisibilityHandler::commitAndWait()
 {
-    if (_visibilityDelay != 0) {
+    if (hasVisibilityDelay()) {
         if (_writeService.master().isCurrentThread()) {
             performCommit(false);
         } else {

@@ -22,9 +22,7 @@ LidReuseDelayer::LidReuseDelayer(IThreadingService &writeService,
 }
 
 
-LidReuseDelayer::~LidReuseDelayer()
-{
-}
+LidReuseDelayer::~LidReuseDelayer() = default;
 
 
 bool

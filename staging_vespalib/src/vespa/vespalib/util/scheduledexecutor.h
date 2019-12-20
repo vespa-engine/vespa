@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/sync.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/thread.h>
 #include <vector>
 
@@ -46,7 +47,7 @@ public:
      * @param delay The delay to wait before first execution.
      * @param interval The interval in seconds.
      */
-    void scheduleAtFixedRate(vespalib::Executor::Task::UP task, double delay, double interval);
+    void scheduleAtFixedRate(vespalib::Executor::Task::UP task, duration delay, duration interval);
 
     /**
      * Reset timer, clearing the list of task to execute.

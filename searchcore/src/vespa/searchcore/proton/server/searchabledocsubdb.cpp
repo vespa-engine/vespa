@@ -13,13 +13,10 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reference/document_db_reference.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
-#include <vespa/searchcorespi/plugin/iindexmanagerfactory.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/closuretask.h>
 #include <vespa/eval/tensor/default_tensor_engine.h>
-#include <vespa/vespalib/util/exceptions.h>
 
 using vespa::config::search::RankProfilesConfig;
 using proton::matching::MatchingStats;
@@ -30,7 +27,6 @@ using search::GrowStrategy;
 using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::SerialNum;
-using vespalib::IllegalStateException;
 using vespalib::ThreadStackExecutorBase;
 using namespace searchcorespi;
 
@@ -320,7 +316,7 @@ SearchableDocSubDB::getSearchableStats() const
 IDocumentRetriever::UP
 SearchableDocSubDB::getDocumentRetriever()
 {
-    return IDocumentRetriever::UP(new FastAccessDocumentRetriever(_rFeedView.get(), _rSearchView.get()->getAttributeManager()));
+    return std::make_unique<FastAccessDocumentRetriever>(_rFeedView.get(), _rSearchView.get()->getAttributeManager());
 }
 
 MatchingStats

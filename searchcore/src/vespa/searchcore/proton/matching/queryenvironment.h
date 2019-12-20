@@ -80,7 +80,7 @@ public:
     // inherited from search::fef::IQueryEnvironment
     const search::fef::IIndexEnvironment & getIndexEnvironment() const override;
 
-    ~QueryEnvironment();
+    ~QueryEnvironment() override;
 };
 
 }

@@ -2,7 +2,6 @@
 
 #include "shrink_lid_space_flush_target.h"
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
-#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 

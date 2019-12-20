@@ -18,7 +18,7 @@ class TransactionLogManager : public TransactionLogManagerBase
 {
     TransLogClient::Visitor::UP _visitor;
 
-    void doLogReplayComplete(const vespalib::string &domainName, std::chrono::milliseconds elapsedTime) const override;
+    void doLogReplayComplete(const vespalib::string &domainName, vespalib::duration elapsedTime) const override;
 
 public:
     /**
@@ -28,7 +28,7 @@ public:
      * @param domainName the name of the domain this manager should handle.
      **/
     TransactionLogManager(const vespalib::string &tlsSpec, const vespalib::string &domainName);
-    ~TransactionLogManager();
+    ~TransactionLogManager() override;
 
     /**
      * Init the transaction log.

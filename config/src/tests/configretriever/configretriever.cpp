@@ -9,7 +9,6 @@
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/fastos/timestamp.h>
 #include "config-bootstrap.h"
 #include "config-foo.h"
 #include "config-bar.h"
@@ -245,9 +244,9 @@ public:
         snap = snapshot;
         configured = true;
     }
-    bool waitUntilConfigured(int64_t timeoutInMillis) {
-        fastos::StopWatch timer;
-        while (timer.elapsed().ms() < timeoutInMillis) {
+    bool waitUntilConfigured(vespalib::duration timeout) {
+        vespalib::Timer timer;
+        while (timer.elapsed() < timeout) {
             if (configured) {
                 return true;
             }
@@ -296,7 +295,7 @@ TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
     f1.configured = false;
     fooBuilder.fooValue = "bimz";
     ctx->reload();
-    ASSERT_TRUE(f1.waitUntilConfigured(60000));
+    ASSERT_TRUE(f1.waitUntilConfigured(60s));
     snap = f1.snap;
     foo = snap.getConfig<FooConfig>("id");
     ASSERT_EQUAL("bimz", foo->fooValue);
@@ -304,7 +303,7 @@ TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
     fooBuilder.fooValue = "bamz";
     f1.configured = false;
     ctx->reload();
-    ASSERT_FALSE(f1.waitUntilConfigured(2000));
+    ASSERT_FALSE(f1.waitUntilConfigured(2s));
 
     SimpleConfigurer configurer2(SimpleConfigRetriever::UP(new SimpleConfigRetriever(sub, ctx)), &f1);
     f1.throwException = true;

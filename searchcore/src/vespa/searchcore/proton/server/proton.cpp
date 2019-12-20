@@ -96,7 +96,7 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
     return DiskMemUsageSampler::Config(
             proton.writefilter.memorylimit,
             proton.writefilter.disklimit,
-            proton.writefilter.sampleinterval,
+            vespalib::from_s(proton.writefilter.sampleinterval),
             hwInfo);
 }
 

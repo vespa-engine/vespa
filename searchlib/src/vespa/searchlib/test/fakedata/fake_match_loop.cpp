@@ -2,7 +2,6 @@
 
 #include "fake_match_loop.h"
 #include "fakeposting.h"
-#include <vespa/fastos/timestamp.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>

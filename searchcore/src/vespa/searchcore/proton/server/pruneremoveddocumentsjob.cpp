@@ -37,8 +37,7 @@ PruneRemovedDocumentsJob(const Config &config,
 
 
 void
-PruneRemovedDocumentsJob::flush(DocId lowLid, DocId nextLowLid,
-                                const Timestamp ageLimit)
+PruneRemovedDocumentsJob::flush(DocId lowLid, DocId nextLowLid, const Timestamp ageLimit)
 {
     if (_pruneLids.empty())
         return;
@@ -65,10 +64,9 @@ PruneRemovedDocumentsJob::flush(DocId lowLid, DocId nextLowLid,
 bool
 PruneRemovedDocumentsJob::run()
 {
-    uint64_t tshz = 1000000;
     vespalib::system_time now = vespalib::system_clock::now();
     const Timestamp ageLimit(static_cast<Timestamp::Type>
-                             ((vespalib::to_s(now.time_since_epoch()) - _cfgAgeLimit) * tshz));
+                             (vespalib::count_us(now.time_since_epoch() - _cfgAgeLimit)));
     DocId lid(_nextLid);
     const DocId olid(lid);
     const DocId docIdLimit(_metaStore.getCommittedDocIdLimit());

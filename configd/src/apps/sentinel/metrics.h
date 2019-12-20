@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <sys/time.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace config::sentinel {
 
@@ -15,7 +15,7 @@ struct StartMetrics {
     vespalib::metrics::Producer producer;
     unsigned long currentlyRunningServices;
     unsigned long totalRestartsCounter;
-    long startedTime;
+    vespalib::steady_time startedTime;
     Counter sentinel_restarts;
     Gauge   sentinel_totalRestarts;
     Gauge   sentinel_running;

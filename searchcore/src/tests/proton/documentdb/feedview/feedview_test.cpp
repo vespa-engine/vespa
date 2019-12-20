@@ -33,7 +33,6 @@ using document::BucketId;
 using document::Document;
 using document::DocumentId;
 using document::DocumentUpdate;
-using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;

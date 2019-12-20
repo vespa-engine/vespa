@@ -1,28 +1,28 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
-#include <vespa/fastos/timestamp.h>
 #include "document_db_flush_config.h"
+#include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace proton {
 
 class DocumentDBPruneConfig
 {
 private:
-    double _delay;
-    double _interval;
-    double _age;
+    vespalib::duration _delay;
+    vespalib::duration _interval;
+    vespalib::duration _age;
 
 public:
     DocumentDBPruneConfig();
-    DocumentDBPruneConfig(double interval, double age);
+    DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age);
 
     bool operator==(const DocumentDBPruneConfig &rhs) const;
-    double getDelay() const { return _delay; }
-    double getInterval() const { return _interval; }
-    double getAge() const { return _age; }
+    vespalib::duration getDelay() const { return _delay; }
+    vespalib::duration getInterval() const { return _interval; }
+    vespalib::duration getAge() const { return _age; }
 };
 
 typedef DocumentDBPruneConfig DocumentDBPruneRemovedDocumentsConfig;
@@ -30,43 +30,43 @@ typedef DocumentDBPruneConfig DocumentDBPruneRemovedDocumentsConfig;
 class DocumentDBHeartBeatConfig
 {
 private:
-    double _interval;
+    vespalib::duration _interval;
 
 public:
     DocumentDBHeartBeatConfig();
-    DocumentDBHeartBeatConfig(double interval);
+    DocumentDBHeartBeatConfig(vespalib::duration interval);
 
     bool operator==(const DocumentDBHeartBeatConfig &rhs) const;
-    double getInterval() const { return _interval; }
+    vespalib::duration getInterval() const { return _interval; }
 };
 
 class DocumentDBLidSpaceCompactionConfig
 {
 private:
-    double   _delay;
-    double   _interval;
-    uint32_t _allowedLidBloat;
-    double   _allowedLidBloatFactor;
-    double   _remove_batch_block_delay;
-    bool     _disabled;
-    uint32_t _maxDocsToScan;
+    vespalib::duration   _delay;
+    vespalib::duration   _interval;
+    uint32_t             _allowedLidBloat;
+    double               _allowedLidBloatFactor;
+    vespalib::duration   _remove_batch_block_delay;
+    bool                 _disabled;
+    uint32_t             _maxDocsToScan;
 
 public:
     DocumentDBLidSpaceCompactionConfig();
-    DocumentDBLidSpaceCompactionConfig(double interval,
+    DocumentDBLidSpaceCompactionConfig(vespalib::duration interval,
                                        uint32_t allowedLidBloat,
                                        double allowwedLidBloatFactor,
-                                       double remove_batch_block_delay,
+                                       vespalib::duration remove_batch_block_delay,
                                        bool disabled,
                                        uint32_t maxDocsToScan = 10000);
 
     static DocumentDBLidSpaceCompactionConfig createDisabled();
     bool operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const;
-    double getDelay() const { return _delay; }
-    double getInterval() const { return _interval; }
+    vespalib::duration getDelay() const { return _delay; }
+    vespalib::duration getInterval() const { return _interval; }
     uint32_t getAllowedLidBloat() const { return _allowedLidBloat; }
     double getAllowedLidBloatFactor() const { return _allowedLidBloatFactor; }
-    double get_remove_batch_block_delay() const { return _remove_batch_block_delay; }
+    vespalib::duration get_remove_batch_block_delay() const { return _remove_batch_block_delay; }
     bool isDisabled() const { return _disabled; }
     uint32_t getMaxDocsToScan() const { return _maxDocsToScan; }
 };
@@ -93,11 +93,11 @@ public:
 private:
     DocumentDBPruneRemovedDocumentsConfig _pruneRemovedDocuments;
     DocumentDBHeartBeatConfig             _heartBeat;
-    double                                _sessionCachePruneInterval;
-    fastos::TimeStamp                     _visibilityDelay;
+    vespalib::duration                    _sessionCachePruneInterval;
+    vespalib::duration                    _visibilityDelay;
     DocumentDBLidSpaceCompactionConfig    _lidSpaceCompaction;
     AttributeUsageFilterConfig            _attributeUsageFilterConfig;
-    double                                _attributeUsageSampleInterval;
+    vespalib::duration                    _attributeUsageSampleInterval;
     BlockableMaintenanceJobConfig         _blockableJobConfig;
     DocumentDBFlushConfig                 _flushConfig;
 
@@ -106,11 +106,11 @@ public:
 
     DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
-                                double sessionCachePruneInterval,
-                                fastos::TimeStamp visibilityDelay,
+                                vespalib::duration sessionCachePruneInterval,
+                                vespalib::duration visibilityDelay,
                                 const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                                 const AttributeUsageFilterConfig &attributeUsageFilterConfig,
-                                double attributeUsageSampleInterval,
+                                vespalib::duration attributeUsageSampleInterval,
                                 const BlockableMaintenanceJobConfig &blockableJobConfig,
                                 const DocumentDBFlushConfig &flushConfig);
 
@@ -123,17 +123,18 @@ public:
     const DocumentDBHeartBeatConfig &getHeartBeatConfig() const {
         return _heartBeat;
     }
-    double getSessionCachePruneInterval() const {
+    vespalib::duration getSessionCachePruneInterval() const {
         return _sessionCachePruneInterval;
     }
-    fastos::TimeStamp getVisibilityDelay() const { return _visibilityDelay; }
+    vespalib::duration getVisibilityDelay() const { return _visibilityDelay; }
+    bool hasVisibilityDelay() const { return _visibilityDelay > vespalib::duration::zero(); }
     const DocumentDBLidSpaceCompactionConfig &getLidSpaceCompactionConfig() const {
         return _lidSpaceCompaction;
     }
     const AttributeUsageFilterConfig &getAttributeUsageFilterConfig() const {
         return _attributeUsageFilterConfig;
     }
-    double getAttributeUsageSampleInterval() const {
+    vespalib::duration getAttributeUsageSampleInterval() const {
         return _attributeUsageSampleInterval;
     }
     const BlockableMaintenanceJobConfig &getBlockableJobConfig() const {
