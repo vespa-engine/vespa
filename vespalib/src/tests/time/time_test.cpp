@@ -47,4 +47,9 @@ TEST(TimeTest, unit_counting_works_as_expected) {
     EXPECT_EQ(count_s(d), 7);
 }
 
+TEST(TimeTest, to_string_print_iso_time) {
+    EXPECT_EQ("1970-01-01 00:00:00.000 UTC", to_string(system_time()));
+    EXPECT_EQ("2019-12-20 02:47:35.768 UTC", to_string(system_time(1576810055768543us)));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
