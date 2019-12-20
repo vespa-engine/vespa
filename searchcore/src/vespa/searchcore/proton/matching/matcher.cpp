@@ -41,7 +41,7 @@ namespace proton::matching {
 
 namespace {
 
-constexpr long SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60;
+constexpr long SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 300;
 
 // used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
@@ -82,6 +82,18 @@ private:
 bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext) {
     return (!groupingContext.needRanking() && (request.maxhits == 0))
            || (!request.sortSpec.empty() && (request.sortSpec.find("[rank]") == vespalib::string::npos));
+}
+
+SearchReply::UP
+handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingContext, GroupingSession::UP groupingSession)
+{
+    auto reply = std::make_unique<SearchReply>();
+    groupingSession->continueExecution(groupingContext);
+    groupingContext.getResult().swap(reply->groupResult);
+    if (!groupingSession->finished()) {
+        sessionMgr.insert(std::move(groupingSession));
+    }
+    return reply;
 }
 
 }  // namespace proton::matching::<unnamed>
@@ -144,19 +156,6 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
     return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request.getStackRef(),
                                                request.location, _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides);
-}
-
-SearchReply::UP
-Matcher::handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingContext,
-                               GroupingSession::UP groupingSession)
-{
-    SearchReply::UP reply = std::make_unique<SearchReply>();
-    groupingSession->continueExecution(groupingContext);
-    groupingContext.getResult().swap(reply->groupResult);
-    if (!groupingSession->finished()) {
-        sessionMgr.insert(std::move(groupingSession));
-    }
-    return reply;
 }
 
 size_t
