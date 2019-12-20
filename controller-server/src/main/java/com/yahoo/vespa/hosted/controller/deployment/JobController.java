@@ -70,7 +70,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  */
 public class JobController {
 
-    private static final int historyLength = 256;
+    private static final int historyLength = 64;
     private static final Duration maxHistoryAge = Duration.ofDays(60);
 
     private final Controller controller;

@@ -273,63 +273,63 @@ public class JobRunnerTest {
             runner.run();
         }
 
-        assertEquals(256, jobs.runs(jobId).size());
+        assertEquals(64, jobs.runs(jobId).size());
         assertTrue(jobs.details(new RunId(instanceId, systemTest, 1)).isPresent());
 
         jobs.start(instanceId, systemTest, versions);
         runner.run();
 
-        assertEquals(256, jobs.runs(jobId).size());
+        assertEquals(64, jobs.runs(jobId).size());
         assertEquals(2, jobs.runs(jobId).keySet().iterator().next().number());
         assertFalse(jobs.details(new RunId(instanceId, systemTest, 1)).isPresent());
-        assertTrue(jobs.details(new RunId(instanceId, systemTest, 257)).isPresent());
+        assertTrue(jobs.details(new RunId(instanceId, systemTest, 65)).isPresent());
 
         JobRunner failureRunner = new JobRunner(tester.controller(), Duration.ofDays(1), new JobControl(tester.controller().curator()),
                                                 inThreadExecutor(), (id, step) -> Optional.of(error));
 
-        // Make all but the oldest of the 256 jobs a failure.
+        // Make all but the oldest of the 54 jobs a failure.
         for (int i = 0; i < jobs.historyLength() - 1; i++) {
             jobs.start(instanceId, systemTest, versions);
             failureRunner.run();
         }
-        assertEquals(256, jobs.runs(jobId).size());
-        assertEquals(257, jobs.runs(jobId).keySet().iterator().next().number());
-        assertEquals(257, jobs.lastSuccess(jobId).get().id().number());
-        assertEquals(258, jobs.firstFailing(jobId).get().id().number());
+        assertEquals(64, jobs.runs(jobId).size());
+        assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
+        assertEquals(65, jobs.lastSuccess(jobId).get().id().number());
+        assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // Oldest success is kept even though it would normally overflow.
         jobs.start(instanceId, systemTest, versions);
         failureRunner.run();
-        assertEquals(257, jobs.runs(jobId).size());
-        assertEquals(257, jobs.runs(jobId).keySet().iterator().next().number());
-        assertEquals(257, jobs.lastSuccess(jobId).get().id().number());
-        assertEquals(258, jobs.firstFailing(jobId).get().id().number());
+        assertEquals(65, jobs.runs(jobId).size());
+        assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
+        assertEquals(65, jobs.lastSuccess(jobId).get().id().number());
+        assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // First failure after the last success is also kept.
         jobs.start(instanceId, systemTest, versions);
         failureRunner.run();
-        assertEquals(258, jobs.runs(jobId).size());
-        assertEquals(257, jobs.runs(jobId).keySet().iterator().next().number());
-        assertEquals(258, jobs.runs(jobId).keySet().stream().skip(1).iterator().next().number());
-        assertEquals(257, jobs.lastSuccess(jobId).get().id().number());
-        assertEquals(258, jobs.firstFailing(jobId).get().id().number());
+        assertEquals(66, jobs.runs(jobId).size());
+        assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
+        assertEquals(66, jobs.runs(jobId).keySet().stream().skip(1).iterator().next().number());
+        assertEquals(65, jobs.lastSuccess(jobId).get().id().number());
+        assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // No other jobs are kept with repeated failures.
         jobs.start(instanceId, systemTest, versions);
         failureRunner.run();
-        assertEquals(258, jobs.runs(jobId).size());
-        assertEquals(257, jobs.runs(jobId).keySet().iterator().next().number());
-        assertEquals(258, jobs.runs(jobId).keySet().stream().skip(1).iterator().next().number());
-        assertEquals(260, jobs.runs(jobId).keySet().stream().skip(2).iterator().next().number());
-        assertEquals(257, jobs.lastSuccess(jobId).get().id().number());
-        assertEquals(258, jobs.firstFailing(jobId).get().id().number());
+        assertEquals(66, jobs.runs(jobId).size());
+        assertEquals(65, jobs.runs(jobId).keySet().iterator().next().number());
+        assertEquals(66, jobs.runs(jobId).keySet().stream().skip(1).iterator().next().number());
+        assertEquals(68, jobs.runs(jobId).keySet().stream().skip(2).iterator().next().number());
+        assertEquals(65, jobs.lastSuccess(jobId).get().id().number());
+        assertEquals(66, jobs.firstFailing(jobId).get().id().number());
 
         // history length returns to 256 when a new success is recorded.
         jobs.start(instanceId, systemTest, versions);
         runner.run();
-        assertEquals(256, jobs.runs(jobId).size());
-        assertEquals(261, jobs.runs(jobId).keySet().iterator().next().number());
-        assertEquals(516, jobs.lastSuccess(jobId).get().id().number());
+        assertEquals(64, jobs.runs(jobId).size());
+        assertEquals(69, jobs.runs(jobId).keySet().iterator().next().number());
+        assertEquals(132, jobs.lastSuccess(jobId).get().id().number());
         assertFalse(jobs.firstFailing(jobId).isPresent());
     }
 
