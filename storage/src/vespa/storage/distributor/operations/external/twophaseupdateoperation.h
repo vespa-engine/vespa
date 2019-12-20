@@ -138,6 +138,7 @@ private:
     mbus::TraceNode _trace;
     document::BucketId _updateDocBucketId;
     std::vector<std::pair<document::BucketId, uint16_t>> _replicas_at_get_send_time;
+    uint16_t _fast_path_repair_source_node;
     bool _replySent;
 };
 

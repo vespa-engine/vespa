@@ -1048,28 +1048,28 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_consistent_get_reply_timestamps_do
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, fast_path_not_restarted_if_replica_set_altered_between_get_send_and_receive) {
-        setupDistributor(3, 3, "storage:3 distributor:1");
-        getConfig().set_update_fast_path_restart_enabled(true);
+    setupDistributor(3, 3, "storage:3 distributor:1");
+    getConfig().set_update_fast_path_restart_enabled(true);
 
-        std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
-        DistributorMessageSenderStub sender;
-        cb->start(sender, framework::MilliSecTime(0));
+    std::shared_ptr<TwoPhaseUpdateOperation> cb(sendUpdate("0=1/2/3,1=2/3/4")); // Inconsistent replicas.
+    DistributorMessageSenderStub sender;
+    cb->start(sender, framework::MilliSecTime(0));
 
-        // Replica set changes between time of Get requests sent and
-        // responses received. This may happen e.g. if concurrent mutations
-        // to the same bucket create a new replica. If this happens, we
-        // must not send the Update operations verbatim, as they will
-        // be started with the _current_ replica set, not the one that
-        // was present during the Get request.
-        BucketId bucket(0x400000000000cac4); // Always the same in the test.
-        addNodesToBucketDB(bucket, "0=1/2/3,1=2/3/4,2=3/3/3");
+    // Replica set changes between time of Get requests sent and
+    // responses received. This may happen e.g. if concurrent mutations
+    // to the same bucket create a new replica. If this happens, we
+    // must not send the Update operations verbatim, as they will
+    // be started with the _current_ replica set, not the one that
+    // was present during the Get request.
+    BucketId bucket(0x400000000000cac4); // Always the same in the test.
+    addNodesToBucketDB(bucket, "0=1/2/3,1=2/3/4,2=3/3/3");
 
-        Timestamp old_timestamp = 500;
-        ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
-        replyToGet(*cb, sender, 0, old_timestamp);
-        replyToGet(*cb, sender, 1, old_timestamp);
+    Timestamp old_timestamp = 500;
+    ASSERT_EQ("Get => 0,Get => 1", sender.getCommands(true));
+    replyToGet(*cb, sender, 0, old_timestamp);
+    replyToGet(*cb, sender, 1, old_timestamp);
 
-        ASSERT_EQ("Put => 1,Put => 2,Put => 0", sender.getCommands(true, false, 2));
+    ASSERT_EQ("Put => 1,Put => 2,Put => 0", sender.getCommands(true, false, 2));
 }
 
 // XXX currently differs in behavior from content nodes in that updates for
