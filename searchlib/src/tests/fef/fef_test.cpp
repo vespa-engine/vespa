@@ -68,14 +68,23 @@ TEST("test TermFieldMatchDataAppend")
     tmd.appendPosition(pos);
     EXPECT_EQUAL(2u, tmd.size());
     EXPECT_EQUAL(2u, tmd.capacity());
+    uint32_t resizeCount(0);
+    const TermFieldMatchDataPosition * prev = tmd.begin();
     for (size_t i(2); i < std::numeric_limits<uint16_t>::max(); i++) {
         EXPECT_EQUAL(i, tmd.size());
         EXPECT_EQUAL(std::min(size_t(std::numeric_limits<uint16_t>::max()), vespalib::roundUp2inN(i)), tmd.capacity());
         tmd.appendPosition(pos);
+        const TermFieldMatchDataPosition * cur = tmd.begin();
+        if (cur != prev) {
+            prev = cur;
+            resizeCount++;
+        }
     }
+    EXPECT_EQUAL(15u, resizeCount);
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.size());
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.capacity());
     tmd.appendPosition(pos);
+    EXPECT_EQUAL(prev, tmd.begin());
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.size());
     EXPECT_EQUAL(std::numeric_limits<uint16_t>::max(), tmd.capacity());
 }
