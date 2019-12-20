@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.google.inject.Inject;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+import org.apache.zookeeper.data.Stat;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -96,6 +98,8 @@ public class CuratorDb {
 
     private final Curator curator;
     private final Duration tryLockTimeout;
+
+    private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     /**
      * All keys, to allow reentrancy.
@@ -376,7 +380,9 @@ public class CuratorDb {
     }
 
     public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
-        curator.set(runsPath(id, type), asJson(runSerializer.toSlime(runs)));
+        Path path = runsPath(id, type);
+        cachedHistoricRuns.remove(path);
+        curator.set(path, asJson(runSerializer.toSlime(runs)));
     }
 
     public Optional<Run> readLastRun(ApplicationId id, JobType type) {
@@ -384,7 +390,13 @@ public class CuratorDb {
     }
 
     public NavigableMap<RunId, Run> readHistoricRuns(ApplicationId id, JobType type) {
-        return readSlime(runsPath(id, type)).map(runSerializer::runsFromSlime).orElse(new TreeMap<>(comparing(RunId::number)));
+        Path path = runsPath(id, type);
+        return curator.getStat(path)
+                      .map(stat -> cachedHistoricRuns.compute(path, (__, old) ->
+                              old != null && old.getFirst() == stat.getVersion()
+                              ? old
+                              : new Pair<>(stat.getVersion(), runSerializer.runsFromSlime(readSlime(path).get()))).getSecond())
+                      .orElse(new TreeMap<>(comparing(RunId::number)));
     }
 
     public void deleteRunData(ApplicationId id, JobType type) {
