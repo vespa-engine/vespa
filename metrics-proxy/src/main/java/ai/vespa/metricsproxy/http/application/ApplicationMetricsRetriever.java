@@ -77,7 +77,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         try {
             var metricsByNode = forkJoinTask.get(taskTimeout.toMillis(), TimeUnit.MILLISECONDS);
 
-            log.info(() -> "Successfully retrieved metrics from " + clients.size() + " nodes.");
+            log.info(() -> "Finished retrieving metrics from " + clients.size() + " nodes.");
             return metricsByNode;
 
         } catch (Exception e) {
