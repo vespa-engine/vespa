@@ -4,6 +4,7 @@
 
 package ai.vespa.metricsproxy.metric.model.json;
 
+import ai.vespa.metricsproxy.http.application.Node;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
@@ -14,6 +15,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -35,9 +37,25 @@ import static java.util.stream.Collectors.toList;
 public class GenericJsonUtil {
     private static final Logger log = Logger.getLogger(GenericJsonUtil.class.getName());
 
-    private GenericJsonUtil() { }
+    private GenericJsonUtil() {
+    }
+
+    public static GenericApplicationModel toGenericApplicationModel(Map<Node, List<MetricsPacket>> metricsByNode) {
+        var applicationModel = new GenericApplicationModel();
+
+        var genericJsonModels = new ArrayList<GenericJsonModel>();
+        metricsByNode.forEach(
+                (node, metrics) -> genericJsonModels.add(toGenericJsonModel(metrics, node.getName())));
+
+        applicationModel.nodes = genericJsonModels;
+        return applicationModel;
+    }
 
     public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets) {
+        return toGenericJsonModel(metricsPackets, null);
+    }
+
+    public static GenericJsonModel toGenericJsonModel(List<MetricsPacket> metricsPackets, String nodeName) {
         Map<ServiceId, List<MetricsPacket>> packetsByService = metricsPackets.stream()
                 .collect(Collectors.groupingBy(packet -> packet.service, LinkedHashMap::new, toList()));
 
@@ -57,6 +75,7 @@ public class GenericJsonUtil {
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
+                jsonModel.node.name = nodeName;
             } else {
                 genericServices.add(genericService);
 

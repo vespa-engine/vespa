@@ -28,11 +28,19 @@ public class Node {
     }
 
     public Node(String configId, String host, int port, String path) {
+        Objects.requireNonNull(configId, "Null configId is not allowed");
+        Objects.requireNonNull(host, "Null host is not allowed");
+        Objects.requireNonNull(path, "Null path is not allowed");
+
         this.configId = configId;
         this.host = host;
         this.port = port;
         this.path = path;
         metricsUriBase = "http://" + host + ":" + port + path;
+    }
+
+    public String getName() {
+        return configId;
     }
 
     URI metricsUri(ConsumerId consumer) {
