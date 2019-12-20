@@ -55,7 +55,7 @@ GetOperation::GetOperation(DistributorComponent& manager,
       _msg(std::move(msg)),
       _returnCode(api::ReturnCode::OK),
       _doc(),
-      _lastModified(0),
+      _lastModified(),
       _metric(metric),
       _operationTimer(manager.getClock()),
       _has_replica_inconsistency(false)
@@ -151,17 +151,17 @@ GetOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<
                 response.second[i].returnCode = getreply->getResult();
 
                 if (getreply->getResult().success()) {
-                    if ((_lastModified != 0) && (getreply->getLastModifiedTimestamp() != _lastModified)) {
+                    if (_lastModified.has_value() && (getreply->getLastModifiedTimestamp() != *_lastModified)) {
                         // At least two document versions returned had different timestamps.
                         _has_replica_inconsistency = true; // This is a one-way toggle.
                     }
-                    if (getreply->getLastModifiedTimestamp() > _lastModified) {
+                    if (!_lastModified.has_value() || getreply->getLastModifiedTimestamp() > *_lastModified) {
                         _returnCode = getreply->getResult();
                         _lastModified = getreply->getLastModifiedTimestamp();
                         _doc = getreply->getDocument();
                     }
                 } else {
-                    if (_lastModified == 0) {
+                    if (!_lastModified.has_value()) {
                         _returnCode = getreply->getResult();
                     }
                     if (!all_bucket_metadata_initially_consistent()) {
@@ -216,7 +216,7 @@ void
 GetOperation::sendReply(DistributorMessageSender& sender)
 {
     if (_msg.get()) {
-        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified, !_has_replica_inconsistency);
+        auto repl = std::make_shared<api::GetReply>(*_msg, _doc, _lastModified.value_or(0), !_has_replica_inconsistency);
         repl->setResult(_returnCode);
         update_internal_metrics();
         sender.sendReply(repl);

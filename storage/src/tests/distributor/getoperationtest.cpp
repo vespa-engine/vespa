@@ -363,6 +363,21 @@ TEST_F(GetOperationTest, not_found) {
     EXPECT_TRUE(last_reply_had_consistent_replicas());
 }
 
+TEST_F(GetOperationTest, not_found_on_subset_of_replicas_marks_get_as_inconsistent) {
+    setClusterState("distributor:1 storage:2");
+    addNodesToBucketDB(bucketId, "0=100,1=200");
+    sendGet();
+    ASSERT_EQ("Get => 0,Get => 1", _sender.getCommands(true));
+
+    ASSERT_NO_FATAL_FAILURE(sendReply(0, api::ReturnCode::OK, "newauthor", 101));
+    ASSERT_NO_FATAL_FAILURE(sendReply(1, api::ReturnCode::OK, "", 0)); // Not found.
+
+    ASSERT_EQ("GetReply(BucketId(0x0000000000000000), id:ns:text/html::uri, "
+              "timestamp 101) ReturnCode(NONE)",
+              _sender.getLastReply());
+    EXPECT_FALSE(last_reply_had_consistent_replicas());
+}
+
 TEST_F(GetOperationTest, resend_on_storage_failure) {
     setClusterState("distributor:1 storage:3");
 
