@@ -153,8 +153,8 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
     vespalib::Doom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
-    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request.getStackRef(),
-                                               request.location, _viewResolver, metaStore, _indexEnv, *_rankSetup,
+    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request,
+                                               _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides);
 }
 
@@ -213,6 +213,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
         }
+
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
                                                                metaStore, *feature_overrides);
         isDoomExplicit = mtf->getRequestContext().getDoom().isExplicitSoftDoom();

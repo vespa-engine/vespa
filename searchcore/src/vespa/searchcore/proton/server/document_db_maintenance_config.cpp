@@ -125,6 +125,8 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
 {
 }
 
+DocumentDBMaintenanceConfig::~DocumentDBMaintenanceConfig() = default;
+
 DocumentDBMaintenanceConfig::
 DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
                             const DocumentDBHeartBeatConfig &heartBeat,

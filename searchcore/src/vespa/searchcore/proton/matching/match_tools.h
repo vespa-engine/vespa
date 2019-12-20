@@ -21,6 +21,7 @@ namespace search::fef {
     class RankProgram;
     class RankSetup;
 }
+namespace search::engine { class Request; }
 namespace proton::matching {
 
 class MatchTools
@@ -109,8 +110,7 @@ public:
                       const vespalib::Doom & softDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
-                      vespalib::stringref queryStack,
-                      const vespalib::string &location,
+                      const search::engine::Request &request,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,
                       const search::fef::IIndexEnvironment &indexEnv,

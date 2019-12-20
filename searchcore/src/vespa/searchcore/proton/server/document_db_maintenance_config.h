@@ -103,7 +103,6 @@ private:
 
 public:
     DocumentDBMaintenanceConfig();
-
     DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
                                 vespalib::duration sessionCachePruneInterval,
@@ -113,6 +112,11 @@ public:
                                 vespalib::duration attributeUsageSampleInterval,
                                 const BlockableMaintenanceJobConfig &blockableJobConfig,
                                 const DocumentDBFlushConfig &flushConfig);
+
+    DocumentDBMaintenanceConfig(const DocumentDBMaintenanceConfig &) = delete;
+    DocumentDBMaintenanceConfig & operator = (const DocumentDBMaintenanceConfig &) = delete;
+    ~DocumentDBMaintenanceConfig();
+
 
     bool
     operator==(const DocumentDBMaintenanceConfig &rhs) const;
