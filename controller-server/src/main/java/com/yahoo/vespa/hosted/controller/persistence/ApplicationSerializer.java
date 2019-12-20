@@ -1,6 +1,10 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.hash.Hashing;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -15,6 +19,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.config.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -49,6 +54,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -56,6 +62,7 @@ import java.util.stream.Collectors;
  * This class is multithread safe.
  *
  * @author jonmv
+ * @author mpolden
  */
 public class ApplicationSerializer {
 
@@ -87,6 +94,7 @@ public class ApplicationSerializer {
     private static final String pemDeployKeysField = "pemDeployKeys";
     private static final String assignedRotationClusterField = "clusterId";
     private static final String assignedRotationRotationField = "rotationId";
+    private static final String versionField = "version";
 
     // Instance fields
     private static final String instanceNameField = "instanceName";
@@ -121,15 +129,6 @@ public class ApplicationSerializer {
     private static final String jobTypeField = "jobType";
     private static final String pausedUntilField = "pausedUntil";
 
-    // JobRun fields
-    private static final String jobRunIdField = "id";
-    private static final String versionField = "version";
-    private static final String revisionField = "revision";
-    private static final String sourceVersionField = "sourceVersion";
-    private static final String sourceApplicationField = "sourceRevision";
-    private static final String reasonField = "reason";
-    private static final String atField = "at";
-
     // ClusterInfo fields
     private static final String clusterInfoField = "clusterInfo";
     private static final String clusterInfoFlavorField = "flavor";
@@ -156,6 +155,13 @@ public class ApplicationSerializer {
     private static final String lastUpdatedField = "lastUpdated";
     private static final String rotationStateField = "state";
     private static final String statusField = "status";
+
+    // A cache of deserialized applications.
+    //
+    // Deserializing an application from slime is expensive, particularly XML fields, such as DeploymentSpec and
+    // ValidationOverrides. Applications that have already been deserialized are returned from this cache instead of
+    // being deserialized again.
+    private final Cache<Long, Application> cache = CacheBuilder.newBuilder().maximumSize(1000).build();
 
     // ------------------ Serialization
 
@@ -317,7 +323,16 @@ public class ApplicationSerializer {
 
     // ------------------ Deserialization
 
-    public Application fromSlime(Slime slime) {
+    public Application fromSlime(byte[] data) {
+        var key = Hashing.sipHash24().hashBytes(data).asLong();
+        try {
+            return cache.get(key, () -> fromSlime(SlimeUtils.jsonToSlime(data)));
+        } catch (ExecutionException e) {
+            throw new UncheckedExecutionException(e);
+        }
+    }
+
+    private Application fromSlime(Slime slime) {
         Inspector root = slime.get();
 
         TenantAndApplicationId id = TenantAndApplicationId.fromSerialized(root.field(idField).asString());

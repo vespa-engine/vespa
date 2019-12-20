@@ -45,8 +45,6 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
 
-import static com.yahoo.config.provision.SystemName.main;
-import static java.util.Optional.empty;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -70,7 +68,7 @@ public class ApplicationSerializerTest {
 
 
     @Test
-    public void testSerialization() {
+    public void testSerialization() throws Exception {
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml("<deployment version='1.0'>\n" +
                                                                "   <staging/>\n" +
                                                                "   <instance id=\"i1\">\n" +
@@ -135,7 +133,7 @@ public class ApplicationSerializerTest {
                                                Optional.of(applicationVersion1),
                                                instances);
 
-        Application serialized = APPLICATION_SERIALIZER.fromSlime(APPLICATION_SERIALIZER.toSlime(original));
+        Application serialized = APPLICATION_SERIALIZER.fromSlime(SlimeUtils.toJsonBytes(APPLICATION_SERIALIZER.toSlime(original)));
 
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
@@ -217,7 +215,7 @@ public class ApplicationSerializerTest {
     @Test
     public void testCompleteApplicationDeserialization() throws Exception {
         byte[] applicationJson = Files.readAllBytes(testData.resolve("complete-application.json"));
-        APPLICATION_SERIALIZER.fromSlime(SlimeUtils.jsonToSlime(applicationJson));
+        APPLICATION_SERIALIZER.fromSlime(applicationJson);
         // ok if no error
     }
 
