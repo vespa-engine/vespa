@@ -67,11 +67,6 @@ private:
     QueryLimiter                 &_queryLimiter;
     uint32_t                      _distributionKey;
 
-    std::unique_ptr<search::engine::SearchReply>
-    handleGroupingSession(SessionManager &sessionMgr,
-                          search::grouping::GroupingContext & groupingContext,
-                          std::unique_ptr<search::grouping::GroupingSession> gs);
-
     size_t computeNumThreadsPerSearch(search::queryeval::Blueprint::HitEstimate hits,
                                       const Properties & rankProperties) const;
 public:

@@ -89,12 +89,14 @@ MatchingStats::updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::dura
     if ((hardLimit >= MIN_TIMEOUT) && (softLimit >= MIN_TIMEOUT)) {
         double diff = vespalib::to_s(softLimit - duration)/vespalib::to_s(hardLimit);
         if (duration < softLimit) {
+            // Since softdoom factor can become very small, allow a minimum change of some size
             diff = std::min(diff, _softDoomFactor*MAX_CHANGE_FACTOR);
             _softDoomFactor += 0.01*diff;
         } else {
             diff = std::max(diff, -_softDoomFactor*MAX_CHANGE_FACTOR);
             _softDoomFactor += 0.02*diff;
         }
+        _softDoomFactor = std::max(_softDoomFactor, 0.01); // Never go below 1%
     }
     return *this;
 }
