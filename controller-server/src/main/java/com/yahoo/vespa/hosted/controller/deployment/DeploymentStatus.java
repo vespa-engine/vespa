@@ -25,6 +25,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -287,6 +288,22 @@ public class DeploymentStatus {
                                                                 .successOn(versions).isEmpty();
     }
 
+
+    public enum StepType {
+
+        /** An instance — completion marks a change as ready for the jobs contained in it. */
+        instance,
+
+        /** A timed delay. */
+        delay,
+
+        /** A system, staging or production test. */
+        test,
+
+        /** A production deployment. */
+        deployment,
+    }
+
     /**
      * Used to represent all steps — explicit and implicit — that may run in order to complete deployment of a change.
      *
@@ -300,19 +317,24 @@ public class DeploymentStatus {
     // TODO jonmv: Make the step status expose _what it is_.
     public static abstract class StepStatus {
 
+        private final StepType type;
         private final DeploymentSpec.Step step;
         private final List<StepStatus> dependencies;
         private final Optional<InstanceName> instance;
 
-        protected StepStatus(DeploymentSpec.Step step, List<StepStatus> dependencies) {
-            this(step, dependencies, null);
+        protected StepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies) {
+            this(type, step, dependencies, null);
         }
 
-        protected StepStatus(DeploymentSpec.Step step, List<StepStatus> dependencies, InstanceName instance) {
+        protected StepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies, InstanceName instance) {
+            this.type = requireNonNull(type);
             this.step = requireNonNull(step);
             this.dependencies = List.copyOf(dependencies);
             this.instance = Optional.ofNullable(instance);
         }
+
+        /** The type of step this is. */
+        public final StepType type() { return type; }
 
         /** The step defining this. */
         public final DeploymentSpec.Step step() { return step; }
@@ -323,23 +345,41 @@ public class DeploymentStatus {
         /** The instance of this, if any. */
         public final Optional<InstanceName> instance() { return instance; }
 
+        /** The id of the job this corresponds to, if any. */
         public Optional<JobId> job() { return Optional.empty(); }
 
-        /** The time at which this is complete on the given versions. */
+        /** The time at which this is, or was, complete on the given change and / or versions. */
         public abstract Optional<Instant> completedAt(Change change, Versions versions);
 
-        // TODO jonmv: dependenciesCompletedAt
-
-        // TODO jonmv: pausedUntil and coolingDownUntil
-
-        /** The time at which all dependencies completed on the given version. */
+        /** The time at which this step is ready to run the specified change and / or versions. */
         public Optional<Instant> readyAt(Change change, Versions versions) {
+            return dependenciesCompletedAt(change, versions)
+                    .map(ready -> Stream.concat(Stream.of(blockedUntil(change),
+                                                          pausedUntil(),
+                                                          coolingDownUntil(versions))
+                                                      .flatMap(Optional::stream),
+                                                Stream.of(ready))
+                                        .max(naturalOrder()).get());
+        }
+
+        /** The time at which all dependencies completed on the given change and / or versions. */
+        public Optional<Instant> dependenciesCompletedAt(Change change, Versions versions) {
             return dependencies.stream().allMatch(step -> step.completedAt(change, versions).isPresent())
                    ? dependencies.stream().map(step -> step.completedAt(change, versions).get())
                                  .max(naturalOrder())
                                  .or(() -> Optional.of(Instant.EPOCH))
                    : Optional.empty();
         }
+
+        /** The time until which this step is blocked by a change blocker. */
+        // TODO jonmv: readyAt for instance can be delayed by block window. Upgrade policy / confidence is something different.
+        public Optional<Instant> blockedUntil(Change change) { return Optional.empty(); }
+
+        /** The time until which this step is paused by user intervention. */
+        public Optional<Instant> pausedUntil() { return Optional.empty(); }
+
+        /** The time until which this step is cooling down, due to consecutive failures. */
+        public Optional<Instant> coolingDownUntil(Versions versions) { return Optional.empty(); }
 
         /** Whether this step is currently running, with the given version parameters. */
         public abstract boolean isRunning(Versions versions);
@@ -353,7 +393,7 @@ public class DeploymentStatus {
     public static class DelayStatus extends StepStatus {
 
         public DelayStatus(DeploymentSpec.Delay step, List<StepStatus> dependencies) {
-            super(step, dependencies);
+            super(StepType.delay, step, dependencies);
         }
 
         @Override
@@ -374,9 +414,9 @@ public class DeploymentStatus {
         private final JobStatus job;
         private final DeploymentStatus status;
 
-        protected JobStepStatus(DeploymentSpec.Step step, List<StepStatus> dependencies, JobStatus job,
+        protected JobStepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies, JobStatus job,
                                 DeploymentStatus status) {
-            super(step, dependencies, job.id().application().instance());
+            super(type, step, dependencies, job.id().application().instance());
             this.job = requireNonNull(job);
             this.status = requireNonNull(status);
         }
@@ -390,27 +430,21 @@ public class DeploymentStatus {
         }
 
         @Override
-        // TODO jonmv: Split in readyAt(change, versions), pausedUntil(), and coolingDownUntil(versions)
-        public Optional<Instant> readyAt(Change change, Versions versions) {
-            Optional<Instant> readyAt = super.readyAt(change, versions);
-            if (readyAt.isEmpty())
-                return Optional.empty();
+        public Optional<Instant> pausedUntil() {
+            return status.application().require(job.id().application().instance()).jobPause(job.id().type());
+        }
 
-            Optional<Instant> pausedUntil = status.application().require(job.id().application().instance()).jobPause(job.id().type());
-            if (pausedUntil.isPresent() && pausedUntil.get().isAfter(readyAt.get()))
-                return pausedUntil;
-
-            if (job.lastTriggered().isEmpty()) return readyAt;
-            if (job.lastCompleted().isEmpty()) return readyAt;
-            if (job.firstFailing().isEmpty()) return readyAt;
-            if ( ! versions.targetsMatch(job.lastCompleted().get().versions())) return readyAt;
-            if (status.application.deploymentSpec().requireInstance(job.id().application().instance()).upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return readyAt;
-            if (job.id().type().environment().isTest() && job.isOutOfCapacity()) return readyAt;
+        @Override
+        public Optional<Instant> coolingDownUntil(Versions versions) {
+            if (job.lastTriggered().isEmpty()) return Optional.empty();
+            if (job.lastCompleted().isEmpty()) return Optional.empty();
+            if (job.firstFailing().isEmpty()) return Optional.empty();
+            if ( ! versions.targetsMatch(job.lastCompleted().get().versions())) return Optional.empty();
+            if (status.application.deploymentSpec().requireInstance(job.id().application().instance()).upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return Optional.empty();
+            if (job.id().type().environment().isTest() && job.isOutOfCapacity()) return Optional.empty();
 
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();
-            if (lastCompleted.isBefore(readyAt.get()))
-                return readyAt;
 
             return firstFailing.equals(lastCompleted) ? Optional.of(lastCompleted)
                                                       : Optional.of(lastCompleted.plus(Duration.ofMinutes(10))
@@ -425,7 +459,7 @@ public class DeploymentStatus {
             Optional<Deployment> existingDeployment = Optional.ofNullable(status.application().require(instance)
                                                                                 .deployments().get(zone));
 
-            return new JobStepStatus(step, dependencies, job, status) {
+            return new JobStepStatus(StepType.deployment, step, dependencies, job, status) {
 
                 @Override
                 public Optional<Instant> readyAt(Change change, Versions versions) {
@@ -458,7 +492,7 @@ public class DeploymentStatus {
         public static JobStepStatus ofProductionTest(DeclaredTest step, List<StepStatus> dependencies,
                                                      DeploymentStatus status, InstanceName instance, JobType testType, JobType jobType) {
             JobStatus job = status.instanceJobs(instance).get(testType);
-            return new JobStepStatus(step, dependencies, job, status) {
+            return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 public Optional<Instant> completedAt(Change change, Versions versions) {
                     return job.lastSuccess()
@@ -474,7 +508,7 @@ public class DeploymentStatus {
                                                      DeploymentStatus status, InstanceName instance,
                                                      JobType jobType, boolean declared) {
             JobStatus job = status.instanceJobs(instance).get(jobType);
-            return new JobStepStatus(step, dependencies, job, status) {
+            return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 public Optional<Instant> completedAt(Change change, Versions versions) {
                     return RunList.from(job)
