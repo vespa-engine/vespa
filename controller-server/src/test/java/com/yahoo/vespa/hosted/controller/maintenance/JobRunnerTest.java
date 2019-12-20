@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -26,6 +25,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
@@ -97,14 +97,14 @@ public class JobRunnerTest {
         catch (IllegalStateException e) { }
         jobs.start(id, stagingTest, versions);
 
-        assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(unfinished::equals));
+        assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
-        assertTrue(jobs.last(id, stagingTest).get().steps().values().stream().allMatch(unfinished::equals));
+        assertTrue(jobs.last(id, stagingTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, stagingTest).get().hasEnded());
         runner.maintain();
 
         phaser.arriveAndAwaitAdvance();
-        assertTrue(jobs.last(id, systemTest).get().steps().values().stream().allMatch(succeeded::equals));
+        assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(succeeded::equals));
         assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
     }
@@ -125,45 +125,54 @@ public class JobRunnerTest {
         jobs.start(id, systemTest, versions);
         RunId first = run.get().id();
 
-        Map<Step, Status> steps = run.get().steps();
+        Map<Step, Status> steps = run.get().stepStatuses();
         runner.maintain();
-        assertEquals(steps, run.get().steps());
+        assertEquals(steps, run.get().stepStatuses());
         assertEquals(List.of(deployTester), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester);
 
         outcomes.put(deployTester, running);
         runner.maintain();
         assertEquals(List.of(deployReal), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal);
 
         outcomes.put(deployReal, running);
         runner.maintain();
         assertEquals(List.of(installTester, installReal), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal);
 
         outcomes.put(installReal, running);
         runner.maintain();
         assertEquals(List.of(installTester), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal);
 
         outcomes.put(installTester, running);
         runner.maintain();
         assertEquals(List.of(startTests), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests);
 
         outcomes.put(startTests, running);
         runner.maintain();
         assertEquals(List.of(endTests), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests);
 
         // Failure ending tests fails the run, but run-always steps continue.
         outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
         assertEquals(List.of(copyVespaLogs, deactivateTester), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester);
 
         outcomes.put(copyVespaLogs, running);
         runner.maintain();
         assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester, deactivateReal);
 
         // Abortion does nothing, as the run has already failed.
         jobs.abort(run.get().id());
         runner.maintain();
         assertEquals(List.of(deactivateReal, deactivateTester), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester, deactivateReal);
 
         outcomes.put(deactivateReal, running);
         outcomes.put(deactivateTester, running);
@@ -183,9 +192,11 @@ public class JobRunnerTest {
         assertTrue(run.get().hasEnded());
         assertTrue(run.get().hasFailed());
         assertFalse(run.get().status() == aborted);
-        assertEquals(failed, run.get().steps().get(deployTester));
-        assertEquals(unfinished, run.get().steps().get(installTester));
-        assertEquals(succeeded, run.get().steps().get(report));
+        assertEquals(failed, run.get().stepStatuses().get(deployTester));
+        assertEquals(unfinished, run.get().stepStatuses().get(installTester));
+        assertEquals(succeeded, run.get().stepStatuses().get(report));
+        // deployTester, plus all forced steps:
+        assertStepsWithStartTime(run.get(), deployTester, copyVespaLogs, deactivateTester, deactivateReal, report);
 
         assertEquals(2, jobs.runs(id, systemTest).size());
 
@@ -195,6 +206,14 @@ public class JobRunnerTest {
         runner.maintain();
         assertFalse(jobs.last(id, systemTest).isPresent());
         assertTrue(jobs.runs(id, systemTest).isEmpty());
+    }
+
+    private void assertStepsWithStartTime(Run lastRun, Step... stepsWithStartTime) {
+        Set<Step> actualStepsWithStartTime = lastRun.steps().entrySet().stream()
+                .filter(entry -> entry.getValue().startTime().isPresent())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toSet());
+        assertEquals(Set.of(stepsWithStartTime), actualStepsWithStartTime);
     }
 
     @Test
