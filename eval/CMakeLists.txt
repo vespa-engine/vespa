@@ -10,6 +10,7 @@ vespa_define_module(
     src/apps/tensor_conformance
 
     TESTS
+    src/tests/ann
     src/tests/eval/aggr
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
