@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
@@ -12,11 +11,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * A list of deployment jobs that can be filtered in various ways.
