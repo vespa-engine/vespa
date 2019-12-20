@@ -99,6 +99,7 @@ public class CuratorDb {
     private final Curator curator;
     private final Duration tryLockTimeout;
 
+    // For each job id (path), store the ZK node version and its deserialised data — update when version changes. 
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     /**
