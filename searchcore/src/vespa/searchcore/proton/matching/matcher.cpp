@@ -153,7 +153,8 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                    _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
     vespalib::Doom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
-    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request,
+    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
+                                               request.trace(), request.getStackRef(), request.location,
                                                _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides);
 }

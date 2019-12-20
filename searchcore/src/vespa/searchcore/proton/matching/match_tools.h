@@ -17,11 +17,12 @@
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/clock.h>
 
+namespace search::engine { class Trace; }
+
 namespace search::fef {
     class RankProgram;
     class RankSetup;
 }
-namespace search::engine { class Request; }
 namespace proton::matching {
 
 class MatchTools
@@ -110,7 +111,9 @@ public:
                       const vespalib::Doom & softDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
-                      const search::engine::Request &request,
+                      search::engine::Trace & trace,
+                      vespalib::stringref queryStack,
+                      const vespalib::string &location,
                       const ViewResolver &viewResolver,
                       const search::IDocumentMetaStore &metaStore,
                       const search::fef::IIndexEnvironment &indexEnv,
