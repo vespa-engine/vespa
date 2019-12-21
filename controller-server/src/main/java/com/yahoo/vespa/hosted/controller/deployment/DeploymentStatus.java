@@ -129,9 +129,7 @@ public class DeploymentStatus {
     private void addProductionJobs(Map<JobId, List<Versions>> jobs, Change change) {
         jobSteps.forEach((job, step) -> {
             Versions versions = Versions.from(change, application, deploymentFor(job), systemVersion);
-            if (     job.type().isProduction()
-                &&   step.completedAt(change, versions).isEmpty()
-                && ! step.isRunning(versions))
+            if (job.type().isProduction() && step.completedAt(change, versions).isEmpty())
                 jobs.put(job, List.of(versions));
         });
     }
@@ -143,18 +141,14 @@ public class DeploymentStatus {
                 declaredTest(job.application(), systemTest).ifPresent(test -> {
                     testJobs.merge(test,
                                    versions.stream()
-                                           .filter(version -> ! jobSteps.get(test).isRunning(version))
-                                           .filter(version ->    allJobs.successOn(version).get(test).isEmpty()
-                                                              && allJobs.triggeredOn(version).get(job).isEmpty())
+                                           .filter(version -> allJobs.successOn(version).get(test).isEmpty())
                                            .collect(toUnmodifiableList()),
                                    DeploymentStatus::union);
                 });
                 declaredTest(job.application(), stagingTest).ifPresent(test -> {
                     testJobs.merge(test,
                                    versions.stream()
-                                           .filter(version -> ! jobSteps.get(test).isRunning(version))
-                                           .filter(version ->    allJobs.successOn(version).get(test).isEmpty()
-                                                              && allJobs.triggeredOn(version).get(job).isEmpty())
+                                           .filter(version -> allJobs.successOn(version).get(test).isEmpty())
                                            .collect(toUnmodifiableList()),
                                    DeploymentStatus::union);
                 });
@@ -164,17 +158,13 @@ public class DeploymentStatus {
             if ( ! job.type().isTest() && ! testedOn(versions, systemTest, testJobs))
                 testJobs.merge(new JobId(job.application(), systemTest),
                                versions.stream()
-                                       .filter(version -> jobSteps.keySet().stream().noneMatch(id -> id.type() == systemTest && jobSteps.get(id).isRunning(version)))
-                                       .filter(version ->    allJobs.successOn(version).type(systemTest).isEmpty()
-                                                          && allJobs.triggeredOn(version).get(job).isEmpty())
+                                       .filter(version -> allJobs.successOn(version).type(systemTest).isEmpty())
                                        .collect(toUnmodifiableList()),
                                DeploymentStatus::union);
             if ( ! job.type().isTest() && ! testedOn(versions, stagingTest, testJobs))
                 testJobs.merge(new JobId(job.application(), stagingTest),
                                versions.stream()
-                                       .filter(version -> jobSteps.keySet().stream().noneMatch(id -> id.type() == stagingTest && jobSteps.get(id).isRunning(version)))
-                                       .filter(version ->    allJobs.successOn(version).type(stagingTest).isEmpty()
-                                                          && allJobs.triggeredOn(version).get(job).isEmpty())
+                                       .filter(version -> allJobs.successOn(version).type(stagingTest).isEmpty())
                                        .collect(toUnmodifiableList()),
                                DeploymentStatus::union);
         });
@@ -195,7 +185,7 @@ public class DeploymentStatus {
         return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
     }
 
-    private Optional<Deployment> deploymentFor(JobId job) {
+    public Optional<Deployment> deploymentFor(JobId job) {
         return Optional.ofNullable(application.require(job.application().instance())
                                               .deployments().get(job.type().zone(system)));
     }

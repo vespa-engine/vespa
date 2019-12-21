@@ -103,52 +103,6 @@ public class DeploymentTriggerTest {
         assertEquals("Job is not triggered when no projectId is present", 0, tester.jobs().active().size());
     }
 
-    /*
-    @Test
-    @Ignore
-    // TODO jonmv: Re-enable, but changed, when instances are orchestrated.
-    public void testIndependentInstances() {
-        var app1 = tester.tester().createApplication("instance1", "app", "tenant", 1, 1L);
-        var app2 = tester.tester().createApplication("instance2", "app", "tenant", 2, 1L);
-        Instance instance1 = tester.tester().instance(app1.id().instance(InstanceName.from("instance1")));
-        Instance instance2 = tester.tester().instance(app2.id().instance(InstanceName.from("instance2")));
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                                                        .upgradePolicy("default")
-                                                        .environment(Environment.prod)
-                                                        .region("us-west-1")
-                                                        .build();
-
-        Version version = Version.fromString("6.2");
-        tester.tester().upgradeSystem(version);
-
-        // Deploy completely once
-        tester.tester().jobCompletion(component).application(app1).application(instance1.id()).uploadArtifact(applicationPackage).submit();
-        tester.tester().deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, JobType.systemTest);
-        tester.tester().deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, JobType.stagingTest);
-        tester.tester().deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, JobType.productionUsWest1);
-
-        tester.tester().jobCompletion(component).application(app2).application(instance2.id()).uploadArtifact(applicationPackage).submit();
-        tester.tester().deployAndNotify(instance2.id(), Optional.of(applicationPackage), true, JobType.systemTest);
-        tester.tester().deployAndNotify(instance2.id(), Optional.of(applicationPackage), true, JobType.stagingTest);
-        tester.tester().deployAndNotify(instance2.id(), Optional.of(applicationPackage), true, JobType.productionUsWest1);
-
-        // New version is released
-        Version newVersion = Version.fromString("6.3");
-        tester.tester().upgradeSystem(newVersion);
-
-        // instance1 upgrades, but not instance 2
-        tester.tester().deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, JobType.systemTest);
-        tester.tester().deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, JobType.stagingTest);
-        tester.tester().deployAndNotify(instance1.id(), Optional.of(applicationPackage), true, JobType.productionUsWest1);
-
-        Version instance1Version = tester.tester().defaultInstance(app1.id()).deployments().get(JobType.productionUsWest1.zone(main)).version();
-        Version instance2Version = tester.tester().defaultInstance(app2.id()).deployments().get(JobType.productionUsWest1.zone(main)).version();
-
-        assertEquals(newVersion, instance1Version);
-        assertEquals(version, instance2Version);
-    }
-    */
-
     @Test
     public void abortsJobsOnNewApplicationChange() {
         var app = tester.newDeploymentContext();
@@ -1001,6 +955,25 @@ public class DeploymentTriggerTest {
         app1.runJob(productionApSoutheast1);
         tester.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
+    }
+
+    @Test
+    public void testChangeCompletion() {
+        var app = tester.newDeploymentContext().submit().deploy();
+        var version = new Version("7.1");
+        tester.controllerTester().upgradeSystem(version);
+        tester.upgrader().maintain();
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1);
+
+        app.submit();
+        tester.triggerJobs();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(version), app.application().change());
+
+        app.runJob(productionUsEast3).runJob(productionUsWest1);
+        tester.triggerJobs();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(app.lastSubmission().get()), app.application().change());
     }
 
 }
