@@ -6,6 +6,8 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
+import ai.vespa.metricsproxy.http.application.VespaNodesConfig;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -40,8 +42,8 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.c
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.consumersConfigFromXml;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getApplicationDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getCustomConsumer;
+import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getMetricsNodesConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.configId;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getQrStartConfig;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicConsumer.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.yahoo.vespa.model.admin.monitoring.DefaultPublicMetrics.defaultPublicMetricSet;
@@ -54,6 +56,8 @@ import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -123,6 +127,7 @@ public class MetricsProxyContainerClusterTest {
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(MetricsHandler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(PrometheusHandler.class.getName())));
         assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(YamasHandler.class.getName())));
+        assertThat(handlerClasses, hasItem(ComponentSpecification.fromString(ApplicationMetricsHandler.class.getName())));
     }
 
     @Test
@@ -293,6 +298,21 @@ public class MetricsProxyContainerClusterTest {
         assertEquals(MY_APPLICATION + "." + MY_INSTANCE, config.dimensions(AppDimensionNames.LEGACY_APPLICATION));
     }
 
+    @Test
+    public void all_nodes_are_included_in_metrics_nodes_config() {
+        VespaModel hostedModel = getModel(servicesWithTwoNodes(), hosted);
+        VespaNodesConfig config = getMetricsNodesConfig(hostedModel);
+        assertEquals(2, config.node().size());
+        assertNodeConfig(config.node(0));
+        assertNodeConfig(config.node(1));
+    }
+
+    private void assertNodeConfig(VespaNodesConfig.Node node) {
+        assertFalse(node.configId().isEmpty());
+        assertFalse(node.hostname().isEmpty());
+        assertEquals(MetricsProxyContainer.BASEPORT, node.metricsPort());
+        assertEquals(MetricsHandler.VALUES_PATH, node.metricsPath());
+    }
 
     private static String servicesWithAdminOnly() {
         return String.join("\n", "<services>",
@@ -301,6 +321,15 @@ public class MetricsProxyContainerClusterTest {
                            "    </admin>",
                            "</services>"
         );
+    }
+
+    private static String servicesWithTwoNodes() {
+        return String.join("\n",
+                           "<services>",
+                           "    <container version='1.0' id='foo'>",
+                           "        <nodes count='2'/>",
+                           "    </container>",
+                           "</services>");
     }
 
 }
