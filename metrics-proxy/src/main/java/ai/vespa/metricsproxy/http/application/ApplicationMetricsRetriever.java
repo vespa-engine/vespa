@@ -17,12 +17,12 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.AbstractMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static java.util.Collections.emptyList;
@@ -98,14 +98,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     }
 
     private List<NodeMetricsClient> createNodeClients(VespaNodesConfig nodesConfig) {
-        var clients = new ArrayList<NodeMetricsClient>();
-        for (var nc : nodesConfig.node()) {
-            var node = new Node(nc.configId(), nc.hostname(), nc.metricsPort(), nc.metricsPath());
-            var client = new NodeMetricsClient(httpClient, node, Clock.systemUTC());
-            clients.add(client);
-        }
-        return clients;
-    }
+        return nodesConfig.node().stream()
+                .map(Node::new)
+                .map(node-> new NodeMetricsClient(httpClient, node, Clock.systemUTC()))
+                .collect(Collectors.toList());
+   }
 
     private static CloseableHttpClient createHttpClient() {
         return VespaHttpClientBuilder.create(PoolingHttpClientConnectionManager::new)
