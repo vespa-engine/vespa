@@ -176,8 +176,8 @@ public class ApplicationMetricsHandlerTest {
         return new VespaNodesConfig.Node.Builder()
                 .configId(path)
                 .hostname("localhost")
-                .path(path)
-                .port(port);
+                .metricsPath(path)
+                .metricsPort(port);
     }
 
     private static MetricsConsumers getMetricsConsumers() {

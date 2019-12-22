@@ -51,7 +51,7 @@ public class ApplicationMetricsRetrieverTest {
     }
 
     private void verifyRetrievingMetricsFromSingleNode(VespaNodesConfig config, Node node) {
-        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
@@ -66,9 +66,9 @@ public class ApplicationMetricsRetrieverTest {
         Node node0 = new Node(config.node(0));
         Node node1 = new Node(config.node(1));
 
-        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
-        wireMockRule.stubFor(get(urlPathEqualTo(config.node(1).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(1).metricsPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
@@ -96,7 +96,7 @@ public class ApplicationMetricsRetrieverTest {
         Node node0 = new Node(config.node(0));
         Node node1 = new Node(config.node(1));
 
-        wireMockRule.stubFor(get(urlPathEqualTo(config.node(1).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(1).metricsPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
         ApplicationMetricsRetriever retriever = new ApplicationMetricsRetriever(config);
@@ -110,7 +110,7 @@ public class ApplicationMetricsRetrieverTest {
     public void an_exception_is_thrown_when_retrieving_times_out() {
         var config = nodesConfig("/node0");
 
-        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
+        wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                      .willReturn(aResponse()
                                                          .withBody(RESPONSE)
                                                          .withFixedDelay(10)));
@@ -131,7 +131,7 @@ public class ApplicationMetricsRetrieverTest {
         var config = nodesConfig("/node0");
         Node node = new Node(config.node(0));
 
-        var delayedStub = wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).path()))
+        var delayedStub = wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                                        .willReturn(aResponse()
                                                                            .withBody(RESPONSE)
                                                                            .withFixedDelay(10)));
@@ -162,8 +162,8 @@ public class ApplicationMetricsRetrieverTest {
         return new VespaNodesConfig.Node.Builder()
                 .configId(path)
                 .hostname(HOST)
-                .path(path)
-                .port(port);
+                .metricsPath(path)
+                .metricsPort(port);
     }
 
 }

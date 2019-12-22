@@ -3,5 +3,5 @@ package=ai.vespa.metricsproxy.http.application
 
 node[].configId string
 node[].hostname string
-node[].port int
-node[].path string
+node[].metricsPort int
+node[].metricsPath string

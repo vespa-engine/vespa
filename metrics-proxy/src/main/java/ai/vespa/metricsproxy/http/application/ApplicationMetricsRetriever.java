@@ -100,7 +100,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     private List<NodeMetricsClient> createNodeClients(VespaNodesConfig nodesConfig) {
         var clients = new ArrayList<NodeMetricsClient>();
         for (var nc : nodesConfig.node()) {
-            var node = new Node(nc.configId(), nc.hostname(), nc.port(), nc.path());
+            var node = new Node(nc.configId(), nc.hostname(), nc.metricsPort(), nc.metricsPath());
             var client = new NodeMetricsClient(httpClient, node, Clock.systemUTC());
             clients.add(client);
         }
