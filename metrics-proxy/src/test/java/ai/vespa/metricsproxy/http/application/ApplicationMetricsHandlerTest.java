@@ -163,17 +163,17 @@ public class ApplicationMetricsHandlerTest {
         }
     }
 
-    private VespaNodesConfig nodesConfig(String... paths) {
+    private MetricsNodesConfig nodesConfig(String... paths) {
         var nodes = Arrays.stream(paths)
                 .map(this::nodeConfig)
                 .collect(toList());
-        return new VespaNodesConfig.Builder()
+        return new MetricsNodesConfig.Builder()
                 .node(nodes)
                 .build();
     }
 
-    private VespaNodesConfig.Node.Builder nodeConfig(String path) {
-        return new VespaNodesConfig.Node.Builder()
+    private MetricsNodesConfig.Node.Builder nodeConfig(String path) {
+        return new MetricsNodesConfig.Node.Builder()
                 .configId(path)
                 .hostname("localhost")
                 .metricsPath(path)

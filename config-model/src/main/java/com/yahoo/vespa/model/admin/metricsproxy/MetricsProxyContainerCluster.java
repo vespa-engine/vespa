@@ -12,7 +12,7 @@ import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
-import ai.vespa.metricsproxy.http.application.VespaNodesConfig;
+import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
@@ -71,7 +71,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
         ThreadpoolConfig.Producer,
-        VespaNodesConfig.Producer
+        MetricsNodesConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
@@ -135,7 +135,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     protected void doPrepare(DeployState deployState) { }
 
     @Override
-    public void getConfig(VespaNodesConfig.Builder builder) {
+    public void getConfig(MetricsNodesConfig.Builder builder) {
         builder.node.addAll(MetricsNodesConfigGenerator.generate(getContainers()));
     }
 

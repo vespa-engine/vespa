@@ -50,7 +50,7 @@ public class ApplicationMetricsRetrieverTest {
         verifyRetrievingMetricsFromSingleNode(config, node);
     }
 
-    private void verifyRetrievingMetricsFromSingleNode(VespaNodesConfig config, Node node) {
+    private void verifyRetrievingMetricsFromSingleNode(MetricsNodesConfig config, Node node) {
         wireMockRule.stubFor(get(urlPathEqualTo(config.node(0).metricsPath()))
                                      .willReturn(aResponse().withBody(RESPONSE)));
 
@@ -149,17 +149,17 @@ public class ApplicationMetricsRetrieverTest {
         verifyRetrievingMetricsFromSingleNode(config, node);
     }
 
-    private VespaNodesConfig nodesConfig(String... paths) {
+    private MetricsNodesConfig nodesConfig(String... paths) {
         var nodes = Arrays.stream(paths)
                 .map(this::nodeConfig)
                 .collect(toList());
-        return new VespaNodesConfig.Builder()
+        return new MetricsNodesConfig.Builder()
                 .node(nodes)
                 .build();
     }
 
-    private VespaNodesConfig.Node.Builder nodeConfig(String path) {
-        return new VespaNodesConfig.Node.Builder()
+    private MetricsNodesConfig.Node.Builder nodeConfig(String path) {
+        return new MetricsNodesConfig.Node.Builder()
                 .configId(path)
                 .hostname(HOST)
                 .metricsPath(path)

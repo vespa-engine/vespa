@@ -23,7 +23,7 @@ public class Node {
 
     private final String metricsUriBase;
 
-    public Node(VespaNodesConfig.Node nodeConfig) {
+    public Node(MetricsNodesConfig.Node nodeConfig) {
         this(nodeConfig.configId(), nodeConfig.hostname(), nodeConfig.metricsPort() , nodeConfig.metricsPath());
     }
 

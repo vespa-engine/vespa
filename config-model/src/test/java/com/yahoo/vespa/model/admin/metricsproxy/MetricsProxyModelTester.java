@@ -5,7 +5,7 @@
 package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
-import ai.vespa.metricsproxy.http.application.VespaNodesConfig;
+import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
@@ -79,8 +79,8 @@ class MetricsProxyModelTester {
         return new ConsumersConfig((ConsumersConfig.Builder) model.getConfig(new ConsumersConfig.Builder(), CLUSTER_CONFIG_ID));
     }
 
-    static VespaNodesConfig getMetricsNodesConfig(VespaModel model) {
-        return new VespaNodesConfig((VespaNodesConfig.Builder) model.getConfig(new VespaNodesConfig.Builder(), CLUSTER_CONFIG_ID));
+    static MetricsNodesConfig getMetricsNodesConfig(VespaModel model) {
+        return new MetricsNodesConfig((MetricsNodesConfig.Builder) model.getConfig(new MetricsNodesConfig.Builder(), CLUSTER_CONFIG_ID));
     }
 
     static ApplicationDimensionsConfig getApplicationDimensionsConfig(VespaModel model) {

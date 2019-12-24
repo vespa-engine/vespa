@@ -53,7 +53,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
     private ForkJoinPool forkJoinPool = new ForkJoinPool(PARALLELISM);
 
     @Inject
-    public ApplicationMetricsRetriever(VespaNodesConfig nodesConfig) {
+    public ApplicationMetricsRetriever(MetricsNodesConfig nodesConfig) {
         clients = createNodeClients(nodesConfig);
         taskTimeout = timeout(clients.size());
     }
@@ -97,7 +97,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         return new AbstractMap.SimpleEntry<>(client.node, emptyList());
     }
 
-    private List<NodeMetricsClient> createNodeClients(VespaNodesConfig nodesConfig) {
+    private List<NodeMetricsClient> createNodeClients(MetricsNodesConfig nodesConfig) {
         return nodesConfig.node().stream()
                 .map(Node::new)
                 .map(node-> new NodeMetricsClient(httpClient, node, Clock.systemUTC()))

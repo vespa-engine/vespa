@@ -7,7 +7,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
-import ai.vespa.metricsproxy.http.application.VespaNodesConfig;
+import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
@@ -301,13 +301,13 @@ public class MetricsProxyContainerClusterTest {
     @Test
     public void all_nodes_are_included_in_metrics_nodes_config() {
         VespaModel hostedModel = getModel(servicesWithTwoNodes(), hosted);
-        VespaNodesConfig config = getMetricsNodesConfig(hostedModel);
+        MetricsNodesConfig config = getMetricsNodesConfig(hostedModel);
         assertEquals(2, config.node().size());
         assertNodeConfig(config.node(0));
         assertNodeConfig(config.node(1));
     }
 
-    private void assertNodeConfig(VespaNodesConfig.Node node) {
+    private void assertNodeConfig(MetricsNodesConfig.Node node) {
         assertFalse(node.configId().isEmpty());
         assertFalse(node.hostname().isEmpty());
         assertEquals(MetricsProxyContainer.BASEPORT, node.metricsPort());
