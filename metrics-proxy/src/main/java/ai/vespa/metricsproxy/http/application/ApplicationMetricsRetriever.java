@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -92,7 +93,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
         try {
             return new AbstractMap.SimpleEntry<>(client.node, client.getMetrics(consumer));
         } catch (Exception e) {
-            log.warning("Could not retrieve metrics from " + client.node.metricsUri(consumer));
+            log.log(Level.WARNING, "Could not retrieve metrics from " + client.node.metricsUri(consumer), e);
         }
         return new AbstractMap.SimpleEntry<>(client.node, emptyList());
     }
