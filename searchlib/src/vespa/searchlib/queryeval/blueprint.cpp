@@ -3,7 +3,7 @@
 #include "blueprint.h"
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
-#include "equiv_blueprint.h"
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/object2slime.h>
@@ -403,11 +403,11 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
-IntermediateBlueprint::fetchPostings(bool strict)
+IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     for (size_t i = 0; i < _children.size(); ++i) {
-        bool strictChild = (strict && inheritStrict(i));
-        _children[i]->fetchPostings(strictChild);
+        ExecuteInfo childInfo = ExecuteInfo(execInfo.isStrict() && inheritStrict(i), execInfo.hitRate());
+        _children[i]->fetchPostings(childInfo);
     }
 }
 
@@ -494,9 +494,9 @@ LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwis
 LeafBlueprint::~LeafBlueprint() = default;
 
 void
-LeafBlueprint::fetchPostings(bool strict)
+LeafBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    (void) strict;
+    (void) execInfo;
 }
 
 void

@@ -81,10 +81,10 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
 
 
 void
-SimplePhraseBlueprint::fetchPostings(bool strict)
+SimplePhraseBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     for (auto & term : _terms) {
-        term->fetchPostings(strict);
+        term->fetchPostings(execInfo);
     }
 }
 

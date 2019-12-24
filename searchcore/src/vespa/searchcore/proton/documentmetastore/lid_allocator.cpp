@@ -2,6 +2,7 @@
 
 #include "lid_allocator.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <mutex>
 
 #include <vespa/log/log.h>
@@ -197,7 +198,7 @@ private:
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const TermFieldMatchDataArray &tfmda,
                      bool strict) const override
     {

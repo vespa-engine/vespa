@@ -103,10 +103,11 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 }
 
 void
-ParallelWeakAndBlueprint::fetchPostings(bool)
+ParallelWeakAndBlueprint::fetchPostings(const ExecuteInfo & execInfo)
 {
+    ExecuteInfo childInfo(true, execInfo.hitRate());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(true);
+        _terms[i]->fetchPostings(childInfo);
     }
 }
 

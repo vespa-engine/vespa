@@ -27,7 +27,7 @@ Test::testEmptyBlueprint()
     EXPECT_EQUAL(1u, empty.getState().field(0).getFieldId());
     EXPECT_EQUAL(11u, empty.getState().field(0).getHandle());
 
-    empty.fetchPostings(true);
+    empty.fetchPostings(ExecuteInfo::TRUE);
     SearchIterator::UP search = empty.createSearch(*md, true);
 
     SimpleResult res;
@@ -45,7 +45,7 @@ Test::testSimpleBlueprint()
     SimpleBlueprint simple(a);
     simple.tag("tag");
     EXPECT_EQUAL("tag", simple.tag());
-    simple.fetchPostings(true);
+    simple.fetchPostings(ExecuteInfo::TRUE);
     SearchIterator::UP search = simple.createSearch(*md, true);
 
     SimpleResult res;
@@ -67,7 +67,7 @@ Test::testFakeBlueprint()
     TermFieldHandle handle = 0;
     FakeBlueprint orig(FieldSpec("<field>", fieldId, handle), fake);
 
-    orig.fetchPostings(true);
+    orig.fetchPostings(ExecuteInfo::TRUE);
     SearchIterator::UP search = orig.createSearch(*md, true);
     search->initFullRange();
     EXPECT_TRUE(!search->seek(1u));

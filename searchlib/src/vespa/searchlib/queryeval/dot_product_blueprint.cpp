@@ -64,11 +64,11 @@ DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
 }
 
 void
-DotProductBlueprint::fetchPostings(bool strict)
+DotProductBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    (void) strict;
+    ExecuteInfo childInfo(true, execInfo.hitRate());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(true);
+        _terms[i]->fetchPostings(childInfo);
     }    
 }
 

@@ -4,10 +4,11 @@
 
 #include "field_spec.h"
 #include "unpackinfo.h"
+#include "executeinfo.h"
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <cassert>
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -15,10 +16,12 @@ namespace vespalib::slime {
     struct Inserter;
 }
 namespace search::attribute { class ISearchContext; }
+namespace search::fef { class TermFieldMatchDataArray; }
 
 namespace search::queryeval {
 
 class SearchIterator;
+class ExecuteInfo;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -186,7 +189,7 @@ public:
 
     double hit_ratio() const { return getState().hit_ratio(_docid_limit); }        
 
-    virtual void fetchPostings(bool strict) = 0;
+    virtual void fetchPostings(const ExecuteInfo &execInfo) = 0;
     virtual void freeze() = 0;
     bool frozen() const { return _frozen; }
 
@@ -288,7 +291,7 @@ public:
                              bool strict, fef::MatchData &md) const = 0;
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() override final;
 
     UnpackInfo calculateUnpackInfo(const fef::MatchData & md) const;
@@ -313,7 +316,7 @@ public:
     ~LeafBlueprint() override;
     const State &getState() const override final { return _state; }
     void setDocIdLimit(uint32_t limit) override final { Blueprint::setDocIdLimit(limit); }
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() override final;
     SearchIteratorUP createSearch(fef::MatchData &md, bool strict) const override;
 

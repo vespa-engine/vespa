@@ -119,7 +119,7 @@ do_search(const Node &node, IAttributeManager &attribute_manager, bool expect_at
     } else {
         EXPECT_TRUE(result->get_attribute_search_context() == nullptr);
     }
-    result->fetchPostings(true);
+    result->fetchPostings(queryeval::ExecuteInfo::TRUE);
     result->setDocIdLimit(DOCID_LIMIT);
     SearchIterator::UP iterator = result->createSearch(*md, true);
     assert((bool)iterator);

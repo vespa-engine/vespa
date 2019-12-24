@@ -195,7 +195,7 @@ Query::optimize()
 void
 Query::fetchPostings()
 {
-    _blueprint->fetchPostings(true);
+    _blueprint->fetchPostings(search::queryeval::ExecuteInfo(true, 1.0));
 }
 
 void

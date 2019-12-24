@@ -139,8 +139,8 @@ public:
     }
 
     void
-    fetchPostings(bool strict) override {
-        _search_context->fetchPostings(strict);
+    fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
+        _search_context->fetchPostings(execInfo);
     }
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
@@ -219,9 +219,9 @@ public:
         }
     }
 
-    void fetchPostings(bool strict) override {
+    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
         for (size_t i(0); i < _rangeSearches.size(); i++) {
-            _rangeSearches[i]->fetchPostings(strict);
+            _rangeSearches[i]->fetchPostings(execInfo);
         }
     }
 };

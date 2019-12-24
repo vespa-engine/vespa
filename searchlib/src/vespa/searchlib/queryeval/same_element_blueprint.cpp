@@ -54,10 +54,11 @@ SameElementBlueprint::optimize_self()
 }
 
 void
-SameElementBlueprint::fetchPostings(bool strict)
+SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(strict && (i == 0));
+        ExecuteInfo childInfo(execInfo.isStrict() && (i == 0), execInfo.hitRate());
+        _terms[i]->fetchPostings(childInfo);
     }
 }
 

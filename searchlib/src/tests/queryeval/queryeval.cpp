@@ -225,7 +225,7 @@ TEST("testAnd") {
     auto and_b = std::make_unique<AndBlueprint>();
     and_b->addChild(std::make_unique<SimpleBlueprint>(a));
     and_b->addChild(std::make_unique<SimpleBlueprint>(b));
-    and_b->fetchPostings(true);
+    and_b->fetchPostings(ExecuteInfo::TRUE);
     SearchIterator::UP and_ab = and_b->createSearch(*md, true);
 
     EXPECT_TRUE(dynamic_cast<const AndSearch *>(and_ab.get()) != nullptr);
@@ -252,7 +252,7 @@ TEST("testOr") {
         auto or_b = std::make_unique<OrBlueprint>();
         or_b->addChild(std::make_unique<SimpleBlueprint>(a));
         or_b->addChild(std::make_unique<SimpleBlueprint>(b));
-        or_b->fetchPostings(true);
+        or_b->fetchPostings(ExecuteInfo::TRUE);
         SearchIterator::UP or_ab = or_b->createSearch(*md, true);
 
         SimpleResult res;
@@ -366,7 +366,7 @@ TEST("testAndNot") {
         auto andnot_b = std::make_unique<AndNotBlueprint>();
         andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
         andnot_b->addChild(std::make_unique<SimpleBlueprint>(b));
-        andnot_b->fetchPostings(true);
+        andnot_b->fetchPostings(ExecuteInfo::TRUE);
         SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
 
         SimpleResult res;
@@ -386,7 +386,7 @@ TEST("testAndNot") {
         auto andnot_b = std::make_unique<AndNotBlueprint>();
         andnot_b->addChild(std::make_unique<SimpleBlueprint>(a));
         andnot_b->addChild(std::make_unique<DummySingleValueBitNumericAttributeBlueprint>(b));
-        andnot_b->fetchPostings(true);
+        andnot_b->fetchPostings(ExecuteInfo::TRUE);
         SearchIterator::UP andnot_ab = andnot_b->createSearch(*md, true);
 
         SimpleResult res;
@@ -412,7 +412,7 @@ TEST("testAndNot") {
         auto and_b = std::make_unique<AndBlueprint>();
         and_b->addChild(std::make_unique<SimpleBlueprint>(c));
         and_b->addChild(std::move(andnot_b));
-        and_b->fetchPostings(true);
+        and_b->fetchPostings(ExecuteInfo::TRUE);
         SearchIterator::UP and_cab = and_b->createSearch(*md, true);
 
         SimpleResult res;
@@ -437,7 +437,7 @@ TEST("testRank") {
         auto rank_b = std::make_unique<RankBlueprint>();
         rank_b->addChild(std::make_unique<SimpleBlueprint>(a));
         rank_b->addChild(std::make_unique<SimpleBlueprint>(b));
-        rank_b->fetchPostings(true);
+        rank_b->fetchPostings(ExecuteInfo::TRUE);
         SearchIterator::UP rank_ab = rank_b->createSearch(*md, true);
 
         SimpleResult res;

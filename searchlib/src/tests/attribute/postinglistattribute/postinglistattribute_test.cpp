@@ -10,6 +10,7 @@
 #include <vespa/searchlib/attribute/multinumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/attributevector.hpp>
@@ -375,7 +376,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<StringAttribute>(sa);
-    sc->fetchPostings(true);
+    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
     if (!EXPECT_TRUE(assertIterator(exp, *sb)))
         return false;
@@ -388,7 +389,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<StringAttribute, std::string>(sa, key, false);
-    sc->fetchPostings(true);
+    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
     if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
         return false;
@@ -400,7 +401,7 @@ PostingListAttributeTest::assertSearch(const std::string &exp, IntegerAttribute 
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>(ia, key, false);
-    sc->fetchPostings(true);
+    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
     if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
         return false;
@@ -478,7 +479,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
 {
     SearchContextPtr sc = getSearch(vec, term, false, attribute::SearchContextParams().useBitVector(useBitVector));
     EXPECT_FALSE( ! sc );
-    sc->fetchPostings(true);
+    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     size_t approx = sc->approximateHits();
     EXPECT_EQUAL(numHits, approx);
     if (docBegin == 0) {
@@ -883,15 +884,14 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
 {
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(ptr1));
-    sc->fetchPostings(true);
+    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
     sb->initFullRange();
 
     const PostingInfo *pi = sb->getPostingInfo();
-    ASSERT_TRUE(pi != NULL);
-    const MinMaxPostingInfo *mmpi =
-        dynamic_cast<const MinMaxPostingInfo *>(pi);
-    ASSERT_TRUE(mmpi != NULL);
+    ASSERT_TRUE(pi != nullptr);
+    const MinMaxPostingInfo *mmpi = dynamic_cast<const MinMaxPostingInfo *>(pi);
+    ASSERT_TRUE(mmpi != nullptr);
 
     if (ptr1->hasMultiValue()) {
         if (trimmed == 2u) {
@@ -909,17 +909,17 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
     EXPECT_EQUAL(1u, sb->getDocId());
 
     sc = getSearch2<VectorType>(as<VectorType>(ptr1));
-    sc->fetchPostings(true);
+    sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     sb = sc->createIterator(&md, true);
     sb->initFullRange();
 
     pi = sb->getPostingInfo();
     if (trimmed == 2) {
-        ASSERT_TRUE(pi == NULL);
+        ASSERT_TRUE(pi == nullptr);
     } else {
-        ASSERT_TRUE(pi != NULL);
+        ASSERT_TRUE(pi != nullptr);
         mmpi = dynamic_cast<const MinMaxPostingInfo *>(pi);
-        ASSERT_TRUE(mmpi != NULL);
+        ASSERT_TRUE(mmpi != nullptr);
 
         if (ptr1->hasMultiValue()) {
             if (trimmed == 0) {

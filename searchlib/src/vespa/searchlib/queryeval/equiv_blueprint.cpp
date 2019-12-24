@@ -47,10 +47,10 @@ EquivBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
-EquivBlueprint::fetchPostings(bool strict)
+EquivBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(strict);
+        _terms[i]->fetchPostings(execInfo);
     }
 }
 

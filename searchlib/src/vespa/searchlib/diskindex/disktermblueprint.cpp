@@ -66,9 +66,9 @@ areAnyParentsEquiv(const Blueprint * node)
 }
 
 void
-DiskTermBlueprint::fetchPostings(bool strict)
+DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
-    (void) strict;
+    (void) execInfo;
     _hasEquivParent = areAnyParentsEquiv(getParent());
     _bitVector = _diskIndex.readBitVector(*_lookupRes);
     if (!_useBitVector || !_bitVector) {
