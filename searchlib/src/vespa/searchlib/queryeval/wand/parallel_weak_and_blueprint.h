@@ -9,8 +9,7 @@
 #include <memory>
 #include <vector>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
 
@@ -45,7 +44,7 @@ public:
                              score_t scoreThreshold,
                              double thresholdBoostFactor,
                              uint32_t scoresAdjustFrequency);
-    virtual ~ParallelWeakAndBlueprint();
+    virtual ~ParallelWeakAndBlueprint() override;
 
     const WeakAndHeap &getScores() const { return _scores; }
 
@@ -65,6 +64,4 @@ public:
     bool always_needs_unpack() const override;
 };
 
-}  // namespace queryeval
-}  // namespace search
-
+}

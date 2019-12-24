@@ -9,6 +9,7 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
+#include <vespa/searchlib/fef/matchdata.h>
 
 using namespace search::queryeval;
 using namespace search::fef;

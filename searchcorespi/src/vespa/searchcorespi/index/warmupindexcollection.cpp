@@ -219,6 +219,15 @@ WarmupIndexCollection::getSearchableSP(uint32_t i) const
     return _next->getSearchableSP(i);
 }
 
+WarmupIndexCollection::WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, WarmupIndexCollection & warmup)
+    : _warmup(warmup),
+      _matchData(std::move(md)),
+      _bluePrint(),
+      _requestContext()
+{ }
+
+WarmupIndexCollection::WarmupTask::~WarmupTask() = default;
+
 void
 WarmupIndexCollection::WarmupTask::run()
 {

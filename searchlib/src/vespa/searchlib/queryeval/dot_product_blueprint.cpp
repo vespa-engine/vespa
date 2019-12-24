@@ -2,6 +2,7 @@
 
 #include "dot_product_blueprint.h"
 #include "dot_product_search.h"
+#include "field_spec.hpp"
 #include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {

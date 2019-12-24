@@ -3,6 +3,7 @@
 #include "blueprint.h"
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
+#include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
@@ -170,8 +171,16 @@ namespace blueprint {
 void
 StateCache::updateState() const
 {
+    assert(!frozen());
     _state = calculateState();
     _stale = false;
+}
+
+void
+StateCache::notifyChange() {
+    assert(!frozen());
+    Blueprint::notifyChange();
+    _stale = true;
 }
 
 } // namespace blueprint

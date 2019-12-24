@@ -5,10 +5,6 @@
 #include "field_spec.h"
 #include "unpackinfo.h"
 #include "executeinfo.h"
-#include <vespa/searchlib/fef/handle.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <cassert>
 
 namespace vespalib { class ObjectVisitor; }
 namespace vespalib::slime {
@@ -16,7 +12,10 @@ namespace vespalib::slime {
     struct Inserter;
 }
 namespace search::attribute { class ISearchContext; }
-namespace search::fef { class TermFieldMatchDataArray; }
+namespace search::fef {
+    class TermFieldMatchDataArray;
+    class MatchData;
+}
 
 namespace search::queryeval {
 
@@ -218,18 +217,13 @@ private:
     void updateState() const;
 
 protected:
-    void notifyChange() override final {
-        assert(!frozen());
-        Blueprint::notifyChange();
-        _stale = true;
-    }
+    void notifyChange() override final;
     virtual State calculateState() const = 0;
 
 public:
     StateCache() : _stale(true), _state(FieldSpecBaseList()) {}
     const State &getState() const override final {
         if (_stale) {
-            assert(!frozen());
             updateState();
         }
         return _state;

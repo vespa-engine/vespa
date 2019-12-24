@@ -3,6 +3,7 @@
 #include "lid_allocator.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <mutex>
 
 #include <vespa/log/log.h>

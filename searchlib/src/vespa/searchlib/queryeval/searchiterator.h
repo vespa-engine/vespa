@@ -4,7 +4,6 @@
 
 #include "posting_info.h"
 #include "begin_and_end_id.h"
-#include <vespa/searchlib/fef/termfieldmatchdataposition.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/trinary.h>
 #include <memory>

@@ -2,6 +2,7 @@
 
 #include "same_element_blueprint.h"
 #include "same_element_search.h"
+#include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>

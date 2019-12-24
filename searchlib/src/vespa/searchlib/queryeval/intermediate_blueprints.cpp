@@ -7,9 +7,9 @@
 #include "nearsearch.h"
 #include "ranksearch.h"
 #include "sourceblendersearch.h"
-#include "equivsearch.h"
 #include "termwise_blueprint_helper.h"
 #include "isourceselector.h"
+#include "field_spec.hpp"
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 
 namespace search::queryeval {

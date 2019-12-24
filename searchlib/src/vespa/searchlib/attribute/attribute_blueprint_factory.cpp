@@ -28,6 +28,7 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
+#include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>

@@ -2,6 +2,7 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/multisearch.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {
