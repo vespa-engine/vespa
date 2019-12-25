@@ -41,7 +41,7 @@ namespace proton::matching {
 
 namespace {
 
-constexpr long SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 300;
+constexpr long SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT = 60;
 
 // used to give out empty whitelist blueprints
 struct StupidMetaStore : search::IDocumentMetaStore {
