@@ -1,0 +1,90 @@
+{
+  "nodes": [
+    {
+      "node": {
+        "name": "node0",
+        "timestamp": 1234,
+        "metrics": [
+          {
+            "values": {
+              "cpu.util": 16.222
+            },
+            "dimensions": {
+              "state": "active"
+            }
+          }
+        ]
+      },
+      "services": [
+        {
+          "name": "searchnode",
+          "timestamp": 1234,
+          "status": {
+            "code": "up"
+          },
+          "metrics": [
+            {
+              "values": {
+                "queries.count": 4
+              },
+              "dimensions": {
+                "documentType": "music"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "node": {
+        "name": "node1",
+        "timestamp": 1234,
+        "metrics": [
+          {
+            "values": {
+              "cpu.util": 32.444
+            },
+            "dimensions": {
+              "state": "active"
+            }
+          }
+        ]
+      },
+      "services": [
+        {
+          "name": "searchnode",
+          "timestamp": 1234,
+          "status": {
+            "code": "up"
+          },
+          "metrics": [
+            {
+              "values": {
+                "queries.count": 8
+              },
+              "dimensions": {
+                "documentType": "music"
+              }
+            }
+          ]
+        },
+        {
+          "name": "slobrok",
+          "timestamp": 1234,
+          "status": {
+            "code": "unknown",
+            "description": "Unable to fetch metrics from service 'slobrok'"
+          },
+          "metrics": [
+            {
+              "values": {},
+              "dimensions": {
+                "instance": "slobrok0"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

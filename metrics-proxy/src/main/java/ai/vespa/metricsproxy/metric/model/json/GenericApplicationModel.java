@@ -7,8 +7,9 @@ package ai.vespa.metricsproxy.metric.model.json;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.List;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
@@ -18,22 +19,18 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_ABSENT)
-@JsonPropertyOrder({ "name", "timestamp", "metrics" })
-public class GenericNode {
+public class GenericApplicationModel {
 
-    @JsonProperty("name")
-    public String name;
+    @JsonProperty("nodes")
+    public List<GenericJsonModel> nodes;
 
-    @JsonProperty("timestamp")
-    public Long timestamp;
-
-    @JsonProperty("metrics")
-    public List<GenericMetrics> metrics;
-
-    public GenericNode() { }
-
-    GenericNode(Long timestamp, List<GenericMetrics> metrics) {
-        this.timestamp = timestamp;
-        this.metrics = metrics;
+    public String serialize() {
+        ObjectMapper mapper = JacksonUtil.createObjectMapper();
+        try {
+            return mapper.writeValueAsString(this);
+        } catch (IOException e) {
+            throw new JsonRenderingException("Could not render application nodes. Check the log for details.", e);
+        }
     }
+
 }

@@ -1,25 +1,4 @@
 {
-  "node": {
-    "timestamp": 1234,
-    "metrics": [
-      {
-        "values": {
-          "cpu.util": 16.222
-        },
-        "dimensions": {
-          "state": "active"
-        }
-      },
-      {
-        "values": {
-          "network.in.bytes": 123123123
-        },
-        "dimensions": {
-          "interface": "eth0"
-        }
-      }
-    ]
-  },
   "services": [
     {
       "name": "searchnode",
