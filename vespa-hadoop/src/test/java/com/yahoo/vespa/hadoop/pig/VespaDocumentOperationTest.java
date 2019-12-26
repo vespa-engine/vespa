@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hadoop.pig;
 
 import org.apache.pig.data.*;
+import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -41,6 +42,22 @@ public class VespaDocumentOperationTest {
         JsonNode fields = root.path("fields");
 
         assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
+        assertEquals("testapp", fields.get("application").get("assign").getTextValue());
+        assertEquals("clicks", fields.get("name").get("assign").getTextValue());
+        assertEquals(3, fields.get("value").get("assign").getIntValue());
+    }
+
+
+    @Test
+    public void requireThatUDFSupportsCreateIfNonExistent() throws IOException {
+        String json = getDocumentOperationJson("docid=id:<application>:metrics::<name>-<date>", "operation=update",
+                "create-if-non-existent=true");
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.path("fields");
+
+        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
+        assertEquals(true, root.get("create").getBooleanValue());
         assertEquals("testapp", fields.get("application").get("assign").getTextValue());
         assertEquals("clicks", fields.get("name").get("assign").getTextValue());
         assertEquals(3, fields.get("value").get("assign").getIntValue());
@@ -266,10 +283,76 @@ public class VespaDocumentOperationTest {
     }
 
 
+    @Test
+    public void requireThatUDFSupportsSimpleObjectFields() throws IOException {
+        Schema objectSchema = new Schema();
+        Tuple objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("id", DataType.LONG, 123456789L, objectSchema, objectTuple);
+        addToTuple("url", DataType.CHARARRAY, "example.com", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 123, objectSchema, objectTuple);
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+        addToTuple("object", DataType.TUPLE, objectTuple, objectSchema, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "simple-object-fields=object");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.get("fields");
+        JsonNode objectNode = fields.get("object");
+
+        assertEquals(123456789L, objectNode.get("id").asLong());
+        assertEquals("example.com", objectNode.get("url").asText());
+        assertEquals(123, objectNode.get("value").asInt());
+    }
+
+
+    @Test
+    public void requireThatUDFSupportsBagAsMapFields() throws IOException {
+        DataBag bag = BagFactory.getInstance().newDefaultBag();
+
+        Schema objectSchema = new Schema();
+        Tuple objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "123456", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 123456, objectSchema, objectTuple);
+        bag.add(objectTuple);
+
+        objectSchema = new Schema();
+        objectTuple = TupleFactory.getInstance().newTuple();
+        addToTuple("key", DataType.CHARARRAY, "234567", objectSchema, objectTuple);
+        addToTuple("value", DataType.INTEGER, 234567, objectSchema, objectTuple);
+        bag.add(objectTuple);
+
+        Schema schema = new Schema();
+        Tuple tuple = TupleFactory.getInstance().newTuple();
+        addToTuple("bag", DataType.BAG, bag, objectSchema, schema, tuple);
+
+        VespaDocumentOperation docOp = new VespaDocumentOperation("docid=empty", "bag-as-map-fields=bag");
+        docOp.setInputSchema(schema);
+        String json = docOp.exec(tuple);
+
+        ObjectMapper m = new ObjectMapper();
+        JsonNode root = m.readTree(json);
+        JsonNode fields = root.get("fields");
+        JsonNode bagNode = fields.get("bag");
+
+        assertEquals(123456, bagNode.get("123456").asInt());
+        assertEquals(234567, bagNode.get("234567").asInt());
+    }
+
+
     private void addToTuple(String alias, byte type, Object value, Schema schema, Tuple tuple) {
         schema.add(new Schema.FieldSchema(alias, type));
         tuple.append(value);
     }
 
 
+    private void addToTuple(String alias, byte type, Object value, Schema schemaInField, Schema schema, Tuple tuple)
+            throws FrontendException {
+        schema.add(new Schema.FieldSchema(alias, schemaInField, type));
+        tuple.append(value);
+    }
 }
