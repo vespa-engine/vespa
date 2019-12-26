@@ -106,6 +106,8 @@ public class GenericJsonUtil {
 
     private static List<MetricsPacket.Builder> toNodePackets(GenericNode node) {
         List<MetricsPacket.Builder> packets = new ArrayList<>();
+        if (node == null) return packets;
+
         if (node.metrics == null || node.metrics.isEmpty()) {
             return singletonList(new MetricsPacket.Builder(VESPA_NODE_SERVICE_ID)
                                          .statusCode(StatusCode.UP.ordinal())
