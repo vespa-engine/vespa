@@ -11,6 +11,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.pig.ResourceSchema;
 import org.apache.pig.StoreFunc;
 import org.apache.pig.data.Tuple;
+import org.apache.pig.impl.logicalLayer.schema.Schema;
 import org.apache.pig.impl.util.UDFContext;
 
 import java.io.*;
@@ -160,7 +161,8 @@ public class VespaStorage extends StoreFunc {
         Map<String, Object> fields = TupleTools.tupleMap(resourceSchema, tuple);
         String docId = TupleTools.toString(fields, template);
 
-        return VespaDocumentOperation.create(operation, docId, fields, properties);
+        Schema schema = Schema.getPigSchema(resourceSchema);
+        return VespaDocumentOperation.create(operation, docId, fields, properties, schema);
     }
 
 
