@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +35,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.BinaryOperator.maxBy;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
@@ -347,12 +349,11 @@ public class DeploymentStatus {
         /** The time at which this step is ready to run the specified change and / or versions. */
         public Optional<Instant> readyAt(Change change, Versions versions) {
             return dependenciesCompletedAt(change, versions)
-                    .map(ready -> Stream.concat(Stream.of(blockedUntil(change),
-                                                          pausedUntil(),
-                                                          coolingDownUntil(versions))
-                                                      .flatMap(Optional::stream),
-                                                Stream.of(ready))
-                                        .max(naturalOrder()).get());
+                    .map(ready -> Stream.of(blockedUntil(change),
+                                            pausedUntil(),
+                                            coolingDownUntil(versions))
+                                        .flatMap(Optional::stream)
+                                        .reduce(ready, maxBy(naturalOrder())));
         }
 
         /** The time at which all dependencies completed on the given change and / or versions. */
@@ -374,9 +375,6 @@ public class DeploymentStatus {
         /** The time until which this step is cooling down, due to consecutive failures. */
         public Optional<Instant> coolingDownUntil(Versions versions) { return Optional.empty(); }
 
-        /** Whether this step is currently running, with the given version parameters. */
-        public abstract boolean isRunning(Versions versions);
-
         /** Whether this step is declared in the deployment spec, or is an implicit step. */
         public boolean isDeclared() { return true; }
 
@@ -392,11 +390,6 @@ public class DeploymentStatus {
         @Override
         public Optional<Instant> completedAt(Change change, Versions versions) {
             return readyAt(change, versions).map(completion -> completion.plus(step().delay()));
-        }
-
-        @Override
-        public boolean isRunning(Versions versions) {
-            return true;
         }
 
     }
@@ -416,11 +409,6 @@ public class DeploymentStatus {
 
         @Override
         public Optional<JobId> job() { return Optional.of(job.id()); }
-
-        @Override
-        public boolean isRunning(Versions versions) {
-            return job.isRunning() && job.lastTriggered().get().versions().targetsMatch(versions);
-        }
 
         @Override
         public Optional<Instant> pausedUntil() {
@@ -464,19 +452,19 @@ public class DeploymentStatus {
                 @Override
                 public Optional<Instant> completedAt(Change change, Versions versions) {
                     if (     change.isPinned()
-                             &&   change.platform().isPresent()
-                             && ! existingDeployment.map(Deployment::version).equals(change.platform()))
+                        &&   change.platform().isPresent()
+                        && ! existingDeployment.map(Deployment::version).equals(change.platform()))
                         return Optional.empty();
 
                     Change fullChange = status.application().change();
                     if (existingDeployment.map(deployment ->    ! (change.upgrades(deployment.version()) || change.upgrades(deployment.applicationVersion()))
-                                                                &&   (fullChange.downgrades(deployment.version()) || fullChange.downgrades(deployment.applicationVersion())))
+                                                             &&   (fullChange.downgrades(deployment.version()) || fullChange.downgrades(deployment.applicationVersion())))
                                           .orElse(false))
                         return job.lastCompleted().flatMap(Run::end);
 
                     return job.lastSuccess()
                               .filter(run ->    change.platform().map(run.versions().targetPlatform()::equals).orElse(true)
-                                                && change.application().map(run.versions().targetApplication()::equals).orElse(true))
+                                             && change.application().map(run.versions().targetApplication()::equals).orElse(true))
                               .flatMap(Run::end);
                 }
             };
