@@ -511,5 +511,103 @@ class JobControllerApiHandlerHelper {
         }
     }
 
+    /**
+     * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
+     */
+    static HttpResponse overviewResponse(Controller controller, TenantAndApplicationId id, URI baseUriForJobs) {
+        Application application = controller.applications().requireApplication(id);
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
+
+        Slime slime = new Slime();
+        Cursor responseObject = slime.setObject();
+        responseObject.setString("tenant", id.tenant().value());
+        responseObject.setString("application", id.application().value());
+
+        Change change = status.application().change();
+        Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
+        Cursor stepsArray = responseObject.setArray("steps");
+        for (DeploymentStatus.StepStatus stepStatus : status.allSteps()) {
+            Cursor stepObject = stepsArray.addObject();
+            stepObject.setString("type", stepStatus.type().name());
+            stepStatus.dependencies().stream()
+                      .map(status.allSteps()::indexOf)
+                      .forEach(stepObject.setArray("dependencies")::addLong);
+            stepObject.setBool("declared", stepStatus.isDeclared());
+            stepStatus.instance().ifPresent(instance -> stepObject.setString("instance", instance.value()));
+
+            stepStatus.job().ifPresent(job -> {
+                stepObject.setString("jobName", job.type().jobName());
+                stepObject.setString("environment", job.type().environment().value());
+                stepObject.setString("region", job.type().zone(controller.system()).value());
+
+                if (job.type().isProduction() && job.type().isDeployment()) {
+                    status.deploymentFor(job).ifPresent(deployment -> {
+                        stepObject.setString("currentPlatform", deployment.version().toFullString());
+                        toSlime(stepObject.setObject("currentApplication"), deployment.applicationVersion());
+                    });
+                }
+
+                JobStatus jobStatus = status.jobs().get(job).get();
+                Cursor jobsArray = stepObject.setArray("jobs");
+                for (Versions versions : jobsToRun.getOrDefault(job, List.of())) {
+                    Cursor jobObject = jobsArray.addObject();
+                    toSlime(jobObject.setObject("versions"), versions);
+                    stepStatus.readyAt(change, versions).ifPresent(ready -> jobObject.setLong("readyAt", ready.toEpochMilli()));
+                    stepStatus.readyAt(change, versions)
+                              .filter(controller.clock().instant()::isBefore)
+                              .ifPresent(until -> jobObject.setLong("delayedUntil", until.toEpochMilli()));
+                    stepStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
+                    stepStatus.coolingDownUntil(versions).ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                    stepStatus.blockedUntil(change).ifPresent(until -> jobObject.setLong("blockedUntil", until.toEpochMilli()));
+
+                    boolean running = jobStatus.lastTriggered()
+                                               .map(run ->    jobStatus.isRunning()
+                                                           && versions.targetsMatch(run.versions())
+                                                           && (job.type().isProduction() || versions.sourcesMatchIfPresent(run.versions())))
+                                               .orElse(false);
+                    jobObject.setBool("running", running);
+                }
+
+                jobStatus.lastTriggered().ifPresent(run -> {
+                    Cursor runObject = stepObject.setObject("lastRun");
+                    runObject.setLong("start", run.start().toEpochMilli());
+                    run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
+                    runObject.setString("status", run.status().name());
+                    toSlime(runObject.setObject("versions"), run.versions());
+                });
+            });
+        }
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor versionObject, ApplicationVersion version) {
+        version.buildNumber().ifPresent(id -> versionObject.setLong("id", id));
+        version.source().ifPresent(source -> versionObject.setString("commit", source.commit()));
+        version.source().flatMap(source -> toUrl(source)).ifPresent(source -> versionObject.setString("source", source.toString()));
+    }
+
+    private static void toSlime(Cursor versionsObject, Versions versions) {
+        versionsObject.setString("targetPlatform", versions.targetPlatform().toFullString());
+        toSlime(versionsObject.setObject("targetApplication"), versions.targetApplication());
+        versions.sourcePlatform().ifPresent(platform -> versionsObject.setString("sourcePlatform", platform.toFullString()));
+        versions.sourceApplication().ifPresent(application -> toSlime(versionsObject.setObject("sourceApplication"), application));
+    }
+
+    // TODO jonmv: Remove this when source url is stored instead of SourceRevision.
+    private static Optional<URI> toUrl(SourceRevision source) {
+        try {
+            String repository = source.repository();
+            if (repository.startsWith("git@"))
+                repository = "https://" + repository.substring(4);
+            if (repository.endsWith(".git"))
+                repository = repository.substring(0, repository.length() - 4);
+            return Optional.of(URI.create(repository + "/tree/" + source.commit()));
+        }
+        catch (RuntimeException e) {
+            return Optional.empty();
+        }
+    }
+
 }
 

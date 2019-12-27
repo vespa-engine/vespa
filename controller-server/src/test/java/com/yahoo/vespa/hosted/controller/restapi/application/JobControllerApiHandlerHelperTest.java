@@ -52,6 +52,7 @@ public class JobControllerApiHandlerHelperTest {
     @Test
     public void testResponses() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .stagingTest()
                 .region("us-central-1")
                 .test("us-central-1")
                 .parallel("us-west-1", "us-east-3")
