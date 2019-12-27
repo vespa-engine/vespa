@@ -175,8 +175,11 @@ public enum JobType {
     /** Returns whether this is a production job */
     public boolean isProduction() { return environment() == Environment.prod; }
 
-    /** Returns whether this is a pure test step */
+    /** Returns whether this job runs tests */
     public boolean isTest() { return isTest; }
+
+    /** Returns whether this job deploys to a zone */
+    public boolean isDeployment() { return ! (isProduction() && isTest); }
 
     /** Returns the environment of this job type, or null if it does not have an environment */
     public Environment environment() {

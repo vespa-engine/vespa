@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -25,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,7 +38,6 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * Status of the deployment jobs of an {@link Application}.
@@ -107,7 +104,7 @@ public class DeploymentStatus {
         return Stream.concat(jobs.entrySet().stream(), testJobs)
                      .collect(collectingAndThen(toMap(Map.Entry::getKey,
                                                       Map.Entry::getValue,
-                                                      (l1, l2) -> ImmutableList.<Versions>builder().addAll(l1).addAll(l2).build(),
+                                                      DeploymentStatus::union,
                                                       LinkedHashMap::new),
                                                 ImmutableMap::copyOf));
     }
@@ -115,10 +112,8 @@ public class DeploymentStatus {
     /** Returns the set of jobs that need to run for the given change to be considered complete. */
     public Map<JobId, List<Versions>> jobsToRun(Change change) {
         Map<JobId, List<Versions>> jobs = new LinkedHashMap<>();
-
         addProductionJobs(jobs, change);
         addTests(jobs);
-
         return ImmutableMap.copyOf(jobs);
     }
 
@@ -136,53 +131,36 @@ public class DeploymentStatus {
 
     private void addTests(Map<JobId, List<Versions>> jobs) {
         Map<JobId, List<Versions>> testJobs = new HashMap<>();
-        jobs.forEach((job, versions) -> {
-            if ( ! job.type().isTest()) {
-                declaredTest(job.application(), systemTest).ifPresent(test -> {
-                    testJobs.merge(test,
-                                   versions.stream()
-                                           .filter(version -> allJobs.successOn(version).get(test).isEmpty())
-                                           .collect(toUnmodifiableList()),
+        for (JobType testType : List.of(systemTest, stagingTest)) {
+            jobs.forEach((job, versions) -> {
+                if (job.type().isDeployment()) {
+                    declaredTest(job.application(), testType).ifPresent(testJob -> {
+                        testJobs.merge(testJob,
+                                       versions.stream()
+                                               .filter(version -> allJobs.successOn(version).get(testJob).isEmpty())
+                                               .collect(toUnmodifiableList()),
+                                       DeploymentStatus::union);
+                    });
+                }
+            });
+            jobs.forEach((job, versionsList) -> {
+                if (job.type().isDeployment())
+                    testJobs.merge(new JobId(job.application(), testType),
+                                   versionsList.stream()
+                                               .filter(versions -> testJobs.keySet().stream()
+                                                                           .noneMatch(test ->    test.type() == testType
+                                                                                              && testJobs.get(test).contains(versions)))
+                                               .filter(versions -> allJobs.successOn(versions).type(testType).isEmpty())
+                                               .collect(toUnmodifiableList()),
                                    DeploymentStatus::union);
-                });
-                declaredTest(job.application(), stagingTest).ifPresent(test -> {
-                    testJobs.merge(test,
-                                   versions.stream()
-                                           .filter(version -> allJobs.successOn(version).get(test).isEmpty())
-                                           .collect(toUnmodifiableList()),
-                                   DeploymentStatus::union);
-                });
-            }
-        });
-        jobs.forEach((job, versions) -> {
-            if ( ! job.type().isTest() && ! testedOn(versions, systemTest, testJobs))
-                testJobs.merge(new JobId(job.application(), systemTest),
-                               versions.stream()
-                                       .filter(version -> allJobs.successOn(version).type(systemTest).isEmpty())
-                                       .collect(toUnmodifiableList()),
-                               DeploymentStatus::union);
-            if ( ! job.type().isTest() && ! testedOn(versions, stagingTest, testJobs))
-                testJobs.merge(new JobId(job.application(), stagingTest),
-                               versions.stream()
-                                       .filter(version -> allJobs.successOn(version).type(stagingTest).isEmpty())
-                                       .collect(toUnmodifiableList()),
-                               DeploymentStatus::union);
-        });
+            });
+        }
         jobs.putAll(testJobs);
     }
 
     private Optional<JobId> declaredTest(ApplicationId instanceId, JobType testJob) {
         JobId jobId = new JobId(instanceId, testJob);
         return jobSteps.get(jobId).isDeclared() ? Optional.of(jobId) : Optional.empty();
-    }
-
-    private boolean testedOn(List<Versions> versions, JobType testJob, Map<JobId, List<Versions>> testJobs) {
-        return testJobs.keySet().stream()
-                       .anyMatch(job -> job.type() == testJob && testJobs.get(job).containsAll(versions));
-    }
-
-    private  static <T> List<T> union(List<T> first, List<T> second) {
-        return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
     }
 
     public Optional<Deployment> deploymentFor(JobId job) {
@@ -215,7 +193,7 @@ public class DeploymentStatus {
 
             JobType jobType;
             StepStatus stepStatus;
-            if (step.concerns(test) || step.concerns(staging)) { // SKIP?
+            if (step.concerns(test) || step.concerns(staging)) {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), null)
                                  .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofTestDeployment((DeclaredZone) step, List.of(), this, instance, jobType, true);
@@ -236,7 +214,7 @@ public class DeploymentStatus {
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, instance, jobType);
                 previous = List.of(stepStatus);
             }
-            else return previous; // Empty container steps end up here.
+            else return previous; // Empty container steps end up here, and are simply ignored.
             allSteps.add(stepStatus);
             dependencies.put(new JobId(application.id().instance(instance), jobType), stepStatus);
             return previous;
@@ -266,16 +244,17 @@ public class DeploymentStatus {
         return List.copyOf(parallel);
     }
 
+    /**
+     * True if the job has already been triggered on the given versions, or if all test types (systemTest, stagingTest),
+     * restricted to the job's instance if declared in that instance, have successful runs on the given versions.
+     */
     public boolean isTested(JobId job, Versions versions) {
-        return      allJobs.triggeredOn(versions).get(job).isPresent()
-               || ! declaredTest(job.application(), systemTest).map(__ -> allJobs.instance(job.application().instance()))
-                                                               .orElse(allJobs)
-                                                               .type(systemTest)
-                                                               .successOn(versions).isEmpty()
-               && ! declaredTest(job.application(), stagingTest).map(__ -> allJobs.instance(job.application().instance()))
-                                                                .orElse(allJobs)
-                                                                .type(stagingTest)
-                                                                .successOn(versions).isEmpty();
+        return    allJobs.triggeredOn(versions).get(job).isPresent()
+               || Stream.of(systemTest, stagingTest)
+                        .noneMatch(testType -> declaredTest(job.application(), testType).map(__ -> allJobs.instance(job.application().instance()))
+                                                                                        .orElse(allJobs)
+                                                                                        .type(testType)
+                                                                                        .successOn(versions).isEmpty());
     }
 
 
@@ -304,7 +283,6 @@ public class DeploymentStatus {
      *
      * The completion criterion for each type of step is implemented in subclasses of this.
      */
-    // TODO jonmv: Make the step status expose _what it is_.
     public static abstract class StepStatus {
 
         private final StepType type;
@@ -535,6 +513,10 @@ public class DeploymentStatus {
 
     private static Stream<DeploymentSpec.Step> flatten(DeploymentSpec.Step step) {
         return step instanceof DeploymentSpec.Steps ? step.steps().stream().flatMap(DeploymentStatus::flatten) : Stream.of(step);
+    }
+
+    private static <T> List<T> union(List<T> first, List<T> second) {
+        return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
     }
 
 }
