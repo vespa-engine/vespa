@@ -264,10 +264,15 @@ public class DeploymentStatus {
         //             set it equal to application's when dependencies are completed.
         if (step instanceof DeploymentInstanceSpec) {
             instance = ((DeploymentInstanceSpec) step).name();
-            for (JobType test : List.of(systemTest, stagingTest))
-                dependencies.putIfAbsent(new JobId(application.id().instance(instance), test),
-                                         JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
-                                                                        this, instance, test, false));
+            for (JobType test : List.of(systemTest, stagingTest)) {
+                JobId job = new JobId(application.id().instance(instance), test);
+                if ( ! dependencies.containsKey(job)) {
+                    var stepStatus = JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
+                                                                    this, job.application().instance(), test, false);
+                    dependencies.put(job, stepStatus);
+                    allSteps.add(stepStatus);
+                }
+            }
         }
 
         if (step.isOrdered()) {
