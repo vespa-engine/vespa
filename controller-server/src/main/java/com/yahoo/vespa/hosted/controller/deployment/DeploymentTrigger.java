@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -245,7 +244,7 @@ public class DeploymentTrigger {
         applications().getApplication(id).map(controller.jobController()::deploymentStatus).ifPresent(status -> {
             status.jobsToRun().forEach((job, versionsList) -> {
                     for (Versions versions : versionsList)
-                        status.stepStatus().get(job).readyAt(status.application().change(), versions)
+                        status.jobSteps().get(job).readyAt(status.application().change(), versions)
                               .filter(readyAt -> ! clock.instant().isBefore(readyAt))
                               .ifPresent(readyAt -> {
                         if (   ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),

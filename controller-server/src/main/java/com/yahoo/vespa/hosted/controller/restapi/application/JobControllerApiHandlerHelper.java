@@ -89,7 +89,7 @@ class JobControllerApiHandlerHelper {
         Change change = application.change();
         Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(id.instance());
         Optional<DeploymentSteps> steps = spec.map(s -> new DeploymentSteps(s, controller::system));
-        List<JobType> jobs = deploymentStatus.stepStatus().keySet().stream()
+        List<JobType> jobs = deploymentStatus.jobSteps().keySet().stream()
                                              .filter(jobId -> id.equals(jobId.application()))
                                              .map(JobId::type)
                                              .collect(Collectors.toUnmodifiableList());
