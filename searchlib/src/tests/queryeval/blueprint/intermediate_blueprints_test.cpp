@@ -1,31 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("blueprint_test");
 
+#include "mysearch.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
-#include <vespa/searchlib/queryeval/searchable.h>
-
-#include "mysearch.h"
-
 #include <vespa/searchlib/queryeval/multisearch.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
-#include <vespa/searchlib/queryeval/andsearch.h>
-#include <vespa/searchlib/queryeval/orsearch.h>
-#include <vespa/searchlib/queryeval/nearsearch.h>
-#include <vespa/searchlib/queryeval/ranksearch.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/diskindex/zcpostingiterators.h>
 
-#include <algorithm>
+#include <vespa/log/log.h>
+LOG_SETUP("blueprint_test");
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -34,6 +25,17 @@ using namespace search::query;
 struct WeightOrder {
     bool operator()(const wand::Term &t1, const wand::Term &t2) const {
         return (t1.weight < t2.weight);
+    }
+};
+
+struct RememberExecuteInfo : public MyLeaf {
+    ExecuteInfo executeInfo;
+
+    using MyLeaf::MyLeaf;
+
+    void fetchPostings(const ExecuteInfo &execInfo) override {
+        LeafBlueprint::fetchPostings(execInfo);
+        executeInfo = execInfo;
     }
 };
 
@@ -84,6 +86,23 @@ TEST("test AndNot Blueprint") {
         EXPECT_EQUAL(false, b.inheritStrict(-1));
     }
     // createSearch tested by iterator unit test
+}
+
+TEST("test And propagates updated histestimate") {
+    AndBlueprint *bp = new AndBlueprint();
+    bp->setSourceId(2);
+    bp->setDocIdLimit(4000);
+    bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp->optimize_self();
+    bp->fetchPostings(ExecuteInfo::create(true));
+    EXPECT_EQUAL(3u, bp->childCnt());
+    for (uint32_t i = 0; i < bp->childCnt(); i++) {
+        const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
+        EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
+        EXPECT_EQUAL(1.0, child.executeInfo.hitRate());
+    }
 }
 
 TEST("test And Blueprint") {

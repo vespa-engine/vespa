@@ -10,6 +10,7 @@ namespace search::queryeval {
      */
 class ExecuteInfo {
 public:
+    ExecuteInfo() : ExecuteInfo(false, 1.0) { }
     ExecuteInfo(bool strict, float hitRate_in)
         : _hitRate(hitRate_in),
           _strict(strict)
