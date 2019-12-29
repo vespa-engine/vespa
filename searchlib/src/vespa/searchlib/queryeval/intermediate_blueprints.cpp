@@ -243,6 +243,11 @@ AndBlueprint::createIntermediateSearch(const MultiSearch::Children &subSearches,
     return SearchIterator::UP(search);
 }
 
+ExecuteInfo
+AndBlueprint::computeNext(const Blueprint & child, const ExecuteInfo &execInfo) const {
+    return ExecuteInfo(execInfo.isStrict(), (execInfo.hitRate()*child.getState().estimate().estHits)/get_docid_limit());
+}
+
 //-----------------------------------------------------------------------------
 
 Blueprint::HitEstimate

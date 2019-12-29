@@ -11,17 +11,17 @@ namespace search::queryeval {
 class ExecuteInfo {
 public:
     ExecuteInfo() : ExecuteInfo(false, 1.0) { }
-    ExecuteInfo(bool strict, float hitRate_in)
+    ExecuteInfo(bool strict, double hitRate_in)
         : _hitRate(hitRate_in),
           _strict(strict)
     { }
     bool isStrict() const { return _strict; }
-    float hitRate() const { return _hitRate; }
+    double hitRate() const { return _hitRate; }
     static const ExecuteInfo TRUE;
     static const ExecuteInfo FALSE;
     static ExecuteInfo create(bool strict);
 private:
-    float _hitRate;
+    double _hitRate;
     bool  _strict;
 };
 

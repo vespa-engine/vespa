@@ -317,6 +317,13 @@ IntermediateBlueprint::calculateState() const
     return state;
 }
 
+ExecuteInfo
+IntermediateBlueprint::computeNext(const Blueprint & child, const ExecuteInfo & execInfo) const
+{
+    (void) child;
+    return execInfo;
+}
+
 bool
 IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo &unpack, double match_limit) const
 {
@@ -414,9 +421,11 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
+    ExecuteInfo childInfo = ExecuteInfo(execInfo.isStrict() && inheritStrict(0), execInfo.hitRate());
     for (size_t i = 0; i < _children.size(); ++i) {
-        ExecuteInfo childInfo = ExecuteInfo(execInfo.isStrict() && inheritStrict(i), execInfo.hitRate());
-        _children[i]->fetchPostings(childInfo);
+        Blueprint & child = *_children[i];
+        child.fetchPostings(childInfo);
+        childInfo = computeNext(child, ExecuteInfo(execInfo.isStrict() && inheritStrict(i+1), childInfo.hitRate()));
     }
 }
 

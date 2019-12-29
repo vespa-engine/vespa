@@ -246,6 +246,7 @@ private:
     bool infer_allow_termwise_eval() const;
 
     size_t count_termwise_nodes(const UnpackInfo &unpack) const;
+    virtual ExecuteInfo computeNext(const Blueprint & child, const ExecuteInfo & execInfo) const;
 
 protected:
     // returns an empty collection if children have empty or
