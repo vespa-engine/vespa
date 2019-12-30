@@ -7741,6 +7741,7 @@
     "methods": [
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
+      "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
       "public void deconstruct()",
