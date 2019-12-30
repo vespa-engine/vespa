@@ -679,7 +679,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         boolean requireTests = ! requestObject.field("skipTests").asBool();
         String triggered = controller.applications().deploymentTrigger()
                                      .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
-                                     .stream().map(JobType::jobName).collect(joining(", "));
+                                     .stream().map(job -> job.type().jobName()).collect(joining(", "));
         return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
                                                        : "Triggered " + triggered + " for " + id);
     }

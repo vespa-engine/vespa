@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -138,9 +137,10 @@ public class DeploymentStatus {
 
     /** Returns the set of jobs that need to run for the given change to be considered complete. */
     public Map<JobId, List<Versions>> jobsToRun(Change change) {
-        Map<JobId, List<Versions>> jobs = new LinkedHashMap<>();
-        addProductionJobs(jobs, change);
-        addTests(jobs);
+        Map<JobId, Versions> productionJobs = productionJobs(change);
+        Map<JobId, List<Versions>> testJobs = testJobs(productionJobs);
+        Map<JobId, List<Versions>> jobs = new LinkedHashMap<>(testJobs);
+        productionJobs.forEach((job, versions) -> jobs.put(job, List.of(versions)));
         return ImmutableMap.copyOf(jobs);
     }
 
@@ -166,41 +166,37 @@ public class DeploymentStatus {
                                                                                            .successOn(versions).isEmpty());
     }
 
-    private void addProductionJobs(Map<JobId, List<Versions>> jobs, Change change) {
+    public Map<JobId, Versions> productionJobs(Change change) {
+        Map<JobId, Versions> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
             Versions versions = Versions.from(change, application, deploymentFor(job), systemVersion);
             if (job.type().isProduction() && step.completedAt(change, versions).isEmpty())
-                jobs.put(job, List.of(versions));
+                jobs.put(job, versions);
         });
+        return ImmutableMap.copyOf(jobs);
     }
 
-    private void addTests(Map<JobId, List<Versions>> jobs) {
-        Map<JobId, List<Versions>> testJobs = new HashMap<>();
+    public Map<JobId, List<Versions>> testJobs(Map<JobId, Versions> jobs) {
+        Map<JobId, List<Versions>> testJobs = new LinkedHashMap<>();
         for (JobType testType : List.of(systemTest, stagingTest)) {
             jobs.forEach((job, versions) -> {
                 if (job.type().isDeployment()) {
                     declaredTest(job.application(), testType).ifPresent(testJob -> {
-                        testJobs.merge(testJob,
-                                       versions.stream()
-                                               .filter(version -> allJobs.successOn(version).get(testJob).isEmpty())
-                                               .collect(toUnmodifiableList()),
-                                       DeploymentStatus::union);
+                        if (allJobs.successOn(versions).get(testJob).isEmpty())
+                            testJobs.merge(testJob, List.of(versions), DeploymentStatus::union);
                     });
                 }
             });
-            jobs.forEach((job, versionsList) -> {
-                if (job.type().isDeployment())
-                    testJobs.merge(new JobId(job.application(), testType),
-                                   versionsList.stream()
-                                               .filter(versions -> testJobs.keySet().stream()
-                                                                           .noneMatch(test ->    test.type() == testType
-                                                                                              && testJobs.get(test).contains(versions)))
-                                               .filter(versions -> allJobs.successOn(versions).type(testType).isEmpty())
-                                               .collect(toUnmodifiableList()),
-                                   DeploymentStatus::union);
+            jobs.forEach((job, versions) -> {
+                if (   job.type().isDeployment()
+                    && allJobs.successOn(versions).type(testType).isEmpty()
+                    && testJobs.keySet().stream()
+                               .noneMatch(test ->    test.type() == testType
+                                                  && testJobs.get(test).contains(versions)))
+                    testJobs.merge(new JobId(job.application(), testType), List.of(versions), DeploymentStatus::union);
             });
         }
-        jobs.putAll(testJobs);
+        return ImmutableMap.copyOf(testJobs);
     }
 
     private Optional<JobId> declaredTest(ApplicationId instanceId, JobType testJob) {

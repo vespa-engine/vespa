@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
@@ -151,20 +153,21 @@ public class DeploymentTrigger {
     }
 
     /** Force triggering of a job for given instance. */
-    public List<JobType> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
+    public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
         Versions versions = Versions.from(application.change(), application, deploymentFor(instance, jobType),
                                           controller.systemVersion());
         String reason = "Job triggered manually by " + user;
-        var jobStatus = jobs.deploymentStatus(application).instanceJobs(instance.name());
-        var jobList = JobList.from(jobStatus.values());
-        return (jobType.isProduction() && requireTests && ! isTested(jobList, versions)
-                // TODO jonmv: Expose adding test jobs from DeploymentStatus, and use this here.
-                ? testJobs(application.deploymentSpec(), application.change(), instance, jobList, versions, reason, clock.instant(), __ -> true).stream()
-                : Stream.of(deploymentJob(instance, versions, application.change(), jobType, jobStatus.get(jobType), reason, clock.instant())))
-                .peek(this::trigger)
-                .map(Job::jobType).collect(toList());
+        DeploymentStatus status = jobs.deploymentStatus(application);
+        JobId job = new JobId(instance.id(), jobType);
+        Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
+        if (jobs.isEmpty() || ! requireTests || ! jobType.isProduction())
+            jobs = Map.of(job, List.of(versions));
+        jobs.forEach((jobId, versionsList) -> {
+            trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobType, status.jobs().get(job).get(), reason, clock.instant()));
+        });
+        return List.copyOf(jobs.keySet());
     }
 
     /** Prevents jobs of the given type from starting, until the given time. */
@@ -341,12 +344,6 @@ public class DeploymentTrigger {
         return change.downgrades(deployment.version()) || change.downgrades(deployment.applicationVersion());
     }
 
-    public boolean isTested(JobList jobs, Versions versions) {
-        return    ! jobs.type(systemTest).successOn(versions).isEmpty()
-               && ! jobs.type(stagingTest).successOn(versions).isEmpty()
-               || ! jobs.production().triggeredOn(versions).isEmpty();
-    }
-
     // ---------- Change management o_O ----------
 
     private boolean acceptNewApplicationVersion(Application application) {
@@ -368,20 +365,6 @@ public class DeploymentTrigger {
     }
 
     // ---------- Version and job helpers ----------
-
-    /**
-     * Returns the list of test jobs that need to succeed on the given versions for it to be considered tested, filtered by the given condition.
-     */
-    private List<Job> testJobs(DeploymentSpec deploymentSpec, Change change, Instance instance, JobList jobList, Versions versions,
-                               String reason, Instant availableSince, Predicate<JobType> condition) {
-        List<Job> jobs = new ArrayList<>();
-        for (JobType jobType : new DeploymentSteps(deploymentSpec.requireInstance(instance.name()), controller::system).testJobs()) { // TODO jonmv: Allow cross-instance validation
-            if (   jobList.type(jobType).successOn(versions).isEmpty()
-                && condition.test(jobType))
-                jobs.add(deploymentJob(instance, versions, change, jobType, jobList.type(jobType).first().get(), reason, availableSince));
-        }
-        return jobs;
-    }
 
     private Job deploymentJob(Instance instance, Versions versions, Change change, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
         return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), change.application().isPresent());
