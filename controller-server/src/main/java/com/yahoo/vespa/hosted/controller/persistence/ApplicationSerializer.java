@@ -82,7 +82,6 @@ public class ApplicationSerializer {
     private static final String deployingField = "deployingField";
     private static final String projectIdField = "projectId";
     private static final String latestVersionField = "latestVersion";
-    private static final String builtInternallyField = "builtInternally";
     private static final String pinnedField = "pinned";
     private static final String outstandingChangeField = "outstandingChangeField";
     private static final String deploymentIssueField = "deploymentIssueId";
@@ -175,7 +174,6 @@ public class ApplicationSerializer {
         application.projectId().ifPresent(projectId -> root.setLong(projectIdField, projectId));
         application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
-        root.setBool(builtInternallyField, true); // TODO jonmv: remove when the change with this comment has deployed.
         toSlime(application.change(), root, deployingField);
         toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
@@ -196,6 +194,7 @@ public class ApplicationSerializer {
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
             assignedRotationsToSlime(instance.rotations(), instanceObject, assignedRotationsField);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
+            toSlime(instance.change(), instanceObject, deployingField);
         }
     }
 
@@ -372,11 +371,13 @@ public class ApplicationSerializer {
             Map<JobType, Instant> jobPauses = jobPausesFromSlime(object.field(deploymentJobsField));
             List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(deploymentSpec, instanceName, object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
+            Change change = changeFromSlime(object.field(deployingField));
             instances.add(new Instance(id.instance(instanceName),
                                        deployments,
                                        jobPauses,
                                        assignedRotations,
-                                       rotationStatus));
+                                       rotationStatus,
+                                       change));
         });
         return instances;
     }

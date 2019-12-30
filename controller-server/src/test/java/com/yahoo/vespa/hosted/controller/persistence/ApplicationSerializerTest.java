@@ -110,12 +110,14 @@ public class ApplicationSerializerTest {
                                                         deployments,
                                                         Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
                                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
-                                                        rotationStatus),
+                                                        rotationStatus,
+                                                        Change.of(new Version("6.1"))),
                                            new Instance(id3,
                                                         List.of(),
                                                         Map.of(),
                                                         List.of(),
-                                                        RotationStatus.EMPTY));
+                                                        RotationStatus.EMPTY,
+                                                        Change.empty()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
@@ -174,6 +176,9 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());
         assertEquals(original.require(id1.instance()).rotationStatus(), serialized.require(id1.instance()).rotationStatus());
+
+        assertEquals(original.require(id1.instance()).change(), serialized.require(id1.instance()).change());
+        assertEquals(original.require(id3.instance()).change(), serialized.require(id3.instance()).change());
 
         // Test cluster info
         assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());

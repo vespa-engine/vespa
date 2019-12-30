@@ -12,6 +12,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.ClusterInfo;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
@@ -46,21 +47,23 @@ public class Instance {
     private final List<AssignedRotation> rotations;
     private final RotationStatus rotationStatus;
     private final Map<JobType, Instant> jobPauses;
+    private final Change change;
 
     /** Creates an empty instance */
     public Instance(ApplicationId id) {
-        this(id, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY);
+        this(id, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY, Change.empty());
     }
 
     /** Creates an empty instance*/
     public Instance(ApplicationId id, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
-                    List<AssignedRotation> rotations, RotationStatus rotationStatus) {
+                    List<AssignedRotation> rotations, RotationStatus rotationStatus, Change change) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.deployments = ImmutableMap.copyOf(Objects.requireNonNull(deployments, "deployments cannot be null").stream()
                                                       .collect(Collectors.toMap(Deployment::zone, Function.identity())));
         this.jobPauses = Map.copyOf(Objects.requireNonNull(jobPauses, "deploymentJobs cannot be null"));
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
+        this.change = Objects.requireNonNull(change, "change cannot be null");
     }
 
     public Instance withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
@@ -82,7 +85,7 @@ public class Instance {
         else
             jobPauses.remove(jobType);
 
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public Instance withClusterInfo(ZoneId zone, Map<ClusterSpec.Id, ClusterInfo> clusterInfo) {
@@ -110,11 +113,15 @@ public class Instance {
     }
 
     public Instance with(List<AssignedRotation> assignedRotations) {
-        return new Instance(id, deployments.values(), jobPauses, assignedRotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, assignedRotations, rotationStatus, change);
     }
 
     public Instance with(RotationStatus rotationStatus) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
+    }
+
+    public Instance withChange(Change change) {
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     private Instance with(Deployment deployment) {
@@ -124,7 +131,7 @@ public class Instance {
     }
 
     private Instance with(Map<ZoneId, Deployment> deployments) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public ApplicationId id() { return id; }
@@ -176,6 +183,11 @@ public class Instance {
     /** Returns the status of the global rotation(s) assigned to this */
     public RotationStatus rotationStatus() {
         return rotationStatus;
+    }
+
+    /** Returns the currently deploying change for this instance. */
+    public Change change() {
+        return change;
     }
 
     @Override
