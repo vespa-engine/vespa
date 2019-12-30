@@ -700,6 +700,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("jobs.json"));
 
+        // GET deployment job overview for whole application.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", GET)
+                                      .userIdentity(USER_ID),
+                              new File("deployment-overview.json"));
+
         // GET system test job overview.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test", GET)
                                       .userIdentity(USER_ID),

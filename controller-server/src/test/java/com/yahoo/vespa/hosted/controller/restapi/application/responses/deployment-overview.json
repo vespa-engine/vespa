@@ -1,0 +1,276 @@
+{
+  "tenant": "tenant1",
+  "application": "application1",
+  "steps": [
+    {
+      "type": "test",
+      "dependencies": [],
+      "declared": false,
+      "instance": "instance1",
+      "jobName": "system-test",
+      "environment": "test",
+      "region": "test.us-east-1",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "readyAt": 0,
+          "running": true
+        }
+      ],
+      "lastRun": {
+        "start": "(ignore)",
+        "status": "running",
+        "versions": {
+          "targetPlatform": "6.1.0",
+          "targetApplication": {
+            "id": 4,
+            "commit": "commit1",
+            "source": "repository1/tree/commit1"
+          }
+        }
+      }
+    },
+    {
+      "type": "test",
+      "dependencies": [],
+      "declared": false,
+      "instance": "instance1",
+      "jobName": "staging-test",
+      "environment": "staging",
+      "region": "staging.us-east-3",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "readyAt": 0,
+          "running": true
+        }
+      ],
+      "lastRun": {
+        "start": "(ignore)",
+        "status": "running",
+        "versions": {
+          "targetPlatform": "6.1.0",
+          "targetApplication": {
+            "id": 4,
+            "commit": "commit1",
+            "source": "repository1/tree/commit1"
+          }
+        }
+      }
+    },
+    {
+      "type": "deployment",
+      "dependencies": [],
+      "declared": true,
+      "instance": "instance1",
+      "jobName": "production-us-central-1",
+      "environment": "prod",
+      "region": "prod.us-central-1",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "running": false
+        }
+      ],
+      "lastRun": {
+        "start": "(ignore)",
+        "end": "(ignore)",
+        "status": "success",
+        "versions": {
+          "targetPlatform": "6.1.0",
+          "targetApplication": {
+            "id": 1,
+            "commit": "commit1",
+            "source": "repository1/tree/commit1"
+          }
+        }
+      }
+    },
+    {
+      "type": "deployment",
+      "dependencies": [
+        2
+      ],
+      "declared": true,
+      "instance": "instance1",
+      "jobName": "production-us-west-1",
+      "environment": "prod",
+      "region": "prod.us-west-1",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "running": false
+        }
+      ],
+      "lastRun": {
+        "start": "(ignore)",
+        "status": "aborted",
+        "versions": {
+          "targetPlatform": "6.1.0",
+          "targetApplication": {
+            "id": 1,
+            "commit": "commit1",
+            "source": "repository1/tree/commit1"
+          }
+        }
+      }
+    },
+    {
+      "type": "deployment",
+      "dependencies": [
+        2
+      ],
+      "declared": true,
+      "instance": "instance1",
+      "jobName": "production-us-east-3",
+      "environment": "prod",
+      "region": "prod.us-east-3",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "running": false
+        }
+      ],
+      "lastRun": {
+        "start": "(ignore)",
+        "status": "aborted",
+        "versions": {
+          "targetPlatform": "6.1.0",
+          "targetApplication": {
+            "id": 1,
+            "commit": "commit1",
+            "source": "repository1/tree/commit1"
+          }
+        }
+      }
+    },
+    {
+      "type": "test",
+      "dependencies": [],
+      "declared": false,
+      "instance": "instance2",
+      "jobName": "system-test",
+      "environment": "test",
+      "region": "test.us-east-1",
+      "jobs": []
+    },
+    {
+      "type": "test",
+      "dependencies": [],
+      "declared": false,
+      "instance": "instance2",
+      "jobName": "staging-test",
+      "environment": "staging",
+      "region": "staging.us-east-3",
+      "jobs": []
+    },
+    {
+      "type": "deployment",
+      "dependencies": [
+        3,
+        4
+      ],
+      "declared": true,
+      "instance": "instance2",
+      "jobName": "production-us-central-1",
+      "environment": "prod",
+      "region": "prod.us-central-1",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "running": false
+        }
+      ]
+    },
+    {
+      "type": "deployment",
+      "dependencies": [
+        7
+      ],
+      "declared": true,
+      "instance": "instance2",
+      "jobName": "production-us-west-1",
+      "environment": "prod",
+      "region": "prod.us-west-1",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "running": false
+        }
+      ]
+    },
+    {
+      "type": "deployment",
+      "dependencies": [
+        7
+      ],
+      "declared": true,
+      "instance": "instance2",
+      "jobName": "production-us-east-3",
+      "environment": "prod",
+      "region": "prod.us-east-3",
+      "jobs": [
+        {
+          "versions": {
+            "targetPlatform": "6.1.0",
+            "targetApplication": {
+              "id": 4,
+              "commit": "commit1",
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "running": false
+        }
+      ]
+    }
+  ]
+}
