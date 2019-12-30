@@ -508,7 +508,7 @@ class JobControllerApiHandlerHelper {
     /**
      * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
      */
-    static HttpResponse overviewResponse(Controller controller, TenantAndApplicationId id, URI baseUriForJobs) {
+    static HttpResponse overviewResponse(Controller controller, TenantAndApplicationId id, URI baseUriForDeployments) {
         Application application = controller.applications().requireApplication(id);
         DeploymentStatus status = controller.jobController().deploymentStatus(application);
 
@@ -531,6 +531,10 @@ class JobControllerApiHandlerHelper {
 
             stepStatus.job().ifPresent(job -> {
                 stepObject.setString("jobName", job.type().jobName());
+                String baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
+                                                                     "/../instance/" + job.application().instance().value() +
+                                                                     "/job/" + job.type().jobName()).normalize().toString();
+                stepObject.setString("url", baseUriForJob);
                 stepObject.setString("environment", job.type().environment().value());
                 stepObject.setString("region", job.type().zone(controller.system()).value());
 
@@ -542,37 +546,47 @@ class JobControllerApiHandlerHelper {
                 }
 
                 JobStatus jobStatus = status.jobs().get(job).get();
-                Cursor jobsArray = stepObject.setArray("jobs");
+                Cursor toRunArray = stepObject.setArray("toRun");
                 for (Versions versions : jobsToRun.getOrDefault(job, List.of())) {
-                    Cursor jobObject = jobsArray.addObject();
-                    toSlime(jobObject.setObject("versions"), versions);
-                    stepStatus.readyAt(change, versions).ifPresent(ready -> jobObject.setLong("readyAt", ready.toEpochMilli()));
-                    stepStatus.readyAt(change, versions)
-                              .filter(controller.clock().instant()::isBefore)
-                              .ifPresent(until -> jobObject.setLong("delayedUntil", until.toEpochMilli()));
-                    stepStatus.pausedUntil().ifPresent(until -> jobObject.setLong("pausedUntil", until.toEpochMilli()));
-                    stepStatus.coolingDownUntil(versions).ifPresent(until -> jobObject.setLong("coolingDownUntil", until.toEpochMilli()));
-                    stepStatus.blockedUntil(change).ifPresent(until -> jobObject.setLong("blockedUntil", until.toEpochMilli()));
-
                     boolean running = jobStatus.lastTriggered()
                                                .map(run ->    jobStatus.isRunning()
                                                            && versions.targetsMatch(run.versions())
                                                            && (job.type().isProduction() || versions.sourcesMatchIfPresent(run.versions())))
                                                .orElse(false);
-                    jobObject.setBool("running", running);
+                    if (running)
+                        continue; // Run will be contained in the "runs" array.
+
+                    Cursor runObject = toRunArray.addObject();
+                    toSlime(runObject.setObject("versions"), versions);
+                    stepStatus.readyAt(change, versions).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
+                    stepStatus.readyAt(change, versions)
+                              .filter(controller.clock().instant()::isBefore)
+                              .ifPresent(until -> runObject.setLong("delayedUntil", until.toEpochMilli()));
+                    stepStatus.pausedUntil().ifPresent(until -> runObject.setLong("pausedUntil", until.toEpochMilli()));
+                    stepStatus.coolingDownUntil(versions).ifPresent(until -> runObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                    stepStatus.blockedUntil(change).ifPresent(until -> runObject.setLong("blockedUntil", until.toEpochMilli()));
                 }
 
-                jobStatus.lastTriggered().ifPresent(run -> {
-                    Cursor runObject = stepObject.setObject("lastRun");
+                Cursor runsArray = stepObject.setArray("runs");
+                jobStatus.runs().descendingMap().values().stream().limit(10).forEach(run -> {
+                    Cursor runObject = runsArray.addObject();
+                    runObject.setLong("id", run.id().number());
+                    runObject.setString("url", baseUriForJob + "/run/" + run.id());
                     runObject.setLong("start", run.start().toEpochMilli());
                     run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
                     runObject.setString("status", run.status().name());
                     toSlime(runObject.setObject("versions"), run.versions());
+                    Cursor runStepsArray = runObject.setArray("steps");
+                    run.steps().forEach((step, info) -> {
+                        Cursor runStepObject = runStepsArray.addObject();
+                        runStepObject.setString("name", step.name());
+                        runStepObject.setString("status", info.status().name());
+                    });
                 });
             });
         }
 
-        // TODO jonmv: Add latest platform and application status, and lists of runs for each of the jobs.
+        // TODO jonmv: Add latest platform and application status.
 
         return new SlimeJsonResponse(slime);
     }
