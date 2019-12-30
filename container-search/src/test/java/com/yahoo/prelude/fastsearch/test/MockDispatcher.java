@@ -34,7 +34,7 @@ class MockDispatcher extends Dispatcher {
         super(searchCluster, dispatchConfig, invokerFactory, new MockMetric());
     }
 
-    private static DispatchConfig toDispatchConfig(List<Node> nodes) {
+    static DispatchConfig toDispatchConfig(List<Node> nodes) {
         DispatchConfig.Builder dispatchConfigBuilder = new DispatchConfig.Builder();
         int key = 0;
         for (Node node : nodes) {
