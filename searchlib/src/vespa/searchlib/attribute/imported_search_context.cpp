@@ -236,7 +236,9 @@ void ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo
     _fetchPostingsDone = true;
     if (!_searchCacheLookup) {
         _target_search_context->fetchPostings(execInfo);
-        if (execInfo.isStrict() || _target_attribute.getIsFastSearch()) {
+        if (execInfo.isStrict()
+            || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))
+        {
             makeMergedPostings(_target_attribute.getIsFilter());
             considerAddSearchCacheEntry();
         }

@@ -20,6 +20,7 @@ public:
     static const ExecuteInfo TRUE;
     static const ExecuteInfo FALSE;
     static ExecuteInfo create(bool strict);
+    static ExecuteInfo create(bool strict, double HitRate);
 private:
     double _hitRate;
     bool  _strict;

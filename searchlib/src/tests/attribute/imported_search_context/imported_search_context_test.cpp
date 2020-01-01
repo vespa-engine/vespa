@@ -218,6 +218,24 @@ TEST_F("Strict iterator is marked as strict", Fixture) {
     EXPECT_TRUE(iter->is_strict() == Trinary::True); // No EXPECT_EQUALS printing of Trinary...
 }
 
+TEST_F("Non-strict blueprint with high hit rate is strict", Fixture) {
+    auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(queryeval::ExecuteInfo::create(false, 0.02));
+    TermFieldMatchData match;
+    auto iter = f.create_iterator(*ctx, match, false);
+
+    EXPECT_TRUE(iter->is_strict() == Trinary::True);
+}
+
+TEST_F("Non-strict blueprint with low hit rate is non-strict", Fixture) {
+    auto ctx = f.create_context(word_term("5678"));
+    ctx->fetchPostings(queryeval::ExecuteInfo::create(false, 0.01));
+    TermFieldMatchData match;
+    auto iter = f.create_iterator(*ctx, match, false);
+
+    EXPECT_TRUE(iter->is_strict() == Trinary::False);
+}
+
 struct SingleValueFixture : Fixture {
     SingleValueFixture() {
         reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(

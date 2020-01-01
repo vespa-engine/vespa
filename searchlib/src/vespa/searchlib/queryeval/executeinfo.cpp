@@ -9,7 +9,12 @@ const ExecuteInfo ExecuteInfo::FALSE(true, 1.0);
 
 ExecuteInfo
 ExecuteInfo::create(bool strict) {
-    return ExecuteInfo(strict, 1.0);
+    return create(strict, 1.0);
+}
+
+ExecuteInfo
+ExecuteInfo::create(bool strict, double hitRate) {
+    return ExecuteInfo(strict, hitRate);
 }
 
 }

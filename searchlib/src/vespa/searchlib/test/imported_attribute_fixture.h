@@ -288,7 +288,7 @@ struct ImportedAttributeFixture {
 
 ImportedAttributeFixture::ImportedAttributeFixture(bool use_search_cache_)
         : use_search_cache(use_search_cache_),
-          target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
+          target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32, FastSearchConfig::ExplicitlyEnabled)),
           target_document_meta_store(create_target_document_meta_store()),
           reference_attr(create_reference_attribute()),
           document_meta_store(create_document_meta_store()),
