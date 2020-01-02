@@ -4,6 +4,5 @@ vespa_add_library(searchcore_grouping STATIC
     groupingcontext.cpp
     groupingmanager.cpp
     groupingsession.cpp
-    mergingmanager.cpp
     DEPENDS
 )
