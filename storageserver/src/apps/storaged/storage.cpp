@@ -72,6 +72,7 @@ public:
     void handleSignals();
 
 private:
+    vespalib::duration getMaxShutDownTime() { return std::chrono::milliseconds(_maxShutdownTime); }
     bool Init() override;
     int Main() override;
     bool gotSignal() { return _lastSignal != 0; }
@@ -198,7 +199,7 @@ int StorageApp::Main()
     LOG(debug, "Server was attempted stopped, shutting down");
     // Create guard that will forcifully kill storage if destruction takes longer
     // time than given timeout.
-    vespalib::ShutdownGuard shutdownGuard(std::chrono::milliseconds(_maxShutdownTime));
+    vespalib::ShutdownGuard shutdownGuard(getMaxShutDownTime());
     LOG(debug, "Attempting proper shutdown");
     _process.reset();
     LOG(debug, "Completed controlled shutdown.");
