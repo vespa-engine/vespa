@@ -46,7 +46,6 @@ public class Application {
     private final Optional<ApplicationVersion> latestVersion;
     private final OptionalLong projectId;
     private final Change change;
-    private final Change outstandingChange;
     private final Optional<IssueId> deploymentIssueId;
     private final Optional<IssueId> ownershipIssueId;
     private final Optional<User> owner;
@@ -57,14 +56,14 @@ public class Application {
 
     /** Creates an empty application. */
     public Application(TenantAndApplicationId id, Instant now) {
-        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(), Change.empty(),
+        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(),
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), Optional.empty(), List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                       Change change, Change outstandingChange, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+                       Change change, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
                        Optional<ApplicationVersion> latestVersion, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
@@ -72,7 +71,6 @@ public class Application {
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
         this.validationOverrides = Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
         this.change = Objects.requireNonNull(change, "change cannot be null");
-        this.outstandingChange = Objects.requireNonNull(outstandingChange, "outstandingChange cannot be null");
         this.deploymentIssueId = Objects.requireNonNull(deploymentIssueId, "deploymentIssueId cannot be null");
         this.ownershipIssueId = Objects.requireNonNull(ownershipIssueId, "ownershipIssueId cannot be null");
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
@@ -123,12 +121,6 @@ public class Application {
      * This is empty when no change is currently under deployment.
      */
     public Change change() { return change; }
-
-    /**
-     * Returns whether this has an outstanding change (in the source repository), which
-     * has currently not started deploying (because a deployment is (or was) already in progress
-     */
-    public Change outstandingChange() { return outstandingChange; }
 
     /** Returns ID of any open deployment issue filed for this */
     public Optional<IssueId> deploymentIssueId() {

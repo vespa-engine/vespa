@@ -292,11 +292,11 @@ public class DeploymentTriggerTest {
         assertEquals(0, tester.jobs().active().size());
 
         app.submit(applicationPackage);
-        assertTrue(app.application().outstandingChange().hasTargets());
+        assertTrue(app.deploymentStatus().outstandingChange().hasTargets());
         app.runJob(systemTest).runJob(stagingTest);
 
         tester.outstandingChangeDeployer().run();
-        assertTrue(app.application().outstandingChange().hasTargets());
+        assertTrue(app.deploymentStatus().outstandingChange().hasTargets());
 
         tester.triggerJobs();
         assertEquals(emptyList(), tester.jobs().active());
@@ -304,7 +304,7 @@ public class DeploymentTriggerTest {
         tester.clock().advance(Duration.ofHours(2)); // ---------------- Exit block window: 20:30
 
         tester.outstandingChangeDeployer().run();
-        assertFalse(app.application().outstandingChange().hasTargets());
+        assertFalse(app.deploymentStatus().outstandingChange().hasTargets());
 
         tester.triggerJobs(); // Tests already run for the blocked production job.
         app.assertRunning(productionUsWest1);
@@ -337,7 +337,7 @@ public class DeploymentTriggerTest {
         tester.outstandingChangeDeployer().run();
         app.runJob(productionUsWest1);
         assertEquals(1, app.instanceJobs().get(productionUsWest1).lastSuccess().get().versions().targetApplication().buildNumber().getAsLong());
-        assertEquals(2, app.application().outstandingChange().application().get().buildNumber().getAsLong());
+        assertEquals(2, app.deploymentStatus().outstandingChange().application().get().buildNumber().getAsLong());
 
         tester.triggerJobs();
         // Platform upgrade keeps rolling, since it began before block window, and tests for the new revision have also started.
@@ -347,13 +347,13 @@ public class DeploymentTriggerTest {
 
         // Upgrade is done, and outstanding change rolls out when block window ends.
         assertEquals(Change.empty(), app.application().change());
-        assertTrue(app.application().outstandingChange().hasTargets());
+        assertTrue(app.deploymentStatus().outstandingChange().hasTargets());
 
         app.runJob(stagingTest).runJob(systemTest);
         tester.clock().advance(Duration.ofHours(1));
         tester.outstandingChangeDeployer().run();
         assertTrue(app.application().change().hasTargets());
-        assertFalse(app.application().outstandingChange().hasTargets());
+        assertFalse(app.deploymentStatus().outstandingChange().hasTargets());
 
         app.runJob(productionUsWest1).runJob(productionUsEast3);
 

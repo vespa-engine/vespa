@@ -78,7 +78,7 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
 
     /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
     public DeploymentStatusList withChanges() {
-        return matching(status -> status.application().change().hasTargets() || status.application().outstandingChange().hasTargets());
+        return matching(status -> status.application().change().hasTargets() || status.outstandingChange().hasTargets());
     }
 
     /** Returns the subset of applications which are currently deploying a change */

@@ -83,7 +83,6 @@ public class ApplicationSerializer {
     private static final String projectIdField = "projectId";
     private static final String latestVersionField = "latestVersion";
     private static final String pinnedField = "pinned";
-    private static final String outstandingChangeField = "outstandingChangeField";
     private static final String deploymentIssueField = "deploymentIssueId";
     private static final String ownershipIssueIdField = "ownershipIssueId";
     private static final String ownerField = "confirmedOwner";
@@ -175,7 +174,6 @@ public class ApplicationSerializer {
         application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
         toSlime(application.change(), root, deployingField);
-        toSlime(application.outstandingChange(), root, outstandingChangeField);
         application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
@@ -339,7 +337,6 @@ public class ApplicationSerializer {
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         Change deploying = changeFromSlime(root.field(deployingField));
-        Change outstandingChange = changeFromSlime(root.field(outstandingChangeField));
         Optional<IssueId> deploymentIssueId = Serializers.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
         Optional<IssueId> ownershipIssueId = Serializers.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         Optional<User> owner = Serializers.optionalString(root.field(ownerField)).map(User::from);
@@ -351,7 +348,7 @@ public class ApplicationSerializer {
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
 
-        return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying, outstandingChange,
+        return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
                                deployKeys, projectId, latestVersion, instances);
     }

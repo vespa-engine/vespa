@@ -81,14 +81,11 @@ public class DeploymentTrigger {
 
         applications().lockApplicationOrThrow(id, application -> {
             if (acceptNewApplicationVersion(application.get())) {
-                application = application.withChange(application.get().change().with(version))
-                                         .withOutstandingChange(Change.empty());
+                application = application.withChange(application.get().change().with(version));
                 for (Run run : jobs.active(id))
                     if ( ! run.id().type().environment().isManuallyDeployed())
                         jobs.abort(run.id());
             }
-            else
-                application = application.withOutstandingChange(Change.of(version));
 
             application = application.withProjectId(OptionalLong.of(projectId));
             application = application.withNewSubmission(version);
@@ -191,8 +188,6 @@ public class DeploymentTrigger {
     /** Overrides the given application's platform and application changes with any contained in the given change. */
     public void forceChange(TenantAndApplicationId applicationId, Change change) {
         applications().lockApplicationOrThrow(applicationId, application -> {
-            if (change.application().isPresent())
-                application = application.withOutstandingChange(Change.empty());
             applications().store(application.withChange(change.onTopOf(application.get().change())));
         });
     }
@@ -229,49 +224,45 @@ public class DeploymentTrigger {
 
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
-        return ApplicationList.from(applications().asList())
-                              .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
-                              .withChanges()
-                              .withDeploymentSpec()
-                              .idList().stream()
-                              .map(this::computeReadyJobs)
-                              .flatMap(Collection::stream)
-                              .collect(toList());
+        return jobs.deploymentStatuses(ApplicationList.from(applications().asList())
+                                                      .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
+                                                      .withDeploymentSpec())
+                   .withChanges()
+                   .asList().stream()
+                   .map(this::computeReadyJobs)
+                   .flatMap(Collection::stream)
+                   .collect(toList());
     }
 
     /**
      * Finds the next step to trigger for the given application, if any, and returns these as a list.
      */
-    private List<Job> computeReadyJobs(TenantAndApplicationId id) {
+    private List<Job> computeReadyJobs(DeploymentStatus status) {
         List<Job> jobs = new ArrayList<>();
-        applications().getApplication(id).map(controller.jobController()::deploymentStatus).ifPresent(status -> {
-            status.jobsToRun().forEach((job, versionsList) -> {
-                    for (Versions versions : versionsList)
-                        status.jobSteps().get(job).readyAt(status.application().change(), versions)
-                              .filter(readyAt -> ! clock.instant().isBefore(readyAt))
-                              .ifPresent(readyAt -> {
-                        if (   ! (   isSuspendedInAnotherZone(status.application().require(job.application().instance()),
-                                                              job.type().zone(controller.system()))
-                                  && job.type().environment() == Environment.prod)
-                            && ! status.jobs().get(job).get().isRunning())
-                            jobs.add(deploymentJob(status.application().require(job.application().instance()),
-                                                   versions,
-                                                   status.application().change(),
-                                                   job.type(),
-                                                   status.instanceJobs(job.application().instance()).get(job.type()),
-                                                   "unknown reason",
-                                                   readyAt));
-                });
+        status.jobsToRun().forEach((job, versionsList) -> {
+                for (Versions versions : versionsList)
+                    status.jobSteps().get(job).readyAt(status.application().change(), versions)
+                          .filter(readyAt -> ! clock.instant().isBefore(readyAt))
+                          .filter(__ -> ! status.jobs().get(job).get().isRunning())
+                          .filter(__ -> ! (job.type().isProduction() && isSuspendedInAnotherZone(status.application(), job)))
+                          .ifPresent(readyAt -> {
+                        jobs.add(deploymentJob(status.application().require(job.application().instance()),
+                                               versions,
+                                               status.application().change(),
+                                               job.type(),
+                                               status.instanceJobs(job.application().instance()).get(job.type()),
+                                               "unknown reason",
+                                               readyAt));
             });
         });
         return Collections.unmodifiableList(jobs);
     }
 
     /** Returns whether given job should be triggered */
-    private boolean isSuspendedInAnotherZone(Instance instance, ZoneId zone) {
-        for (Deployment deployment : instance.productionDeployments().values()) {
-            if (   ! deployment.zone().equals(zone)
-                &&   controller.applications().isSuspended(new DeploymentId(instance.id(), deployment.zone())))
+    private boolean isSuspendedInAnotherZone(Application application, JobId job) {
+        for (Deployment deployment : application.require(job.application().instance()).productionDeployments().values()) {
+            if (   ! deployment.zone().equals(job.type().zone(controller.system()))
+                &&   controller.applications().isSuspended(new DeploymentId(job.application(), deployment.zone())))
                 return true;
         }
         return false;

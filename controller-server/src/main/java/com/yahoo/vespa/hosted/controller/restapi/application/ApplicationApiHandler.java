@@ -699,6 +699,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                  "/job/",
                                                  request.getUri()).toString());
 
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.latestVersion().ifPresent(version -> toSlime(version, object.setObject("latestVersion")));
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
@@ -708,15 +709,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(object.setObject("deploying"), application.change());
 
         // Outstanding change
-        if ( ! application.outstandingChange().isEmpty())
-            toSlime(object.setObject("outstandingChange"), application.outstandingChange());
+        if ( ! status.outstandingChange().isEmpty())
+            toSlime(object.setObject("outstandingChange"), status.outstandingChange());
 
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
-        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         Cursor instancesArray = object.setArray("instances");
         for (Instance instance : application.instances().values())
             toSlime(instancesArray.addObject(), status, instance, application.deploymentSpec(), request);
@@ -855,8 +855,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         // Outstanding change
-        if ( ! application.outstandingChange().isEmpty()) {
-            toSlime(object.setObject("outstandingChange"), application.outstandingChange());
+        if ( ! status.outstandingChange().isEmpty()) {
+            toSlime(object.setObject("outstandingChange"), status.outstandingChange());
         }
 
         if (application.deploymentSpec().instance(instance.name()).isPresent()) {

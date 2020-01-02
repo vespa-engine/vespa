@@ -119,11 +119,11 @@ public class DeploymentStatus {
     /** Returns the set of jobs that need to run for the application's current change to be considered complete. */
     public Map<JobId, List<Versions>> jobsToRun() {
         Map<JobId, List<Versions>> jobs = jobsToRun(application().change());
-        if (application.outstandingChange().isEmpty())
+        if (outstandingChange().isEmpty())
             return jobs;
 
         // Add test jobs for any outstanding change.
-        var testJobs = jobsToRun(application.outstandingChange().onTopOf(application.change()))
+        var testJobs = jobsToRun(outstandingChange().onTopOf(application.change()))
                 .entrySet().stream()
                 .filter(entry -> ! entry.getKey().type().isProduction());
 
@@ -154,16 +154,27 @@ public class DeploymentStatus {
     }
 
     /**
+     * Returns the change of this application's latest submission, if this upgrades any of its production deployments,
+     * and has not yet started rolling out, due to some other change or a block window being present at the time of submission.
+     */
+    public Change outstandingChange() {
+        return application.latestVersion().map(Change::of)
+                          .filter(change -> application.change().application().map(change::upgrades).orElse(true))
+                          .filter(change -> ! jobsToRun(change).isEmpty())
+                          .orElse(Change.empty());
+    }
+
+    /**
      * True if the job has already been triggered on the given versions, or if all test types (systemTest, stagingTest),
      * restricted to the job's instance if declared in that instance, have successful runs on the given versions.
      */
     public boolean isTested(JobId job, Versions versions) {
         return    allJobs.triggeredOn(versions).get(job).isPresent()
-                  || Stream.of(systemTest, stagingTest)
-                           .noneMatch(testType -> declaredTest(job.application(), testType).map(__ -> allJobs.instance(job.application().instance()))
-                                                                                           .orElse(allJobs)
-                                                                                           .type(testType)
-                                                                                           .successOn(versions).isEmpty());
+               || Stream.of(systemTest, stagingTest)
+                        .noneMatch(testType -> declaredTest(job.application(), testType).map(__ -> allJobs.instance(job.application().instance()))
+                                                                                        .orElse(allJobs)
+                                                                                        .type(testType)
+                                                                                        .successOn(versions).isEmpty());
     }
 
     public Map<JobId, Versions> productionJobs(Change change) {
