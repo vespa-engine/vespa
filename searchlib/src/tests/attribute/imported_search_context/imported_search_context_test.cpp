@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/search_context_params.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/imported_search_context.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
@@ -19,31 +18,30 @@ using vespalib::Trinary;
 
 struct Fixture : ImportedAttributeFixture {
 
-    Fixture(bool useSearchCache = false) : ImportedAttributeFixture(useSearchCache) {}
+    Fixture(bool useSearchCache = false, FastSearchConfig fastSearch = FastSearchConfig::Default)
+        : ImportedAttributeFixture(useSearchCache, fastSearch)
+    {}
 
-    std::unique_ptr<ImportedSearchContext> create_context(std::unique_ptr<QueryTermSimple> term) {
+    std::unique_ptr<ImportedSearchContext>
+    create_context(std::unique_ptr<QueryTermSimple> term) {
         return std::make_unique<ImportedSearchContext>(std::move(term), SearchContextParams(), *imported_attr, *target_attr);
     }
 
-    std::unique_ptr<SearchIterator> create_iterator(
-            ImportedSearchContext& ctx,
-            TermFieldMatchData& match,
-            bool strict) {
+    std::unique_ptr<SearchIterator>
+    create_iterator(ImportedSearchContext& ctx,TermFieldMatchData& match,bool strict) {
         auto iter = ctx.createIterator(&match, strict);
         assert(iter.get() != nullptr);
         iter->initRange(DocId(1), reference_attr->getNumDocs());
         return iter;
     }
 
-    std::unique_ptr<SearchIterator> create_non_strict_iterator(
-            ImportedSearchContext& ctx,
-            TermFieldMatchData& match) {
+    std::unique_ptr<SearchIterator>
+    create_non_strict_iterator(ImportedSearchContext& ctx, TermFieldMatchData& match) {
         return create_iterator(ctx, match, false);
     }
 
-    std::unique_ptr<SearchIterator> create_strict_iterator(
-            ImportedSearchContext& ctx,
-            TermFieldMatchData& match) {
+    std::unique_ptr<SearchIterator>
+    create_strict_iterator(ImportedSearchContext& ctx,TermFieldMatchData& match) {
         return create_iterator(ctx, match, true);
     }
 
@@ -218,7 +216,7 @@ TEST_F("Strict iterator is marked as strict", Fixture) {
     EXPECT_TRUE(iter->is_strict() == Trinary::True); // No EXPECT_EQUALS printing of Trinary...
 }
 
-TEST_F("Non-strict blueprint with high hit rate is strict", Fixture) {
+TEST_F("Non-strict blueprint with high hit rate is strict", Fixture(false, FastSearchConfig::ExplicitlyEnabled)) {
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::create(false, 0.02));
     TermFieldMatchData match;
@@ -227,7 +225,7 @@ TEST_F("Non-strict blueprint with high hit rate is strict", Fixture) {
     EXPECT_TRUE(iter->is_strict() == Trinary::True);
 }
 
-TEST_F("Non-strict blueprint with low hit rate is non-strict", Fixture) {
+TEST_F("Non-strict blueprint with low hit rate is non-strict", Fixture(false, FastSearchConfig::ExplicitlyEnabled)) {
     auto ctx = f.create_context(word_term("5678"));
     ctx->fetchPostings(queryeval::ExecuteInfo::create(false, 0.01));
     TermFieldMatchData match;
