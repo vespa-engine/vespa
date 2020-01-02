@@ -152,17 +152,16 @@ public class DeploymentTrigger {
     /** Force triggering of a job for given instance. */
     public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
-        Instance instance = application.require(applicationId.instance());
-        Versions versions = Versions.from(application.change(), application, deploymentFor(instance, jobType),
-                                          controller.systemVersion());
-        String reason = "Job triggered manually by " + user;
         DeploymentStatus status = jobs.deploymentStatus(application);
+        Instance instance = application.require(applicationId.instance());
         JobId job = new JobId(instance.id(), jobType);
+        Versions versions = Versions.from(application.change(), application, status.deploymentFor(job), controller.systemVersion());
+        String reason = "Job triggered manually by " + user;
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
-        if (jobs.isEmpty() || ! requireTests || ! jobType.isProduction())
+        if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobType, status.jobs().get(job).get(), reason, clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
         });
         return List.copyOf(jobs.keySet());
     }

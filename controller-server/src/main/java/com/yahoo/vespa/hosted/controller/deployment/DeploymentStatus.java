@@ -191,7 +191,7 @@ public class DeploymentStatus {
         Map<JobId, List<Versions>> testJobs = new LinkedHashMap<>();
         for (JobType testType : List.of(systemTest, stagingTest)) {
             jobs.forEach((job, versions) -> {
-                if (job.type().isDeployment()) {
+                if (job.type().isProduction() && job.type().isDeployment()) {
                     declaredTest(job.application(), testType).ifPresent(testJob -> {
                         if (allJobs.successOn(versions).get(testJob).isEmpty())
                             testJobs.merge(testJob, List.of(versions), DeploymentStatus::union);
@@ -199,7 +199,7 @@ public class DeploymentStatus {
                 }
             });
             jobs.forEach((job, versions) -> {
-                if (   job.type().isDeployment()
+                if (   job.type().isProduction() && job.type().isDeployment()
                     && allJobs.successOn(versions).type(testType).isEmpty()
                     && testJobs.keySet().stream()
                                .noneMatch(test ->    test.type() == testType
