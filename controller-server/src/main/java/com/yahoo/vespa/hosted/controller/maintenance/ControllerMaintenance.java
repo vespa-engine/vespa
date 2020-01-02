@@ -68,7 +68,7 @@ public class ControllerMaintenance extends AbstractComponent {
         deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(controller, Duration.ofMinutes(5), jobControl);
         applicationOwnershipConfirmer = new ApplicationOwnershipConfirmer(controller, Duration.ofHours(12), jobControl, controller.serviceRegistry().ownershipIssues());
         systemUpgrader = new SystemUpgrader(controller, Duration.ofMinutes(1), jobControl);
-        jobRunner = new JobRunner(controller, Duration.ofSeconds(90), jobControl);
+        jobRunner = new JobRunner(controller, Duration.ofSeconds(90), jobControl, controller.clock());
         osUpgraders = osUpgraders(controller, jobControl);
         osVersionStatusUpdater = new OsVersionStatusUpdater(controller, maintenanceInterval, jobControl);
         contactInformationMaintainer = new ContactInformationMaintainer(controller, Duration.ofHours(12), jobControl);

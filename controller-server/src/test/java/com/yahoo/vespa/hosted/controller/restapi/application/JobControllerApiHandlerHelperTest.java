@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;

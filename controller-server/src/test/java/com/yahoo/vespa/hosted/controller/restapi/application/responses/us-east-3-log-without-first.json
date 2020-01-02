@@ -1,6 +1,4 @@
 {
-  "active": false,
-  "status": "deploymentFailed",
   "log": {
     "deployTester": [
       {
@@ -17,5 +15,36 @@
       }
     ]
   },
-  "lastId": 2
+  "active": false,
+  "lastId": 2,
+  "steps": {
+    "startTests": {
+      "status": "unfinished"
+    },
+    "deployTester": {
+      "startMillis": 1000,
+      "status": "failed"
+    },
+    "report": {
+      "startMillis": 1000,
+      "status": "succeeded"
+    },
+    "installTester": {
+      "status": "unfinished"
+    },
+    "deployReal": {
+      "status": "unfinished"
+    },
+    "installReal": {
+      "status": "unfinished"
+    },
+    "deactivateTester": {
+      "startMillis": 1000,
+      "status": "succeeded"
+    },
+    "endTests": {
+      "status": "unfinished"
+    }
+  },
+  "status": "deploymentFailed"
 }

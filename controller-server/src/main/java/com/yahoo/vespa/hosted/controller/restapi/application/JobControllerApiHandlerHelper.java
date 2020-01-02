@@ -451,6 +451,13 @@ class JobControllerApiHandlerHelper {
         }
         runLog.lastId().ifPresent(id -> detailsObject.setLong("lastId", id));
 
+        Cursor stepsObject = detailsObject.setObject("steps");
+        run.steps().forEach((step, info) -> {
+            Cursor stepCursor = stepsObject.setObject(step.name());
+            stepCursor.setString("status", info.status().name());
+            info.startTime().ifPresent(startTime -> stepCursor.setLong("startMillis", startTime.toEpochMilli()));
+        });
+
         return new SlimeJsonResponse(slime);
     }
 

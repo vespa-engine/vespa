@@ -399,6 +399,48 @@
       }
     ]
   },
-  "lastId": 75
+  "lastId": 75,
+  "steps": {
+    "deployTester": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "deployReal": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "installTester": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "installReal": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "startTests": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "endTests": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "copyVespaLogs": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "deactivateReal": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "deactivateTester": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    },
+    "report": {
+      "status": "succeeded",
+      "startMillis": "(ignore)"
+    }
+  }
 }
 

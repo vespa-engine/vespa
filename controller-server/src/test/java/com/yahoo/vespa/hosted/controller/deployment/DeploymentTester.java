@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.RoutingGeneratorMock;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
@@ -29,9 +28,7 @@ import com.yahoo.vespa.hosted.controller.maintenance.Upgrader;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.Collections;
 import java.util.logging.Logger;
@@ -90,7 +87,7 @@ public class DeploymentTester {
         cloud = (MockTesterCloud) tester.controller().jobController().cloud();
         var jobControl = new JobControl(tester.controller().curator());
         runner = new JobRunner(tester.controller(), Duration.ofDays(1), jobControl,
-                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()));
+                               JobRunnerTest.inThreadExecutor(), new InternalStepRunner(tester.controller()), tester.clock());
         upgrader = new Upgrader(tester.controller(), maintenanceInterval, jobControl, tester.curator());
         upgrader.setUpgradesPerMinute(1); // Anything that makes it at least one for any maintenance period is fine.
         readyJobsTrigger = new ReadyJobsTrigger(tester.controller(), maintenanceInterval, jobControl);

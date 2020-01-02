@@ -59,5 +59,18 @@
   },
   "active": true,
   "lastId": 9,
+  "steps": {
+    "deployReal": {
+      "startMillis": 0,
+      "status": "succeeded"
+    },
+    "installReal": {
+      "startMillis": 0,
+      "status": "unfinished"
+    },
+    "copyVespaLogs": {
+      "status": "unfinished"
+    }
+  },
   "status": "running"
 }
