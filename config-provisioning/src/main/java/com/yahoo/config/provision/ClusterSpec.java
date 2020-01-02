@@ -101,13 +101,25 @@ public final class ClusterSpec {
         // These enum values are stored in ZooKeeper - do not change
         admin,
         container,
-        content;
+        content,
+        combined;
+
+        /** Returns whether this runs a content cluster */
+        public boolean isContent() {
+            return this == content || this == combined;
+        }
+
+        /** Returns whether this runs a container cluster */
+        public boolean isContainer() {
+            return this == container || this == combined;
+        }
 
         public static Type from(String typeName) {
             switch (typeName) {
                 case "admin" : return admin;
                 case "container" : return container;
                 case "content" : return content;
+                case "combined" : return combined;
                 default: throw new IllegalArgumentException("Illegal cluster type '" + typeName + "'");
             }
         }
