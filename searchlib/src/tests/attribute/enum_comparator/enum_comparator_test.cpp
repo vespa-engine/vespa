@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("enum_comparator_test");
 
 #include <vespa/searchlib/attribute/enumcomparator.h>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/vespalib/btree/btreenode.hpp>
-#include <vespa/vespalib/btree/btreenodeallocator.hpp>
-#include <vespa/vespalib/btree/btreeroot.hpp>
+
+#include <vespa/log/log.h>
+LOG_SETUP("enum_comparator_test");
 
 namespace search {
 

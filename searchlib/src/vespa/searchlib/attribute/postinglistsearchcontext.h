@@ -6,11 +6,11 @@
 #include "postinglisttraits.h"
 #include "postingstore.h"
 #include "ipostinglistsearchcontext.h"
+#include "posting_list_merger.h"
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <regex>
-#include "posting_list_merger.h"
 
 namespace search::attribute {
 
@@ -337,8 +337,7 @@ getIterators(bool shouldApplyRangeLimit)
     bool isFloat =
         _toBeSearched.getBasicType() == BasicType::FLOAT ||
         _toBeSearched.getBasicType() == BasicType::DOUBLE;
-    bool isUnsigned = _toBeSearched.getInternalBasicType().isUnsigned();
-    search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat, isUnsigned);
+    search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat);
 
     auto compLow = _enumStore.make_comparator(capped.lower());
     auto compHigh = _enumStore.make_comparator(capped.upper());

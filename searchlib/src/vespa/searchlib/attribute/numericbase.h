@@ -65,7 +65,7 @@ protected:
 
         template <typename BaseType>
         search::Range<BaseType>
-        cappedRange(bool isFloat, bool isUnsigned)
+        cappedRange(bool isFloat)
         {
             BaseType low = static_cast<BaseType>(_low);
             BaseType high = static_cast<BaseType>(_high);
@@ -79,11 +79,7 @@ protected:
                 }
             } else {
                 if (_low <= (numMin)) {
-                    if (isUnsigned) {
-                        low = numMin;
-                    } else {
-                        low = numMin + 1; // we must avoid the undefined value
-                    }
+                    low = numMin + 1; // we must avoid the undefined value
                 }
             }
 
