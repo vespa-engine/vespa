@@ -34,7 +34,6 @@ class BasicType
 
     Type type() const { return _type; }
     const char * asString() const { return asString(_type); }
-    bool isUnsigned() const { return isUnsigned(_type); }
     size_t fixedSize() const { return fixedSize(_type); }
     static BasicType fromType(bool) { return BOOL; }
     static BasicType fromType(int8_t) { return INT8; }
@@ -48,7 +47,6 @@ class BasicType
 
   private:
     static const char * asString(Type t) { return _typeTable[t]._name; }
-    static bool isUnsigned(Type t) { return _typeTable[t]._name[0] == 'u'; }
     static size_t fixedSize(Type t) { return _typeTable[t]._fixedSize; }
     static Type asType(const vespalib::string & t);
 
