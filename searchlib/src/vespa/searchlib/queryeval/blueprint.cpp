@@ -317,11 +317,11 @@ IntermediateBlueprint::calculateState() const
     return state;
 }
 
-ExecuteInfo
-IntermediateBlueprint::computeNext(const Blueprint & child, const ExecuteInfo & execInfo) const
+double
+IntermediateBlueprint::computeNextHitRate(const Blueprint & child, double hitRate) const
 {
     (void) child;
-    return execInfo;
+    return hitRate;
 }
 
 bool
@@ -421,11 +421,11 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    ExecuteInfo childInfo = ExecuteInfo(execInfo.isStrict() && inheritStrict(0), execInfo.hitRate());
+    double nextHitRate = execInfo.hitRate();
     for (size_t i = 0; i < _children.size(); ++i) {
         Blueprint & child = *_children[i];
-        child.fetchPostings(childInfo);
-        childInfo = computeNext(child, ExecuteInfo(execInfo.isStrict() && inheritStrict(i+1), childInfo.hitRate()));
+        child.fetchPostings(ExecuteInfo::create(execInfo.isStrict() && inheritStrict(i), nextHitRate));
+        nextHitRate = computeNextHitRate(child, nextHitRate);
     }
 }
 

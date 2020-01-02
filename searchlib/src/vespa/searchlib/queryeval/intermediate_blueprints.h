@@ -39,7 +39,7 @@ public:
     void optimize_self() override;
 
 private:
-    ExecuteInfo computeNext(const Blueprint & child, const ExecuteInfo &execInfo) const override;
+    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
 
 public:
     Blueprint::UP get_replacement() override;

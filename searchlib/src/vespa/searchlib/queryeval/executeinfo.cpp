@@ -5,7 +5,7 @@
 namespace search::queryeval {
 
 const ExecuteInfo ExecuteInfo::TRUE(true, 1.0);
-const ExecuteInfo ExecuteInfo::FALSE(true, 1.0);
+const ExecuteInfo ExecuteInfo::FALSE(false, 1.0);
 
 ExecuteInfo
 ExecuteInfo::create(bool strict) {

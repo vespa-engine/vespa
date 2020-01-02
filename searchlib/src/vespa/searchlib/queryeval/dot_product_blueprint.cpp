@@ -67,7 +67,7 @@ DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
 void
 DotProductBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    ExecuteInfo childInfo(true, execInfo.hitRate());
+    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
     for (size_t i = 0; i < _terms.size(); ++i) {
         _terms[i]->fetchPostings(childInfo);
     }    
