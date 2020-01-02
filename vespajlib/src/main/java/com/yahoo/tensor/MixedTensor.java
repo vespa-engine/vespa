@@ -53,9 +53,11 @@ public class MixedTensor implements Tensor {
     @Override
     public double get(TensorAddress address) {
         long cellIndex = index.indexOf(address);
+        if (cellIndex < 0)
+            return Double.NaN;
         Cell cell = cells.get((int)cellIndex);
         if ( ! address.equals(cell.getKey()))
-            throw new IllegalStateException("Unable to find correct cell in " + this + " by direct index " + address);
+            return Double.NaN;
         return cell.getValue();
     }
 
@@ -69,10 +71,6 @@ public class MixedTensor implements Tensor {
     @Override
     public Iterator<Cell> cellIterator() {
         return cells.iterator();
-    }
-
-    private Iterable<Cell> cellIterable() {
-        return this::cellIterator;
     }
 
     /**
@@ -110,20 +108,6 @@ public class MixedTensor implements Tensor {
                     this.type.toString() + "', requested type: '" + type.toString() + "'");
         }
         return new MixedTensor(other, cells, index);
-    }
-
-    @Override
-    public Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> addCells) {
-        Tensor.Builder builder = Tensor.Builder.of(type());
-        for (Cell cell  : cellIterable()) {
-            TensorAddress address = cell.getKey();
-            double value = cell.getValue();
-            builder.cell(address, addCells.containsKey(address) ? op.applyAsDouble(value, addCells.get(address)) : value);
-        }
-        for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
-            builder.cell(addCell.getKey(), addCell.getValue());
-        }
-        return builder.build();
     }
 
     @Override
@@ -380,10 +364,11 @@ public class MixedTensor implements Tensor {
             this.denseType = createPartialType(type.valueType(), indexedDimensions);
         }
 
+        /** Returns the index of the given address, or -1 if it is not present */
         public long indexOf(TensorAddress address) {
             TensorAddress sparsePart = sparsePartialAddress(address);
             if ( ! sparseMap.containsKey(sparsePart))
-                throw new IllegalArgumentException("Address subspace " + sparsePart + " not found in " + this);
+                return -1;
             long base = sparseMap.get(sparsePart);
             long offset = denseOffset(address);
             return base + offset;

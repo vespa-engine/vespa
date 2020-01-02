@@ -314,12 +314,13 @@ public class TensorType {
 
         /**
          * Returns the dimension resulting from combining two dimensions having the same name but possibly different
-         * types. This works by degrading to the type making the fewer promises.
-         * [N] + [M] = [min(N, M)]
+         * types:
+         *
+         * [N] + [M] = [ minimal ? min(N, M) : max(N, M) ]
          * [N] + [] = []
          * [] + {} = {}
          */
-        Dimension combineWith(Optional<Dimension> other) {
+        public Dimension combineWith(Optional<Dimension> other, boolean minimal) {
             if ( ! other.isPresent()) return this;
             if (this instanceof MappedDimension) return this;
             if (other.get() instanceof MappedDimension) return other.get();
@@ -329,7 +330,10 @@ public class TensorType {
             // both are indexed bound
             IndexedBoundDimension thisIb = (IndexedBoundDimension)this;
             IndexedBoundDimension otherIb = (IndexedBoundDimension)other.get();
-            return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
+            if (minimal)
+                return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
+            else
+                return thisIb.size().get() < otherIb.size().get() ? otherIb : thisIb;
         }
 
         @Override
@@ -483,7 +487,7 @@ public class TensorType {
         /**
          * Creates a builder containing a combination of the dimensions of the given types
          *
-         * If the same dimension is indexed with different size restrictions the largest size will be used.
+         * If the same dimension is indexed with different size restrictions the smallest size will be used.
          * If it is size restricted in one argument but not the other it will not be size restricted.
          * If it is indexed in one and mapped in the other it will become mapped.
          *
@@ -516,7 +520,7 @@ public class TensorType {
             }
             else {
                 for (Dimension dimension : type.dimensions)
-                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name()))));
+                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), true));
             }
         }
 
@@ -528,7 +532,7 @@ public class TensorType {
                 if (containsMapped)
                     dimension = new MappedDimension(dimension.name());
                 Dimension existing = dimensions.get(dimension.name());
-                set(dimension.combineWith(Optional.ofNullable(existing)));
+                set(dimension.combineWith(Optional.ofNullable(existing), true));
             }
         }
 

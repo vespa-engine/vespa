@@ -48,7 +48,7 @@ public class TensorAddUpdate extends ValueUpdate<TensorFieldValue> {
 
         Tensor old = ((TensorFieldValue) oldValue).getTensor().get();
         Tensor update = tensor.getTensor().get();
-        Tensor result = old.merge((left, right) -> right, update.cells());  // note this might be slow for large mixed tensor updates
+        Tensor result = old.merge(update, (left, right) -> right);  // note this might be slow for large mixed tensor updates
         return new TensorFieldValue(result);
     }
 
