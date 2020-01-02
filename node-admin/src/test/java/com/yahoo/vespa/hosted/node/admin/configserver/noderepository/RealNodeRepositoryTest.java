@@ -110,7 +110,7 @@ public class RealNodeRepositoryTest {
         assertThat(node.state(), is(NodeState.active));
         assertThat(node.wantedRestartGeneration().get(), is(0L));
         assertThat(node.currentRestartGeneration().get(), is(0L));
-        assertEquals(1, node.vcpus(), delta);
+        assertEquals(1, node.vcpu(), delta);
         assertEquals(4, node.memoryGb(), delta);
         assertEquals(100, node.diskGb(), delta);
     }

@@ -33,7 +33,7 @@ public class DockerFailTest {
                     .flavor("docker")
                     .wantedRestartGeneration(1L)
                     .currentRestartGeneration(1L)
-                    .vcpus(1)
+                    .vcpu(1)
                     .memoryGb(1)
                     .diskGb(1)
                     .build());

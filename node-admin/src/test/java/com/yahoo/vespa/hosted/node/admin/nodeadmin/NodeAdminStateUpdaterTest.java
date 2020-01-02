@@ -263,7 +263,7 @@ public class NodeAdminStateUpdaterTest {
                         .state(NodeState.active)
                         .type(NodeType.tenant)
                         .flavor("docker")
-                        .vcpus(1)
+                        .vcpu(1)
                         .memoryGb(1)
                         .diskGb(1)
                         .build())
@@ -276,7 +276,7 @@ public class NodeAdminStateUpdaterTest {
                 .state(hostState)
                 .type(NodeType.tenant)
                 .flavor("default")
-                .vcpus(1)
+                .vcpu(1)
                 .memoryGb(1)
                 .diskGb(1)
                 .build());

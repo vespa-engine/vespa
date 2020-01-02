@@ -28,7 +28,7 @@ public class MultiDockerTest {
             tester.addChildNodeRepositoryNode(
                     new NodeSpec.Builder(nodeSpec2)
                             .state(NodeState.dirty)
-                            .vcpus(1)
+                            .vcpu(1)
                             .memoryGb(1)
                             .diskGb(1)
                             .build());
@@ -51,7 +51,7 @@ public class MultiDockerTest {
                 .flavor("docker")
                 .wantedRestartGeneration(1L)
                 .currentRestartGeneration(1L)
-                .vcpus(2)
+                .vcpu(2)
                 .memoryGb(4)
                 .diskGb(1)
                 .build();

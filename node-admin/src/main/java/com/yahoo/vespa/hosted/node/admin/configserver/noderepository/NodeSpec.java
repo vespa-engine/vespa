@@ -216,7 +216,7 @@ public class NodeSpec {
         return resources;
     }
 
-    public double vcpus() {
+    public double vcpu() {
         return resources.vcpu();
     }
 
@@ -518,8 +518,8 @@ public class NodeSpec {
             return this;
         }
 
-        public Builder vcpus(double vcpus) {
-            return resources(resources.withVcpu(vcpus));
+        public Builder vcpu(double vcpu) {
+            return resources(resources.withVcpu(vcpu));
         }
 
         public Builder memoryGb(double memoryGb) {
