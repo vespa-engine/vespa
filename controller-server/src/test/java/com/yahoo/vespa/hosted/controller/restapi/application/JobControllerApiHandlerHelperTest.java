@@ -52,6 +52,7 @@ public class JobControllerApiHandlerHelperTest {
     @Test
     public void testResponses() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .stagingTest()
                 .region("us-central-1")
                 .test("us-central-1")
                 .parallel("us-west-1", "us-east-3")
@@ -139,6 +140,8 @@ public class JobControllerApiHandlerHelperTest {
         userApp.runJob(devAwsUsEast2a, applicationPackage);
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
+
+        assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "deployment-overview-2.json");
     }
 
     @Test

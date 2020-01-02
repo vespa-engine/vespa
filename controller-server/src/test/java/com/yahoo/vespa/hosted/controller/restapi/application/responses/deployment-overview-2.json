@@ -1,0 +1,1174 @@
+{
+  "application": "application",
+  "steps": [
+    {
+      "declared": true,
+      "jobName": "staging-test",
+      "environment": "staging",
+      "instance": "default",
+      "toRun": [
+        {
+          "readyAt": 752000,
+          "coolingDownUntil": 752000,
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "delayedUntil": 752000
+        }
+      ],
+      "type": "test",
+      "region": "staging.us-east-3",
+      "runs": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 102000,
+          "end": 102000,
+          "id": 5,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installInitialReal",
+              "status": "failed"
+            },
+            {
+              "name": "deployReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "installTester",
+              "status": "unfinished"
+            },
+            {
+              "name": "installReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "startTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "endTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/staging-test/run/run 5 of staging-test for tenant.application",
+          "status": "installationFailed"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 2000,
+          "end": 2000,
+          "id": 4,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installInitialReal",
+              "status": "failed"
+            },
+            {
+              "name": "deployReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "installTester",
+              "status": "unfinished"
+            },
+            {
+              "name": "installReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "startTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "endTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/staging-test/run/run 4 of staging-test for tenant.application",
+          "status": "installationFailed"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 2000,
+          "end": 2000,
+          "id": 3,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/staging-test/run/run 3 of staging-test for tenant.application",
+          "status": "success"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 1000,
+          "end": 1000,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/staging-test/run/run 2 of staging-test for tenant.application",
+          "status": "success"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            },
+            "targetPlatform": "6.1.0"
+          },
+          "start": 0,
+          "end": 0,
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installInitialReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/staging-test/run/run 1 of staging-test for tenant.application",
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/instance/default/job/staging-test",
+      "dependencies": []
+    },
+    {
+      "declared": false,
+      "jobName": "system-test",
+      "environment": "test",
+      "instance": "default",
+      "toRun": [],
+      "type": "test",
+      "region": "test.us-east-1",
+      "runs": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 2000,
+          "end": 2000,
+          "id": 3,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/system-test/run/run 3 of system-test for tenant.application",
+          "status": "success"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 1000,
+          "end": 1000,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/system-test/run/run 2 of system-test for tenant.application",
+          "status": "success"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            },
+            "targetPlatform": "6.1.0"
+          },
+          "start": 0,
+          "end": 0,
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "copyVespaLogs",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/system-test/run/run 1 of system-test for tenant.application",
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/instance/default/job/system-test",
+      "dependencies": []
+    },
+    {
+      "declared": true,
+      "jobName": "production-us-central-1",
+      "environment": "prod",
+      "instance": "default",
+      "currentPlatform": "6.1.0",
+      "toRun": [],
+      "currentApplication": {
+        "commit": "commit1",
+        "id": 3,
+        "source": "repository1/tree/commit1"
+      },
+      "type": "deployment",
+      "region": "prod.us-central-1",
+      "runs": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 2000,
+          "id": 3,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "unfinished"
+            },
+            {
+              "name": "installReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "startTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "endTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "unfinished"
+            },
+            {
+              "name": "report",
+              "status": "unfinished"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 3 of production-us-central-1 for tenant.application",
+          "status": "running"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 1000,
+          "end": 1000,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 2 of production-us-central-1 for tenant.application",
+          "status": "success"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            },
+            "targetPlatform": "6.1.0"
+          },
+          "start": 0,
+          "end": 0,
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-central-1/run/run 1 of production-us-central-1 for tenant.application",
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/instance/default/job/production-us-central-1",
+      "dependencies": [
+        0
+      ]
+    },
+    {
+      "declared": true,
+      "jobName": "test-us-central-1",
+      "environment": "prod",
+      "instance": "default",
+      "toRun": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            }
+          }
+        }
+      ],
+      "type": "test",
+      "region": "prod.us-central-1",
+      "runs": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 1000,
+          "end": 1000,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/test-us-central-1/run/run 2 of test-us-central-1 for tenant.application",
+          "status": "success"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 0,
+          "end": 0,
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/test-us-central-1/run/run 1 of test-us-central-1 for tenant.application",
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/instance/default/job/test-us-central-1",
+      "dependencies": [
+        2
+      ]
+    },
+    {
+      "declared": true,
+      "jobName": "production-us-west-1",
+      "environment": "prod",
+      "instance": "default",
+      "currentPlatform": "6.1.0",
+      "toRun": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            }
+          }
+        }
+      ],
+      "currentApplication": {
+        "commit": "commit1",
+        "id": 2,
+        "source": "repository1/tree/commit1"
+      },
+      "type": "deployment",
+      "region": "prod.us-west-1",
+      "runs": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 1000,
+          "end": 1000,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "failed"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-west-1/run/run 2 of production-us-west-1 for tenant.application",
+          "status": "testFailure"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            },
+            "targetPlatform": "6.1.0"
+          },
+          "start": 0,
+          "end": 0,
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-west-1/run/run 1 of production-us-west-1 for tenant.application",
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/instance/default/job/production-us-west-1",
+      "dependencies": [
+        3
+      ]
+    },
+    {
+      "declared": true,
+      "jobName": "production-us-east-3",
+      "environment": "prod",
+      "instance": "default",
+      "currentPlatform": "6.1.0",
+      "toRun": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 3,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          }
+        }
+      ],
+      "currentApplication": {
+        "commit": "commit1",
+        "id": 1,
+        "source": "repository1/tree/commit1"
+      },
+      "type": "deployment",
+      "region": "prod.us-east-3",
+      "runs": [
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 2,
+              "source": "repository1/tree/commit1"
+            },
+            "sourcePlatform": "6.1.0",
+            "targetPlatform": "6.1.0",
+            "sourceApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            }
+          },
+          "start": 1000,
+          "end": 1000,
+          "id": 2,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "failed"
+            },
+            {
+              "name": "deployReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "installTester",
+              "status": "unfinished"
+            },
+            {
+              "name": "installReal",
+              "status": "unfinished"
+            },
+            {
+              "name": "startTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "endTests",
+              "status": "unfinished"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-east-3/run/run 2 of production-us-east-3 for tenant.application",
+          "status": "deploymentFailed"
+        },
+        {
+          "versions": {
+            "targetApplication": {
+              "commit": "commit1",
+              "id": 1,
+              "source": "repository1/tree/commit1"
+            },
+            "targetPlatform": "6.1.0"
+          },
+          "start": 0,
+          "end": 0,
+          "id": 1,
+          "steps": [
+            {
+              "name": "deployTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "deployReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "installTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "installReal",
+              "status": "succeeded"
+            },
+            {
+              "name": "startTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "endTests",
+              "status": "succeeded"
+            },
+            {
+              "name": "deactivateTester",
+              "status": "succeeded"
+            },
+            {
+              "name": "report",
+              "status": "succeeded"
+            }
+          ],
+          "url": "https://some.url:43/instance/default/job/production-us-east-3/run/run 1 of production-us-east-3 for tenant.application",
+          "status": "success"
+        }
+      ],
+      "url": "https://some.url:43/instance/default/job/production-us-east-3",
+      "dependencies": [
+        3
+      ]
+    }
+  ],
+  "tenant": "tenant"
+}
+
