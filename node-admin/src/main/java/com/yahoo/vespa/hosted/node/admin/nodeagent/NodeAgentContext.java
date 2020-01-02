@@ -48,7 +48,7 @@ public interface NodeAgentContext extends TaskContext {
      *
      * @return node vcpu without the cpu speedup factor.
      */
-    double normalizedVcpu();
+    double unscaledVcpu();
 
     /**
      * This method is the inverse of {@link #pathInNodeFromPathOnHost(Path)}}
