@@ -233,7 +233,7 @@ namespace {
 
 }
 
-void PredicateBlueprint::fetchPostings(bool) {
+void PredicateBlueprint::fetchPostings(const ExecuteInfo &) {
     const auto &interval_index = _index.getIntervalIndex();
     const auto &bounds_index = _index.getBoundsIndex();
     lookupPostingLists(_interval_dict_entries, _interval_vector_iterators,

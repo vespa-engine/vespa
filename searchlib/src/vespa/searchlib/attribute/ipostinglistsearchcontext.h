@@ -4,7 +4,10 @@
 
 #include <memory>
 
-namespace search::queryeval { class SearchIterator; }
+namespace search::queryeval {
+    class SearchIterator;
+    class ExecuteInfo;
+}
 namespace search::fef { class TermFieldMatchData; }
 
 namespace search::attribute {
@@ -25,7 +28,7 @@ protected:
     virtual ~IPostingListSearchContext() { }
 
 public:
-    virtual void fetchPostings(bool strict) = 0;
+    virtual void fetchPostings(const queryeval::ExecuteInfo & execInfo) = 0;
     virtual std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) = 0;
     virtual unsigned int approximateHits() const = 0;
 };

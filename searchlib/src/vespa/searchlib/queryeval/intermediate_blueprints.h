@@ -37,6 +37,11 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+
+private:
+    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
+
+public:
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;

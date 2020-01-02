@@ -56,7 +56,7 @@ public:
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData* matchData, bool strict) override;
     unsigned int approximateHits() const override;
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     bool valid() const override;
     Int64Range getAsIntegerTerm() const override;
     const QueryTermUCS4 * queryTerm() const override;

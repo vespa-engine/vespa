@@ -526,9 +526,9 @@ createFilterIterator(fef::TermFieldMatchData *matchData, bool strict)
 
 
 void
-AttributeVector::SearchContext::fetchPostings(bool strict) {
+AttributeVector::SearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
     if (_plsc != nullptr)
-        _plsc->fetchPostings(strict);
+        _plsc->fetchPostings(execInfo);
 }
 
 

@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_test
     SOURCES
     document_weight_attribute_helper.cpp
+    imported_attribute_fixture.cpp
     initrange.cpp
     make_attribute_map_lookup_node.cpp
     mock_attribute_context.cpp

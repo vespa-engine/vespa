@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/multisearch.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
-#include <cassert>
 
 namespace search::queryeval {
 
@@ -93,7 +94,7 @@ public:
         }
     }
 
-    virtual void visitMembers(vespalib::ObjectVisitor &visitor) const override {
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override {
         visit(visitor, "_tag",      _tag);
         visit(visitor, "_isLeaf",   _isLeaf);
         visit(visitor, "_isStrict", _isStrict);
@@ -101,7 +102,7 @@ public:
         visit(visitor, "_handles",  _handles);
     }
 
-    virtual ~MySearch() {}
+    ~MySearch() override {}
 };
 
 //-----------------------------------------------------------------------------
@@ -111,7 +112,7 @@ class MyLeaf : public SimpleLeafBlueprint
     typedef search::fef::TermFieldMatchDataArray TFMDA;
 
 public:
-    virtual SearchIterator::UP
+    SearchIterator::UP
     createLeafSearch(const TFMDA &tfmda, bool strict) const override
     {
         return SearchIterator::UP(new MySearch("leaf", tfmda, strict));
@@ -155,7 +156,11 @@ public:
         return *this;
     }
     MyLeaf *create() const {
-        MyLeaf *leaf = new MyLeaf(_fields);
+        return create<MyLeaf>();
+    }
+    template<typename Leaf>
+    Leaf *create() const {
+        Leaf *leaf = new Leaf(_fields);
         leaf->estimate(_estimate.estHits, _estimate.empty);
         if (_cost_tier > 0) {
             leaf->cost_tier(_cost_tier);

@@ -9,11 +9,11 @@
 #include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
-#include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/parsequery/parse.h>
@@ -29,6 +29,7 @@
 #include <cmath>
 
 using search::AttributeFactory;
+using search::AttributeVector;
 using search::AttributeMemoryFileBufferWriter;
 using search::BufferWriter;
 using search::FloatingPointAttribute;
@@ -630,7 +631,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
 
     TermFieldMatchData md;
     SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(v));
-    sc->fetchPostings(true);
+    sc->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
     sb->initFullRange();
     sb->seek(1u);

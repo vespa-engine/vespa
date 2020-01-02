@@ -2,9 +2,9 @@
 
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/memoryindex/field_index.h>
-#include <vespa/searchlib/memoryindex/posting_iterator.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>

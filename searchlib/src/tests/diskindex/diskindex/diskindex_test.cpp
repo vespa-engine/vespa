@@ -269,13 +269,13 @@ Test::requireThatBlueprintCanCreateSearchIterators()
     SearchIterator::UP s;
     { // bit vector due to isFilter
         b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, true), makeTerm("w2"));
-        b->fetchPostings(true);
+        b->fetchPostings(queryeval::ExecuteInfo::TRUE);
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
     }
     { // bit vector due to no ranking needed
         b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, false), makeTerm("w2"));
-        b->fetchPostings(true);
+        b->fetchPostings(queryeval::ExecuteInfo::TRUE);
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
         EXPECT_FALSE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
         TermFieldMatchData md2;
@@ -289,7 +289,7 @@ Test::requireThatBlueprintCanCreateSearchIterators()
     { // fake bit vector
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0, true), makeTerm("w2"));
 //        std::cerr << "BP = " << typeid(*b).name() << std::endl;
-        b->fetchPostings(true);
+        b->fetchPostings(queryeval::ExecuteInfo::TRUE);
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
 //        std::cerr << "SI = " << typeid(*s).name() << std::endl;
         EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != NULL) ||
@@ -297,18 +297,15 @@ Test::requireThatBlueprintCanCreateSearchIterators()
     }
     { // posting list iterator
         b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
-        b->fetchPostings(true);
+        b->fetchPostings(queryeval::ExecuteInfo::TRUE);
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda, true);
         ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != NULL));
     }
 }
 
-Test::Test() :
-    TestDiskIndex()
-{
-}
+Test::Test() = default;
 
-Test::~Test() {}
+Test::~Test() = default;
 
 int
 Test::Main()
