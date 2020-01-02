@@ -40,11 +40,15 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final Path pathToVespaHome;
     private final String vespaUser;
     private final String vespaUserOnHost;
+    private final double cpuSpeedup;
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 DockerNetworking dockerNetworking, ZoneApi zone,
                                 Path pathToContainerStorage, Path pathToVespaHome,
-                                String vespaUser, String vespaUserOnHost) {
+                                String vespaUser, String vespaUserOnHost, double cpuSpeedup) {
+        if (cpuSpeedup <= 0)
+            throw new IllegalArgumentException("cpuSpeedUp must be positive, was: " + cpuSpeedup);
+
         this.node = Objects.requireNonNull(node);
         this.acl = Objects.requireNonNull(acl);
         this.containerName = ContainerName.fromHostname(node.hostname());
@@ -56,6 +60,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.logPrefix = containerName.asString() + ": ";
         this.vespaUser = vespaUser;
         this.vespaUserOnHost = vespaUserOnHost;
+        this.cpuSpeedup = cpuSpeedup;
     }
 
     @Override
@@ -96,6 +101,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public String vespaUserOnHost() {
         return vespaUserOnHost;
+    }
+
+    @Override
+    public double normalizedVcpu() {
+        return node.vcpu() / cpuSpeedup;
     }
 
     @Override
@@ -186,6 +196,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private String vespaUser;
         private String vespaUserOnHost;
         private FileSystem fileSystem = FileSystems.getDefault();
+        private double cpuSpeedUp = 1;
 
         public Builder(NodeSpec node) {
             this.nodeSpecBuilder = new NodeSpec.Builder(node);
@@ -258,6 +269,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder cpuSpeedUp(double cpuSpeedUp) {
+            this.cpuSpeedUp = cpuSpeedUp;
+            return this;
+        }
+
         public NodeAgentContextImpl build() {
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
@@ -288,7 +304,8 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(pathToContainerStorage).orElseGet(() -> fileSystem.getPath("/home/docker")),
                     Optional.ofNullable(pathToVespaHome).orElseGet(() -> fileSystem.getPath("/opt/vespa")),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
-                    Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"));
+                    Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"),
+                    cpuSpeedUp);
         }
     }
 }

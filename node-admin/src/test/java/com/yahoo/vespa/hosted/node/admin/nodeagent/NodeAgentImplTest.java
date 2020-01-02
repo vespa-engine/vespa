@@ -239,7 +239,7 @@ public class NodeAgentImplTest {
         nodeAgent.doConverge(firstContext);
         NodeAgentContext secondContext = createContext(specBuilder.diskGb(200).build());
         nodeAgent.doConverge(secondContext);
-        NodeAgentContext thirdContext = createContext(specBuilder.vcpu(4).build());
+        NodeAgentContext thirdContext = new NodeAgentContextImpl.Builder(specBuilder.vcpu(5).build()).cpuSpeedUp(1.25).build();
         nodeAgent.doConverge(thirdContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
         mockGetContainer(dockerImage, resourcesAfterThird, true);

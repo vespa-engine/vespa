@@ -43,6 +43,14 @@ public interface NodeAgentContext extends TaskContext {
     String vespaUserOnHost();
 
     /**
+     * The vcpu value in NodeSpec is multiplied by the speedup factor per cpu core compared to a historical baseline
+     * for a particular cpu generation of the host (see flavors.def cpuSpeedup).
+     *
+     * @return node vcpu without the cpu speedup factor.
+     */
+    double normalizedVcpu();
+
+    /**
      * This method is the inverse of {@link #pathInNodeFromPathOnHost(Path)}}
      *
      * @param pathInNode absolute path in the container

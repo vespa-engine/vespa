@@ -353,9 +353,9 @@ public class NodeAgentImpl implements NodeAgent {
                         .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
                         .orElse(containerCpuCap)
                         .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())
-                        .value() * context.node().vcpu();
+                        .value() * context.normalizedVcpu();
 
-        return ContainerResources.from(cpuCap, context.node().vcpu(), context.node().memoryGb());
+        return ContainerResources.from(cpuCap, context.normalizedVcpu(), context.node().memoryGb());
     }
 
     private boolean noCpuCap(ZoneApi zone) {
