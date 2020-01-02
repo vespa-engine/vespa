@@ -6,7 +6,6 @@
 #include <vespa/document/base/fieldpath.h>
 
 namespace document {
-    class BucketDistribution;
     class BucketIdFactory;
     class DocumentId;
     class BucketId;
