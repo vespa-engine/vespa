@@ -5,7 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search::attribute { class IAttributeVector; }
-namespace vespalib::eval { class Value; }
+namespace vespalib::eval { struct Value; }
 namespace vespalib { class Doom; }
 
 namespace search::queryeval {
