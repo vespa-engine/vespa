@@ -90,20 +90,24 @@ public class DeploymentStatus {
         this.allSteps = List.copyOf(allSteps);
     }
 
+    /** The application this deployment status concerns. */
     public Application application() {
         return application;
     }
 
+    /** A filterable list of the status of all jobs for this application. */
     public JobList jobs() {
         return allJobs;
     }
 
+    /** Whether any jobs of this application are failing with other errors than lack of capacity in a test zone. */
     public boolean hasFailures() {
         return ! allJobs.failing()
                         .not().withStatus(RunStatus.outOfCapacity)
                         .isEmpty();
     }
 
+    /** All job statuses, by job type, for the given instance. */
     public Map<JobType, JobStatus> instanceJobs(InstanceName instance) {
         return allJobs.asList().stream()
                       .filter(job -> job.id().application().equals(application.id().instance(instance)))
@@ -111,13 +115,17 @@ public class DeploymentStatus {
                                                          job -> job));
     }
 
+    /** Filterable job status lists for each instance of this application. */
     public Map<ApplicationId, JobList> instanceJobs() {
         return allJobs.asList().stream()
                       .collect(groupingBy(job -> job.id().application(),
                                           collectingAndThen(toUnmodifiableList(), JobList::from)));
     }
 
-    /** Returns the set of jobs that need to run for the application's current change to be considered complete. */
+    /**
+     * The set of jobs that need to run for the application's current change to be considered complete,
+     * and any test jobs for any oustanding change, which will likely be needed to lated deploy this change.
+     */
     public Map<JobId, List<Versions>> jobsToRun() {
         Map<JobId, List<Versions>> jobs = jobsToRun(application().change());
         if (outstandingChange().isEmpty())
@@ -136,7 +144,7 @@ public class DeploymentStatus {
                                                 ImmutableMap::copyOf));
     }
 
-    /** Returns the set of jobs that need to run for the given change to be considered complete. */
+    /** The set of jobs that need to run for the given change to be considered complete. */
     public Map<JobId, List<Versions>> jobsToRun(Change change) {
         Map<JobId, Versions> productionJobs = productionJobs(change);
         Map<JobId, List<Versions>> testJobs = testJobs(productionJobs);
@@ -145,8 +153,10 @@ public class DeploymentStatus {
         return ImmutableMap.copyOf(jobs);
     }
 
+    /** The step status for all steps in the deployment spec of this, which are jobs, in the same order as in the deployment spec. */
     public Map<JobId, StepStatus> jobSteps() { return jobSteps; }
 
+    /** The step status for all steps in the deployment spec of this, in the same order as in the deployment spec. */
     public List<StepStatus> allSteps() { return allSteps; }
 
     public Optional<Deployment> deploymentFor(JobId job) {
@@ -155,7 +165,7 @@ public class DeploymentStatus {
     }
 
     /**
-     * Returns the change of this application's latest submission, if this upgrades any of its production deployments,
+     * The change of this application's latest submission, if this upgrades any of its production deployments,
      * and has not yet started rolling out, due to some other change or a block window being present at the time of submission.
      */
     public Change outstandingChange() {
@@ -178,6 +188,7 @@ public class DeploymentStatus {
                                                                                         .successOn(versions).isEmpty());
     }
 
+    /** The production jobs that need to run to complete roll-out of the given change to production. */
     public Map<JobId, Versions> productionJobs(Change change) {
         Map<JobId, Versions> jobs = new LinkedHashMap<>();
         jobSteps.forEach((job, step) -> {
@@ -188,11 +199,12 @@ public class DeploymentStatus {
         return ImmutableMap.copyOf(jobs);
     }
 
+    /** The test jobs that need to run prior to the given production deployment jobs. */
     public Map<JobId, List<Versions>> testJobs(Map<JobId, Versions> jobs) {
         Map<JobId, List<Versions>> testJobs = new LinkedHashMap<>();
         for (JobType testType : List.of(systemTest, stagingTest)) {
             jobs.forEach((job, versions) -> {
-                if (job.type().isDeployment()) {
+                if (job.type().isProduction() && job.type().isDeployment()) {
                     declaredTest(job.application(), testType).ifPresent(testJob -> {
                         if (allJobs.successOn(versions).get(testJob).isEmpty())
                             testJobs.merge(testJob, List.of(versions), DeploymentStatus::union);
@@ -200,7 +212,7 @@ public class DeploymentStatus {
                 }
             });
             jobs.forEach((job, versions) -> {
-                if (   job.type().isDeployment()
+                if (   job.type().isProduction() && job.type().isDeployment()
                     && allJobs.successOn(versions).type(testType).isEmpty()
                     && testJobs.keySet().stream()
                                .noneMatch(test ->    test.type() == testType
@@ -211,12 +223,13 @@ public class DeploymentStatus {
         return ImmutableMap.copyOf(testJobs);
     }
 
+    /** JobId of any declared test of the given type, for the given instance. */
     private Optional<JobId> declaredTest(ApplicationId instanceId, JobType testJob) {
         JobId jobId = new JobId(instanceId, testJob);
         return jobSteps.get(jobId).isDeclared() ? Optional.of(jobId) : Optional.empty();
     }
 
-    /** Returns a DAG of the dependencies between the primitive steps in the spec, with iteration order equal to declaration order. */
+    /** A DAG of the dependencies between the primitive steps in the spec, with iteration order equal to declaration order. */
     private Map<JobId, StepStatus> jobDependencies(DeploymentSpec spec, List<StepStatus> allSteps) {
         if (DeploymentSpec.empty.equals(spec))
             return Map.of();

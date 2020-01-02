@@ -4,8 +4,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -31,13 +29,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.partitioningBy;
@@ -153,13 +147,12 @@ public class DeploymentTrigger {
     public List<JobId> forceTrigger(ApplicationId applicationId, JobType jobType, String user, boolean requireTests) {
         Application application = applications().requireApplication(TenantAndApplicationId.from(applicationId));
         Instance instance = application.require(applicationId.instance());
-        Versions versions = Versions.from(application.change(), application, deploymentFor(instance, jobType),
-                                          controller.systemVersion());
-        String reason = "Job triggered manually by " + user;
         DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
+        Versions versions = Versions.from(application.change(), application, status.deploymentFor(job), controller.systemVersion());
+        String reason = "Job triggered manually by " + user;
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
-        if (jobs.isEmpty() || ! requireTests || ! jobType.isProduction())
+        if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
             trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
