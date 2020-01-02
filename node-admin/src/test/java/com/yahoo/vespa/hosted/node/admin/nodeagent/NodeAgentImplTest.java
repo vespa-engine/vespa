@@ -54,7 +54,7 @@ public class NodeAgentImplTest {
             .hostname(hostName)
             .type(NodeType.tenant)
             .flavor("docker")
-            .vcpus(MIN_CPU_CORES)
+            .vcpu(MIN_CPU_CORES)
             .memoryGb(MIN_MAIN_MEMORY_AVAILABLE_GB)
             .diskGb(MIN_DISK_AVAILABLE_GB);
 
@@ -239,7 +239,7 @@ public class NodeAgentImplTest {
         nodeAgent.doConverge(firstContext);
         NodeAgentContext secondContext = createContext(specBuilder.diskGb(200).build());
         nodeAgent.doConverge(secondContext);
-        NodeAgentContext thirdContext = createContext(specBuilder.vcpus(4).build());
+        NodeAgentContext thirdContext = createContext(specBuilder.vcpu(4).build());
         nodeAgent.doConverge(thirdContext);
         ContainerResources resourcesAfterThird = ContainerResources.from(0, 4, 16);
         mockGetContainer(dockerImage, resourcesAfterThird, true);
