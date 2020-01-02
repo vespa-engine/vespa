@@ -165,7 +165,7 @@ public class DeploymentTrigger {
         if (jobs.isEmpty() || ! requireTests || ! jobType.isProduction())
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobType, status.jobs().get(job).get(), reason, clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
         });
         return List.copyOf(jobs.keySet());
     }
