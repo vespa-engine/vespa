@@ -124,7 +124,6 @@ public class ApplicationSerializerTest {
                                                deploymentSpec,
                                                validationOverrides,
                                                Change.of(Version.fromString("6.7")).withPin(),
-                                               Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("4321")),
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),
@@ -165,8 +164,6 @@ public class ApplicationSerializerTest {
                      serialized.require(id1.instance()).jobPause(JobType.systemTest));
         assertEquals(original.require(id1.instance()).jobPause(JobType.stagingTest),
                      serialized.require(id1.instance()).jobPause(JobType.stagingTest));
-
-        assertEquals(original.outstandingChange(), serialized.outstandingChange());
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());
