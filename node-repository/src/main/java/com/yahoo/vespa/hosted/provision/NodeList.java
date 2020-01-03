@@ -62,6 +62,11 @@ public class NodeList implements Iterable<Node> {
         return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
     }
 
+    /** Returns the subset of nodes that run containers */
+    public NodeList container() {
+        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().isContainer());
+    }
+
     /** Returns the subset of nodes that are currently changing their Vespa version */
     public NodeList changingVersion() {
         return filter(node -> node.status().vespaVersion().isPresent() &&
