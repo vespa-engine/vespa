@@ -3,13 +3,10 @@
 #pragma once
 
 #include <vespa/searchlib/fef/handle.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 
-namespace search::fef {
-    class MatchData;
-    class TermFieldMatchData;
-}
 namespace search::queryeval {
 
 /**
@@ -21,8 +18,12 @@ public:
     FieldSpecBase(uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_ = false);
 
     // resolve where to put match information for this term/field combination
-    fef::TermFieldMatchData *resolve(fef::MatchData &md) const;
-    const fef::TermFieldMatchData *resolve(const fef::MatchData &md) const;
+    search::fef::TermFieldMatchData *resolve(search::fef::MatchData &md) const {
+        return md.resolveTermField(getHandle());
+    }
+    const search::fef::TermFieldMatchData *resolve(const search::fef::MatchData &md) const {
+        return md.resolveTermField(getHandle());
+    }
     uint32_t getFieldId() const { return _fieldId & 0xffffff; }
     fef::TermFieldHandle getHandle() const { return _handle; }
     /// a filter produces less detailed match data
@@ -44,6 +45,10 @@ public:
           _name(name)
     {}
 
+    // resolve where to put match information for this term/field combination
+    search::fef::TermFieldMatchData *resolve(search::fef::MatchData &md) const {
+        return md.resolveTermField(getHandle());
+    }
     const vespalib::string & getName() const { return _name; }
 private:
     vespalib::string     _name;     // field name

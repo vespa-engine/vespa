@@ -61,7 +61,7 @@ MyTerm::MyTerm(const std::set<uint32_t> &doc, const std::set<uint32_t> &pos)
     : _docs(doc),
       _data(pos)
 {}
-MyTerm::~MyTerm() = default;
+MyTerm::~MyTerm() {}
 
 class MyQuery {
 private:
@@ -230,7 +230,7 @@ Test::testNearSearch(MyQuery &query, uint32_t matchId)
     }
     search::fef::MatchData::UP md(layout.createMatchData());
 
-    bp->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    bp->fetchPostings(true);
     search::queryeval::SearchIterator::UP near = bp->createSearch(*md, true);
     near->initFullRange();
     bool foundMatch = false;

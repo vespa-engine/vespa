@@ -37,7 +37,7 @@ std::unique_ptr<SameElementBlueprint> make_blueprint(const std::vector<FakeResul
 
 Blueprint::UP finalize(Blueprint::UP bp, bool strict) {
     Blueprint::UP result = Blueprint::optimize(std::move(bp));
-    result->fetchPostings(ExecuteInfo::create(strict));
+    result->fetchPostings(strict);
     result->freeze();
     return result;
 }

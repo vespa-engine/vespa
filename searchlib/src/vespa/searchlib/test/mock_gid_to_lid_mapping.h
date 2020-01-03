@@ -7,7 +7,9 @@
 #include <map>
 #include <memory>
 
-namespace search::attribute::test {
+namespace search {
+namespace attribute {
+namespace test {
 
 using MockGidToLidMap = std::map<document::GlobalId, uint32_t>;
 
@@ -36,4 +38,6 @@ struct MockGidToLidMapperFactory : public search::IGidToLidMapperFactory {
     }
 };
 
-}
+} // test
+} // attribute
+} // search

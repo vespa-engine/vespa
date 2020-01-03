@@ -2,10 +2,10 @@
 
 #include "equiv_blueprint.h"
 #include "equivsearch.h"
-#include "field_spec.hpp"
 #include <vespa/vespalib/objects/visit.hpp>
 
-namespace search::queryeval {
+namespace search {
+namespace queryeval {
 
 EquivBlueprint::EquivBlueprint(const FieldSpecBaseList &fields,
                                fef::MatchDataLayout subtree_mdl)
@@ -18,14 +18,17 @@ EquivBlueprint::EquivBlueprint(const FieldSpecBaseList &fields,
 {
 }
 
-EquivBlueprint::~EquivBlueprint() = default;
+EquivBlueprint::~EquivBlueprint()
+{
+}
 
 SearchIterator::UP
-EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs, bool strict) const
+EquivBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &outputs,
+                                 bool strict) const
 {
     fef::MatchData::UP md = _layout.createMatchData();
     MultiSearch::Children children(_terms.size());
-    fef::TermMatchDataMerger::Inputs childMatch;
+    search::fef::TermMatchDataMerger::Inputs childMatch;
     for (size_t i = 0; i < _terms.size(); ++i) {
         const State &childState = _terms[i]->getState();
         for (size_t j = 0; j < childState.numFields(); ++j) {
@@ -44,10 +47,10 @@ EquivBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
-EquivBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+EquivBlueprint::fetchPostings(bool strict)
 {
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(execInfo);
+        _terms[i]->fetchPostings(strict);
     }
 }
 
@@ -66,4 +69,6 @@ EquivBlueprint::addTerm(Blueprint::UP term, double exactness)
     return *this;
 }
 
-}
+
+} // namespace queryeval
+} // namespace search

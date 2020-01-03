@@ -1,12 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#include <vespa/log/log.h>
+LOG_SETUP("blueprint_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/fef/matchdata.h>
-
-#include <vespa/log/log.h>
-LOG_SETUP("blueprint_test");
+#include <vespa/vespalib/objects/visit.h>
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -29,7 +27,7 @@ Test::testEmptyBlueprint()
     EXPECT_EQUAL(1u, empty.getState().field(0).getFieldId());
     EXPECT_EQUAL(11u, empty.getState().field(0).getHandle());
 
-    empty.fetchPostings(ExecuteInfo::TRUE);
+    empty.fetchPostings(true);
     SearchIterator::UP search = empty.createSearch(*md, true);
 
     SimpleResult res;
@@ -47,7 +45,7 @@ Test::testSimpleBlueprint()
     SimpleBlueprint simple(a);
     simple.tag("tag");
     EXPECT_EQUAL("tag", simple.tag());
-    simple.fetchPostings(ExecuteInfo::TRUE);
+    simple.fetchPostings(true);
     SearchIterator::UP search = simple.createSearch(*md, true);
 
     SimpleResult res;
@@ -69,7 +67,7 @@ Test::testFakeBlueprint()
     TermFieldHandle handle = 0;
     FakeBlueprint orig(FieldSpec("<field>", fieldId, handle), fake);
 
-    orig.fetchPostings(ExecuteInfo::TRUE);
+    orig.fetchPostings(true);
     SearchIterator::UP search = orig.createSearch(*md, true);
     search->initFullRange();
     EXPECT_TRUE(!search->seek(1u));

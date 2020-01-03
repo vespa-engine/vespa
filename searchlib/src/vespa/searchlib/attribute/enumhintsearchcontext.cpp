@@ -39,8 +39,9 @@ EnumHintSearchContext::lookupRange(const datastore::EntryComparator &low,
 }
 
 void
-EnumHintSearchContext::fetchPostings(const queryeval::ExecuteInfo &)
+EnumHintSearchContext::fetchPostings(bool strict)
 {
+    (void) strict;
 }
 
 SearchIterator::UP

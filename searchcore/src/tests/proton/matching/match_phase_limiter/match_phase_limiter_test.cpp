@@ -4,7 +4,6 @@
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -55,7 +54,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
     FieldSpec spec;
     vespalib::string term;
     bool postings_fetched = false;
-    search::queryeval::ExecuteInfo postings_strict = search::queryeval::ExecuteInfo::FALSE;
+    bool postings_strict = false;
     MockBlueprint(const FieldSpec &spec_in, const vespalib::string &term_in)
         : SimpleLeafBlueprint(FieldSpecBaseList().add(spec_in)), spec(spec_in), term(term_in)
     {
@@ -65,13 +64,13 @@ struct MockBlueprint : SimpleLeafBlueprint {
                                                 bool strict) const override
     {
         if (postings_fetched) {
-            EXPECT_EQUAL(postings_strict.isStrict(), strict);
+            EXPECT_EQUAL(postings_strict, strict);
         }
         return SearchIterator::UP(new MockSearch(spec, term, strict, tfmda,
                                                  postings_fetched));
     }
-    virtual void fetchPostings(const search::queryeval::ExecuteInfo &execInfo) override {
-        postings_strict = execInfo;
+    virtual void fetchPostings(bool strict) override {
+        postings_strict = strict;
         postings_fetched = true;
     }
 };

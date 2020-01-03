@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/hitcollector.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/parsequery/parse.h>
@@ -134,7 +133,7 @@ AttributeFindSearcher<T>::doRun()
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
-        searchContext->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        searchContext->fetchPostings(true);
         std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
@@ -212,7 +211,7 @@ AttributeRangeSearcher::doRun()
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
-        searchContext->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        searchContext->fetchPostings(true);
         std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 
@@ -251,7 +250,7 @@ AttributePrefixSearcher::doRun()
             _attrPtr->getSearch(vespalib::stringref(&_query[0], _query.size()),
                                 attribute::SearchContextParams());
 
-        searchContext->fetchPostings(queryeval::ExecuteInfo::TRUE);
+        searchContext->fetchPostings(true);
         std::unique_ptr<queryeval::SearchIterator> iterator = searchContext->createIterator(nullptr, true);
         std::unique_ptr<ResultSet> results = performSearch(*iterator, _attrPtr->getNumDocs());
 

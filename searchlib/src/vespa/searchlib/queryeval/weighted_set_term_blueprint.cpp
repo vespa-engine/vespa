@@ -56,11 +56,11 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
 }
 
 void
-WeightedSetTermBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+WeightedSetTermBlueprint::fetchPostings(bool strict)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
+    (void) strict;
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(childInfo);
+        _terms[i]->fetchPostings(true);
     }
 }
 

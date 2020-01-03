@@ -17,8 +17,6 @@
 #include <vespa/searchlib/parsequery/parse.h>
 
 #include <vespa/log/log.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
-
 LOG_SETUP("bitvector_test");
 
 using search::AttributeFactory;
@@ -456,7 +454,7 @@ BitVectorTest::checkSearch(AttributePtr v,
                            bool checkStride)
 {
     TermFieldMatchData md;
-    sc->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    sc->fetchPostings(true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     checkSearch(v, std::move(sb), md,
                 expFirstDocId, expLastDocId, expDocFreq, weights,

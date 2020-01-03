@@ -125,7 +125,7 @@ void Test::testSearch(Searchable &source,
     SimpleStringTerm node(term, field_name, 0, search::query::Weight(0));
     Blueprint::UP result = source.createBlueprint(requestContext,
             FieldSpecList().add(FieldSpec(field_name, 0, handle)), node);
-    result->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    result->fetchPostings(true);
     SearchIterator::UP search_iterator =
         result->createSearch(*match_data, true);
     search_iterator->initFullRange();

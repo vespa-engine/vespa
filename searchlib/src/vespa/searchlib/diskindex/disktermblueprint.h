@@ -40,7 +40,7 @@ public:
     // For now, this DiskTermBlueprint instance must have longer lifetime than the created iterator.
     std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray & tfmda, bool strict) const override;
 
-    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
+    void fetchPostings(bool strict) override;
 };
 
 }

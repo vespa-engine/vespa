@@ -188,7 +188,7 @@ public:
 SearchIterator::UP
 Test::create(const Blueprint &blueprint)
 {
-    const_cast<Blueprint &>(blueprint).fetchPostings(ExecuteInfo::TRUE);
+    const_cast<Blueprint &>(blueprint).fetchPostings(true);
     SearchIterator::UP search = blueprint.createSearch(*_md, true);
     MySearch::verifyAndInfer(search.get(), *_md);
     return search;

@@ -5,7 +5,8 @@
 #include "multisearch.h"
 #include "unpackinfo.h"
 
-namespace search::queryeval {
+namespace search {
+namespace queryeval {
 
 /**
  * A simple implementation of the Or search operation.
@@ -30,4 +31,5 @@ private:
     bool isOr() const override { return true; }
 };
 
-}
+} // namespace queryeval
+} // namespace search

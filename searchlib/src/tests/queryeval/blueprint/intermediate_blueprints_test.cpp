@@ -1,22 +1,31 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include <vespa/log/log.h>
+LOG_SETUP("blueprint_test");
 
-#include "mysearch.h"
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
+#include <vespa/searchlib/queryeval/searchable.h>
+
+#include "mysearch.h"
+
 #include <vespa/searchlib/queryeval/multisearch.h>
 #include <vespa/searchlib/queryeval/andnotsearch.h>
+#include <vespa/searchlib/queryeval/andsearch.h>
+#include <vespa/searchlib/queryeval/orsearch.h>
+#include <vespa/searchlib/queryeval/nearsearch.h>
+#include <vespa/searchlib/queryeval/ranksearch.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/diskindex/zcpostingiterators.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP("blueprint_test");
+#include <algorithm>
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -25,17 +34,6 @@ using namespace search::query;
 struct WeightOrder {
     bool operator()(const wand::Term &t1, const wand::Term &t2) const {
         return (t1.weight < t2.weight);
-    }
-};
-
-struct RememberExecuteInfo : public MyLeaf {
-    ExecuteInfo executeInfo;
-
-    using MyLeaf::MyLeaf;
-
-    void fetchPostings(const ExecuteInfo &execInfo) override {
-        LeafBlueprint::fetchPostings(execInfo);
-        executeInfo = execInfo;
     }
 };
 
@@ -86,25 +84,6 @@ TEST("test AndNot Blueprint") {
         EXPECT_EQUAL(false, b.inheritStrict(-1));
     }
     // createSearch tested by iterator unit test
-}
-
-TEST("test And propagates updated histestimate") {
-    AndBlueprint *bp = new AndBlueprint();
-    bp->setSourceId(2);
-    bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp->addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp->optimize_self();
-    bp->setDocIdLimit(5000);
-    bp->fetchPostings(ExecuteInfo::create(true));
-    EXPECT_EQUAL(3u, bp->childCnt());
-    for (uint32_t i = 0; i < bp->childCnt(); i++) {
-        const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
-        EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
-    }
-    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
 }
 
 TEST("test And Blueprint") {
@@ -1068,7 +1047,7 @@ TEST("test WeakAnd Blueprint") {
             wa.addTerm(Blueprint::UP(new FakeBlueprint(field, z)), 140);
             wa.addTerm(Blueprint::UP(new FakeBlueprint(field, y)), 130);
             {
-                wa.fetchPostings(ExecuteInfo::TRUE);
+                wa.fetchPostings(true);
                 SearchIterator::UP search = wa.createSearch(*md, true);
                 EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != 0);
                 WeakAndSearch &s = dynamic_cast<WeakAndSearch&>(*search);
@@ -1090,7 +1069,7 @@ TEST("test WeakAnd Blueprint") {
                 EXPECT_EQUAL(0u, terms[2].maxScore); // NB: not set
             }
             {
-                wa.fetchPostings(ExecuteInfo::FALSE);
+                wa.fetchPostings(false);
                 SearchIterator::UP search = wa.createSearch(*md, false);
                 EXPECT_TRUE(dynamic_cast<WeakAndSearch*>(search.get()) != 0);
                 EXPECT_TRUE(search->seek(1));
@@ -1120,7 +1099,7 @@ TEST("require_that_unpack_of_or_over_multisearch_is_optimized") {
                        addChild(std::move(child1)).
                        addChild(std::move(child2))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
@@ -1146,7 +1125,7 @@ TEST("require_that_unpack_of_or_is_optimized") {
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::OrLikeSearch<false, search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
@@ -1165,7 +1144,7 @@ TEST("require_that_unpack_of_and_is_optimized") {
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
@@ -1185,7 +1164,7 @@ TEST("require_that_unpack_optimization_is_honoured_by_parents") {
                        addChild(ap(MyLeafSpec(20).addField(2,2).create())).
                        addChild(ap(MyLeafSpec(10).addField(3,3).create()))))));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->fetchPostings(false);
     EXPECT_EQUAL("search::queryeval::AndSearchNoStrict<search::queryeval::(anonymous namespace)::FullUnpack>",
                  top_up->createSearch(*md, false)->getClassName());
     md->resolveTermField(2)->tagAsNotNeeded();
@@ -1234,7 +1213,7 @@ TEST("require that children does not optimize when parents refuse them to") {
                                                         FieldSpec("f2", 2, idxth21), makeTerm("w2")),
                        1.0)));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->fetchPostings(false);
     SearchIterator::UP search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {
@@ -1272,7 +1251,7 @@ TEST("require_that_unpack_optimization_is_overruled_by_equiv") {
                           addChild(ap(MyLeafSpec(10).addField(3,idxth3).create()))),
                        1.0)));
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    top_up->fetchPostings(ExecuteInfo::FALSE);
+    top_up->fetchPostings(false);
     SearchIterator::UP search = top_up->createSearch(*md, true);
     EXPECT_EQUAL("search::queryeval::EquivImpl<true>", search->getClassName());
     {

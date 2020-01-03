@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
-namespace search::queryeval::test {
+namespace search {
+namespace queryeval {
+namespace test {
 
 /**
  * Seek and unpack history for a search iterator.
@@ -51,4 +53,7 @@ std::ostream &operator << (std::ostream &out, const SearchHistory &hist) {
     return out;
 }
 
-}
+} // namespace test
+} // namespace queryeval
+} // namespace search
+

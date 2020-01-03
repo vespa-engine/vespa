@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 namespace search::queryeval {
     
@@ -29,6 +30,8 @@ private:
     int32_t _maxWeight;
 
 public:
+    typedef std::unique_ptr<MinMaxPostingInfo> UP;
+    typedef std::shared_ptr<MinMaxPostingInfo> SP;
     MinMaxPostingInfo(int32_t minWeight, int32_t maxWeight)
         : PostingInfo(),
           _minWeight(minWeight),

@@ -201,7 +201,7 @@ public:
         MatchData::UP match_data = mdl.createMatchData();
 
         Blueprint::UP blueprint = BlueprintBuilder::build(requestContext, node, context);
-        blueprint->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+        blueprint->fetchPostings(true);
         return blueprint->createSearch(*match_data, true)->asString();
     }
 

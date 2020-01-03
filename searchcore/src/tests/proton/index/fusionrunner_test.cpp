@@ -243,7 +243,7 @@ void Test::checkResults(uint32_t fusion_id, const uint32_t *ids, size_t size) {
     search::queryeval::Searchable &searchable = disk_index;
     SimpleStringTerm node(term, field_name, fieldId, search::query::Weight(0));
     Blueprint::UP blueprint = searchable.createBlueprint(requestContext, fields, node);
-    blueprint->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
+    blueprint->fetchPostings(true);
     SearchIterator::UP search = blueprint->createSearch(*match_data, true);
     search->initFullRange();
     for (size_t i = 0; i < size; ++i) {
