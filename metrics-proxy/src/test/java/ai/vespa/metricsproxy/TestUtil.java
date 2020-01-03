@@ -1,7 +1,4 @@
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
-
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy;
 
 import ai.vespa.metricsproxy.core.MetricsConsumers;
@@ -10,16 +7,11 @@ import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
 import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
-import ai.vespa.metricsproxy.service.VespaService;
 import ai.vespa.metricsproxy.service.VespaServices;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.List;
 import java.util.stream.Collectors;
 
 /**

@@ -1,7 +1,4 @@
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
-
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.rpc;
 
 import ai.vespa.metricsproxy.metric.Metric;
@@ -17,9 +14,7 @@ import com.yahoo.jrt.Transport;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.List;
 
@@ -38,7 +33,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author jobergum

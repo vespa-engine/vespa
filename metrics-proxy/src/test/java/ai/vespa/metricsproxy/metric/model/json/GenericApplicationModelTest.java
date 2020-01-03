@@ -1,12 +1,8 @@
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
-
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.http.application.Node;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.metricsproxy.metric.model.ServiceId;
 import ai.vespa.metricsproxy.metric.model.StatusCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;

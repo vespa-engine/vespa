@@ -1,7 +1,4 @@
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
-
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.metric.model.json;
 
 import ai.vespa.metricsproxy.metric.model.DimensionId;
@@ -10,11 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import com.google.common.base.Functions;
-import com.yahoo.stream.CustomCollectors;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
 import static com.yahoo.stream.CustomCollectors.toLinkedMap;
