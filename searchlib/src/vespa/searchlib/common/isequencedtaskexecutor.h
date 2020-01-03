@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/stllike/hash_fun.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 namespace search {
@@ -25,8 +25,8 @@ public:
     private:
         uint32_t _id;
     };
-    ISequencedTaskExecutor(uint32_t numExecutors) : _numExecutors(numExecutors) { }
-    virtual ~ISequencedTaskExecutor() { }
+    ISequencedTaskExecutor(uint32_t numExecutors);
+    virtual ~ISequencedTaskExecutor();
 
     /**
      * Calculate which executor will handle an component. All callers
@@ -40,10 +40,7 @@ public:
     }
     uint32_t getNumExecutors() const { return _numExecutors; }
 
-    ExecutorId getExecutorId(vespalib::stringref componentId) const {
-        vespalib::hash<vespalib::stringref> hashfun;
-        return getExecutorId(hashfun(componentId));
-    }
+    ExecutorId getExecutorId(vespalib::stringref componentId) const;
 
     /**
      * Schedule a task to run after all previously scheduled tasks with

@@ -15,6 +15,7 @@ vespa_add_library(searchlib_common OBJECT
     gatecallback.cpp
     growablebitvector.cpp
     indexmetainfo.cpp
+    isequencedtaskexecutor.cpp
     location.cpp
     locationiterators.cpp
     mapnames.cpp
