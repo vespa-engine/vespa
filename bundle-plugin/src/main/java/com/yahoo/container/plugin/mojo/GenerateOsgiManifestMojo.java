@@ -12,7 +12,6 @@ import com.yahoo.container.plugin.osgi.ExportPackages;
 import com.yahoo.container.plugin.osgi.ExportPackages.Export;
 import com.yahoo.container.plugin.osgi.ImportPackages.Import;
 import com.yahoo.container.plugin.util.Strings;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.versioning.ArtifactVersion;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
@@ -25,7 +24,6 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -231,27 +229,29 @@ public class GenerateOsgiManifestMojo extends AbstractMojo {
         String exportPackage = osgiExportPackages(pluginPackageTally.exportedPackages()).stream().sorted()
                 .collect(Collectors.joining(","));
 
-        for (Pair<String, String> element : Arrays.asList(//
-                Pair.of("Created-By", "vespa container maven plugin"), //
-                Pair.of("Bundle-ManifestVersion", "2"), //
-                Pair.of("Bundle-Name", project.getName()), //
-                Pair.of("Bundle-SymbolicName", bundleSymbolicName), //
-                Pair.of("Bundle-Version", asBundleVersion(bundleVersion)), //
-                Pair.of("Bundle-Vendor", "Yahoo!"), //
-                Pair.of("Bundle-ClassPath", bundleClassPath(jarArtifactsToInclude)), //
-                Pair.of("Bundle-Activator", bundleActivator), //
-                Pair.of("X-JDisc-Privileged-Activator", jdiscPrivilegedActivator), //
-                Pair.of("Main-Class", mainClass), //
-                Pair.of("X-JDisc-Application", discApplicationClass), //
-                Pair.of("X-JDisc-Preinstall-Bundle", trimWhitespace(Optional.ofNullable(discPreInstallBundle))), //
-                Pair.of("WebInfUrl", webInfUrl), //
-                Pair.of("Import-Package", importPackage), //
-                Pair.of("Export-Package", exportPackage))) {
-            if (element.getValue() != null && ! element.getValue().isEmpty()) {
-                ret.put(element.getKey(), element.getValue());
-            }
-        }
+        ret.put("Created-By", "vespa container maven plugin");
+        ret.put("Bundle-ManifestVersion", "2");
+        addIfNotEmpty(ret, "Bundle-Name", project.getName());
+        addIfNotEmpty(ret, "Bundle-SymbolicName", bundleSymbolicName);
+        addIfNotEmpty(ret, "Bundle-Version", asBundleVersion(bundleVersion));
+        ret.put("Bundle-Vendor", "Yahoo!");
+        addIfNotEmpty(ret, "Bundle-ClassPath", bundleClassPath(jarArtifactsToInclude));
+        addIfNotEmpty(ret, "Bundle-Activator", bundleActivator);
+        addIfNotEmpty(ret, "X-JDisc-Privileged-Activator", jdiscPrivilegedActivator);
+        addIfNotEmpty(ret, "Main-Class", mainClass);
+        addIfNotEmpty(ret, "X-JDisc-Application", discApplicationClass);
+        addIfNotEmpty(ret, "X-JDisc-Preinstall-Bundle", trimWhitespace(Optional.ofNullable(discPreInstallBundle)));
+        addIfNotEmpty(ret, "WebInfUrl", webInfUrl);
+        addIfNotEmpty(ret, "Import-Package", importPackage);
+        addIfNotEmpty(ret, "Export-Package", exportPackage);
+
         return ret;
+    }
+
+    private static void addIfNotEmpty(Map<String, String> map, String key, String value) {
+        if (value != null && ! value.isEmpty()) {
+            map.put(key, value);
+        }
     }
 
     private static String asOsgiImport(String packageName, Optional<String> version) {
