@@ -5,11 +5,9 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
-namespace search {
+namespace search { struct IDocumentMetaStoreContext; }
 
-struct IDocumentMetaStoreContext;
-
-namespace attribute {
+namespace search::attribute {
 
 class BitVectorSearchCache;
 class ImportedAttributeVector;
@@ -39,5 +37,4 @@ public:
            std::shared_ptr<BitVectorSearchCache> search_cache);
 };
 
-} // attribute
-} // search
+}

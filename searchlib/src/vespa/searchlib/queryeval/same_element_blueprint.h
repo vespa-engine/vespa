@@ -35,7 +35,7 @@ public:
     void addTerm(Blueprint::UP term);
 
     void optimize_self() override;
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const ExecuteInfo &execInfo) override;
 
     std::unique_ptr<SameElementSearch> create_same_element_search(bool strict) const;
     SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,

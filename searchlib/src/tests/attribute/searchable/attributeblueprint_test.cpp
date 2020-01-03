@@ -19,6 +19,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -119,7 +120,7 @@ do_search(const Node &node, IAttributeManager &attribute_manager, bool expect_at
     } else {
         EXPECT_TRUE(result->get_attribute_search_context() == nullptr);
     }
-    result->fetchPostings(true);
+    result->fetchPostings(queryeval::ExecuteInfo::TRUE);
     result->setDocIdLimit(DOCID_LIMIT);
     SearchIterator::UP iterator = result->createSearch(*md, true);
     assert((bool)iterator);

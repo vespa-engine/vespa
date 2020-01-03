@@ -68,7 +68,7 @@ struct ParallelWeakAndSearch : public SearchIterator
     static SearchIterator *createHeapWand(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
     static SearchIterator *create(const Terms &terms, const MatchParams &matchParams, RankParams &&rankParams, bool strict);
 
-    static SearchIterator::UP create(search::fef::TermFieldMatchData &tmd,
+    static SearchIterator::UP create(fef::TermFieldMatchData &tmd,
                                      const MatchParams &matchParams,
                                      const std::vector<int32_t> &weights,
                                      const std::vector<IDocumentWeightAttribute::LookupResult> &dict_entries,

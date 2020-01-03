@@ -2,8 +2,7 @@
 
 #include "equivsearch.h"
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 template <bool strict>
 class EquivImpl : public OrLikeSearch<strict, NoUnpack>
@@ -24,15 +23,15 @@ public:
      **/
     EquivImpl(const MultiSearch::Children &children,
               fef::MatchData::UP inputMatchData,
-              const search::fef::TermMatchDataMerger::Inputs &inputs,
+              const fef::TermMatchDataMerger::Inputs &inputs,
               const fef::TermFieldMatchDataArray &outputs);
 };
 
 template<bool strict>
 EquivImpl<strict>::EquivImpl(const MultiSearch::Children &children,
                              fef::MatchData::UP inputMatchData,
-                             const search::fef::TermMatchDataMerger::Inputs &inputs,
-                             const search::fef::TermFieldMatchDataArray &outputs)
+                             const fef::TermMatchDataMerger::Inputs &inputs,
+                             const fef::TermFieldMatchDataArray &outputs)
 
     : OrLikeSearch<strict, NoUnpack>(children, NoUnpack()),
       _inputMatchData(std::move(inputMatchData)),
@@ -54,8 +53,8 @@ EquivImpl<strict>::doUnpack(uint32_t docid)
 SearchIterator *
 EquivSearch::create(const Children &children,
                     fef::MatchData::UP inputMatchData,
-                    const search::fef::TermMatchDataMerger::Inputs &inputs,
-                    const search::fef::TermFieldMatchDataArray &outputs,
+                    const fef::TermMatchDataMerger::Inputs &inputs,
+                    const fef::TermFieldMatchDataArray &outputs,
                     bool strict)
 {
     if (strict) {
@@ -65,5 +64,4 @@ EquivSearch::create(const Children &children,
     }
 }
 
-}  // namespace queryeval
-}  // namespace search
+}

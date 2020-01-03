@@ -522,7 +522,7 @@ public:
 
         unsigned int approximateHits() const override;
         queryeval::SearchIterator::UP createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
-        void fetchPostings(bool strict) override;
+        void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
         bool valid() const override { return false; }
         Int64Range getAsIntegerTerm() const override { return Int64Range(); }
         const QueryTermUCS4 * queryTerm() const override {

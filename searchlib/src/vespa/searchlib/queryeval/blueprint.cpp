@@ -3,7 +3,8 @@
 #include "blueprint.h"
 #include "leaf_blueprints.h"
 #include "intermediate_blueprints.h"
-#include "equiv_blueprint.h"
+#include "field_spec.hpp"
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/objects/object2slime.h>
@@ -170,8 +171,16 @@ namespace blueprint {
 void
 StateCache::updateState() const
 {
+    assert(!frozen());
     _state = calculateState();
     _stale = false;
+}
+
+void
+StateCache::notifyChange() {
+    assert(!frozen());
+    Blueprint::notifyChange();
+    _stale = true;
 }
 
 } // namespace blueprint
@@ -308,6 +317,13 @@ IntermediateBlueprint::calculateState() const
     return state;
 }
 
+double
+IntermediateBlueprint::computeNextHitRate(const Blueprint & child, double hitRate) const
+{
+    (void) child;
+    return hitRate;
+}
+
 bool
 IntermediateBlueprint::should_do_termwise_eval(const UnpackInfo &unpack, double match_limit) const
 {
@@ -403,11 +419,13 @@ IntermediateBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
-IntermediateBlueprint::fetchPostings(bool strict)
+IntermediateBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
+    double nextHitRate = execInfo.hitRate();
     for (size_t i = 0; i < _children.size(); ++i) {
-        bool strictChild = (strict && inheritStrict(i));
-        _children[i]->fetchPostings(strictChild);
+        Blueprint & child = *_children[i];
+        child.fetchPostings(ExecuteInfo::create(execInfo.isStrict() && inheritStrict(i), nextHitRate));
+        nextHitRate = computeNextHitRate(child, nextHitRate);
     }
 }
 
@@ -494,9 +512,9 @@ LeafBlueprint::LeafBlueprint(const FieldSpecBaseList &fields, bool allow_termwis
 LeafBlueprint::~LeafBlueprint() = default;
 
 void
-LeafBlueprint::fetchPostings(bool strict)
+LeafBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
-    (void) strict;
+    (void) execInfo;
 }
 
 void

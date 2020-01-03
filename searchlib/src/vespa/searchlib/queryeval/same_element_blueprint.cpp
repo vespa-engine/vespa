@@ -2,6 +2,7 @@
 
 #include "same_element_blueprint.h"
 #include "same_element_search.h"
+#include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/attribute/elementiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
@@ -54,10 +55,10 @@ SameElementBlueprint::optimize_self()
 }
 
 void
-SameElementBlueprint::fetchPostings(bool strict)
+SameElementBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(strict && (i == 0));
+        _terms[i]->fetchPostings(ExecuteInfo::create(execInfo.isStrict() && (i == 0), execInfo.hitRate()));
     }
 }
 

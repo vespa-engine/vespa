@@ -219,12 +219,21 @@ WarmupIndexCollection::getSearchableSP(uint32_t i) const
     return _next->getSearchableSP(i);
 }
 
+WarmupIndexCollection::WarmupTask::WarmupTask(std::unique_ptr<MatchData> md, WarmupIndexCollection & warmup)
+    : _warmup(warmup),
+      _matchData(std::move(md)),
+      _bluePrint(),
+      _requestContext()
+{ }
+
+WarmupIndexCollection::WarmupTask::~WarmupTask() = default;
+
 void
 WarmupIndexCollection::WarmupTask::run()
 {
     if (_warmup._warmupEndTime != vespalib::steady_time()) {
         LOG(debug, "Warming up %s", _bluePrint->asString().c_str());
-        _bluePrint->fetchPostings(true);
+        _bluePrint->fetchPostings(search::queryeval::ExecuteInfo::TRUE);
         SearchIterator::UP it(_bluePrint->createSearch(*_matchData, true));
         it->initFullRange();
         for (uint32_t docId = it->seekFirst(1); !it->isAtEnd(); docId = it->seekNext(docId+1)) {

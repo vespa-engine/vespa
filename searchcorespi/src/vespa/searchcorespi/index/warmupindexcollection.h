@@ -70,12 +70,8 @@ private:
     typedef vespalib::Executor::Task Task;
     class WarmupTask : public Task {
     public:
-        WarmupTask(MatchData::UP md, WarmupIndexCollection & warmup) :
-            _warmup(warmup),
-            _matchData(std::move(md)), 
-            _bluePrint(),
-            _requestContext()
-        { }
+        WarmupTask(std::unique_ptr<MatchData> md, WarmupIndexCollection & warmup);
+        ~WarmupTask() override;
         WarmupTask &createBlueprint(const FieldSpec &field, const Node &term) {
             _bluePrint = _warmup.createBlueprint(_requestContext, field, term);
             return *this;
@@ -86,10 +82,10 @@ private:
         }
     private:
         void run() override;
-        WarmupIndexCollection  & _warmup;
-        MatchData::UP            _matchData;
-        Blueprint::UP            _bluePrint;
-        FakeRequestContext       _requestContext;
+        WarmupIndexCollection      & _warmup;
+        std::unique_ptr<MatchData>   _matchData;
+        Blueprint::UP                _bluePrint;
+        FakeRequestContext           _requestContext;
     };
 
     void fireWarmup(Task::UP task);

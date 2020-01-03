@@ -50,7 +50,7 @@ Test::testEquiv()
         bool strict = (i == 0);
         TEST_STATE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 

@@ -9,6 +9,7 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
+#include <vespa/searchlib/fef/matchdata.h>
 
 using namespace search::queryeval;
 using namespace search::fef;
@@ -73,7 +74,7 @@ TEST("test strictness") {
         blend_b->addChild(std::move(a_b));
         blend_b->addChild(std::move(b_b));
         Blueprint::UP bp(blend_b);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
         SearchIterator &blend = *search;
