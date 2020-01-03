@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,4 +71,20 @@ public class ResourceSnapshot {
         return zoneId;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ResourceSnapshot)) return false;
+
+        ResourceSnapshot other = (ResourceSnapshot) o;
+        return this.applicationId.equals(other.applicationId) &&
+                this.resourceAllocation.equals(other.resourceAllocation) &&
+                this.timestamp.equals(other.timestamp) &&
+                this.zoneId.equals(other.zoneId);
+    }
+
+    @Override
+    public int hashCode(){
+        return Objects.hash(applicationId, resourceAllocation, timestamp, zoneId);
+    }
 }

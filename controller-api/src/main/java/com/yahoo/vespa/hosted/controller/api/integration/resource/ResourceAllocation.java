@@ -1,6 +1,8 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
+import java.util.Objects;
+
 /**
  * An allocation of node resources.
  *
@@ -44,6 +46,23 @@ public class ResourceAllocation {
     /** Returns a copy of this with each resource multiplied by given factor */
     public ResourceAllocation multiply(double multiplicand) {
         return new ResourceAllocation(cpuCores * multiplicand, memoryGb * multiplicand, diskGb * multiplicand);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ResourceAllocation)) return false;
+
+        ResourceAllocation other = (ResourceAllocation) o;
+        return Double.compare(this.cpuCores, other.cpuCores) == 0 &&
+                Double.compare(this.memoryGb, other.memoryGb) == 0 &&
+                Double.compare(this.diskGb, other.diskGb) == 0;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(cpuCores, memoryGb, diskGb);
     }
 
 }
