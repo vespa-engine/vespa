@@ -1266,6 +1266,7 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public final java.lang.String toString(com.yahoo.tensor.TensorType)",
+      "public static java.lang.String labelToString(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": []
@@ -1327,6 +1328,7 @@
       "public abstract com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public abstract com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)",
       "public boolean isIndexed()",
+      "public boolean isMapped()",
       "public abstract java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

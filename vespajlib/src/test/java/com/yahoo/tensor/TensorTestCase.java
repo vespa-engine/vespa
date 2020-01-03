@@ -37,7 +37,7 @@ public class TensorTestCase {
         assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:5.0,{d1:l1,d2:l2}:6.0}", Tensor.from("{ {d1:l1,d2:l1}: 5,   {d2:l2, d1:l1}:6.0} ").toString());
         assertEquals("tensor(d1{},d2{}):{{d1:l1,d2:l1}:-5.3,{d1:l1,d2:l2}:0.0}", Tensor.from("{ {d1:l1,d2:l1}:-5.3, {d2:l2, d1:l1}:0}").toString());
         assertEquals("Labels are quoted when necessary",
-                     "tensor(d1{}):{{d1:\"'''\"}:6.0,{d1:'[[\":\"]]'}:5.0}",
+                     "tensor(d1{}):{\"'''\":6.0,'[[\":\"]]':5.0}",
                      Tensor.from("{ {d1:'[[\":\"]]'}: 5, {d1:\"'''\"}:6.0 }").toString());
     }
 

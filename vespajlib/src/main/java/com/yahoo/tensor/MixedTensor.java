@@ -148,7 +148,14 @@ public class MixedTensor implements Tensor {
     public int hashCode() { return cells.hashCode(); }
 
     @Override
-    public String toString() { return Tensor.toStandardString(this); }
+    public String toString() {
+        if (type.rank() == 0) return Tensor.toStandardString(this);
+        if (type.rank() > 1 && type.dimensions().stream().anyMatch(d -> d.size().isEmpty()))
+            return Tensor.toStandardString(this);
+        if (type.dimensions().stream().filter(d -> d.isMapped()).count() > 1) return Tensor.toStandardString(this);
+
+        return type.toString() + ":" + index.contentToString(this);
+    }
 
     @Override
     public boolean equals(Object other) {
@@ -494,7 +501,63 @@ public class MixedTensor implements Tensor {
 
         @Override
         public String toString() {
-            return "indexes into " + type;
+            return "index into " + type;
+        }
+
+        private String contentToString(MixedTensor tensor) {
+            if (mappedDimensions.size() > 1) throw new IllegalStateException("Should be ensured by caller");
+            if (mappedDimensions.size() == 0) {
+                StringBuilder b = new StringBuilder();
+                denseSubspaceToString(tensor, 0, b);
+                return b.toString();
+            }
+
+            // Exactly 1 mapped dimension
+            StringBuilder b = new StringBuilder("{");
+            sparseMap.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+                b.append(TensorAddress.labelToString(entry.getKey().label(0 )));
+                b.append(":");
+                denseSubspaceToString(tensor, entry.getValue(), b);
+                b.append(",");
+            });
+            if (b.length() > 1)
+                b.setLength(b.length() - 1);
+            b.append("}");
+            return b.toString();
+        }
+
+        private void denseSubspaceToString(MixedTensor tensor, long subspaceIndex, StringBuilder b) {
+            if (denseSubspaceSize == 1) {
+                b.append(getDouble(subspaceIndex, 0, tensor));
+                return;
+            }
+
+            IndexedTensor.Indexes indexes = IndexedTensor.Indexes.of(denseType);
+            for (int index = 0; index < denseSubspaceSize; index++) {
+                indexes.next();
+
+                // start brackets
+                for (int i = 0; i < indexes.nextDimensionsAtStart(); i++)
+                    b.append("[");
+
+                // value
+                if (type.valueType() == TensorType.Value.DOUBLE)
+                    b.append(getDouble(subspaceIndex, index, tensor));
+                else if (tensor.type().valueType() == TensorType.Value.FLOAT)
+                    b.append(getDouble(subspaceIndex, index, tensor)); // TODO: Really use floats
+                else
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
+
+                // end bracket and comma
+                for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
+                    b.append("]");
+                if (index < denseSubspaceSize - 1)
+                    b.append(", ");
+            }
+        }
+
+        private double getDouble(long indexedSubspaceIndex, long indexInIndexedSubspace, MixedTensor tensor) {
+            return tensor.cells.get((int)(indexedSubspaceIndex + indexInIndexedSubspace)).getDoubleValue();
         }
 
     }

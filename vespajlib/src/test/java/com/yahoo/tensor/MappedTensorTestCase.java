@@ -35,7 +35,7 @@ public class MappedTensorTestCase {
                 cell().label("x", "0").value(1).
                 cell().label("x", "1").value(2).build();
         assertEquals(Sets.newHashSet("x"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{}):{{x:0}:1.0,{x:1}:2.0}", tensor.toString());
+        assertEquals("tensor(x{}):{0:1.0,1:2.0}", tensor.toString());
     }
 
     @Test
