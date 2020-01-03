@@ -749,7 +749,7 @@ TEST_F("require that attribute writer spreads write over 2 write contexts", Fixt
     TEST_DO(putAttributes(f, {0, 1}));
 }
 
-TEST_F("require that attribute writer spreads write over 3 write contexts", Fixture(3))
+TEST_F("require that attribute writer spreads write over 3 write contexts", Fixture(8))
 {
     TEST_DO(putAttributes(f, {0, 1, 2}));
 }

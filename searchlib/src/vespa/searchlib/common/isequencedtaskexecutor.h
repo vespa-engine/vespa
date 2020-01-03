@@ -2,8 +2,10 @@
 #pragma once
 
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/vespalib/stllike/hash_fun.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vector>
+#include <mutex>
 
 namespace search {
 
@@ -25,25 +27,19 @@ public:
     private:
         uint32_t _id;
     };
-    ISequencedTaskExecutor(uint32_t numExecutors) : _numExecutors(numExecutors) { }
-    virtual ~ISequencedTaskExecutor() { }
+    ISequencedTaskExecutor(uint32_t numExecutors);
+    virtual ~ISequencedTaskExecutor();
 
     /**
-     * Calculate which executor will handle an component. All callers
-     * must be in the same thread.
+     * Calculate which executor will handle an component.
      *
      * @param componentId   component id
      * @return              executor id
      */
-    ExecutorId getExecutorId(uint64_t componentId) const {
-        return ExecutorId((componentId * 1099511628211ULL ) % _numExecutors);
-    }
+    ExecutorId getExecutorId(uint64_t componentId) const;
     uint32_t getNumExecutors() const { return _numExecutors; }
 
-    ExecutorId getExecutorId(vespalib::stringref componentId) const {
-        vespalib::hash<vespalib::stringref> hashfun;
-        return getExecutorId(hashfun(componentId));
-    }
+    ExecutorId getExecutorId(vespalib::stringref componentId) const;
 
     /**
      * Schedule a task to run after all previously scheduled tasks with
@@ -100,7 +96,10 @@ public:
         executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
 private:
-    uint32_t _numExecutors;
+    mutable std::vector<uint8_t> _component2Id;
+    mutable std::mutex           _mutex;
+    uint32_t                     _numExecutors;
+    mutable uint32_t             _nextId;
 };
 
 } // namespace search

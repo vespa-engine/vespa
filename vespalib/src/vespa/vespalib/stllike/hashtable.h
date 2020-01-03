@@ -79,6 +79,8 @@ public:
     private:
         next_t _mask;
     };
+    static size_t getModuloStl(size_t newSize);
+    static size_t getModuloSimple(size_t newSize);
 protected:
     struct DefaultMoveHandler
     {
@@ -88,8 +90,6 @@ protected:
         }
     };
 private:
-    static size_t getModuloStl(size_t newSize);
-    static size_t getModuloSimple(size_t newSize);
     static size_t getModulo(size_t newSize, const unsigned long * list, size_t sz);
 };
 

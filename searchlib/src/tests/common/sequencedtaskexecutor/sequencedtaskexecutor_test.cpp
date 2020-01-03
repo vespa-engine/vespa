@@ -19,10 +19,7 @@ class Fixture
 public:
     SequencedTaskExecutor _threads;
 
-    Fixture()
-        : _threads(2)
-    {
-    }
+    Fixture() : _threads(2) { }
 };
 
 
@@ -101,7 +98,7 @@ TEST_F("require that task with different component ids are not serialized", Fixt
         std::shared_ptr<TestObj> tv(std::make_shared<TestObj>());
         EXPECT_EQUAL(0, tv->_val);
         f._threads.execute(0, [=]() { usleep(2000); tv->modify(0, 14); });
-        f._threads.execute(1, [=]() { tv->modify(14, 42); });
+        f._threads.execute(2, [=]() { tv->modify(14, 42); });
         tv->wait(2);
         if (tv->_fail != 1) {
              continue;
@@ -175,12 +172,13 @@ vespalib::string makeAltComponentId(Fixture &f)
 
 TEST_F("require that task with different string component ids are not serialized", Fixture)
 {
-    int tryCnt = detectSerializeFailure(f, "1", 100);
+    int tryCnt = detectSerializeFailure(f, "2", 100);
     EXPECT_TRUE(tryCnt < 100);
 }
 
 
-TEST_F("require that task with different string component ids mapping to the same executor id are serialized", Fixture)
+TEST_F("require that task with different string component ids mapping to the same executor id are serialized",
+       Fixture)
 {
     vespalib::string altComponentId = makeAltComponentId(f);
     LOG(info, "second string component id is \"%s\"", altComponentId.c_str());
