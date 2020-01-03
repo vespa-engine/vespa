@@ -22,7 +22,6 @@ import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -222,7 +221,7 @@ public class ClusterSearcher extends Searcher {
             return new Result(query,
                               ErrorMessage.createInvalidQueryParameter("Requested rank profile '" + rankProfile +
                                                                        "' is undefined for document type" + plural + " '" +
-                                                                       StringUtils.join(invalidInDocTypes.iterator(), ", ") + "'"));
+                                                                       String.join(", ", invalidInDocTypes) + "'"));
         }
 
         return null;

@@ -27,7 +27,6 @@ import com.yahoo.search.federation.sourceref.SourceRefResolver;
 import com.yahoo.search.federation.sourceref.SourcesTarget;
 import com.yahoo.search.federation.sourceref.UnresolvedSearchChainException;
 import com.yahoo.search.query.Properties;
-import com.yahoo.search.query.properties.QueryProperties;
 import com.yahoo.search.query.properties.SubProperties;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
@@ -39,7 +38,6 @@ import com.yahoo.search.searchchain.ForkingSearcher;
 import com.yahoo.search.searchchain.FutureResult;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
-import org.apache.commons.lang.StringUtils;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -319,8 +317,8 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private ErrorMessage missingSearchChainsErrorMessage(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
-        String message =  StringUtils.join(getMessagesSet(unresolvedSearchChainExceptions), ' ') + 
-                          " Valid source refs are " + StringUtils.join(allSourceRefDescriptions().iterator(), ", ") +'.';
+        String message = String.join(" ", getMessagesSet(unresolvedSearchChainExceptions)) +
+                      " Valid source refs are " + String.join(", ", allSourceRefDescriptions()) +'.';
         return ErrorMessage.createInvalidQueryParameter(message);
     }
 
