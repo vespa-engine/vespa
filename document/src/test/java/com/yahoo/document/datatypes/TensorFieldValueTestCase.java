@@ -52,7 +52,7 @@ public class TensorFieldValueTestCase {
     @Test
     public void requireThatToStringWorks() {
         TensorFieldValue field1 = createFieldValue("{{x:0}:2.0}");
-        assertEquals("tensor(x{}):{{x:0}:2.0}", field1.toString());
+        assertEquals("tensor(x{}):{0:2.0}", field1.toString());
         TensorFieldValue field2 = new TensorFieldValue(TensorType.fromSpec("tensor(x{})"));
         assertEquals("null", field2.toString());
     }
