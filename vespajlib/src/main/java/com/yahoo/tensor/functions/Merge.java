@@ -25,18 +25,10 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 
 /**
- * The <i>merge</i> tensor operation produces from two argument tensors having equal dimension names
- * a tensor having the same dimension names, with each dimension the smallest (see below) which can encompass all the
- * values of both tensors, and where the values are the union of the values of both tensors. In the cases where both
+ * The <i>merge</i> tensor operation produces from two argument tensors having equal types
+ * a tensor having the same type where the values are the union of the values of both tensors. In the cases where both
  * tensors contain a value for a given cell, and only then, the lambda scalar expression is evaluated to produce
- * the resulting cell value. If none of the argument tensors have a value (but the cell exists due to merging
- * indexed dimensions of uneven size in multidimensional tensors) the resulting cell is 0.
- * <p>
- * The type of each dimension of the result tensor is determined as follows:
- * <ul>
- * <li>If at least one of the two argument dimensions are mapped, the resulting dimension is mapped.
- * <li>Otherwise, the size of the resulting (indexed) dimension is the max size of the argument dimensions.
- * </ul>
+ * the resulting cell value.
  *
  * @author bratseth
  */
@@ -56,14 +48,9 @@ public class Merge<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     /** Returns the type resulting from applying Merge to the two given types */
     public static TensorType outputType(TensorType a, TensorType b) {
-        if ( ! a.dimensionNames().equals(b.dimensionNames()))
-            throw new IllegalArgumentException("Cannot merge " + a + " and " + b +
-                                               ": Both arguments must have the same dimension names");
-
-        TensorType.Builder builder = new TensorType.Builder(TensorType.combinedValueType(a, b));
-        for (TensorType.Dimension dimension : a.dimensions())
-            builder.set(dimension.combineWith(b.dimension(dimension.name()), false));
-        return builder.build();
+        Optional<TensorType> outputType = a.dimensionwiseGeneralizationWith(b);
+        if (outputType.isPresent()) return outputType.get();
+        throw new IllegalArgumentException("Cannot merge " + a + " and " + b + ": Arguments must have compatible types");
     }
 
     public DoubleBinaryOperator merger() { return merger; }

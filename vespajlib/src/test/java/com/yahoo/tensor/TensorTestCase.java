@@ -217,21 +217,21 @@ public class TensorTestCase {
                 Tensor.from("tensor(x{},y[3])", "{}"),
                 Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"));
         assertTensorMerge(
-                Tensor.from("tensor(x[2]):[5,6]"),
+                Tensor.from("tensor(x[4]):[5,6,7,8]"),
                 Tensor.from("tensor(x[4]):[1,2,3,4]"),
                 Tensor.from("tensor(x[4]):[1,2,3,4]"));
         assertTensorMerge(
-                Tensor.from("tensor(x[4]):[1,2,3,4]"),
-                Tensor.from("tensor(x[2]):[5,6]"),
+                Tensor.from("tensor(x[]):{{x:0}:1,{x:1}:2,{x:2}:3,{x:3}:4}"),
+                Tensor.from("tensor(x[]):{{x:0}:5,{x:1}:6}"),
                 Tensor.from("tensor(x[4]):[5,6,3,4]"));
         assertTensorMerge(
-                Tensor.from("tensor(x[4],y[2]):[[1,2],[3,4],[5,6],[7,8]]"),
-                Tensor.from("tensor(x[2],y[3]):[[9,10,11],[12,13,14]]"),
-                Tensor.from("tensor(x[4],y[3]):[[9,10,11],[12,13,14],[5,6,0],[7,8,0]]"));
+                Tensor.from("tensor(x{}):{a:1,b:2}"),
+                Tensor.from("tensor(x{}):{b:3,c:4}"),
+                Tensor.from("tensor(x{}):{a:1,b:3,c:4}"));
         assertTensorMerge(
                 Tensor.from("tensor(key{},x[4]):{a:[1,2,3,4],c:[5,6,7,8]}"),
-                Tensor.from("tensor(key{},x[2]):{a:[9,10],b:[11,12]}"),
-                Tensor.from("tensor(key{},x[4]):{a:[9,10,3,4],b:[11,12,0,0],c:[5,6,7,8]}"));
+                Tensor.from("tensor(key{},x[4]):{a:[9,10,11,12],b:[13,14,15,16]}"),
+                Tensor.from("tensor(key{},x[4]):{a:[9,10,11,12],b:[13,14,15,16],c:[5,6,7,8]}"));
     }
 
     @Test

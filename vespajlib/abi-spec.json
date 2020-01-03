@@ -1324,7 +1324,6 @@
       "public abstract com.yahoo.tensor.TensorType$Dimension$Type type()",
       "public abstract com.yahoo.tensor.TensorType$Dimension withName(java.lang.String)",
       "public boolean isIndexed()",
-      "public com.yahoo.tensor.TensorType$Dimension combineWith(java.util.Optional, boolean)",
       "public abstract java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

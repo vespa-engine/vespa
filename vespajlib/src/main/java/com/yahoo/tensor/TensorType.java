@@ -316,11 +316,11 @@ public class TensorType {
          * Returns the dimension resulting from combining two dimensions having the same name but possibly different
          * types:
          *
-         * [N] + [M] = [ minimal ? min(N, M) : max(N, M) ]
+         * [N] + [M] = [ min(N, M) ]
          * [N] + [] = []
          * [] + {} = {}
          */
-        public Dimension combineWith(Optional<Dimension> other, boolean minimal) {
+        Dimension combineWith(Optional<Dimension> other) {
             if ( ! other.isPresent()) return this;
             if (this instanceof MappedDimension) return this;
             if (other.get() instanceof MappedDimension) return other.get();
@@ -330,10 +330,7 @@ public class TensorType {
             // both are indexed bound
             IndexedBoundDimension thisIb = (IndexedBoundDimension)this;
             IndexedBoundDimension otherIb = (IndexedBoundDimension)other.get();
-            if (minimal)
                 return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
-            else
-                return thisIb.size().get() < otherIb.size().get() ? otherIb : thisIb;
         }
 
         @Override
@@ -520,7 +517,7 @@ public class TensorType {
             }
             else {
                 for (Dimension dimension : type.dimensions)
-                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), true));
+                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name()))));
             }
         }
 
@@ -532,7 +529,7 @@ public class TensorType {
                 if (containsMapped)
                     dimension = new MappedDimension(dimension.name());
                 Dimension existing = dimensions.get(dimension.name());
-                set(dimension.combineWith(Optional.ofNullable(existing), true));
+                set(dimension.combineWith(Optional.ofNullable(existing)));
             }
         }
 
