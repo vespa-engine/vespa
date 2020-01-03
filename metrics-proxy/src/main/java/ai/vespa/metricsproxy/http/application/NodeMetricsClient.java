@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import static ai.vespa.metricsproxy.http.ValuesFetcher.DEFAULT_PUBLIC_CONSUMER_ID;
 import static com.yahoo.log.LogLevel.DEBUG;
 import static java.util.Collections.emptyList;
 
@@ -47,14 +46,10 @@ public class NodeMetricsClient {
     private final Map<ConsumerId, Snapshot> snapshots = new HashMap<>();
     private long snapshotsRetrieved = 0;
 
-    public NodeMetricsClient(HttpClient httpClient, Node node, Clock clock) {
+    NodeMetricsClient(HttpClient httpClient, Node node, Clock clock) {
         this.httpClient = httpClient;
         this.node = node;
         this.clock = clock;
-    }
-
-    public List<MetricsPacket.Builder> getMetrics() {
-        return getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
     }
 
     public List<MetricsPacket.Builder> getMetrics(ConsumerId consumer) {

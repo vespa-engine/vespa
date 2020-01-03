@@ -88,28 +88,28 @@ public class NodeMetricsClientTest {
 
     @Test
     public void metrics_are_retrieved_upon_first_request() {
-        List<MetricsPacket.Builder> metrics = nodeMetricsClient.getMetrics();
+        List<MetricsPacket.Builder> metrics = nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
         assertEquals(4, metrics.size());
    }
 
     @Test
     public void cached_metrics_are_used_when_ttl_has_not_expired() {
-        nodeMetricsClient.getMetrics();
+        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
 
         clock.advance(NodeMetricsClient.METRICS_TTL.minusMillis(1));
-        nodeMetricsClient.getMetrics();
+        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
     }
 
     @Test
     public void metrics_are_refreshed_when_ttl_has_expired() {
-        nodeMetricsClient.getMetrics();
+        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(1, nodeMetricsClient.snapshotsRetrieved());
 
         clock.advance(NodeMetricsClient.METRICS_TTL.plusMillis(1));
-        nodeMetricsClient.getMetrics();
+        nodeMetricsClient.getMetrics(DEFAULT_PUBLIC_CONSUMER_ID);
         assertEquals(2, nodeMetricsClient.snapshotsRetrieved());
     }
 
