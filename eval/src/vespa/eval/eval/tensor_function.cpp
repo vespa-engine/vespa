@@ -164,20 +164,23 @@ void op_tensor_peek(State &state, uint64_t param) {
     TensorSpec::Address addr;
     size_t child_cnt = 0;
     for (auto pos = self.spec().rbegin(); pos != self.spec().rend(); ++pos) {
-        if (std::holds_alternative<TensorSpec::Label>(pos->second)) {
-            addr.emplace(pos->first, std::get<TensorSpec::Label>(pos->second));
-        } else {
-            assert(std::holds_alternative<TensorFunction::Child>(pos->second));
-            double index = round(state.peek(child_cnt++).as_double());
-            size_t dim_idx = self.param_type().dimension_index(pos->first);
-            assert(dim_idx != ValueType::Dimension::npos);
-            const auto &param_dim = self.param_type().dimensions()[dim_idx];
-            if (param_dim.is_mapped()) {
-                addr.emplace(pos->first, vespalib::make_string("%ld", int64_t(index)));
-            } else {
-                addr.emplace(pos->first, size_t(index));
-            }
-        }
+        std::visit(vespalib::overload
+                   {
+                       [&](const TensorSpec::Label &label) {
+                           addr.emplace(pos->first, label);
+                       },
+                       [&](const TensorFunction::Child &) {
+                           double index = round(state.peek(child_cnt++).as_double());
+                           size_t dim_idx = self.param_type().dimension_index(pos->first);
+                           assert(dim_idx != ValueType::Dimension::npos);
+                           const auto &param_dim = self.param_type().dimensions()[dim_idx];
+                           if (param_dim.is_mapped()) {
+                               addr.emplace(pos->first, vespalib::make_string("%ld", int64_t(index)));
+                           } else {
+                               addr.emplace(pos->first, size_t(index));
+                           }
+                       }
+                   }, pos->second);
     }
     TensorSpec spec = state.engine.to_spec(state.peek(child_cnt++));
     const Value &result = self.result_type().is_double()
@@ -364,9 +367,13 @@ Peek::push_children(std::vector<Child::CREF> &children) const
 {
     children.emplace_back(_param);
     for (const auto &dim: _spec) {
-        if (std::holds_alternative<Child>(dim.second)) {
-            children.emplace_back(std::get<Child>(dim.second));
-        }
+        std::visit(vespalib::overload
+                   {
+                       [&](const Child &child) {
+                           children.emplace_back(child);
+                       },
+                       [](const TensorSpec::Label &){}
+                   }, dim.second);
     }
 }
 
@@ -381,17 +388,19 @@ Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 {
     ::visit(visitor, "param", _param.get());
     for (const auto &dim: _spec) {
-        if (std::holds_alternative<TensorSpec::Label>(dim.second)) {
-            const auto &label = std::get<TensorSpec::Label>(dim.second);
-            if (label.is_mapped()) {
-                ::visit(visitor, dim.first, label.name);
-            } else {
-                ::visit(visitor, dim.first, label.index);
-            }
-        } else {
-            assert(std::holds_alternative<Child>(dim.second));
-            ::visit(visitor, dim.first, std::get<Child>(dim.second).get());
-        }
+        std::visit(vespalib::overload
+                   {
+                       [&](const TensorSpec::Label &label) {
+                           if (label.is_mapped()) {
+                               ::visit(visitor, dim.first, label.name);
+                           } else {
+                               ::visit(visitor, dim.first, label.index);
+                           }
+                       },
+                       [&](const Child &child) {
+                           ::visit(visitor, dim.first, child.get());
+                       }
+                   }, dim.second);
     }
 }
 

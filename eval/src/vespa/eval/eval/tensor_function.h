@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/overload.h>
 #include "tensor_spec.h"
 #include "lazy_params.h"
 #include "value_type.h"
@@ -320,12 +321,15 @@ public:
         : Node(result_type_in), _param(param), _spec()
     {
         for (const auto &dim: spec) {
-            if (std::holds_alternative<TensorSpec::Label>(dim.second)) {
-                _spec.emplace(dim.first, std::get<TensorSpec::Label>(dim.second));
-            } else {
-                assert(std::holds_alternative<Node::CREF>(dim.second));
-                _spec.emplace(dim.first, std::get<Node::CREF>(dim.second).get());
-            }
+            std::visit(vespalib::overload
+                       {
+                           [&](const TensorSpec::Label &label) {
+                               _spec.emplace(dim.first, label);
+                           },
+                           [&](const Node::CREF &ref) {
+                               _spec.emplace(dim.first, ref.get());
+                           }
+                       }, dim.second);
         }
     }
     const std::map<vespalib::string, MyLabel> &spec() const { return _spec; }

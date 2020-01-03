@@ -2,6 +2,7 @@
 
 #include "dense_tensor_peek_function.h"
 #include "dense_tensor_view.h"
+#include <vespa/vespalib/util/overload.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/tensor/tensor.h>
@@ -87,14 +88,17 @@ DenseTensorPeekFunction::optimize(const eval::TensorFunction &expr, Stash &stash
             for (auto dim = peek_type.dimensions().rbegin(); dim != peek_type.dimensions().rend(); ++dim) {
                 auto dim_spec = peek->spec().find(dim->name);
                 assert(dim_spec != peek->spec().end());
-                if (std::holds_alternative<TensorSpec::Label>(dim_spec->second)) {
-                    const auto &label = std::get<TensorSpec::Label>(dim_spec->second);
-                    assert(label.is_indexed());
-                    spec.emplace_back(label.index, dim->size);
-                } else {
-                    assert(std::holds_alternative<TensorFunction::Child>(dim_spec->second));
-                    spec.emplace_back(-1, dim->size);
-                }
+
+                std::visit(vespalib::overload
+                           {
+                               [&](const TensorSpec::Label &label) {
+                                   assert(label.is_indexed());
+                                   spec.emplace_back(label.index, dim->size);
+                               },
+                               [&](const TensorFunction::Child &) {
+                                   spec.emplace_back(-1, dim->size);
+                               }
+                           }, dim_spec->second);
             }
             return stash.create<DenseTensorPeekFunction>(peek->copy_children(), spec);
         }
