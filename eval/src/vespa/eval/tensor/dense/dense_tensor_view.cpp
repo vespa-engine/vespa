@@ -90,7 +90,7 @@ checkDimensions(const DenseTensorView &lhs, const DenseTensorView &rhs,
 template <typename LCT, typename RCT, typename Function>
 static Tensor::UP
 sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
-              const eval::ValueType &lhs_type,
+              const std::vector<eval::ValueType::Dimension> &lhs_dims,
               Function &&func)
 {
     size_t sz = lhs.size();
@@ -106,7 +106,7 @@ sameShapeJoin(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
     }
     assert(rhsCellItr == rhs.cend());
     assert(newCells.size() == sz);
-    auto newType = eval::ValueType::tensor_type(lhs_type.dimensions(), eval::get_cell_type<OCT>());
+    auto newType = eval::ValueType::tensor_type(lhs_dims, eval::get_cell_type<OCT>());
     return std::make_unique<DenseTensor<OCT>>(std::move(newType), std::move(newCells));
 }
 
@@ -115,10 +115,10 @@ struct CallJoin
     template <typename LCT, typename RCT, typename Function>
     static Tensor::UP
     call(const ConstArrayRef<LCT> &lhs, const ConstArrayRef<RCT> &rhs,
-         const eval::ValueType &lhs_type,
+         const std::vector<eval::ValueType::Dimension> &lhs_dims,
          Function &&func)
     {
-        return sameShapeJoin(lhs, rhs, lhs_type, std::move(func));
+        return sameShapeJoin(lhs, rhs, lhs_dims, std::move(func));
     }
 };
 
@@ -129,7 +129,7 @@ joinDenseTensors(const DenseTensorView &lhs, const DenseTensorView &rhs,
 {
     TypedCells lhsCells = lhs.cellsRef();
     TypedCells rhsCells = rhs.cellsRef();
-    return dispatch_2<CallJoin>(lhsCells, rhsCells, lhs.fast_type(), std::move(func));
+    return dispatch_2<CallJoin>(lhsCells, rhsCells, lhs.fast_type().dimensions(), std::move(func));
 }
 
 template <typename Function>
@@ -289,7 +289,7 @@ DenseTensorView::accept(TensorVisitor &visitor) const
 Tensor::UP
 DenseTensorView::join(join_fun_t function, const Tensor &arg) const
 {
-    if (fast_type() == arg.type()) {
+    if (fast_type().dimensions() == arg.type().dimensions()) {
         if (function == eval::operation::Mul::f) {
             return joinDenseTensors(*this, arg, "mul",
                                     [](double a, double b) { return (a * b); });
@@ -307,6 +307,13 @@ DenseTensorView::join(join_fun_t function, const Tensor &arg) const
         return dense::generic_join(*this, arg, [](double a, double b) { return (a + b); });
     }
     return dense::generic_join(*this, arg, function);
+}
+
+Tensor::UP
+DenseTensorView::merge(join_fun_t function, const Tensor &arg) const
+{
+    assert(fast_type().dimensions() == arg.type().dimensions());
+    return join(function, arg);
 }
 
 Tensor::UP

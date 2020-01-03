@@ -80,6 +80,7 @@ public:
     static ValueType from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);
+    static ValueType merge(const ValueType &lhs, const ValueType &rhs);
     static CellType unify_cell_types(const ValueType &a, const ValueType &b);
     static ValueType concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension);
     static ValueType either(const ValueType &one, const ValueType &other);

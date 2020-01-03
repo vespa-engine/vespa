@@ -266,6 +266,25 @@ public:
 
 //-----------------------------------------------------------------------------
 
+class Merge : public Op2
+{
+    using Super = Op2;
+private:
+    join_fun_t _function;
+public:
+    Merge(const ValueType &result_type_in,
+          const TensorFunction &lhs_in,
+          const TensorFunction &rhs_in,
+          join_fun_t function_in)
+        : Op2(result_type_in, lhs_in, rhs_in), _function(function_in) {}
+    join_fun_t function() const { return _function; }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(Stash &stash) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 class Concat : public Op2
 {
     using Super = Op2;
@@ -394,6 +413,7 @@ const Node &inject(const ValueType &type, size_t param_idx, Stash &stash);
 const Node &reduce(const Node &child, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash);
 const Node &map(const Node &child, map_fun_t function, Stash &stash);
 const Node &join(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
+const Node &merge(const Node &lhs, const Node &rhs, join_fun_t function, Stash &stash);
 const Node &concat(const Node &lhs, const Node &rhs, const vespalib::string &dimension, Stash &stash);
 const Node &create(const ValueType &type, const std::map<TensorSpec::Address, Node::CREF> &spec, Stash &stash);
 const Node &peek(const Node &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, Node::CREF>> &spec, Stash &stash);

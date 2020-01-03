@@ -84,6 +84,7 @@ const Value &to_default(const Value &value, Stash &stash) {
 }
 
 const Value &to_value(std::unique_ptr<Tensor> tensor, Stash &stash) {
+    assert(tensor);
     if (tensor->type().is_tensor()) {
         return *stash.create<Value::UP>(std::move(tensor));
     }
@@ -99,6 +100,10 @@ Value::UP to_value(std::unique_ptr<Tensor> tensor) {
 
 const Value &fallback_join(const Value &a, const Value &b, join_fun_t function, Stash &stash) {
     return to_default(simple_engine().join(to_simple(a, stash), to_simple(b, stash), function, stash), stash);
+}
+
+const Value &fallback_merge(const Value &a, const Value &b, join_fun_t function, Stash &stash) {
+    return to_default(simple_engine().merge(to_simple(a, stash), to_simple(b, stash), function, stash), stash);
 }
 
 const Value &fallback_reduce(const Value &a, eval::Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) {
@@ -325,6 +330,25 @@ DefaultTensorEngine::join(const Value &a, const Value &b, join_fun_t function, S
         } else {
             return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
         }
+    }
+}
+
+const Value &
+DefaultTensorEngine::merge(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
+{
+    if (auto tensor_a = a.as_tensor()) {
+        auto tensor_b = b.as_tensor();
+        assert(tensor_b);
+        assert(&tensor_a->engine() == this);
+        assert(&tensor_b->engine() == this);
+        const tensor::Tensor &my_a = static_cast<const tensor::Tensor &>(*tensor_a);
+        const tensor::Tensor &my_b = static_cast<const tensor::Tensor &>(*tensor_b);
+        if (!tensor::Tensor::supported({my_a.type(), my_b.type()})) {
+            return fallback_merge(a, b, function, stash);
+        }
+        return to_value(my_a.merge(function, my_b), stash);
+    } else {
+        return stash.create<DoubleValue>(function(a.as_double(), b.as_double()));
     }
 }
 

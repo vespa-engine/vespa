@@ -3,6 +3,8 @@
 #include "simple_tensor.h"
 #include "simple_tensor_engine.h"
 #include "operation.h"
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <algorithm>
 #include <cassert>
@@ -674,6 +676,24 @@ SimpleTensor::join(const SimpleTensor &a, const SimpleTensor &b, join_fun_t func
             }
         }
     }
+    return builder.build();
+}
+
+std::unique_ptr<SimpleTensor>
+SimpleTensor::merge(const SimpleTensor &a, const SimpleTensor &b, join_fun_t function)
+{
+    ValueType result_type = ValueType::merge(a.type(), b.type());
+    if (result_type.is_error()) {
+        return std::make_unique<SimpleTensor>();
+    }
+    Builder builder(result_type);
+    auto cmp = [](const Cell &x, const Cell &y) { return (x.address < y.address); };
+    auto visitor = overload{
+        [&builder](visit_ranges_either, const Cell &x) { builder.set(x.address, x.value); },
+        [&builder,function](visit_ranges_both, const Cell &x, const Cell &y) {
+            builder.set(x.address, function(x.value, y.value));
+        }};
+    visit_ranges(visitor, a._cells.begin(), a._cells.end(), b._cells.begin(), b._cells.end(), cmp);
     return builder.build();
 }
 

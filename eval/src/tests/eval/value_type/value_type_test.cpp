@@ -408,6 +408,25 @@ TEST("require that tensor dimensions can be renamed") {
     EXPECT_EQUAL(type("error").rename({"a"}, {"b"}), type("error"));
 }
 
+TEST("require that similar types can be merged") {
+    EXPECT_EQUAL(ValueType::merge(type("error"), type("error")), type("error"));
+    EXPECT_EQUAL(ValueType::merge(type("double"), type("double")), type("double"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor(x[5])"), type("tensor(x[5])")), type("tensor(x[5])"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor<float>(x[5])"), type("tensor(x[5])")), type("tensor(x[5])"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor(x[5])"), type("tensor<float>(x[5])")), type("tensor(x[5])"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor<float>(x[5])"), type("tensor<float>(x[5])")), type("tensor<float>(x[5])"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor(x{})"), type("tensor(x{})")), type("tensor(x{})"));
+}
+
+TEST("require that diverging types can not be merged") {
+    EXPECT_EQUAL(ValueType::merge(type("error"), type("double")), type("error"));
+    EXPECT_EQUAL(ValueType::merge(type("double"), type("error")), type("error"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor(x[5])"), type("double")), type("error"));
+    EXPECT_EQUAL(ValueType::merge(type("double"), type("tensor(x[5])")), type("error"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor(x[5])"), type("tensor(x[3])")), type("error"));
+    EXPECT_EQUAL(ValueType::merge(type("tensor(x{})"), type("tensor(y{})")), type("error"));
+}
+
 void verify_concat(const ValueType &a, const ValueType b, const vespalib::string &dim, const ValueType &res) {
     EXPECT_EQUAL(ValueType::concat(a, b, dim), res);
     EXPECT_EQUAL(ValueType::concat(b, a, dim), res);

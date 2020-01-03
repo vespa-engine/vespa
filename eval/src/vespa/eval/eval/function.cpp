@@ -603,6 +603,15 @@ void parse_tensor_join(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorJoin>(std::move(lhs), std::move(rhs), std::move(lambda)));
 }
 
+void parse_tensor_merge(ParseContext &ctx) {
+    Node_UP lhs = get_expression(ctx);
+    ctx.eat(',');
+    Node_UP rhs = get_expression(ctx);
+    ctx.eat(',');
+    auto lambda = parse_lambda(ctx, 2);
+    ctx.push_expression(std::make_unique<nodes::TensorMerge>(std::move(lhs), std::move(rhs), std::move(lambda)));
+}
+
 void parse_tensor_reduce(ParseContext &ctx) {
     Node_UP child = get_expression(ctx);
     ctx.eat(',');
@@ -862,6 +871,8 @@ bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_map(ctx);
             } else if (name == "join") {
                 parse_tensor_join(ctx);
+            } else if (name == "merge") {
+                parse_tensor_merge(ctx);
             } else if (name == "reduce") {
                 parse_tensor_reduce(ctx);
             } else if (name == "rename") {

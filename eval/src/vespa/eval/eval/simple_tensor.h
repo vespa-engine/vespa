@@ -89,6 +89,7 @@ public:
     std::unique_ptr<SimpleTensor> rename(const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) const;
     static std::unique_ptr<SimpleTensor> create(const TensorSpec &spec);
     static std::unique_ptr<SimpleTensor> join(const SimpleTensor &a, const SimpleTensor &b, join_fun_t function);
+    static std::unique_ptr<SimpleTensor> merge(const SimpleTensor &a, const SimpleTensor &b, join_fun_t function);
     static std::unique_ptr<SimpleTensor> concat(const SimpleTensor &a, const SimpleTensor &b, const vespalib::string &dimension);
     static void encode(const SimpleTensor &tensor, nbostream &output);
     static std::unique_ptr<SimpleTensor> decode(nbostream &input);

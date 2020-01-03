@@ -28,6 +28,9 @@ const Function *get_lambda(const nodes::Node &node) {
     if (auto ptr = nodes::as<nodes::TensorJoin>(node)) {
         return &ptr->lambda();
     }
+    if (auto ptr = nodes::as<nodes::TensorMerge>(node)) {
+        return &ptr->lambda();
+    }
     return nullptr;
 }
 

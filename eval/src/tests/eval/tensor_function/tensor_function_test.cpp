@@ -154,6 +154,28 @@ struct EvalCtx {
                 .add({{"x","2"},{"y","1"},{"z","2"}}, 39)
                 .add({{"x","1"},{"y","2"},{"z","1"}}, 55));
     }
+    Value::UP make_tensor_merge_lhs() {
+        return engine.from_spec(
+                TensorSpec("tensor(x{})")
+                .add({{"x","1"}}, 1)
+                .add({{"x","2"}}, 3)
+                .add({{"x","3"}}, 5));
+    }
+    Value::UP make_tensor_merge_rhs() {
+        return engine.from_spec(
+                TensorSpec("tensor(x{})")
+                .add({{"x","2"}}, 7)
+                .add({{"x","3"}}, 9)
+                .add({{"x","4"}}, 11));
+    }
+    Value::UP make_tensor_merge_output() {
+        return engine.from_spec(
+                TensorSpec("tensor(x{})")
+                .add({{"x","1"}}, 1)
+                .add({{"x","2"}}, 10)
+                .add({{"x","3"}}, 14)
+                .add({{"x","4"}}, 11));
+    }
 };
 
 void verify_equal(const Value &expect, const Value &value) {
@@ -231,6 +253,20 @@ TEST("require that tensor join works") {
     const auto &fun = join(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash),
                            inject(ValueType::from_spec("tensor(y{},z{})"), b_id, ctx.stash),
                            operation::Mul::f, ctx.stash);
+    EXPECT_TRUE(fun.result_is_mutable());
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    const auto &prog = ctx.compile(fun);
+    TEST_DO(verify_equal(*expect, ctx.eval(prog)));
+}
+
+TEST("require that tensor merge works") {
+    EvalCtx ctx(SimpleTensorEngine::ref());
+    size_t a_id = ctx.add_tensor(ctx.make_tensor_merge_lhs());
+    size_t b_id = ctx.add_tensor(ctx.make_tensor_merge_rhs());
+    Value::UP expect = ctx.make_tensor_merge_output();
+    const auto &fun = merge(inject(ValueType::from_spec("tensor(x{})"), a_id, ctx.stash),
+                            inject(ValueType::from_spec("tensor(x{})"), b_id, ctx.stash),
+                            operation::Add::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQUAL(expect->type(), fun.result_type());
     const auto &prog = ctx.compile(fun);
@@ -412,20 +448,25 @@ TEST("require that push_children works") {
     EXPECT_EQUAL(&refs[2].get().get(), &a);
     EXPECT_EQUAL(&refs[3].get().get(), &b);
     //-------------------------------------------------------------------------
-    concat(a, b, "x", stash).push_children(refs);
+    merge(a, b, operation::Add::f, stash).push_children(refs);
     ASSERT_EQUAL(refs.size(), 6u);
     EXPECT_EQUAL(&refs[4].get().get(), &a);
     EXPECT_EQUAL(&refs[5].get().get(), &b);
     //-------------------------------------------------------------------------
+    concat(a, b, "x", stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 8u);
+    EXPECT_EQUAL(&refs[6].get().get(), &a);
+    EXPECT_EQUAL(&refs[7].get().get(), &b);
+    //-------------------------------------------------------------------------
     rename(c, {}, {}, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 7u);
-    EXPECT_EQUAL(&refs[6].get().get(), &c);
+    ASSERT_EQUAL(refs.size(), 9u);
+    EXPECT_EQUAL(&refs[8].get().get(), &c);
     //-------------------------------------------------------------------------
     if_node(a, b, c, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 10u);
-    EXPECT_EQUAL(&refs[7].get().get(), &a);
-    EXPECT_EQUAL(&refs[8].get().get(), &b);
-    EXPECT_EQUAL(&refs[9].get().get(), &c);
+    ASSERT_EQUAL(refs.size(), 12u);
+    EXPECT_EQUAL(&refs[9].get().get(), &a);
+    EXPECT_EQUAL(&refs[10].get().get(), &b);
+    EXPECT_EQUAL(&refs[11].get().get(), &c);
     //-------------------------------------------------------------------------
 }
 
@@ -433,6 +474,7 @@ TEST("require that tensor function can be dumped for debugging") {
     Stash stash;
     auto my_value_1 = stash.create<DoubleValue>(1.0);
     auto my_value_2 = stash.create<DoubleValue>(2.0);
+    auto my_value_3 = stash.create<DoubleValue>(3.0);
     //-------------------------------------------------------------------------
     const auto &x5 = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
     const auto &mapped_x5 = map(x5, operation::Relu::f, stash);
@@ -452,7 +494,9 @@ TEST("require that tensor function can be dumped for debugging") {
     const auto &concat_x5 = concat(x3, x2, "x", stash);
     //-------------------------------------------------------------------------
     const auto &const_2 = const_value(my_value_2, stash);
-    const auto &root = if_node(const_2, joined_x5, concat_x5, stash);
+    const auto &const_3 = const_value(my_value_3, stash);
+    const auto &merged_double = merge(const_2, const_3, operation::Less::f, stash);
+    const auto &root = if_node(merged_double, joined_x5, concat_x5, stash);
     EXPECT_EQUAL(root.result_type(), ValueType::from_spec("tensor(x[5])"));
     fprintf(stderr, "function dump -->[[%s]]<-- function dump\n", root.as_string().c_str());
 }

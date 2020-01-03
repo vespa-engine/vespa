@@ -121,6 +121,12 @@ SimpleTensorEngine::join(const Value &a, const Value &b, join_fun_t function, St
 }
 
 const Value &
+SimpleTensorEngine::merge(const Value &a, const Value &b, join_fun_t function, Stash &stash) const
+{
+    return to_value(SimpleTensor::merge(to_simple(a, stash), to_simple(b, stash), function), stash);
+}
+
+const Value &
 SimpleTensorEngine::reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const
 {
     return to_value(to_simple(a, stash).reduce(Aggregator::create(aggr, stash), dimensions), stash);

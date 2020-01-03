@@ -49,6 +49,7 @@ struct TensorEngine
 
     virtual const Value &map(const Value &a, map_fun_t function, Stash &stash) const = 0;
     virtual const Value &join(const Value &a, const Value &b, join_fun_t function, Stash &stash) const = 0;
+    virtual const Value &merge(const Value &a, const Value &b, join_fun_t function, Stash &stash) const = 0;
     virtual const Value &reduce(const Value &a, Aggr aggr, const std::vector<vespalib::string> &dimensions, Stash &stash) const = 0;
     virtual const Value &concat(const Value &a, const Value &b, const vespalib::string &dimension, Stash &stash) const = 0;
     virtual const Value &rename(const Value &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to, Stash &stash) const = 0;
