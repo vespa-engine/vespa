@@ -44,11 +44,6 @@
       <artifactId>predicate-search-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-      <version>1.4</version>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
