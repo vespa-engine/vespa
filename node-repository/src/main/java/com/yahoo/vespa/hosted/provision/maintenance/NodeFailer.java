@@ -389,7 +389,7 @@ public class NodeFailer extends Maintainer {
         List<Node> nodes = nodeRepository().getNodes();
         NodeList recentlyFailedNodes = nodes.stream()
                                             .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
-                                            .collect(collectingAndThen(Collectors.toList(), NodeList::new));
+                                            .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
 
         // Allow failing nodes within policy
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;

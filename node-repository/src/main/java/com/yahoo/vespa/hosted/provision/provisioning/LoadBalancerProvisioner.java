@@ -179,12 +179,12 @@ public class LoadBalancerProvisioner {
 
     /** Returns a list of active and reserved nodes of type container in given cluster */
     private List<Node> allocatedContainers(ApplicationId application, ClusterSpec.Id clusterId) {
-        return new NodeList(nodeRepository.getNodes(NodeType.tenant, Node.State.reserved, Node.State.active))
-                .owner(application)
-                .filter(node -> node.state().isAllocated())
-                .container()
-                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterId))
-                .asList();
+        return NodeList.copyOf(nodeRepository.getNodes(NodeType.tenant, Node.State.reserved, Node.State.active))
+                       .owner(application)
+                       .filter(node -> node.state().isAllocated())
+                       .container()
+                       .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterId))
+                       .asList();
     }
 
     /** Find IP addresses reachable by the load balancer service */
