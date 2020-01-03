@@ -9,9 +9,9 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequest;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpRequestHandler;
 import com.yahoo.vespa.clustercontroller.utils.communication.http.HttpResult;
-import org.apache.commons.io.IOUtils;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.logging.Logger;
 
@@ -95,7 +95,7 @@ public class JDiscHttpRequestHandler extends LoggingRequestHandler {
 
     private void copyPostData(com.yahoo.container.jdisc.HttpRequest request, HttpRequest legacyRequest) {
         try {
-            legacyRequest.setPostContent(IOUtils.toString(request.getData(), "UTF-8"));
+            legacyRequest.setPostContent(new String(request.getData().readAllBytes(), StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
