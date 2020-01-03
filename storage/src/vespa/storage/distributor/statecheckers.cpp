@@ -1119,7 +1119,7 @@ BucketStateStateChecker::check(StateChecker::Context& c)
 bool
 GarbageCollectionStateChecker::needsGarbageCollection(const Context& c) const
 {
-    if (c.entry->getNodeCount() == 0 || c.distributorConfig.getGarbageCollectionInterval() == 0) {
+    if (c.entry->getNodeCount() == 0 || c.distributorConfig.getGarbageCollectionInterval() == vespalib::duration::zero()) {
         return false;
     }
     if (containsMaintenanceNode(c.idealState, c)) {
@@ -1147,7 +1147,7 @@ GarbageCollectionStateChecker::check(Context& c)
                << ", current time "
                << c.component.getClock().getTimeInSeconds().getTime()
                << ", configured interval "
-               << c.distributorConfig.getGarbageCollectionInterval() << "]";
+               << vespalib::to_s(c.distributorConfig.getGarbageCollectionInterval()) << "]";
 
         op->setPriority(c.distributorConfig.getMaintenancePriorities().garbageCollection);
         op->setDetailedReason(reason.c_str());

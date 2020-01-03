@@ -797,10 +797,15 @@ public class MockCurator extends Curator {
 
         @Override
         public Stat forPath(String path) throws Exception {
-            if (exists(path, fileSystem.root()))
-                return new Stat(); // A more accurate mock should set the stat fields
-            else
+            try {
+                Node node = getNode(path, fileSystem.root());
+                Stat stat = new Stat();
+                stat.setVersion(node.version());
+                return stat;
+            }
+            catch (KeeperException.NoNodeException e) {
                 return null;
+            }
         }
 
         @Override

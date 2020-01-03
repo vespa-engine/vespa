@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
@@ -72,24 +73,24 @@ import static java.util.stream.Collectors.toMap;
  */
 class JobControllerApiHandlerHelper {
 
-    static HttpResponse applicationJobs(Controller controller, TenantAndApplicationId id, URI baseUriForJobs) {
-        DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(id));
-
-        return null;
-    }
-
     /**
      * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
      */
     static HttpResponse jobTypeResponse(Controller controller, ApplicationId id, URI baseUriForJobs) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
+        DeploymentStatus deploymentStatus = controller.jobController().deploymentStatus(application);
         Instance instance = application.require(id.instance());
         Change change = application.change();
         Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(id.instance());
         Optional<DeploymentSteps> steps = spec.map(s -> new DeploymentSteps(s, controller::system));
-        List<JobType> productionJobs = steps.map(DeploymentSteps::productionJobs).orElse(List.of());
-        List<JobType> jobs = steps.map(DeploymentSteps::jobs).orElse(List.of());
-        Map<JobType, JobStatus> status = controller.jobController().deploymentStatus(application).instanceJobs(id.instance());
+        List<JobType> jobs = deploymentStatus.jobSteps().keySet().stream()
+                                             .filter(jobId -> id.equals(jobId.application()))
+                                             .map(JobId::type)
+                                             .collect(Collectors.toUnmodifiableList());
+        List<JobType> productionJobs = jobs.stream()
+                                           .filter(JobType::isProduction)
+                                           .collect(Collectors.toUnmodifiableList());
+        Map<JobType, JobStatus> status = deploymentStatus.instanceJobs(id.instance());
 
         // The logic for pending runs imitates DeploymentTrigger logic; not good, but the trigger wiring must be re-written to reuse :S
         Map<JobType, Versions> pendingProduction =
@@ -127,6 +128,7 @@ class JobControllerApiHandlerHelper {
 
         Cursor deploymentsArray = responseObject.setArray("deployments");
         steps.ifPresent(deploymentSteps -> deploymentSteps.production().forEach(step -> {
+            if (step.isTest()) return;
             Cursor deploymentsObject = deploymentsArray.addObject();
             deploymentSteps.toJobs(step).forEach(type -> {
                 ZoneId zone = type.zone(controller.system());
@@ -144,7 +146,7 @@ class JobControllerApiHandlerHelper {
         }));
 
         Cursor jobsObject = responseObject.setObject("jobs");
-        steps.ifPresent(deploymentSteps -> deploymentSteps.jobs().forEach(type -> {
+        steps.ifPresent(deploymentSteps -> jobs.forEach(type -> {
             jobTypeToSlime(jobsObject.setObject(shortNameOf(type, controller.system())),
                            controller,
                            application,
@@ -189,11 +191,15 @@ class JobControllerApiHandlerHelper {
         Version lastPlatform = lastVespa.versionNumber();
         lastPlatformObject.setString("platform", lastPlatform.toString());
         lastPlatformObject.setLong("at", lastVespa.committedAt().toEpochMilli());
-        long completed = productionJobs.stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type, status.get(type))).count();
+        long completed = productionJobs.stream()
+                                       .filter(type -> ! type.isTest())
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastPlatform), change, instance, type, status.get(type)))
+                                       .count();
+        long total = productionJobs.stream().filter(type -> ! type.isTest()).count();
         if (Optional.of(lastPlatform).equals(change.platform()))
-            lastPlatformObject.setString("deploying", completed + " of " + productionJobs.size() + " complete");
-        else if (completed == productionJobs.size())
-            lastPlatformObject.setString("completed", completed + " of " + productionJobs.size() + " complete");
+            lastPlatformObject.setString("deploying", completed + " of " + total + " complete");
+        else if (completed == total)
+            lastPlatformObject.setString("completed", completed + " of " + total + " complete");
         else if ( ! application.deploymentSpec().instances().stream()
                                .allMatch(spec -> spec.canUpgradeAt(controller.clock().instant()))) {
             lastPlatformObject.setString("blocked", application.deploymentSpec().instances().stream()
@@ -210,15 +216,18 @@ class JobControllerApiHandlerHelper {
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Instance instance, Map<JobType, JobStatus> status, Change change, List<JobType> productionJobs, Controller controller) {
-        long completed;
         ApplicationVersion lastApplication = application.latestVersion().get();
         applicationVersionToSlime(lastApplicationObject.setObject("application"), lastApplication);
         lastApplicationObject.setLong("at", lastApplication.buildTime().get().toEpochMilli());
-        completed = productionJobs.stream().filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type, status.get(type))).count();
+        long completed = productionJobs.stream()
+                                       .filter(type -> ! type.isTest())
+                                       .filter(type -> controller.applications().deploymentTrigger().isComplete(Change.of(lastApplication), change, instance, type, status.get(type)))
+                                       .count();
+        long total = productionJobs.stream().filter(type -> ! type.isTest()).count();
         if (Optional.of(lastApplication).equals(change.application()))
-            lastApplicationObject.setString("deploying", completed + " of " + productionJobs.size() + " complete");
-        else if (completed == productionJobs.size())
-            lastApplicationObject.setString("completed", completed + " of " + productionJobs.size() + " complete");
+            lastApplicationObject.setString("deploying", completed + " of " + total + " complete");
+        else if (completed == total)
+            lastApplicationObject.setString("completed", completed + " of " + total + " complete");
         else if ( ! application.deploymentSpec().instances().stream()
                                .allMatch(spec -> spec.canChangeRevisionAt(controller.clock().instant()))) {
             lastApplicationObject.setString("blocked", application.deploymentSpec().instances().stream()
@@ -243,7 +252,7 @@ class JobControllerApiHandlerHelper {
                                                                      && run.targetApplication().equals(deployment.applicationVersion()))
                                                       .isPresent());
         if (running.containsKey(type))
-            deploymentObject.setString("status", running.get(type).steps().get(deployReal) == unfinished ? "deploying" : "verifying");
+            deploymentObject.setString("status", running.get(type).stepStatus(deployReal).equals(Optional.of(unfinished)) ? "deploying" : "verifying");
         else if (change.hasTargets())
             deploymentObject.setString("status", pendingProduction.containsKey(type) ? "pending" : "completed");
     }
@@ -343,7 +352,7 @@ class JobControllerApiHandlerHelper {
     }
 
     private static String shortNameOf(JobType type, SystemName system) {
-        return type.isProduction() ? type.zone(system).region().value() : type.jobName();
+        return type.jobName().replaceFirst("production-", "");
     }
 
     private static String taskStatusOf(Run run) {
@@ -363,7 +372,7 @@ class JobControllerApiHandlerHelper {
         versionsToSlime(runObject, run.versions());
 
         Cursor stepsObject = runObject.setObject("steps");
-        run.steps().forEach((step, status) -> stepsObject.setString(step.name(), status.name()));
+        run.steps().forEach((step, info) -> stepsObject.setString(step.name(), info.status().name()));
         Cursor tasksObject = runObject.setObject("tasks");
         taskStatus(deployReal, run).ifPresent(status -> tasksObject.setString("deploy", status));
         taskStatus(Step.installReal, run).ifPresent(status -> tasksObject.setString("install", status));
@@ -376,8 +385,8 @@ class JobControllerApiHandlerHelper {
     private static Optional<String> taskStatus(Step step, Run run) {
         return run.readySteps().contains(step) ? Optional.of("running")
                                                : Optional.ofNullable(run.steps().get(step))
-                                                         .filter(status -> status != unfinished)
-                                                         .map(Step.Status::name);
+                                                         .filter(info -> info.status() != unfinished)
+                                                         .map(info -> info.status().name());
     }
 
     /** Returns a response with the runs for the given job type. */
@@ -493,6 +502,120 @@ class JobControllerApiHandlerHelper {
             case deploymentFailed:      return "deploymentFailed";
             case success:               return "success";
             default:                    throw new IllegalArgumentException("Unexpected status '" + status + "'");
+        }
+    }
+
+    /**
+     * @return Response with all job types that have recorded runs for the application _and_ the status for the last run of that type
+     */
+    static HttpResponse overviewResponse(Controller controller, TenantAndApplicationId id, URI baseUriForDeployments) {
+        Application application = controller.applications().requireApplication(id);
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
+
+        Slime slime = new Slime();
+        Cursor responseObject = slime.setObject();
+        responseObject.setString("tenant", id.tenant().value());
+        responseObject.setString("application", id.application().value());
+
+        Change change = status.application().change();
+        Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
+        Cursor stepsArray = responseObject.setArray("steps");
+        for (DeploymentStatus.StepStatus stepStatus : status.allSteps()) {
+            Cursor stepObject = stepsArray.addObject();
+            stepObject.setString("type", stepStatus.type().name());
+            stepStatus.dependencies().stream()
+                      .map(status.allSteps()::indexOf)
+                      .forEach(stepObject.setArray("dependencies")::addLong);
+            stepObject.setBool("declared", stepStatus.isDeclared());
+            stepStatus.instance().ifPresent(instance -> stepObject.setString("instance", instance.value()));
+
+            stepStatus.job().ifPresent(job -> {
+                stepObject.setString("jobName", job.type().jobName());
+                String baseUriForJob = baseUriForDeployments.resolve(baseUriForDeployments.getPath() +
+                                                                     "/../instance/" + job.application().instance().value() +
+                                                                     "/job/" + job.type().jobName()).normalize().toString();
+                stepObject.setString("url", baseUriForJob);
+                stepObject.setString("environment", job.type().environment().value());
+                stepObject.setString("region", job.type().zone(controller.system()).value());
+
+                if (job.type().isProduction() && job.type().isDeployment()) {
+                    status.deploymentFor(job).ifPresent(deployment -> {
+                        stepObject.setString("currentPlatform", deployment.version().toFullString());
+                        toSlime(stepObject.setObject("currentApplication"), deployment.applicationVersion());
+                    });
+                }
+
+                JobStatus jobStatus = status.jobs().get(job).get();
+                Cursor toRunArray = stepObject.setArray("toRun");
+                for (Versions versions : jobsToRun.getOrDefault(job, List.of())) {
+                    boolean running = jobStatus.lastTriggered()
+                                               .map(run ->    jobStatus.isRunning()
+                                                           && versions.targetsMatch(run.versions())
+                                                           && (job.type().isProduction() || versions.sourcesMatchIfPresent(run.versions())))
+                                               .orElse(false);
+                    if (running)
+                        continue; // Run will be contained in the "runs" array.
+
+                    Cursor runObject = toRunArray.addObject();
+                    toSlime(runObject.setObject("versions"), versions);
+                    stepStatus.readyAt(change, versions).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
+                    stepStatus.readyAt(change, versions)
+                              .filter(controller.clock().instant()::isBefore)
+                              .ifPresent(until -> runObject.setLong("delayedUntil", until.toEpochMilli()));
+                    stepStatus.pausedUntil().ifPresent(until -> runObject.setLong("pausedUntil", until.toEpochMilli()));
+                    stepStatus.coolingDownUntil(versions).ifPresent(until -> runObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                    stepStatus.blockedUntil(change).ifPresent(until -> runObject.setLong("blockedUntil", until.toEpochMilli()));
+                }
+
+                Cursor runsArray = stepObject.setArray("runs");
+                jobStatus.runs().descendingMap().values().stream().limit(10).forEach(run -> {
+                    Cursor runObject = runsArray.addObject();
+                    runObject.setLong("id", run.id().number());
+                    runObject.setString("url", baseUriForJob + "/run/" + run.id());
+                    runObject.setLong("start", run.start().toEpochMilli());
+                    run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
+                    runObject.setString("status", run.status().name());
+                    toSlime(runObject.setObject("versions"), run.versions());
+                    Cursor runStepsArray = runObject.setArray("steps");
+                    run.steps().forEach((step, info) -> {
+                        Cursor runStepObject = runStepsArray.addObject();
+                        runStepObject.setString("name", step.name());
+                        runStepObject.setString("status", info.status().name());
+                    });
+                });
+            });
+        }
+
+        // TODO jonmv: Add latest platform and application status.
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor versionObject, ApplicationVersion version) {
+        version.buildNumber().ifPresent(id -> versionObject.setLong("id", id));
+        version.source().ifPresent(source -> versionObject.setString("commit", source.commit()));
+        version.source().flatMap(source -> toUrl(source)).ifPresent(source -> versionObject.setString("source", source.toString()));
+    }
+
+    private static void toSlime(Cursor versionsObject, Versions versions) {
+        versionsObject.setString("targetPlatform", versions.targetPlatform().toFullString());
+        toSlime(versionsObject.setObject("targetApplication"), versions.targetApplication());
+        versions.sourcePlatform().ifPresent(platform -> versionsObject.setString("sourcePlatform", platform.toFullString()));
+        versions.sourceApplication().ifPresent(application -> toSlime(versionsObject.setObject("sourceApplication"), application));
+    }
+
+    // TODO jonmv: Remove this when source url is stored instead of SourceRevision.
+    private static Optional<URI> toUrl(SourceRevision source) {
+        try {
+            String repository = source.repository();
+            if (repository.startsWith("git@"))
+                repository = "https://" + repository.substring(4);
+            if (repository.endsWith(".git"))
+                repository = repository.substring(0, repository.length() - 4);
+            return Optional.of(URI.create(repository + "/tree/" + source.commit()));
+        }
+        catch (RuntimeException e) {
+            return Optional.empty();
         }
     }
 

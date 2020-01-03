@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "debugwaitfunctionnode.h"
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace search::expression {
 
@@ -30,7 +30,7 @@ using std::chrono::microseconds;
 bool
 DebugWaitFunctionNode::onExecute() const
 {
-    fastos::StopWatch::waitAtLeast(microseconds(long(_waitTime * 1000000)), _busyWait);
+    vespalib::Timer::waitAtLeast(vespalib::from_s(_waitTime), _busyWait);
 
     getArg().execute();
     updateResult().assign(getArg().getResult());

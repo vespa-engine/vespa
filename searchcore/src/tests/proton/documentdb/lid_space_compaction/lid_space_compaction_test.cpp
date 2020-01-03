@@ -26,10 +26,10 @@ using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 using TimePoint = LidUsageStats::TimePoint;
 
 constexpr uint32_t SUBDB_ID = 2;
-constexpr double JOB_DELAY = 1.0;
+constexpr vespalib::duration JOB_DELAY = 1s;
 constexpr uint32_t ALLOWED_LID_BLOAT = 1;
 constexpr double ALLOWED_LID_BLOAT_FACTOR = 0.3;
-constexpr double REMOVE_BATCH_BLOCK_DELAY = 20.0;
+constexpr vespalib::duration REMOVE_BATCH_BLOCK_DELAY = 20s;
 constexpr uint32_t MAX_DOCS_TO_SCAN = 100;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_MOVE_OPS = 10;
@@ -257,7 +257,7 @@ struct JobTestBase : public ::testing::Test {
               double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
               uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
-              double interval = JOB_DELAY,
+              vespalib::duration interval = JOB_DELAY,
               bool nodeRetired = false,
               uint32_t maxOutstandingMoveOps = MAX_OUTSTANDING_MOVE_OPS)
     {
@@ -366,13 +366,13 @@ struct JobTest : public JobTestBase {
               double allowedLidBloatFactor = ALLOWED_LID_BLOAT_FACTOR,
               uint32_t maxDocsToScan = MAX_DOCS_TO_SCAN,
               double resourceLimitFactor = RESOURCE_LIMIT_FACTOR,
-              double interval = JOB_DELAY,
+              vespalib::duration interval = JOB_DELAY,
               bool nodeRetired = false,
               uint32_t maxOutstandingMoveOps = MAX_OUTSTANDING_MOVE_OPS) {
         JobTestBase::init(allowedLidBloat, allowedLidBloatFactor, maxDocsToScan, resourceLimitFactor, interval, nodeRetired, maxOutstandingMoveOps);
         _jobRunner = std::make_unique<MyDirectJobRunner>(*_job);
     }
-    void init_with_interval(double interval) {
+    void init_with_interval(vespalib::duration interval) {
         init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, MAX_DOCS_TO_SCAN, RESOURCE_LIMIT_FACTOR, interval);
     }
     void init_with_node_retired(bool retired) {
@@ -580,16 +580,16 @@ TEST_F(JobTest, resource_limit_factor_adjusts_limit)
 
 TEST_F(JobTest, delay_is_set_based_on_interval_and_is_max_300_secs)
 {
-    init_with_interval(301);
-    EXPECT_EQ(300, _job->getDelay());
-    EXPECT_EQ(301, _job->getInterval());
+    init_with_interval(301s);
+    EXPECT_EQ(300s, _job->getDelay());
+    EXPECT_EQ(301s, _job->getInterval());
 }
 
 TEST_F(JobTest, delay_is_set_based_on_interval_and_can_be_less_than_300_secs)
 {
-    init_with_interval(299);
-    EXPECT_EQ(299, _job->getDelay());
-    EXPECT_EQ(299, _job->getInterval());
+    init_with_interval(299s);
+    EXPECT_EQ(299s, _job->getDelay());
+    EXPECT_EQ(299s, _job->getInterval());
 }
 
 TEST_F(JobTest, job_is_disabled_when_node_is_retired)
@@ -649,7 +649,7 @@ TEST_F(JobTest, job_is_re_enabled_when_remove_batch_is_no_longer_ongoing)
     EXPECT_TRUE(run()); // job is disabled
     assertJobContext(2, 9, 1, 0, 0);
 
-    _handler->set_last_remove_batch(last_remove_batch - std::chrono::seconds(static_cast<long>(REMOVE_BATCH_BLOCK_DELAY)));
+    _handler->set_last_remove_batch(last_remove_batch - REMOVE_BATCH_BLOCK_DELAY);
     EXPECT_FALSE(run()); // job executed as normal (with more work to do)
     assertJobContext(3, 8, 2, 0, 0);
 }

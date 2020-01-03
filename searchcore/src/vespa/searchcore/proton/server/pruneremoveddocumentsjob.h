@@ -20,7 +20,7 @@ class PruneRemovedDocumentsJob : public BlockableMaintenanceJob
 private:
     const IDocumentMetaStore      &_metaStore;  // external ownership
     uint32_t                       _subDbId;
-    double                         _cfgAgeLimit;
+    vespalib::duration             _cfgAgeLimit;
     const vespalib::string        &_docTypeName;
     IPruneRemovedDocumentsHandler &_handler;
     IFrozenBucketHandler          &_frozenHandler;

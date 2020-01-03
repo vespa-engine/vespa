@@ -33,17 +33,17 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
     size_t     _runIdx;
     bool       _blocked;
     MyMaintenanceJob(size_t numRuns)
-        : IBlockableMaintenanceJob("myjob", 10, 20),
+        : IBlockableMaintenanceJob("myjob", 10s, 20s),
           _runGates(getGateVector(numRuns)),
           _runIdx(0),
           _blocked(false)
     {}
     void block() { setBlocked(BlockedReason::RESOURCE_LIMITS); }
     void unBlock() { unBlock(BlockedReason::RESOURCE_LIMITS); }
-    virtual void setBlocked(BlockedReason) override { _blocked = true; }
-    virtual void unBlock(BlockedReason) override { _blocked = false; }
-    virtual bool isBlocked() const override { return _blocked; }
-    virtual bool run() override {
+    void setBlocked(BlockedReason) override { _blocked = true; }
+    void unBlock(BlockedReason) override { _blocked = false; }
+    bool isBlocked() const override { return _blocked; }
+    bool run() override {
         _runGates[_runIdx++]->await(5000);
         return _runIdx == _runGates.size();
     }
@@ -90,8 +90,8 @@ struct Fixture
 TEST_F("require that maintenance job name, delay and interval are preserved", Fixture)
 {
     EXPECT_EQUAL("myjob", f._trackedJob->getName());
-    EXPECT_EQUAL(10, f._trackedJob->getDelay());
-    EXPECT_EQUAL(20, f._trackedJob->getInterval());
+    EXPECT_EQUAL(10s, f._trackedJob->getDelay());
+    EXPECT_EQUAL(20s, f._trackedJob->getInterval());
 }
 
 TEST_F("require that maintenance job that needs 1 run is tracked", Fixture)

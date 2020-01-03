@@ -1,15 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configholder.h>
-#include <vespa/fastos/timestamp.h>
 
 using namespace config;
-using namespace std::chrono_literals;
 
 namespace {
 
-constexpr long ONE_SEC = 1000;
-constexpr long ONE_MINUTE = 60 * ONE_SEC;
+constexpr vespalib::duration ONE_SEC = 1s;
+constexpr vespalib::duration ONE_MINUTE = 60s;
 
 }
 
@@ -34,10 +32,10 @@ TEST("Require that waiting is done")
     ConfigValue value;
 
     ConfigHolder holder;
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     holder.wait(1000ms);
-    EXPECT_GREATER_EQUAL(timer.elapsed().ms(), ONE_SEC);
-    EXPECT_LESS(timer.elapsed().ms(), ONE_MINUTE);
+    EXPECT_GREATER_EQUAL(timer.elapsed(), ONE_SEC);
+    EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
 
     holder.handle(std::make_unique<ConfigUpdate>(value, true, 0));
     ASSERT_TRUE(holder.wait(100ms));
@@ -57,23 +55,23 @@ TEST("Require that polling for elements work")
 
 TEST("Require that negative time does not mean forever.") {
     ConfigHolder holder;
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     ASSERT_FALSE(holder.poll());
     ASSERT_FALSE(holder.wait(10ms));
     ASSERT_FALSE(holder.wait(0ms));
     ASSERT_FALSE(holder.wait(-1ms));
     ASSERT_FALSE(holder.wait(-7ms));
-    EXPECT_LESS(timer.elapsed().ms(), ONE_MINUTE);
+    EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
 }
 
 TEST_MT_F("Require that wait is interrupted", 2, ConfigHolder)
 {
     if (thread_id == 0) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         TEST_BARRIER();
         f.wait(1000ms);
-        EXPECT_LESS(timer.elapsed().ms(), ONE_MINUTE);
-        EXPECT_GREATER(timer.elapsed().ms(), 400.0);
+        EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
+        EXPECT_GREATER(timer.elapsed(), 400ms);
         TEST_BARRIER();
     } else {
         TEST_BARRIER();

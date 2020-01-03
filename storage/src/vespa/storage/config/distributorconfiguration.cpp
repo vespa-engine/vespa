@@ -3,7 +3,6 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/traversingvisitor.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/fastos/timestamp.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -23,14 +22,14 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxIdealStateOperations(100),
       _idealStateChunkSize(1000),
       _maxNodesPerMerge(16),
-      _lastGarbageCollectionChange(0),
+      _lastGarbageCollectionChange(vespalib::duration::zero()),
       _garbageCollectionInterval(0),
       _minPendingMaintenanceOps(100),
       _maxPendingMaintenanceOps(1000),
       _maxVisitorsPerNodePerClientVisitor(4),
       _minBucketsPerVisitor(5),
       _maxClusterClockSkew(0),
-      _inhibitMergeSendingOnBusyNodeDuration(std::chrono::seconds(60)),
+      _inhibitMergeSendingOnBusyNodeDuration(60s),
       _simulated_db_pruning_latency(0),
       _simulated_db_merging_latency(0),
       _doInlineSplit(true),
@@ -122,20 +121,20 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _minimalBucketSplit = config.minsplitcount;
     _maxNodesPerMerge = config.maximumNodesPerMerge;
 
-    _garbageCollectionInterval = config.garbagecollection.interval;
+    _garbageCollectionInterval = std::chrono::seconds(config.garbagecollection.interval);
 
     if (containsTimeStatement(config.garbagecollection.selectiontoremove)) {
         // Always changes.
-        _lastGarbageCollectionChange = 1;
+        _lastGarbageCollectionChange = vespalib::steady_time::min();
     } else if (_garbageCollectionSelection != config.garbagecollection.selectiontoremove) {
-        _lastGarbageCollectionChange = fastos::time();
+        _lastGarbageCollectionChange = vespalib::steady_clock::now();
     }
 
     _garbageCollectionSelection = config.garbagecollection.selectiontoremove;
 
     // Don't garbage collect with empty selection.
     if (_garbageCollectionSelection.empty()) {
-      _garbageCollectionInterval = 0;
+      _garbageCollectionInterval = vespalib::duration::zero();
     }
 
     _blockedStateCheckers.clear();
@@ -177,7 +176,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
         (int)_byteCountJoinLimit,
         (int)_minimalBucketSplit,
         _garbageCollectionSelection.c_str(),
-        (int)_garbageCollectionInterval,
+        (int)vespalib::to_s(_garbageCollectionInterval),
         (int)_maxIdealStateOperations);
 }
 

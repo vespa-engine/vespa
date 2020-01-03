@@ -1,0 +1,37 @@
+{
+  "services": [
+    {
+      "name": "searchnode",
+      "timestamp": 1234,
+      "status": {
+        "code": "up"
+      },
+      "metrics": [
+        {
+          "values": {
+            "queries.count": 4
+          },
+          "dimensions": {
+            "documentType": "music"
+          }
+        }
+      ]
+    },
+    {
+      "name": "slobrok",
+      "timestamp": 1234,
+      "status": {
+        "code": "unknown",
+        "description": "Unable to fetch metrics from service 'slobrok'"
+      },
+      "metrics": [
+        {
+          "values": {},
+          "dimensions": {
+            "instance": "slobrok0"
+          }
+        }
+      ]
+    }
+  ]
+}

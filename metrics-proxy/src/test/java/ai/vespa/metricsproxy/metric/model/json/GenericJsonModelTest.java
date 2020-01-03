@@ -18,31 +18,67 @@ import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
 import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.metric.model.ServiceId.toServiceId;
 import static ai.vespa.metricsproxy.metric.model.json.JacksonUtil.createObjectMapper;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author gjoranv
  */
 public class GenericJsonModelTest {
     private static final String TEST_FILE = "generic-sample.json";
+    private static final String TEST_FILE_WITHOUT_NODE = "generic-without-node.json";
 
     @Test
     public void deserialize_serialize_roundtrip() throws IOException {
-        GenericJsonModel jsonModel = genericJsonModelFromTestFile();
+        GenericJsonModel jsonModel = genericJsonModelFromTestFile(TEST_FILE);
 
         // Do some sanity checking
         assertEquals(2, jsonModel.services.size());
         assertEquals(2, jsonModel.node.metrics.size());
         assertEquals(16.222, jsonModel.node.metrics.get(0).values.get("cpu.util"), 0.01d);
 
-        String expected = getFileContents(TEST_FILE).trim().replaceAll("\\s+", "");;
+        assertThatSerializedModelEqualsTestFile(jsonModel, TEST_FILE);
+    }
 
-        String serialized = jsonModel.serialize();
-        String trimmed = serialized.trim().replaceAll("\\s+", "");
+    @Test
+    public void deserialize_serialize_roundtrip_without_node_json() throws IOException {
+        GenericJsonModel jsonModel = genericJsonModelFromTestFile(TEST_FILE_WITHOUT_NODE);
+        assertEquals(2, jsonModel.services.size());
 
-        assertEquals(expected, trimmed);
+        assertThatSerializedModelEqualsTestFile(jsonModel, TEST_FILE_WITHOUT_NODE);
+    }
+
+    @Test
+    public void deserialize_serialize_roundtrip_with_metrics_packets() throws IOException {
+        GenericJsonModel modelFromFile = genericJsonModelFromTestFile(TEST_FILE);
+        List<MetricsPacket> metricsPackets = GenericJsonUtil.toMetricsPackets(modelFromFile).stream()
+                .map(MetricsPacket.Builder::build)
+                .collect(toList());
+
+        assertEquals(4, metricsPackets.size());
+
+        GenericJsonModel modelFromPackets = GenericJsonUtil.toGenericJsonModel(metricsPackets);
+
+        // Do some sanity checking
+        assertEquals(2, modelFromFile.services.size());
+        assertEquals(2, modelFromFile.node.metrics.size());
+        assertEquals(16.222, modelFromFile.node.metrics.get(0).values.get("cpu.util"), 0.01d);
+
+        assertThatSerializedModelEqualsTestFile(modelFromPackets, TEST_FILE);
+    }
+
+    @Test
+    public void deserialize_serialize_roundtrip_without_node_json_with_metrics_packets() throws IOException {
+        GenericJsonModel modelFromFile = genericJsonModelFromTestFile(TEST_FILE_WITHOUT_NODE);
+        List<MetricsPacket> metricsPackets = GenericJsonUtil.toMetricsPackets(modelFromFile).stream()
+                .map(MetricsPacket.Builder::build)
+                .collect(toList());
+
+        assertEquals(2, metricsPackets.size());
+
+        GenericJsonModel modelFromPackets = GenericJsonUtil.toGenericJsonModel(metricsPackets);
+        assertThatSerializedModelEqualsTestFile(modelFromPackets, TEST_FILE_WITHOUT_NODE);
     }
 
     @Test
@@ -84,10 +120,30 @@ public class GenericJsonModelTest {
         System.out.println(createObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonModel));
     }
 
+    @Test
+    public void generic_json_string_can_be_converted_to_metrics_packets() {
+        String genericJson = getFileContents(TEST_FILE);
+        List<MetricsPacket> metricsPackets = GenericJsonUtil.toMetricsPackets(genericJson).stream()
+                .map(MetricsPacket.Builder::build)
+                .collect(toList());
 
-    private GenericJsonModel genericJsonModelFromTestFile() throws IOException {
+        assertEquals(4, metricsPackets.size());
+        GenericJsonModel modelFromPackets = GenericJsonUtil.toGenericJsonModel(metricsPackets);
+
+        assertThatSerializedModelEqualsTestFile(modelFromPackets, TEST_FILE);
+    }
+
+    private void assertThatSerializedModelEqualsTestFile(GenericJsonModel modelFromPackets, String testFile) {
+        String serialized = modelFromPackets.serialize();
+        String trimmed = serialized.trim().replaceAll("\\s+", "");
+
+        String expected = getFileContents(testFile).trim().replaceAll("\\s+", "");
+        assertEquals(expected, trimmed);
+    }
+
+    private GenericJsonModel genericJsonModelFromTestFile(String filename) throws IOException {
         ObjectMapper mapper = createObjectMapper();
-        return mapper.readValue(getFileContents(TEST_FILE), GenericJsonModel.class);
+        return mapper.readValue(getFileContents(filename), GenericJsonModel.class);
     }
 
 }

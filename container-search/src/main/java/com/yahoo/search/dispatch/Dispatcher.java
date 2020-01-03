@@ -131,8 +131,9 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        invokerFactory.release();
+        /* The seach cluster must be shutdown first as it uses the invokerfactory. */
         searchCluster.shutDown();
+        invokerFactory.release();
     }
 
     public FillInvoker getFillInvoker(Result result, VespaBackEndSearcher searcher) {

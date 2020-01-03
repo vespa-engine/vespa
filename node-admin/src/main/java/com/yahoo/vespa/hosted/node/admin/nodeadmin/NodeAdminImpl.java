@@ -211,7 +211,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
     private static NodeAgentWithScheduler create(Clock clock, NodeAgentFactory nodeAgentFactory, NodeAgentContext context) {
         NodeAgentContextManager contextManager = new NodeAgentContextManager(clock, context);
-        NodeAgent nodeAgent = nodeAgentFactory.create(contextManager);
+        NodeAgent nodeAgent = nodeAgentFactory.create(contextManager, context);
         return new NodeAgentWithScheduler(nodeAgent, contextManager);
     }
 }

@@ -100,7 +100,7 @@ Test::Main()
         payLoad = strtol(_argv[3], NULL, 0);
     }
     TEST_INIT("sort_benchmark");
-    fastos::SteadyTimeStamp start(fastos::ClockSteady::now());
+    steady_time start(steady_clock::now());
     if (payLoad < 8) {
         typedef TT<8> T;
         if (type == "sortdirect") {

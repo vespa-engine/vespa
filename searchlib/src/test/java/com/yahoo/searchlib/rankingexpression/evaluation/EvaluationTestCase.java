@@ -324,7 +324,7 @@ public class EvaluationTestCase {
                                                                                 "{y:1}:((1+1)+a)}{y:1}" +
                                                            "}");
 
-        // tensor value
+        // tensor slice
         tester.assertEvaluates("3.0", "tensor0{x:1}", "{ {x:0}:1, {x:1}:3 }");
         tester.assertEvaluates("1.2", "tensor0{key:foo,x:0}", true, "{ {key:foo,x:0}:1.2, {key:bar,x:0}:3 }");
         tester.assertEvaluates("3.0", "tensor0{bar}", true, "{ {x:foo}:1, {x:bar}:3 }");
@@ -401,6 +401,9 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{}):{ {x:a}:6.0, {x:b}:4.0, {x:c}:14.0 }",
                                "tensor(x{}):{ {x:a}:1+2+3, {x:b}:if(1>2,3,4), {x:c}:sum(tensor0*tensor1) }",
                                "{ {x:0}:7 }", "tensor(x{}):{ {x:0}:2 }");
+        tester.assertEvaluates("tensor(x{}):{ {x:a}:6.0, {x:b}:4.0, {x:'--'}:14.0 }",
+                               "tensor(x{}):{ a:1+2+3, b:if(1>2,3,4), '--':sum(tensor0*tensor1) }",
+                               "{ {x:0}:7 }", "tensor(x{}):{ {x:0}:2 }");
         tester.assertEvaluates("tensor<float>(d0[1],x[3]):[[1.0, 0.5, 0.25]]",
                                "tensor<float>(d0[1],x[3]):[[one,one_half,a_quarter]]");
         tester.assertEvaluates("tensor(x[2],y[3]):[[1.0, 0.5, 0.25],[0.25, 0.5, 1.0]]",
@@ -410,10 +413,10 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor(x{},y[2]):{a:[1.0, 0.5], b:[0.25, 2]}",
                                "tensor(x{},y[2]):{a:[one, one_half], b:[a_quarter, 2]}");
         tester.assertEvaluates("tensor(key{},x[2],y[3]):{key1:[[1.0, 0.5, 0.25],[0.25, 0.5, 1.0]]," +
-                               "                                       key2:[[1.0, 2.0, 3.00],[4.00, 5.0, 6.0]]}",
+                               "                                       'key2.[]':[[1.0, 2.0, 3.00],[4.00, 5.0, 6.0]]}",
                                "tensor(key{},x[2],y[3]):{key1:[[one,one_half,a_quarter],[a_quarter,one_half,one]]," +
-                               "                                        key2:[[1,2,3],[4,5,6]]}");
-        tester.assertEvaluates("tensor(x{}):{{x:a}:1, {x:b}:-2, {x:cee}:0.5}", "tensor(x{}):{a:1, b:-2, cee:one_half}");
+                               "                                        'key2.[]':[[1,2,3],[4,5,6]]}");
+        tester.assertEvaluates("tensor(x{}):{{x:a}:1, {x:'\"'}:-2, {x:\"'\"}:0.5}", "tensor(x{}):{a:1, '\"':-2, \"'\":one_half}");
 
         // Opposite order in the expression:
         // - indexed

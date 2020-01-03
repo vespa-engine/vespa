@@ -2,6 +2,7 @@
 
 #include "simple_phrase_blueprint.h"
 #include "simple_phrase_search.h"
+#include "field_spec.hpp"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
@@ -81,10 +82,10 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
 
 
 void
-SimplePhraseBlueprint::fetchPostings(bool strict)
+SimplePhraseBlueprint::fetchPostings(const ExecuteInfo &execInfo)
 {
     for (auto & term : _terms) {
-        term->fetchPostings(strict);
+        term->fetchPostings(execInfo);
     }
 }
 

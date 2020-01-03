@@ -6,7 +6,6 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/ptrholder.h>
-#include <vespa/fastos/timestamp.h>
 #include <vector>
 
 namespace vespalib { class asciistream; }
@@ -36,7 +35,6 @@ public:
         vespalib::string  _name;
         DataType          _dataType;
         CollectionType    _collectionType;
-        fastos::TimeStamp _timestamp;
 
     public:
         Field(vespalib::stringref n, DataType dt);
@@ -49,8 +47,6 @@ public:
 
         virtual ~Field();
 
-        void setTimestamp(fastos::TimeStamp ts) { _timestamp = ts; }
-
         virtual void
         write(vespalib::asciistream & os,
               vespalib::stringref prefix) const;
@@ -58,7 +54,6 @@ public:
         const vespalib::string &getName() const { return _name; }
         DataType getDataType() const { return _dataType; }
         CollectionType getCollectionType() const { return _collectionType; }
-        fastos::TimeStamp getTimestamp() const { return _timestamp; }
 
         bool matchingTypes(const Field &rhs) const {
             return getDataType() == rhs.getDataType() &&
@@ -388,8 +383,6 @@ public:
 
     void swap(Schema &rhs);
     void clear();
-
-    Schema::UP getOldFields(fastos::TimeStamp limit_timestamp);
 
     static Schema::UP intersect(const Schema &lhs, const Schema &rhs);
     static Schema::UP make_union(const Schema &lhs, const Schema &rhs);

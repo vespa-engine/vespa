@@ -17,6 +17,8 @@
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/clock.h>
 
+namespace search::engine { class Trace; }
+
 namespace search::fef {
     class RankProgram;
     class RankSetup;
@@ -109,6 +111,7 @@ public:
                       const vespalib::Doom & softDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
+                      search::engine::Trace & trace,
                       vespalib::stringref queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,

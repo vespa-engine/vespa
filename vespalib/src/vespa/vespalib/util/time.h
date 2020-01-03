@@ -3,6 +3,8 @@
 #pragma once
 
 #include <chrono>
+#include <vespa/vespalib/stllike/string.h>
+#include <sys/time.h>
 
 // Guidelines:
 //
@@ -39,8 +41,14 @@ constexpr double to_s(duration d) {
     return std::chrono::duration_cast<std::chrono::duration<double>>(d).count();
 }
 
+system_time to_utc(steady_time ts);
+
 constexpr duration from_s(double seconds) {
     return std::chrono::duration_cast<duration>(std::chrono::duration<double>(seconds));
+}
+
+constexpr int64_t count_s(duration d) {
+    return std::chrono::duration_cast<std::chrono::seconds>(d).count();
 }
 
 constexpr int64_t count_ms(duration d) {
@@ -55,6 +63,12 @@ constexpr int64_t count_ns(duration d) {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(d).count();
 }
 
+constexpr duration from_timeval(const timeval & tv) {
+    return duration(tv.tv_sec*1000000000L + tv.tv_usec*1000L);
+}
+
+vespalib::string to_string(system_time time);
+
 /**
  * Simple utility class used to measure how much time has elapsed
  * since it was constructed.
@@ -67,6 +81,7 @@ public:
     Timer() : _start(steady_clock::now()) {}
     ~Timer();
     duration elapsed() const { return (steady_clock::now() - _start); }
+    static void waitAtLeast(duration dur, bool busyWait);
 };
 
 }

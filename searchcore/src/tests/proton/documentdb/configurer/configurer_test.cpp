@@ -40,7 +40,6 @@ using namespace vespa::config::search::summary;
 using namespace vespa::config::search;
 using namespace vespalib;
 
-using fastos::TimeStamp;
 using proton::matching::SessionManager;
 using searchcorespi::IndexSearchable;
 using searchcorespi::index::IThreadingService;
@@ -127,7 +126,7 @@ ViewSet::ViewSet()
       _dmsc(),
       _gidToLidChangeHandler(),
       _lidReuseDelayer(),
-      _commitTimeTracker(TimeStamp()),
+      _commitTimeTracker(vespalib::duration::zero()),
       searchView(),
       feedView(),
       _hwInfo()
@@ -144,7 +143,7 @@ struct MyDocumentDBReferenceResolver : public IDocumentDBReferenceResolver {
     std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &,
                                                     const search::IAttributeManager &,
                                                     const std::shared_ptr<search::IDocumentMetaStoreContext> &,
-                                                    fastos::TimeStamp) override {
+                                                    vespalib::duration) override {
         return std::make_unique<ImportedAttributesRepo>();
     }
     void teardown(const search::IAttributeManager &) override { }
@@ -256,7 +255,7 @@ struct MyFastAccessFeedView
           _dmsc(),
           _gidToLidChangeHandler(make_shared<DummyGidToLidChangeHandler>()),
           _lidReuseDelayer(),
-          _commitTimeTracker(TimeStamp()),
+          _commitTimeTracker(vespalib::duration::zero()),
           _feedView()
     {
         init();

@@ -169,14 +169,22 @@ public class TensorFunctionNode extends CompositeNode {
 
             if (outermost instanceof ExpressionToStringContext) {
                 ExpressionToStringContext context = (ExpressionToStringContext)outermost;
-                return expression.toString(new StringBuilder(),
-                                           new ExpressionToStringContext(context.wrappedSerializationContext, c, context.path, context.parent),
-                                           context.path,
-                                           context.parent).toString();
+                ExpressionNode root = expression;
+                if (root instanceof CompositeNode && ! (root instanceof EmbracedNode) && ! isIdentifierReference(root))
+                    root = new EmbracedNode(root); // Output embraced if composite
+                return root.toString(new StringBuilder(),
+                                     new ExpressionToStringContext(context.wrappedSerializationContext, c, context.path, context.parent),
+                                     context.path,
+                                     context.parent).toString();
             }
             else {
                 return expression.toString();
             }
+        }
+
+        private boolean isIdentifierReference(ExpressionNode node) {
+            if ( ! (node instanceof ReferenceNode)) return false;
+            return ((ReferenceNode)node).reference().isIdentifier();
         }
 
     }

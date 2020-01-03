@@ -870,6 +870,7 @@ private:
 
 extern template class BTreeIteratorBase<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeIteratorBase<uint32_t, BTreeNoLeafData, NoAggregated>;
+extern template class BTreeIteratorBase<datastore::EntryRef, BTreeNoLeafData, NoAggregated>;
 extern template class BTreeIteratorBase<uint32_t, int32_t, MinMaxAggregated>;
 extern template class BTreeConstIterator<uint32_t, uint32_t, NoAggregated>;
 extern template class BTreeConstIterator<uint32_t, BTreeNoLeafData, NoAggregated>;

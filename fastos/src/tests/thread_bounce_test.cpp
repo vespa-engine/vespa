@@ -3,7 +3,8 @@
 #include "tests.h"
 #include "job.h"
 #include "thread_test_base.hpp"
-#include <vespa/fastos/timestamp.h>
+
+using namespace std::chrono;
 
 class Thread_Bounce_Test : public ThreadTestBase
 {
@@ -39,12 +40,12 @@ class Thread_Bounce_Test : public ThreadTestBase
 
      lastcntsum = -1;
      for (int iter = 0; iter < 8; iter++) {
-       fastos::StopWatch checkTime;
+       steady_clock::time_point start = steady_clock::now();
 
-       int left = static_cast<int>(checkTime.elapsed().ms());
-       while (left < 1000) {
-         std::this_thread::sleep_for(std::chrono::milliseconds(1000 - left));
-         left = static_cast<int>(checkTime.elapsed().ms());
+       nanoseconds left = steady_clock::now() - start;
+       while (left < 1000ms) {
+         std::this_thread::sleep_for(1000ms - left);
+         left = steady_clock::now() - start;
        }
 
        mutex1.lock();

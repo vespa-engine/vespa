@@ -243,55 +243,16 @@ TEST(SchemaTest, test_load_and_save)
     }
 }
 
-TEST(SchemaTest, require_that_schema_can_save_and_load_timestamps_for_fields)
-{
-    const fastos::TimeStamp timestamp(42);
-    const std::string file_name = "schema-with-timestamps.txt";
-    Schema s;
-    Schema::IndexField f("foo", DataType::STRING);
-    f.setTimestamp(timestamp);
-    s.addIndexField(f);
-    ASSERT_TRUE(s.saveToFile(file_name));
-    Schema s2;
-    ASSERT_TRUE(s2.loadFromFile(file_name));
-    ASSERT_EQ(1u, s2.getNumIndexFields());
-    EXPECT_EQ(timestamp, s2.getIndexField(0).getTimestamp());
-}
-
-TEST(SchemaTest, require_that_timestamps_are_omitted_when_0)
-{
-    const std::string file_name = "schema-without-timestamps.txt";
-    Schema s;
-    s.addIndexField(Schema::IndexField("foo", DataType::STRING));
-    ASSERT_TRUE(s.saveToFile(file_name));
-
-    std::ifstream file(file_name.c_str());
-    ASSERT_TRUE(file.good());
-    while (file) {
-        std::string line;
-        getline(file, line);
-        EXPECT_NE("indexfield[0].timestamp 0", line);
-    }
-
-    Schema s2;
-    ASSERT_TRUE(s2.loadFromFile(file_name));
-    ASSERT_EQ(1u, s2.getNumIndexFields());
-}
-
 void
-addAllFieldTypes(const string& name, Schema& schema,
-                 fastos::TimeStamp timestamp)
+addAllFieldTypes(const string& name, Schema& schema)
 {
     Schema::IndexField index_field(name, DataType::STRING);
-    index_field.setTimestamp(timestamp);
     schema.addIndexField(index_field);
 
     Schema::AttributeField attribute_field(name, DataType::STRING);
-    attribute_field.setTimestamp(timestamp);
     schema.addAttributeField(attribute_field);
 
     Schema::SummaryField summary_field(name, DataType::STRING);
-    summary_field.setTimestamp(timestamp);
     schema.addSummaryField(summary_field);
 
     schema.addFieldSet(Schema::FieldSet(name));
@@ -301,12 +262,10 @@ TEST(SchemaTest, require_that_schemas_can_be_added)
 {
     const string name1 = "foo";
     const string name2 = "bar";
-    const fastos::TimeStamp timestamp1(42);
-    const fastos::TimeStamp timestamp2(84);
     Schema s1;
-    addAllFieldTypes(name1, s1, timestamp1);
+    addAllFieldTypes(name1, s1);
     Schema s2;
-    addAllFieldTypes(name2, s2, timestamp2);
+    addAllFieldTypes(name2, s2);
 
     Schema::UP sum = Schema::make_union(s1, s2);
     ASSERT_EQ(2u, sum->getNumIndexFields());
@@ -334,7 +293,7 @@ TEST(SchemaTest, require_that_schemas_can_be_added)
 TEST(SchemaTest, require_that_S_union_S_equals_S_for_schema_S)
 {
     Schema schema;
-    addAllFieldTypes("foo", schema, 42);
+    addAllFieldTypes("foo", schema);
 
     Schema::UP sum = Schema::make_union(schema, schema);
     EXPECT_TRUE(schema == *sum);
@@ -344,36 +303,17 @@ TEST(SchemaTest, require_that_schema_can_calculate_set_difference)
 {
     const string name1 = "foo";
     const string name2 = "bar";
-    const fastos::TimeStamp timestamp1(42);
-    const fastos::TimeStamp timestamp2(84);
     Schema s1;
-    addAllFieldTypes(name1, s1, timestamp1);
-    addAllFieldTypes(name2, s1, timestamp2);
+    addAllFieldTypes(name1, s1);
+    addAllFieldTypes(name2, s1);
     Schema s2;
-    addAllFieldTypes(name2, s2, timestamp2);
+    addAllFieldTypes(name2, s2);
 
     Schema::UP schema = Schema::set_difference(s1, s2);
 
     Schema expected;
-    addAllFieldTypes(name1, expected, timestamp1);
+    addAllFieldTypes(name1, expected);
     EXPECT_TRUE(expected == *schema);
-}
-
-TEST(SchemaTest, require_that_get_old_fields_returns_a_subset_of_a_schema)
-{
-    Schema schema;
-    const int64_t limit_timestamp = 1000;
-
-    addAllFieldTypes("bar", schema, fastos::TimeStamp(limit_timestamp - 1));
-    addAllFieldTypes("foo", schema, fastos::TimeStamp(limit_timestamp + 1));
-
-    Schema::UP old_fields =
-        schema.getOldFields(fastos::TimeStamp(limit_timestamp));
-
-    EXPECT_EQ(1u, old_fields->getNumIndexFields());
-    EXPECT_EQ("bar", old_fields->getIndexField(0).getName());
-    EXPECT_EQ(1u, old_fields->getNumAttributeFields());
-    EXPECT_EQ(1u, old_fields->getNumSummaryFields());
 }
 
 TEST(SchemaTest, require_that_schema_can_calculate_intersection)
@@ -381,19 +321,17 @@ TEST(SchemaTest, require_that_schema_can_calculate_intersection)
     const string name1 = "foo";
     const string name2 = "bar";
     const string name3 = "baz";
-    const fastos::TimeStamp timestamp1(42);
-    const fastos::TimeStamp timestamp2(84);
     Schema s1;
-    addAllFieldTypes(name1, s1, timestamp1);
-    addAllFieldTypes(name2, s1, timestamp2);
+    addAllFieldTypes(name1, s1);
+    addAllFieldTypes(name2, s1);
     Schema s2;
-    addAllFieldTypes(name2, s2, timestamp2);
-    addAllFieldTypes(name3, s2, timestamp2);
+    addAllFieldTypes(name2, s2);
+    addAllFieldTypes(name3, s2);
 
     Schema::UP schema = Schema::intersect(s1, s2);
 
     Schema expected;
-    addAllFieldTypes(name2, expected, timestamp2);
+    addAllFieldTypes(name2, expected);
     EXPECT_TRUE(expected == *schema);
 }
 

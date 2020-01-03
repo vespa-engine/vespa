@@ -174,22 +174,20 @@ DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBRefere
 {
 }
 
-DocumentDBReferenceResolver::~DocumentDBReferenceResolver()
-{
-}
+DocumentDBReferenceResolver::~DocumentDBReferenceResolver() = default;
 
 ImportedAttributesRepo::UP
 DocumentDBReferenceResolver::resolve(const IAttributeManager &newAttrMgr,
                                      const IAttributeManager &oldAttrMgr,
                                      const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
-                                     fastos::TimeStamp visibilityDelay)
+                                     vespalib::duration visibilityDelay)
 {
     detectOldListeners(oldAttrMgr);
     if (_useReferences) {
         connectReferenceAttributesToGidMapper(newAttrMgr);
         listenToGidToLidChanges(newAttrMgr);
     }
-    return createImportedAttributesRepo(newAttrMgr, documentMetaStore, (visibilityDelay > 0));
+    return createImportedAttributesRepo(newAttrMgr, documentMetaStore, (visibilityDelay > vespalib::duration::zero()));
 }
 
 void

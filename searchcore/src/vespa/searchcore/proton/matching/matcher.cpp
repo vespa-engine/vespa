@@ -84,6 +84,18 @@ bool willNotNeedRanking(const SearchRequest & request, const GroupingContext & g
            || (!request.sortSpec.empty() && (request.sortSpec.find("[rank]") == vespalib::string::npos));
 }
 
+SearchReply::UP
+handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingContext, GroupingSession::UP groupingSession)
+{
+    auto reply = std::make_unique<SearchReply>();
+    groupingSession->continueExecution(groupingContext);
+    groupingContext.getResult().swap(reply->groupResult);
+    if (!groupingSession->finished()) {
+        sessionMgr.insert(std::move(groupingSession));
+    }
+    return reply;
+}
+
 }  // namespace proton::matching::<unnamed>
 
 Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
@@ -134,29 +146,17 @@ Matcher::create_match_tools_factory(const search::engine::Request &request, ISea
                         ? Factor::lookup(rankProperties, _stats.softDoomFactor())
                         : _stats.softDoomFactor())
                     : 0.95;
-    int64_t safeLeft = request.getTimeLeft() * factor;
-    fastos::SteadyTimeStamp safeDoom(_clock.getTimeNSAssumeRunning() + safeLeft);
+    vespalib::duration safeLeft = std::chrono::duration_cast<vespalib::duration>(request.getTimeLeft() * factor);
+    vespalib::steady_time safeDoom(_clock.getTimeNSAssumeRunning() + safeLeft);
     if (softTimeoutEnabled) {
         LOG(debug, "Soft-timeout computed factor=%1.3f, used factor=%1.3f, userSupplied=%d, softTimeout=%" PRId64,
-                   _stats.softDoomFactor(), factor, hasFactorOverride, safeLeft);
+                   _stats.softDoomFactor(), factor, hasFactorOverride, vespalib::count_ns(safeLeft));
     }
     vespalib::Doom doom(_clock, safeDoom, request.getTimeOfDoom(), hasFactorOverride);
-    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext, request.getStackRef(),
-                                               request.location, _viewResolver, metaStore, _indexEnv, *_rankSetup,
+    return std::make_unique<MatchToolsFactory>(_queryLimiter, doom, searchContext, attrContext,
+                                               request.trace(), request.getStackRef(), request.location,
+                                               _viewResolver, metaStore, _indexEnv, *_rankSetup,
                                                rankProperties, feature_overrides);
-}
-
-SearchReply::UP
-Matcher::handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingContext,
-                               GroupingSession::UP groupingSession)
-{
-    SearchReply::UP reply = std::make_unique<SearchReply>();
-    groupingSession->continueExecution(groupingContext);
-    groupingContext.getResult().swap(reply->groupResult);
-    if (!groupingSession->finished()) {
-        sessionMgr.insert(std::move(groupingSession));
-    }
-    return reply;
 }
 
 size_t
@@ -185,7 +185,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                ISearchContext &searchContext, IAttributeContext &attrContext, SessionManager &sessionMgr,
                const search::IDocumentMetaStore &metaStore, SearchSession::OwnershipBundle &&owned_objects)
 {
-    fastos::StopWatch total_matching_time;
+    vespalib::Timer total_matching_time;
     MatchingStats my_stats;
     SearchReply::UP reply = std::make_unique<SearchReply>();
     size_t covered = 0;
@@ -214,6 +214,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             owned_objects.feature_overrides = std::make_unique<Properties>(*feature_overrides);
             feature_overrides = owned_objects.feature_overrides.get();
         }
+
         MatchToolsFactory::UP mtf = create_match_tools_factory(request, searchContext, attrContext,
                                                                metaStore, *feature_overrides);
         isDoomExplicit = mtf->getRequestContext().getDoom().isExplicitSoftDoom();
@@ -286,17 +287,17 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
             numThreadsPerSearch, _rankSetup->getNumThreadsPerSearch(), estHits, reply->totalHitCount,
             request.ranking.c_str());
     }
-    my_stats.queryCollateralTime(total_matching_time.elapsed().sec() - my_stats.queryLatencyAvg());
+    my_stats.queryCollateralTime(vespalib::to_s(total_matching_time.elapsed()) - my_stats.queryLatencyAvg());
     {
-        fastos::TimeStamp duration = request.getTimeUsed();
+        vespalib::duration duration = request.getTimeUsed();
         std::lock_guard<std::mutex> guard(_statsLock);
         _stats.add(my_stats);
         if (my_stats.softDoomed()) {
             double old = _stats.softDoomFactor();
-            fastos::TimeStamp overtimeLimit = (1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout();
-            fastos::TimeStamp adjustedDuration = duration - my_stats.doomOvertime();
-            if (adjustedDuration < 0) {
-                adjustedDuration = 0;
+            vespalib::duration overtimeLimit = std::chrono::duration_cast<vespalib::duration>((1.0 - _rankSetup->getSoftTimeoutTailCost()) * request.getTimeout());
+            vespalib::duration adjustedDuration = duration - my_stats.doomOvertime();
+            if (adjustedDuration < vespalib::duration::zero()) {
+                adjustedDuration = vespalib::duration::zero();
             }
             bool allowedSoftTimeoutFactorAdjustment = (std::chrono::duration_cast<std::chrono::seconds>(my_clock::now() - _startTime).count() > SECONDS_BEFORE_ALLOWING_SOFT_TIMEOUT_FACTOR_ADJUSTMENT)
                                                       && ! isDoomExplicit;
@@ -307,7 +308,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
                       ", factor %sadjusted from %1.3f to %1.3f",
                 isDoomExplicit ? "with query override" : "factor adjustment",
                 covered, numActiveLids,
-                request.getTimeout().sec(), my_stats.doomOvertime().sec(), overtimeLimit.sec(), duration.sec(),
+                vespalib::to_s(request.getTimeout()), vespalib::to_s(my_stats.doomOvertime()), vespalib::to_s(overtimeLimit), vespalib::to_s(duration),
                 request.ranking.c_str(), (allowedSoftTimeoutFactorAdjustment ? "" : "NOT "), old, _stats.softDoomFactor());
         }
     }

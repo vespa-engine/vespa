@@ -41,7 +41,7 @@ public class ValuesFetcher {
     }
 
     public List<MetricsPacket> fetch(String requestedConsumer) throws JsonRenderingException {
-        ConsumerId consumer = getConsumerOrDefault(requestedConsumer);
+        ConsumerId consumer = getConsumerOrDefault(requestedConsumer, metricsConsumers);
 
         return fetchAllMetrics()
                 .stream()
@@ -53,12 +53,12 @@ public class ValuesFetcher {
         return metricsManager.getMetrics(vespaServices.getVespaServices(), Instant.now());
     }
 
-    private ConsumerId getConsumerOrDefault(String consumer) {
-        if (consumer == null) return DEFAULT_PUBLIC_CONSUMER_ID;
+    public static ConsumerId getConsumerOrDefault(String requestedConsumer, MetricsConsumers consumers) {
+        if (requestedConsumer == null) return DEFAULT_PUBLIC_CONSUMER_ID;
 
-        ConsumerId consumerId = toConsumerId(consumer);
-        if (! metricsConsumers.getAllConsumers().contains(consumerId)) {
-            log.info("No consumer with id '" + consumer + "' - using the default consumer instead.");
+        ConsumerId consumerId = toConsumerId(requestedConsumer);
+        if (! consumers.getAllConsumers().contains(consumerId)) {
+            log.info("No consumer with id '" + requestedConsumer + "' - using the default consumer instead.");
             return DEFAULT_PUBLIC_CONSUMER_ID;
         }
         return consumerId;

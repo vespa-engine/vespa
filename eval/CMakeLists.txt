@@ -10,6 +10,7 @@ vespa_define_module(
     src/apps/tensor_conformance
 
     TESTS
+    src/tests/ann
     src/tests/eval/aggr
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function
@@ -35,6 +36,7 @@ vespa_define_module(
     src/tests/tensor/dense_remove_dimension_optimizer
     src/tests/tensor/dense_replace_type_function
     src/tests/tensor/dense_tensor_create_function
+    src/tests/tensor/dense_tensor_peek_function
     src/tests/tensor/dense_xw_product_function
     src/tests/tensor/direct_dense_tensor_builder
     src/tests/tensor/direct_sparse_tensor_builder

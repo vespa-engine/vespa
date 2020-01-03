@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -13,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -32,6 +32,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -358,7 +359,7 @@ public class VersionStatusTest {
 
         // Create and deploy application on current version
         var app = tester.newDeploymentContext("tenant1", "app1", "default")
-                        .submit(DeploymentContext.applicationPackage)
+                        .submit()
                         .deploy();
         tester.controllerTester().computeVersionStatus();
         assertEquals(Confidence.high, confidence(tester.controller(), version0));
@@ -491,6 +492,77 @@ public class VersionStatusTest {
         tester.upgrader().maintain();
         tester.triggerJobs();
         default0.deployPlatform(version2);
+    }
+
+    @Test
+    public void testStatusIncludesIncompleteUpgrades() {
+        var tester = new DeploymentTester().atMondayMorning();
+        var version0 = Version.fromString("7.1");
+        var applicationPackage = new ApplicationPackageBuilder().region("us-west-1").build();
+
+        // Application deploys on initial version
+        tester.controllerTester().upgradeSystem(version0);
+        var context = tester.newDeploymentContext("tenant1", "default0", "default");
+        context.submit(applicationPackage).deploy();
+
+        // System is upgraded and application starts upgrading to next version
+        var version1 = Version.fromString("7.2");
+        tester.controllerTester().upgradeSystem(version1);
+        tester.upgrader().maintain();
+
+        // Upgrade of prod zone fails
+        context.runJob(systemTest)
+               .runJob(stagingTest)
+               .failDeployment(productionUsWest1);
+        tester.controllerTester().computeVersionStatus();
+        for (var version : List.of(version0, version1)) {
+            assertOnVersion(version, context.instanceId(), tester.controllerTester());
+        }
+
+        // System is upgraded and application starts upgrading to next version
+        var version2 = Version.fromString("7.3");
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().maintain();
+
+        // Upgrade of prod zone fails again, application is now potentially on 3 different versions:
+        // 1 completed upgrade + 2 failed
+        context.runJob(systemTest)
+               .runJob(stagingTest)
+               .failDeployment(productionUsWest1);
+        tester.controllerTester().computeVersionStatus();
+        for (var version : List.of(version0, version1, version2)) {
+            assertOnVersion(version, context.instanceId(), tester.controllerTester());
+        }
+
+        // Upgrade succeeds
+        context.deployPlatform(version2);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(1, tester.controller().versionStatus().versions().size());
+        assertOnVersion(version2, context.instanceId(), tester.controllerTester());
+
+        // System is upgraded and application starts upgrading to next version
+        var version3 = Version.fromString("7.4");
+        tester.controllerTester().upgradeSystem(version3);
+        tester.upgrader().maintain();
+
+        // Upgrade of prod zone fails again. Upgrades that failed before the most recent success are not counted
+        context.runJob(systemTest)
+               .runJob(stagingTest)
+               .failDeployment(productionUsWest1);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(2, tester.controller().versionStatus().versions().size());
+        for (var version : List.of(version2, version3)) {
+            assertOnVersion(version, context.instanceId(), tester.controllerTester());
+        }
+    }
+
+    private void assertOnVersion(Version version, ApplicationId instance, ControllerTester tester) {
+        var vespaVersion = tester.controller().versionStatus().version(version);
+        assertNotNull("Statistics for version " + version + " exist", vespaVersion);
+        var statistics = vespaVersion.statistics();
+        assertTrue("Application is on version " + version, statistics.production().contains(instance) ||
+                                                           statistics.failing().contains(instance) ||
+                                                           statistics.deploying().contains(instance));
     }
 
     private static void writeControllerVersion(HostName hostname, Version version, CuratorDb db) {

@@ -249,23 +249,36 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
         app1.runJob(JobType.devUsEast1);
 
-
-        // POST an application package is allowed under user instance
+        // POST an application package is not generally allowed under user instance
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser/deploy/dev-us-east-1", POST)
                                       .userIdentity(OTHER_USER_ID)
                                       .data(createApplicationDeployData(applicationPackageInstance1, false)),
-                              new File("deployment-job-accepted-2.json"));
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
-        // DELETE a dev deployment is allowed under user instance
+        // DELETE a dev deployment is not generally allowed under user instance
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser/environment/dev/region/us-east-1", DELETE)
                                       .userIdentity(OTHER_USER_ID),
-                              "{\"message\":\"Deactivated tenant1.application1.otheruser in dev.us-east-1\"}");
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
+
+        // When the user is a tenant admin, user instances are allowed.
+        // POST an application package is not allowed under user instance for tenant admins
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser/deploy/dev-us-east-1", POST)
+                                      .userIdentity(USER_ID)
+                                      .data(createApplicationDeployData(applicationPackageInstance1, false)),
+                              new File("deployment-job-accepted-2.json"));
+
+        // DELETE a dev deployment is allowed under user instance for tenant admins
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser/environment/dev/region/us-east-1", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Deactivated tenant1.application1.myuser in dev.us-east-1\"}");
 
         // DELETE a user instance
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/otheruser", DELETE)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"message\":\"Deleted instance tenant1.application1.otheruser\"}");
+                              "{\"message\":\"Deleted instance tenant1.application1.myuser\"}");
 
         addScrewdriverUserToDeployRole(SCREWDRIVER_ID,
                                        ATHENZ_TENANT_DOMAIN,
@@ -687,6 +700,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("jobs.json"));
 
+        // GET deployment job overview for whole application.
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", GET)
+                                      .userIdentity(USER_ID),
+                              new File("deployment-overview.json"));
+
         // GET system test job overview.
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test", GET)
                                       .userIdentity(USER_ID),
@@ -719,31 +737,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "");
 
-        // POST an application package with an empty deployment spec, to allow removal of production instances.
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
-                                      .screwdriverIdentity(SCREWDRIVER_ID)
-                                      .data(createApplicationSubmissionData(new ApplicationPackageBuilder()
-                                                                                    .allow(ValidationId.deploymentRemoval)
-                                                                                    .build(), 1000)),
-                              "{\"message\":\"Application package version: 1.0.5-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
-        // DELETE all instances under an application to delete the application
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user", DELETE)
-                                      .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"message\":\"Deleted instance tenant1.application1.my-user\"}");
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
-                                      .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"message\":\"Deleted instance tenant1.application1.instance1\"}");
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance2", DELETE)
-                                      .userIdentity(USER_ID)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"message\":\"Deleted instance tenant1.application1.instance2\"}");
-        // DELETE the application which now only has one instance
+        // DELETE the application which no longer has any deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
                               "{\"message\":\"Deleted application tenant1.application1\"}");
+
         // DELETE an empty tenant
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE).userIdentity(USER_ID)
                                       .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
@@ -1231,20 +1230,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               new File("instance-reference-default.json"),
                               200);
 
-        // Deleting the application when more than one instance is present is forbidden
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
-                                      .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not delete application; more than one instance present: [tenant1.application1, tenant1.application1.instance1]\"}",
-                              400);
-
-        // Deleting one instance is OK
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/default", DELETE)
-                                      .userIdentity(authorizedUser)
-                                      .oktaAccessToken(OKTA_AT).oktaIdentityToken(OKTA_IT),
-                              "{\"message\":\"Deleted instance tenant1.application1.default\"}",
-                              200);
-
         // (Deleting the application with the right tenant id)
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
                                       .userIdentity(authorizedUser)
@@ -1340,12 +1325,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 .build();
 
         // POST (deploy) an application to a dev zone
-        String expectedResult="{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch services in Athenz domain domain1. Please reach out to the domain admin.\"}";
         MultiPartStreamer entity = createApplicationDeployData(applicationPackage, true);
         tester.assertResponse(request("/application/v4/tenant/by-new-user/application/application1/environment/dev/region/us-west-1/instance/default", POST)
                                       .data(entity)
                                       .userIdentity(userId),
-                              expectedResult,
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"User user.new-user is not allowed to launch services in Athenz domain domain1. Please reach out to the domain admin.\"}",
                               400);
 
         createTenantAndApplication();
@@ -1353,8 +1337,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/new-user/deploy/dev-us-east-1", POST)
                                       .data(entity)
                                       .userIdentity(userId),
-                              expectedResult,
-                              400);
+                              "{\n  \"code\" : 403,\n  \"message\" : \"Access denied\"\n}",
+                              403);
 
         // Add "new-user" to the admin role, to allow service launches.
         tester.athenzClientFactory().getSetup()

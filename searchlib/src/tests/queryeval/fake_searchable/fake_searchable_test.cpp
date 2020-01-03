@@ -62,7 +62,7 @@ TEST_F(FakeSearchableTest, require_that_term_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -116,7 +116,7 @@ TEST_F(FakeSearchableTest, require_that_phrase_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -167,7 +167,7 @@ TEST_F(FakeSearchableTest, require_that_weigheted_set_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -238,7 +238,7 @@ TEST_F(FakeSearchableTest, require_that_multi_field_search_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -322,7 +322,7 @@ TEST_F(FakeSearchableTest, require_that_phrase_with_empty_child_works) {
         bool strict = (i == 0);
         SCOPED_TRACE(strict ? "strict" : "non-strict");
         MatchData::UP md = MatchData::makeTestInstance(100, 10);
-        bp->fetchPostings(strict);
+        bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP search = bp->createSearch(*md, strict);
         search->initFullRange();
 
@@ -342,7 +342,7 @@ TEST_F(FakeSearchableTest, require_that_match_data_is_compressed_for_attributes)
     fields.add(FieldSpec("attrfoo", 1, 1));
     Blueprint::UP bp = source.createBlueprint(req_ctx, fields, termNode);
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    bp->fetchPostings(false);
+    bp->fetchPostings(ExecuteInfo::FALSE);
     SearchIterator::UP search = bp->createSearch(*md, false);
     search->initFullRange();
     EXPECT_TRUE(search->seek(5));
@@ -369,7 +369,7 @@ TEST_F(FakeSearchableTest, require_that_relevant_data_can_be_obtained_from_fake_
     fields.add(FieldSpec("attrfoo", 1, 1));
     Blueprint::UP bp = source.createBlueprint(req_ctx, fields, termNode);
     MatchData::UP md = MatchData::makeTestInstance(100, 10);
-    bp->fetchPostings(false);
+    bp->fetchPostings(ExecuteInfo::FALSE);
     SearchIterator::UP search = bp->createSearch(*md, false);
     EXPECT_TRUE(bp->get_attribute_search_context() != nullptr);
     const auto *attr_ctx = bp->get_attribute_search_context();

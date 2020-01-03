@@ -41,7 +41,7 @@ import java.util.concurrent.TimeoutException;
 public abstract class ClusterSearcher<T> extends PingableSearcher implements NodeManager<T> {
 
     private final Hasher<T> hasher;
-    private final ClusterMonitor<T> monitor = new ClusterMonitor<>(this);
+    private final ClusterMonitor<T> monitor;
 
     /**
      * Creates a new cluster searcher
@@ -55,8 +55,13 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
     }
 
     public ClusterSearcher(ComponentId id, List<T> connections, Hasher<T> hasher, boolean internal) {
+        this(id, connections, hasher, internal, true);
+    }
+
+    public ClusterSearcher(ComponentId id, List<T> connections, Hasher<T> hasher, boolean internal, boolean startPingThread) {
         super(id);
         this.hasher = hasher;
+        this.monitor = new ClusterMonitor<>(this, startPingThread);
         for (T connection : connections) {
             monitor.add(connection, internal);
             hasher.add(connection);

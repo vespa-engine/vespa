@@ -1,13 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "prune_session_cache_job.h"
-#include <vespa/fastos/timestamp.h>
-#include <chrono>
 
 namespace proton {
 
 using matching::ISessionCachePruner;
 
-PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, double jobInterval)
+PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, vespalib::duration jobInterval)
     : IMaintenanceJob("prune_session_cache", jobInterval, jobInterval),
       _pruner(pruner)
 {
@@ -16,7 +14,7 @@ PruneSessionCacheJob::PruneSessionCacheJob(ISessionCachePruner &pruner, double j
 bool
 PruneSessionCacheJob::run()
 {
-    _pruner.pruneTimedOutSessions(fastos::ClockSteady::now());
+    _pruner.pruneTimedOutSessions(vespalib::steady_clock::now());
     return true;
 }
 

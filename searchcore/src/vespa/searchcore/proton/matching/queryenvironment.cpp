@@ -39,7 +39,7 @@ const search::fef::ITermData *
 QueryEnvironment::getTerm(uint32_t idx) const
 {
     if (idx >= _terms.size()) {
-        return 0;
+        return nullptr;
     }
     return _terms[idx];
 }

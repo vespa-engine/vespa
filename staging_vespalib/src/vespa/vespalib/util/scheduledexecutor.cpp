@@ -16,9 +16,9 @@ private:
 
     FNET_Scheduler *_scheduler;
     Task::UP _task;
-    double _interval;
+    duration _interval;
 public:
-    TimerTask(FNET_Scheduler *scheduler, Task::UP task, double interval)
+    TimerTask(FNET_Scheduler *scheduler, Task::UP task, duration interval)
         : FNET_Task(scheduler),
           _task(std::move(task)),
           _interval(interval)
@@ -30,7 +30,7 @@ public:
 
     void PerformTask() override {
         _task->run();
-        Schedule(_interval);
+        Schedule(to_s(_interval));
     }
 };
 
@@ -53,12 +53,12 @@ ScheduledExecutor::~ScheduledExecutor()
 
 
 void
-ScheduledExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task, double delay, double interval)
+ScheduledExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task, duration delay, duration interval)
 {
     vespalib::LockGuard guard(_lock);
     TimerTaskPtr tTask(new TimerTask(_transport->GetScheduler(), std::move(task), interval));
     _taskList.push_back(std::move(tTask));
-    _taskList.back()->Schedule(delay);
+    _taskList.back()->Schedule(to_s(delay));
 }
 
 void

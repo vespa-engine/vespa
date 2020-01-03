@@ -150,7 +150,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0u, all1.docsMatched());
     EXPECT_EQUAL(0u, all1.getNumPartitions());
     EXPECT_EQUAL(0u, all1.softDoomed());
-    EXPECT_EQUAL(0u, all1.doomOvertime());
+    EXPECT_EQUAL(vespalib::duration::zero(), all1.doomOvertime());
 
     MatchingStats::Partition subPart;
     subPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
@@ -158,8 +158,8 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0u, subPart.softDoomed());
     EXPECT_EQUAL(0u, subPart.softDoomed(false).softDoomed());
     EXPECT_EQUAL(1u, subPart.softDoomed(true).softDoomed());
-    EXPECT_EQUAL(0l, subPart.doomOvertime());
-    EXPECT_EQUAL(1000, subPart.doomOvertime(1000).doomOvertime());
+    EXPECT_EQUAL(vespalib::duration::zero(), subPart.doomOvertime());
+    EXPECT_EQUAL(1000ns, subPart.doomOvertime(1000ns).doomOvertime());
     EXPECT_EQUAL(7u, subPart.docsCovered());
     EXPECT_EQUAL(3u, subPart.docsMatched());
     EXPECT_EQUAL(2u, subPart.docsRanked());
@@ -180,7 +180,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1u, all1.docsReRanked());
     EXPECT_EQUAL(1u, all1.getNumPartitions());
     EXPECT_EQUAL(1u, all1.softDoomed());
-    EXPECT_EQUAL(1000, all1.doomOvertime());
+    EXPECT_EQUAL(1000ns, all1.doomOvertime());
     EXPECT_EQUAL(7u, all1.getPartition(0).docsCovered());
     EXPECT_EQUAL(3u, all1.getPartition(0).docsMatched());
     EXPECT_EQUAL(2u, all1.getPartition(0).docsRanked());
@@ -194,14 +194,14 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_max());
     EXPECT_EQUAL(0.5, all1.getPartition(0).wait_time_max());
     EXPECT_EQUAL(1u, all1.getPartition(0).softDoomed());
-    EXPECT_EQUAL(1000, all1.getPartition(0).doomOvertime());
+    EXPECT_EQUAL(1000ns, all1.getPartition(0).doomOvertime());
 
     MatchingStats::Partition otherSubPart;
     otherSubPart.docsCovered(7).docsMatched(3).docsRanked(2).docsReRanked(1)
-            .active_time(0.5).wait_time(1.0).softDoomed(true).doomOvertime(300);
+            .active_time(0.5).wait_time(1.0).softDoomed(true).doomOvertime(300ns);
     all1.merge_partition(otherSubPart, 1);
     EXPECT_EQUAL(1u, all1.softDoomed());
-    EXPECT_EQUAL(1000, all1.doomOvertime());
+    EXPECT_EQUAL(1000ns, all1.doomOvertime());
     EXPECT_EQUAL(14u, all1.docidSpaceCovered());
     EXPECT_EQUAL(6u, all1.docsMatched());
     EXPECT_EQUAL(4u, all1.docsRanked());
@@ -219,7 +219,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(0.5, all1.getPartition(1).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
     EXPECT_EQUAL(1u, all1.getPartition(1).softDoomed());
-    EXPECT_EQUAL(300, all1.getPartition(1).doomOvertime());
+    EXPECT_EQUAL(300ns, all1.getPartition(1).doomOvertime());
 
     MatchingStats all2;
     all2.merge_partition(otherSubPart, 0);
@@ -227,7 +227,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
 
     all1.add(all2);
     EXPECT_EQUAL(2u, all1.softDoomed());
-    EXPECT_EQUAL(1000, all1.doomOvertime());
+    EXPECT_EQUAL(1000ns, all1.doomOvertime());
     EXPECT_EQUAL(28u, all1.docidSpaceCovered());
     EXPECT_EQUAL(12u, all1.docsMatched());
     EXPECT_EQUAL(8u, all1.docsRanked());
@@ -245,7 +245,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(0).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(0).wait_time_max());
     EXPECT_EQUAL(2u, all1.getPartition(0).softDoomed());
-    EXPECT_EQUAL(1000, all1.getPartition(0).doomOvertime());
+    EXPECT_EQUAL(1000ns, all1.getPartition(0).doomOvertime());
     EXPECT_EQUAL(6u, all1.getPartition(1).docsMatched());
     EXPECT_EQUAL(4u, all1.getPartition(1).docsRanked());
     EXPECT_EQUAL(2u, all1.getPartition(1).docsReRanked());
@@ -258,7 +258,7 @@ TEST("requireThatPartitionsAreAddedCorrectly") {
     EXPECT_EQUAL(1.0, all1.getPartition(1).active_time_max());
     EXPECT_EQUAL(1.0, all1.getPartition(1).wait_time_max());
     EXPECT_EQUAL(2u, all1.getPartition(1).softDoomed());
-    EXPECT_EQUAL(1000, all1.getPartition(1).doomOvertime());
+    EXPECT_EQUAL(1000ns, all1.getPartition(1).doomOvertime());
 }
 
 TEST("requireThatSoftDoomIsSetAndAdded") {
@@ -280,19 +280,19 @@ TEST("requireThatSoftDoomFacorIsComputedCorrectlyForDownAdjustment") {
     EXPECT_EQUAL(0ul, stats.softDoomed());
     EXPECT_EQUAL(0.5, stats.softDoomFactor());
     stats.softDoomed(1);
-    stats.updatesoftDoomFactor(1.0, 0.5, 2.0);
+    stats.updatesoftDoomFactor(1000ms, 500ms, 2000ms);
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.47, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1.0, 0.5, 2.0);
+    stats.updatesoftDoomFactor(1000ms, 500ms, 2000ms);
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.44, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(0.0009, 0.5, 2.0);   // hard limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(900us, 500ms, 2000ms);   // hard limits less than 1ms should be ignored
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.44, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1.0, 0.0009, 2.0);   // soft limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(1000ms, 900us, 2000ms);   // soft limits less than 1ms should be ignored
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.44, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1.0, 0.5, 10.0);      // Prevent changes above 10%
+    stats.updatesoftDoomFactor(1000ms, 500ms, 10s);      // Prevent changes above 10%
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.396, stats.softDoomFactor());
 }
@@ -302,22 +302,32 @@ TEST("requireThatSoftDoomFacorIsComputedCorrectlyForUpAdjustment") {
     EXPECT_EQUAL(0ul, stats.softDoomed());
     EXPECT_EQUAL(0.5, stats.softDoomFactor());
     stats.softDoomed(1);
-    stats.updatesoftDoomFactor(1.0, 0.9, 0.1);
+    stats.updatesoftDoomFactor(1s, 900ms, 100ms);
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.508, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1.0, 0.9, 0.1);
+    stats.updatesoftDoomFactor(1s, 900ms, 100ms);
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.516, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(0.0009, 0.9, 0.1);   // hard limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(900us, 900ms, 100ms);   // hard limits less than 1ms should be ignored
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.516, stats.softDoomFactor());
-    stats.updatesoftDoomFactor(1.0, 0.0009, 0.1);   // soft limits less than 1ms should be ignored
+    stats.updatesoftDoomFactor(1s, 900us, 100ms);   // soft limits less than 1ms should be ignored
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.516, stats.softDoomFactor());
     stats.softDoomFactor(0.1);
-    stats.updatesoftDoomFactor(1.0, 0.9, 0.001);      // Prevent changes above 5%
+    stats.updatesoftDoomFactor(1s, 900ms, 1ms);      // Prevent changes above 5%
     EXPECT_EQUAL(1ul, stats.softDoomed());
     EXPECT_EQUAL(0.105, stats.softDoomFactor());
+}
+
+TEST("requireThatFactor is capped at minimum 1%") {
+    MatchingStats stats;
+    stats.softDoomFactor(0.01001);
+    EXPECT_EQUAL(0.01001, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(1s, 500ms, 900ms);
+    EXPECT_EQUAL(0.01, stats.softDoomFactor());
+    stats.updatesoftDoomFactor(1s, 900ms, 1ms);
+    EXPECT_EQUAL(0.0105, stats.softDoomFactor());
 }
 
 TEST_MAIN() {

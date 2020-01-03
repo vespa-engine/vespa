@@ -193,7 +193,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns a filterable list of all load balancers in this repository */
     public LoadBalancerList loadBalancers() {
-        return new LoadBalancerList(database().readLoadBalancers().values());
+        return LoadBalancerList.copyOf(database().readLoadBalancers().values());
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State ... inState) { return db.getNodes(id, inState); }

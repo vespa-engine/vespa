@@ -4,6 +4,7 @@
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -54,7 +55,7 @@ struct MockBlueprint : SimpleLeafBlueprint {
     FieldSpec spec;
     vespalib::string term;
     bool postings_fetched = false;
-    bool postings_strict = false;
+    search::queryeval::ExecuteInfo postings_strict = search::queryeval::ExecuteInfo::FALSE;
     MockBlueprint(const FieldSpec &spec_in, const vespalib::string &term_in)
         : SimpleLeafBlueprint(FieldSpecBaseList().add(spec_in)), spec(spec_in), term(term_in)
     {
@@ -64,13 +65,13 @@ struct MockBlueprint : SimpleLeafBlueprint {
                                                 bool strict) const override
     {
         if (postings_fetched) {
-            EXPECT_EQUAL(postings_strict, strict);
+            EXPECT_EQUAL(postings_strict.isStrict(), strict);
         }
         return SearchIterator::UP(new MockSearch(spec, term, strict, tfmda,
                                                  postings_fetched));
     }
-    virtual void fetchPostings(bool strict) override {
-        postings_strict = strict;
+    virtual void fetchPostings(const search::queryeval::ExecuteInfo &execInfo) override {
+        postings_strict = execInfo;
         postings_fetched = true;
     }
 };
@@ -289,9 +290,9 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     MaybeMatchPhaseLimiter &limiter = yes_limiter;
     EXPECT_TRUE(limiter.is_enabled());
     EXPECT_EQUAL(12u, limiter.sample_hits_per_thread(10));
-    RelativeTime clock(std::make_unique<CountingClock>(fastos::TimeStamp::fromSec(10000000), 1700000L));
+    RelativeTime clock(std::make_unique<CountingClock>(vespalib::count_ns(10000000s), 1700000L));
     Trace trace(clock, 7);
-    trace.start(4);
+    trace.start(4, false);
     SearchIterator::UP search = limiter.maybe_limit(prepare(new MockSearch("search")), 0.1, 100000, trace.maybeCreateCursor(7, "limit"));
     limiter.updateDocIdSpaceEstimate(1000, 9000);
     EXPECT_EQUAL(1680u, limiter.getDocIdSpaceEstimate());
@@ -315,7 +316,7 @@ TEST("require that the match phase limiter is able to pre-limit the query") {
     trace.done();
     verify(
         "{"
-        "    start_time_relative: '1970-04-26 17:46:40.000 UTC',"
+        "    start_time: '1970-04-26 17:46:40.000 UTC',"
         "    traces: ["
         "        {"
         "            timestamp_ms: 1.7,"

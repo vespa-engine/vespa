@@ -8,6 +8,7 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.ClusterSearcher;
+import com.yahoo.search.cluster.Hasher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -164,7 +165,7 @@ public class ClusteredConnectionTestCase {
     private static class MyBackend extends ClusterSearcher<Connection> {
 
         public MyBackend(ComponentId componentId, List<Connection> connections) {
-            super(componentId,connections, false);
+            super(componentId,connections, new Hasher<>(), false, false);
         }
 
         @Override

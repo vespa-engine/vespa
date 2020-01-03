@@ -14,7 +14,7 @@ MatchingStats::Partition &get_writable_partition(std::vector<MatchingStats::Part
     return state[id];
 }
 
-constexpr double MIN_TIMEOUT_SEC = 0.001;
+constexpr vespalib::duration MIN_TIMEOUT = 1ms;
 constexpr double MAX_CHANGE_FACTOR = 5;
 
 } // namespace proton::matching::<unnamed>
@@ -81,20 +81,22 @@ MatchingStats::add(const MatchingStats &rhs)
 }
 
 MatchingStats &
-MatchingStats::updatesoftDoomFactor(double hardLimit, double softLimit, double duration) {
+MatchingStats::updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration) {
     // The safety capping here should normally not be necessary as all input numbers
     // will normally be within reasonable values.
     // It is merely a safety measure to avoid overflow on bad input as can happen with time senstive stuff
     // in any soft real time system.
-    if ((hardLimit >= MIN_TIMEOUT_SEC) && (softLimit >= MIN_TIMEOUT_SEC)) {
-        double diff = (softLimit - duration)/hardLimit;
+    if ((hardLimit >= MIN_TIMEOUT) && (softLimit >= MIN_TIMEOUT)) {
+        double diff = vespalib::to_s(softLimit - duration)/vespalib::to_s(hardLimit);
         if (duration < softLimit) {
+            // Since softdoom factor can become very small, allow a minimum change of some size
             diff = std::min(diff, _softDoomFactor*MAX_CHANGE_FACTOR);
             _softDoomFactor += 0.01*diff;
         } else {
             diff = std::max(diff, -_softDoomFactor*MAX_CHANGE_FACTOR);
             _softDoomFactor += 0.02*diff;
         }
+        _softDoomFactor = std::max(_softDoomFactor, 0.01); // Never go below 1%
     }
     return *this;
 }

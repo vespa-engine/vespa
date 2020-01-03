@@ -66,6 +66,15 @@ public class ExecutionFactory extends AbstractComponent {
                              new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics));
     }
 
+    /**
+     * Creates a new execution starting at a search chain.
+     * An execution instance should be used once to execute a (tree of) search chains.
+     */
+    public Execution newExecution(String searchChainId) {
+        return new Execution(searchChainRegistry().getChain(searchChainId),
+                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics));
+    }
+
     /** Returns the search chain registry used by this */
     public SearchChainRegistry searchChainRegistry() { return searchChainRegistry; }
 

@@ -18,6 +18,7 @@ import com.yahoo.tensor.functions.Reduce;
 import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
+import com.yahoo.text.Ascii7BitMatcher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +31,8 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+
+import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 
 /**
  * A multidimensional array which can be used in computations.

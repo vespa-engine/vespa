@@ -17,8 +17,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 
-namespace storage {
-namespace api {
+namespace storage::api {
 
 class BucketInfo : public vespalib::AsciiPrintable
 {
@@ -87,5 +86,4 @@ public:
     void printXml(vespalib::XmlOutputStream&) const;
 };
 
-} // api
-} // storage
+}

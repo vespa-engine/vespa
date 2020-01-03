@@ -28,8 +28,8 @@ SummaryManagerInitializer(const search::GrowStrategy &grow,
       _tuneFile(tuneFile),
       _fileHeaderContext(fileHeaderContext),
       _tlSyncer(tlSyncer),
-      _bucketizer(bucketizer),
-      _result(result)
+      _bucketizer(std::move(bucketizer)),
+      _result(std::move(result))
 { }
 
 SummaryManagerInitializer::~SummaryManagerInitializer() = default;
@@ -38,12 +38,12 @@ void
 SummaryManagerInitializer::run()
 {
     vespalib::mkdir(_baseDir, false);
-    fastos::StopWatch stopWatch;
+    vespalib::Timer timer;
     EventLogger::loadDocumentStoreStart(_subDbName);
     *_result = std::make_shared<SummaryManager>
                (_summaryExecutor, _storeCfg, _grow, _baseDir, _docTypeName,
                 _tuneFile, _fileHeaderContext, _tlSyncer, _bucketizer);
-    EventLogger::loadDocumentStoreComplete(_subDbName, stopWatch.elapsed().ms());
+    EventLogger::loadDocumentStoreComplete(_subDbName, vespalib::count_ms(timer.elapsed()));
 }
 
 } // namespace proton

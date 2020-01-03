@@ -22,6 +22,14 @@
       "endTests": "unfinished",
       "report": "failed"
     },
+    "stepDetails": {
+      "installInitialReal": {
+        "startTime": 1196676940000
+      },
+      "installTester": {
+        "startTime": 1196677940000
+      }
+    },
     "versions": {
       "platform": "1.2.3",
       "repository": "git@github.com:user/repo.git",

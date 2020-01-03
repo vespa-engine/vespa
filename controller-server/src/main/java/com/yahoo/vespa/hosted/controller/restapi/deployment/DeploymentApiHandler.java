@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -148,7 +149,8 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                                                                    "/application/" +
                                                                    id.application().value()).toString());
         object.setString("upgradePolicy", toString(controller.applications().requireApplication(TenantAndApplicationId.from(id))
-                                                             .deploymentSpec().requireInstance(id.instance()).upgradePolicy()));
+                                                             .deploymentSpec().instance(id.instance()).map(DeploymentInstanceSpec::upgradePolicy)
+                                                             .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
     }
 
     private static String toString(DeploymentSpec.UpgradePolicy upgradePolicy) {

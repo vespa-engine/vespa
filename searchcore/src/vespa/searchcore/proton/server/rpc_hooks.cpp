@@ -13,8 +13,6 @@ LOG_SETUP(".proton.server.rtchooks");
 
 using namespace vespalib;
 using vespalib::compression::CompressionConfig;
-using fastos::SteadyTimeStamp;
-using fastos::TimeStamp;
 
 namespace {
 
@@ -38,10 +36,11 @@ namespace proton {
 void
 RPCHooksBase::checkState(std::unique_ptr<StateArg> arg)
 {
-    SteadyTimeStamp now(fastos::ClockSteady::now());
+    steady_time now(steady_clock::now());
     if (now < arg->_dueTime) {
         std::unique_lock<std::mutex> guard(_stateLock);
-        if (_stateCond.wait_for(guard, std::chrono::milliseconds(std::min(INT64_C(1000), (arg->_dueTime - now)/TimeStamp::MS))) == std::cv_status::no_timeout) {
+        vespalib::duration left = (arg->_dueTime - now);
+        if (_stateCond.wait_for(guard, left) == std::cv_status::no_timeout) {
             LOG(debug, "state has changed");
             reportState(*arg->_session, arg->_req);
             arg->_req->Return();
@@ -285,7 +284,7 @@ RPCHooksBase::rpc_GetState(FRT_RPCRequest *req)
     if (sharedSession->getGen() < 0 || sharedSession->getNumDocs() != numDocs) {  // NB Should use something else to define generation.
         reportState(*sharedSession, req);
     } else {
-        SteadyTimeStamp dueTime(fastos::ClockSteady::now() + TimeStamp(timeoutMS * TimeStamp::MS));
+        steady_time dueTime(steady_clock::now() + std::chrono::milliseconds(timeoutMS));
         auto stateArg = std::make_unique<StateArg>(sharedSession, req, dueTime);
         if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
             reportState(*sharedSession, req);
@@ -350,7 +349,7 @@ RPCHooksBase::rpc_getIncrementalState(FRT_RPCRequest *req)
     if (sharedSession->getGen() < 0 || sharedSession->getNumDocs() != numDocs) {  // NB Should use something else to define generation.
         reportState(*sharedSession, req);
     } else {
-        SteadyTimeStamp dueTime(fastos::ClockSteady::now() + TimeStamp(timeoutMS * TimeStamp::MS));
+        steady_time dueTime(steady_clock::now() + std::chrono::milliseconds(timeoutMS));
         auto stateArg = std::make_unique<StateArg>(sharedSession, req, dueTime);
         if (_executor.execute(makeTask(makeClosure(this, &RPCHooksBase::checkState, std::move(stateArg))))) {
             reportState(*sharedSession, req);

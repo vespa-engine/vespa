@@ -1369,11 +1369,7 @@ public class JsonRendererTestCase {
     }
 
     private Execution createExecution(Chain<Searcher> chain) {
-        Map<String, List<String>> clusters = new LinkedHashMap<>();
-        Map<String, SearchDefinition> searchDefs = new LinkedHashMap<>();
-        searchDefs.put("one", createSearchDefinitionOne());
-        SearchDefinition union = new SearchDefinition("union");
-        IndexModel indexModel = new IndexModel(clusters, searchDefs, union);
+        IndexModel indexModel = new IndexModel(createSearchDefinitionOne());
         return new Execution(chain, Execution.Context.createContextStub(new IndexFacts(indexModel)));
     }
 

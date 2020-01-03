@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/persistence/spi/result.h>
-#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -16,7 +15,6 @@
 #include <vespa/searchcore/proton/feedoperation/putoperation.h>
 #include <vespa/searchcore/proton/feedoperation/removeoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
-#include <vespa/searchcore/proton/feedoperation/wipehistoryoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/server/configstore.h>
 #include <vespa/searchcore/proton/server/ddbstate.h>
@@ -28,10 +26,8 @@
 #include <vespa/searchlib/common/idestructorcallback.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/closuretask.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/io/fileutil.h>
@@ -63,7 +59,6 @@ using vespalib::BlockingThreadStackExecutor;
 using vespalib::ThreadStackExecutor;
 using vespalib::ThreadStackExecutorBase;
 using vespalib::makeClosure;
-using vespalib::makeTask;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::ValueType;
 using vespalib::tensor::test::makeTensor;

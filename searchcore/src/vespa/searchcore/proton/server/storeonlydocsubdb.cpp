@@ -18,7 +18,6 @@
 #include <vespa/searchcore/proton/flushengine/threadedflushtarget.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
-#include <vespa/searchcore/proton/metrics/metricswireservice.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
 #include <vespa/searchlib/attribute/configconverter.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
@@ -45,7 +44,6 @@ using proton::matching::SessionManager;
 using vespalib::GenericHeader;
 using search::common::FileHeaderContext;
 using proton::documentmetastore::LidReuseDelayer;
-using fastos::TimeStamp;
 using proton::initializer::InitializerTask;
 using searchcorespi::IFlushTarget;
 
@@ -87,7 +85,7 @@ StoreOnlyDocSubDB::Context::Context(IDocumentSubDBOwner &owner,
       _getSerialNum(getSerialNum),
       _fileHeaderContext(fileHeaderContext),
       _writeService(writeService),
-      _bucketDB(bucketDB),
+      _bucketDB(std::move(bucketDB)),
       _bucketDBHandlerInitializer(bucketDBHandlerInitializer),
       _metrics(metrics),
       _configMutex(configMutex),
@@ -125,7 +123,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _subDbType(cfg._subDbType),
       _fileHeaderContext(*this, ctx._fileHeaderContext, _docTypeName, _baseDir),
       _lidReuseDelayer(),
-      _commitTimeTracker(TimeStamp::Seconds(3600.0)),
+      _commitTimeTracker(3600s),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
     vespalib::mkdir(_baseDir, false); // Assume parent is created.
@@ -232,13 +230,13 @@ createSummaryManagerInitializer(const search::LogDocumentStore::Config & storeCf
     vespalib::string baseDir(_baseDir + "/summary");
     return std::make_shared<SummaryManagerInitializer>
         (grow, baseDir, getSubDbName(), _docTypeName, _writeService.shared(),
-         storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, bucketizer, result);
+         storeCfg, tuneFile, _fileHeaderContext, _tlSyncer, std::move(bucketizer), std::move(result));
 }
 
 void
 StoreOnlyDocSubDB::setupSummaryManager(SummaryManager::SP summaryManager)
 {
-    _rSummaryMgr = summaryManager;
+    _rSummaryMgr = std::move(summaryManager);
     _iSummaryMgr = _rSummaryMgr; // Upcast allowed with std::shared_ptr
     _flushedDocumentStoreSerialNum = _iSummaryMgr->getBackingStore().lastSyncToken();
     _summaryAdapter.reset(new SummaryAdapter(_rSummaryMgr));
@@ -317,7 +315,7 @@ StoreOnlyDocSubDB::setup(const DocumentSubDbInitializerResult &initResult)
 {
     setupDocumentMetaStore(initResult.documentMetaStore());
     setupSummaryManager(initResult.summaryManager());
-    _lidReuseDelayer.reset(new LidReuseDelayer(_writeService, *_dms));
+    _lidReuseDelayer = std::make_unique<LidReuseDelayer>(_writeService, *_dms);
     updateLidReuseDelayer(initResult.lidReuseDelayerConfig());
 }
 
@@ -394,7 +392,7 @@ StoreOnlyDocSubDB::updateLidReuseDelayer(const DocumentDBConfig * newConfigSnaps
 void
 StoreOnlyDocSubDB::updateLidReuseDelayer(const LidReuseDelayerConfig &config)
 {
-    bool immediateCommit = config.visibilityDelay() == 0;
+    bool immediateCommit = (config.visibilityDelay() == vespalib::duration::zero());
     /*
      * The lid reuse delayer should not have any pending lids stored at this
      * time, since DocumentDB::applyConfig() calls forceCommit() on the

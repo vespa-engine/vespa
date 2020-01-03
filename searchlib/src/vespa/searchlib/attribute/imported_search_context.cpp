@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include "attributeiterators.hpp"
 
 #include <vespa/log/log.h>
@@ -33,7 +34,7 @@ ImportedSearchContext::ImportedSearchContext(
         const IAttributeVector &target_attribute)
     : _imported_attribute(imported_attribute),
       _queryTerm(term->getTerm()),
-      _useSearchCache(_imported_attribute.getSearchCache().get() != nullptr),
+      _useSearchCache(_imported_attribute.getSearchCache()),
       _searchCacheLookup((_useSearchCache ? _imported_attribute.getSearchCache()->find(_queryTerm) :
                           std::shared_ptr<BitVectorSearchCache::Entry>())),
       _dmsReadGuard((_useSearchCache && !_searchCacheLookup) ? imported_attribute.getDocumentMetaStore()->getReadGuard() :
@@ -230,12 +231,14 @@ ImportedSearchContext::considerAddSearchCacheEntry()
     }
 }
 
-void ImportedSearchContext::fetchPostings(bool strict) {
+void ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
     assert(!_fetchPostingsDone);
     _fetchPostingsDone = true;
     if (!_searchCacheLookup) {
-        _target_search_context->fetchPostings(strict);
-        if (strict || _target_attribute.getIsFastSearch()) {
+        _target_search_context->fetchPostings(execInfo);
+        if (execInfo.isStrict()
+            || (_target_attribute.getIsFastSearch() && execInfo.hitRate() > 0.01))
+        {
             makeMergedPostings(_target_attribute.getIsFilter());
             considerAddSearchCacheEntry();
         }

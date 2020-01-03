@@ -6,6 +6,7 @@
 #include <vespa/storage/bucketdb/bucketdatabase.h>
 #include <vespa/storageapi/messageapi/storagemessage.h>
 #include <vespa/storageframework/generic/clock/timer.h>
+#include <optional>
 
 namespace document { class Document; }
 
@@ -88,7 +89,7 @@ private:
     api::ReturnCode _returnCode;
     std::shared_ptr<document::Document> _doc;
 
-    api::Timestamp _lastModified;
+    std::optional<api::Timestamp> _lastModified;
 
     PersistenceOperationMetricSet& _metric;
     framework::MilliSecTimer _operationTimer;

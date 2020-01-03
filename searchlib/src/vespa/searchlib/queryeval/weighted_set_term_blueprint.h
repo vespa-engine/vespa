@@ -37,7 +37,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 
 private:
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const ExecuteInfo &execInfo) override;
 };
 
 }

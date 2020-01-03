@@ -6,10 +6,11 @@
 #include "attributeiterators.h"
 #include "diversity.h"
 #include "postingstore.hpp"
+#include "posting_list_traverser.h"
 #include <vespa/searchlib/queryeval/emptysearch.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/common/growablebitvector.h>
-#include "posting_list_traverser.h"
 
 
 using search::queryeval::EmptySearch;
@@ -113,7 +114,7 @@ PostingListSearchContextT<DataT>::fillBitVector()
 
 template <typename DataT>
 void
-PostingListSearchContextT<DataT>::fetchPostings(bool strict)
+PostingListSearchContextT<DataT>::fetchPostings(const queryeval::ExecuteInfo & execInfo)
 {
     if (_fetchPostingsDone) return;
 
@@ -121,7 +122,7 @@ PostingListSearchContextT<DataT>::fetchPostings(bool strict)
 
     if (_uniqueValues < 2u) return;
 
-    if (strict && !fallbackToFiltering()) {
+    if (execInfo.isStrict() && !fallbackToFiltering()) {
         size_t sum(countHits());
         if (sum < _docIdLimit / 64) {
             _merger.reserveArray(_uniqueValues, sum);

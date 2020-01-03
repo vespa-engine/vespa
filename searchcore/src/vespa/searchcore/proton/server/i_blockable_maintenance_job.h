@@ -2,7 +2,6 @@
 #pragma once
 
 #include "i_maintenance_job.h"
-#include <string>
 
 namespace proton {
 
@@ -20,8 +19,8 @@ public:
     };
 
     IBlockableMaintenanceJob(const vespalib::string &name,
-                             double delay,
-                             double interval)
+                             vespalib::duration delay,
+                             vespalib::duration interval)
         : IMaintenanceJob(name, delay, interval)
     {}
 

@@ -333,7 +333,7 @@ public class Curator implements AutoCloseable {
      */
     public Optional<Stat> getStat(Path path) {
         try {
-            return Optional.of(framework().checkExists().forPath(path.getAbsolute()));
+            return Optional.ofNullable(framework().checkExists().forPath(path.getAbsolute()));
         }
         catch (KeeperException.NoNodeException e) {
             return Optional.empty();

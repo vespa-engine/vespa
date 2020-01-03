@@ -212,6 +212,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/cost/{month}")) return tenantCost(path.get("tenant"), path.get("month"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return JobControllerApiHandlerHelper.overviewResponse(controller, TenantAndApplicationId.from(path.get("tenant"), path.get("application")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
@@ -678,7 +679,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         boolean requireTests = ! requestObject.field("skipTests").asBool();
         String triggered = controller.applications().deploymentTrigger()
                                      .forceTrigger(id, type, request.getJDiscRequest().getUserPrincipal().getName(), requireTests)
-                                     .stream().map(JobType::jobName).collect(joining(", "));
+                                     .stream().map(job -> job.type().jobName()).collect(joining(", "));
         return new MessageResponse(triggered.isEmpty() ? "Job " + type.jobName() + " for " + id + " not triggered"
                                                        : "Triggered " + triggered + " for " + id);
     }
@@ -1942,9 +1943,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
 
-        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
-        if (DeploymentSpec.empty.equals(applicationPackage.deploymentSpec()))
-            throw new IllegalArgumentException("Missing required file 'deployment.xml'");
+        ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          applicationPackage,

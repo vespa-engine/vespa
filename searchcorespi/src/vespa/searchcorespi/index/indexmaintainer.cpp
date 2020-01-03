@@ -277,13 +277,13 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
     }
-    fastos::StopWatch stopWatch;
+    vespalib::Timer timer;
     _active_indexes->setActive(indexDir);
     IDiskIndex::SP retval(new DiskIndexWithDestructorClosure
                           (_operations.loadDiskIndex(indexDir),
                            makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.elapsed().ms());
+        EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
     return retval;
 }
@@ -296,7 +296,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadStart(indexDir);
     }
-    fastos::StopWatch stopWatch;
+    vespalib::Timer timer;
     _active_indexes->setActive(indexDir);
     const IDiskIndex &wrappedDiskIndex =
         (dynamic_cast<const DiskIndexWithDestructorClosure &>(oldIndex)).getWrapped();
@@ -304,7 +304,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
                           (_operations.reloadDiskIndex(wrappedDiskIndex),
                            makeClosure(this, &IndexMaintainer::deactivateDiskIndexes, indexDir)));
     if (LOG_WOULD_LOG(event)) {
-        EventLogger::diskIndexLoadComplete(indexDir, stopWatch.elapsed().ms());
+        EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
     return retval;
 }
@@ -391,8 +391,8 @@ IndexMaintainer::swapInNewIndex(LockGuard & guard,
 {
     assert(indexes->valid());
     (void) guard;
-    if (_warmupConfig.getDuration() > 0) {
-        if (dynamic_cast<const IDiskIndex *>(&source) != NULL) {
+    if (_warmupConfig.getDuration() > vespalib::duration::zero()) {
+        if (dynamic_cast<const IDiskIndex *>(&source) != nullptr) {
             LOG(debug, "Warming up a disk index.");
             indexes = std::make_shared<WarmupIndexCollection>
                       (_warmupConfig, getLeaf(guard, _source_list, true), indexes,

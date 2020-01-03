@@ -136,9 +136,9 @@ AttributeVector::~AttributeVector() = default;
 void AttributeVector::updateStat(bool force) {
     if (force) {
         onUpdateStat();
-    } else if (_nextStatUpdateTime < fastos::ClockSteady::now()) {
+    } else if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
         onUpdateStat();
-        _nextStatUpdateTime = fastos::ClockSteady::now() + fastos::TimeStamp(5ul * fastos::TimeStamp::SEC);
+        _nextStatUpdateTime = vespalib::steady_clock::now() + 5s;
     }
 }
 
@@ -526,9 +526,9 @@ createFilterIterator(fef::TermFieldMatchData *matchData, bool strict)
 
 
 void
-AttributeVector::SearchContext::fetchPostings(bool strict) {
+AttributeVector::SearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
     if (_plsc != nullptr)
-        _plsc->fetchPostings(strict);
+        _plsc->fetchPostings(execInfo);
 }
 
 

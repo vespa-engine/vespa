@@ -4,19 +4,18 @@
 
 namespace proton {
 
-constexpr double MAX_DELAY_SEC = 300;
+constexpr vespalib::duration MAX_DELAY_SEC = 300s;
 
 DocumentDBPruneConfig::
 DocumentDBPruneConfig()
     : _delay(MAX_DELAY_SEC),
-      _interval(21600.0),
-      _age(1209600.0)
+      _interval(21600s),
+      _age(1209600s)
 {
 }
 
 DocumentDBPruneConfig::
-DocumentDBPruneConfig(double interval,
-                      double age)
+DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age)
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
       _age(age)
@@ -33,11 +32,11 @@ operator==(const DocumentDBPruneConfig &rhs) const
 }
 
 DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig()
-    : _interval(60.0)
+    : _interval(60s)
 {
 }
 
-DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig(double interval)
+DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig(vespalib::duration interval)
     : _interval(interval)
 {
 }
@@ -51,19 +50,19 @@ operator==(const DocumentDBHeartBeatConfig &rhs) const
 
 DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
     : _delay(MAX_DELAY_SEC),
-      _interval(3600),
+      _interval(3600s),
       _allowedLidBloat(1000000000),
       _allowedLidBloatFactor(1.0),
-      _remove_batch_block_delay(5.0),
+      _remove_batch_block_delay(5s),
       _disabled(false),
       _maxDocsToScan(10000)
 {
 }
 
-DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(double interval,
+DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib::duration interval,
                                                                        uint32_t allowedLidBloat,
                                                                        double allowedLidBloatFactor,
-                                                                       double remove_batch_block_delay,
+                                                                       vespalib::duration remove_batch_block_delay,
                                                                        bool disabled,
                                                                        uint32_t maxDocsToScan)
     : _delay(std::min(MAX_DELAY_SEC, interval)),
@@ -116,25 +115,26 @@ BlockableMaintenanceJobConfig::operator==(const BlockableMaintenanceJobConfig &r
 DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
     : _pruneRemovedDocuments(),
       _heartBeat(),
-      _sessionCachePruneInterval(900.0),
-      _visibilityDelay(0),
+      _sessionCachePruneInterval(900s),
+      _visibilityDelay(vespalib::duration::zero()),
       _lidSpaceCompaction(),
       _attributeUsageFilterConfig(),
-      _attributeUsageSampleInterval(60.0),
+      _attributeUsageSampleInterval(60s),
       _blockableJobConfig(),
       _flushConfig()
 {
 }
 
+DocumentDBMaintenanceConfig::~DocumentDBMaintenanceConfig() = default;
+
 DocumentDBMaintenanceConfig::
-DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &
-                            pruneRemovedDocuments,
+DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
                             const DocumentDBHeartBeatConfig &heartBeat,
-                            double groupingSessionPruneInterval,
-                            fastos::TimeStamp visibilityDelay,
+                            vespalib::duration groupingSessionPruneInterval,
+                            vespalib::duration visibilityDelay,
                             const DocumentDBLidSpaceCompactionConfig &lidSpaceCompaction,
                             const AttributeUsageFilterConfig &attributeUsageFilterConfig,
-                            double attributeUsageSampleInterval,
+                            vespalib::duration attributeUsageSampleInterval,
                             const BlockableMaintenanceJobConfig &blockableJobConfig,
                             const DocumentDBFlushConfig &flushConfig)
     : _pruneRemovedDocuments(pruneRemovedDocuments),

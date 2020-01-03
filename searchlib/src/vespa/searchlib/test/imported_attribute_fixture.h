@@ -2,10 +2,8 @@
 
 #pragma once
 
-#include "mock_gid_to_lid_mapping.h"
 #include "weighted_type_test_utils.h"
 #include <vespa/document/base/documentid.h>
-#include <vespa/document/base/globalid.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -13,43 +11,27 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/not_implemented_attribute.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <algorithm>
-#include <future>
-#include <map>
-#include <memory>
-#include <vector>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 namespace search {
 
 struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext {
-
-    struct MockReadGuard : public IDocumentMetaStoreContext::IReadGuard {
-        virtual const search::IDocumentMetaStore &get() const override {
-            search::IDocumentMetaStore *nullStore = nullptr;
-            return static_cast<search::IDocumentMetaStore &>(*nullStore);
-        }
-    };
-
     mutable size_t get_read_guard_cnt;
 
-    using SP = std::shared_ptr<MockDocumentMetaStoreContext>;
     MockDocumentMetaStoreContext() : get_read_guard_cnt(0) {}
-
-    virtual IReadGuard::UP getReadGuard() const override {
-        ++get_read_guard_cnt;
-        return std::make_unique<MockReadGuard>();
-    }
+    IReadGuard::UP getReadGuard() const override;
 };
 
-namespace attribute {
+}
+
+namespace search::attribute {
+
+namespace test { class MockGidToLidMapperFactory; }
 
 using document::DocumentId;
 using document::GlobalId;
@@ -59,19 +41,6 @@ using WeightedFloat     = IAttributeVector::WeightedFloat;
 using WeightedString    = IAttributeVector::WeightedString;
 using WeightedConstChar = IAttributeVector::WeightedConstChar;
 using WeightedEnum      = IAttributeVector::WeightedEnum;
-using test::MockGidToLidMapperFactory;
-
-std::shared_ptr<ReferenceAttribute> create_reference_attribute(vespalib::stringref name = "ref") {
-    return std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
-}
-
-MockDocumentMetaStoreContext::SP create_target_document_meta_store() {
-    return std::make_shared<MockDocumentMetaStoreContext>();
-}
-
-MockDocumentMetaStoreContext::SP create_document_meta_store() {
-    return std::make_shared<MockDocumentMetaStoreContext>();
-}
 
 enum class FastSearchConfig {
     ExplicitlyEnabled,
@@ -136,13 +105,8 @@ void add_n_docs_with_undefined_values(VectorType &vec, size_t n) {
     vec.commit();
 }
 
-GlobalId dummy_gid(uint32_t doc_index) {
-    return DocumentId(vespalib::make_string("id:foo:bar::%u", doc_index)).getGlobalId();
-}
-
-std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
-    return std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
-}
+GlobalId dummy_gid(uint32_t doc_index);
+std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term);
 
 struct ReadGuardWrapper {
     std::unique_ptr<AttributeReadGuard> guard;
@@ -154,13 +118,13 @@ struct ReadGuardWrapper {
 struct ImportedAttributeFixture {
     bool use_search_cache;
     std::shared_ptr<AttributeVector> target_attr;
-    MockDocumentMetaStoreContext::SP target_document_meta_store;
+    std::shared_ptr<IDocumentMetaStoreContext> target_document_meta_store;
     std::shared_ptr<ReferenceAttribute> reference_attr;
-    MockDocumentMetaStoreContext::SP document_meta_store;
+    std::shared_ptr<MockDocumentMetaStoreContext> document_meta_store;
     std::shared_ptr<ImportedAttributeVector> imported_attr;
-    std::shared_ptr<MockGidToLidMapperFactory> mapper_factory;
+    std::shared_ptr<test::MockGidToLidMapperFactory> mapper_factory;
 
-    ImportedAttributeFixture(bool use_search_cache_ = false);
+    ImportedAttributeFixture(bool use_search_cache_ = false, FastSearchConfig fastSearch = FastSearchConfig::Default);
 
     virtual ~ImportedAttributeFixture();
 
@@ -168,26 +132,14 @@ struct ImportedAttributeFixture {
         return ReadGuardWrapper(imported_attr->makeReadGuard(false));
     }
 
-    void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid) {
-        assert(from_lid < reference_attr->getNumDocs());
-        mapper_factory->_map[via_gid] = to_lid;
-        if (to_lid != 0) {
-            reference_attr->notifyReferencedPut(via_gid, to_lid);
-        } else {
-            reference_attr->notifyReferencedRemove(via_gid);
-        }
-        reference_attr->update(from_lid, via_gid);
-        reference_attr->commit();
-    }
+    void map_reference(DocId from_lid, GlobalId via_gid, DocId to_lid);
 
     static vespalib::stringref default_imported_attr_name() {
         return "imported";
     }
 
     std::shared_ptr<ImportedAttributeVector>
-    create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name()) {
-        return ImportedAttributeVectorFactory::create(name, reference_attr, document_meta_store, target_attr, target_document_meta_store, use_search_cache);
-    }
+    create_attribute_vector_from_members(vespalib::stringref name = default_imported_attr_name());
 
     template<typename AttrVecType>
     std::shared_ptr<AttrVecType> target_attr_as() {
@@ -196,10 +148,7 @@ struct ImportedAttributeFixture {
         return ptr;
     }
 
-    void reset_with_new_target_attr(std::shared_ptr<AttributeVector> new_target) {
-        target_attr = std::move(new_target);
-        imported_attr = create_attribute_vector_from_members();
-    }
+    void reset_with_new_target_attr(std::shared_ptr<AttributeVector> new_target);
 
     template<typename ValueType>
     struct LidToLidMapping {
@@ -218,12 +167,7 @@ struct ImportedAttributeFixture {
                   _value_in_target_attr(std::move(value_in_target_attr)) {}
     };
 
-    void set_up_attribute_vectors_before_adding_mappings() {
-        // Make a sneaky assumption that no tests try to use a lid > 9
-        add_n_docs_with_undefined_values(*reference_attr, 10);
-        target_attr->addReservedDoc();
-        add_n_docs_with_undefined_values(*target_attr, 10);
-    }
+    void set_up_attribute_vectors_before_adding_mappings();
 
     template<typename AttrVecType, typename MappingsType, typename ValueAssigner>
     void set_up_and_map(const MappingsType &mappings, ValueAssigner assigner) {
@@ -286,19 +230,6 @@ struct ImportedAttributeFixture {
     }
 };
 
-ImportedAttributeFixture::ImportedAttributeFixture(bool use_search_cache_)
-        : use_search_cache(use_search_cache_),
-          target_attr(create_single_attribute<IntegerAttribute>(BasicType::INT32)),
-          target_document_meta_store(create_target_document_meta_store()),
-          reference_attr(create_reference_attribute()),
-          document_meta_store(create_document_meta_store()),
-          imported_attr(create_attribute_vector_from_members()),
-          mapper_factory(std::make_shared<MockGidToLidMapperFactory>()) {
-    reference_attr->setGidToLidMapperFactory(mapper_factory);
-}
-
-ImportedAttributeFixture::~ImportedAttributeFixture() = default;
-
 template<typename AttrValueType, typename PredicateType>
 void assert_multi_value_matches(const ImportedAttributeFixture &f,
                                 DocId lid,
@@ -352,9 +283,6 @@ void reset_with_wset_value_reference_mappings(
     f.reset_with_wset_value_reference_mappings<AttrVecType, WeightedValueType>(type, mappings, fast_search);
 }
 
-bool has_active_enum_guards(AttributeVector &attr) {
-    return std::async(std::launch::async, [&attr] { return attr.hasActiveEnumGuards(); }).get();
-}
+bool has_active_enum_guards(AttributeVector &attr);
 
-} // attribute
-} // search
+}

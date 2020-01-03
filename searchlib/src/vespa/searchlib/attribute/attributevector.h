@@ -20,7 +20,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/address_space.h>
 #include <vespa/vespalib/util/rcuvector.h>
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 #include <cmath>
 #include <mutex>
 #include <shared_mutex>
@@ -522,7 +522,7 @@ public:
 
         unsigned int approximateHits() const override;
         queryeval::SearchIterator::UP createIterator(fef::TermFieldMatchData *matchData, bool strict) override;
-        void fetchPostings(bool strict) override;
+        void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
         bool valid() const override { return false; }
         Int64Range getAsIntegerTerm() const override { return Int64Range(); }
         const QueryTermUCS4 * queryTerm() const override {
@@ -587,7 +587,7 @@ private:
     uint64_t                              _compactLidSpaceGeneration;
     bool                                  _hasEnum;
     bool                                  _loaded;
-    fastos::SteadyTimeStamp               _nextStatUpdateTime;
+    vespalib::steady_time                 _nextStatUpdateTime;
 
 ////// Locking strategy interface. only available from the Guards.
     /**

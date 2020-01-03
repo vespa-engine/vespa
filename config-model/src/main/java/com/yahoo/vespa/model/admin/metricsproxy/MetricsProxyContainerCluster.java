@@ -10,6 +10,9 @@ import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.core.MonitoringConfig;
 import ai.vespa.metricsproxy.core.VespaMetrics;
 import ai.vespa.metricsproxy.http.MetricsHandler;
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsHandler;
+import ai.vespa.metricsproxy.http.application.ApplicationMetricsRetriever;
+import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
 import ai.vespa.metricsproxy.http.yamas.YamasHandler;
 import ai.vespa.metricsproxy.http.prometheus.PrometheusHandler;
 import ai.vespa.metricsproxy.metric.ExternalMetrics;
@@ -67,7 +70,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ApplicationDimensionsConfig.Producer,
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
-        ThreadpoolConfig.Producer
+        ThreadpoolConfig.Producer,
+        MetricsNodesConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
@@ -110,9 +114,13 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addMetricsProxyComponent(RpcServer.class);
         addMetricsProxyComponent(SystemPollerProvider.class);
         addMetricsProxyComponent(VespaMetrics.class);
+
         addHttpHandler(MetricsHandler.class, MetricsHandler.V1_PATH);
         addHttpHandler(PrometheusHandler.class, PrometheusHandler.V1_PATH);
         addHttpHandler(YamasHandler.class, YamasHandler.V1_PATH);
+
+        addHttpHandler(ApplicationMetricsHandler.class, ApplicationMetricsHandler.V1_PATH);
+        addMetricsProxyComponent(ApplicationMetricsRetriever.class);
     }
 
     private void addHttpHandler(Class<? extends ThreadedHttpRequestHandler> clazz, String bindingPath) {
@@ -125,6 +133,11 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     @Override
     protected void doPrepare(DeployState deployState) { }
+
+    @Override
+    public void getConfig(MetricsNodesConfig.Builder builder) {
+        builder.node.addAll(MetricsNodesConfigGenerator.generate(getContainers()));
+    }
 
     @Override
     public void getConfig(MonitoringConfig.Builder builder) {

@@ -14,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
-import com.yahoo.vespa.hosted.controller.deployment.JobList;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.maintenance.SystemUpgrader;
@@ -202,13 +201,19 @@ public class VersionStatus {
                     versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);
 
             status.instanceJobs().forEach((id, jobs) -> {
+                // Add all unsuccessful runs for failing jobs as any run may have resulted in an incomplete deployment
+                // where a subset of nodes have upgraded.
                 jobs.failing()
                     .not().failingApplicationChange()
                     .not().withStatus(RunStatus.outOfCapacity)
-                    .lastCompleted().mapToList(run -> run.versions().targetPlatform())
-                    .forEach(version -> versionMap.put(version,
-                                                       versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
-                                                                 .withFailing(id)));
+                    .mapToList(JobStatus::runs)
+                    .forEach(runs -> runs.descendingMap().values().stream()
+                                         .dropWhile(run -> !run.hasEnded())
+                                         .takeWhile(run -> run.hasFailed())
+                                         .map(run -> run.versions().targetPlatform())
+                                         .forEach(version -> versionMap.put(version,
+                                                                            versionMap.getOrDefault(version, DeploymentStatistics.empty(version))
+                                                                                      .withFailing(id))));
 
                 jobs.production()
                     .lastSuccess().mapToList(run -> run.versions().targetPlatform())

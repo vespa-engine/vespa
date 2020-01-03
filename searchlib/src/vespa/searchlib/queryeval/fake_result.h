@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/searchlib/common/fslimits.h>
 #include <vector>
+#include <memory>
 
 namespace search::queryeval {
 
@@ -42,7 +43,7 @@ public:
 
 private:
     std::vector<Document> _documents;
-    MinMaxPostingInfo::SP _minMaxPostingInfo;
+    std::shared_ptr<MinMaxPostingInfo> _minMaxPostingInfo;
 
 public:
     FakeResult();

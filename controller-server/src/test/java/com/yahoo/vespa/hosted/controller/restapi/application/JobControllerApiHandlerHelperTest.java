@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.json.JSONException;
@@ -33,6 +34,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status.FAILURE;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
@@ -49,21 +51,28 @@ public class JobControllerApiHandlerHelperTest {
 
     @Test
     public void testResponses() {
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
+                .stagingTest()
+                .region("us-central-1")
+                .test("us-central-1")
+                .parallel("us-west-1", "us-east-3")
+                .build();
         DeploymentTester tester = new DeploymentTester();
         var app = tester.newDeploymentContext();
         tester.clock().setInstant(Instant.EPOCH);
 
         // Revision 1 gets deployed everywhere.
-        app.submit().deploy();
+        app.submit(applicationPackage).deploy();
         ApplicationVersion revision1 = app.lastSubmission().get();
         assertEquals(1000, tester.application().projectId().getAsLong());
 
         tester.clock().advance(Duration.ofMillis(1000));
         // Revision 2 gets deployed everywhere except in us-east-3.
-        ApplicationVersion revision2 = app.submit().lastSubmission().get();
+        ApplicationVersion revision2 = app.submit(applicationPackage).lastSubmission().get();
         app.runJob(systemTest);
         app.runJob(stagingTest);
         app.runJob(productionUsCentral1);
+        app.runJob(testUsCentral1);
 
         tester.triggerJobs();
 
@@ -88,7 +97,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().advance(Duration.ofMillis(1000));
 
         // Revision 3 starts.
-        app.submit()
+        app.submit(applicationPackage)
            .runJob(systemTest).runJob(stagingTest);
         tester.triggerJobs(); // Starts runs for us-central-1 and a new staging test run.
         tester.runner().run();
@@ -131,6 +140,8 @@ public class JobControllerApiHandlerHelperTest {
         userApp.runJob(devAwsUsEast2a, applicationPackage);
         assertResponse(JobControllerApiHandlerHelper.runResponse(tester.jobs().runs(userApp.instanceId(), devAwsUsEast2a), URI.create("https://some.url:43/root")), "dev-aws-us-east-2a-runs.json");
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), userApp.instanceId(), URI.create("https://some.url:43/root/")), "overview-user-instance.json");
+
+        assertResponse(JobControllerApiHandlerHelper.overviewResponse(tester.controller(), app.application().id(), URI.create("https://some.url:43/root/")), "deployment-overview-2.json");
     }
 
     @Test

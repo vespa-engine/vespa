@@ -9,11 +9,10 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in,
-                                         const Config &config)
+DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const Config &config)
     : _filter(config.hwInfo),
       _path(path_in),
-      _sampleInterval(60.0),
+      _sampleInterval(60s),
       _periodicTimer()
 {
     setConfig(config);

@@ -1,6 +1,5 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -35,11 +34,11 @@ import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobTy
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.BinaryOperator.maxBy;
 import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 
 /**
  * Status of the deployment jobs of an {@link Application}.
@@ -47,6 +46,31 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  * @author jonmv
  */
 public class DeploymentStatus {
+
+    public static List<JobId> jobsFor(Application application, SystemName system) {
+        if (DeploymentSpec.empty.equals(application.deploymentSpec()))
+            return List.of();
+
+        return application.deploymentSpec().instances().stream()
+                          .flatMap(spec -> Stream.concat(Stream.of(systemTest, stagingTest),
+                                                         flatten(spec).filter(step -> step.concerns(prod))
+                                                                      .map(step -> {
+                                                                          if (step instanceof DeclaredZone)
+                                                                              return JobType.from(system, prod, ((DeclaredZone) step).region().get());
+                                                                          return JobType.testFrom(system, ((DeclaredTest) step).region());
+                                                                      })
+                                                                      .flatMap(Optional::stream))
+                                                 .map(type -> new JobId(application.id().instance(spec.name()), type)))
+                          .collect(toUnmodifiableList());
+    }
+
+    private static Stream<DeploymentSpec.Step> flatten(DeploymentSpec.Step step) {
+        return step instanceof DeploymentSpec.Steps ? step.steps().stream().flatMap(DeploymentStatus::flatten) : Stream.of(step);
+    }
+
+    private static <T> List<T> union(List<T> first, List<T> second) {
+        return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
+    }
 
     private final Application application;
     private final JobList allJobs;
@@ -106,76 +130,73 @@ public class DeploymentStatus {
         return Stream.concat(jobs.entrySet().stream(), testJobs)
                      .collect(collectingAndThen(toMap(Map.Entry::getKey,
                                                       Map.Entry::getValue,
-                                                      (l1, l2) -> ImmutableList.<Versions>builder().addAll(l1).addAll(l2).build(),
+                                                      DeploymentStatus::union,
                                                       LinkedHashMap::new),
                                                 ImmutableMap::copyOf));
     }
 
     /** Returns the set of jobs that need to run for the given change to be considered complete. */
     public Map<JobId, List<Versions>> jobsToRun(Change change) {
-        Map<JobId, List<Versions>> jobs = new LinkedHashMap<>();
-
-        addProductionJobs(jobs, change);
-        addTests(jobs);
-
+        Map<JobId, Versions> productionJobs = productionJobs(change);
+        Map<JobId, List<Versions>> testJobs = testJobs(productionJobs);
+        Map<JobId, List<Versions>> jobs = new LinkedHashMap<>(testJobs);
+        productionJobs.forEach((job, versions) -> jobs.put(job, List.of(versions)));
         return ImmutableMap.copyOf(jobs);
     }
 
-    public Map<JobId, StepStatus> stepStatus() { return jobSteps; }
+    public Map<JobId, StepStatus> jobSteps() { return jobSteps; }
 
-    private void addProductionJobs(Map<JobId, List<Versions>> jobs, Change change) {
-        jobSteps.forEach((job, step) -> {
-            Versions versions = Versions.from(change, application, deploymentFor(job), systemVersion);
-            if (     job.type().isProduction()
-                &&   step.completedAt(change, versions).isEmpty()
-                && ! step.isRunning(versions))
-                jobs.put(job, List.of(versions));
-        });
+    public List<StepStatus> allSteps() { return allSteps; }
+
+    public Optional<Deployment> deploymentFor(JobId job) {
+        return Optional.ofNullable(application.require(job.application().instance())
+                                              .deployments().get(job.type().zone(system)));
     }
 
-    private void addTests(Map<JobId, List<Versions>> jobs) {
-        Map<JobId, List<Versions>> testJobs = new HashMap<>();
-        jobs.forEach((job, versions) -> {
-            if ( ! job.type().isTest()) {
-                declaredTest(job.application(), systemTest).ifPresent(test -> {
-                    testJobs.merge(test,
-                                   versions.stream()
-                                           .filter(version -> ! jobSteps.get(test).isRunning(version))
-                                           .filter(version ->    allJobs.successOn(version).get(test).isEmpty()
-                                                              && allJobs.triggeredOn(version).get(job).isEmpty())
-                                           .collect(toUnmodifiableList()),
-                                   DeploymentStatus::union);
-                });
-                declaredTest(job.application(), stagingTest).ifPresent(test -> {
-                    testJobs.merge(test,
-                                   versions.stream()
-                                           .filter(version -> ! jobSteps.get(test).isRunning(version))
-                                           .filter(version ->    allJobs.successOn(version).get(test).isEmpty()
-                                                              && allJobs.triggeredOn(version).get(job).isEmpty())
-                                           .collect(toUnmodifiableList()),
-                                   DeploymentStatus::union);
-                });
-            }
+    /**
+     * True if the job has already been triggered on the given versions, or if all test types (systemTest, stagingTest),
+     * restricted to the job's instance if declared in that instance, have successful runs on the given versions.
+     */
+    public boolean isTested(JobId job, Versions versions) {
+        return    allJobs.triggeredOn(versions).get(job).isPresent()
+                  || Stream.of(systemTest, stagingTest)
+                           .noneMatch(testType -> declaredTest(job.application(), testType).map(__ -> allJobs.instance(job.application().instance()))
+                                                                                           .orElse(allJobs)
+                                                                                           .type(testType)
+                                                                                           .successOn(versions).isEmpty());
+    }
+
+    public Map<JobId, Versions> productionJobs(Change change) {
+        Map<JobId, Versions> jobs = new LinkedHashMap<>();
+        jobSteps.forEach((job, step) -> {
+            Versions versions = Versions.from(change, application, deploymentFor(job), systemVersion);
+            if (job.type().isProduction() && step.completedAt(change, versions).isEmpty())
+                jobs.put(job, versions);
         });
-        jobs.forEach((job, versions) -> {
-            if ( ! job.type().isTest() && ! testedOn(versions, systemTest, testJobs))
-                testJobs.merge(new JobId(job.application(), systemTest),
-                               versions.stream()
-                                       .filter(version -> jobSteps.keySet().stream().noneMatch(id -> id.type() == systemTest && jobSteps.get(id).isRunning(version)))
-                                       .filter(version ->    allJobs.successOn(version).type(systemTest).isEmpty()
-                                                          && allJobs.triggeredOn(version).get(job).isEmpty())
-                                       .collect(toUnmodifiableList()),
-                               DeploymentStatus::union);
-            if ( ! job.type().isTest() && ! testedOn(versions, stagingTest, testJobs))
-                testJobs.merge(new JobId(job.application(), stagingTest),
-                               versions.stream()
-                                       .filter(version -> jobSteps.keySet().stream().noneMatch(id -> id.type() == stagingTest && jobSteps.get(id).isRunning(version)))
-                                       .filter(version ->    allJobs.successOn(version).type(stagingTest).isEmpty()
-                                                          && allJobs.triggeredOn(version).get(job).isEmpty())
-                                       .collect(toUnmodifiableList()),
-                               DeploymentStatus::union);
-        });
-        jobs.putAll(testJobs);
+        return ImmutableMap.copyOf(jobs);
+    }
+
+    public Map<JobId, List<Versions>> testJobs(Map<JobId, Versions> jobs) {
+        Map<JobId, List<Versions>> testJobs = new LinkedHashMap<>();
+        for (JobType testType : List.of(systemTest, stagingTest)) {
+            jobs.forEach((job, versions) -> {
+                if (job.type().isDeployment()) {
+                    declaredTest(job.application(), testType).ifPresent(testJob -> {
+                        if (allJobs.successOn(versions).get(testJob).isEmpty())
+                            testJobs.merge(testJob, List.of(versions), DeploymentStatus::union);
+                    });
+                }
+            });
+            jobs.forEach((job, versions) -> {
+                if (   job.type().isDeployment()
+                    && allJobs.successOn(versions).type(testType).isEmpty()
+                    && testJobs.keySet().stream()
+                               .noneMatch(test ->    test.type() == testType
+                                                  && testJobs.get(test).contains(versions)))
+                    testJobs.merge(new JobId(job.application(), testType), List.of(versions), DeploymentStatus::union);
+            });
+        }
+        return ImmutableMap.copyOf(testJobs);
     }
 
     private Optional<JobId> declaredTest(ApplicationId instanceId, JobType testJob) {
@@ -183,22 +204,8 @@ public class DeploymentStatus {
         return jobSteps.get(jobId).isDeclared() ? Optional.of(jobId) : Optional.empty();
     }
 
-    private boolean testedOn(List<Versions> versions, JobType testJob, Map<JobId, List<Versions>> testJobs) {
-        return testJobs.keySet().stream()
-                       .anyMatch(job -> job.type() == testJob && testJobs.get(job).containsAll(versions));
-    }
-
-    private  static <T> List<T> union(List<T> first, List<T> second) {
-        return Stream.concat(first.stream(), second.stream()).distinct().collect(toUnmodifiableList());
-    }
-
-    private Optional<Deployment> deploymentFor(JobId job) {
-        return Optional.ofNullable(application.require(job.application().instance())
-                                              .deployments().get(job.type().zone(system)));
-    }
-
     /** Returns a DAG of the dependencies between the primitive steps in the spec, with iteration order equal to declaration order. */
-    Map<JobId, StepStatus> jobDependencies(DeploymentSpec spec, List<StepStatus> allSteps) {
+    private Map<JobId, StepStatus> jobDependencies(DeploymentSpec spec, List<StepStatus> allSteps) {
         if (DeploymentSpec.empty.equals(spec))
             return Map.of();
 
@@ -206,20 +213,13 @@ public class DeploymentStatus {
         List<StepStatus> previous = List.of();
         for (DeploymentSpec.Step step : spec.steps())
             previous = fillStep(dependencies, allSteps, step, previous, spec.instanceNames().get(0));
-        for (InstanceName instance : spec.instanceNames())
-            for (JobType test : List.of(systemTest, stagingTest)) {
-                JobId job = new JobId(application.id().instance(instance), test);
-                if ( ! dependencies.containsKey(job))
-                    dependencies.put(job, JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
-                                                                         this, instance, test, false));
-            }
 
         return ImmutableMap.copyOf(dependencies);
     }
 
     /** Adds the primitive steps contained in the given step, which depend on the given previous primitives, to the dependency graph. */
-    List<StepStatus> fillStep(Map<JobId, StepStatus> dependencies, List<StepStatus> allSteps,
-                              DeploymentSpec.Step step, List<StepStatus> previous, InstanceName instance) {
+    private List<StepStatus> fillStep(Map<JobId, StepStatus> dependencies, List<StepStatus> allSteps,
+                                      DeploymentSpec.Step step, List<StepStatus> previous, InstanceName instance) {
         if (step.steps().isEmpty()) {
             if ( ! step.delay().isZero()) {
                 StepStatus stepStatus = new DelayStatus((DeploymentSpec.Delay) step, previous);
@@ -229,61 +229,76 @@ public class DeploymentStatus {
 
             JobType jobType;
             StepStatus stepStatus;
-            if (step.concerns(test) || step.concerns(staging)) { // SKIP?
+            if (step.concerns(test) || step.concerns(staging)) {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), null)
-                                 .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofTestDeployment((DeclaredZone) step, List.of(), this, instance, jobType, true);
                 previous = new ArrayList<>(previous);
                 previous.add(stepStatus);
             }
             else if (step.isTest()) {
                 jobType = JobType.testFrom(system, ((DeclaredTest) step).region())
-                                          .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 JobType preType = JobType.from(system, prod, ((DeclaredTest) step).region())
-                                         .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                         .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofProductionTest((DeclaredTest) step, previous, this, instance, jobType, preType);
                 previous = List.of(stepStatus);
             }
             else if (step.concerns(prod)) {
                 jobType = JobType.from(system, ((DeclaredZone) step).environment(), ((DeclaredZone) step).region().get())
-                                         .orElseThrow(() -> new IllegalStateException("No job is known for " + step + " in " + system));
+                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, instance, jobType);
                 previous = List.of(stepStatus);
             }
-            else return previous; // Empty container steps end up here.
+            else return previous; // Empty container steps end up here, and are simply ignored.
             allSteps.add(stepStatus);
             dependencies.put(new JobId(application.id().instance(instance), jobType), stepStatus);
             return previous;
         }
 
-        Optional<InstanceName> stepInstance = Optional.of(step)
-                                                      .filter(DeploymentInstanceSpec.class::isInstance)
-                                                      .map(DeploymentInstanceSpec.class::cast)
-                                                      .map(DeploymentInstanceSpec::name);
+        // TODO jonmv: Make instance status as well, including block-change and upgrade policy, to keep track of change;
+        //             set it equal to application's when dependencies are completed.
+        if (step instanceof DeploymentInstanceSpec) {
+            instance = ((DeploymentInstanceSpec) step).name();
+            for (JobType test : List.of(systemTest, stagingTest)) {
+                JobId job = new JobId(application.id().instance(instance), test);
+                if ( ! dependencies.containsKey(job)) {
+                    var stepStatus = JobStepStatus.ofTestDeployment(new DeclaredZone(test.environment()), List.of(),
+                                                                    this, job.application().instance(), test, false);
+                    dependencies.put(job, stepStatus);
+                    allSteps.add(stepStatus);
+                }
+            }
+        }
+
         if (step.isOrdered()) {
             for (DeploymentSpec.Step nested : step.steps())
-                previous = fillStep(dependencies, allSteps, nested, previous, stepInstance.orElse(instance));
+                previous = fillStep(dependencies, allSteps, nested, previous, instance);
 
             return previous;
         }
 
         List<StepStatus> parallel = new ArrayList<>();
         for (DeploymentSpec.Step nested : step.steps())
-            parallel.addAll(fillStep(dependencies, allSteps, nested, previous, stepInstance.orElse(instance)));
+            parallel.addAll(fillStep(dependencies, allSteps, nested, previous, instance));
 
         return List.copyOf(parallel);
     }
 
-    public boolean isTested(JobId job, Versions versions) {
-        return      allJobs.triggeredOn(versions).get(job).isPresent()
-               || ! declaredTest(job.application(), systemTest).map(__ -> allJobs.instance(job.application().instance()))
-                                                               .orElse(allJobs)
-                                                               .type(systemTest)
-                                                               .successOn(versions).isEmpty()
-               && ! declaredTest(job.application(), stagingTest).map(__ -> allJobs.instance(job.application().instance()))
-                                                                .orElse(allJobs)
-                                                                .type(stagingTest)
-                                                                .successOn(versions).isEmpty();
+
+    public enum StepType {
+
+        /** An instance — completion marks a change as ready for the jobs contained in it. */
+        instance,
+
+        /** A timed delay. */
+        delay,
+
+        /** A system, staging or production test. */
+        test,
+
+        /** A production deployment. */
+        deployment,
     }
 
     /**
@@ -296,22 +311,26 @@ public class DeploymentStatus {
      *
      * The completion criterion for each type of step is implemented in subclasses of this.
      */
-    // TODO jonmv: Make the step status expose _what it is_.
     public static abstract class StepStatus {
 
+        private final StepType type;
         private final DeploymentSpec.Step step;
         private final List<StepStatus> dependencies;
         private final Optional<InstanceName> instance;
 
-        protected StepStatus(DeploymentSpec.Step step, List<StepStatus> dependencies) {
-            this(step, dependencies, null);
+        private StepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies) {
+            this(type, step, dependencies, null);
         }
 
-        protected StepStatus(DeploymentSpec.Step step, List<StepStatus> dependencies, InstanceName instance) {
+        private StepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies, InstanceName instance) {
+            this.type = requireNonNull(type);
             this.step = requireNonNull(step);
             this.dependencies = List.copyOf(dependencies);
             this.instance = Optional.ofNullable(instance);
         }
+
+        /** The type of step this is. */
+        public final StepType type() { return type; }
 
         /** The step defining this. */
         public final DeploymentSpec.Step step() { return step; }
@@ -322,11 +341,24 @@ public class DeploymentStatus {
         /** The instance of this, if any. */
         public final Optional<InstanceName> instance() { return instance; }
 
-        /** The time at which this is complete on the given versions. */
+        /** The id of the job this corresponds to, if any. */
+        public Optional<JobId> job() { return Optional.empty(); }
+
+        /** The time at which this is, or was, complete on the given change and / or versions. */
         public abstract Optional<Instant> completedAt(Change change, Versions versions);
 
-        /** The time at which all dependencies completed on the given version. */
+        /** The time at which this step is ready to run the specified change and / or versions. */
         public Optional<Instant> readyAt(Change change, Versions versions) {
+            return dependenciesCompletedAt(change, versions)
+                    .map(ready -> Stream.of(blockedUntil(change),
+                                            pausedUntil(),
+                                            coolingDownUntil(versions))
+                                        .flatMap(Optional::stream)
+                                        .reduce(ready, maxBy(naturalOrder())));
+        }
+
+        /** The time at which all dependencies completed on the given change and / or versions. */
+        public Optional<Instant> dependenciesCompletedAt(Change change, Versions versions) {
             return dependencies.stream().allMatch(step -> step.completedAt(change, versions).isPresent())
                    ? dependencies.stream().map(step -> step.completedAt(change, versions).get())
                                  .max(naturalOrder())
@@ -334,8 +366,15 @@ public class DeploymentStatus {
                    : Optional.empty();
         }
 
-        /** Whether this step is currently running, with the given version parameters. */
-        public abstract boolean isRunning(Versions versions);
+        /** The time until which this step is blocked by a change blocker. */
+        // TODO jonmv: readyAt for instance can be delayed by block window. Upgrade policy / confidence is something different.
+        public Optional<Instant> blockedUntil(Change change) { return Optional.empty(); }
+
+        /** The time until which this step is paused by user intervention. */
+        public Optional<Instant> pausedUntil() { return Optional.empty(); }
+
+        /** The time until which this step is cooling down, due to consecutive failures. */
+        public Optional<Instant> coolingDownUntil(Versions versions) { return Optional.empty(); }
 
         /** Whether this step is declared in the deployment spec, or is an implicit step. */
         public boolean isDeclared() { return true; }
@@ -343,10 +382,10 @@ public class DeploymentStatus {
     }
 
 
-    public static class DelayStatus extends StepStatus {
+    private static class DelayStatus extends StepStatus {
 
-        public DelayStatus(DeploymentSpec.Delay step, List<StepStatus> dependencies) {
-            super(step, dependencies);
+        private DelayStatus(DeploymentSpec.Delay step, List<StepStatus> dependencies) {
+            super(StepType.delay, step, dependencies);
         }
 
         @Override
@@ -354,53 +393,40 @@ public class DeploymentStatus {
             return readyAt(change, versions).map(completion -> completion.plus(step().delay()));
         }
 
-        @Override
-        public boolean isRunning(Versions versions) {
-            return true;
-        }
-
     }
 
 
-    public static abstract class JobStepStatus extends StepStatus {
+    private static abstract class JobStepStatus extends StepStatus {
 
         private final JobStatus job;
         private final DeploymentStatus status;
 
-        protected JobStepStatus(DeploymentSpec.Step step, List<StepStatus> dependencies, JobStatus job,
+        private JobStepStatus(StepType type, DeploymentSpec.Step step, List<StepStatus> dependencies, JobStatus job,
                                 DeploymentStatus status) {
-            super(step, dependencies, job.id().application().instance());
+            super(type, step, dependencies, job.id().application().instance());
             this.job = requireNonNull(job);
             this.status = requireNonNull(status);
         }
 
         @Override
-        public boolean isRunning(Versions versions) {
-            return job.isRunning() && job.lastTriggered().get().versions().targetsMatch(versions);
+        public Optional<JobId> job() { return Optional.of(job.id()); }
+
+        @Override
+        public Optional<Instant> pausedUntil() {
+            return status.application().require(job.id().application().instance()).jobPause(job.id().type());
         }
 
         @Override
-        // TODO jonmv: Split in readyAt(change, versions), pausedUntil(), and coolingDownUntil(versions)
-        public Optional<Instant> readyAt(Change change, Versions versions) {
-            Optional<Instant> readyAt = super.readyAt(change, versions);
-            if (readyAt.isEmpty())
-                return Optional.empty();
-
-            Optional<Instant> pausedUntil = status.application().require(job.id().application().instance()).jobPause(job.id().type());
-            if (pausedUntil.isPresent() && pausedUntil.get().isAfter(readyAt.get()))
-                return pausedUntil;
-
-            if (job.lastTriggered().isEmpty()) return readyAt;
-            if (job.lastCompleted().isEmpty()) return readyAt;
-            if (job.firstFailing().isEmpty()) return readyAt;
-            if ( ! versions.targetsMatch(job.lastCompleted().get().versions())) return readyAt;
-            if (status.application.deploymentSpec().requireInstance(job.id().application().instance()).upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return readyAt;
-            if (job.id().type().environment().isTest() && job.isOutOfCapacity()) return readyAt;
+        public Optional<Instant> coolingDownUntil(Versions versions) {
+            if (job.lastTriggered().isEmpty()) return Optional.empty();
+            if (job.lastCompleted().isEmpty()) return Optional.empty();
+            if (job.firstFailing().isEmpty()) return Optional.empty();
+            if ( ! versions.targetsMatch(job.lastCompleted().get().versions())) return Optional.empty();
+            if (status.application.deploymentSpec().requireInstance(job.id().application().instance()).upgradePolicy() == DeploymentSpec.UpgradePolicy.canary) return Optional.empty();
+            if (job.id().type().environment().isTest() && job.isOutOfCapacity()) return Optional.empty();
 
             Instant firstFailing = job.firstFailing().get().end().get();
             Instant lastCompleted = job.lastCompleted().get().end().get();
-            if (lastCompleted.isBefore(readyAt.get()))
-                return readyAt;
 
             return firstFailing.equals(lastCompleted) ? Optional.of(lastCompleted)
                                                       : Optional.of(lastCompleted.plus(Duration.ofMinutes(10))
@@ -408,14 +434,14 @@ public class DeploymentStatus {
                                                                                                .dividedBy(2)));
         }
 
-        public static JobStepStatus ofProductionDeployment(DeclaredZone step, List<StepStatus> dependencies,
-                                                           DeploymentStatus status, InstanceName instance, JobType jobType) {
+        private static JobStepStatus ofProductionDeployment(DeclaredZone step, List<StepStatus> dependencies,
+                                                            DeploymentStatus status, InstanceName instance, JobType jobType) {
             ZoneId zone = ZoneId.from(step.environment(), step.region().get());
             JobStatus job = status.instanceJobs(instance).get(jobType);
             Optional<Deployment> existingDeployment = Optional.ofNullable(status.application().require(instance)
                                                                                 .deployments().get(zone));
 
-            return new JobStepStatus(step, dependencies, job, status) {
+            return new JobStepStatus(StepType.deployment, step, dependencies, job, status) {
 
                 @Override
                 public Optional<Instant> readyAt(Change change, Versions versions) {
@@ -445,10 +471,10 @@ public class DeploymentStatus {
             };
         }
 
-        public static JobStepStatus ofProductionTest(DeclaredTest step, List<StepStatus> dependencies,
-                                                     DeploymentStatus status, InstanceName instance, JobType testType, JobType jobType) {
+        private static JobStepStatus ofProductionTest(DeclaredTest step, List<StepStatus> dependencies,
+                                                      DeploymentStatus status, InstanceName instance, JobType testType, JobType jobType) {
             JobStatus job = status.instanceJobs(instance).get(testType);
-            return new JobStepStatus(step, dependencies, job, status) {
+            return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 public Optional<Instant> completedAt(Change change, Versions versions) {
                     return job.lastSuccess()
@@ -460,11 +486,11 @@ public class DeploymentStatus {
             };
         }
 
-        public static JobStepStatus ofTestDeployment(DeclaredZone step, List<StepStatus> dependencies,
-                                                     DeploymentStatus status, InstanceName instance,
-                                                     JobType jobType, boolean declared) {
+        private static JobStepStatus ofTestDeployment(DeclaredZone step, List<StepStatus> dependencies,
+                                                      DeploymentStatus status, InstanceName instance,
+                                                      JobType jobType, boolean declared) {
             JobStatus job = status.instanceJobs(instance).get(jobType);
-            return new JobStepStatus(step, dependencies, job, status) {
+            return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 public Optional<Instant> completedAt(Change change, Versions versions) {
                     return RunList.from(job)
@@ -480,27 +506,6 @@ public class DeploymentStatus {
             };
         }
 
-    }
-
-    public static List<JobId> jobsFor(Application application, SystemName system) {
-        if (DeploymentSpec.empty.equals(application.deploymentSpec()))
-            return List.of();
-
-        return application.deploymentSpec().instances().stream()
-                          .flatMap(spec -> Stream.concat(Stream.of(systemTest, stagingTest),
-                                                         flatten(spec).filter(step -> step.concerns(prod))
-                                                                      .map(step -> {
-                                                                          if (step instanceof DeclaredZone)
-                                                                              return JobType.from(system, prod, ((DeclaredZone) step).region().get());
-                                                                          return JobType.testFrom(system, ((DeclaredTest) step).region());
-                                                                      })
-                                                                      .flatMap(Optional::stream))
-                                                 .map(type -> new JobId(application.id().instance(spec.name()), type)))
-                          .collect(toUnmodifiableList());
-    }
-
-    private static Stream<DeploymentSpec.Step> flatten(DeploymentSpec.Step step) {
-        return step instanceof DeploymentSpec.Steps ? step.steps().stream().flatMap(DeploymentStatus::flatten) : Stream.of(step);
     }
 
 }

@@ -2,8 +2,8 @@
 
 #include "trans_log_server_explorer.h"
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/file.h>
-#include <vespa/fastos/timestamp.h>
 
 
 using vespalib::slime::Inserter;
@@ -16,7 +16,7 @@ namespace {
 struct DomainExplorer : vespalib::StateExplorer {
     Domain::SP domain;
     DomainExplorer(Domain::SP domain_in) : domain(std::move(domain_in)) {}
-    virtual void get_state(const Inserter &inserter, bool full) const override {
+    void get_state(const Inserter &inserter, bool full) const override {
         Cursor &state = inserter.insertObject();
         DomainInfo info = domain->getDomainInfo();
         state.setLong("from", info.range.from());
@@ -35,7 +35,7 @@ struct DomainExplorer : vespalib::StateExplorer {
                 {
                     FastOS_StatInfo stat_info;
                     FastOS_File::Stat(part_in.file.c_str(), &stat_info);
-                    part.setString("lastModified", fastos::TimeStamp::asString(stat_info._modifiedTime));
+                    part.setString("lastModified", vespalib::to_string(vespalib::system_time(std::chrono::nanoseconds(stat_info._modifiedTimeNS))));
                 }
             }
         }

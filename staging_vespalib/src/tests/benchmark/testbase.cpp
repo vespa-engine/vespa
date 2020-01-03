@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "testbase.h"
-#include <vespa/fastos/timestamp.h>
 #include <vespa/vespalib/util/time.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".testbase");
+
+using namespace std::chrono;
 
 namespace vespalib {
 
@@ -180,13 +181,13 @@ size_t ClockREALTIME::onRun()
     int foo = clock_gettime(CLOCK_REALTIME, &ts);
     assert(foo == 0);
     (void) foo;
-    fastos::TimeStamp start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
-    fastos::TimeStamp end(start);
+    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    nanoseconds end(start);
     for (size_t i=0; i < 1000; i++) {
         clock_gettime(CLOCK_REALTIME, &ts);
-        end = ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec;
+        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
     }
-    return (start - end).ns();
+    return count_ns(start - end);
 }
 
 size_t ClockMONOTONIC::onRun()
@@ -195,13 +196,13 @@ size_t ClockMONOTONIC::onRun()
     int foo = clock_gettime(CLOCK_MONOTONIC, &ts);
     assert(foo == 0);
     (void) foo;
-    fastos::TimeStamp start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
-    fastos::TimeStamp end(start);
+    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    nanoseconds end(start);
     for (size_t i=0; i < 1000; i++) {
         clock_gettime(CLOCK_MONOTONIC, &ts);
-        end = ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec;
+        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
     }
-    return (start - end).ns();
+    return count_ns(start - end);;
 }
 
 ClockMONOTONIC_RAW::ClockMONOTONIC_RAW()
@@ -221,13 +222,13 @@ size_t ClockMONOTONIC_RAW::onRun()
     int foo = clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
     assert(foo == 0);
     (void) foo;
-    fastos::TimeStamp start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
-    fastos::TimeStamp end(start);
+    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    nanoseconds end(start);
     for (size_t i=0; i < 1000; i++) {
         clock_gettime(CLOCK_MONOTONIC_RAW, &ts);
-        end = ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec;
+        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
     }
-    return (start - end).ns();
+    return count_ns(start - end);
 }
 
 size_t ClockPROCESS_CPUTIME_ID::onRun()
@@ -236,13 +237,13 @@ size_t ClockPROCESS_CPUTIME_ID::onRun()
     int foo = clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
     assert(foo == 0);
     (void) foo;
-    fastos::TimeStamp start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
-    fastos::TimeStamp end(start);
+    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    nanoseconds end(start);
     for (size_t i=0; i < 1000; i++) {
         clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
-        end = ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec;
+        end =nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
     }
-    return (start - end).ns();
+    return count_ns(start - end);
 }
 
 size_t ClockTHREAD_CPUTIME_ID::onRun()
@@ -251,13 +252,13 @@ size_t ClockTHREAD_CPUTIME_ID::onRun()
     int foo = clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
     assert(foo == 0);
     (void) foo;
-    fastos::TimeStamp start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
-    fastos::TimeStamp end(start);
+    nanoseconds start(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
+    nanoseconds end(start);
     for (size_t i=0; i < 1000; i++) {
         clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts);
-        end = ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec;
+        end = nanoseconds(ts.tv_sec*1000L*1000L*1000L + ts.tv_nsec);
     }
-    return (start - end).ns();
+    return count_ns(start - end);
 }
 
 size_t CreateVespalibString::onRun()

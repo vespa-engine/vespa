@@ -4,9 +4,6 @@
 
 package ai.vespa.metricsproxy.http;
 
-import ai.vespa.metricsproxy.core.MetricsConsumers;
-import ai.vespa.metricsproxy.core.MetricsManager;
-import ai.vespa.metricsproxy.service.VespaServices;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
@@ -32,14 +29,8 @@ import static java.util.logging.Level.WARNING;
  */
 public abstract class HttpHandlerBase extends ThreadedHttpRequestHandler {
 
-    protected final ValuesFetcher valuesFetcher;
-
-    protected HttpHandlerBase(Executor executor,
-                              MetricsManager metricsManager,
-                              VespaServices vespaServices,
-                              MetricsConsumers metricsConsumers) {
+    protected HttpHandlerBase(Executor executor) {
         super(executor);
-        valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
     }
 
     protected abstract Optional<HttpResponse> doHandle(URI requestUri, Path apiPath, String consumer);

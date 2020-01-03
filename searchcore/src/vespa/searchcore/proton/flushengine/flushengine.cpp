@@ -53,7 +53,7 @@ logTarget(const char * text, const FlushContext & ctx) {
 
 FlushEngine::FlushMeta::FlushMeta(const vespalib::string & name, uint32_t id)
     : _name(name),
-      _stopWatch(),
+      _timer(),
       _id(id)
 { }
 FlushEngine::FlushMeta::~FlushMeta() = default;
@@ -348,17 +348,17 @@ FlushEngine::initFlush(const FlushContext &ctx)
 void
 FlushEngine::flushDone(const FlushContext &ctx, uint32_t taskId)
 {
-    fastos::TimeStamp duration;
+    vespalib::duration duration = vespalib::duration::zero();
     {
         std::lock_guard<std::mutex> guard(_lock);
         duration = _flushing[taskId].elapsed();
     }
     if (LOG_WOULD_LOG(event)) {
         FlushStats stats = ctx.getTarget()->getLastFlushStats();
-        EventLogger::flushComplete(ctx.getName(), duration.ms(), ctx.getTarget()->getFlushedSerialNum(),
+        EventLogger::flushComplete(ctx.getName(), vespalib::count_ms(duration), ctx.getTarget()->getFlushedSerialNum(),
                                    stats.getPath(), stats.getPathElementsToLog());
     }
-    LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, duration.sec());
+    LOG(debug, "FlushEngine::flushDone(taskId='%d') took '%f' secs", taskId, vespalib::to_s(duration));
     std::lock_guard<std::mutex> guard(_lock);
     _flushing.erase(taskId);
     assert(ctx.getHandler());

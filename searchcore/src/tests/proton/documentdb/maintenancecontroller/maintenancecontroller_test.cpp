@@ -47,7 +47,6 @@ using document::Document;
 using document::DocumentId;
 using document::test::makeBucketSpace;
 using vespalib::system_clock;
-using fastos::TimeStamp;
 using proton::bucketdb::BucketCreateNotifier;
 using proton::matching::ISessionCachePruner;
 using search::AttributeGuard;
@@ -67,7 +66,7 @@ typedef BucketId::List BucketIdVector;
 typedef std::set<BucketId> BucketIdSet;
 
 constexpr int TIMEOUT_MS = 60000;
-constexpr double TIMEOUT_SEC = 60.0;
+constexpr vespalib::duration TIMEOUT_SEC = 60s;
 
 namespace {
 
@@ -197,7 +196,7 @@ struct MySessionCachePruner : public ISessionCachePruner
 {
     bool isInvoked;
     MySessionCachePruner() : isInvoked(false) { }
-    void pruneTimedOutSessions(fastos::SteadyTimeStamp current) override {
+    void pruneTimedOutSessions(vespalib::steady_time current) override {
         (void) current;
         isInvoked = true;
     }
@@ -251,7 +250,7 @@ public:
     ~MyExecutor();
 
     bool isIdle();
-    bool waitIdle(double timeout);
+    bool waitIdle(vespalib::duration timeout);
 };
 
 
@@ -281,8 +280,8 @@ struct MySimpleJob : public BlockableMaintenanceJob
     vespalib::CountDownLatch _latch;
     size_t                   _runCnt;
 
-    MySimpleJob(double delay,
-                double interval,
+    MySimpleJob(vespalib::duration delay,
+                vespalib::duration interval,
                 uint32_t finishCount)
         : BlockableMaintenanceJob("my_job", delay, interval),
           _latch(finishCount),
@@ -300,8 +299,8 @@ struct MySimpleJob : public BlockableMaintenanceJob
 
 struct MySplitJob : public MySimpleJob
 {
-    MySplitJob(double delay,
-               double interval,
+    MySplitJob(vespalib::duration delay,
+               vespalib::duration interval,
                uint32_t finishCount)
         : MySimpleJob(delay, interval, finishCount)
     {
@@ -318,8 +317,8 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
 {
     vespalib::Gate _firstRun;
 
-    MyLongRunningJob(double delay,
-                     double interval)
+    MyLongRunningJob(vespalib::duration delay,
+                     vespalib::duration interval)
         : BlockableMaintenanceJob("long_running_job", delay, interval),
           _firstRun()
     {
@@ -380,51 +379,24 @@ public:
 
     MaintenanceControllerFixture();
 
-    virtual
-    ~MaintenanceControllerFixture();
+    virtual ~MaintenanceControllerFixture();
 
-    void
-    syncSubDBs();
-
-    void commit() override {
-    }
-
-    void commitAndWait() override {
-    }
-
-    void
-    performSyncSubDBs();
-
-    void
-    notifyClusterStateChanged();
-
-    void
-    performNotifyClusterStateChanged();
-
-    void
-    startMaintenance();
-
+    void syncSubDBs();
+    void commit() override { }
+    void commitAndWait() override { }
+    void performSyncSubDBs();
+    void notifyClusterStateChanged();
+    void performNotifyClusterStateChanged();
+    void startMaintenance();
     void injectMaintenanceJobs();
+    void performStartMaintenance();
+    void stopMaintenance();
+    void forwardMaintenanceConfig();
+    void performForwardMaintenanceConfig();
 
-    void
-    performStartMaintenance();
+    void insertDocs(const test::UserDocuments &docs, MyDocumentSubDB &subDb);
 
-    void
-    stopMaintenance();
-
-    void
-    forwardMaintenanceConfig();
-
-    void
-    performForwardMaintenanceConfig();
-
-    void
-    insertDocs(const test::UserDocuments &docs,
-               MyDocumentSubDB &subDb);
-
-    void
-    removeDocs(const test::UserDocuments &docs,
-               Timestamp timestamp);
+    void removeDocs(const test::UserDocuments &docs, Timestamp timestamp);
 
     void
     setPruneConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneConfig)
@@ -463,7 +435,7 @@ public:
     }
 
     void
-    setGroupingSessionPruneInterval(double groupingSessionPruneInterval)
+    setGroupingSessionPruneInterval(vespalib::duration groupingSessionPruneInterval)
     {
         DocumentDBMaintenanceConfig::SP
             newCfg(new DocumentDBMaintenanceConfig(
@@ -800,11 +772,11 @@ MyExecutor::isIdle()
 
 
 bool
-MyExecutor::waitIdle(double timeout)
+MyExecutor::waitIdle(vespalib::duration timeout)
 {
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     while (!isIdle()) {
-        if (timer.elapsed().sec() >= timeout)
+        if (timer.elapsed() >= timeout)
             return false;
     }
     return true;
@@ -1062,7 +1034,7 @@ TEST_F("require that document pruner is active",
     EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
     MyFrozenBucket::UP frozen3(new MyFrozenBucket(f._mc, bucketId3));
-    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(0.2, 900.0));
+    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(200ms, 900s));
     for (uint32_t i = 0; i < 6; ++i) {
         std::this_thread::sleep_for(100ms);
         ASSERT_TRUE(f._executor.waitIdle(TIMEOUT_SEC));
@@ -1087,7 +1059,7 @@ TEST_F("require that heartbeats are scheduled",
 {
     f.notifyClusterStateChanged();
     f.startMaintenance();
-    f.setHeartBeatConfig(DocumentDBHeartBeatConfig(0.2));
+    f.setHeartBeatConfig(DocumentDBHeartBeatConfig(200ms));
     for (uint32_t i = 0; i < 600; ++i) {
         std::this_thread::sleep_for(100ms);
         if (f._fh.getHeartBeats() != 0u)
@@ -1102,7 +1074,7 @@ TEST_F("require that periodic session prunings are scheduled",
     ASSERT_FALSE(f._gsp.isInvoked);
     f.notifyClusterStateChanged();
     f.startMaintenance();
-    f.setGroupingSessionPruneInterval(0.2);
+    f.setGroupingSessionPruneInterval(200ms);
     for (uint32_t i = 0; i < 600; ++i) {
         std::this_thread::sleep_for(100ms);
         if (f._gsp.isInvoked) {
@@ -1182,7 +1154,7 @@ TEST_F("require that active bucket is not moved until de-activated", Maintenance
 
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job(new MySimpleJob(0.2, 0.2, 3));
+    IMaintenanceJob::UP job(new MySimpleJob(200ms, 200ms, 3));
     MySimpleJob &myJob = static_cast<MySimpleJob &>(*job);
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
@@ -1194,7 +1166,7 @@ TEST_F("require that a simple maintenance job is executed", MaintenanceControlle
 
 TEST_F("require that a split maintenance job is executed", MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job(new MySplitJob(0.2, TIMEOUT_SEC * 2, 3));
+    IMaintenanceJob::UP job(new MySplitJob(200ms, TIMEOUT_SEC * 2, 3));
     MySplitJob &myJob = static_cast<MySplitJob &>(*job);
     f._mc.registerJobInMasterThread(std::move(job));
     f._injectDefaultJobs = false;
@@ -1239,7 +1211,7 @@ TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
 
 TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixture)
 {
-    IMaintenanceJob::UP job(new MySimpleJob(0.2, 0.2, 0));
+    IMaintenanceJob::UP job(new MySimpleJob(200ms, 200ms, 0));
     MySimpleJob &myJob = static_cast<MySimpleJob &>(*job);
     myJob.block();
     f._mc.registerJobInMasterThread(std::move(job));
@@ -1253,7 +1225,7 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
 {
     {
         IMaintenanceJob::UP job1(new MySimpleJob(TIMEOUT_SEC * 2, TIMEOUT_SEC * 2, 0));
-        IMaintenanceJob::UP job2(new MyLongRunningJob(0.2, 0.2));
+        IMaintenanceJob::UP job2(new MyLongRunningJob(200ms, 200ms));
         MyLongRunningJob &longRunningJob = static_cast<MyLongRunningJob &>(*job2);
         f._mc.registerJobInMasterThread(std::move(job1));
         f._mc.registerJobInMasterThread(std::move(job2));
@@ -1365,9 +1337,9 @@ TEST_F("require that maintenance jobs are run by correct executor", MaintenanceC
 }
 
 void
-assertPruneRemovedDocumentsConfig(double expDelay, double expInterval, double interval, MaintenanceControllerFixture &f)
+assertPruneRemovedDocumentsConfig(vespalib::duration expDelay, vespalib::duration expInterval, vespalib::duration interval, MaintenanceControllerFixture &f)
 {
-    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(interval, 1000));
+    f.setPruneConfig(DocumentDBPruneRemovedDocumentsConfig(interval, 1000s));
     const auto *job = findJob(f._mc.getJobList(), "prune_removed_documents.searchdocument");
     EXPECT_EQUAL(expDelay, job->getJob().getDelay());
     EXPECT_EQUAL(expInterval, job->getJob().getInterval());
@@ -1375,8 +1347,8 @@ assertPruneRemovedDocumentsConfig(double expDelay, double expInterval, double in
 
 TEST_F("require that delay for prune removed documents is set based on interval and is max 300 secs", MaintenanceControllerFixture)
 {
-    assertPruneRemovedDocumentsConfig(300, 301, 301, f);
-    assertPruneRemovedDocumentsConfig(299, 299, 299, f);
+    assertPruneRemovedDocumentsConfig(300s, 301s, 301s, f);
+    assertPruneRemovedDocumentsConfig(299s, 299s, 299s, f);
 }
 
 TEST_MAIN()

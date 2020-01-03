@@ -6,5 +6,5 @@ package com.yahoo.vespa.hosted.node.admin.nodeagent;
  */
 @FunctionalInterface
 public interface NodeAgentFactory {
-    NodeAgent create(NodeAgentContextSupplier contextSupplier);
+    NodeAgent create(NodeAgentContextSupplier contextSupplier, NodeAgentContext nodeAgentContext);
 }

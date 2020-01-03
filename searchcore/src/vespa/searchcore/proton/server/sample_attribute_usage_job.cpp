@@ -13,8 +13,8 @@ SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
                         IAttributeManagerSP notReadyAttributeManager,
                         AttributeUsageFilter &attributeUsageFilter,
                         const vespalib::string &docTypeName,
-                        double interval)
-    : IMaintenanceJob("sample_attribute_usage." + docTypeName, 0.0, interval),
+                        vespalib::duration interval)
+    : IMaintenanceJob("sample_attribute_usage." + docTypeName, vespalib::duration::zero(), interval),
       _readyAttributeManager(readyAttributeManager),
       _notReadyAttributeManager(notReadyAttributeManager),
       _attributeUsageFilter(attributeUsageFilter)

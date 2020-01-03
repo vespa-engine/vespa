@@ -18,9 +18,9 @@ namespace proton {
 
 void
 TransactionLogManager::doLogReplayComplete(const vespalib::string &domainName,
-                                           std::chrono::milliseconds elapsedTime) const
+                                           vespalib::duration elapsedTime) const
 {
-    EventLogger::transactionLogReplayComplete(domainName, elapsedTime.count());
+    EventLogger::transactionLogReplayComplete(domainName, vespalib::count_ms(elapsedTime));
 }
 
 

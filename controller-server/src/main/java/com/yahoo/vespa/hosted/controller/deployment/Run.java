@@ -11,11 +11,11 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static java.util.Objects.requireNonNull;
@@ -28,7 +28,7 @@ import static java.util.Objects.requireNonNull;
 public class Run {
 
     private final RunId id;
-    private final Map<Step, Step.Status> steps;
+    private final Map<Step, StepInfo> steps;
     private final Versions versions;
     private final Instant start;
     private final Optional<Instant> end;
@@ -38,7 +38,7 @@ public class Run {
     private final Optional<X509Certificate> testerCertificate;
 
     // For deserialisation only -- do not use!
-    public Run(RunId id, Map<Step, Step.Status> steps, Versions versions, Instant start,
+    public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, Instant start,
                Optional<Instant> end, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
                Optional<X509Certificate> testerCertificate) {
         this.id = id;
@@ -53,52 +53,67 @@ public class Run {
     }
 
     public static Run initial(RunId id, Versions versions, Instant now) {
-        EnumMap<Step, Step.Status> steps = new EnumMap<>(Step.class);
-        JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, unfinished));
+        EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
+        JobProfile.of(id.type()).steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
         return new Run(id, steps, requireNonNull(versions), requireNonNull(now), Optional.empty(), running,
                        -1, Instant.EPOCH, Optional.empty());
     }
 
-    /** Returns a new Run with the new status, and with the status of the given, completed step set accordingly. */
+    /** Returns a new Run with the status of the given completed step set accordingly. */
     public Run with(RunStatus status, LockedStep step) {
         requireActive();
-        if (steps.get(step.get()) != unfinished)
+        StepInfo stepInfo = getRequiredStepInfo(step.get());
+        if (stepInfo.status() != unfinished)
             throw new IllegalStateException("Step '" + step.get() + "' can't be set to '" + status + "'" +
-                                     " -- it already completed with status '" + steps.get(step.get()) + "'!");
+                                     " -- it already completed with status '" + stepInfo.status() + "'!");
 
-        EnumMap<Step, Step.Status> steps = new EnumMap<>(this.steps);
-        steps.put(step.get(), Step.Status.of(status));
+        EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
+        steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
         return new Run(id, steps, versions, start, end, this.status == running ? status : this.status,
                        lastTestRecord, lastVespaLogTimestamp, testerCertificate);
     }
 
+    /** Returns a new Run with a new start time*/
+    public Run with(Instant startTime, LockedStep step) {
+        requireActive();
+        StepInfo stepInfo = getRequiredStepInfo(step.get());
+        if (stepInfo.status() != unfinished)
+            throw new IllegalStateException("Unable to set start timestamp of step " + step.get() +
+                    ": it has already completed with status " + stepInfo.status() + "!");
+
+        EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
+        steps.put(step.get(), stepInfo.with(startTime));
+
+        return new Run(id, steps, versions, start, end, status, lastTestRecord, lastVespaLogTimestamp, testerCertificate);
+    }
+
     public Run finished(Instant now) {
         requireActive();
-        return new Run(id, new EnumMap<>(steps), versions, start, Optional.of(now), status == running ? success : status,
+        return new Run(id, steps, versions, start, Optional.of(now), status == running ? success : status,
                        lastTestRecord, lastVespaLogTimestamp, testerCertificate);
     }
 
     public Run aborted() {
         requireActive();
-        return new Run(id, new EnumMap<>(steps), versions, start, end, aborted,
+        return new Run(id, steps, versions, start, end, aborted,
                        lastTestRecord, lastVespaLogTimestamp, testerCertificate);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
-        return new Run(id, new EnumMap<>(steps), versions, start, end, status,
+        return new Run(id, steps, versions, start, end, status,
                        lastTestRecord, lastVespaLogTimestamp, testerCertificate);
     }
 
     public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
-        return new Run(id, new EnumMap<>(steps), versions, start, end, status,
+        return new Run(id, steps, versions, start, end, status,
                        lastTestRecord, lastVespaLogTimestamp, testerCertificate);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
-        return new Run(id, new EnumMap<>(steps), versions, start, end, status,
+        return new Run(id, steps, versions, start, end, status,
                        lastTestRecord, lastVespaLogTimestamp, Optional.of(testerCertificate));
     }
 
@@ -107,9 +122,33 @@ public class Run {
         return id;
     }
 
-    /** Returns an unmodifiable view of the status of all steps in this run. */
-    public Map<Step, Step.Status> steps() {
+    /** Whether this run contains this step. */
+    public boolean hasStep(Step step) {
+        return steps.containsKey(step);
+    }
+
+    /** Returns info on step. */
+    public Optional<StepInfo> stepInfo(Step step) {
+        return Optional.ofNullable(steps.get(step));
+    }
+
+    private StepInfo getRequiredStepInfo(Step step) {
+        return stepInfo(step).orElseThrow(() -> new IllegalArgumentException("There is no such step " + step + " for run " + id));
+    }
+
+    /** Returns status of step. */
+    public Optional<Step.Status> stepStatus(Step step) {
+        return stepInfo(step).map(StepInfo::status);
+    }
+
+    /** Returns an unmodifiable view of all step information in this run. */
+    public Map<Step, StepInfo> steps() {
         return steps;
+    }
+
+    /** Returns an unmodifiable view of the status of all steps in this run. */
+    public Map<Step, Step.Status> stepStatuses() {
+        return Collections.unmodifiableMap(steps.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().status())));
     }
 
     public RunStatus status() {
@@ -190,10 +229,10 @@ public class Run {
     /** Returns the list of unfinished steps whose prerequisites have all succeeded. */
     private List<Step> normalSteps() {
         return ImmutableList.copyOf(steps.entrySet().stream()
-                                         .filter(entry ->    entry.getValue() == unfinished
+                                         .filter(entry ->    entry.getValue().status() == unfinished
                                                           && entry.getKey().prerequisites().stream()
                                                                   .allMatch(step ->    steps.get(step) == null
-                                                                                    || steps.get(step) == succeeded))
+                                                                                    || steps.get(step).status() == succeeded))
                                          .map(Map.Entry::getKey)
                                          .iterator());
     }
@@ -201,11 +240,12 @@ public class Run {
     /** Returns the list of not-yet-run run-always steps whose run-always prerequisites have all run. */
     private List<Step> forcedSteps() {
         return ImmutableList.copyOf(steps.entrySet().stream()
-                                         .filter(entry ->    entry.getValue() == unfinished
+                                         .filter(entry ->    entry.getValue().status() == unfinished
                                                           && JobProfile.of(id.type()).alwaysRun().contains(entry.getKey())
                                                           && entry.getKey().prerequisites().stream()
                                                                   .filter(JobProfile.of(id.type()).alwaysRun()::contains)
-                                                                  .allMatch(step -> steps.get(step) != unfinished))
+                                                                  .allMatch(step ->    steps.get(step) == null
+                                                                                    || steps.get(step).status() != unfinished))
                                          .map(Map.Entry::getKey)
                                          .iterator());
     }

@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/searchlib/transactionlog/translogclient.h>
+#include <vespa/vespalib/util/time.h>
 #include <mutex>
 #include <condition_variable>
-#include <vespa/fastos/timestamp.h>
 
 namespace proton {
 
@@ -23,7 +23,7 @@ private:
     mutable std::condition_variable _replayCond;
     volatile bool                   _replayDone;
     bool                            _replayStarted;
-    fastos::StopWatch               _replayStopWatch;
+    vespalib::Timer                 _replayStopWatch;
 
 protected:
     typedef search::SerialNum SerialNum;
@@ -38,7 +38,7 @@ protected:
     StatusResult init();
 
     void internalStartReplay();
-    virtual void doLogReplayComplete(const vespalib::string &domainName, std::chrono::milliseconds elapsedTime) const = 0;
+    virtual void doLogReplayComplete(const vespalib::string &domainName, vespalib::duration elapsedTime) const = 0;
 
 public:
     TransactionLogManagerBase(const TransactionLogManagerBase &) = delete;

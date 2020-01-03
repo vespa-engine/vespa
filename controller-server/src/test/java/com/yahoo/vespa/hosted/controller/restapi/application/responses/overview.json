@@ -572,6 +572,115 @@
       ],
       "url": "https://some.url:43/root/production-us-central-1"
     },
+    "test-us-central-1": {
+      "runs": [
+        {
+          "status": "pending",
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.3-commit1",
+            "build": 3,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "tasks": {
+            "us-central-1": "running",
+            "us-west-1": "pending",
+            "us-east-3": "pending"
+          }
+        },
+        {
+          "id": 2,
+          "status": "success",
+          "start": 1000,
+          "end": 1000,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.2-commit1",
+            "build": 2,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
+          "tasks": {
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/test-us-central-1/run/2"
+        },
+        {
+          "id": 1,
+          "status": "success",
+          "start": 0,
+          "end": 0,
+          "wantedPlatform": "6.1",
+          "wantedApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "currentPlatform": "6.1",
+          "currentApplication": {
+            "hash": "1.0.1-commit1",
+            "build": 1,
+            "source": {
+              "gitRepository": "repository1",
+              "gitBranch": "master",
+              "gitCommit": "commit1"
+            }
+          },
+          "steps": {
+            "deployTester": "succeeded",
+            "installTester": "succeeded",
+            "startTests": "succeeded",
+            "endTests": "succeeded",
+            "deactivateTester": "succeeded",
+            "report": "succeeded"
+          },
+          "tasks": {
+            "test": "succeeded"
+          },
+          "log": "https://some.url:43/root/test-us-central-1/run/1"
+        }
+      ],
+      "url": "https://some.url:43/root/test-us-central-1"
+    },
     "us-west-1": {
       "runs": [
         {
@@ -782,3 +891,4 @@
   },
   "devJobs": {}
 }
+

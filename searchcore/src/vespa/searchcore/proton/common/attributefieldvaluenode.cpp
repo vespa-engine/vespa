@@ -4,6 +4,7 @@
 #include "selectcontext.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.common.attribute_field_value_node");
@@ -23,6 +24,9 @@ using search::attribute::AttributeContent;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeVector;
+using vespalib::IllegalArgumentException;
+using vespalib::IllegalStateException;
+using vespalib::make_string;
 
 AttributeFieldValueNode::
 AttributeFieldValueNode(const vespalib::string& doctype,
@@ -47,51 +51,53 @@ getValue(const Context &context) const
     assert(docId != 0u);
     const AttributeVector &v(*_attribute);
     if (v.isUndefined(docId)) {
-        return Value::UP(new NullValue);
+        return std::make_unique<NullValue>();
     }
     switch (v.getBasicType()) {
-    case BasicType::STRING:
-        do {
-            AttributeContent<const char *> content;
-            content.fill(v, docId);
-            assert(content.size() == 1u);
-            return Value::UP(new StringValue(content[0]));
-        } while (0);
-        break;
-    case BasicType::BOOL:
-    case BasicType::UINT2:
-    case BasicType::UINT4:
-    case BasicType::INT8:
-    case BasicType::INT16:
-    case BasicType::INT32:
-    case BasicType::INT64:
-        do {
-            AttributeContent<IAttributeVector::largeint_t> content;
-            content.fill(v, docId);
-            assert(content.size() == 1u);
-            return Value::UP(new IntegerValue(content[0], false));
-        } while (0);
-        break;
-    case BasicType::FLOAT:
-    case BasicType::DOUBLE:
-        do {
-            AttributeContent<double> content;
-            content.fill(v, docId);
-            assert(content.size() == 1u);
-            return Value::UP(new FloatValue(content[0]));
-        } while (0);
-        break;
-    default:
-        LOG_ABORT("should not be reached");
+        case BasicType::STRING:
+            {
+                AttributeContent<const char *> content;
+                content.fill(v, docId);
+                assert(content.size() == 1u);
+                return std::make_unique<StringValue>(content[0]);
+            };
+        case BasicType::BOOL:
+        case BasicType::UINT2:
+        case BasicType::UINT4:
+        case BasicType::INT8:
+        case BasicType::INT16:
+        case BasicType::INT32:
+        case BasicType::INT64:
+            {
+                AttributeContent<IAttributeVector::largeint_t> content;
+                content.fill(v, docId);
+                assert(content.size() == 1u);
+                return std::make_unique<IntegerValue>(content[0], false);
+            }
+        case BasicType::FLOAT:
+        case BasicType::DOUBLE:
+            {
+                AttributeContent<double> content;
+                content.fill(v, docId);
+                assert(content.size() == 1u);
+                return std::make_unique<FloatValue>(content[0]);
+            };
+        case BasicType::NONE:
+        case BasicType::PREDICATE:
+        case BasicType::TENSOR:
+        case BasicType::REFERENCE:
+            throw new IllegalArgumentException(make_string("Attribute '%s' of type '%s' can not be used for selection",
+                                                           v.getName().c_str(), v.getInternalBasicType().asString()));
+        case BasicType::MAX_TYPE:
+            throw new IllegalStateException(make_string("Attribute '%s' has illegal type '%d'", v.getName().c_str(), v.getBasicType()));
     }
-    return Value::UP();
+    return std::make_unique<NullValue>();;
 
 }
 
 
 std::unique_ptr<Value>
-AttributeFieldValueNode::traceValue(const Context &context,
-                                    std::ostream& out) const
+AttributeFieldValueNode::traceValue(const Context &context, std::ostream& out) const
 {
     return defaultTrace(getValue(context), out);
 }

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/fastos/timestamp.h>
+#include <vespa/vespalib/util/time.h>
 
 namespace proton { class DocumentDBConfig; }
 
@@ -14,12 +14,12 @@ namespace proton::documentmetastore {
 class LidReuseDelayerConfig
 {
 private:
-    fastos::TimeStamp                _visibilityDelay;
-    bool                             _hasIndexedOrAttributeFields;
+    vespalib::duration  _visibilityDelay;
+    bool                _hasIndexedOrAttributeFields;
 public:
     LidReuseDelayerConfig();
     explicit LidReuseDelayerConfig(const DocumentDBConfig &configSnapshot);
-    fastos::TimeStamp visibilityDelay() const { return _visibilityDelay; }
+    vespalib::duration visibilityDelay() const { return _visibilityDelay; }
     bool hasIndexedOrAttributeFields() const { return _hasIndexedOrAttributeFields; }
 };
 

@@ -3,7 +3,6 @@
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configholder.h>
 #include <vespa/config/subscription/configsubscription.h>
-#include <vespa/fastos/timestamp.h>
 #include <config-my.h>
 
 using namespace config;
@@ -66,18 +65,18 @@ TEST_F("requireThatNextUpdateBlocks", SubscriptionFixture(ConfigKey::create<MyCo
 {
     ASSERT_FALSE(f1.sub.nextUpdate(0, 0ms));
     f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
-    fastos::StopWatch timer;
+    vespalib::Timer timer;
     ASSERT_FALSE(f1.sub.nextUpdate(1, 500ms));
-    ASSERT_TRUE(timer.elapsed().ms() > 400.0);
+    ASSERT_TRUE(timer.elapsed() > 400ms);
 }
 
 TEST_MT_F("requireThatNextUpdateReturnsWhenNotified", 2, SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
     if (thread_id == 0) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
         ASSERT_TRUE(f1.sub.nextUpdate(2, 5000ms));
-        ASSERT_TRUE(timer.elapsed().ms() > 200.0);
+        ASSERT_TRUE(timer.elapsed() > 200ms);
     } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
@@ -88,10 +87,10 @@ TEST_MT_F("requireThatNextUpdateReturnsWhenNotified", 2, SubscriptionFixture(Con
 TEST_MT_F("requireThatNextUpdateReturnsInterrupted", 2, SubscriptionFixture(ConfigKey::create<MyConfig>("myid")))
 {
     if (thread_id == 0) {
-        fastos::StopWatch timer;
+        vespalib::Timer timer;
         f1.holder->handle(std::make_unique<ConfigUpdate>(ConfigValue(), 1, 1));
         ASSERT_TRUE(f1.sub.nextUpdate(1, 5000ms));
-        ASSERT_TRUE(timer.elapsed().ms() > 300.0);
+        ASSERT_TRUE(timer.elapsed() > 300ms);
     } else {
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
         f1.sub.close();

@@ -6,7 +6,6 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/fastos/timestamp.h>
 #include <mutex>
 #include <condition_variable>
 

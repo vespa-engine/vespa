@@ -1953,6 +1953,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.search.cluster.NodeManager)",
+      "public void <init>(com.yahoo.search.cluster.NodeManager, boolean)",
       "public com.yahoo.search.cluster.MonitorConfiguration getConfiguration()",
       "public void add(java.lang.Object, boolean)",
       "public com.yahoo.search.cluster.BaseNodeMonitor getNodeMonitor(java.lang.Object)",
@@ -1977,6 +1978,7 @@
     "methods": [
       "public void <init>(com.yahoo.component.ComponentId, java.util.List, boolean)",
       "public void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean)",
+      "public void <init>(com.yahoo.component.ComponentId, java.util.List, com.yahoo.search.cluster.Hasher, boolean, boolean)",
       "public final void ping(java.lang.Object, java.util.concurrent.Executor)",
       "protected abstract com.yahoo.prelude.Pong ping(com.yahoo.prelude.Ping, java.lang.Object)",
       "protected java.lang.Object getFirstConnection(com.yahoo.search.cluster.Hasher$NodeList, int, int, com.yahoo.search.Query)",
@@ -7741,6 +7743,7 @@
     "methods": [
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
+      "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
       "public void deconstruct()",

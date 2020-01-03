@@ -16,5 +16,4 @@
 #include "removeoperation.h"
 #include "splitbucketoperation.h"
 #include "updateoperation.h"
-#include "wipehistoryoperation.h"
 

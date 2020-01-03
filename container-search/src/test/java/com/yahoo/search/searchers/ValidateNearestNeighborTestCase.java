@@ -209,12 +209,8 @@ public class ValidateNearestNeighborTestCase {
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(queryTree.getRoot());
         query.getRanking().getProperties().put("qvector", qTensor);
-        TreeMap<String, List<String>> masterClusters = new TreeMap<>();
-        masterClusters.put("cluster", Arrays.asList("document"));
         SearchDefinition searchDefinition = new SearchDefinition("document");
-        Map<String, SearchDefinition> searchDefinitionMap = new HashMap<>();
-        searchDefinitionMap.put("document", searchDefinition);
-        IndexFacts indexFacts = new IndexFacts(new IndexModel(masterClusters, searchDefinitionMap, searchDefinition));
+        IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
         Execution.Context context = new Execution.Context(null, indexFacts, null, new RendererRegistry(MoreExecutors.directExecutor()), new SimpleLinguistics());
         return new Execution(searcher, context).search(query);
     }

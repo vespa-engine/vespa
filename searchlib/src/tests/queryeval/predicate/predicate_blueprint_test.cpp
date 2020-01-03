@@ -26,6 +26,7 @@ using search::query::Weight;
 using search::queryeval::FieldSpecBase;
 using search::queryeval::PredicateBlueprint;
 using search::queryeval::SearchIterator;
+using search::queryeval::ExecuteInfo;
 
 namespace {
 
@@ -137,7 +138,7 @@ TEST_F("require that blueprint can create search", Fixture) {
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(true);
+    blueprint.fetchPostings(ExecuteInfo::TRUE);
     TermFieldMatchDataArray tfmda;
     SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
     ASSERT_TRUE(it.get());
@@ -161,7 +162,7 @@ TEST_F("require that blueprint can create more advanced search", Fixture) {
     f.indexEmptyDocument(doc_id + 2);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(true);
+    blueprint.fetchPostings(ExecuteInfo::TRUE);
     TermFieldMatchDataArray tfmda;
     SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
     ASSERT_TRUE(it.get());
@@ -184,7 +185,7 @@ TEST_F("require that blueprint can create NOT search", Fixture) {
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(true);
+    blueprint.fetchPostings(ExecuteInfo::TRUE);
     TermFieldMatchDataArray tfmda;
     SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
     ASSERT_TRUE(it.get());
@@ -200,7 +201,7 @@ TEST_F("require that blueprint can create compressed NOT search", Fixture) {
     f.indexDocument(doc_id, annotations);
 
     PredicateBlueprint blueprint(f.field, f.guard(), f.query);
-    blueprint.fetchPostings(true);
+    blueprint.fetchPostings(ExecuteInfo::TRUE);
     TermFieldMatchDataArray tfmda;
     SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
     ASSERT_TRUE(it.get());
@@ -224,7 +225,7 @@ TEST_F("require that blueprint can set up search with subqueries", Fixture) {
     query.getTerm()->addFeature("key2", "value", 2);
 
     PredicateBlueprint blueprint(f.field, f.guard(), query);
-    blueprint.fetchPostings(true);
+    blueprint.fetchPostings(ExecuteInfo::TRUE);
     TermFieldMatchDataArray tfmda;
     SearchIterator::UP it = blueprint.createLeafSearch(tfmda, true);
     ASSERT_TRUE(it.get());

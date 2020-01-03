@@ -7,7 +7,6 @@
 #include <vespa/searchlib/util/runnable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/fastos/app.h>
-#include <vespa/fastos/timestamp.h>
 #include <iostream>
 #include <stdexcept>
 #include <sstream>
@@ -202,7 +201,7 @@ private:
     Packet _packet;
     SerialNum _current;
     SerialNum _lastCommited;
-    fastos::StopWatch _timer;
+    vespalib::Timer _timer;
 
     void commitPacket();
     bool addEntry(const Packet::Entry & e);
@@ -254,7 +253,7 @@ FeederThread::doRun()
 
     while (!_done) {
         if (_feedRate != 0) {
-            _timer.restart();
+            _timer = vespalib::Timer();
             for (uint32_t i = 0; i < _feedRate; ++i) {
                 Packet::Entry entry = _generator.getRandomEntry(_current++);
                 if (!addEntry(entry)) {
@@ -267,10 +266,9 @@ FeederThread::doRun()
             }
             commitPacket();
 
-            int64_t milliSecsUsed = _timer.elapsed().ms();
-            if (milliSecsUsed < 1000) {
+            if (_timer.elapsed() < 1s) {
                 //LOG(info, "FeederThread: sleep %u ms", 1000 - milliSecsUsed);
-                std::this_thread::sleep_for(std::chrono::milliseconds(1000 - milliSecsUsed));
+                std::this_thread::sleep_for(1s - _timer.elapsed());
             } else {
                 LOG(info, "FeederThread: max throughput");
             }
@@ -460,9 +458,9 @@ private:
     EntryGenerator _generator;
     std::vector<std::shared_ptr<VisitorAgent> > _visitors;
     std::vector<std::shared_ptr<VisitorAgent> > _rndVisitors;
-    vespalib::duration _visitorInterval; // in milliseconds
-    int64_t _pruneInterval;   // in milliseconds
-    fastos::StopWatch _pruneTimer;
+    vespalib::duration _visitorInterval;
+    vespalib::duration _pruneInterval;
+    vespalib::Timer _pruneTimer;
     SerialNum _begin;
     SerialNum _end;
     size_t _count;
@@ -472,7 +470,7 @@ private:
 
 public:
     ControllerThread(const std::string & tlsSpec, const std::string & domain, const EntryGenerator & generator,
-                     uint32_t numVisitors, uint64_t visitorInterval, uint64_t pruneInterval);
+                     uint32_t numVisitors, vespalib::duration visitorInterval, vespalib::duration pruneInterval);
     ~ControllerThread();
     uint32_t runningVisitors();
     std::vector<std::shared_ptr<VisitorAgent> > & getVisitors() { return _visitors; }
@@ -482,9 +480,9 @@ public:
 
 ControllerThread::ControllerThread(const std::string & tlsSpec, const std::string & domain,
                                    const EntryGenerator & generator, uint32_t numVisitors,
-                                   uint64_t visitorInterval, uint64_t pruneInterval)
+                                   vespalib::duration visitorInterval, vespalib::duration pruneInterval)
     : _tlsSpec(tlsSpec), _domain(domain), _client(tlsSpec.c_str()), _session(),
-      _generator(generator), _visitors(), _rndVisitors(), _visitorInterval(std::chrono::milliseconds(visitorInterval)),
+      _generator(generator), _visitors(), _rndVisitors(), _visitorInterval(visitorInterval),
       _pruneInterval(pruneInterval), _pruneTimer(), _begin(0), _end(0), _count(0)
 {
     for (uint32_t i = 0; i < numVisitors; ++i) {
@@ -521,7 +519,7 @@ ControllerThread::doRun()
         throw std::runtime_error(vespalib::make_string("ControllerThread: Could not open session to %s", _tlsSpec.c_str()));
     }
 
-    _pruneTimer.restart();
+    _pruneTimer = vespalib::Timer();
     while (!_done) {
         // set finished visitors as idle
         for (size_t i = 0; i < _visitors.size(); ++i) {
@@ -541,7 +539,7 @@ ControllerThread::doRun()
             }
         }
         // prune transaction log server
-        if (_pruneTimer.elapsed().ms() > _pruneInterval) {
+        if (_pruneTimer.elapsed() > _pruneInterval) {
             getStatus();
             SerialNum safePrune = _end;
             for (size_t i = 0; i < _visitors.size(); ++i) {
@@ -554,7 +552,7 @@ ControllerThread::doRun()
             if (!_session->erase(safePrune)) {
                 throw std::runtime_error(vespalib::make_string("ControllerThread: Could not erase up to %" PRIu64, safePrune));
             }
-            _pruneTimer.restart();
+            _pruneTimer = vespalib::Timer();
         }
         std::this_thread::sleep_for(_visitorInterval);
     }
@@ -575,8 +573,8 @@ private:
     std::chrono::milliseconds stressTime;
     uint32_t feedRate;
     uint32_t numVisitors;
-    uint64_t visitorInterval;
-    uint64_t pruneInterval;
+    vespalib::duration visitorInterval;
+    vespalib::duration pruneInterval;
 
     uint32_t numPreGeneratedBuffers;
     uint32_t minStrLen;
@@ -604,8 +602,8 @@ TransLogStress::printConfig()
     std::cout << "stressTime:             " << vespalib::to_s(_cfg.stressTime) << " s" << std::endl;
     std::cout << "feedRate:               " << _cfg.feedRate << " per/sec" << std::endl;
     std::cout << "numVisitors:            " << _cfg.numVisitors << std::endl;
-    std::cout << "visitorInterval:        " << _cfg.visitorInterval << " ms" << std::endl;
-    std::cout << "pruneInterval:          " << _cfg.pruneInterval / 1000 << " s" << std::endl;
+    std::cout << "visitorInterval:        " << vespalib::count_ms(_cfg.visitorInterval) << " ms" << std::endl;
+    std::cout << "pruneInterval:          " << vespalib::to_s(_cfg.pruneInterval) << " s" << std::endl;
     std::cout << "numPreGeneratedBuffers: " << _cfg.numPreGeneratedBuffers << std::endl;
     std::cout << "minStrLen:              " << _cfg.minStrLen << std::endl;
     std::cout << "maxStrLen:              " << _cfg.maxStrLen << std::endl;
@@ -631,11 +629,11 @@ TransLogStress::Main()
     _cfg.domainPartSize = 8000000; // ~8MB
     _cfg.packetSize = 0x10000;
 
-    _cfg.stressTime = std::chrono::milliseconds(1000 * 60);
+    _cfg.stressTime = 60s;
     _cfg.feedRate = 10000;
     _cfg.numVisitors = 1;
-    _cfg.visitorInterval = 1000 * 1;
-    _cfg.pruneInterval = 1000 * 12;
+    _cfg.visitorInterval = 1s;
+    _cfg.pruneInterval = 12s;
 
     _cfg.numPreGeneratedBuffers = 0;
     _cfg.minStrLen = 40;
@@ -666,10 +664,10 @@ TransLogStress::Main()
             _cfg.numVisitors = atoi(arg);
             break;
         case 'c':
-            _cfg.visitorInterval = atol(arg);
+            _cfg.visitorInterval = std::chrono::milliseconds(atol(arg));
             break;
         case 'e':
-            _cfg.pruneInterval = 1000 * atol(arg);
+            _cfg.pruneInterval = vespalib::from_s(atol(arg));
             break;
         case 'g':
             _cfg.numPreGeneratedBuffers = atoi(arg);

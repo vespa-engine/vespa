@@ -2,6 +2,7 @@
 
 #include "compile_cache.h"
 #include <vespa/eval/eval/key_gen.h>
+#include <thread>
 
 namespace vespalib {
 namespace eval {
@@ -50,7 +51,7 @@ CompileCache::Token::UP
 CompileCache::compile(const Function &function, PassParams pass_params)
 {
     Token::UP token;
-    CompileTask::UP task;
+    Executor::Task::UP task;
     vespalib::string key = gen_key(function, pass_params);
     {
         std::lock_guard<std::mutex> guard(_lock);
@@ -71,7 +72,7 @@ CompileCache::compile(const Function &function, PassParams pass_params)
         }
     }
     if (task) {
-        task->run();
+        std::thread([&task](){ task.get()->run(); }).join();
     }
     return token;
 }

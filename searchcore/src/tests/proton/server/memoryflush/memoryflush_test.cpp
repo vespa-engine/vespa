@@ -5,11 +5,8 @@
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchcore/proton/server/memoryflush.h>
-#include <vespa/fastos/timestamp.h>
 
-using fastos::TimeStamp;
 using vespalib::system_time;
-using fastos::SteadyTimeStamp;
 using search::SerialNum;
 using namespace proton;
 using namespace searchcorespi;

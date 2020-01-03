@@ -1,6 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <vespa/vespalib/util/time.h>
+
 namespace searchcorespi::index {
 
 /**
@@ -8,13 +10,13 @@ namespace searchcorespi::index {
  **/
 class WarmupConfig {
 public:
-    WarmupConfig() : _duration(0.0), _unpack(false) { }
-    WarmupConfig(double duration, bool unpack) : _duration(duration), _unpack(unpack) { }
-    double getDuration() const { return _duration; }
+    WarmupConfig() : _duration(vespalib::duration::zero()), _unpack(false) { }
+    WarmupConfig(vespalib::duration duration, bool unpack) : _duration(duration), _unpack(unpack) { }
+    vespalib::duration getDuration() const { return _duration; }
     bool getUnpack() const { return _unpack; }
 private:
-    const double _duration;
-    const bool   _unpack;
+    const vespalib::duration _duration;
+    const bool               _unpack;
 };
 
 }

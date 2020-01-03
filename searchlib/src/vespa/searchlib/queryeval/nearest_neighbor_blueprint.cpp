@@ -3,6 +3,7 @@
 #include "emptysearch.h"
 #include "nearest_neighbor_blueprint.h"
 #include "nearest_neighbor_iterator.h"
+#include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/eval/tensor/dense/dense_tensor_view.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 

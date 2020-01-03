@@ -232,7 +232,7 @@ StressMaster::makePostingsHelper(FPFactory *postingFactory,
                                  const std::string &postingFormat,
                                  bool validate, bool verbose)
 {
-    fastos::StopWatch tv;
+    vespalib::Timer tv;
 
     postingFactory->setup(_wordSet);
     for (size_t i = 0; i < _wordSet.words().size(); ++i)
@@ -244,7 +244,7 @@ StressMaster::makePostingsHelper(FPFactory *postingFactory,
 
     LOG(info,
         "StressMaster::makePostingsHelper() elapsed %10.6f s for %s format",
-        tv.elapsed().sec(),
+        vespalib::to_s(tv.elapsed()),
         postingFormat.c_str());
 }
 
@@ -314,7 +314,7 @@ StressMaster::run()
 double
 StressMaster::runWorkers(const std::string &postingFormat)
 {
-    fastos::StopWatch tv;
+    vespalib::Timer tv;
 
     uint32_t numWorkers = 8;
     for (uint32_t i = 0; i < numWorkers; ++i) {
@@ -340,11 +340,11 @@ StressMaster::runWorkers(const std::string &postingFormat)
 
     LOG(info,
         "StressMaster::run() elapsed %10.6f s for workers %s format",
-       tv.elapsed().sec(),
+       vespalib::to_s(tv.elapsed()),
         postingFormat.c_str());
     _workers.clear();
     _workersDone = 0;
-    return tv.elapsed().sec();
+    return vespalib::to_s(tv.elapsed());
 }
 
 StressWorker::StressWorker(StressMaster& master, uint32_t id)

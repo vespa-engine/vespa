@@ -117,8 +117,8 @@ public class AthenzRoleFilterTest {
         assertEquals(Set.of(Role.athenzTenantAdmin(TENANT), Role.tenantPipeline(TENANT, APPLICATION)),
                      filter.roles(TENANT_ADMIN_AND_PIPELINE, APPLICATION_CONTEXT_PATH));
 
-        // Users have the athenzUser under their instance
-        assertEquals(Set.of(Role.athenzUser(TENANT, APPLICATION, INSTANCE)),
+        // Users have nothing special under their instance
+        assertEquals(Set.of(Role.everyone()),
                      filter.roles(USER, INSTANCE_CONTEXT_PATH));
 
         // Unprivileged users are just members of the everyone role.

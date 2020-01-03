@@ -5,7 +5,7 @@
 
 namespace proton::matching {
 
-SearchSession::SearchSession(const SessionId &id, fastos::SteadyTimeStamp create_time, fastos::SteadyTimeStamp time_of_doom,
+SearchSession::SearchSession(const SessionId &id, vespalib::steady_time create_time, vespalib::steady_time time_of_doom,
                              std::unique_ptr<MatchToolsFactory> match_tools_factory,
                              OwnershipBundle &&owned_objects)
     : _session_id(id),

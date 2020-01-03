@@ -52,13 +52,13 @@ public:
                                 MonitoredRefCount &refCount,
                                 search::ISequencedTaskExecutor &attributeFieldWriter,
                                 bool useReferences);
-    ~DocumentDBReferenceResolver();
+    ~DocumentDBReferenceResolver() override;
 
-    virtual std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
-                                                            const search::IAttributeManager &oldAttrMgr,
-                                                            const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
-                                                            fastos::TimeStamp visibilityDelay) override;
-    virtual void teardown(const search::IAttributeManager &oldAttrMgr) override;
+    std::unique_ptr<ImportedAttributesRepo> resolve(const search::IAttributeManager &newAttrMgr,
+                                                    const search::IAttributeManager &oldAttrMgr,
+                                                    const std::shared_ptr<search::IDocumentMetaStoreContext> &documentMetaStore,
+                                                    vespalib::duration visibilityDelay) override;
+    void teardown(const search::IAttributeManager &oldAttrMgr) override;
 };
 
 }

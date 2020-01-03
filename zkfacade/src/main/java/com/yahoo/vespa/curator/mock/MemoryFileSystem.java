@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simple in-memory "file system" useful for Curator caching/mocking.
@@ -116,6 +117,8 @@ class MemoryFileSystem extends FileSystem {
         /** The content of this node, never null. This buffer is effectively immutable. */
         private byte[] content;
 
+        private final AtomicInteger version = new AtomicInteger(0);
+
         private Map<String, Node> children = Collections.synchronizedMap(new LinkedHashMap<>());
 
         private Node(Node parent, String name) {
@@ -132,7 +135,12 @@ class MemoryFileSystem extends FileSystem {
         public byte[] getContent() { return Arrays.copyOf(content, content.length); }
 
         /** Replaces the content of this file */
-        public void setContent(byte[] content) { this.content = Arrays.copyOf(content, content.length); }
+        public void setContent(byte[] content) {
+            this.content = Arrays.copyOf(content, content.length);
+            this.version.incrementAndGet();
+        }
+
+        public int version() { return version.get(); }
 
         /**
          * Returns the node given by the path.

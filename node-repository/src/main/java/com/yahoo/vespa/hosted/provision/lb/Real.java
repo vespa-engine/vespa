@@ -13,7 +13,7 @@ import java.util.Objects;
  */
 public class Real implements Comparable<Real> {
 
-    private static final int defaultPort = 4443;
+    public static final int defaultPort = 4443;
 
     private final HostName hostname;
     private final String ipAddress;

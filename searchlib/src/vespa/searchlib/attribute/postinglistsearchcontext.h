@@ -6,11 +6,11 @@
 #include "postinglisttraits.h"
 #include "postingstore.h"
 #include "ipostinglistsearchcontext.h"
+#include "posting_list_merger.h"
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <regex>
-#include "posting_list_merger.h"
 
 namespace search::attribute {
 
@@ -116,14 +116,14 @@ protected:
     PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
                               bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
                               uint32_t minBvCocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
-    ~PostingListSearchContextT();
+    ~PostingListSearchContextT() override;
 
     void lookupSingle();
     size_t countHits() const;
     void fillArray();
     void fillBitVector();
 
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const queryeval::ExecuteInfo & strict) override;
     // this will be called instead of the fetchPostings function in some cases
     void diversify(bool forward, size_t wanted_hits, const IAttributeVector &diversity_attr,
                    size_t max_per_group, size_t cutoff_groups, bool cutoff_strict);
@@ -229,7 +229,7 @@ private:
             ? limit
             : estimate;
     }
-    void fetchPostings(bool strict) override {
+    void fetchPostings(const queryeval::ExecuteInfo & execInfo) override {
         if (params().diversityAttribute() != nullptr) {
             bool forward = (this->getRangeLimit() > 0);
             size_t wanted_hits = std::abs(this->getRangeLimit());
@@ -237,7 +237,7 @@ private:
                                                         *(params().diversityAttribute()), this->getMaxPerGroup(),
                                                         params().diversityCutoffGroups(), params().diversityCutoffStrict());
         } else {
-            PostingListSearchContextT<DataT>::fetchPostings(strict);
+            PostingListSearchContextT<DataT>::fetchPostings(execInfo);
         }
     }
 
@@ -267,7 +267,7 @@ PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &to
 }
 
 template <typename BaseSC, typename BaseSC2, typename AttrT>
-PostingSearchContext<BaseSC, BaseSC2, AttrT>::~PostingSearchContext() { }
+PostingSearchContext<BaseSC, BaseSC2, AttrT>::~PostingSearchContext() = default;
 
 
 template <typename BaseSC, typename AttrT, typename DataT>
@@ -337,8 +337,7 @@ getIterators(bool shouldApplyRangeLimit)
     bool isFloat =
         _toBeSearched.getBasicType() == BasicType::FLOAT ||
         _toBeSearched.getBasicType() == BasicType::DOUBLE;
-    bool isUnsigned = _toBeSearched.getInternalBasicType().isUnsigned();
-    search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat, isUnsigned);
+    search::Range<BaseType> capped = this->template cappedRange<BaseType>(isFloat);
 
     auto compLow = _enumStore.make_comparator(capped.lower());
     auto compHigh = _enumStore.make_comparator(capped.upper());

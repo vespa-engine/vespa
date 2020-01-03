@@ -2,7 +2,6 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/helper/configfetcher.h>
 #include <vespa/vespalib/util/exception.h>
-#include <vespa/fastos/timestamp.h>
 #include "config-my.h"
 #include <atomic>
 
@@ -65,8 +64,8 @@ TEST("requireThatConfigUpdatesArePerformed") {
         writeFile("test1.cfg", "bar");
 
         cb._configured = false;
-        fastos::StopWatch timer;
-        while (!cb._configured && timer.elapsed().ms() < 20000.0) {
+        vespalib::Timer timer;
+        while (!cb._configured && timer.elapsed() < 20s) {
             if (cb._configured)
                 break;
             std::this_thread::sleep_for(1s);
@@ -145,12 +144,12 @@ TEST_F("verify that config generation can be obtained from config fetcher", Conf
         f1.builder.myField = "bar";
         cb._configured = false;
         f1.context->reload();
-        fastos::StopWatch timer;
-        while (timer.elapsed().ms() < 120000) {
+        vespalib::Timer timer;
+        while (timer.elapsed() < 120s) {
             if (cb._configured) {
                 break;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));;
+            std::this_thread::sleep_for(10ms);;
         }
         EXPECT_EQUAL(2, fetcher.getGeneration());
         EXPECT_EQUAL("bar", cb._config.get()->myField);

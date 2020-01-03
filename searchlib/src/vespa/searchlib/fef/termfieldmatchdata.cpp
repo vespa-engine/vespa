@@ -142,6 +142,7 @@ TermFieldMatchData::allocateVector()
 void
 TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosition &pos)
 {
+    if (__builtin_expect(_sz >= MAX_ELEMS, false)) return;
     assert(allocated());
     if (__builtin_expect(_sz >= _data._positions._allocated, false)) {
         resizePositionVector(_sz*2);
@@ -149,9 +150,7 @@ TermFieldMatchData::appendPositionToAllocatedVector(const TermFieldMatchDataPosi
     if (__builtin_expect(pos.getElementLen() > _data._positions._maxElementLength, false)) {
         _data._positions._maxElementLength = pos.getElementLen();
     }
-    if (__builtin_expect(_sz < MAX_ELEMS, true)) {
-        _data._positions._positions[_sz++] = pos;
-    }
+    _data._positions._positions[_sz++] = pos;
 }
 
 }
