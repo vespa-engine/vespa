@@ -89,22 +89,22 @@ TEST("test AndNot Blueprint") {
 }
 
 TEST("test And propagates updated histestimate") {
-    AndBlueprint *bp = new AndBlueprint();
-    bp->setSourceId(2);
-    bp->addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp->addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp->addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
-    bp->optimize_self();
-    bp->setDocIdLimit(5000);
-    bp->fetchPostings(ExecuteInfo::create(true));
-    EXPECT_EQUAL(3u, bp->childCnt());
-    for (uint32_t i = 0; i < bp->childCnt(); i++) {
-        const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp->getChild(i));
+    AndBlueprint bp;
+    bp.setSourceId(2);
+    bp.addChild(ap(MyLeafSpec(20).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.addChild(ap(MyLeafSpec(200).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.addChild(ap(MyLeafSpec(2000).create<RememberExecuteInfo>()->setSourceId(2)));
+    bp.optimize_self();
+    bp.setDocIdLimit(5000);
+    bp.fetchPostings(ExecuteInfo::create(true));
+    EXPECT_EQUAL(3u, bp.childCnt());
+    for (uint32_t i = 0; i < bp.childCnt(); i++) {
+        const RememberExecuteInfo & child = dynamic_cast<const RememberExecuteInfo &>(bp.getChild(i));
         EXPECT_EQUAL((i == 0), child.executeInfo.isStrict());
     }
-    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(0)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp->getChild(1)).executeInfo.hitRate());
-    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp->getChild(2)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(0)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0/250, dynamic_cast<const RememberExecuteInfo &>(bp.getChild(1)).executeInfo.hitRate());
+    EXPECT_EQUAL(1.0/(250*25), dynamic_cast<const RememberExecuteInfo &>(bp.getChild(2)).executeInfo.hitRate());
 }
 
 TEST("test And Blueprint") {
@@ -376,7 +376,7 @@ TEST("test Rank Blueprint") {
 }
 
 TEST("test SourceBlender Blueprint") {
-    ISourceSelector *selector = 0; // not needed here
+    ISourceSelector *selector = nullptr; // not needed here
     SourceBlenderBlueprint b(*selector);
     { // combine
         std::vector<Blueprint::HitEstimate> est;
