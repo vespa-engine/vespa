@@ -9,15 +9,13 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.common.cachedselect");
-
 namespace proton {
 
 using search::AttributeVector;
 using search::AttributeGuard;
 using document::select::FieldValueNode;
 using search::attribute::CollectionType;
+using search::attribute::BasicType;
 
 using NodeUP = std::unique_ptr<document::select::Node>;
 
@@ -42,7 +40,7 @@ public:
     }
     
     AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::AttributeVectors &attributes);
-    ~AttrVisitor();
+    ~AttrVisitor() override;
 
     /*
      * Mutate field value nodes representing single value attributes into
@@ -62,7 +60,11 @@ AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr, CachedSelect::At
       _complexAttrs(0u)
 {}
 
-AttrVisitor::~AttrVisitor() { }
+AttrVisitor::~AttrVisitor() = default;
+
+bool isSingleValueThatWEHandle(BasicType type) {
+    return (type != BasicType::PREDICATE) && (type != BasicType::TENSOR) && (type != BasicType::REFERENCE);
+}
 
 void
 AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
@@ -83,20 +85,26 @@ AttrVisitor::visitFieldValueNode(const FieldValueNode &expr)
         }
         std::shared_ptr<search::AttributeVector> av(ag->getSP());
         if (av->getCollectionType() == CollectionType::SINGLE) {
-            ++_svAttrs;
-            AttrMap::iterator it(_amap.find(name));
-            uint32_t idx(invalidIdx());
-            if (it == _amap.end()) {
-                // Allocate new location for guard
-                idx = _attributes.size();
-                _amap[name] = idx;
-                _attributes.push_back(av);
+            if (isSingleValueThatWEHandle(av->getBasicType())) {
+                ++_svAttrs;
+                auto it(_amap.find(name));
+                uint32_t idx(invalidIdx());
+                if (it == _amap.end()) {
+                    // Allocate new location for guard
+                    idx = _attributes.size();
+                    _amap[name] = idx;
+                    _attributes.push_back(av);
+                } else {
+                    // Already allocated location for guard
+                    idx = it->second;
+                }
+                assert(idx != invalidIdx());
+                _valueNode = std::make_unique<AttributeFieldValueNode>(expr.getDocType(), name, av);
             } else {
-                // Already allocated location for guard
-                idx = it->second;
+                ++_complexAttrs;
+                // Don't try to optimize predicate/tensor/reference attributes yet.
+                _valueNode = expr.clone();
             }
-            assert(idx != invalidIdx());
-            _valueNode.reset(new AttributeFieldValueNode(expr.getDocType(), name, av));
         } else {
             // Don't try to optimize multivalue attribute vectors yet
             ++_mvAttrs;
@@ -186,7 +194,7 @@ CachedSelect::CachedSelect()
       _preDocSelect()
 { }
 
-CachedSelect::~CachedSelect() { }
+CachedSelect::~CachedSelect() = default;
 
 void
 CachedSelect::set(const vespalib::string &selection,
