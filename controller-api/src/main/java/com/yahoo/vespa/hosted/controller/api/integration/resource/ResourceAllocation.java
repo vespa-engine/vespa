@@ -54,10 +54,9 @@ public class ResourceAllocation {
         if (!(o instanceof ResourceAllocation)) return false;
 
         ResourceAllocation other = (ResourceAllocation) o;
-        double epsilon = 0.001;
-        return Math.abs(this.cpuCores - other.cpuCores) < epsilon &&
-                Math.abs(this.memoryGb - other.memoryGb) < epsilon &&
-                Math.abs(this.diskGb - other.diskGb) < epsilon;
+        return Double.compare(this.cpuCores, other.cpuCores) == 0 &&
+                Double.compare(this.memoryGb, other.memoryGb) == 0 &&
+                Double.compare(this.diskGb, other.diskGb) == 0;
 
     }
 
