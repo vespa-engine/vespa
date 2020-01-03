@@ -5,7 +5,8 @@
 namespace search {
 
 SequencedTaskExecutorObserver::SequencedTaskExecutorObserver(ISequencedTaskExecutor &executor)
-    : _executor(executor),
+    : ISequencedTaskExecutor(executor.getNumExecutors()),
+      _executor(executor),
       _executeCnt(0u),
       _syncCnt(0u),
       _executeHistory(),
@@ -14,12 +15,6 @@ SequencedTaskExecutorObserver::SequencedTaskExecutorObserver(ISequencedTaskExecu
 }
 
 SequencedTaskExecutorObserver::~SequencedTaskExecutorObserver() = default;
-
-ISequencedTaskExecutor::ExecutorId
-SequencedTaskExecutorObserver::getExecutorId(uint64_t componentId)
-{
-    return _executor.getExecutorId(componentId);
-}
 
 void
 SequencedTaskExecutorObserver::executeTask(ExecutorId id, vespalib::Executor::Task::UP task)
