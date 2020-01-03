@@ -4,6 +4,8 @@
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vector>
+#include <mutex>
 
 namespace search {
 
@@ -29,15 +31,12 @@ public:
     virtual ~ISequencedTaskExecutor();
 
     /**
-     * Calculate which executor will handle an component. All callers
-     * must be in the same thread.
+     * Calculate which executor will handle an component.
      *
      * @param componentId   component id
      * @return              executor id
      */
-    ExecutorId getExecutorId(uint64_t componentId) const {
-        return ExecutorId((componentId * 1099511628211ULL ) % _numExecutors);
-    }
+    ExecutorId getExecutorId(uint64_t componentId) const;
     uint32_t getNumExecutors() const { return _numExecutors; }
 
     ExecutorId getExecutorId(vespalib::stringref componentId) const;
@@ -97,7 +96,10 @@ public:
         executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
 private:
-    uint32_t _numExecutors;
+    mutable std::vector<uint8_t> _component2Id;
+    mutable std::mutex           _mutex;
+    uint32_t                     _numExecutors;
+    mutable uint32_t             _nextId;
 };
 
 } // namespace search
