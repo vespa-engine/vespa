@@ -171,6 +171,11 @@ public class Flags {
              "Takes effect on next host admin tick",
             NODE_TYPE, HOSTNAME, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag DISABLE_CM3 = defineFeatureFlag(
+            "disable-cm3", false,
+            "Whether to disable CM3.", "Takes effect on next host admin tick",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, String description,
                                                        String modificationEffect, FetchVector.Dimension... dimensions) {
