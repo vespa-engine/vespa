@@ -8,8 +8,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/fef/termmatchdatamerger.h>
 
-namespace search {
-namespace queryeval {
+namespace search::queryeval {
 
 /**
  * A simple implementation of the Equiv search operation.
@@ -22,11 +21,9 @@ public:
     // Caller takes ownership of the returned SearchIterator.
     static SearchIterator *create(const Children &children,
                                   fef::MatchData::UP inputMD,
-                                  const search::fef::TermMatchDataMerger::Inputs &inputs,
-                                  const search::fef::TermFieldMatchDataArray &outputs,
+                                  const fef::TermMatchDataMerger::Inputs &inputs,
+                                  const fef::TermFieldMatchDataArray &outputs,
                                   bool strict);
 };
 
-} // namespace queryeval
-} // namespace search
-
+}

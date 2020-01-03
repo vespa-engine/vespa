@@ -175,7 +175,7 @@ struct WandBlueprintSpec
         Node::UP term = createNode();
         Blueprint::UP bp = blueprint(searchable, field, *term);
         MatchData::UP md(MatchData::makeTestInstance(1, 1));
-        bp->fetchPostings(true);
+        bp->fetchPostings(ExecuteInfo::TRUE);
         bp->setDocIdLimit(docIdLimit);
         SearchIterator::UP sb = bp->createSearch(*md, true);
         EXPECT_TRUE(dynamic_cast<ParallelWeakAndSearch*>(sb.get()) != 0);
@@ -190,7 +190,7 @@ struct WandBlueprintSpec
     FakeResult search(Searchable &searchable, const std::string &field, const search::query::Node &term) const {
         Blueprint::UP bp = blueprint(searchable, field, term);
         MatchData::UP md(MatchData::makeTestInstance(1, 1));
-        bp->fetchPostings(true);
+        bp->fetchPostings(ExecuteInfo::TRUE);
         bp->setDocIdLimit(docIdLimit);
         SearchIterator::UP sb = bp->createSearch(*md, true);
         EXPECT_TRUE(dynamic_cast<ParallelWeakAndSearch*>(sb.get()) != 0);

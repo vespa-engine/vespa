@@ -4,7 +4,6 @@
 
 #include "readable_attribute_vector.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <memory>
 
 namespace search { struct IDocumentMetaStoreContext; }
 
@@ -39,7 +38,7 @@ public:
                             std::shared_ptr<ReadableAttributeVector> target_attribute,
                             std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                             std::shared_ptr<BitVectorSearchCache> search_cache);
-    virtual ~ImportedAttributeVector();
+    ~ImportedAttributeVector() override;
 
     const std::shared_ptr<ReferenceAttribute>& getReferenceAttribute() const noexcept {
         return _reference_attribute;

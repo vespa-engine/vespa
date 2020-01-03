@@ -6,7 +6,10 @@
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search::fef { class TermFieldMatchData; }
-namespace search::queryeval { class SearchIterator; }
+namespace search::queryeval {
+    class SearchIterator;
+    class ExecuteInfo;
+}
 namespace search { class QueryTermUCS4; }
 
 namespace search::attribute {
@@ -43,7 +46,7 @@ public:
      * Create temporary posting lists.
      * Should be called before createIterator() is called.
      */
-    virtual void fetchPostings(bool strict) = 0;
+    virtual void fetchPostings(const queryeval::ExecuteInfo &execInfo) = 0;
 
     virtual bool valid() const = 0;
     virtual Int64Range getAsIntegerTerm() const = 0;

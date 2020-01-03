@@ -127,7 +127,7 @@ public:
 
     std::unique_ptr<queryeval::SearchIterator>
     createFilterIterator(fef::TermFieldMatchData * matchData, bool strict) override;
-    void fetchPostings(bool strict) override;
+    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     std::unique_ptr<queryeval::SearchIterator> createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
     unsigned int approximateHits() const override;
 };
@@ -157,8 +157,8 @@ BitVectorSearchContext::createFilterIterator(fef::TermFieldMatchData * matchData
 }
 
 void
-BitVectorSearchContext::fetchPostings(bool strict) {
-    (void) strict;
+BitVectorSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo) {
+    (void) execInfo;
 }
 
 std::unique_ptr<queryeval::SearchIterator>

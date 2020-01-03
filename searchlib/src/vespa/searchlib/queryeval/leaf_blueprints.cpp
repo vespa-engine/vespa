@@ -87,7 +87,7 @@ struct FakeContext : attribute::ISearchContext {
     }
     unsigned int approximateHits() const override { return 0; }
     std::unique_ptr<SearchIterator> createIterator(fef::TermFieldMatchData *, bool) override { abort(); }
-    void fetchPostings(bool) override { }
+    void fetchPostings(const ExecuteInfo &) override { }
     bool valid() const override { return true; }
     search::Int64Range getAsIntegerTerm() const override { abort(); }
     const search::QueryTermUCS4 * queryTerm() const override { abort(); }
