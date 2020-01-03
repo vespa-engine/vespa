@@ -565,12 +565,12 @@ class JobControllerApiHandlerHelper {
 
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions);
-                    stepStatus.readyAt(change, versions).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
-                    stepStatus.readyAt(change, versions)
+                    stepStatus.readyAt(change, Optional.empty()).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
+                    stepStatus.readyAt(change, Optional.empty())
                               .filter(controller.clock().instant()::isBefore)
                               .ifPresent(until -> runObject.setLong("delayedUntil", until.toEpochMilli()));
                     stepStatus.pausedUntil().ifPresent(until -> runObject.setLong("pausedUntil", until.toEpochMilli()));
-                    stepStatus.coolingDownUntil(versions).ifPresent(until -> runObject.setLong("coolingDownUntil", until.toEpochMilli()));
+                    stepStatus.coolingDownUntil(change).ifPresent(until -> runObject.setLong("coolingDownUntil", until.toEpochMilli()));
                     stepStatus.blockedUntil(change).ifPresent(until -> runObject.setLong("blockedUntil", until.toEpochMilli()));
                 }
 

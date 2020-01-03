@@ -234,7 +234,7 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         status.jobsToRun().forEach((job, versionsList) -> {
                 for (Versions versions : versionsList)
-                    status.jobSteps().get(job).readyAt(status.application().change(), versions)
+                    status.jobSteps().get(job).readyAt(status.application().change(), Optional.empty())
                           .filter(readyAt -> ! clock.instant().isBefore(readyAt))
                           .filter(__ -> ! status.jobs().get(job).get().isRunning())
                           .filter(__ -> ! (job.type().isProduction() && isSuspendedInAnotherZone(status.application(), job)))
