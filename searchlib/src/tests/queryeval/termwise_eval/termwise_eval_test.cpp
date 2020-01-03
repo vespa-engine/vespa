@@ -11,7 +11,6 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
-#include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vespalib/objects/visit.hpp>
 
 using namespace vespalib;
@@ -82,15 +81,15 @@ struct MyBlueprint : SimpleLeafBlueprint {
         setEstimate(HitEstimate(hits.size(), hits.empty()));
         set_allow_termwise_eval(allow_termwise_eval);
     }
-    ~MyBlueprint() override;
+    ~MyBlueprint();
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &,
                                         bool strict) const override
     {
-        return std::make_unique<MyTerm>(hits, strict);
+        return SearchIterator::UP(new MyTerm(hits, strict));
     }
 };
 
-MyBlueprint::~MyBlueprint() = default;
+MyBlueprint::~MyBlueprint() {}
 
 struct MyOr : OrBlueprint {
     bool use_my_value;

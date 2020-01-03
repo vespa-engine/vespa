@@ -2,7 +2,6 @@
 
 #include "posting_iterator.h"
 #include <vespa/searchlib/queryeval/iterators.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>

@@ -178,11 +178,11 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
 }
 
 void
-AttributeWeightedSetBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
+AttributeWeightedSetBlueprint::fetchPostings(bool strict)
 {
-    if (execInfo.isStrict()) {
+    if (strict) {
         for (auto * context : _contexts) {
-            context->fetchPostings(execInfo);
+            context->fetchPostings(true);
         }
     }
 }

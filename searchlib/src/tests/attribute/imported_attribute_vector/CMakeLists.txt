@@ -4,6 +4,5 @@ vespa_add_executable(searchlib_imported_attribute_vector_test_app TEST
     imported_attribute_vector_test.cpp
     DEPENDS
     searchlib
-    searchlib_test
 )
 vespa_add_test(NAME searchlib_imported_attribute_vector_test_app COMMAND searchlib_imported_attribute_vector_test_app)

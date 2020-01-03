@@ -47,7 +47,7 @@ public:
                        const query::PredicateQuery &query);
 
     ~PredicateBlueprint();
-    void fetchPostings(const ExecuteInfo &execInfo) override;
+    void fetchPostings(bool strict) override;
 
     SearchIterator::UP
     createLeafSearch(const fef::TermFieldMatchDataArray &tfmda,

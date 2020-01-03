@@ -3,7 +3,9 @@
 
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace search::queryeval::test {
+namespace search {
+namespace queryeval {
+namespace test {
 
 /**
  * Child iterator that has initial docid > 0.
@@ -15,4 +17,7 @@ struct EagerChild : public SearchIterator
     void doUnpack(uint32_t) override {}
 };
 
-}
+} // namespace test
+} // namespace queryeval
+} // namespace search
+

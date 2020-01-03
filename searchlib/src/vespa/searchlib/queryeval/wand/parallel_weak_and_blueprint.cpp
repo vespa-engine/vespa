@@ -2,13 +2,13 @@
 #include "wand_parts.h"
 #include "parallel_weak_and_blueprint.h"
 #include "parallel_weak_and_search.h"
-#include <vespa/searchlib/queryeval/field_spec.hpp>
-#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <algorithm>
 
-namespace search::queryeval {
+namespace search {
+namespace queryeval {
 
 ParallelWeakAndBlueprint::ParallelWeakAndBlueprint(const FieldSpec &field,
                                                    uint32_t scoresToTrack,
@@ -78,7 +78,8 @@ ParallelWeakAndBlueprint::addTerm(Blueprint::UP term, int32_t weight)
 }
 
 SearchIterator::UP
-ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda, bool strict) const
+ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda,
+                                           bool strict) const
 {
     assert(tfmda.size() == 1);
     fef::MatchData::UP childrenMatchData = _layout.createMatchData();
@@ -102,11 +103,10 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 }
 
 void
-ParallelWeakAndBlueprint::fetchPostings(const ExecuteInfo & execInfo)
+ParallelWeakAndBlueprint::fetchPostings(bool)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(childInfo);
+        _terms[i]->fetchPostings(true);
     }
 }
 
@@ -124,4 +124,5 @@ ParallelWeakAndBlueprint::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "_terms", _terms);
 }
 
-}
+}  // namespace search::queryeval
+}  // namespace search

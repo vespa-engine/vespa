@@ -16,11 +16,11 @@ namespace search::queryeval::test {
 class TrackedSearch : public SearchIterator
 {
 private:
-    std::string                          _name;
-    SearchHistory                       &_history;
-    fef::TermFieldMatchData              _matchData;
-    SearchIterator::UP                   _search;
-    std::unique_ptr<MinMaxPostingInfo>   _minMaxPostingInfo;
+    std::string             _name;
+    SearchHistory          &_history;
+    fef::TermFieldMatchData _matchData;
+    SearchIterator::UP          _search;
+    MinMaxPostingInfo::UP   _minMaxPostingInfo;
 
     static fef::TermFieldMatchDataArray makeArray(fef::TermFieldMatchData &match) {
         fef::TermFieldMatchDataArray array;

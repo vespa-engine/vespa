@@ -58,7 +58,7 @@ struct DP {
         Node::UP node = createNode();
         FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
-        bp->fetchPostings(ExecuteInfo::create(strict));
+        bp->fetchPostings(strict);
         SearchIterator::UP sb = bp->createSearch(*md, strict);
         EXPECT_TRUE(dynamic_cast<DotProductSearch*>(sb.get()) != 0);
         sb->initFullRange();

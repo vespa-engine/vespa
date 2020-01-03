@@ -2,7 +2,6 @@
 
 #include "dot_product_blueprint.h"
 #include "dot_product_search.h"
-#include "field_spec.hpp"
 #include <vespa/vespalib/objects/visit.hpp>
 
 namespace search::queryeval {
@@ -65,11 +64,11 @@ DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
 }
 
 void
-DotProductBlueprint::fetchPostings(const ExecuteInfo &execInfo)
+DotProductBlueprint::fetchPostings(bool strict)
 {
-    ExecuteInfo childInfo = ExecuteInfo::create(true, execInfo.hitRate());
+    (void) strict;
     for (size_t i = 0; i < _terms.size(); ++i) {
-        _terms[i]->fetchPostings(childInfo);
+        _terms[i]->fetchPostings(true);
     }    
 }
 

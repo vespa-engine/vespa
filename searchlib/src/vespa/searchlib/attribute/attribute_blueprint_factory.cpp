@@ -28,7 +28,6 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_blueprint.h>
 #include <vespa/searchlib/queryeval/weighted_set_term_search.h>
-#include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -140,8 +139,8 @@ public:
     }
 
     void
-    fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
-        _search_context->fetchPostings(execInfo);
+    fetchPostings(bool strict) override {
+        _search_context->fetchPostings(strict);
     }
 
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
@@ -220,9 +219,9 @@ public:
         }
     }
 
-    void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
+    void fetchPostings(bool strict) override {
         for (size_t i(0); i < _rangeSearches.size(); i++) {
-            _rangeSearches[i]->fetchPostings(execInfo);
+            _rangeSearches[i]->fetchPostings(strict);
         }
     }
 };

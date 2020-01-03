@@ -3,6 +3,7 @@
 #pragma once
 
 #include "searchiterator.h"
+#include <vector>
 
 struct MultiSearchRemoveTest;
 
@@ -31,7 +32,7 @@ public:
      *        this object takes ownership of the children.
      **/
     MultiSearch(const Children & children);
-    virtual ~MultiSearch() override;
+    virtual ~MultiSearch();
     const Children & getChildren() const { return _children; }
     virtual bool isAnd() const { return false; }
     virtual bool isAndNot() const { return false; }

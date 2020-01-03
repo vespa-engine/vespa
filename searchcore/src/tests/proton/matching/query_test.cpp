@@ -69,7 +69,6 @@ using search::queryeval::AndBlueprint;
 using search::queryeval::IntermediateBlueprint;
 using search::queryeval::AndNotBlueprint;
 using search::queryeval::SourceBlenderBlueprint;
-using search::queryeval::ExecuteInfo;
 
 using std::string;
 using std::vector;
@@ -455,7 +454,7 @@ SearchIterator::UP Test::getIterator(Node &node, ISearchContext &context) {
 
     _blueprint = BlueprintBuilder::build(_requestContext, node, context);
 
-    _blueprint->fetchPostings(ExecuteInfo::TRUE);
+    _blueprint->fetchPostings(true);
     SearchIterator::UP search(_blueprint->createSearch(*_match_data, true));
     search->initFullRange();
     return search;
@@ -822,10 +821,10 @@ Test::requireThatFakeFieldSearchDumpsDiffer()
     Blueprint::UP l3(a.createBlueprint(requestContext, fields2, n3)); // field
     Blueprint::UP l4(b.createBlueprint(requestContext, fields1, n1)); // tag
 
-    l1->fetchPostings(ExecuteInfo::TRUE);
-    l2->fetchPostings(ExecuteInfo::TRUE);
-    l3->fetchPostings(ExecuteInfo::TRUE);
-    l4->fetchPostings(ExecuteInfo::TRUE);
+    l1->fetchPostings(true);
+    l2->fetchPostings(true);
+    l3->fetchPostings(true);
+    l4->fetchPostings(true);
 
     SearchIterator::UP s1(l1->createSearch(*match_data, true));
     SearchIterator::UP s2(l2->createSearch(*match_data, true));

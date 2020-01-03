@@ -28,7 +28,7 @@ protected:
     EnumHintSearchContext(const IEnumStoreDictionary &dictionary,
                           uint32_t docIdLimit,
                           uint64_t numValues);
-    ~EnumHintSearchContext() override;
+    ~EnumHintSearchContext();
 
     void lookupTerm(const datastore::EntryComparator &comp);
     void lookupRange(const datastore::EntryComparator &low, const datastore::EntryComparator &high);
@@ -36,7 +36,7 @@ protected:
     queryeval::SearchIterator::UP
     createPostingIterator(fef::TermFieldMatchData *matchData, bool strict) override;
 
-    void fetchPostings(const queryeval::ExecuteInfo & execInfo) override;
+    void fetchPostings(bool strict) override;
     unsigned int approximateHits() const override;
 };
 

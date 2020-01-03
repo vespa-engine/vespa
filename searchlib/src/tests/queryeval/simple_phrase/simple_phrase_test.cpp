@@ -138,13 +138,12 @@ public:
     void
     fetchPostings(bool useBlueprint)
     {
-        ExecuteInfo execInfo = ExecuteInfo::create(_strict);
         if (useBlueprint) {
-            _phrase.fetchPostings(execInfo);
+            _phrase.fetchPostings(_strict);
             return;
         }
         for (size_t i = 0; i < _children.size(); ++i) {
-            _children[i]->fetchPostings(execInfo);
+            _children[i]->fetchPostings(_strict);
         }
     }
 

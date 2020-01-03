@@ -2,6 +2,9 @@
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <iostream>
+#include <limits>
+#include <string>
 
 #include <vespa/log/log.h>
 LOG_SETUP("enumstore_test");

@@ -9,7 +9,8 @@
 #include <memory>
 #include <vector>
 
-namespace search::queryeval {
+namespace search {
+namespace queryeval {
 
 const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
 
@@ -44,7 +45,7 @@ public:
                              score_t scoreThreshold,
                              double thresholdBoostFactor,
                              uint32_t scoresAdjustFrequency);
-    virtual ~ParallelWeakAndBlueprint() override;
+    virtual ~ParallelWeakAndBlueprint();
 
     const WeakAndHeap &getScores() const { return _scores; }
 
@@ -60,8 +61,10 @@ public:
 
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void fetchPostings(const ExecuteInfo &execInfo) override;
+    void fetchPostings(bool strict) override;
     bool always_needs_unpack() const override;
 };
 
-}
+}  // namespace queryeval
+}  // namespace search
+

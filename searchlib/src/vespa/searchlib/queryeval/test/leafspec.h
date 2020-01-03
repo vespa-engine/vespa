@@ -43,9 +43,9 @@ struct LeafSpec
         return *this;
     }
     SearchIterator *create(SearchHistory &hist, fef::TermFieldMatchData *tfmd) const {
-        if (search != nullptr) {
+        if (search != NULL) {
             return new TrackedSearch(name, hist, search);
-        } else if (tfmd != nullptr) {
+        } else if (tfmd != NULL) {
             return new TrackedSearch(name, hist, result, *tfmd,
                                      MinMaxPostingInfo(0, maxWeight));
         }
