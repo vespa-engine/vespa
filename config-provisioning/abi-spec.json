@@ -249,12 +249,15 @@
     "methods": [
       "public static com.yahoo.config.provision.ClusterSpec$Type[] values()",
       "public static com.yahoo.config.provision.ClusterSpec$Type valueOf(java.lang.String)",
+      "public boolean isContent()",
+      "public boolean isContainer()",
       "public static com.yahoo.config.provision.ClusterSpec$Type from(java.lang.String)"
     ],
     "fields": [
       "public static final enum com.yahoo.config.provision.ClusterSpec$Type admin",
       "public static final enum com.yahoo.config.provision.ClusterSpec$Type container",
-      "public static final enum com.yahoo.config.provision.ClusterSpec$Type content"
+      "public static final enum com.yahoo.config.provision.ClusterSpec$Type content",
+      "public static final enum com.yahoo.config.provision.ClusterSpec$Type combined"
     ]
   },
   "com.yahoo.config.provision.ClusterSpec": {
@@ -277,7 +280,7 @@
       "public java.lang.String toString()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
-      "public boolean equalsIgnoringGroupAndVespaVersion(java.lang.Object)"
+      "public boolean satisfies(com.yahoo.config.provision.ClusterSpec)"
     ],
     "fields": []
   },

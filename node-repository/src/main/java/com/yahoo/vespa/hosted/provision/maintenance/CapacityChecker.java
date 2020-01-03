@@ -281,7 +281,7 @@ public class CapacityChecker {
         if (node.allocation().isEmpty()) return false;
         Allocation nodeAllocation = node.allocation().get();
         for (var allocation : containedAllocations.get(host)) {
-            if (allocation.membership().cluster().equalsIgnoringGroupAndVespaVersion(nodeAllocation.membership().cluster())
+            if (allocation.membership().cluster().satisfies(nodeAllocation.membership().cluster())
                     && allocation.owner().equals(nodeAllocation.owner())) {
                 return true;
             }

@@ -49,7 +49,7 @@ public class StaticProvisioner implements HostProvisioner {
         if (requestedCluster.group().isPresent()) // we are requesting a specific group
             return nodeCluster.equals(requestedCluster);
         else // we are requesting nodes of all groups in this cluster
-            return nodeCluster.equalsIgnoringGroupAndVespaVersion(requestedCluster);
+            return nodeCluster.satisfies(requestedCluster);
     }
 
 }

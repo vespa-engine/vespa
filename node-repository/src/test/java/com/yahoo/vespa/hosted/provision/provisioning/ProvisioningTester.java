@@ -207,7 +207,7 @@ public class ProvisioningTester {
         Set<Integer> indices = new HashSet<>();
         for (HostSpec host : hosts) {
             ClusterSpec nodeCluster = host.membership().get().cluster();
-            assertTrue(requestedCluster.equalsIgnoringGroupAndVespaVersion(nodeCluster));
+            assertTrue(requestedCluster.satisfies(nodeCluster));
             if (requestedCluster.group().isPresent())
                 assertEquals(requestedCluster.group(), nodeCluster.group());
             else
