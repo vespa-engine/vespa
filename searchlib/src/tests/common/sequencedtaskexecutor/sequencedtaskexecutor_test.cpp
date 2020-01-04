@@ -234,6 +234,17 @@ TEST("require that you get correct number of executors") {
     EXPECT_EQUAL(7u, seven.getNumExecutors());
 }
 
+TEST("require that you distribute well") {
+    SequencedTaskExecutor seven(7);
+    EXPECT_EQUAL(7u, seven.getNumExecutors());
+    EXPECT_EQUAL(97u, seven.getComponentHashSize());
+    EXPECT_EQUAL(0u, seven.getComponentEffectiveHashSize());
+    for (uint32_t id=0; id < 1000; id++) {
+        EXPECT_EQUAL((id%97)%7, seven.getExecutorId(id).getId());
+    }
+    EXPECT_EQUAL(97u, seven.getComponentHashSize());
+    EXPECT_EQUAL(97u, seven.getComponentEffectiveHashSize());
+}
 
 }
 

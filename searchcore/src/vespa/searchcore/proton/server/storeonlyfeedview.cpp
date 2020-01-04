@@ -464,7 +464,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
                          [upd = updOp.getUpdate(), serialNum, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
                           promisedStream = std::move(promisedStream), this]() mutable
                          {
-                             makeUpdatedDocument(serialNum, lid, upd, onWriteDone,
+                             makeUpdatedDocument(serialNum, lid, std::move(upd), onWriteDone,
                                                  std::move(promisedDoc), std::move(promisedStream));
                          });
 #pragma GCC diagnostic pop
