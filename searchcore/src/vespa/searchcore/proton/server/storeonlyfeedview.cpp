@@ -464,7 +464,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
                          [upd = updOp.getUpdate(), serialNum, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
                           promisedStream = std::move(promisedStream), this]() mutable
                          {
-                             makeUpdatedDocument(serialNum, lid, std::move(upd), onWriteDone,
+                             makeUpdatedDocument(serialNum, lid, *upd, onWriteDone,
                                                  std::move(promisedDoc), std::move(promisedStream));
                          });
 #pragma GCC diagnostic pop
@@ -473,12 +473,12 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
 }
 
 void
-StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP update,
+StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, const DocumentUpdate & update,
                                        OnOperationDoneType onWriteDone, PromisedDoc promisedDoc,
                                        PromisedStream promisedStream)
 {
     Document::UP prevDoc = _summaryAdapter->get(lid, *_repo);
-    const DocumentUpdate & upd = *update;
+    const DocumentUpdate & upd = update;
     Document::UP newDoc;
     vespalib::nbostream newStream(12345);
     assert(!onWriteDone->hasToken() || useDocumentStore(serialNum));
