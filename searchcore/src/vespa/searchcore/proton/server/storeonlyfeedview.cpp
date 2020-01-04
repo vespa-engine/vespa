@@ -464,7 +464,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
                          [upd = updOp.getUpdate(), serialNum, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
                           promisedStream = std::move(promisedStream), this]() mutable
                          {
-                             makeUpdatedDocument(serialNum, lid, upd, onWriteDone,
+                             makeUpdatedDocument(serialNum, lid, *upd, onWriteDone,
                                                  std::move(promisedDoc), std::move(promisedStream));
                          });
 #pragma GCC diagnostic pop
@@ -473,12 +473,11 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
 }
 
 void
-StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdate::SP update,
+StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, const DocumentUpdate & update,
                                        OnOperationDoneType onWriteDone, PromisedDoc promisedDoc,
                                        PromisedStream promisedStream)
 {
     Document::UP prevDoc = _summaryAdapter->get(lid, *_repo);
-    const DocumentUpdate & upd = *update;
     Document::UP newDoc;
     vespalib::nbostream newStream(12345);
     assert(!onWriteDone->hasToken() || useDocumentStore(serialNum));
@@ -492,10 +491,10 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpd
         // also check that this operation is marked for ignore by index
         // proxy.
     } else {
-        if (upd.getId() == prevDoc->getId()) {
+        if (update.getId() == prevDoc->getId()) {
             newDoc = std::move(prevDoc);
             if (useDocumentStore(serialNum)) {
-                upd.applyTo(*newDoc);
+                update.applyTo(*newDoc);
                 newDoc->serialize(newStream);
             }
         } else {

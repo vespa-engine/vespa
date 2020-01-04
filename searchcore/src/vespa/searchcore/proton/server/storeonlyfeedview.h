@@ -189,7 +189,7 @@ private:
     // Ack token early if visibility delay is nonzero
     void considerEarlyAck(FeedToken &token);
 
-    void makeUpdatedDocument(SerialNum serialNum, Lid lid, DocumentUpdateSP upd, OnOperationDoneType onWriteDone,
+    void makeUpdatedDocument(SerialNum serialNum, Lid lid, const DocumentUpdate & update, OnOperationDoneType onWriteDone,
                              PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:

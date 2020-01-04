@@ -71,7 +71,6 @@ public:
      * Wrap lambda function into a task and schedule it to be run.
      * Caller must ensure that pointers and references are valid and
      * call sync before tearing down pointed to/referenced data.
-     * All tasks must be scheduled from same thread.
      *
      * @param componentId   component id
      * @param function      function to be wrapped in a task and later executed
@@ -86,7 +85,6 @@ public:
      * Wrap lambda function into a task and schedule it to be run.
      * Caller must ensure that pointers and references are valid and
      * call sync before tearing down pointed to/referenced data.
-     * All tasks must be scheduled from same thread.
      *
      * @param id        executor id
      * @param function  function to be wrapped in a task and later executed
@@ -95,6 +93,11 @@ public:
     void execute(ExecutorId id, FunctionType &&function) {
         executeTask(id, vespalib::makeLambdaTask(std::forward<FunctionType>(function)));
     }
+    /**
+     * For testing only
+     */
+    uint32_t getComponentHashSize() const { return _component2Id.size(); }
+    uint32_t getComponentEffectiveHashSize() const { return _nextId; }
 private:
     mutable std::vector<uint8_t> _component2Id;
     mutable std::mutex           _mutex;
