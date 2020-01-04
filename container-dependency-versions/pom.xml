@@ -446,7 +446,7 @@
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
-        <jetty.version>9.4.25.v20191220</jetty.version>
+        <jetty.version>9.4.22.v20191022</jetty.version>
         <lz4.version>1.3.0</lz4.version>
         <org.json.version>20090211</org.json.version>
         <slf4j.version>1.7.5</slf4j.version>
