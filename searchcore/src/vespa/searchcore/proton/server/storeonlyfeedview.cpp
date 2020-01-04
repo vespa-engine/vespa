@@ -478,7 +478,6 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, const Docum
                                        PromisedStream promisedStream)
 {
     Document::UP prevDoc = _summaryAdapter->get(lid, *_repo);
-    const DocumentUpdate & upd = update;
     Document::UP newDoc;
     vespalib::nbostream newStream(12345);
     assert(!onWriteDone->hasToken() || useDocumentStore(serialNum));
@@ -492,10 +491,10 @@ StoreOnlyFeedView::makeUpdatedDocument(SerialNum serialNum, Lid lid, const Docum
         // also check that this operation is marked for ignore by index
         // proxy.
     } else {
-        if (upd.getId() == prevDoc->getId()) {
+        if (update.getId() == prevDoc->getId()) {
             newDoc = std::move(prevDoc);
             if (useDocumentStore(serialNum)) {
-                upd.applyTo(*newDoc);
+                update.applyTo(*newDoc);
                 newDoc->serialize(newStream);
             }
         } else {
