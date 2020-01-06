@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.yahoo.text.Ascii7BitMatcher.charsAndNumbers;
 
@@ -312,23 +313,21 @@ public interface Tensor {
     }
 
     static String contentToString(Tensor tensor) {
-        List<java.util.Map.Entry<TensorAddress, Double>> cellEntries = new ArrayList<>(tensor.cells().entrySet());
+        var cellEntries = new ArrayList<>(tensor.cells().entrySet());
         if (tensor.type().dimensions().isEmpty()) {
             if (cellEntries.isEmpty()) return "{}";
             return "{" + cellEntries.get(0).getValue() +"}";
         }
+        return "{" + cellEntries.stream().sorted(Map.Entry.comparingByKey())
+                                         .map(cell -> cellToString(cell, tensor.type()))
+                                         .collect(Collectors.joining(",")) +
+               "}";
+    }
 
-        Collections.sort(cellEntries, java.util.Map.Entry.<TensorAddress, Double>comparingByKey());
-
-        StringBuilder b = new StringBuilder("{");
-        for (java.util.Map.Entry<TensorAddress, Double> cell : cellEntries) {
-            b.append(cell.getKey().toString(tensor.type())).append(":").append(cell.getValue());
-            b.append(",");
-        }
-        if (b.length() > 1)
-            b.setLength(b.length() - 1);
-        b.append("}");
-        return b.toString();
+    private static String cellToString(Map.Entry<TensorAddress, Double> cell, TensorType type) {
+        return (type.rank() > 1 ? cell.getKey().toString(type) : TensorAddress.labelToString(cell.getKey().label(0))) +
+               ":" +
+               cell.getValue();
     }
 
     // ----------------- equality

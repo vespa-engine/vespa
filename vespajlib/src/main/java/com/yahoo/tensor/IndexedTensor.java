@@ -204,12 +204,18 @@ public abstract class IndexedTensor implements Tensor {
     @Override
     public String toString() {
         if (type.rank() == 0) return Tensor.toStandardString(this);
-        if (type.dimensions().stream().anyMatch(d -> d.size().isEmpty())) return Tensor.toStandardString(this);
+        if (type.dimensions().stream().anyMatch(d -> d.size().isEmpty()))
+            return Tensor.toStandardString(this);
 
         Indexes indexes = Indexes.of(dimensionSizes);
 
         StringBuilder b = new StringBuilder(type.toString()).append(":");
-        for (int index = 0; index < size(); index++) {
+        indexedBlockToString(this, indexes, b);
+        return b.toString();
+    }
+
+    static void indexedBlockToString(IndexedTensor tensor, Indexes indexes, StringBuilder b) {
+        for (int index = 0; index < tensor.size(); index++) {
             indexes.next();
 
             // start brackets
@@ -217,20 +223,19 @@ public abstract class IndexedTensor implements Tensor {
                 b.append("[");
 
             // value
-            if (type.valueType() == TensorType.Value.DOUBLE)
-                b.append(get(index));
-            else if (type.valueType() == TensorType.Value.FLOAT)
-                b.append(get(index)); // TODO: Use getFloat
+            if (tensor.type().valueType() == TensorType.Value.DOUBLE)
+                b.append(tensor.get(index));
+            else if (tensor.type().valueType() == TensorType.Value.FLOAT)
+                b.append(tensor.getFloat(index));
             else
-                throw new IllegalStateException("Unexpected value type " + type.valueType());
+                throw new IllegalStateException("Unexpected value type " + tensor.type().valueType());
 
             // end bracket and comma
             for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)
                 b.append("]");
-            if (index < size() - 1)
+            if (index < tensor.size() - 1)
                 b.append(", ");
         }
-        return b.toString();
     }
 
     @Override

@@ -312,6 +312,9 @@ public class TensorType {
         /** Returns true if this is an indexed bound or unbound type */
         public boolean isIndexed() { return type() == Type.indexedBound || type() == Type.indexedUnbound; }
 
+        /** Returns true if this is of the mapped type */
+        public boolean isMapped() { return type() == Type.mapped; }
+
         /**
          * Returns the dimension resulting from combining two dimensions having the same name but possibly different
          * types:

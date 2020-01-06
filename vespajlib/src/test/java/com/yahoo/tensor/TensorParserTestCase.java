@@ -43,7 +43,7 @@ public class TensorParserTestCase {
         assertDense(Tensor.Builder.of(TensorType.fromSpec("tensor()")).cell(1.3).build(),
                     "tensor():{1.3}");
         assertDense(Tensor.Builder.of(TensorType.fromSpec("tensor(x[])")).cell(1.0, 0).build(),
-                    "tensor(x[]):{{x:0}:1.0}");
+                    "tensor(x[]):{0:1.0}");
         assertDense(Tensor.Builder.of(TensorType.fromSpec("tensor(x[1])")).cell(1.0, 0).build(),
                     "tensor(x[1]):[1.0]");
         assertDense(Tensor.Builder.of(TensorType.fromSpec("tensor(x[2])")).cell(1.0, 0).cell(2.0, 1).build(),

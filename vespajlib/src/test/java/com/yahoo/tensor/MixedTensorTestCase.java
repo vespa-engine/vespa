@@ -41,7 +41,7 @@ public class MixedTensorTestCase {
                 // {y:2} should be 0.0 and non NaN since we specify indexed size
                 build();
         assertEquals(Sets.newHashSet("y"), tensor.type().dimensionNames());
-        assertEquals("tensor(y[3]):{{y:0}:1.0,{y:1}:2.0,{y:2}:0.0}",
+        assertEquals("tensor(y[3]):[1.0, 2.0, 0.0]",
                 tensor.toString());
     }
 
@@ -57,8 +57,8 @@ public class MixedTensorTestCase {
                 cell().label("x", 1).label("y", 2).value(6).
                 build();
         assertEquals(Sets.newHashSet("x", "y"), tensor.type().dimensionNames());
-        assertEquals("tensor(x[2],y[3]):{{x:0,y:0}:1.0,{x:0,y:1}:2.0,{x:0,y:2}:0.0,{x:1,y:0}:4.0,{x:1,y:1}:5.0,{x:1,y:2}:6.0}",
-                tensor.toString());
+        assertEquals("tensor(x[2],y[3]):[[1.0, 2.0, 0.0], [4.0, 5.0, 6.0]]",
+                     tensor.toString());
     }
 
     @Test
@@ -69,8 +69,8 @@ public class MixedTensorTestCase {
                 cell().label("x", "1").value(2).
                 build();
         assertEquals(Sets.newHashSet("x"), tensor.type().dimensionNames());
-        assertEquals("tensor(x{}):{{x:0}:1.0,{x:1}:2.0}",
-                tensor.toString());
+        assertEquals("tensor(x{}):{0:1.0,1:2.0}",
+                     tensor.toString());
     }
 
     @Test
