@@ -330,7 +330,7 @@ public class TensorType {
             // both are indexed bound
             IndexedBoundDimension thisIb = (IndexedBoundDimension)this;
             IndexedBoundDimension otherIb = (IndexedBoundDimension)other.get();
-                return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
+            return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
         }
 
         @Override
