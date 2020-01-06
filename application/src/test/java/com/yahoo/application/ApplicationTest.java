@@ -22,7 +22,6 @@ import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.handler.SearchHandler;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
 import java.net.ServerSocket;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -223,7 +223,7 @@ public class ApplicationTest {
     public void document_type() throws Exception {
         try (
                 Application app = Application.fromBuilder(new Application.Builder()
-                        .documentType("test", IOUtils.toString(this.getClass().getResourceAsStream("/test.sd")))
+                        .documentType("test", new String(this.getClass().getResourceAsStream("/test.sd").readAllBytes(), StandardCharsets.UTF_8))
                         .container("default", new Application.Builder.Container()
                             .documentProcessor(MockDocproc.class)
                             .config(new MockApplicationConfig(new MockApplicationConfig.Builder().mystruct(new MockApplicationConfig.Mystruct.Builder().id("foo").value("bar"))))))
@@ -264,7 +264,7 @@ public class ApplicationTest {
     @Test
     public void client() throws Exception {
         try (ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder()
-                .documentType("test", IOUtils.toString(this.getClass().getResourceAsStream("/test.sd")))
+                .documentType("test", new String(this.getClass().getResourceAsStream("/test.sd").readAllBytes(), StandardCharsets.UTF_8))
                 .container("default", new Application.Builder.Container()
                     .client("mbus://*/*", MockClient.class)
                     .documentProcessor(MockDispatchDocproc.class)
@@ -320,7 +320,7 @@ public class ApplicationTest {
                         "<field name=\"defaultage\" type=\"string\" />\n" +
                         "</query-profile-type>")
                 .rankExpression("re", "commonfirstphase(globalstaticrank)")
-                .documentType("test", IOUtils.toString(this.getClass().getResourceAsStream("/test.sd")))
+                .documentType("test", new String(this.getClass().getResourceAsStream("/test.sd").readAllBytes(), StandardCharsets.UTF_8))
                 .container("default", new Application.Builder.Container()
                 .search(true)
                 ))) {

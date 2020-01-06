@@ -14,8 +14,9 @@
     <name>${project.artifactId}</name>
     <dependencies>
         <dependency>
-	        <groupId>commons-lang</groupId>
-	        <artifactId>commons-lang</artifactId>
+	        <groupId>com.google.guava</groupId>
+	        <artifactId>guava</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

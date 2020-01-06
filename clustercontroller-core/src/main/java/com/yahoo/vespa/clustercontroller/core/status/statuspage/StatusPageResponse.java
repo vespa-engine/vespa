@@ -1,9 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import com.google.common.html.HtmlEscapers;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 public class StatusPageResponse {
 
@@ -67,7 +70,7 @@ public class StatusPageResponse {
     }
 
     public void writeHtmlHeader(StringBuilder content, String title) {
-        String escaped_title = StringEscapeUtils.escapeHtml(title);
+        String escaped_title = HtmlEscapers.htmlEscaper().escape(title);
         content.append("<html>\n")
                .append("<head><title>").append(escaped_title).append("</title></head>")
                .append("<body>\n")
@@ -76,7 +79,7 @@ public class StatusPageResponse {
 
     public void writeHtmlFooter(StringBuilder content, String hiddenMessage) {
         if (hiddenMessage != null && !hiddenMessage.isEmpty()) {
-            content.append("\n<!-- " + StringEscapeUtils.escapeHtml(hiddenMessage) + " -->\n");
+            content.append("\n<!-- " + HtmlEscapers.htmlEscaper().escape(hiddenMessage) + " -->\n");
         }
         content.append("</body>\n")
                .append("</html>\n");

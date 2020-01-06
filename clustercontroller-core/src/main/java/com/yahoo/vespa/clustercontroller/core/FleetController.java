@@ -12,20 +12,26 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.listeners.*;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlobrokClient;
-import com.yahoo.vespa.clustercontroller.core.status.*;
+import com.yahoo.vespa.clustercontroller.core.status.ClusterStateRequestHandler;
+import com.yahoo.vespa.clustercontroller.core.status.LegacyIndexPageRequestHandler;
+import com.yahoo.vespa.clustercontroller.core.status.LegacyNodePageRequestHandler;
+import com.yahoo.vespa.clustercontroller.core.status.NodeHealthRequestHandler;
+import com.yahoo.vespa.clustercontroller.core.status.RunDataExtractor;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageResponse;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServerInterface;
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
-import org.apache.commons.lang.exception.ExceptionUtils;
 
 import java.io.FileNotFoundException;
-
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -542,7 +548,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (Exception e) {
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
-            hiddenMessage = ExceptionUtils.getStackTrace(e);
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw, true);
+            e.printStackTrace(pw);
+            hiddenMessage = sw.getBuffer().toString();
             log.log(LogLevel.DEBUG, "Unknown exception thrown for request " + httpRequest.getRequest() +
                     ": " + hiddenMessage);
         }

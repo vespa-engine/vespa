@@ -1,11 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa;
 
-import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.codegen.MakeConfig;
 import com.yahoo.config.codegen.MakeConfigProperties;
 import com.yahoo.config.codegen.PropertyException;
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -16,9 +14,12 @@ import org.apache.maven.project.MavenProject;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.yahoo.config.codegen.DefParser.DEFAULT_PACKAGE_PREFIX;
 
@@ -160,8 +161,11 @@ public class ConfigGenMojo extends AbstractMojo {
 
     private boolean isSomeGeneratedFileStale(File outputDirectory, List<String> defFileNames) {
         long oldestGeneratedModifiedTime = Long.MAX_VALUE;
-        final Collection<File> files = FileUtils.listFiles(outputDirectory, null, true);
-        if (files != null) {
+        try {
+            List<File> files = Files.walk(outputDirectory.toPath())
+                    .filter(Files::isRegularFile)
+                    .map(Path::toFile)
+                    .collect(Collectors.toList());
             for (File f : files) {
                 getLog().debug("Checking generated file " + f);
                 final long l = f.lastModified();
@@ -169,6 +173,8 @@ public class ConfigGenMojo extends AbstractMojo {
                     oldestGeneratedModifiedTime = l;
                 }
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
 
         long lastModifiedSource = 0;

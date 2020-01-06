@@ -58,7 +58,7 @@ public class Base64DecodeTestCase {
             new Base64DecodeExpression().execute(new StringFieldValue("???"));
             fail();
         } catch (IllegalArgumentException e) {
-            assertEquals("Illegal base64 value '???'.", e.getMessage());
+            assertEquals("Illegal base64 character 3f", e.getMessage());
         }
     }
 

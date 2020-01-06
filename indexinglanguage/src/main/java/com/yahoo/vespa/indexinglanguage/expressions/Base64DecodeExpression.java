@@ -3,7 +3,8 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.LongFieldValue;
-import org.apache.commons.codec.binary.Base64;
+
+import java.util.Base64;
 
 /**
  * @author Simon Thoresen Hult
@@ -24,7 +25,7 @@ public final class Base64DecodeExpression extends Expression {
         if (input.length() > 12) {
             throw new NumberFormatException("Base64 value '" + input + "' is out of range.");
         }
-        byte[] decoded = Base64.decodeBase64(input);
+        byte[] decoded = Base64.getDecoder().decode(input);
         if (decoded == null || decoded.length == 0) {
             throw new NumberFormatException("Illegal base64 value '" + input + "'.");
         }

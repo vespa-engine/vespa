@@ -2,19 +2,28 @@
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
 import com.yahoo.log.LogLevel;
-import org.apache.commons.lang.exception.ExceptionUtils;
 
-import java.io.*;
-import java.net.ServerSocket;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Shows status pages with debug information through a very simple HTTP interface.
@@ -177,7 +186,11 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                         response.setResponseCode(StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR);
                         StringBuilder content = new StringBuilder();
                         response.writeHtmlHeader(content, "Internal Server Error");
-                        response.writeHtmlFooter(content, ExceptionUtils.getStackTrace(e));
+                        try (StringWriter sw = new StringWriter();
+                             PrintWriter pw = new PrintWriter(sw, true)) {
+                            e.printStackTrace(pw);
+                            response.writeHtmlFooter(content, sw.getBuffer().toString());
+                        }
                         response.writeContent(content.toString());
                     }
                     if (response == null) {

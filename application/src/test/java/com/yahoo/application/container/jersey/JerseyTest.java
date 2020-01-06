@@ -10,7 +10,6 @@ import com.yahoo.application.container.jersey.resources.nestedpackage2.NestedTes
 import com.yahoo.container.test.jars.jersey.resources.TestResourceBase;
 import com.yahoo.osgi.maven.ProjectBundleClassPaths;
 import com.yahoo.osgi.maven.ProjectBundleClassPaths.BundleClasspathMapping;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -19,6 +18,7 @@ import org.apache.http.util.EntityUtils;
 import org.junit.Test;
 
 import javax.ws.rs.core.UriBuilder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -158,7 +158,7 @@ public class JerseyTest {
             HttpResponse response = httpGetter.get(path(resource));
             assertThat("Failed sending response to " + resource, response.getStatusLine().getStatusCode(), is(200));
 
-            String content = IOUtils.toString(response.getEntity().getContent());
+            String content = new String(response.getEntity().getContent().readAllBytes(), StandardCharsets.UTF_8);
             assertThat(content, is(TestResourceBase.content(resource)));
         }
     }

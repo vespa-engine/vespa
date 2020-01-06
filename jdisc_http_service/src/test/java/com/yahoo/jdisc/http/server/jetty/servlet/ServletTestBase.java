@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty.servlet;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
@@ -16,8 +15,6 @@ import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig.Servlets.Builder;
 import com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.RequestExecutor;
 import com.yahoo.jdisc.http.server.jetty.TestDriver;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import javax.servlet.ServletException;
@@ -27,15 +24,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * @author Tony Vaagenes
  * @author bakksjo
  */
 public class ServletTestBase {
-    private ImmutableMap<Pair<ComponentId, String>, HttpServlet> servlets = ImmutableMap.of(
-            ImmutablePair.of(TestServlet.ID, TestServlet.PATH), new TestServlet(),
-            ImmutablePair.of(NoContentTestServlet.ID, NoContentTestServlet.PATH), new NoContentTestServlet());
+
+    private static class ServletInstance {
+        final ComponentId componentId; final String path; final HttpServlet instance;
+
+        ServletInstance(ComponentId componentId, String path, HttpServlet instance) {
+            this.componentId = componentId;
+            this.path = path;
+            this.instance = instance;
+        }
+    }
+
+    private final List<ServletInstance> servlets = List.of(
+            new ServletInstance(TestServlet.ID, TestServlet.PATH, new TestServlet()),
+            new ServletInstance(NoContentTestServlet.ID, NoContentTestServlet.PATH, new NoContentTestServlet()));
 
     protected RequestExecutor httpGet(TestDriver testDriver, String path) {
         return testDriver.client().newGet("/" + path);
@@ -44,10 +53,10 @@ public class ServletTestBase {
     protected ServletPathsConfig createServletPathConfig() {
         ServletPathsConfig.Builder configBuilder = new ServletPathsConfig.Builder();
 
-        servlets.forEach((idAndPath, servlet) ->
+        servlets.forEach(servlet ->
                 configBuilder.servlets(
-                        idAndPath.getLeft().stringValue(),
-                        new Builder().path(idAndPath.getRight())));
+                        servlet.componentId.stringValue(),
+                        new Builder().path(servlet.path)));
 
         return new ServletPathsConfig(configBuilder);
     }
@@ -55,8 +64,8 @@ public class ServletTestBase {
     protected ComponentRegistry<ServletHolder> servlets() {
         ComponentRegistry<ServletHolder> result = new ComponentRegistry<>();
 
-        servlets.forEach((idAndPath, servlet) ->
-                result.register(idAndPath.getLeft(), new ServletHolder(servlet)));
+        servlets.forEach(servlet ->
+                result.register(servlet.componentId, new ServletHolder(servlet.instance)));
 
         result.freeze();
         return result;

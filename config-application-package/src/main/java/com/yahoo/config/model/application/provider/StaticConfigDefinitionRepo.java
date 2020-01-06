@@ -8,7 +8,6 @@ import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.defaults.Defaults;
-import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +53,7 @@ public class StaticConfigDefinitionRepo implements ConfigDefinitionRepo {
 
     private void addConfigDefinition(ConfigDefinitionKey key, File defFile) throws IOException {
         String payload = IOUtils.readFile(defFile);
-        configDefinitions.put(key, new ConfigDefinition(key.getName(), StringUtils.split(payload, "\n")));
+        configDefinitions.put(key, new ConfigDefinition(key.getName(), payload.split("[\\r\\n]+")));
     }
 
     @Override

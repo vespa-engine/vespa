@@ -2,10 +2,10 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import org.apache.commons.codec.binary.Base64;
+
+import java.util.Base64;
 
 /**
  * @author Simon Thoresen Hult
@@ -23,7 +23,7 @@ public final class Base64EncodeExpression extends Expression {
             output[i] = (byte)(input & 0xffL);
             input >>>= 8;
         }
-        String encoded = new Base64(0).encodeToString(output);
+        String encoded = Base64.getEncoder().encodeToString(output);
         ctx.setValue(new StringFieldValue(encoded));
     }
 
