@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.admin.metricsproxy;
 
 import ai.vespa.metricsproxy.http.MetricsHandler;
 import ai.vespa.metricsproxy.http.application.MetricsNodesConfig;
+import com.yahoo.config.provision.ClusterMembership;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,11 +21,18 @@ public class MetricsNodesConfigGenerator {
     }
 
     private static MetricsNodesConfig.Node.Builder toNodeBuilder(MetricsProxyContainer container) {
-        return new MetricsNodesConfig.Node.Builder()
+        var builder = new MetricsNodesConfig.Node.Builder()
                 .configId(container.getHost().getConfigId())
                 .hostname(container.getHostName())
                 .metricsPort(MetricsProxyContainer.BASEPORT)
                 .metricsPath(MetricsHandler.VALUES_PATH);
+
+        if (container.isHostedVespa)
+            container.getHostResource().spec().membership()
+                    .map(ClusterMembership::stringValue)
+                    .ifPresent(builder::configId);
+
+        return builder;
     }
 
 }

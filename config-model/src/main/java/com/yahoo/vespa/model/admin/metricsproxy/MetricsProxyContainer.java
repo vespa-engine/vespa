@@ -38,7 +38,7 @@ public class MetricsProxyContainer extends Container implements
         static final String CLUSTER_ID = "clusterid";
     }
 
-    private final boolean isHostedVespa;
+    final boolean isHostedVespa;
 
     public MetricsProxyContainer(AbstractConfigProducer parent, String hostname, int index, boolean isHostedVespa) {
         super(parent, hostname, index);
