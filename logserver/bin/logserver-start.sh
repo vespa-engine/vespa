@@ -78,7 +78,7 @@ ROOT=${VESPA_HOME%/}
 export ROOT
 cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
-addopts="-server -Xms64m -Xmx256m -XX:MaxDirectMemorySize=76m -XX:MaxJavaStackTraceDepth=1000000"
+addopts="-server -Xms32m -Xmx256m -XX:MaxDirectMemorySize=76m -XX:MaxJavaStackTraceDepth=1000000"
 
 oomopt="-XX:+ExitOnOutOfMemoryError"
 
