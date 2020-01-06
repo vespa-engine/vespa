@@ -1,10 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.google.common.io.Files;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.text.Utf8;
@@ -15,7 +15,6 @@ import com.yahoo.vespa.config.server.http.ContentHandlerTestBase;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.tenant.TenantBuilder;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -24,6 +23,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNotNull;
@@ -145,8 +145,8 @@ public class SessionContentHandlerTest extends ContentHandlerTestBase {
     }
 
     private File createTestApp() throws IOException {
-        File testApp = Files.createTempDir();
-        FileUtils.copyDirectory(new File("src/test/apps/content"), testApp);
+        File testApp = Files.createTempDirectory("session-content-handler-test-app").toFile();
+        IOUtils.copyDirectory(new File("src/test/apps/content"), testApp);
         return testApp;
     }
 

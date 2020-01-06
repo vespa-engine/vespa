@@ -17,7 +17,6 @@ import com.yahoo.path.Path;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
-import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -249,7 +248,7 @@ public class ZooKeeperClient {
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (InputStream inputStream = file.createInputStream()) {
-            IOUtils.copy(inputStream, baos);
+            inputStream.transferTo(baos);
             baos.flush();
             configCurator.putData(zkPath.append(file.getPath().getName()).getAbsolute(), baos.toByteArray());
         }
