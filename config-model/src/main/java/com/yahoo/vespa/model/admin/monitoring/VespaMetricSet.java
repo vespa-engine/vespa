@@ -245,6 +245,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("hits_per_query.sum"));
         metrics.add(new Metric("hits_per_query.count"));
         metrics.add(new Metric("hits_per_query.average")); // TODO: Remove in Vespa 8
+        metrics.add(new Metric("query_hit_offset.max"));
+        metrics.add(new Metric("query_hit_offset.sum"));
+        metrics.add(new Metric("query_hit_offset.count"));
         metrics.add(new Metric("documents_covered.count"));
         metrics.add(new Metric("documents_total.count"));
         metrics.add(new Metric("dispatch_internal.rate"));
