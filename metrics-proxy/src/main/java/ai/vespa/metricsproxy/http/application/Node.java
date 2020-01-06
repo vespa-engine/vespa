@@ -21,7 +21,7 @@ public class Node {
     private final String metricsUriBase;
 
     public Node(MetricsNodesConfig.Node nodeConfig) {
-        this(nodeConfig.configId(), nodeConfig.hostname(), nodeConfig.metricsPort() , nodeConfig.metricsPath());
+        this(nodeConfig.nodeId(), nodeConfig.hostname(), nodeConfig.metricsPort() , nodeConfig.metricsPath());
     }
 
     public Node(String configId, String host, int port, String path) {
