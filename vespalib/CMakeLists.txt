@@ -131,6 +131,7 @@ vespa_define_module(
     src/tests/util/md5
     src/tests/util/rcuvector
     src/tests/valgrind
+    src/tests/visit_ranges
     src/tests/websocket
     src/tests/zcurve
 
