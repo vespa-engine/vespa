@@ -9,6 +9,8 @@ import com.yahoo.vespa.model.ConfigProducer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -78,6 +80,14 @@ public final class ReflectionUtil {
         }  catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static List<Class<?>> getAllSuperclasses(Class<?> cls) {
+        var result = new ArrayList<Class<?>>();
+        for(Class<?> superClass = cls.getSuperclass(); superClass != null; superClass = superClass.getSuperclass()) {
+            result.add(superClass);
+        }
+        return result;
     }
 
     private static ConfigKey<?> createConfigKeyFromInstance(Class<?> configInstClass, String configId) {

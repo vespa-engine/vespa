@@ -3,10 +3,10 @@ package com.yahoo.vespa.model.content.cluster;
 
 import com.yahoo.vespa.model.content.ContentSearch;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
-import org.apache.commons.io.input.CharSequenceInputStream;
 import org.junit.Test;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
@@ -52,7 +52,7 @@ public class DomContentSearchBuilderTest {
         return DomContentSearchBuilder.build(
                 new ModelElement(DocumentBuilderFactory.newInstance()
                                                        .newDocumentBuilder()
-                                                       .parse(new CharSequenceInputStream(xml, StandardCharsets.UTF_8))
+                                                       .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))
                                                        .getDocumentElement()));
     }
 }

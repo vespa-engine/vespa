@@ -5,13 +5,14 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.search.grouping.GroupingValidator;
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -50,7 +51,7 @@ public class BundleInstantiationSpecificationBuilderTest {
             xml += " bundle=\"" + explicitBundle + "\"";
         }
         xml += " />";
-        InputStream xmlStream = IOUtils.toInputStream(xml);
+        InputStream xmlStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
         Element component = XmlHelper.getDocumentBuilder().parse(xmlStream).getDocumentElement();
 
         BundleInstantiationSpecification spec = BundleInstantiationSpecificationBuilder.build(component);
