@@ -13,7 +13,7 @@ import java.util.Objects;
  */
 public class Node {
 
-    final String configId;
+    final String nodeId;
     final String host;
     final int port;
     final String path;
@@ -24,12 +24,12 @@ public class Node {
         this(nodeConfig.nodeId(), nodeConfig.hostname(), nodeConfig.metricsPort() , nodeConfig.metricsPath());
     }
 
-    public Node(String configId, String host, int port, String path) {
-        Objects.requireNonNull(configId, "Null configId is not allowed");
+    public Node(String nodeId, String host, int port, String path) {
+        Objects.requireNonNull(nodeId, "Null configId is not allowed");
         Objects.requireNonNull(host, "Null host is not allowed");
         Objects.requireNonNull(path, "Null path is not allowed");
 
-        this.configId = configId;
+        this.nodeId = nodeId;
         this.host = host;
         this.port = port;
         this.path = path;
@@ -37,7 +37,7 @@ public class Node {
     }
 
     public String getName() {
-        return configId;
+        return nodeId;
     }
 
     URI metricsUri(ConsumerId consumer) {
@@ -50,12 +50,12 @@ public class Node {
         if (o == null || getClass() != o.getClass()) return false;
         Node node = (Node) o;
         return port == node.port &&
-                configId.equals(node.configId) &&
+                nodeId.equals(node.nodeId) &&
                 host.equals(node.host);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(configId, host, port);
+        return Objects.hash(nodeId, host, port);
     }
 }
