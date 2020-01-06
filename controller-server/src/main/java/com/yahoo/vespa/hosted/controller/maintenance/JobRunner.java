@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
 
-import java.time.Clock;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,21 +33,19 @@ public class JobRunner extends Maintainer {
     private final JobController jobs;
     private final ExecutorService executors;
     private final StepRunner runner;
-    private final Clock clock;
 
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl, Clock clock) {
-        this(controller, duration, jobControl, Executors.newFixedThreadPool(32), new InternalStepRunner(controller), clock);
+    public JobRunner(Controller controller, Duration duration, JobControl jobControl) {
+        this(controller, duration, jobControl, Executors.newFixedThreadPool(32), new InternalStepRunner(controller));
     }
 
     @TestOnly
     public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors,
-                     StepRunner runner, Clock clock) {
+                     StepRunner runner) {
         super(controller, duration, jobControl);
         this.jobs = controller.jobController();
         this.jobs.setRunner(this::advance);
         this.executors = executors;
         this.runner = runner;
-        this.clock = clock;
     }
 
     @Override
@@ -105,7 +102,7 @@ public class JobRunner extends Maintainer {
 
                     StepInfo stepInfo = run.stepInfo(lockedStep.get()).orElseThrow();
                     if (stepInfo.startTime().isEmpty()) {
-                        jobs.setStartTimestamp(run.id(), clock.instant(), lockedStep);
+                        jobs.setStartTimestamp(run.id(), controller().clock().instant(), lockedStep);
                     }
 
                     runner.run(lockedStep, run.id()).ifPresent(status -> {
