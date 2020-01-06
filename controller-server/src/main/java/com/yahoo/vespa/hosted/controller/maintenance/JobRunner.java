@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 import org.jetbrains.annotations.TestOnly;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +39,8 @@ public class JobRunner extends Maintainer {
     }
 
     @TestOnly
-    public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors, StepRunner runner) {
+    public JobRunner(Controller controller, Duration duration, JobControl jobControl, ExecutorService executors,
+                     StepRunner runner) {
         super(controller, duration, jobControl);
         this.jobs = controller.jobController();
         this.jobs.setRunner(this::advance);
@@ -102,7 +102,7 @@ public class JobRunner extends Maintainer {
 
                     StepInfo stepInfo = run.stepInfo(lockedStep.get()).orElseThrow();
                     if (stepInfo.startTime().isEmpty()) {
-                        jobs.setStartTimestamp(run.id(), Instant.now(), lockedStep);
+                        jobs.setStartTimestamp(run.id(), controller().clock().instant(), lockedStep);
                     }
 
                     runner.run(lockedStep, run.id()).ifPresent(status -> {
