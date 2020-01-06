@@ -21,13 +21,13 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.metrics.DocumentApiMetrics;
 import com.yahoo.documentapi.metrics.DocumentOperationStatus;
 import com.yahoo.documentapi.metrics.DocumentOperationType;
+import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.yolean.concurrent.ConcurrentResourcePool;
 import com.yahoo.yolean.concurrent.ResourceFactory;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -146,7 +146,7 @@ public class OperationHandlerImpl implements OperationHandler {
         } catch (Exception e) {
             throw new RestApiException(Response.createErrorResponse(
                     500,
-                    "Failed during parsing of arguments for visiting: " + ExceptionUtils.getStackTrace(e),
+                    "Failed during parsing of arguments for visiting: " + ExceptionUtils.getStackTraceAsString(e),
                     restUri,
                     RestUri.apiErrorCodes.VISITOR_ERROR));
         }
@@ -175,7 +175,7 @@ public class OperationHandlerImpl implements OperationHandler {
             visitorControlHandler.waitUntilDone(); // VisitorParameters' session timeout implicitly triggers timeout failures.
             throwIfFatalVisitingError(visitorControlHandler, restUri);
         } catch (InterruptedException e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERRUPTED));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTraceAsString(e), restUri, RestUri.apiErrorCodes.INTERRUPTED));
         }
         if (localDataVisitorHandler.getErrors().isEmpty()) {
             Optional<String> continuationToken;
@@ -214,7 +214,7 @@ public class OperationHandlerImpl implements OperationHandler {
         } catch (DocumentAccessException documentException) {
             response = createErrorResponse(documentException, restUri);
         } catch (Exception e) {
-            response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION);
+            response = Response.createErrorResponse(500, ExceptionUtils.getStackTraceAsString(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION);
         } finally {
             syncSessions.free(syncSession);
         }
@@ -236,7 +236,7 @@ public class OperationHandlerImpl implements OperationHandler {
         } catch (DocumentAccessException documentException) {
             response = createErrorResponse(documentException, restUri);
         } catch (Exception e) {
-            response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION);
+            response = Response.createErrorResponse(500, ExceptionUtils.getStackTraceAsString(e), restUri, RestUri.apiErrorCodes.INTERNAL_EXCEPTION);
         } finally {
             syncSessions.free(syncSession);
         }
@@ -268,7 +268,7 @@ public class OperationHandlerImpl implements OperationHandler {
                 response = Response.createErrorResponse(400, documentException.getMessage(), restUri, RestUri.apiErrorCodes.DOCUMENT_EXCEPTION);
             }
         } catch (Exception e) {
-            response = Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED);
+            response = Response.createErrorResponse(500, ExceptionUtils.getStackTraceAsString(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED);
         } finally {
             syncSessions.free(syncSession);
         }
@@ -297,7 +297,7 @@ public class OperationHandlerImpl implements OperationHandler {
             return Optional.of(outputStream.toString(StandardCharsets.UTF_8.name()));
 
         } catch (Exception e) {
-            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
+            throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTraceAsString(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
         } finally {
             syncSessions.free(syncSession);
         }
@@ -441,7 +441,7 @@ public class OperationHandlerImpl implements OperationHandler {
             try {
                 params.setResumeToken(ProgressToken.fromSerializedString(options.continuation.get()));
             } catch (Exception e) {
-                throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTrace(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
+                throw new RestApiException(Response.createErrorResponse(500, ExceptionUtils.getStackTraceAsString(e), restUri, RestUri.apiErrorCodes.UNSPECIFIED));
             }
         }
         return params;
