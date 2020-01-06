@@ -31,6 +31,8 @@ import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.server.rpc.security.AuthorizationException.*;
+
 
 /**
  * A {@link RpcAuthorizer} that perform access control for configserver RPC methods when TLS and multi-tenant mode are enabled.
@@ -110,7 +112,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
                         if (isConfigKeyForSentinelConfig(configKey)) {
                             return; // config processor will return empty sentinel config for unknown nodes
                         }
-                        throw new AuthorizationException(String.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
+                        throw new AuthorizationException(Type.SILENT, String.format("Host '%s' not found in host registry for [%s]", hostname, configKey));
                     }
                     RequestHandler tenantHandler = getTenantHandler(tenantName.get());
                     ApplicationId resolvedApplication = tenantHandler.resolveApplicationId(hostname);
@@ -151,10 +153,13 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
     }
 
     private void handleAuthorizationFailure(Request request, Throwable throwable) {
+        boolean isAuthorizationException = throwable instanceof AuthorizationException;
         String errorMessage = String.format("For request '%s' from '%s': %s", request.methodName(), request.target().toString(), throwable.getMessage());
-        log.log(LogLevel.INFO, errorMessage);
+        if (!isAuthorizationException || ((AuthorizationException) throwable).type() != Type.SILENT) {
+            log.log(LogLevel.INFO, errorMessage);
+        }
         log.log(LogLevel.DEBUG, throwable, throwable::getMessage);
-        JrtErrorCode error = throwable instanceof AuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
+        JrtErrorCode error = isAuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
         request.setError(error.code, errorMessage);
         request.returnRequest();
         throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).

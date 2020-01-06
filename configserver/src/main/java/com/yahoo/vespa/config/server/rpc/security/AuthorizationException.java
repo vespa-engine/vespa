@@ -6,12 +6,28 @@ package com.yahoo.vespa.config.server.rpc.security;
  */
 class AuthorizationException extends RuntimeException {
 
-    AuthorizationException(String message) {
+    enum Type {WARN, SILENT}
+
+    private final Type type;
+
+    AuthorizationException(Type type, String message) {
         super(message);
+        this.type = type;
+    }
+
+    AuthorizationException(String message) {
+        this(Type.WARN, message);
+    }
+
+    AuthorizationException(Type type, String message, Throwable cause) {
+        super(message, cause);
+        this.type = type;
     }
 
     AuthorizationException(String message, Throwable cause) {
-        super(message, cause);
+        this(Type.WARN, message, cause);
     }
+
+    Type type() { return type; }
 }
 
