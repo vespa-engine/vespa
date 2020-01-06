@@ -8,7 +8,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 
-import java.util.EnumSet;
 import java.util.Locale;
 
 /**
@@ -106,10 +105,14 @@ public class CapacityPolicies {
     private int ensureRedundancy(int nodeCount, ClusterSpec.Type clusterType, boolean canFail) {
         if (canFail &&
             nodeCount == 1 &&
-            EnumSet.of(ClusterSpec.Type.container, ClusterSpec.Type.content).contains(clusterType) &&
+            requiresRedundancy(clusterType) &&
             zone.environment().isProduction())
             throw new IllegalArgumentException("Deployments to prod require at least 2 nodes per cluster for redundancy");
         return nodeCount;
+    }
+
+    private static boolean requiresRedundancy(ClusterSpec.Type clusterType) {
+        return clusterType.isContent() || clusterType.isContainer();
     }
 
 }

@@ -8,8 +8,11 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +44,11 @@ public class NodesSpecification {
     
     private final boolean exclusive;
 
+    /**
+     * Whether this requires running container and content processes co-located on the same node.
+     */
+    private final boolean combined;
+
     /** The resources each node should have, or empty to use the default */
     private final Optional<NodeResources> resources;
 
@@ -48,7 +56,7 @@ public class NodesSpecification {
     private final Optional<String> dockerImage;
 
     private NodesSpecification(boolean dedicated, int count, int groups, Version version,
-                               boolean required, boolean canFail, boolean exclusive,
+                               boolean required, boolean canFail, boolean exclusive, boolean combined,
                                Optional<NodeResources> resources, Optional<String> dockerImage) {
         this.dedicated = dedicated;
         this.count = count;
@@ -59,9 +67,10 @@ public class NodesSpecification {
         this.exclusive = exclusive;
         this.resources = resources;
         this.dockerImage = dockerImage;
+        this.combined = combined;
     }
 
-    private NodesSpecification(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
+    private NodesSpecification(boolean dedicated, boolean canFail, boolean combined, Version version, ModelElement nodesElement) {
         this(dedicated,
              nodesElement.integerAttribute("count", 1),
              nodesElement.integerAttribute("groups", 1),
@@ -69,16 +78,23 @@ public class NodesSpecification {
              nodesElement.booleanAttribute("required", false),
              canFail,
              nodesElement.booleanAttribute("exclusive", false),
+             combined,
              getResources(nodesElement),
              Optional.ofNullable(nodesElement.stringAttribute("docker-image")));
     }
 
+    private static NodesSpecification create(boolean dedicated, boolean canFail, Version version, ModelElement nodesElement) {
+        var resolvedElement = resolveElement(nodesElement);
+        boolean combined = resolvedElement != nodesElement || isReferencedByOtherElement(nodesElement);
+        return new NodesSpecification(dedicated, canFail, combined, version, resolvedElement);
+    }
+
     /** Returns a requirement for dedicated nodes taken from the given <code>nodes</code> element */
     public static NodesSpecification from(ModelElement nodesElement, ConfigModelContext context) {
-        return new NodesSpecification(true,
-                                      ! context.getDeployState().getProperties().isBootstrap(),
-                                      context.getDeployState().getWantedNodeVespaVersion(),
-                                      nodesElement);
+        return create(true,
+                      ! context.getDeployState().getProperties().isBootstrap(),
+                      context.getDeployState().getWantedNodeVespaVersion(),
+                      nodesElement);
     }
 
     /**
@@ -103,10 +119,9 @@ public class NodesSpecification {
         if (parentElement == null) return Optional.empty();
         ModelElement nodesElement = parentElement.child("nodes");
         if (nodesElement == null) return Optional.empty();
-        return Optional.of(new NodesSpecification(nodesElement.booleanAttribute("dedicated", false),
-                                                  ! context.getDeployState().getProperties().isBootstrap(),
-                                                  context.getDeployState().getWantedNodeVespaVersion(),
-                                                  nodesElement));
+        return Optional.of(create(nodesElement.booleanAttribute("dedicated", false),
+                                  ! context.getDeployState().getProperties().isBootstrap(),
+                                  context.getDeployState().getWantedNodeVespaVersion(), nodesElement));
     }
 
     /** Returns a requirement from <code>count</code> nondedicated nodes in one group */
@@ -117,6 +132,7 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
+                                      false,
                                       false,
                                       Optional.empty(),
                                       Optional.empty());
@@ -130,6 +146,7 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       false,
                                       ! context.getDeployState().getProperties().isBootstrap(),
+                                      false,
                                       false,
                                       Optional.empty(),
                                       Optional.empty());
@@ -158,6 +175,9 @@ public class NodesSpecification {
                                                           ClusterSpec.Type clusterType,
                                                           ClusterSpec.Id clusterId,
                                                           DeployLogger logger) {
+        if (combined) {
+            clusterType = ClusterSpec.Type.combined;
+        }
         ClusterSpec cluster = ClusterSpec.request(clusterType, clusterId, version, exclusive);
         return hostSystem.allocateHosts(cluster, Capacity.fromCount(count, resources, required, canFail), groups, logger);
     }
@@ -237,6 +257,66 @@ public class NodesSpecification {
             default: throw new IllegalArgumentException("Illegal storage-type value '" + storageTypeString +
                                                         "': Legal values are 'remote', 'local' and 'any')");
         }
+    }
+
+    /**
+     * Resolve any reference in nodesElement and return the referred element.
+     *
+     * If nodesElement does not refer to a different element, this method behaves as the identity function.
+     */
+    private static ModelElement resolveElement(ModelElement nodesElement) {
+        var element = nodesElement.getXml();
+        var referenceId = element.getAttribute("of");
+        if (referenceId.isEmpty()) return nodesElement;
+
+        var services = findParentByTag("services", element).orElseThrow(() -> clusterReferenceNotFoundException(referenceId));
+        var referencedService = findChildById(services, referenceId).orElseThrow(() -> clusterReferenceNotFoundException(referenceId));
+        if ( ! referencedService.getTagName().equals("content"))
+            throw new IllegalArgumentException("service '" + referenceId + "' is not a content service");
+        var referencedNodesElement = XML.getChild(referencedService, "nodes");
+        if (referencedNodesElement == null)
+            throw new IllegalArgumentException("expected reference to service '" + referenceId + "' to supply nodes, " +
+                                               "but that service has no <nodes> element");
+
+        return new ModelElement(referencedNodesElement);
+    }
+
+    /** Returns whether the given nodesElement is referenced by any other nodes element */
+    private static boolean isReferencedByOtherElement(ModelElement nodesElement) {
+        var element = nodesElement.getXml();
+        var services = findParentByTag("services", element);
+        if (services.isEmpty()) return false;
+
+        var content = findParentByTag("content", element);
+        if (content.isEmpty()) return false;
+        var clusterId = content.get().getAttribute("id");
+        for (var rootChild : XML.getChildren(services.get())) {
+            if (!"container".equals(rootChild.getTagName())) continue; // Only container can reference content
+            var nodes = XML.getChild(rootChild, "nodes");
+            if (nodes == null) continue;
+            if (!clusterId.equals(nodes.getAttribute("of"))) continue;
+            return true;
+        }
+        return false;
+    }
+
+    private static Optional<Element> findChildById(Element parent, String id) {
+        for (Element child : XML.getChildren(parent))
+            if (id.equals(child.getAttribute("id"))) return Optional.of(child);
+        return Optional.empty();
+    }
+
+    private static Optional<Element> findParentByTag(String tag, Element element) {
+        Node parent = element.getParentNode();
+        if (parent == null) return Optional.empty();
+        if ( ! (parent instanceof Element)) return Optional.empty();
+        Element parentElement = (Element) parent;
+        if (parentElement.getTagName().equals(tag)) return Optional.of(parentElement);
+        return findParentByTag(tag, parentElement);
+    }
+
+    private static IllegalArgumentException clusterReferenceNotFoundException(String referenceId) {
+        return new IllegalArgumentException("referenced service '" + referenceId + "' is not defined");
     }
 
     @Override

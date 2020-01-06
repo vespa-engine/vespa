@@ -6,7 +6,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
@@ -31,6 +31,7 @@ import com.yahoo.vespa.model.search.SearchNode;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -249,6 +250,10 @@ public class ModelProvisioningTest {
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Heap size is lowered with combined clusters", 
                      17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals(2, model.getHostSystem().getHosts().stream()
+                             .filter(hostResource -> hostResource.spec().membership().get().cluster().type() == ClusterSpec.Type.combined)
+                             .count());
+
     }
 
     @Test
@@ -330,7 +335,7 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("container cluster 'container1' references service 'container2' but this service is not defined", e.getMessage());
+            assertEquals("container cluster 'container1' contains an invalid reference: referenced service 'container2' is not defined", Exceptions.toMessageString(e));
         }
     }
 
@@ -353,7 +358,7 @@ public class ModelProvisioningTest {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("container cluster 'container1' references service 'container2', but that is not a content service", e.getMessage());
+            assertEquals("container cluster 'container1' contains an invalid reference: service 'container2' is not a content service", Exceptions.toMessageString(e));
         }
     }
 

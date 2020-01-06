@@ -66,7 +66,7 @@ public class AllocationSimulator {
         initialNodes.add(host("host9", flavors.getFlavorOrThrow("host-small")));
         initialNodes.add(host("host10", flavors.getFlavorOrThrow("host-small")));
         initialNodes.add(node("node1", flavors.getFlavorOrThrow("d-2"), Optional.of("host1"), Optional.of("test")));
-        nodes = new NodeList(initialNodes);
+        nodes = NodeList.copyOf(initialNodes);
 
         visualizer.addStep(nodes.asList(), "Initial state", "");
     }
@@ -117,7 +117,7 @@ public class AllocationSimulator {
 
     public void addCluster(String task, int count, Flavor flavor, String id) {
         // TODO: Implement
-        nodes = new NodeList(nodes.asList());
+        nodes = NodeList.copyOf(nodes.asList());
     }
 
 

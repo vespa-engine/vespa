@@ -102,7 +102,7 @@ class NodeAllocation {
             if (offered.allocation().isPresent()) {
                 ClusterMembership membership = offered.allocation().get().membership();
                 if ( ! offered.allocation().get().owner().equals(application)) continue; // wrong application
-                if ( ! membership.cluster().equalsIgnoringGroupAndVespaVersion(cluster)) continue; // wrong cluster id/type
+                if ( ! membership.cluster().satisfies(cluster)) continue; // wrong cluster id/type
                 if ((! node.isSurplusNode || saturated()) && ! membership.cluster().group().equals(cluster.group())) continue; // wrong group and we can't or have no reason to change it
                 if ( offered.allocation().get().isRemovable()) continue; // don't accept; causes removal
                 if ( indexes.contains(membership.index())) continue; // duplicate index (just to be sure)
@@ -198,23 +198,24 @@ class NodeAllocation {
      * Returns whether this node should be accepted into the cluster even if it is not currently desired
      * (already enough nodes, or wrong flavor).
      * Such nodes will be marked retired during finalization of the list of accepted nodes.
-     * The conditions for this are
-     * <ul>
-     * <li>This is a content node. These must always be retired before being removed to allow the cluster to
+     * The conditions for this are:
+     *
+     * This is a content or combined node. These must always be retired before being removed to allow the cluster to
      * migrate away data.
-     * <li>This is a container node and it is not desired due to having the wrong flavor. In this case this
+     *
+     * This is a container node and it is not desired due to having the wrong flavor. In this case this
      * will (normally) obtain for all the current nodes in the cluster and so retiring before removing must
      * be used to avoid removing all the current nodes at once, before the newly allocated replacements are
      * initialized. (In the other case, where a container node is not desired because we have enough nodes we
      * do want to remove it immediately to get immediate feedback on how the size reduction works out.)
-     * </ul>
      */
     private boolean acceptToRetire(Node node) {
         if (node.state() != Node.State.active) return false;
         if (! node.allocation().get().membership().cluster().group().equals(cluster.group())) return false;
 
-        return (cluster.type() == ClusterSpec.Type.content) ||
-                (cluster.type() == ClusterSpec.Type.container && ! hasCompatibleFlavor(node));
+        return cluster.type() == ClusterSpec.Type.content ||
+               cluster.type() == ClusterSpec.Type.combined ||
+               (cluster.type() == ClusterSpec.Type.container && !hasCompatibleFlavor(node));
     }
 
     private boolean hasCompatibleFlavor(Node node) {

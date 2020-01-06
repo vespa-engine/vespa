@@ -509,8 +509,8 @@ public class ProvisioningTest {
                                                   new com.yahoo.component.Version(4, 5, 6),
                                                   false);
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
-        assertEquals(0, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
+        assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
 
         // Mark the nodes as want to retire
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node.with(node.status().withWantToRetire(true))));
@@ -518,16 +518,16 @@ public class ProvisioningTest {
         tester.activate(application, tester.prepare(application, cluster, capacityFORCED, 1));
 
         // Nodes are not retired since that is unsafe when we cannot fail
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
-        assertEquals(0, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
+        assertEquals(0, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
         // ... but we still want to
         tester.nodeRepository().getNodes(application, Node.State.active).forEach(node -> assertTrue(node.status().wantToRetire()));
 
         // redeploy with allowing failing
         tester.activate(application, tester.prepare(application, cluster, capacity, 1));
         // ... old nodes are now retired
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
-        assertEquals(5, new NodeList(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).not().retired().size());
+        assertEquals(5, NodeList.copyOf(tester.nodeRepository().getNodes(application, Node.State.active)).retired().size());
     }
 
     @Test
@@ -649,6 +649,35 @@ public class ProvisioningTest {
         SystemState state = prepare(application, 2, 2, 3, 3, defaultResources, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
+    }
+
+    @Test
+    public void change_to_combined_cluster_does_not_change_node_allocation() {
+        var tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        var application = tester.makeApplicationId();
+
+        tester.makeReadyNodes(4, defaultResources);
+
+        // Application allocates two content nodes initially. This is the old behaviour where combined clusters has type
+        // content
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content,
+                                                  ClusterSpec.Id.from("combined"),
+                                                  Version.fromString("1.2.3"),
+                                                  false);
+        var initialNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                                       Capacity.fromCount(2, defaultResources, false, false),
+                                                                       1));
+
+        // Application is redeployed with cluster type combined
+        cluster = ClusterSpec.request(ClusterSpec.Type.combined,
+                                      ClusterSpec.Id.from("combined"),
+                                      Version.fromString("1.2.3"),
+                                      false);
+        var newNodes = tester.activate(application, tester.prepare(application, cluster,
+                                                                   Capacity.fromCount(2, defaultResources, false, false),
+                                                                   1));
+
+        assertEquals("Node allocation remains the same", initialNodes, newNodes);
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,

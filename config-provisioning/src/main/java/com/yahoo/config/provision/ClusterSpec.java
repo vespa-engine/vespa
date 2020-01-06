@@ -85,14 +85,15 @@ public final class ClusterSpec {
         return true;
     }
 
-    /** Returns whether this is equal, disregarding the group value and wanted Vespa version */
-    public boolean equalsIgnoringGroupAndVespaVersion(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof ClusterSpec)) return false;
-        ClusterSpec other = (ClusterSpec)o;
-        if ( ! other.type.equals(this.type)) return false;
-        if ( ! other.id.equals(this.id)) return false;
-        return true;
+    /**
+     * Returns whether this satisfies other for allocation purposes. Only considers cluster ID and type, other fields
+     * are ignored.
+     */
+    public boolean satisfies(ClusterSpec other) {
+        if ( ! other.id.equals(this.id)) return false; // ID mismatch
+        // TODO(mpolden): Remove this after January 2019, once all nodes in combined clusters have type combined.
+        if (other.type.isContent() || this.type.isContent()) return other.type.isContent() == this.type.isContent();
+        return other.type.equals(this.type);
     }
 
     /** A cluster type */
@@ -101,13 +102,25 @@ public final class ClusterSpec {
         // These enum values are stored in ZooKeeper - do not change
         admin,
         container,
-        content;
+        content,
+        combined;
+
+        /** Returns whether this runs a content cluster */
+        public boolean isContent() {
+            return this == content || this == combined;
+        }
+
+        /** Returns whether this runs a container cluster */
+        public boolean isContainer() {
+            return this == container || this == combined;
+        }
 
         public static Type from(String typeName) {
             switch (typeName) {
                 case "admin" : return admin;
                 case "container" : return container;
                 case "content" : return content;
+                case "combined" : return combined;
                 default: throw new IllegalArgumentException("Illegal cluster type '" + typeName + "'");
             }
         }

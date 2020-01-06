@@ -183,7 +183,7 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns a filterable list of all nodes in this repository */
     public NodeList list() {
-        return new NodeList(getNodes());
+        return NodeList.copyOf(getNodes());
     }
 
     /** Returns a locked list of all nodes in this repository */

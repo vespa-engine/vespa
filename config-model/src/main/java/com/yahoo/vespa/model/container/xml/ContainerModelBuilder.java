@@ -651,22 +651,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
     
     private List<ApplicationContainer> createNodesFromContentServiceReference(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
-        // Resolve references to content clusters at the XML level because content clusters must be built after container clusters
+        NodesSpecification nodeSpecification;
+        try {
+            nodeSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(cluster + " contains an invalid reference", e);
+        }
         String referenceId = nodesElement.getAttribute("of");
-        Element services = servicesRootOf(nodesElement).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
-        Element referencedService = findChildById(services, referenceId).orElseThrow(() -> clusterReferenceNotFoundException(cluster, referenceId));
-        if ( ! referencedService.getTagName().equals("content"))
-            throw new IllegalArgumentException(cluster + " references service '" + referenceId + "', " +
-                                               "but that is not a content service");
-        Element referencedNodesElement = XML.getChild(referencedService, "nodes");
-        if (referencedNodesElement == null)
-            throw new IllegalArgumentException(cluster + " references service '" + referenceId + "' to supply nodes, " + 
-                                               "but that service has no <nodes> element");
-        
         cluster.setHostClusterId(referenceId);
 
         Map<HostResource, ClusterMembership> hosts = 
-                StorageGroup.provisionHosts(NodesSpecification.from(new ModelElement(referencedNodesElement), context),
+                StorageGroup.provisionHosts(nodeSpecification,
                                             referenceId, 
                                             cluster.getRoot().getHostSystem(),
                                             context.getDeployLogger());
@@ -730,17 +725,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             nodeIndex++;
         }
         return nodes;
-    }
-
-    private IllegalArgumentException clusterReferenceNotFoundException(ApplicationContainerCluster cluster, String referenceId) {
-        return new IllegalArgumentException(cluster + " references service '" + referenceId +
-                                            "' but this service is not defined");
-    }
-
-    private Optional<Element> findChildById(Element parent, String id) {
-        for (Element child : XML.getChildren(parent))
-            if (id.equals(child.getAttribute("id"))) return Optional.of(child);
-        return Optional.empty();
     }
 
     private static boolean useCpuSocketAffinity(Element nodesElement) {

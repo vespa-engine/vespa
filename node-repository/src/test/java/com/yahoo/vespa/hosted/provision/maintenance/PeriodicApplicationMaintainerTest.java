@@ -287,7 +287,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         NodeList getNodes(Node.State ... states) {
-            return new NodeList(nodeRepository.getNodes(NodeType.tenant, states));
+            return NodeList.copyOf(nodeRepository.getNodes(NodeType.tenant, states));
         }
 
     }

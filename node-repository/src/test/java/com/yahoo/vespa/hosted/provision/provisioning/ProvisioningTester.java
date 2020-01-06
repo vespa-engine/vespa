@@ -118,7 +118,7 @@ public class ProvisioningTester {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
-    public NodeList getNodes(ApplicationId id, Node.State ... inState) { return new NodeList(nodeRepository.getNodes(id, inState)); }
+    public NodeList getNodes(ApplicationId id, Node.State ... inState) { return NodeList.copyOf(nodeRepository.getNodes(id, inState)); }
 
     public void patchNode(Node node) { nodeRepository.write(node, () -> {}); }
 
@@ -207,7 +207,7 @@ public class ProvisioningTester {
         Set<Integer> indices = new HashSet<>();
         for (HostSpec host : hosts) {
             ClusterSpec nodeCluster = host.membership().get().cluster();
-            assertTrue(requestedCluster.equalsIgnoringGroupAndVespaVersion(nodeCluster));
+            assertTrue(requestedCluster.satisfies(nodeCluster));
             if (requestedCluster.group().isPresent())
                 assertEquals(requestedCluster.group(), nodeCluster.group());
             else

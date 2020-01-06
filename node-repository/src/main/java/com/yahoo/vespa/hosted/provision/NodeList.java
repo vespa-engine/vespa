@@ -30,7 +30,7 @@ public class NodeList implements Iterable<Node> {
     private final List<Node> nodes;
     private final boolean negate;
 
-    public NodeList(List<Node> nodes) {
+    NodeList(List<Node> nodes) {
         this(nodes, true, false);
     }
 
@@ -60,6 +60,11 @@ public class NodeList implements Iterable<Node> {
     /** Returns the subset of nodes assigned to the given cluster type */
     public NodeList type(ClusterSpec.Type type) {
         return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));
+    }
+
+    /** Returns the subset of nodes that run containers */
+    public NodeList container() {
+        return filter(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().isContainer());
     }
 
     /** Returns the subset of nodes that are currently changing their Vespa version */
@@ -164,6 +169,10 @@ public class NodeList implements Iterable<Node> {
     /** Create a new list containing the given nodes, without copying */
     private static NodeList wrap(List<Node> nodes) {
         return new NodeList(nodes, false, false);
+    }
+
+    public static NodeList copyOf(List<Node> nodes) {
+        return new NodeList(nodes, true, false);
     }
 
 }

@@ -56,7 +56,7 @@ public class AllocationVisualizer extends JPanel {
 
 
     public void addStep(List<Node> nodes, String task, String message) {
-        steps.add(new AllocationSnapshot(new NodeList(nodes), task, message));
+        steps.add(new AllocationSnapshot(NodeList.copyOf(nodes), task, message));
     }
 
     @Override

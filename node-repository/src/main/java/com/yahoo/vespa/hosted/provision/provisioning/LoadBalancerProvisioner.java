@@ -71,7 +71,7 @@ public class LoadBalancerProvisioner {
      */
     public void prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes) {
         if (requestedNodes.type() != NodeType.tenant) return; // Nothing to provision for this node type
-        if (cluster.type() != ClusterSpec.Type.container) return; // Nothing to provision for this cluster type
+        if (!cluster.type().isContainer()) return; // Nothing to provision for this cluster type
         try (var loadBalancersLock = db.lockLoadBalancers()) {
             provision(application, cluster.id(), false, loadBalancersLock);
         }
@@ -179,12 +179,12 @@ public class LoadBalancerProvisioner {
 
     /** Returns a list of active and reserved nodes of type container in given cluster */
     private List<Node> allocatedContainers(ApplicationId application, ClusterSpec.Id clusterId) {
-        return new NodeList(nodeRepository.getNodes(NodeType.tenant, Node.State.reserved, Node.State.active))
-                .owner(application)
-                .filter(node -> node.state().isAllocated())
-                .type(ClusterSpec.Type.container)
-                .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterId))
-                .asList();
+        return NodeList.copyOf(nodeRepository.getNodes(NodeType.tenant, Node.State.reserved, Node.State.active))
+                       .owner(application)
+                       .filter(node -> node.state().isAllocated())
+                       .container()
+                       .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterId))
+                       .asList();
     }
 
     /** Find IP addresses reachable by the load balancer service */
@@ -204,7 +204,7 @@ public class LoadBalancerProvisioner {
 
     private static Set<ClusterSpec.Id> containerClusterOf(Set<ClusterSpec> clusters) {
         return clusters.stream()
-                       .filter(c -> c.type() == ClusterSpec.Type.container)
+                       .filter(c -> c.type().isContainer())
                        .map(ClusterSpec::id)
                        .collect(Collectors.toUnmodifiableSet());
     }

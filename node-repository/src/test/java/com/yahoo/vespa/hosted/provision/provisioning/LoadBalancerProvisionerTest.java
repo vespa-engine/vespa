@@ -200,6 +200,18 @@ public class LoadBalancerProvisionerTest {
         assertEquals(List.of(), tester.nodeRepository().loadBalancers().owner(app1).asList());
     }
 
+    @Test
+    public void provision_load_balancer_combined_cluster() {
+        Supplier<List<LoadBalancer>> lbs = () -> tester.nodeRepository().loadBalancers().owner(app1).asList();
+        ClusterSpec.Id cluster = ClusterSpec.Id.from("foo");
+
+        var nodes = prepare(app1, clusterRequest(ClusterSpec.Type.combined, cluster));
+        assertEquals(1, lbs.get().size());
+        assertEquals("Prepare provisions load balancer with reserved nodes", 2, lbs.get().get(0).instance().reals().size());
+        tester.activate(app1, nodes);
+        assertSame(LoadBalancer.State.active, lbs.get().get(0).state());
+    }
+
     private void dirtyNodesOf(ApplicationId application) {
         tester.nodeRepository().setDirty(tester.nodeRepository().getNodes(application), Agent.system, this.getClass().getSimpleName());
     }
