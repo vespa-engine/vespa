@@ -1,7 +1,4 @@
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
-
+// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
 import com.google.inject.Inject;
@@ -10,7 +7,6 @@ import com.yahoo.log.LogLevel;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
