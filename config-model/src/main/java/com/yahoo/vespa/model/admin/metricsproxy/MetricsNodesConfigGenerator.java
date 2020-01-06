@@ -23,7 +23,7 @@ public class MetricsNodesConfigGenerator {
 
     private static MetricsNodesConfig.Node.Builder toNodeBuilder(MetricsProxyContainer container) {
         return new MetricsNodesConfig.Node.Builder()
-                .configId(container.getConfigId())
+                .configId(container.getHost().getConfigId())
                 .hostname(container.getHostName())
                 .metricsPort(MetricsProxyContainer.BASEPORT)
                 .metricsPath(MetricsHandler.VALUES_PATH);
