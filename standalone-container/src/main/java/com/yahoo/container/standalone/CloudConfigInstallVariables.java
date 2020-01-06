@@ -22,7 +22,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Boolean> multiTenant() {
-        return getInstallVariable("multitenant", Boolean::parseBoolean);
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_MULTITENANT"))
+                .or(() -> getInstallVariable("multitenant"))
+                .map(Boolean::parseBoolean);
     }
 
     @Override
@@ -99,7 +101,9 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
 
     @Override
     public Optional<Boolean> hostedVespa() {
-        return getInstallVariable("hosted_vespa", Boolean::parseBoolean);
+        return Optional.ofNullable(System.getenv("VESPA_CONFIGSERVER_HOSTED"))
+                .or(() -> getInstallVariable("hosted_vespa"))
+                .map(Boolean::parseBoolean);
     }
 
     @Override
@@ -145,11 +149,7 @@ public class CloudConfigInstallVariables implements CloudConfigOptions {
     }
 
     private static <T> Optional<T> getInstallVariable(String name, Function<String, T> converter) {
-        return getInstallVariable(name, "cloudconfig_server", converter);
-    }
-
-    private static <T> Optional<T> getInstallVariable(String name, String installPackage, Function<String, T> converter) {
-        return getRawInstallVariable(installPackage + "." + name).map(converter);
+        return getRawInstallVariable("cloudconfig_server." + name).map(converter);
     }
 
     private static Optional<String> getRawInstallVariable(String name) {
