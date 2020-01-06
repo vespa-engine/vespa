@@ -1,14 +1,13 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status.statuspage;
 
+import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.log.LogLevel;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -186,11 +185,7 @@ public class StatusPageServer implements Runnable, StatusPageServerInterface {
                         response.setResponseCode(StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR);
                         StringBuilder content = new StringBuilder();
                         response.writeHtmlHeader(content, "Internal Server Error");
-                        try (StringWriter sw = new StringWriter();
-                             PrintWriter pw = new PrintWriter(sw, true)) {
-                            e.printStackTrace(pw);
-                            response.writeHtmlFooter(content, sw.getBuffer().toString());
-                        }
+                        response.writeHtmlFooter(content, ExceptionUtils.getStackTraceAsString(e));
                         response.writeContent(content.toString());
                     }
                     if (response == null) {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.document.FixedBucketSpaces;
+import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -30,8 +31,6 @@ import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -548,10 +547,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } catch (Exception e) {
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw, true);
-            e.printStackTrace(pw);
-            hiddenMessage = sw.getBuffer().toString();
+            hiddenMessage = ExceptionUtils.getStackTraceAsString(e);;
             log.log(LogLevel.DEBUG, "Unknown exception thrown for request " + httpRequest.getRequest() +
                     ": " + hiddenMessage);
         }
