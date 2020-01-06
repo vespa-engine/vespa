@@ -1706,6 +1706,7 @@ Object documentSummary(Search search) :
 {
     ( <DOCUMENTSUMMARY>
       name = identifierWithDash() { search.addSummary(summary = new DocumentSummary(name)); }
+      [inheritsDocumentSummary(summary, search)]
       lbrace()
          (
            <FROMDISK> { summary.setFromDisk(true); } |
@@ -1715,6 +1716,23 @@ Object documentSummary(Search search) :
       <RBRACE>
       )
     { return null; }
+}
+
+/**
+ * This rule consumes an inherits statement of a document summary.
+ *
+ * @param documentSummary The document summary to modify.
+ * @param search The search object documentSummary is being added to.
+ */
+void inheritsDocumentSummary(DocumentSummary documentSummary, Search search) :
+{
+    String name;
+}
+{
+    <INHERITS> name = identifierWithDash()
+    {
+        documentSummary.setInherited(search.getSummaries().get(name));
+    }
 }
 
 /**

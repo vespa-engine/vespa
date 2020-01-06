@@ -1,8 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
-import com.yahoo.document.Field;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -16,6 +14,7 @@ import java.util.List;
 public class DocumentSummary extends FieldView {
 
     private boolean fromDisk = false;
+    private DocumentSummary inherited;
 
     /**
      * Creates a DocumentSummary with the given name.
@@ -44,13 +43,21 @@ public class DocumentSummary extends FieldView {
     }
 
     public SummaryField getSummaryField(String name) {
+        var parent = getInherited();
+        if (parent != null) {
+            return parent.getSummaryField(name);
+        }
         return (SummaryField) get(name);
     }
 
     public Collection<SummaryField> getSummaryFields() {
-        ArrayList<SummaryField> fields = new ArrayList<>(getFields().size());
-        for(Field f : getFields()) {
-            fields.add((SummaryField) f);
+        var fields = new ArrayList<SummaryField>(getFields().size());
+        var parent = getInherited();
+        if (parent != null) {
+            fields.addAll(parent.getSummaryFields());
+        }
+        for (var field : getFields()) {
+            fields.add((SummaryField) field);
         }
         return fields;
     }
@@ -80,8 +87,19 @@ public class DocumentSummary extends FieldView {
         }
     }
 
+    /** Sets the parent of this. Both summaries must be present in the same search definition */
+    public void setInherited(DocumentSummary inherited) {
+        this.inherited = inherited;
+    }
+
+    /** Returns the parent of this, or null if none is inherited */
+    public DocumentSummary getInherited() {
+        return inherited;
+    }
+
     public String toString() {
-        return "document summary '" + getName() + "'";
+        return "document summary '" + getName() + "'" +
+               (inherited == null ? "" : " inheriting from '" + inherited.getName() + "'");
     }
 
 }
