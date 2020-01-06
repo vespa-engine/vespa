@@ -24,6 +24,7 @@ import java.util.logging.Logger;
  * @author gjoranv
  */
 public class ExportPackages {
+
     private static final Logger log = Logger.getLogger(ExportPackages.class.getName());
 
     public static final String PROPERTIES_FILE = "/exportPackages.properties";

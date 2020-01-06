@@ -16,9 +16,10 @@ import java.io.PrintStream;
  *  <li>debug true|false</li>
  * </ol>
  *
- * @author <a href="mailto:vlarsen@yahoo-inc.com">Vidar Larsen</a>
+ * @author Vidar Larsen
  */
 class UnicodePropertyDump {
+
     public static void main(String[] arg) {
         int start = 0;
         int end = 0xffff;

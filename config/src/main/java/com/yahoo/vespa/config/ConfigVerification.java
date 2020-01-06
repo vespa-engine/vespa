@@ -25,6 +25,7 @@ import java.util.Stack;
  * @author Ulf Lilleengen
  */
 public class ConfigVerification {
+
     private final static int port = 19071;
     private final static String prefix = "http://";
 

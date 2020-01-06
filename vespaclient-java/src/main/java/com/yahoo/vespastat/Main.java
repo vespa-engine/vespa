@@ -35,4 +35,5 @@ public class Main {
     private static BucketStatsRetriever.ShutdownHookRegistrar createShutdownHookRegistrar() {
         return runnable -> Runtime.getRuntime().addShutdownHook(new Thread(runnable));
     }
+
 }

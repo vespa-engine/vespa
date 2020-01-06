@@ -27,9 +27,10 @@ import java.util.logging.Logger;
 /**
  * Example client using visiting
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>, based on work by <a href="mailto:humbe@yahoo-inc.com">H&aring;kon Humberset</a>
+ * @author Einar M R Rosenvinge
  */
 public class VdsVisitTarget {
+
     private static final Logger log = Logger.getLogger(VdsVisitTarget.class.getName());
 
     private boolean printIds = false;
@@ -275,4 +276,5 @@ public class VdsVisitTarget {
             }
         }
     }
+
 }

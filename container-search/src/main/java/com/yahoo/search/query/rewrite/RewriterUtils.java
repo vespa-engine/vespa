@@ -153,13 +153,12 @@ public class RewriterUtils {
      *
      * @param query Query object from the searcher
      * @param paramName parameter to be retrieved
-     *
      * @return parameter value or null if not found
      */
     public static String getUserParam(Query query, String paramName) {
         log(utilsLogger, query, "Retrieving user param value: " + paramName);
 
-        if(paramName==null) {
+        if (paramName == null) {
             error(utilsLogger, query, "Parameter name is null");
             return null;
         }
@@ -172,8 +171,7 @@ public class RewriterUtils {
     }
 
     /**
-     * Retrieve metadata passed by previous rewriter
-     * from query properties
+     * Retrieve metadata passed by previous rewriter from query properties
      * Initialize values if this is the first rewriter
      *
      * @param query Query object from the searcher
@@ -183,10 +181,10 @@ public class RewriterUtils {
        log(utilsLogger, query, "Retrieving metadata passed by previous rewriter");
 
         @SuppressWarnings("unchecked")
-        HashMap<String, Object> rewriteMeta = (HashMap<String, Object>) query
-                .properties().get(RewriterConstants.REWRITE_META);
+        HashMap<String, Object> rewriteMeta =
+                (HashMap<String, Object>)query.properties().get(RewriterConstants.REWRITE_META);
 
-       if(rewriteMeta==null) {
+       if (rewriteMeta == null) {
            log(utilsLogger, query, "No metadata available from previous rewriter");
            rewriteMeta = new HashMap<>();
            rewriteMeta.put(RewriterConstants.REWRITTEN, false);
@@ -326,9 +324,9 @@ public class RewriterUtils {
      * @param msg Error message
      */
     public static void error(Logger logger, Query query, String msg) {
-        if(query!=null) {
+        if (query != null)
             query.trace(logger.getName() + ": " + msg, true, TRACELEVEL);
-        }
         logger.severe(logger.getName() + ": " + msg);
     }
+
 }

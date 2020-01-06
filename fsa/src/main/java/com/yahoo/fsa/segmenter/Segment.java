@@ -4,39 +4,38 @@ package com.yahoo.fsa.segmenter;
 /**
  * Class encapsulation of a segment.
  *
- * @author  <a href="mailto:boros@yahoo-inc.com">Peter Boros</a>
+ * @author Peter Boros
  */
 public class Segment {
 
-    int   _beg;
-    int   _end;
-    int   _conn;
+    final int begin;
+    final int end;
+    final int conn;
 
-    public Segment(int b, int e, int c)
-    {
-      _beg  = b;
-      _end  = e;
-      _conn = c;
+    public Segment(int b, int e, int c) {
+      begin = b;
+      end = e;
+      conn = c;
     }
 
     public int beg()
     {
-      return _beg;
+      return begin;
     }
 
     public int end()
     {
-      return _end;
+      return end;
     }
 
     public int len()
     {
-      return _end-_beg;
+      return end - begin;
     }
 
     public int conn()
     {
-      return _conn;
+      return conn;
     }
 
 }

@@ -25,13 +25,13 @@ import com.yahoo.fsa.MetaData;
  * predicted topics for a term. Each topic has an attached weight and
  * a term vector (topicSegments).
  *
- * @author  <a href="mailto:boros@yahoo-inc.com">Peter Boros</a>
- **/
+ * @author Peter Boros
+ */
 public class TopicPredictor extends MetaData {
 
     private static final String packageName = "com.yahoo.fsa.topicpredictor";
 
-    private FSA fsa = null;
+    private final FSA fsa;
 
     public TopicPredictor(String fsafile, String datfile){
         this(fsafile, datfile, "utf-8");
@@ -153,28 +153,5 @@ public class TopicPredictor extends MetaData {
     private String[] getTopicInfo(int topicId) {
         return getStringArrayEntry(user(0) + topicId, 2);
     }
-
-
-    //// test ////
-    public static void main(String[] args) {
-        String segment = "new york";
-        if (args.length >= 1) {
-            segment = args[0];
-        }
-
-        String fsafile = "/home/gv/fsa/automata/dmozPred_2.fsa";
-        String datfile = "/home/gv/fsa/automata/dmozPred_2.dat";
-
-        TopicPredictor predictor = new TopicPredictor(fsafile, datfile);
-
-        List predictedTopics = predictor.getPredictedTopics(segment, 25);
-        Iterator i = predictedTopics.iterator();
-        while (i.hasNext()) {
-            PredictedTopic topic = (PredictedTopic) i.next();
-            System.out.println("\n  topic=" + topic.getTopic());
-            System.out.println("  weight=" + topic.getWeight());
-            System.out.println("  vector=" + topic.getVector());
-        }
-     }
 
 }

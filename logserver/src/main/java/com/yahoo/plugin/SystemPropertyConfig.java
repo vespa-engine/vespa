@@ -11,19 +11,18 @@ package com.yahoo.plugin;
  * @author Stig Bakken
  */
 public class SystemPropertyConfig extends Config {
+
     private final String prefix;
 
     /**
-     * @param prefix Prefix string prepended to config keys
+     * @param prefix prefix string prepended to config keys
      *               as they are looked up as system properties.
      */
     public SystemPropertyConfig(String prefix) {
         this.prefix = prefix;
     }
 
-    /**
-     * @return a config value for the specified key
-     */
+    /** Returns a config value for the specified key */
     public String get(String key, String defaultValue) {
         return System.getProperty(prefix + key, defaultValue);
     }
@@ -31,4 +30,5 @@ public class SystemPropertyConfig extends Config {
     public String toString() {
         return "Prefix=" + prefix;
     }
+
 }

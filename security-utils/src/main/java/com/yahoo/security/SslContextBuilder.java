@@ -136,6 +136,9 @@ public class SslContextBuilder {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        finally {
+            keyStorePassword = null;
+        }
     }
 
     private static KeyStore createTrustStore(List<X509Certificate> caCertificates) {
