@@ -5,6 +5,7 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
@@ -98,14 +99,16 @@ class SystemFlagsDeployer  {
             if (currentData != null) {
                 return; // not a new flag
             }
-            if (!dryRun) {
-                try {
+            try {
+                if (!dryRun) {
                     client.putFlagData(target, data);
-                } catch (Exception e) {
-                    log.log(LogLevel.WARNING, String.format("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
-                    errors.add(OperationError.createFailed(e.getMessage(), target, data));
-                    return;
+                } else {
+                    dryRunFlagDataValidation(data);
                 }
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, String.format("Failed to put flag '%s' for target '%s': %s", data.id(), target, e.getMessage()), e);
+                errors.add(OperationError.createFailed(e.getMessage(), target, data));
+                return;
             }
             results.add(FlagDataChange.created(id, target, data));
         });
@@ -122,14 +125,16 @@ class SystemFlagsDeployer  {
             if (currentData == null || isEqual(currentData, wantedData)) {
                 return; // not an flag data update
             }
-            if (!dryRun) {
-                try {
+            try {
+                if (!dryRun) {
                     client.putFlagData(target, wantedData);
-                } catch (Exception e) {
-                    log.log(LogLevel.WARNING, String.format("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
-                    errors.add(OperationError.updateFailed(e.getMessage(), target, wantedData));
-                    return;
+                } else {
+                    dryRunFlagDataValidation(wantedData);
                 }
+            } catch (Exception e) {
+                log.log(LogLevel.WARNING, String.format("Failed to update flag '%s' for target '%s': %s", wantedData.id(), target, e.getMessage()), e);
+                errors.add(OperationError.updateFailed(e.getMessage(), target, wantedData));
+                return;
             }
             results.add(FlagDataChange.updated(id, target, wantedData, currentData));
         });
@@ -156,6 +161,11 @@ class SystemFlagsDeployer  {
             }
             results.add(FlagDataChange.deleted(id, target));
         });
+    }
+
+    private static void dryRunFlagDataValidation(FlagData data) {
+        Flags.getFlag(data.id())
+                .ifPresent(definition -> data.validate(definition.getUnboundFlag().serializer()));
     }
 
     private static Map<FlagId, FlagData> lookupTable(Collection<FlagData> data) {
