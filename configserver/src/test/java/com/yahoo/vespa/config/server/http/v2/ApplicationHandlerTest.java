@@ -123,6 +123,15 @@ public class ApplicationHandlerTest {
     }
 
     @Test
+    public void testDeleteNonExistent() throws Exception {
+        deleteAndAssertResponse(applicationId,
+                                Zone.defaultZone(),
+                                Response.Status.NOT_FOUND,
+                                HttpErrorResponse.errorCodes.NOT_FOUND,
+                                "Unable to delete mytenant.default.default: Not found");
+    }
+
+    @Test
     public void testGet() throws Exception {
         long sessionId = applicationRepository.deploy(testApp, prepareParams(applicationId)).sessionId();
         assertApplicationGeneration(applicationId, Zone.defaultZone(), sessionId, true);
@@ -232,6 +241,10 @@ public class ApplicationHandlerTest {
     private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, boolean fullAppIdInUrl) throws IOException {
         String expectedResponse = "{\"message\":\"Application '" + applicationId + "' deleted\"}";
         deleteAndAssertResponse(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedStatus, errorCode, expectedResponse, com.yahoo.jdisc.http.HttpRequest.Method.DELETE);
+    }
+
+    private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse) throws IOException {
+        deleteAndAssertResponse(toUrlPath(applicationId, zone, true), expectedStatus, errorCode, expectedResponse, com.yahoo.jdisc.http.HttpRequest.Method.DELETE);
     }
 
     private void deleteAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse, com.yahoo.jdisc.http.HttpRequest.Method method) throws IOException {
