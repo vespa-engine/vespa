@@ -216,6 +216,22 @@ public class TensorTestCase {
                 Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"),
                 Tensor.from("tensor(x{},y[3])", "{}"),
                 Tensor.from("tensor(x{},y[3])", "{{x:0,y:0}:1,{x:0,y:1}:2}"));
+        assertTensorMerge(
+                Tensor.from("tensor(x[4]):[5,6,7,8]"),
+                Tensor.from("tensor(x[4]):[1,2,3,4]"),
+                Tensor.from("tensor(x[4]):[1,2,3,4]"));
+        assertTensorMerge(
+                Tensor.from("tensor(x[]):{{x:0}:1,{x:1}:2,{x:2}:3,{x:3}:4}"),
+                Tensor.from("tensor(x[]):{{x:0}:5,{x:1}:6}"),
+                Tensor.from("tensor(x[4]):[5,6,3,4]"));
+        assertTensorMerge(
+                Tensor.from("tensor(x{}):{a:1,b:2}"),
+                Tensor.from("tensor(x{}):{b:3,c:4}"),
+                Tensor.from("tensor(x{}):{a:1,b:3,c:4}"));
+        assertTensorMerge(
+                Tensor.from("tensor(key{},x[4]):{a:[1,2,3,4],c:[5,6,7,8]}"),
+                Tensor.from("tensor(key{},x[4]):{a:[9,10,11,12],b:[13,14,15,16]}"),
+                Tensor.from("tensor(key{},x[4]):{a:[9,10,11,12],b:[13,14,15,16],c:[5,6,7,8]}"));
     }
 
     @Test
@@ -302,7 +318,7 @@ public class TensorTestCase {
 
     private void assertTensorMerge(Tensor init, Tensor update, Tensor expected) {
         DoubleBinaryOperator op = (left, right) -> right;
-        assertEquals(expected, init.merge(op, update.cells()));
+        assertEquals(expected, init.merge(update, op));
     }
 
     private void assertTensorRemove(Tensor init, Tensor update, Tensor expected) {

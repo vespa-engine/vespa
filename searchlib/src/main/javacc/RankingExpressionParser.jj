@@ -126,6 +126,7 @@ TOKEN :
     <MAP: "map"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
+    <MERGE: "merge"> |
     <RENAME: "rename"> |
     <CONCAT: "concat"> |
     <TENSOR: "tensor"> |
@@ -384,6 +385,7 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorReduce() |
         tensorExpression = tensorReduceComposites() |
         tensorExpression = tensorJoin() |
+        tensorExpression = tensorMerge() |
         tensorExpression = tensorRename() |
         tensorExpression = tensorConcat() |
         tensorExpression = tensorGenerate() |
@@ -445,6 +447,18 @@ TensorFunctionNode tensorJoin() :
     { return new TensorFunctionNode(new Join(TensorFunctionNode.wrap(tensor1),
                                  TensorFunctionNode.wrap(tensor2),
                                  doubleJoiner.asDoubleBinaryOperator())); }
+}
+
+TensorFunctionNode tensorMerge() :
+{
+    ExpressionNode tensor1, tensor2;
+    LambdaFunctionNode doubleMerger;
+}
+{
+    <MERGE> <LBRACE> tensor1 = expression() <COMMA> tensor2 = expression() <COMMA> doubleMerger = lambdaFunction() <RBRACE>
+    { return new TensorFunctionNode(new Merge(TensorFunctionNode.wrap(tensor1),
+                                    TensorFunctionNode.wrap(tensor2),
+                                     doubleMerger.asDoubleBinaryOperator())); }
 }
 
 TensorFunctionNode tensorRename() :
@@ -671,6 +685,7 @@ String tensorFunctionName() :
     ( <MAP>          { return token.image; } ) |
     ( <REDUCE>       { return token.image; } ) |
     ( <JOIN>         { return token.image; } ) |
+    ( <MERGE>         { return token.image; } ) |
     ( <RENAME>       { return token.image; } ) |
     ( <CONCAT>       { return token.image; } ) |
     ( <TENSOR>       { return token.image; } ) |

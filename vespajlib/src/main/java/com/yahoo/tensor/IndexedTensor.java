@@ -197,11 +197,6 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     @Override
-    public Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> cells) {
-        throw new IllegalArgumentException("Merge is not supported for indexed tensors");
-    }
-
-    @Override
     public Tensor remove(Set<TensorAddress> addresses) {
         throw new IllegalArgumentException("Remove is not supported for indexed tensors");
     }

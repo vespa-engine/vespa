@@ -896,7 +896,6 @@
       "public abstract com.yahoo.tensor.IndexedTensor withType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.DimensionSizes dimensionSizes()",
       "public java.util.Map cells()",
-      "public com.yahoo.tensor.Tensor merge(java.util.function.DoubleBinaryOperator, java.util.Map)",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
@@ -945,7 +944,6 @@
       "public java.util.Iterator valueIterator()",
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)",
-      "public com.yahoo.tensor.Tensor merge(java.util.function.DoubleBinaryOperator, java.util.Map)",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public int hashCode()",
       "public java.lang.String toString()",
@@ -1036,7 +1034,6 @@
       "public java.util.Iterator valueIterator()",
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)",
-      "public com.yahoo.tensor.Tensor merge(java.util.function.DoubleBinaryOperator, java.util.Map)",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public int hashCode()",
       "public java.lang.String toString()",
@@ -1157,12 +1154,12 @@
       "public double asDouble()",
       "public abstract com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.Tensor modify(java.util.function.DoubleBinaryOperator, java.util.Map)",
-      "public abstract com.yahoo.tensor.Tensor merge(java.util.function.DoubleBinaryOperator, java.util.Map)",
       "public abstract com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public com.yahoo.tensor.Tensor map(java.util.function.DoubleUnaryOperator)",
       "public varargs com.yahoo.tensor.Tensor reduce(com.yahoo.tensor.functions.Reduce$Aggregator, java.lang.String[])",
       "public com.yahoo.tensor.Tensor reduce(com.yahoo.tensor.functions.Reduce$Aggregator, java.util.List)",
       "public com.yahoo.tensor.Tensor join(com.yahoo.tensor.Tensor, java.util.function.DoubleBinaryOperator)",
+      "public com.yahoo.tensor.Tensor merge(com.yahoo.tensor.Tensor, java.util.function.DoubleBinaryOperator)",
       "public com.yahoo.tensor.Tensor rename(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.Tensor concat(double, java.lang.String)",
       "public com.yahoo.tensor.Tensor concat(com.yahoo.tensor.Tensor, java.lang.String)",
@@ -1743,6 +1740,25 @@
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.tensor.functions.Merge": {
+    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction, java.util.function.DoubleBinaryOperator)",
+      "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
+      "public java.util.function.DoubleBinaryOperator merger()",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)"
     ],
     "fields": []
   },

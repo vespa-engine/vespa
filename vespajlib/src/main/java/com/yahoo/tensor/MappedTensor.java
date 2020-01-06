@@ -53,25 +53,6 @@ public class MappedTensor implements Tensor {
     }
 
     @Override
-    public Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> addCells) {
-
-        // currently, underlying implementation disallows multiple entries with the same key
-
-        Tensor.Builder builder = Tensor.Builder.of(type());
-        for (Map.Entry<TensorAddress, Double> cell  : cells.entrySet()) {
-            TensorAddress address = cell.getKey();
-            double value = cell.getValue();
-            builder.cell(address, addCells.containsKey(address) ? op.applyAsDouble(value, addCells.get(address)) : value);
-        }
-        for (Map.Entry<TensorAddress, Double> addCell : addCells.entrySet()) {
-            if ( ! cells.containsKey(addCell.getKey())) {
-                builder.cell(addCell.getKey(), addCell.getValue());
-            }
-        }
-        return builder.build();
-    }
-
-    @Override
     public Tensor remove(Set<TensorAddress> addresses) {
         Tensor.Builder builder = Tensor.Builder.of(type());
         for (Iterator<Tensor.Cell> i = cellIterator(); i.hasNext(); ) {

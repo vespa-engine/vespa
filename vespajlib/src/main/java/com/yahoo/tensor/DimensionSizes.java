@@ -38,7 +38,7 @@ public final class DimensionSizes {
      * @throws IllegalArgumentException if the index is larger than the number of dimensions in this tensor minus one
      */
     public long size(int dimensionIndex) {
-        if (dimensionIndex <0 || dimensionIndex >= sizes.length)
+        if (dimensionIndex < 0 || dimensionIndex >= sizes.length)
             throw new IllegalArgumentException("Illegal dimension index " + dimensionIndex +
                                                ": This has " + sizes.length + " dimensions");
         return sizes[dimensionIndex];

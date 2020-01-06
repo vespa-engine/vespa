@@ -12,6 +12,7 @@ import com.yahoo.tensor.functions.Join;
 import com.yahoo.tensor.functions.L1Normalize;
 import com.yahoo.tensor.functions.L2Normalize;
 import com.yahoo.tensor.functions.Matmul;
+import com.yahoo.tensor.functions.Merge;
 import com.yahoo.tensor.functions.Random;
 import com.yahoo.tensor.functions.Range;
 import com.yahoo.tensor.functions.Reduce;
@@ -124,18 +125,6 @@ public interface Tensor {
 
     /**
      * Returns a new tensor where existing cells in this tensor have been
-     * modified according to the given operation and cells in the given map.
-     * In contrast to {@link #modify}, previously non-existing cells are added
-     * to this tensor. Only valid for sparse or mixed tensors.
-     *
-     * @param op how to update overlapping cells
-     * @param cells cells to merge with this tensor
-     * @return a new tensor where this tensor is merged with the other
-     */
-    Tensor merge(DoubleBinaryOperator op, Map<TensorAddress, Double> cells);
-
-    /**
-     * Returns a new tensor where existing cells in this tensor have been
      * removed according to the given set of addresses. Only valid for sparse
      * or mixed tensors. For mixed tensors, addresses are assumed to only
      * contain the sparse dimensions, as the entire dense subspace is removed.
@@ -162,6 +151,10 @@ public interface Tensor {
 
     default Tensor join(Tensor argument, DoubleBinaryOperator combinator) {
         return new Join<>(new ConstantTensor<>(this), new ConstantTensor<>(argument), combinator).evaluate();
+    }
+
+    default Tensor merge(Tensor argument, DoubleBinaryOperator combinator) {
+        return new Merge<>(new ConstantTensor<>(this), new ConstantTensor<>(argument), combinator).evaluate();
     }
 
     default Tensor rename(String fromDimension, String toDimension) {

@@ -299,6 +299,11 @@ public class EvaluationTestCase {
                                "tensor0 in [1,2,3]", "{ {x:0}:3, {x:1}:7 }");
         tester.assertEvaluates("{ {x:0}:0.1 }", "join(tensor0, 0.1, f(x,y) (x*y))", "{ {x:0}:1 }");
 
+        // tensor merge
+        tester.assertEvaluates("{ {x:0}:15, {x:1}:4 }", "merge(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3 }", "{ {x:0}:5, {x:1}:4 }");
+        // -- join composites
+        tester.assertEvaluates("{ }", "merge(tensor0, tensor1, f(x,y) (x*y))", "{}");
+
         // TODO
         // argmax
         // argmin
