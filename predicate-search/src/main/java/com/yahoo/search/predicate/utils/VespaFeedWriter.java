@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.utils;
 
+import com.google.common.html.HtmlEscapers;
 import com.yahoo.document.predicate.Predicate;
-import org.apache.commons.lang.StringEscapeUtils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -35,7 +35,7 @@ public class VespaFeedWriter extends BufferedWriter {
         try {
             this.append(String.format("<document documenttype=\"%2$s\" documentid=\"id:%1$s:%2$s::%3$d\">\n",
                     namespace, documentType, id));
-            this.append("<" + fieldName + ">" + StringEscapeUtils.escapeHtml(predicate.toString()) + "</" + fieldName + ">\n");
+            this.append("<" + fieldName + ">" + HtmlEscapers.htmlEscaper().escape(predicate.toString()) + "</" + fieldName + ">\n");
             this.append("</document>\n");
         } catch (IOException e) {
             throw new RuntimeException(e);
