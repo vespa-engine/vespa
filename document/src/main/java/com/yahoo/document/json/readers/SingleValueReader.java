@@ -9,8 +9,8 @@ import com.yahoo.document.ReferenceDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.json.TokenBuffer;
 import com.yahoo.document.update.ValueUpdate;
-import org.apache.commons.codec.binary.Base64;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -86,7 +86,7 @@ public class SingleValueReader {
 
     public static FieldValue readAtomic(String field, DataType expectedType) {
         if (expectedType.equals(DataType.RAW)) {
-            return expectedType.createFieldValue(new Base64().decode(field));
+            return expectedType.createFieldValue(Base64.getMimeDecoder().decode(field));
         } else if (expectedType.equals(PositionDataType.INSTANCE)) {
             return PositionDataType.fromString(field);
         } else if (expectedType instanceof ReferenceDataType) {

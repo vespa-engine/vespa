@@ -13,13 +13,13 @@ import com.yahoo.document.predicate.FeatureSet;
 import com.yahoo.document.predicate.Predicate;
 import com.yahoo.document.serialization.DeserializationException;
 import com.yahoo.tensor.TensorType;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.Test;
 
 import javax.xml.stream.XMLStreamReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -161,7 +161,7 @@ public class VespaXmlFieldReaderTestCase {
         assertRead(predicate,
                    "<document id='id:ns:my_type::' type='my_type'>" +
                    "  <my_predicate binaryencoding='base64'>" +
-                   Base64.encodeBase64String(BinaryFormat.encode(predicate)) +
+                           Base64.getMimeEncoder().encodeToString(BinaryFormat.encode(predicate)) +
                    "  </my_predicate>" +
                    "</document>");
     }
