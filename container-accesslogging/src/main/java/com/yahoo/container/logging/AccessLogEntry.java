@@ -2,7 +2,6 @@
 package com.yahoo.container.logging;
 
 import com.yahoo.collections.ListMap;
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 
 import javax.security.auth.x500.X500Principal;
 import java.net.InetAddress;
@@ -456,9 +455,34 @@ public class AccessLogEntry {
     @Override
     public String toString() {
         synchronized (monitor) {
-            return new ReflectionToStringBuilder(this)
-                    .setExcludeFieldNames(FIELDS_EXCLUDED_FROM_TOSTRING)
-                    .toString();
+            return "AccessLogEntry{" +
+                    "ipV4AddressInDotDecimalNotation='" + ipV4AddressInDotDecimalNotation + '\'' +
+                    ", timeStampMillis=" + timeStampMillis +
+                    ", durationBetweenRequestResponseMillis=" + durationBetweenRequestResponseMillis +
+                    ", numBytesReturned=" + numBytesReturned +
+                    ", remoteAddress='" + remoteAddress + '\'' +
+                    ", remotePort=" + remotePort +
+                    ", peerAddress='" + peerAddress + '\'' +
+                    ", peerPort=" + peerPort +
+                    ", profile='" + profile + '\'' +
+                    ", errorMessage='" + errorMessage + '\'' +
+                    ", fileName='" + fileName + '\'' +
+                    ", userAgent='" + userAgent + '\'' +
+                    ", referer='" + referer + '\'' +
+                    ", user='" + user + '\'' +
+                    ", hitCounts=" + hitCounts +
+                    ", httpMethod='" + httpMethod + '\'' +
+                    ", httpVersion='" + httpVersion + '\'' +
+                    ", hostString='" + hostString + '\'' +
+                    ", statusCode=" + statusCode +
+                    ", scheme='" + scheme + '\'' +
+                    ", localPort=" + localPort +
+                    ", principal=" + principal +
+                    ", sslPrincipal=" + sslPrincipal +
+                    ", rawPath='" + rawPath + '\'' +
+                    ", rawQuery='" + rawQuery + '\'' +
+                    ", keyValues=" + keyValues +
+                    '}';
         }
     }
 
