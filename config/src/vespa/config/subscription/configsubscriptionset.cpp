@@ -40,7 +40,7 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
     int64_t lastGeneration = _currentGeneration;
     bool inSync = false;
 
-    LOG(debug, "Going into nextConfig loop, time left is %ld", timeLeft.count());
+    LOG(debug, "Going into nextConfig loop, time left is %" PRId64, timeLeft.count());
     while (!isClosed() && (timeLeft.count() >= 0) && !inSync) {
         size_t numChanged = 0;
         size_t numGenerationChanged = 0;
@@ -79,7 +79,7 @@ ConfigSubscriptionSet::acquireSnapshot(milliseconds timeoutInMillis, bool ignore
         lastGeneration = generation;
         timeLeft = timeoutInMillis - duration_cast<milliseconds>(steady_clock::now() - startTime);
         if (!inSync && (timeLeft.count() > 0)) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(std::min(10l, timeLeft.count())));
+            std::this_thread::sleep_for(std::chrono::milliseconds(std::min(INT64_C(10), timeLeft.count())));
         } else {
             break;
         }

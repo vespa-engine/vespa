@@ -175,7 +175,7 @@ void op_tensor_peek(State &state, uint64_t param) {
                            assert(dim_idx != ValueType::Dimension::npos);
                            const auto &param_dim = self.param_type().dimensions()[dim_idx];
                            if (param_dim.is_mapped()) {
-                               addr.emplace(pos->first, vespalib::make_string("%ld", int64_t(index)));
+                               addr.emplace(pos->first, vespalib::make_string("%" PRId64, int64_t(index)));
                            } else {
                                addr.emplace(pos->first, size_t(index));
                            }
@@ -394,7 +394,7 @@ Peek::visit_children(vespalib::ObjectVisitor &visitor) const
                            if (label.is_mapped()) {
                                ::visit(visitor, dim.first, label.name);
                            } else {
-                               ::visit(visitor, dim.first, label.index);
+                               ::visit(visitor, dim.first, static_cast<int64_t>(label.index));
                            }
                        },
                        [&](const Child &child) {

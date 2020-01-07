@@ -124,7 +124,7 @@ VisitorOperation::timeLeft() const noexcept
 
 
     LOG(spam,
-        "Checking if visitor has timed out: elapsed=%ld ms, timeout=%ld ms",
+        "Checking if visitor has timed out: elapsed=%" PRId64 " ms, timeout=%" PRId64 " ms",
         vespalib::count_ms(elapsed),
         vespalib::count_ms(_msg->getTimeout()));
 
@@ -624,7 +624,7 @@ VisitorOperation::startNewVisitors(DistributorMessageSender& sender)
         markOperationAsFailed(
                 api::ReturnCode(api::ReturnCode::ABORTED,
                                 vespalib::make_string(
-                                    "Timeout of %ld ms is running out",
+                                    "Timeout of %" PRId64 " ms is running out",
                                     vespalib::count_ms(_msg->getTimeout()))));
     }
 
