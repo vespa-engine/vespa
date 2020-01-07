@@ -16,12 +16,12 @@ import com.yahoo.document.serialization.DeserializationException;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.FieldBase;
-import org.apache.commons.codec.binary.Base64;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Optional;
 
 /**
@@ -242,7 +242,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
     }
 
     private void assignPositionFieldFromStringIfNonEmpty(Struct value, String elementText, boolean base64) {
-        String str = base64 ? Utf8.toString(new Base64().decode(elementText)) : elementText;
+        String str = base64 ? Utf8.toString(Base64.getMimeDecoder().decode(elementText)) : elementText;
         str = str.trim();
         if (str.isEmpty()) {
             return;
@@ -409,7 +409,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
     public void read(FieldBase field, Raw value) {
         try {
             if (isBase64EncodedElement(reader)) {
-                value.assign(new Base64().decode(reader.getElementText()));
+                value.assign(Base64.getMimeDecoder().decode(reader.getElementText()));
             } else {
                 value.assign(reader.getElementText().getBytes());
             }
@@ -422,7 +422,7 @@ public class VespaXMLFieldReader extends VespaXMLReader implements FieldReader {
     public void read(FieldBase field, PredicateFieldValue value) {
         try {
             if (isBase64EncodedElement(reader)) {
-                value.assign(Predicate.fromBinary(new Base64().decode(reader.getElementText())));
+                value.assign(Predicate.fromBinary(Base64.getMimeDecoder().decode(reader.getElementText())));
             } else {
                 value.assign(Predicate.fromString(reader.getElementText()));
             }

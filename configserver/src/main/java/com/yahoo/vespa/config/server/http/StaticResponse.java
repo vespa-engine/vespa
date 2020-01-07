@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.http;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -29,7 +28,7 @@ public class StaticResponse extends HttpResponse {
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
-        IOUtils.copy(body, outputStream);
+        body.transferTo(outputStream);
         body.close();
     }
 

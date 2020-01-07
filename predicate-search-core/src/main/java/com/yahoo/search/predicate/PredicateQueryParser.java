@@ -4,7 +4,6 @@ package com.yahoo.search.predicate;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import org.apache.commons.lang.ArrayUtils;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -112,7 +111,7 @@ public class PredicateQueryParser {
 
     private static void skipToken(JsonParser parser, JsonToken... expected) throws IOException {
         JsonToken actual = parser.nextToken();
-        if (!ArrayUtils.contains(expected, actual)) {
+        if (Arrays.stream(expected).noneMatch(e -> e.equals(actual))) {
             throw new IllegalArgumentException(
                     String.format("Expected a token in %s, got %s (%s).",
                             Arrays.toString(expected), actual, parser.getTokenLocation()));

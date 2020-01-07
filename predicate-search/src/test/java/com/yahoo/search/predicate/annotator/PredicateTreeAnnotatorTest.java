@@ -9,9 +9,8 @@ import com.yahoo.document.predicate.PredicateHash;
 import com.yahoo.document.predicate.RangeEdgePartition;
 import com.yahoo.document.predicate.RangePartition;
 import com.yahoo.search.predicate.index.Feature;
-import com.yahoo.search.predicate.index.conjunction.IndexableFeatureConjunction;
 import com.yahoo.search.predicate.index.IntervalWithBounds;
-import org.apache.commons.lang.ArrayUtils;
+import com.yahoo.search.predicate.index.conjunction.IndexableFeatureConjunction;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -232,7 +231,7 @@ public class PredicateTreeAnnotatorTest {
         long hash = PredicateHash.hash64(feature);
         List<Integer> actualIntervals = r.intervalMap.get(hash);
         assertNotNull(actualIntervals);
-        assertArrayEquals(ArrayUtils.toPrimitive(expectedIntervals), Ints.toArray(actualIntervals));
+        assertArrayEquals(Ints.toArray(Arrays.asList(expectedIntervals)), Ints.toArray(actualIntervals));
     }
 
     private static void assertBoundsContains(PredicateTreeAnnotations r, String feature, IntervalWithBounds expectedBounds) {

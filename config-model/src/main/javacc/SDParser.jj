@@ -63,7 +63,6 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.logging.Level;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * A search definition parser
@@ -2429,7 +2428,8 @@ void importField(Search search) :
     <IMPORT> <FIELD> fieldRefSpec = identifier() <AS> aliasFieldName = identifier() lbrace()
     <RBRACE>
     {
-        if (StringUtils.countMatches(fieldRefSpec, ".") != 1) {
+        long nDots = Utils.count(fieldRefSpec, '.');
+        if (nDots != 1) {
             throw new IllegalArgumentException("Illegal field reference spec '" + fieldRefSpec + "': Does not include a single '.'");
         }
         int indexOfDot = fieldRefSpec.indexOf('.');

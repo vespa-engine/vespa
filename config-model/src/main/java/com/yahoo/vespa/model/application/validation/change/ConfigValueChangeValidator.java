@@ -4,14 +4,13 @@ package com.yahoo.vespa.model.application.validation.change;
 import com.yahoo.config.ChangesRequiringRestart;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.RestartConfigs;
-import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.vespa.model.utils.internal.ReflectionUtil;
-import org.apache.commons.lang3.ClassUtils;
 
 import java.time.Instant;
 import java.util.Arrays;
@@ -95,7 +94,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
      * NOTE: Only the super classes that are subclass of Service are inspected.
      */
     private static Stream<Class<? extends ConfigInstance>> getConfigInstancesFromServiceAnnotations(Class<? extends Service> serviceClass) {
-        List<Class<?>> classHierarchy = ClassUtils.getAllSuperclasses(serviceClass);
+        List<Class<?>> classHierarchy = ReflectionUtil.getAllSuperclasses(serviceClass);
         classHierarchy.add(serviceClass);
         return classHierarchy.stream()
                 .filter(Service.class::isAssignableFrom)

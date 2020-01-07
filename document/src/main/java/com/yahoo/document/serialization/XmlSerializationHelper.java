@@ -5,8 +5,8 @@ import com.yahoo.document.Document;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.*;
 import com.yahoo.text.Utf8;
-import org.apache.commons.codec.binary.Base64;
 
+import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +84,7 @@ public class XmlSerializationHelper {
 
     public static void printRawXml(Raw r, XmlStream xml) {
         xml.addAttribute("binaryencoding", "base64");
-        xml.addContent(new Base64(0).encodeToString(r.getByteBuffer().array()));
+        xml.addContent(Base64.getEncoder().encodeToString(r.getByteBuffer().array()));
     }
 
     public static void printStringXml(StringFieldValue s, XmlStream xml) {
@@ -92,7 +92,7 @@ public class XmlSerializationHelper {
         if (containsNonPrintableCharactersString(content)) {
             byte[] bytecontent = Utf8.toBytes(content);
             xml.addAttribute("binaryencoding", "base64");
-            xml.addContent(new Base64(0).encodeToString(bytecontent));
+            xml.addContent(Base64.getEncoder().encodeToString(bytecontent));
         } else {
             xml.addContent(content);
         }

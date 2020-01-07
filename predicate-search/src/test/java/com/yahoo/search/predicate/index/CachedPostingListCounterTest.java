@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.index;
 
-import org.apache.commons.lang.ArrayUtils;
+import com.google.common.primitives.Ints;
 import org.eclipse.collections.impl.map.mutable.primitive.ObjectIntHashMap;
 import org.junit.Test;
 
@@ -109,7 +109,7 @@ public class CachedPostingListCounterTest {
 
     private static PostingList postingList(Integer... docIds) {
         PostingList postingList = mock(PostingList.class);
-        when(postingList.getDocIds()).thenReturn(ArrayUtils.toPrimitive(docIds));
+        when(postingList.getDocIds()).thenReturn(Ints.toArray(Arrays.asList((docIds))));
         return postingList;
     }
 

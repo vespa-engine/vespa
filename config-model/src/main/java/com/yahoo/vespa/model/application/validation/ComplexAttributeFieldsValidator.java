@@ -10,7 +10,6 @@ import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,7 +66,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
     }
 
     private static String toString(ImmutableSDField field) {
-        return field.getName() + " (" + StringUtils.join(getStructFieldAttributes(field.getStructFields()), ", ") + ")";
+        return field.getName() + " (" + String.join(", ", getStructFieldAttributes(field.getStructFields())) + ")";
     }
 
     private static boolean hasStructFieldAttributes(Collection<? extends ImmutableSDField> structFields) {

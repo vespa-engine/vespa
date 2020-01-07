@@ -5,7 +5,7 @@ import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.json.JsonWriter;
 import com.yahoo.documentapi.DumpVisitorDataHandler;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+import com.yahoo.exception.ExceptionUtils;
 
 import java.nio.charset.StandardCharsets;
 
@@ -43,7 +43,7 @@ class LocalDataVisitorHandler extends DumpVisitorDataHandler {
             }
         } catch (Exception e) {
             synchronized (monitor) {
-                errors.append(ExceptionUtils.getStackTrace(e)).append("\n");
+                errors.append(ExceptionUtils.getStackTraceAsString(e)).append("\n");
             }
         }
     }
@@ -62,7 +62,7 @@ class LocalDataVisitorHandler extends DumpVisitorDataHandler {
             }
         } catch (Exception e) {
             synchronized (monitor) {
-                errors.append(ExceptionUtils.getStackTrace(e)).append("\n");
+                errors.append(ExceptionUtils.getStackTraceAsString(e)).append("\n");
             }
         }
     }

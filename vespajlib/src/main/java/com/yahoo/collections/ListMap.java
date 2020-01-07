@@ -3,10 +3,14 @@ package com.yahoo.collections;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A map holding multiple items at each key (using ArrayList and HashMap).
@@ -140,7 +144,10 @@ public class ListMap<K, V> {
 
     @Override
     public String toString() {
-        return ToStringBuilder.reflectionToString(this);
+        return "ListMap{" +
+                "frozen=" + frozen +
+                ", map=" + map +
+                '}';
     }
 
     /** Returns the number of keys in this map */
