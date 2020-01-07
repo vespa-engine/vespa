@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.testrunner;
 
-import org.apache.commons.io.IOUtils;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -28,7 +27,7 @@ public class PomXmlGeneratorTest {
     }
 
     private void assertFile(String resourceFile, String actual) throws IOException {
-        String expected = IOUtils.toString(this.getClass().getResourceAsStream(resourceFile));
+        String expected = new String(this.getClass().getResourceAsStream(resourceFile).readAllBytes());
         assertEquals(resourceFile, expected, actual);
     }
 
