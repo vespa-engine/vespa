@@ -26,7 +26,7 @@ MetricManager::ConsumerSpec::~ConsumerSpec() = default;
 
 time_t
 MetricManager::Timer::getTime() const {
-    return vespalib::count_s(vespalib::steady_clock::now().time_since_epoch());
+    return vespalib::count_s(vespalib::system_clock::now().time_since_epoch());
 }
 
 void
