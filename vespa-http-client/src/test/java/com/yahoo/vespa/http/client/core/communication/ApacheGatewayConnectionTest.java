@@ -50,14 +50,14 @@ public class ApacheGatewayConnectionTest {
 
     @Test
     public void testProtocolV3() throws Exception {
-        final Endpoint endpoint = Endpoint.create("hostname", 666, false);
+        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
                 .build();
         final List<Document> documents = new ArrayList<>();
 
-        final String vespaDocContent ="Hello, I a JSON doc.";
+        final String vespaDocContent = "Hello, I a JSON doc.";
         final String docId = "42";
 
         final AtomicInteger requestsReceived = new AtomicInteger(0);
@@ -84,7 +84,7 @@ public class ApacheGatewayConnectionTest {
 
     @Test(expected=IllegalArgumentException.class)
     public void testServerReturnsBadSessionInV3() throws Exception {
-        final Endpoint endpoint = Endpoint.create("hostname", 666, false);
+        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
@@ -108,7 +108,7 @@ public class ApacheGatewayConnectionTest {
 
     @Test(expected=RuntimeException.class)
     public void testBadConfigParameters() throws Exception {
-            final Endpoint endpoint = Endpoint.create("hostname", 666, false);
+            final Endpoint endpoint = Endpoint.create("localhost", 666, false);
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
@@ -128,7 +128,7 @@ public class ApacheGatewayConnectionTest {
 
     @Test
     public void testJsonDocumentHeader() throws Exception {
-        final Endpoint endpoint = Endpoint.create("hostname", 666, false);
+        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.JSON_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
@@ -187,7 +187,7 @@ public class ApacheGatewayConnectionTest {
      */
     @Test
     public void testCompressedWriteOperations() throws Exception {
-        final Endpoint endpoint = Endpoint.create("hostname", 666, false);
+        final Endpoint endpoint = Endpoint.create("localhost", 666, false);
         final FeedParams feedParams = new FeedParams.Builder().setDataFormat(FeedParams.DataFormat.XML_UTF8).build();
         final String clusterSpecificRoute = "";
         final ConnectionParams connectionParams = new ConnectionParams.Builder()
@@ -237,7 +237,7 @@ public class ApacheGatewayConnectionTest {
     }
 
     @Test
-    public void dynamic_headers_are_added_to_the_response() throws IOException, ServerResponseException, InterruptedException {
+    public void dynamic_headers_are_added_to_the_response() throws IOException, ServerResponseException {
         ConnectionParams.HeaderProvider headerProvider = mock(ConnectionParams.HeaderProvider.class);
         when(headerProvider.getHeaderValue())
                 .thenReturn("v1")
@@ -260,7 +260,7 @@ public class ApacheGatewayConnectionTest {
 
         ApacheGatewayConnection apacheGatewayConnection =
             new ApacheGatewayConnection(
-                    Endpoint.create("hostname", 666, false),
+                    Endpoint.create("localhost", 666, false),
                     new FeedParams.Builder().build(),
                     "",
                     connectionParams,
@@ -288,7 +288,7 @@ public class ApacheGatewayConnectionTest {
 
         ApacheGatewayConnection apacheGatewayConnection =
             new ApacheGatewayConnection(
-                    Endpoint.create("hostname", 666, false),
+                    Endpoint.create("localhost", 666, false),
                     new FeedParams.Builder().build(),
                     "",
                     new ConnectionParams.Builder().build(),
@@ -379,4 +379,5 @@ public class ApacheGatewayConnectionTest {
         when(response.getEntity()).thenReturn(httpEntity);
         return response;
     }
+
 }
