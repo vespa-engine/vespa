@@ -6,7 +6,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib//util/time.h>
+#include <vespa/vespalib/util/time.h>
 #include <filesystem>
 #include <thread>
 #include <vespa/log/log.h>
