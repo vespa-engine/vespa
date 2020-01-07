@@ -8,6 +8,27 @@
 
 using namespace vespalib;
 
+TEST(VisitRangeExample, set_intersection) {
+    std::vector<int> first({1,3,7});
+    std::vector<int> second({2,3,8});
+    std::vector<int> result;
+    vespalib::visit_ranges(overload{[](visit_ranges_either, int) {},
+                                    [&result](visit_ranges_both, int x, int) { result.push_back(x); }},
+                           first.begin(), first.end(), second.begin(), second.end());
+    EXPECT_EQ(result, std::vector<int>({3}));
+}
+
+TEST(VisitRangeExample, set_subtraction) {
+    std::vector<int> first({1,3,7});
+    std::vector<int> second({2,3,8});
+    std::vector<int> result;
+    vespalib::visit_ranges(overload{[&result](visit_ranges_first, int a) { result.push_back(a); },
+                                    [](visit_ranges_second, int) {},
+                                    [](visit_ranges_both, int, int) {}},
+                           first.begin(), first.end(), second.begin(), second.end());
+    EXPECT_EQ(result, std::vector<int>({1,7}));
+}
+
 TEST(VisitRangesTest, empty_ranges_can_be_visited) {
     std::vector<int> a;
     std::vector<int> b;
