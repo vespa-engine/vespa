@@ -173,7 +173,6 @@ public class ApplicationSerializer {
         application.projectId().ifPresent(projectId -> root.setLong(projectIdField, projectId));
         application.deploymentIssueId().ifPresent(jiraIssueId -> root.setString(deploymentIssueField, jiraIssueId.value()));
         application.ownershipIssueId().ifPresent(issueId -> root.setString(ownershipIssueIdField, issueId.value()));
-        toSlime(application.change(), root, deployingField);
         application.owner().ifPresent(owner -> root.setString(ownerField, owner.username()));
         application.majorVersion().ifPresent(majorVersion -> root.setLong(majorVersionField, majorVersion));
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
@@ -336,7 +335,6 @@ public class ApplicationSerializer {
         Instant createdAt = Instant.ofEpochMilli(root.field(createdAtField).asLong());
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
-        Change deploying = changeFromSlime(root.field(deployingField));
         Optional<IssueId> deploymentIssueId = Serializers.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
         Optional<IssueId> ownershipIssueId = Serializers.optionalString(root.field(ownershipIssueIdField)).map(IssueId::from);
         Optional<User> owner = Serializers.optionalString(root.field(ownerField)).map(User::from);
@@ -348,7 +346,7 @@ public class ApplicationSerializer {
         OptionalLong projectId = Serializers.optionalLong(root.field(projectIdField));
         Optional<ApplicationVersion> latestVersion = latestVersionFromSlime(root.field(latestVersionField));
 
-        return new Application(id, createdAt, deploymentSpec, validationOverrides, deploying,
+        return new Application(id, createdAt, deploymentSpec, validationOverrides,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
                                deployKeys, projectId, latestVersion, instances);
     }

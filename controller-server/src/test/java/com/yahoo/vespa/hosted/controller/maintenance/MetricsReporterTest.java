@@ -139,7 +139,7 @@ public class MetricsReporterTest {
 
         // Application change completes
         context.deploy();
-        assertFalse("Change deployed", context.application().change().hasTargets());
+        assertFalse("Change deployed", context.instance().change().hasTargets());
 
         // New versions is released and upgrade fails in test environments
         Version version = Version.fromString("7.1");
@@ -159,7 +159,7 @@ public class MetricsReporterTest {
 
         // Upgrade eventually succeeds
         context.runJob(productionUsWest1);
-        assertFalse("Upgrade deployed", context.application().change().hasTargets());
+        assertFalse("Upgrade deployed", context.instance().change().hasTargets());
         reporter.maintain();
         assertEquals(0, getDeploymentsFailingUpgrade(context.instanceId()));
     }

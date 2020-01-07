@@ -340,7 +340,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        id2.application());
 
         // Trigger upgrade and then application change
-        deploymentTester.applications().deploymentTrigger().triggerChange(TenantAndApplicationId.from(id2), Change.of(Version.fromString("7.0")));
+        deploymentTester.applications().deploymentTrigger().triggerChange(id2, Change.of(Version.fromString("7.0")));
 
         // POST an application package and a test jar, submitting a new application for production deployment.
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/submit", POST)

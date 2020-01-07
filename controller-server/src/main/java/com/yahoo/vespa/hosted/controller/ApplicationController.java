@@ -393,7 +393,7 @@ public class ApplicationController {
 
                     applicationPackage = getApplicationPackage(instanceId, applicationVersion);
                     applicationPackage = withTesterCertificate(applicationPackage, instanceId, jobType);
-                    validateRun(application.get(), instance, zone, platformVersion, applicationVersion);
+                    validateRun(application.get().require(instance), zone, platformVersion, applicationVersion);
                 }
 
                 if (controller.zoneRegistry().zones().directlyRouted().ids().contains(zone)) {
@@ -887,14 +887,14 @@ public class ApplicationController {
     }
 
     /** Verify that we don't downgrade an existing production deployment. */
-    private void validateRun(Application application, InstanceName instance, ZoneId zone, Version platformVersion, ApplicationVersion applicationVersion) {
-        Deployment deployment = application.require(instance).deployments().get(zone);
+    private void validateRun(Instance instance, ZoneId zone, Version platformVersion, ApplicationVersion applicationVersion) {
+        Deployment deployment = instance.deployments().get(zone);
         if (   zone.environment().isProduction() && deployment != null
-            && (   platformVersion.compareTo(deployment.version()) < 0 && ! application.change().isPinned()
+            && (   platformVersion.compareTo(deployment.version()) < 0 && ! instance.change().isPinned()
                 || applicationVersion.compareTo(deployment.applicationVersion()) < 0))
             throw new IllegalArgumentException(String.format("Rejecting deployment of application %s to %s, as the requested versions (platform: %s, application: %s)" +
                                                              " are older than the currently deployed (platform: %s, application: %s).",
-                                                             application.id().instance(instance), zone, platformVersion, applicationVersion, deployment.version(), deployment.applicationVersion()));
+                                                             instance.id(), zone, platformVersion, applicationVersion, deployment.version(), deployment.applicationVersion()));
     }
 
     /** Returns the rotation repository, used for managing global rotation assignments */

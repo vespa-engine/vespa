@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -16,7 +17,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -29,6 +32,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -39,7 +43,7 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * Responsible for scheduling deployment jobs in a build system and keeping
- * {@link Application#change()} in sync with what is scheduled.
+ * {@link Instance#change()} in sync with what is scheduled.
  *
  * This class is multi-thread safe.
  *
@@ -74,16 +78,22 @@ public class DeploymentTrigger {
         }
 
         applications().lockApplicationOrThrow(id, application -> {
-            if (acceptNewApplicationVersion(application.get())) {
-                application = application.withChange(application.get().change().with(version));
-                for (Run run : jobs.active(id))
-                    if ( ! run.id().type().environment().isManuallyDeployed())
-                        jobs.abort(run.id());
-            }
-
             application = application.withProjectId(OptionalLong.of(projectId));
             application = application.withNewSubmission(version);
-            applications().store(application.withChange(remainingChange(application.get())));
+            DeploymentStatus status = jobs.deploymentStatus(application.get());
+            for (ApplicationId instanceId : InstanceList.from(DeploymentStatusList.from(List.of(status)))
+                                                        .canChangeRevisionAt(clock.instant()).asList())
+                if (acceptNewApplicationVersion(status, instanceId.instance())) {
+                    application = application.with(instanceId.instance(),
+                                                   instance -> instance.withChange(status.outstandingChange(instance.name()).onTopOf(instance.change())));
+                    for (Run run : jobs.active(instanceId))
+                        if ( ! run.id().type().environment().isManuallyDeployed())
+                            jobs.abort(run.id());
+                }
+
+            for (InstanceName instanceName : application.get().instances().keySet())
+                application = application.with(instanceName, instance -> instance.withChange(remainingChange(instance, status)));
+            applications().store(application);
         });
     }
 
@@ -98,7 +108,8 @@ public class DeploymentTrigger {
         }
 
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application ->
-                applications().store(application.withChange(remainingChange(application.get()))));
+                applications().store(application.with(id.instance(),
+                                                      instance -> instance.withChange(remainingChange(instance, jobs.deploymentStatus(application.get()))))));
     }
 
     /**
@@ -149,13 +160,13 @@ public class DeploymentTrigger {
         Instance instance = application.require(applicationId.instance());
         DeploymentStatus status = jobs.deploymentStatus(application);
         JobId job = new JobId(instance.id(), jobType);
-        Versions versions = Versions.from(application.change(), application, status.deploymentFor(job), controller.systemVersion());
+        Versions versions = Versions.from(instance.change(), application, status.deploymentFor(job), controller.systemVersion());
         String reason = "Job triggered manually by " + user;
         Map<JobId, List<Versions>> jobs = status.testJobs(Map.of(job, versions));
         if (jobs.isEmpty() || ! requireTests)
             jobs = Map.of(job, List.of(versions));
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0), application.change(), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
+            trigger(deploymentJob(instance, versionsList.get(0), jobId.type(), status.jobs().get(jobId).get(), reason, clock.instant()));
         });
         return List.copyOf(jobs.keySet());
     }
@@ -171,33 +182,42 @@ public class DeploymentTrigger {
     }
 
     /** Triggers a change of this application, unless it already has a change. */
-    public void triggerChange(TenantAndApplicationId applicationId, Change change) {
-        applications().lockApplicationOrThrow(applicationId, application -> {
-            if ( ! application.get().change().hasTargets())
-                forceChange(applicationId, change);
+    public void triggerChange(ApplicationId instanceId, Change change) {
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
+            if ( ! application.get().require(instanceId.instance()).change().hasTargets())
+                forceChange(instanceId, change);
         });
     }
 
-    /** Overrides the given application's platform and application changes with any contained in the given change. */
-    public void forceChange(TenantAndApplicationId applicationId, Change change) {
-        applications().lockApplicationOrThrow(applicationId, application -> {
-            applications().store(application.withChange(change.onTopOf(application.get().change())));
+    public void triggerNewRevision(ApplicationId id) {
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
+            DeploymentStatus status = jobs.deploymentStatus(application.get());
+            triggerChange(id, status.outstandingChange(id.instance()));
+        });
+    }
+
+    /** Overrides the given instance's platform and application changes with any contained in the given change. */
+    public void forceChange(ApplicationId instanceId, Change change) {
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
+            applications().store(application.with(instanceId.instance(),
+                                                  instance -> instance.withChange(change.onTopOf(application.get().require(instanceId.instance()).change()))));
         });
     }
 
     /** Cancels the indicated part of the given application's change. */
-    public void cancelChange(TenantAndApplicationId applicationId, ChangesToCancel cancellation) {
-        applications().lockApplicationOrThrow(applicationId, application -> {
+    public void cancelChange(ApplicationId instanceId, ChangesToCancel cancellation) {
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
             Change change;
             switch (cancellation) {
                 case ALL: change = Change.empty(); break;
                 case VERSIONS: change = Change.empty().withPin(); break;
-                case PLATFORM: change = application.get().change().withoutPlatform(); break;
-                case APPLICATION: change = application.get().change().withoutApplication(); break;
-                case PIN: change = application.get().change().withoutPin(); break;
+                case PLATFORM: change = application.get().require(instanceId.instance()).change().withoutPlatform(); break;
+                case APPLICATION: change = application.get().require(instanceId.instance()).change().withoutApplication(); break;
+                case PIN: change = application.get().require(instanceId.instance()).change().withoutPin(); break;
                 default: throw new IllegalArgumentException("Unknown cancellation choice '" + cancellation + "'!");
             }
-            applications().store(application.withChange(change));
+            applications().store(application.with(instanceId.instance(),
+                                                  instance -> instance.withChange(change)));
         });
     }
 
@@ -234,19 +254,18 @@ public class DeploymentTrigger {
         List<Job> jobs = new ArrayList<>();
         status.jobsToRun().forEach((job, versionsList) -> {
                 for (Versions versions : versionsList)
-                    status.jobSteps().get(job).readyAt(status.application().change(), Optional.empty())
+                    status.jobSteps().get(job).readyAt(status.application().require(job.application().instance()).change())
                           .filter(readyAt -> ! clock.instant().isBefore(readyAt))
                           .filter(__ -> ! status.jobs().get(job).get().isRunning())
                           .filter(__ -> ! (job.type().isProduction() && isSuspendedInAnotherZone(status.application(), job)))
                           .ifPresent(readyAt -> {
-                        jobs.add(deploymentJob(status.application().require(job.application().instance()),
-                                               versions,
-                                               status.application().change(),
-                                               job.type(),
-                                               status.instanceJobs(job.application().instance()).get(job.type()),
-                                               "unknown reason",
-                                               readyAt));
-            });
+                              jobs.add(deploymentJob(status.application().require(job.application().instance()),
+                                                     versions,
+                                                     job.type(),
+                                                     status.instanceJobs(job.application().instance()).get(job.type()),
+                                                     "unknown reason",
+                                                     readyAt));
+                          });
         });
         return Collections.unmodifiableList(jobs);
     }
@@ -330,28 +349,25 @@ public class DeploymentTrigger {
 
     // ---------- Change management o_O ----------
 
-    private boolean acceptNewApplicationVersion(Application application) {
-        if ( ! application.deploymentSpec().instances().stream()
-                          .allMatch(instance -> instance.canChangeRevisionAt(clock.instant()))) return false;
-        if (application.change().application().isPresent()) return true; // Replacing a previous application change is ok.
-        if (jobs.deploymentStatus(application).hasFailures()) return true; // Allow changes to fix upgrade problems.
-        return application.change().platform().isEmpty();
+    private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance) {
+        if (status.application().require(instance).change().application().isPresent()) return true; // Replacing a previous application change is ok.
+        if (status.hasFailures()) return true; // Allow changes to fix upgrade problems.
+        return status.application().require(instance).change().platform().isEmpty();
     }
 
-    private Change remainingChange(Application application) {
-        Change change = application.change();
-        DeploymentStatus status = jobs.deploymentStatus(application);
-        if (status.jobsToRun(status.application().change().withoutApplication()).isEmpty())
+    private Change remainingChange(Instance instance, DeploymentStatus status) {
+        Change change = instance.change();
+        if (status.jobsToRun(Map.of(instance.name(), instance.change().withoutApplication())).isEmpty())
             change = change.withoutPlatform();
-        if (status.jobsToRun(status.application().change().withoutPlatform()).isEmpty())
+        if (status.jobsToRun(Map.of(instance.name(), instance.change().withoutPlatform())).isEmpty())
             change = change.withoutApplication();
         return change;
     }
 
     // ---------- Version and job helpers ----------
 
-    private Job deploymentJob(Instance instance, Versions versions, Change change, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
-        return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), change.application().isPresent());
+    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, String reason, Instant availableSince) {
+        return new Job(instance, versions, jobType, availableSince, jobStatus.isOutOfCapacity(), instance.change().application().isPresent());
     }
 
     // ---------- Data containers ----------

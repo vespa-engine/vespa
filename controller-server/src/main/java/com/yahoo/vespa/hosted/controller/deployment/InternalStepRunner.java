@@ -588,7 +588,7 @@ public class InternalStepRunner implements StepRunner {
     private void sendNotification(Run run, DualLogger logger) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
         Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
-        boolean newCommit = application.change().application()
+        boolean newCommit = application.require(run.id().application().instance()).change().application()
                                     .map(run.versions().targetApplication()::equals)
                                     .orElse(false);
         When when = newCommit ? failingCommit : failing;

@@ -80,7 +80,7 @@ class JobControllerApiHandlerHelper {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
         DeploymentStatus deploymentStatus = controller.jobController().deploymentStatus(application);
         Instance instance = application.require(id.instance());
-        Change change = application.change();
+        Change change = instance.change();
         Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(id.instance());
         Optional<DeploymentSteps> steps = spec.map(s -> new DeploymentSteps(s, controller::system));
         List<JobType> jobs = deploymentStatus.jobSteps().keySet().stream()
@@ -210,9 +210,9 @@ class JobControllerApiHandlerHelper {
         }
         else
             lastPlatformObject.setString("pending",
-                                         application.change().isEmpty()
+                                         instance.change().isEmpty()
                                                  ? "Waiting for upgrade slot"
-                                                 : "Waiting for " + application.change() + " to complete");
+                                                 : "Waiting for " + instance.change() + " to complete");
     }
 
     private static void lastApplicationToSlime(Cursor lastApplicationObject, Application application, Instance instance, Map<JobType, JobStatus> status, Change change, List<JobType> productionJobs, Controller controller) {
@@ -320,7 +320,7 @@ class JobControllerApiHandlerHelper {
                         break;
                     for (JobType stepType : steps.toJobs(step)) {
                         if (pendingProduction.containsKey(stepType)) {
-                            Versions jobVersions = Versions.from(application.change(),
+                            Versions jobVersions = Versions.from(instance.change(),
                                                                  application,
                                                                  Optional.ofNullable(instance.deployments().get(stepType.zone(controller.system()))),
                                                                  controller.systemVersion());
@@ -524,17 +524,17 @@ class JobControllerApiHandlerHelper {
         responseObject.setString("tenant", id.tenant().value());
         responseObject.setString("application", id.application().value());
 
-        Change change = status.application().change();
         Map<JobId, List<Versions>> jobsToRun = status.jobsToRun();
         Cursor stepsArray = responseObject.setArray("steps");
         for (DeploymentStatus.StepStatus stepStatus : status.allSteps()) {
+            Change change = status.application().require(stepStatus.instance()).change();
             Cursor stepObject = stepsArray.addObject();
             stepObject.setString("type", stepStatus.type().name());
             stepStatus.dependencies().stream()
                       .map(status.allSteps()::indexOf)
                       .forEach(stepObject.setArray("dependencies")::addLong);
             stepObject.setBool("declared", stepStatus.isDeclared());
-            stepStatus.instance().ifPresent(instance -> stepObject.setString("instance", instance.value()));
+            stepObject.setString("instance", stepStatus.instance().value());
 
             stepStatus.job().ifPresent(job -> {
                 stepObject.setString("jobName", job.type().jobName());
@@ -565,8 +565,8 @@ class JobControllerApiHandlerHelper {
 
                     Cursor runObject = toRunArray.addObject();
                     toSlime(runObject.setObject("versions"), versions);
-                    stepStatus.readyAt(change, Optional.empty()).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
-                    stepStatus.readyAt(change, Optional.empty())
+                    stepStatus.readyAt(change).ifPresent(ready -> runObject.setLong("readyAt", ready.toEpochMilli()));
+                    stepStatus.readyAt(change)
                               .filter(controller.clock().instant()::isBefore)
                               .ifPresent(until -> runObject.setLong("delayedUntil", until.toEpochMilli()));
                     stepStatus.pausedUntil().ifPresent(until -> runObject.setLong("pausedUntil", until.toEpochMilli()));

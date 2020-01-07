@@ -8,6 +8,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * The changes to an application we currently wish to complete deploying.
  * A goal of the system is to deploy platform and application versions separately.
@@ -28,17 +30,17 @@ public final class Change {
     /** The application version we are changing to, or empty if none */
     private final Optional<ApplicationVersion> application;
 
+    /** Whether this change is a pin to its contained Vespa version, or to the application's current. */
     private final boolean pinned;
 
     private Change(Optional<Version> platform, Optional<ApplicationVersion> application, boolean pinned) {
-        Objects.requireNonNull(platform, "platform cannot be null");
-        Objects.requireNonNull(application, "application cannot be null");
+        this.platform = requireNonNull(platform, "platform cannot be null");
+        this.application = requireNonNull(application, "application cannot be null");
         if (application.isPresent() && application.get().isUnknown()) {
             throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
-        this.platform = platform;
-        this.application = application;
         this.pinned = pinned;
+
     }
 
     public Change withoutPlatform() {

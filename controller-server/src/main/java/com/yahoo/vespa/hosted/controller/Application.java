@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
@@ -45,7 +46,6 @@ public class Application {
     private final ValidationOverrides validationOverrides;
     private final Optional<ApplicationVersion> latestVersion;
     private final OptionalLong projectId;
-    private final Change change;
     private final Optional<IssueId> deploymentIssueId;
     private final Optional<IssueId> ownershipIssueId;
     private final Optional<User> owner;
@@ -56,21 +56,20 @@ public class Application {
 
     /** Creates an empty application. */
     public Application(TenantAndApplicationId id, Instant now) {
-        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Change.empty(),
+        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty,
              Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
              new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), Optional.empty(), List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
-                       Change change, Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
+                       Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
                        Optional<ApplicationVersion> latestVersion, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
         this.validationOverrides = Objects.requireNonNull(validationOverrides, "validationOverrides cannot be null");
-        this.change = Objects.requireNonNull(change, "change cannot be null");
         this.deploymentIssueId = Objects.requireNonNull(deploymentIssueId, "deploymentIssueId cannot be null");
         this.ownershipIssueId = Objects.requireNonNull(ownershipIssueId, "ownershipIssueId cannot be null");
         this.owner = Objects.requireNonNull(owner, "owner cannot be null");
@@ -115,12 +114,6 @@ public class Application {
     public Instance require(InstanceName instance) {
         return get(instance).orElseThrow(() -> new IllegalArgumentException("Unknown instance '" + instance + "' in '" + id + "'"));
     }
-
-    /**
-     * Returns base change for this application, i.e., the change that is deployed outside block windows.
-     * This is empty when no change is currently under deployment.
-     */
-    public Change change() { return change; }
 
     /** Returns ID of any open deployment issue filed for this */
     public Optional<IssueId> deploymentIssueId() {

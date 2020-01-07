@@ -117,13 +117,12 @@ public class ApplicationSerializerTest {
                                                         Map.of(),
                                                         List.of(),
                                                         RotationStatus.EMPTY,
-                                                        Change.empty()));
+                                                        Change.of(Version.fromString("6.7")).withPin()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
                                                deploymentSpec,
                                                validationOverrides,
-                                               Change.of(Version.fromString("6.7")).withPin(),
                                                Optional.of(IssueId.from("4321")),
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),
@@ -168,7 +167,6 @@ public class ApplicationSerializerTest {
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
-        assertEquals(original.change(), serialized.change());
         assertEquals(original.deployKeys(), serialized.deployKeys());
 
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());

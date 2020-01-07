@@ -144,7 +144,7 @@ public class DeploymentIssueReporterTest {
         // app2 is changed to be a canary
         app2.submit(canaryPackage).deploy();
         assertEquals(canary, app2.application().deploymentSpec().requireInstance("default").upgradePolicy());
-        assertEquals(Change.empty(), app2.application().change());
+        assertEquals(Change.empty(), app2.instance().change());
 
         // Bump system version to upgrade canary app2.
         Version version = Version.fromString("6.3");

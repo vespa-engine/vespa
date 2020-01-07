@@ -86,6 +86,10 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor platformArray = root.setArray("versions");
+        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()))
+                                                     .asList().stream()
+                                                     .flatMap(status -> status.instanceJobs().entrySet().stream())
+                                                     .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
         for (VespaVersion version : controller.versionStatus().versions()) {
             Cursor versionObject = platformArray.addObject();
             versionObject.setString("version", version.versionNumber().toString());
@@ -101,10 +105,6 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 configServerObject.setString("hostname", hostname.value());
             }
 
-            Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()))
-                                                         .asList().stream()
-                                                         .flatMap(status -> status.instanceJobs().entrySet().stream())
-                                                         .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
             Cursor failingArray = versionObject.setArray("failingApplications");
             for (ApplicationId id : version.statistics().failing()) {
                 if (jobs.containsKey(id))

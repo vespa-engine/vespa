@@ -80,11 +80,11 @@ public class ControllerTest {
         context.submit(applicationPackage);
         assertEquals("Application version is known from completion of initial job",
                      ApplicationVersion.from(DeploymentContext.defaultSourceRevision, 1, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
-                     context.application().change().application().get());
+                     context.instance().change().application().get());
         context.runJob(systemTest);
         context.runJob(stagingTest);
 
-        ApplicationVersion applicationVersion = context.application().change().application().get();
+        ApplicationVersion applicationVersion = context.instance().change().application().get();
         assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
 
         tester.triggerJobs();
