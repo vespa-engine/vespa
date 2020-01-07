@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -414,15 +415,27 @@ public class OperationProcessorTest {
     }
 
     @Test
-    public void testUnknownHost() {
+    public void unknownHostThrowsExceptionAtConstructionTime() {
         try {
-            new SessionParams.Builder()
+            SessionParams sessionParams = new SessionParams.Builder()
                     .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
-                    .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("unknown")).build())
+                    .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("unknown.invalid")).build())
                     .build();
+            ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
+
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            OperationProcessor operationProcessor = new OperationProcessor(
+                    new IncompleteResultsThrottler(19, 19, null, null),
+                    (docId, documentResult) -> {
+                        countDownLatch.countDown();
+                    },
+                    sessionParams, executor);
+
+            fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("", e.getMessage());
+            assertEquals("Unknown host: unknown.invalid:4080 ssl=false", e.getMessage());
         }
     }
 
