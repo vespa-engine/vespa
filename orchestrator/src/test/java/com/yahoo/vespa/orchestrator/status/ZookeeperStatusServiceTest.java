@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.status;
 
+import com.yahoo.exception.ExceptionUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.test.TestTimer;
@@ -9,7 +10,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.TestIds;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.test.KillSession;
 import org.apache.curator.test.TestingServer;
@@ -219,8 +220,8 @@ public class ZookeeperStatusServiceTest {
                 getException(item).ifPresent( throwable ->
                         mismatchDescription
                                 .appendText("Got exception: ")
-                                .appendText(ExceptionUtils.getMessage(throwable))
-                                .appendText(ExceptionUtils.getFullStackTrace(throwable)));
+                                .appendText(Exceptions.toMessageString(throwable))
+                                .appendText(ExceptionUtils.getStackTraceRecursivelyAsString(throwable)));
             }
         };
     }
