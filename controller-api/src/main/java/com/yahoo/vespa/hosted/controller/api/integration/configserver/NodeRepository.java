@@ -73,6 +73,8 @@ public interface NodeRepository {
     /** Cancels firmware checks on all hosts in the given zone. */
     void cancelFirmwareCheck(ZoneId zone);
 
+    void retireAndDeprovision(ZoneId zoneId, String hostName);
+
     private static Node toNode(NodeRepositoryNode node) {
         var application = Optional.ofNullable(node.getOwner())
                                   .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
