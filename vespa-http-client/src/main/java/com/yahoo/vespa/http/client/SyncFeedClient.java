@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client;
 
-import com.google.common.annotations.Beta;
 import com.yahoo.vespa.http.client.config.SessionParams;
 
 import java.math.BigInteger;
@@ -21,7 +20,6 @@ import java.util.concurrent.ThreadLocalRandom;
  *
  * @author bratseth
  */
-@Beta
 public class SyncFeedClient implements AutoCloseable {
 
     private final FeedClient wrappedClient;
@@ -128,23 +126,6 @@ public class SyncFeedClient implements AutoCloseable {
          */
         private LinkedHashMap<String, Result> results = null;
 
-        void resetExpectedResults() {
-            synchronized (monitor) {
-                if (results != null)
-                    throw new ConcurrentModificationException("A SyncFeedClient instance is used by multiple threads");
-
-                resultsReceived = 0;
-                exception = null;
-                results = new LinkedHashMap<>();
-            }
-        }
-
-        void addExpectationOfResultFor(String operationId) {
-            synchronized (monitor) {
-                results.put(operationId, null);
-            }
-        }
-
         void expectResultsOf(List<SyncOperation> operations) {
             synchronized (monitor) {
                 if (results != null)
@@ -157,6 +138,7 @@ public class SyncFeedClient implements AutoCloseable {
                     results.put(operation.operationId, null);
             }
         }
+
         SyncResult waitForResults() {
             try {
                 synchronized (monitor) {
