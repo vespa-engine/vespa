@@ -835,6 +835,9 @@ allCopiesAreInvalid(const StateChecker::Context& c)
 StateChecker::Result
 SynchronizeAndMoveStateChecker::check(StateChecker::Context& c)
 {
+    if (c.distributorConfig.merge_operations_disabled()) {
+        return Result::noMaintenanceNeeded();
+    }
     if (isInconsistentlySplit(c)) {
         return Result::noMaintenanceNeeded();
     }

@@ -40,6 +40,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _sequenceMutatingOperations(true),
       _allowStaleReadsDuringClusterStateTransitions(false),
       _update_fast_path_restart_enabled(false),
+      _merge_operations_disabled(false),
       _minimumReplicaCountingMode(ReplicaCountingMode::TRUSTED)
 { }
 
@@ -151,6 +152,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _sequenceMutatingOperations = config.sequenceMutatingOperations;
     _allowStaleReadsDuringClusterStateTransitions = config.allowStaleReadsDuringClusterStateTransitions;
     _update_fast_path_restart_enabled = config.restartWithFastUpdatePathIfAllGetTimestampsAreConsistent;
+    _merge_operations_disabled = config.mergeOperationsDisabled;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;
 

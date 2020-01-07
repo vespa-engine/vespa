@@ -168,6 +168,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         uint32_t _minSplitBits {0};
         bool _includeMessagePriority {false};
         bool _includeSchedulingPriority {false};
+        bool _merge_operations_disabled {false};
         CheckerParams();
         ~CheckerParams();
 
@@ -203,6 +204,10 @@ struct StateCheckersTest : Test, DistributorTestUtil {
             _includeSchedulingPriority = includePri;
             return *this;
         }
+        CheckerParams& merge_operations_disabled(bool disabled) noexcept {
+            _merge_operations_disabled = disabled;
+            return *this;
+        }
     };
 
     template <typename CheckerImpl>
@@ -213,6 +218,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
         addNodesToBucketDB(bid, params._bucketInfo);
         setRedundancy(params._redundancy);
         enableDistributorClusterState(params._clusterState);
+        getConfig().set_merge_operations_disabled(params._merge_operations_disabled);
         if (!params._pending_cluster_state.empty()) {
             auto cmd = std::make_shared<api::SetSystemStateCommand>(lib::ClusterState(params._pending_cluster_state));
             _distributor->onDown(cmd);
@@ -815,6 +821,15 @@ TEST_F(StateCheckersTest, retired_nodes_out_of_sync_are_merged) {
             .bucketInfo("0=1,1=2")
             .clusterState("distributor:1 storage:4 "
                           ".0.s:r .1.s:r .2.s:r .3.s:r"));
+}
+
+TEST_F(StateCheckersTest, no_merge_operation_generated_if_merges_explicitly_config_disabled) {
+    runAndVerify<SynchronizeAndMoveStateChecker>(
+        CheckerParams()
+            .expect("NO OPERATIONS GENERATED") // Would normally generate a merge op
+            .bucketInfo("0=1,2=2")
+            .clusterState("distributor:1 storage:3")
+            .merge_operations_disabled(true));
 }
 
 std::string

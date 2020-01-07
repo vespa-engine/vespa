@@ -214,3 +214,8 @@ use_btree_database bool default=false restart
 ## Since all replicas of the document were in sync, applying the update in-place
 ## shall be considered safe.
 restart_with_fast_update_path_if_all_get_timestamps_are_consistent bool default=false
+
+## If set, no merge operations may be generated for any reason by a distributor.
+## This is ONLY intended for system testing of certain transient edge cases and
+## MUST NOT be set to true in a production environment.
+merge_operations_disabled bool default=false
