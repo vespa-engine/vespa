@@ -2,7 +2,6 @@
 package com.yahoo.container.jdisc;
 
 import com.google.inject.Inject;
-import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.ResourceReference;
@@ -19,13 +18,13 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.log.LogLevel;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static java.util.Collections.singletonMap;
 
 /**
  * A request handler which assigns a worker thread to handle each request.
@@ -79,19 +78,20 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         this.allowAsyncResponse = allowAsyncResponse;
     }
 
-    private Map<String, Metric.Context> handlerContexts = new CopyOnWriteHashMap<>();
-    private Metric.Context contextFor(BindingMatch match) {
+    private Metric.Context contextFor(Request request) {
+        BindingMatch match = request.getBindingMatch();
         if (match == null) return null;
         UriPattern matched = match.matched();
         if (matched == null) return null;
         String name = matched.toString();
-        Metric.Context context = handlerContexts.get(name);
-        if (context == null) {
-            Map<String, String> dimensions = singletonMap("handler", name);
-            context = this.metric.createContext(dimensions);
-            handlerContexts.put(name, context);
+        String endpoint = request.headers().containsKey("Host") ? request.headers().get("Host").get(0) : null;
+
+        Map<String, String> dimensions = new HashMap<>();
+        dimensions.put("handler", name);
+        if (endpoint != null) {
+            dimensions.put("endpoint", endpoint);
         }
-        return context;
+        return this.metric.createContext(dimensions);
     }
 
     /**
@@ -101,7 +101,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Override
     public final ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        metric.add("handled.requests", 1, contextFor(request.getBindingMatch()));
+        metric.add("handled.requests", 1, contextFor(request));
         if (request.getTimeout(TimeUnit.SECONDS) == null) {
             Duration timeout = getTimeout();
             if (timeout != null) {
@@ -195,7 +195,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             if ( tryHasResponded()) throw new IllegalStateException("Response already handled");
             ContentChannel cc = responseHandler.handleResponse(response);
             long millis = request.timeElapsed(TimeUnit.MILLISECONDS);
-            metric.set("handled.latency", millis, contextFor(request.getBindingMatch()));
+            metric.set("handled.latency", millis, contextFor(request));
             return cc;
         }
 
