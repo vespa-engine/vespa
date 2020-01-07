@@ -226,12 +226,15 @@ public class FederationSearcher extends ForkingSearcher {
         if (timeout <= 0) return Optional.empty();
 
         Execution newExecution = new Execution(target.getChain(), execution.context());
+        Result result;
         if (strictSearchchain) {
             query.resetTimeout();
-            return Optional.of(newExecution.search(createFederationQuery(query, query, Window.from(query), timeout, target)));
+            result = newExecution.search(createFederationQuery(query, query, Window.from(query), timeout, target));
         } else {
-            return Optional.of(newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target)));
+            result = newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target));
         }
+        target.modifyTargetResult(result);
+        return Optional.of(result);
     }
 
     private FederationResult search(Query query, Execution execution, Collection<Target> targets) {
@@ -558,7 +561,6 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void mergeResult(Query query, Target target, Result mergedResults, Result result) {
-        target.modifyTargetResult(result);
         ComponentId searchChainId = target.getId();
         Chain<Searcher> searchChain = target.getChain();
 

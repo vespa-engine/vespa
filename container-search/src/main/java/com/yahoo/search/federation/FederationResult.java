@@ -94,6 +94,7 @@ class FederationResult {
         public Optional<Result> getIfAvailable(long timeout) {
             if (availableResult.isPresent()) return availableResult;
             availableResult = futureResult.getIfAvailable(timeout, TimeUnit.MILLISECONDS);
+            availableResult.ifPresent(result -> target.modifyTargetResult(result));
             return availableResult;
         }
         
