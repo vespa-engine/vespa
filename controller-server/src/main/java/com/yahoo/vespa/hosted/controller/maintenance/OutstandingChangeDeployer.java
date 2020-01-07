@@ -29,12 +29,11 @@ public class OutstandingChangeDeployer extends Maintainer {
 
     @Override
     protected void maintain() {
-        ApplicationList applications = ApplicationList.from(controller().applications().asList())
+        for (Application application : ApplicationList.from(controller().applications().asList())
                                                       .withProductionDeployment()
-                                                      .withDeploymentSpec();
-        for (ApplicationId instance : InstanceList.from(controller().jobController().deploymentStatuses(applications))
-                                                  .canChangeRevisionAt(controller().clock().instant()).asList())
-            controller().applications().deploymentTrigger().triggerNewRevision(instance);
+                                                      .withDeploymentSpec()
+                                                      .asList())
+            controller().applications().deploymentTrigger().triggerNewRevision(application.id());
     }
 
 }

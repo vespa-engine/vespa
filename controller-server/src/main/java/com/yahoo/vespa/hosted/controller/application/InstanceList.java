@@ -52,16 +52,6 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
                                                                                           .orElse(defaultMajorVersion)));
     }
 
-    /** Returns the subset of instances that are allowed to start deploying its outstanding revision at the given time */
-    public InstanceList canChangeRevisionAt(Instant instant) {
-        return matching(id -> {
-            Change change = statuses.get(id).outstandingChange(id.instance());
-            return change.hasTargets() && statuses.get(id).instanceSteps().get(id.instance())
-                                                  .readyAt(change)
-                                                  .map(readyAt -> ! readyAt.isAfter(instant)).orElse(false);
-        });
-    }
-
     /** Returns the subset of instances that are allowed to upgrade to the given version at the given time */
     public InstanceList canUpgradeAt(Version version, Instant instant) {
         return matching(id -> statuses.get(id).instanceSteps().get(id.instance())

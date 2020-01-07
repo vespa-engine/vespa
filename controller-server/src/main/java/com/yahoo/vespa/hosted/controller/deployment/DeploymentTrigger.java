@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -32,7 +31,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -80,19 +78,36 @@ public class DeploymentTrigger {
         applications().lockApplicationOrThrow(id, application -> {
             application = application.withProjectId(OptionalLong.of(projectId));
             application = application.withNewSubmission(version);
+            applications().store(application);
+        });
+        triggerNewRevision(id);
+    }
+
+    /**
+     * Propagates the latest revision to ready instances.
+     * Ready instances are those whose dependencies are complete, and which aren't blocked, and, additionally,
+     * which aren't upgrading, or are already deploying an application change, or failing upgrade.
+     */
+    public void triggerNewRevision(TenantAndApplicationId id) {
+        applications().lockApplicationIfPresent(id, application -> {
             DeploymentStatus status = jobs.deploymentStatus(application.get());
-            for (ApplicationId instanceId : InstanceList.from(DeploymentStatusList.from(List.of(status)))
-                                                        .canChangeRevisionAt(clock.instant()).asList())
-                if (acceptNewApplicationVersion(status, instanceId.instance())) {
-                    application = application.with(instanceId.instance(),
-                                                   instance -> instance.withChange(status.outstandingChange(instance.name()).onTopOf(instance.change())));
-                    for (Run run : jobs.active(instanceId))
+            for (InstanceName instanceName : application.get().deploymentSpec().instanceNames()) {
+                Change outstanding = status.outstandingChange(instanceName);
+                if (   outstanding.hasTargets()
+                    && status.instanceSteps().get(instanceName)
+                             .readyAt(outstanding)
+                             .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
+                    && acceptNewApplicationVersion(status, instanceName)) {
+                    application = application.with(instanceName,
+                                                   instance -> {
+                                                       instance = instance.withChange(instance.change().with(outstanding.application().get()));
+                                                       return instance.withChange(remainingChange(instance, status));
+                                                   });
+                    for (Run run : jobs.active(application.get().id().instance(instanceName)))
                         if ( ! run.id().type().environment().isManuallyDeployed())
                             jobs.abort(run.id());
                 }
-
-            for (InstanceName instanceName : application.get().instances().keySet())
-                application = application.with(instanceName, instance -> instance.withChange(remainingChange(instance, status)));
+            }
             applications().store(application);
         });
     }
@@ -186,13 +201,6 @@ public class DeploymentTrigger {
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(instanceId), application -> {
             if ( ! application.get().require(instanceId.instance()).change().hasTargets())
                 forceChange(instanceId, change);
-        });
-    }
-
-    public void triggerNewRevision(ApplicationId id) {
-        applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            DeploymentStatus status = jobs.deploymentStatus(application.get());
-            triggerChange(id, status.outstandingChange(id.instance()));
         });
     }
 
