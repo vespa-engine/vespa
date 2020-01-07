@@ -11,10 +11,13 @@ import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
+import java.util.stream.Collectors;
 
 /**
  * A free, parametrized function
@@ -27,7 +30,12 @@ public class LambdaFunctionNode extends CompositeNode {
     private final ExpressionNode functionExpression;
 
     public LambdaFunctionNode(List<String> arguments, ExpressionNode functionExpression) {
-        // TODO: Verify that the function only accesses the given arguments
+        if ( ! arguments.containsAll(featuresAccessedIn(functionExpression))) {
+            throw new IllegalArgumentException("Lambda " + functionExpression + " accesses features outside its scope: " +
+                                               featuresAccessedIn(functionExpression).stream()
+                                                                                     .filter(f ->  ! arguments.contains(f))
+                                                                                     .collect(Collectors.joining(", ")));
+        }
         this.arguments = ImmutableList.copyOf(arguments);
         this.functionExpression = functionExpression;
     }
@@ -133,6 +141,22 @@ public class LambdaFunctionNode extends CompositeNode {
             }
         });
     }
+
+    private static Set<String> featuresAccessedIn(ExpressionNode node) {
+        if (node instanceof ReferenceNode) {
+            return Set.of(((ReferenceNode) node).reference().toString());
+        }
+        else if (node instanceof NameNode) { // (This clause probably not necessary)
+            return Set.of(((NameNode) node).getValue());
+        }
+        else if (node instanceof CompositeNode) {
+            Set<String> features = new HashSet<>();
+            ((CompositeNode)node).children().forEach(child -> features.addAll(featuresAccessedIn(child)));
+            return features;
+        }
+        return Set.of();
+    }
+
 
     private class DoubleUnaryLambda implements DoubleUnaryOperator {
 

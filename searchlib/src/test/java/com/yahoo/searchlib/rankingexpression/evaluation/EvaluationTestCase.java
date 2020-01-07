@@ -459,6 +459,22 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testLambdaValidation() {
+        EvaluationTester tester = new EvaluationTester();
+        try {
+            tester.assertEvaluates("{ {d1:0}:1, {d1:1}:2, {d1:2 }:3 }",
+                                   "map(tensor0, f(x) (log10(x+sum(tensor0)))", "{ {d1:0}:10, {d1:1}:100, {d1:2}:1000 }");
+            fail("Expected validation failure");
+        }
+        catch (IllegalArgumentException e) {
+            // success
+            assertEquals("Lambda log10(x + reduce(tensor0, sum)) accesses features outside its scope: tensor0",
+                         e.getMessage());
+        }
+
+    }
+
+    @Test
     public void testExpand() {
         EvaluationTester tester = new EvaluationTester();
         // Add a dimension using a literal tensor
