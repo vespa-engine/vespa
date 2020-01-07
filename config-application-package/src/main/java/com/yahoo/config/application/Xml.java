@@ -68,6 +68,7 @@ public class Xml {
 
     static DocumentBuilder getPreprocessDocumentBuilder() throws ParserConfigurationException {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false); // XXE prevention
         factory.setNamespaceAware(true);
         factory.setXIncludeAware(false);
         factory.setValidating(false);

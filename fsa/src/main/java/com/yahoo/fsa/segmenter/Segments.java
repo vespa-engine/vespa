@@ -6,7 +6,7 @@ import java.util.LinkedList;
 /**
  * Contains the segmentation() method.
  *
- * @author  <a href="mailto:boros@yahoo-inc.com">Peter Boros</a>
+ * @author  Peter Boros
  */
 public class Segments extends LinkedList {
 

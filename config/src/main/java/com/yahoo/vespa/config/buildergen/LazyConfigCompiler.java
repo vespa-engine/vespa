@@ -16,9 +16,9 @@ import java.util.Locale;
  * {@link CompiledBuilder}.
  *
  * @author Ulf Lilleengen
- * @since 5.2
  */
 public class LazyConfigCompiler implements ConfigCompiler {
+
     private final File outputDirectory;
     private final ClassLoader classLoader;
     private final JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();

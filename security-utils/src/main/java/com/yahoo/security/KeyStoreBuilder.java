@@ -100,6 +100,9 @@ public class KeyStoreBuilder {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+        finally {
+            inputFilePassword = null;
+        }
     }
 
     private static class KeyEntry {
@@ -125,4 +128,5 @@ public class KeyStoreBuilder {
             this.certificate = certificate;
         }
     }
+
 }

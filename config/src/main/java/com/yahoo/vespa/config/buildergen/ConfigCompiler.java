@@ -7,5 +7,7 @@ package com.yahoo.vespa.config.buildergen;
  * @author Ulf Lilleengen
  */
 public interface ConfigCompiler {
+
     CompiledBuilder compile(ConfigDefinitionClass defClass);
+
 }

@@ -21,6 +21,7 @@ public class Runner {
 
     /**
      * Feed data from inputFile to session.
+     *
      * @param feedClient where to send data to
      * @param inputStream source of data
      * @param isJson if input stream is of json formatted data

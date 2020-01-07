@@ -306,9 +306,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * calling {@link #getConfig(com.yahoo.config.ConfigInstance.Builder, String)}. The default values used will be those of the config
      * types in the model.
      *
-     * @param clazz The type of config
-     * @param configId The config id
-     * @return A config instance of the given type
+     * @param clazz the type of config
+     * @param configId the config id
+     * @return a config instance of the given type
      */
     public <CONFIGTYPE extends ConfigInstance> CONFIGTYPE getConfig(Class<CONFIGTYPE> clazz, String configId) {
         try {

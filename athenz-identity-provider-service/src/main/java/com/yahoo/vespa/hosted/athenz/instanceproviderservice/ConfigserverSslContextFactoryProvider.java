@@ -45,6 +45,7 @@ import java.util.logging.Logger;
  * @author bjorncs
  */
 public class ConfigserverSslContextFactoryProvider extends TlsContextBasedProvider  {
+
     private static final String CERTIFICATE_ALIAS = "athenz";
     private static final Duration EXPIRATION_MARGIN = Duration.ofHours(6);
     private static final Path VESPA_SIA_DIRECTORY = Paths.get(Defaults.getDefaults().underVespaHome("var/vespa/sia"));

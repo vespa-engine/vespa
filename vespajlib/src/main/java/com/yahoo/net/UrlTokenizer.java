@@ -175,4 +175,5 @@ public class UrlTokenizer {
         schemeToPort.put(scheme, str);
         portToScheme.put(str, scheme);
     }
+
 }

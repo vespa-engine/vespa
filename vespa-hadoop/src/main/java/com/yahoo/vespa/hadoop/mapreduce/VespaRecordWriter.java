@@ -35,8 +35,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 /**
- * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa
- * endpoints.
+ * VespaRecordWriter sends the output &lt;key, value&gt; to one or more Vespa endpoints.
  *
  * @author lesters
  */

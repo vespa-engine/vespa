@@ -133,9 +133,9 @@ public class Mirror implements IMirror {
      * and end with '**' to match the rest of the name.
      * Note that this isn't quite globbing, as there is no backtracking.
      *
-     * @return true if the name matches the pattern
      * @param name the name
      * @param pattern the pattern
+     * @return true if the name matches the pattern
      */
     static boolean match(char [] name, char [] pattern) {
         int ni = 0;

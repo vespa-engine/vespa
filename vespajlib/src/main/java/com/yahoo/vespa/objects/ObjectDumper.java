@@ -131,4 +131,5 @@ public class ObjectDumper extends ObjectVisitor {
             addLine(name + ": " + obj);
         }
     }
+
 }

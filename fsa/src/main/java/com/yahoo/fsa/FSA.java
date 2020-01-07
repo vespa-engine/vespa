@@ -83,7 +83,7 @@ public class FSA implements Closeable {
         public void delta(String string){
             ByteBuffer buf = fsa.encode(string);
             Maps m = fsa.map();
-            while(state >0 && buf.position()<buf.limit()){
+            while (state >0 && buf.position()<buf.limit()){
                 delta(m, buf.get());
             }
         }
@@ -106,7 +106,7 @@ public class FSA implements Closeable {
 
         /** Jumps ahead by a word -  if this is not the first word, it must be preceeded by space. */
         public void deltaWord(String string){
-            if (state!=fsa.start()) {
+            if (state != fsa.start()) {
                 delta((byte)' ');
             }
             delta(string);
