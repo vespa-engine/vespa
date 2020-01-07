@@ -27,7 +27,7 @@ public class FeedClientTest {
 
     SessionParams sessionParams = new SessionParams.Builder()
             .addCluster(new Cluster.Builder()
-                    .addEndpoint(Endpoint.create("hostname"))
+                    .addEndpoint(Endpoint.create("localhost"))
                     .build())
             .setConnectionParams(new ConnectionParams.Builder()
                     .setDryRun(true)

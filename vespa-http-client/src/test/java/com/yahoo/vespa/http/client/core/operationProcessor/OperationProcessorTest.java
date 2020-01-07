@@ -19,8 +19,11 @@ import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
@@ -40,10 +43,10 @@ public class OperationProcessorTest {
     @Test
     public void testBasic() {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .build();
 
         OperationProcessor q = new OperationProcessor(
@@ -53,26 +56,26 @@ public class OperationProcessorTest {
 
 
         q.resultReceived(new EndpointResult("foo", new Result.Detail(null)), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
 
         q.sendDocument(doc1);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("b"))), 1);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("c"))), 2);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("d"))), 3);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("e"))), 0);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         //check a, b, c, d
         Result aggregated = queue.poll();
@@ -121,8 +124,8 @@ public class OperationProcessorTest {
     @Test
     public void testBlockingOfOperationsTwoEndpoints() {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
         OperationProcessor operationProcessor = new OperationProcessor(
@@ -159,7 +162,7 @@ public class OperationProcessorTest {
     @Test
     public void testBlockingOfOperationsToSameDocIdWithTwoOperations() {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
 
@@ -192,7 +195,7 @@ public class OperationProcessorTest {
     @Test
     public void testBlockingOfOperationsToSameDocIdMany() {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .setConnectionParams(new ConnectionParams.Builder().build())
                 .build();
 
@@ -225,7 +228,7 @@ public class OperationProcessorTest {
 
     @Test
     public void testMixOfBlockingAndNonBlocking() {
-        Endpoint endpoint = Endpoint.create("host");
+        Endpoint endpoint = Endpoint.create("localhost");
         SessionParams sessionParams = new SessionParams.Builder()
                 .addCluster(new Cluster.Builder().addEndpoint(endpoint).build())
                 .setConnectionParams(new ConnectionParams.Builder().build())
@@ -266,9 +269,9 @@ public class OperationProcessorTest {
     @Test
     public void assertThatDuplicateResultsFromOneClusterWorks() {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .build();
 
         OperationProcessor q = new OperationProcessor(
@@ -292,9 +295,9 @@ public class OperationProcessorTest {
     @Test
     public void testMultipleDuplicateDocIds() {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .build();
 
         OperationProcessor q = new OperationProcessor(
@@ -354,7 +357,7 @@ public class OperationProcessorTest {
     @Test
     public void testWaitBlocks() throws InterruptedException {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("host")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .build();
 
         OperationProcessor operationProcessor = new OperationProcessor(
@@ -376,17 +379,17 @@ public class OperationProcessorTest {
         started.await();
         // We want the test to pass fast so we only wait 40mS to see that it is blocking. This might lead to
         // some false positives, but that is ok.
-        assertThat(done.await(40, TimeUnit.MILLISECONDS), is(false));
+        assertFalse(done.await(40, TimeUnit.MILLISECONDS));
         operationProcessor.resultReceived(
                 new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("d"))), 0);
-        assertThat(done.await(120, TimeUnit.SECONDS), is(true));
+        assertTrue(done.await(120, TimeUnit.SECONDS));
 
     }
 
     @Test
     public void testSendsResponseToQueuedDocumentOnClose() throws InterruptedException {
         SessionParams sessionParams = new SessionParams.Builder()
-                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("#$#")).build())
+                .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
                 .build();
 
         ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
@@ -410,4 +413,30 @@ public class OperationProcessorTest {
         operationProcessor.close();
         countDownLatch.await();
     }
+
+    @Test
+    public void unknownHostThrowsExceptionAtConstructionTime() {
+        try {
+            SessionParams sessionParams = new SessionParams.Builder()
+                    .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("localhost")).build())
+                    .addCluster(new Cluster.Builder().addEndpoint(Endpoint.create("unknown.invalid")).build())
+                    .build();
+            ScheduledThreadPoolExecutor executor = mock(ScheduledThreadPoolExecutor.class);
+
+            CountDownLatch countDownLatch = new CountDownLatch(3);
+
+            OperationProcessor operationProcessor = new OperationProcessor(
+                    new IncompleteResultsThrottler(19, 19, null, null),
+                    (docId, documentResult) -> {
+                        countDownLatch.countDown();
+                    },
+                    sessionParams, executor);
+
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Unknown host: unknown.invalid:4080 ssl=false", e.getMessage());
+        }
+    }
+
 }
