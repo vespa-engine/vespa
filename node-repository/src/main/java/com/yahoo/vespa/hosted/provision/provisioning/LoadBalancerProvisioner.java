@@ -166,8 +166,8 @@ public class LoadBalancerProvisioner {
                 reals.add(new Real(HostName.from(node.hostname()), ip));
             }
         }
-        log.log(LogLevel.INFO, "Creating load balancer for " + cluster + " in " + application.toShortString() +
-                               ", targeting: " + reals);
+        log.log(LogLevel.DEBUG, "Creating load balancer for " + cluster + " in " + application.toShortString() +
+                                ", targeting: " + reals);
         try {
             return service.create(application, cluster, reals, force);
         } catch (Exception e) {
