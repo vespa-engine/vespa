@@ -27,6 +27,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -75,7 +77,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             HttpClientFactory httpClientFactory,
             String clientId) {
         SUPPORTED_VERSIONS.add(3);
-        this.endpoint = endpoint;
+        this.endpoint = validate(endpoint);
         this.feedParams = feedParams;
         this.clusterSpecificRoute = clusterSpecificRoute;
         this.httpClientFactory = httpClientFactory;
@@ -90,8 +92,17 @@ class ApacheGatewayConnection implements GatewayConnection {
             endOfFeed = END_OF_FEED_XML;
         }
         this.clientId = clientId;
-        if (this.clientId == null) {
-            throw new RuntimeException("Got no client Id.");
+        if (this.clientId == null)
+            throw new IllegalArgumentException("Got no client Id.");
+    }
+
+    private Endpoint validate(Endpoint endpoint) {
+        try {
+            InetAddress.getByName(endpoint.getHostname());
+            return endpoint;
+        }
+        catch (UnknownHostException e) {
+            throw new IllegalArgumentException("Unknown host: " + endpoint);
         }
     }
 
@@ -390,7 +401,7 @@ class ApacheGatewayConnection implements GatewayConnection {
         final ConnectionParams connectionParams;
         final boolean useSsl;
 
-        public HttpClientFactory(final ConnectionParams connectionParams, final boolean useSsl) {
+        public HttpClientFactory(ConnectionParams connectionParams, boolean useSsl) {
             this.connectionParams = connectionParams;
             this.useSsl = useSsl;
         }
@@ -426,14 +437,12 @@ class ApacheGatewayConnection implements GatewayConnection {
             clientBuilder.disableContentCompression();
             // Try to disable the disabling to see if system tests become stable again.
             // clientBuilder.disableAutomaticRetries();
-            {
-                RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
-                requestConfigBuilder.setSocketTimeout(0);
-                if (connectionParams.getProxyHost() != null) {
-                    requestConfigBuilder.setProxy(new HttpHost(connectionParams.getProxyHost(), connectionParams.getProxyPort()));
-                }
-                clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
+            RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
+            requestConfigBuilder.setSocketTimeout(0);
+            if (connectionParams.getProxyHost() != null) {
+                requestConfigBuilder.setProxy(new HttpHost(connectionParams.getProxyHost(), connectionParams.getProxyPort()));
             }
+            clientBuilder.setDefaultRequestConfig(requestConfigBuilder.build());
 
             log.fine("Creating HttpClient: " + " ConnectionTimeout "
                             + " SocketTimeout 0 secs "

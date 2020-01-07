@@ -298,6 +298,7 @@ class IOThread implements Runnable, AutoCloseable {
         return processResponse;
     }
 
+    /** Given a current thread state, take the appropriate action and return the resulting new thread state */
     private ThreadState cycle(ThreadState threadState) {
         switch(threadState) {
             case DISCONNECTED:
