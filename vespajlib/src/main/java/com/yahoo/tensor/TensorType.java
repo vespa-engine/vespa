@@ -323,7 +323,7 @@ public class TensorType {
          * [N] + [] = []
          * [] + {} = {}
          */
-        Dimension combineWith(Optional<Dimension> other, boolean allowDifferentSizes) {
+        Dimension combineWith(Optional<Dimension> other) {
             if ( ! other.isPresent()) return this;
             if (this instanceof MappedDimension) return this;
             if (other.get() instanceof MappedDimension) return other.get();
@@ -333,11 +333,7 @@ public class TensorType {
             // both are indexed bound
             IndexedBoundDimension thisIb = (IndexedBoundDimension)this;
             IndexedBoundDimension otherIb = (IndexedBoundDimension)other.get();
-            if (allowDifferentSizes)
-                return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
-            if (  ! thisIb.size().equals(otherIb.size()))
-                throw new IllegalArgumentException("Unequal dimension sizes in " + thisIb + " and " + otherIb);
-            return thisIb;
+            return thisIb.size().get() < otherIb.size().get() ? thisIb : otherIb;
         }
 
         @Override
@@ -498,13 +494,9 @@ public class TensorType {
          * The value type will be the largest of the value types of the input types
          */
         public Builder(TensorType ... types) {
-            this(true, types);
-        }
-
-        public Builder(boolean allowDifferentSizes, TensorType ... types) {
             this.valueType = TensorType.combinedValueType(types);
             for (TensorType type : types)
-                addDimensionsOf(type, allowDifferentSizes);
+                addDimensionsOf(type);
         }
 
         /** Creates a builder from the given dimensions, having double as the value type */
@@ -522,17 +514,17 @@ public class TensorType {
 
         private static final boolean supportsMixedTypes = false;
 
-        private void addDimensionsOf(TensorType type, boolean allowDifferentSizes) {
+        private void addDimensionsOf(TensorType type) {
             if ( ! supportsMixedTypes) {  // TODO: Support it
-                addDimensionsOfAndDisallowMixedDimensions(type, allowDifferentSizes);
+                addDimensionsOfAndDisallowMixedDimensions(type);
             }
             else {
                 for (Dimension dimension : type.dimensions)
-                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name())), allowDifferentSizes));
+                    set(dimension.combineWith(Optional.ofNullable(dimensions.get(dimension.name()))));
             }
         }
 
-        private void addDimensionsOfAndDisallowMixedDimensions(TensorType type, boolean allowDifferentSizes) {
+        private void addDimensionsOfAndDisallowMixedDimensions(TensorType type) {
             boolean containsMapped = dimensions.values().stream().anyMatch(d -> ! d.isIndexed());
             containsMapped = containsMapped || type.dimensions().stream().anyMatch(d -> ! d.isIndexed());
 
@@ -540,7 +532,7 @@ public class TensorType {
                 if (containsMapped)
                     dimension = new MappedDimension(dimension.name());
                 Dimension existing = dimensions.get(dimension.name());
-                set(dimension.combineWith(Optional.ofNullable(existing), allowDifferentSizes));
+                set(dimension.combineWith(Optional.ofNullable(existing)));
             }
         }
 
