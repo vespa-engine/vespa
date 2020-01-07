@@ -368,7 +368,7 @@ public class FixedQuery {
     }
 
     /**
-     * build the vespa query string join by '&'
+     * build the vespa query string join by '&amp;'
      *
      * @return the query string
      */
