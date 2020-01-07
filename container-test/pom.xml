@@ -35,10 +35,6 @@
       <artifactId>jackson-dataformat-xml</artifactId>
     </dependency>
     <dependency>
-      <groupId>commons-collections</groupId>
-      <artifactId>commons-collections</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>airline</artifactId>
       <exclusions>
