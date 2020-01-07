@@ -1,15 +1,12 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
-import com.yahoo.concurrent.ThreadFactoryFactory;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.Curator;
 import org.apache.curator.framework.recipes.cache.ChildData;
 
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 /**
@@ -40,7 +37,8 @@ public class LocalSessionStateWatcher {
     // Will delete session if it exists in local session repo
     private void sessionChanged(Session.Status status) {
         long sessionId = session.getSessionId();
-        log.log(LogLevel.DEBUG, session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
+        log.log(status == Session.Status.DELETE ? LogLevel.INFO : LogLevel.DEBUG,
+                session.logPre() + "Session change: Local session " + sessionId + " changed status to " + status);
 
         if (status.equals(Session.Status.DELETE) && localSessionRepo.getSession(sessionId) != null) {
             log.log(LogLevel.DEBUG, session.logPre() + "Deleting session " + sessionId);
