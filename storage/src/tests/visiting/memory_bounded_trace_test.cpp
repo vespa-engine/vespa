@@ -7,7 +7,7 @@ using namespace ::testing;
 
 namespace storage {
 
-constexpr vespalib::system_time epoch(vespalib::duration::zero());
+constexpr vespalib::system_time epoch(vespalib::system_time::duration::zero());
 
 TEST(MemoryBoundedTraceTest, no_memory_reported_used_when_empty) {
     MemoryBoundedTrace trace(100);

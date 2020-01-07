@@ -24,7 +24,7 @@ public:
         FlushMeta(const vespalib::string & name, uint32_t id);
         ~FlushMeta();
         const vespalib::string & getName() const { return _name; }
-        vespalib::system_time getStart() const { return vespalib::system_clock::now() - elapsed(); }
+        vespalib::system_time getStart() const { return vespalib::system_clock::now() - std::chrono::duration_cast<vespalib::system_time::duration>(elapsed()); }
         vespalib::duration elapsed() const { return _timer.elapsed(); }
         uint32_t getId() const { return _id; }
         bool operator < (const FlushMeta & rhs) const { return _id < rhs._id; }

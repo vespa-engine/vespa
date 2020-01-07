@@ -10,7 +10,7 @@ using namespace vespalib::slime;
 
 struct FixedClock : public Clock
 {
-    FixedClock() : _currentTime(duration::zero()) { }
+    FixedClock() : _currentTime(vespalib::system_time::duration::zero()) { }
     vespalib::system_time _currentTime;
     vespalib::system_time currentTime() const override { return _currentTime; }
 };
@@ -57,7 +57,7 @@ TEST("that trace can be copied") {
     EXPECT_EQUAL(trace.toString(), trace2.toString());
 }
 
-constexpr vespalib::system_time epoch(duration::zero());
+constexpr vespalib::system_time epoch(vespalib::system_time::duration::zero());
 
 TEST("ensure that system clock is used by default") {
     Trace trace(2);

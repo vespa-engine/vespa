@@ -10,7 +10,7 @@ system_time
 to_utc(steady_time ts) {
     system_clock::time_point nowUtc = system_clock::now();
     steady_time nowSteady = steady_clock::now();
-    return system_time(nowUtc.time_since_epoch() - nowSteady.time_since_epoch() + ts.time_since_epoch());
+    return system_time(std::chrono::duration_cast<system_time::duration>(nowUtc.time_since_epoch() - nowSteady.time_since_epoch() + ts.time_since_epoch()));
 }
 
 namespace {

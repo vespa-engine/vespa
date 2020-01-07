@@ -21,7 +21,7 @@ TEST("that a single trace node is serialized") {
     EXPECT_FALSE(i["payload"].valid());
 }
 
-constexpr system_time zero_system_time(duration::zero());
+constexpr system_time zero_system_time(system_time::duration::zero());
 constexpr system_time as_ms(long ms) { return system_time(std::chrono::milliseconds(ms)); }
 
 

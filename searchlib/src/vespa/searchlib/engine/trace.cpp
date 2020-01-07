@@ -41,7 +41,7 @@ Trace::start(int level, bool useUTC) {
         if (useUTC) {
             root().setString("start_time", vespalib::to_string(vespalib::to_utc(_relativeTime.timeOfDawn())));
         } else {
-            root().setString("start_time", vespalib::to_string(vespalib::system_time(_relativeTime.timeOfDawn().time_since_epoch())));
+            root().setString("start_time", vespalib::to_string(vespalib::system_time(std::chrono::duration_cast<vespalib::system_time::duration>(_relativeTime.timeOfDawn().time_since_epoch()))));
         }
     }
 }
