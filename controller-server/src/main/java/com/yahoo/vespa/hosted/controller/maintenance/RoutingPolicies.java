@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -143,11 +142,6 @@ public class RoutingPolicies {
         // Remove active load balancers and irrelevant zones from candidates
         removalCandidates.removeIf(policy -> activeLoadBalancers.contains(policy.canonicalName()) ||
                                              !policy.zone().equals(loadBalancers.zone));
-        if (!removalCandidates.isEmpty()) {
-            LOGGER.log(LogLevel.WARNING, "Removing " + removalCandidates + ". Active load balancers " +
-                                         activeLoadBalancers);
-        }
-
         for (var policy : removalCandidates) {
             var dnsName = policy.endpointIn(controller.system()).dnsName();
             controller.nameServiceForwarder().removeRecords(Record.Type.CNAME, RecordName.from(dnsName), Priority.normal);
