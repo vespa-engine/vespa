@@ -78,6 +78,7 @@ vespa_define_module(
     src/tests/net/tls/transport_options
     src/tests/objects/nbostream
     src/tests/optimized
+    src/tests/overload
     src/tests/portal
     src/tests/portal/handle_manager
     src/tests/portal/http_request
@@ -130,6 +131,7 @@ vespa_define_module(
     src/tests/util/md5
     src/tests/util/rcuvector
     src/tests/valgrind
+    src/tests/visit_ranges
     src/tests/websocket
     src/tests/zcurve
 
