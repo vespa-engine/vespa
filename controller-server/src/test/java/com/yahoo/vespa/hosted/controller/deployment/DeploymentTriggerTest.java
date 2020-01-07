@@ -877,7 +877,7 @@ public class DeploymentTriggerTest {
                 "        <instance id='other'>\n" +
                 "            <upgrade policy='conservative' />\n" +
                 "            <test />\n" +
-                "            <block-change days='sat' hours='10' time-zone='CET' />\n" +
+                "            <block-change revision='true' version='false' days='sat' hours='0-23' time-zone='CET' />\n" +
                 "            <prod>\n" +
                 "                <region active='true'>eu-west-1</region>\n" +
                 "                <test>eu-west-1</test>\n" +
@@ -954,9 +954,67 @@ public class DeploymentTriggerTest {
         tester.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
 
-        tester.atMondayMorning().clock().advance(Duration.ofDays(5).plusHours(5)); // Inside block window for second instance.
-        // TODO jonmv: More checks.
+        tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside block window for second instance.
+        Version version = Version.fromString("8.1");
+        tester.controllerTester().upgradeSystem(version);
+        tester.upgrader().maintain();
+        assertEquals(Change.of(version), app1.instance().change());
+        assertEquals(Change.empty(), app2.instance().change());
 
+        // Upgrade instance 1; a failure allows an application change to accompany the upgrade.
+        // The new platform won't roll out to the conservative instance until the normal one is upgraded.
+        app1.failDeployment(systemTest);
+        app1.submit(applicationPackage);
+        assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app1.instance().change());
+        app1.runJob(systemTest)
+            .jobAborted(stagingTest)
+            .runJob(stagingTest)
+            .runJob(productionUsWest1)
+            .runJob(productionUsEast3);
+        tester.clock().advance(Duration.ofHours(2));
+        app1.runJob(productionEuWest1);
+        tester.clock().advance(Duration.ofHours(1));
+        app1.runJob(productionAwsUsEast1a);
+        tester.triggerJobs();
+        app1.runJob(testAwsUsEast1a);
+        app1.runJob(productionApNortheast2);
+        app1.runJob(productionApNortheast1);
+        tester.clock().advance(Duration.ofHours(1));
+        app1.runJob(testApNortheast1);
+        app1.runJob(testApNortheast2);
+        app1.runJob(testUsEast3);
+        app1.runJob(productionApSoutheast1);
+
+        tester.controllerTester().computeVersionStatus();
+        tester.upgrader().maintain();
+        tester.outstandingChangeDeployer().run();
+        tester.triggerJobs();
+        assertEquals(2, tester.jobs().active().size());
+        assertEquals(Change.empty(), app1.instance().change());
+        assertEquals(Change.of(version), app2.instance().change());
+
+        app2.runJob(systemTest)     // Testing outstanding revision.
+            .runJob(stagingTest);   // Testing outstanding revision.
+
+        app2.runJob(systemTest)     // Explicitly defined for this instance.
+            .runJob(stagingTest)    // Never completed successfully with just the upgrade.
+            .runJob(productionEuWest1)
+            .failDeployment(testEuWest1)
+            .runJob(systemTest);    // Testing outstanding revision with currently deployed (upgraded) platform.
+
+        tester.clock().advance(Duration.ofDays(1)); // Leave block window for revisions.
+        app2.abortJob(testEuWest1);
+        tester.upgrader().maintain();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(0, tester.jobs().active().size());
+        tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        assertEquals(Change.empty(), app1.instance().change());
+        assertEquals(Change.of(version).with(app1.application().latestVersion().get()), app2.instance().change());
+
+        app2.runJob(productionEuWest1)
+            .runJob(testEuWest1);
+        assertEquals(Change.empty(), app2.instance().change());
     }
 
     @Test
