@@ -29,25 +29,25 @@ public class WeakAnd extends QueryChain {
     @Override
     boolean hasPositiveSearchField(String fieldName) {
         // TODO: implementation
-        return false;
+        throw new UnsupportedOperationException("method not implemented");
     }
 
     @Override
     boolean hasPositiveSearchField(String fieldName, Object value) {
         // TODO: implementation
-        return false;
+        throw new UnsupportedOperationException("method not implemented");
     }
 
     @Override
     boolean hasNegativeSearchField(String fieldName) {
         // TODO: implementation
-        return false;
+        throw new UnsupportedOperationException("method not implemented");
     }
 
     @Override
     boolean hasNegativeSearchField(String fieldName, Object value) {
         // TODO: implementation
-        return false;
+        throw new UnsupportedOperationException("method not implemented");
     }
 
     @Override
