@@ -118,21 +118,33 @@ public class ConvertedModel {
                                             RankProfile rankProfile,
                                             QueryProfileRegistry queryProfileRegistry,
                                             ImportedMlModel importedModel) {
-        ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
-        return new ConvertedModel(modelName,
-                                  modelDescription,
-                                  convertAndStore(importedModel, rankProfile, queryProfileRegistry, modelStore),
-                                  Optional.of(importedModel));
+        try {
+            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            return new ConvertedModel(modelName,
+                                      modelDescription,
+                                      convertAndStore(importedModel, rankProfile, queryProfileRegistry, modelStore),
+                                      Optional.of(importedModel));
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("In " + rankProfile + ": Could not create model '" + modelName +
+                                               " (" + modelDescription + ")", e);
+        }
     }
 
     public static ConvertedModel fromStore(ModelName modelName,
                                            String modelDescription,
                                            RankProfile rankProfile) {
-        ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
-        return new ConvertedModel(modelName,
-                                  modelDescription,
-                                  convertStored(modelStore, rankProfile),
-                                  Optional.empty());
+        try {
+            ModelStore modelStore = new ModelStore(rankProfile.applicationPackage(), modelName);
+            return new ConvertedModel(modelName,
+                                      modelDescription,
+                                      convertStored(modelStore, rankProfile),
+                                      Optional.empty());
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("In " + rankProfile + ": Could not create model '" + modelName +
+                                               " (" + modelDescription + ")", e);
+        }
     }
 
     /**
