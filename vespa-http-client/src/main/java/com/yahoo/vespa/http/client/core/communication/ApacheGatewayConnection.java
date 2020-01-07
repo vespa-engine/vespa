@@ -96,7 +96,7 @@ class ApacheGatewayConnection implements GatewayConnection {
             throw new IllegalArgumentException("Got no client Id.");
     }
 
-    private Endpoint validate(Endpoint endpoint) {
+    private static Endpoint validate(Endpoint endpoint) {
         try {
             InetAddress.getByName(endpoint.getHostname());
             return endpoint;
