@@ -39,6 +39,7 @@ import com.yahoo.vespa.config.server.configchange.RestartActions;
 import com.yahoo.vespa.config.server.deploy.DeployHandlerLogger;
 import com.yahoo.vespa.config.server.deploy.Deployment;
 import com.yahoo.vespa.config.server.deploy.InfraDeployerProvider;
+import com.yahoo.vespa.config.server.http.InternalServerException;
 import com.yahoo.vespa.config.server.http.LogRetriever;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 import com.yahoo.vespa.config.server.http.v2.MetricsResponse;
@@ -325,8 +326,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Deployment deployment = deployFromPreparedSession(localSession, tenant, timeoutBudget.timeLeft());
         deployment.setIgnoreSessionStaleFailure(ignoreSessionStaleFailure);
         deployment.activate();
-        ApplicationId applicationId = localSession.getApplicationId();
-        return applicationId;
+        return localSession.getApplicationId();
     }
 
     private Deployment deployFromPreparedSession(LocalSession session, Tenant tenant, Duration timeout) {
@@ -341,7 +341,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * @return true if the application was found and deleted, false if it was not present
      * @throws RuntimeException if the delete transaction fails. This method is exception safe.
      */
-    public boolean delete(ApplicationId applicationId) {
+    boolean delete(ApplicationId applicationId) {
+        return delete(applicationId, Duration.ofSeconds(60));
+    }
+
+    /**
+     * Deletes an application
+     *
+     * @return true if the application was found and deleted, false if it was not present
+     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
+     */
+    public boolean delete(ApplicationId applicationId, Duration waitTime) {
         Tenant tenant = tenantRepository.getTenant(applicationId.tenant());
         if (tenant == null) return false;
 
@@ -349,23 +359,23 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try (Lock lock = tenantApplications.lock(applicationId)) {
             if ( ! tenantApplications.exists(applicationId)) return false;
 
+            Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
+            if (activeSession.isEmpty()) return false;
+
             // Deleting an application is done by deleting the remote session and waiting
             // until the config server where the deployment happened picks it up and deletes
             // the local session
-            boolean sessionDeleted = tenantApplications.activeSessionOf(applicationId).map(sessionId -> {
-                RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
-                remoteSession.createDeleteTransaction().commit();
-                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
-                // TODO: Add support for timeout in request
-                Duration waitTime = Duration.ofSeconds(60);
-                if (localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
-                    log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
-                    return true;
-                } else {
-                    log.log(LogLevel.ERROR, TenantRepository.logPre(applicationId) + "Session " + sessionId + " was not deleted (waited " + waitTime + ")");
-                    return false;
-                }
-            }).orElse(true);
+            long sessionId = activeSession.get();
+            RemoteSession remoteSession = getRemoteSession(tenant, sessionId);
+            remoteSession.createDeleteTransaction().commit();
+            log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Waiting for session " + sessionId + " to be deleted");
+
+
+            if ( ! waitTime.isZero() && localSessionHasBeenDeleted(applicationId, sessionId, waitTime)) {
+                log.log(LogLevel.INFO, TenantRepository.logPre(applicationId) + "Session " + sessionId + " deleted");
+            } else {
+                throw new InternalServerException("Session " + sessionId + " was not deleted (waited " + waitTime + ")");
+            }
 
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), tenant.getCurator()).delete(applicationId)); // TODO: Not unit tested
@@ -376,7 +386,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             hostProvisioner.ifPresent(provisioner -> provisioner.remove(transaction, applicationId));
             transaction.onCommitted(() -> log.log(LogLevel.INFO, "Deleted " + applicationId));
             transaction.commit();
-            return sessionDeleted;
+            return true;
         }
     }
 
