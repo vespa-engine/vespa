@@ -69,7 +69,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     @Override
     protected Admin doBuild(DeployState deployState, AbstractConfigProducer parent, Element adminElement) {
-        Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"));
+        Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, predefinedMetricSets)
                 .buildMetrics(XML.getChild(adminElement, "metrics"));
         FileDistributionConfigProducer fileDistributionConfigProducer = getFileDistributionConfigProducer(parent);
@@ -88,8 +88,9 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     protected abstract void doBuildAdmin(DeployState deployState, Admin admin, Element adminE);
 
-    private Monitoring getMonitoring(Element monitoringElement) {
+    private Monitoring getMonitoring(Element monitoringElement, boolean isHosted) {
         if (monitoringElement == null) return new DefaultMonitoring(DEFAULT_CLUSTER_NAME, DEFAULT_INTERVAL);
+        if (isHosted) throw new IllegalArgumentException("The 'monitoring' element cannot be used on hosted Vespa.");
 
         Integer minutes = getMonitoringInterval(monitoringElement);
         if (minutes == null)
