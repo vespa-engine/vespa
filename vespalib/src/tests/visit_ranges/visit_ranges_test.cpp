@@ -90,7 +90,7 @@ TEST(VisitRangesTest, asymmetric_merge_can_be_implemented) {
                        [&c](visit_ranges_first, int x) {
                            c.push_back(x);
                        },
-                       [&c](visit_ranges_second, int) {},
+                       [](visit_ranges_second, int) {},
                        [&c](visit_ranges_both, int x, int y) {
                            c.push_back(x * y);
                        }
