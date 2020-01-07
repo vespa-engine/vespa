@@ -210,6 +210,7 @@ cmake3 -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DEXTRA_INCLUDE_DIRECTORY="%{_extra_include_directory}" \
        -DCMAKE_INSTALL_RPATH="%{_prefix}/lib64%{?_extra_link_directory:;%{_extra_link_directory}};/usr/lib/jvm/jre-11-openjdk/lib" \
        %{?_vespa_llvm_version:-DVESPA_LLVM_VERSION="%{_vespa_llvm_version}"} \
+       -DVESPA_UNPRIVILEGED=no \
        .
 
 make %{_smp_mflags}
