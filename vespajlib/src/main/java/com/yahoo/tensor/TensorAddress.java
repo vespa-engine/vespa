@@ -206,7 +206,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public TensorAddress build() {
             for (int i = 0; i < labels.length; i++)
                 if (labels[i] == null)
-                    throw new IllegalArgumentException("Missing a value for dimension " +
+                    throw new IllegalArgumentException("Missing a label for dimension " +
                                                        type.dimensions().get(i).name() + " for " + type);
             return TensorAddress.of(labels);
         }
