@@ -25,18 +25,48 @@ public class Field extends QueryChain {
         this.fieldName = fieldName;
     }
 
+    /**
+     * Contains query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param value the value
+     * @return the query
+     */
     public Query contains(String value) {
         return contains(A.empty(), value);
     }
 
+    /**
+     * Contains query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param annotation the annotation
+     * @param value      the value
+     * @return the query
+     */
     public Query contains(Annotation annotation, String value) {
         return common("contains", annotation, value);
     }
 
+    /**
+     * Contains phrase query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param value  the value
+     * @param others the others
+     * @return the query
+     */
     public Query containsPhrase(String value, String... others) {
         return common("phrase", annotation, value, others);
     }
 
+    /**
+     * Contains phrase query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param values the values
+     * @return the query
+     */
     public Query containsPhrase(List<String> values) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException("value of \"contains phrase\" should not be empty");
@@ -45,10 +75,25 @@ public class Field extends QueryChain {
         return common("phrase", annotation, values);
     }
 
+    /**
+     * Contains near query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param value  the value
+     * @param others the others
+     * @return the query
+     */
     public Query containsNear(String value, String... others) {
         return common("near", annotation, value, others);
     }
 
+    /**
+     * Contains near query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param values the values
+     * @return the query
+     */
     public Query containsNear(List<String> values) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException("value of \"contains near\" should not be empty");
@@ -57,10 +102,27 @@ public class Field extends QueryChain {
         return common("near", annotation, values);
     }
 
+    /**
+     * Contains near query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param annotation the annotation
+     * @param value      the value
+     * @param others     the others
+     * @return the query
+     */
     public Query containsNear(Annotation annotation, String value, String... others) {
         return common("near", annotation, value, others);
     }
 
+    /**
+     * Contains near query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param annotation the annotation
+     * @param values     the values
+     * @return the query
+     */
     public Query containsNear(Annotation annotation, List<String> values) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException("value of \"contains near\" should not be empty");
@@ -69,10 +131,25 @@ public class Field extends QueryChain {
         return common("near", annotation, values);
     }
 
+    /**
+     * Contains onear query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param value  the value
+     * @param others the others
+     * @return the query
+     */
     public Query containsOnear(String value, String... others) {
         return common("onear", annotation, value, others);
     }
 
+    /**
+     * Contains onear query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param values the values
+     * @return the query
+     */
     public Query containsOnear(List<String> values) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException("value of \"contains onear\" should not be empty");
@@ -81,10 +158,27 @@ public class Field extends QueryChain {
         return common("onear", annotation, values);
     }
 
+    /**
+     * Contains onear query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param annotation the annotation
+     * @param value      the value
+     * @param others     the others
+     * @return the query
+     */
     public Query containsOnear(Annotation annotation, String value, String... others) {
         return common("onear", annotation, value, others);
     }
 
+    /**
+     * Contains onear query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param annotation the annotation
+     * @param values     the values
+     * @return the query
+     */
     public Query containsOnear(Annotation annotation, List<String> values) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException("value of \"contains onear\" should not be empty");
@@ -93,14 +187,36 @@ public class Field extends QueryChain {
         return common("onear", annotation, values);
     }
 
+    /**
+     * Contains same element query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param andQuery the and query
+     * @return the query
+     */
     public Query containsSameElement(Query andQuery) {
         return common("sameElement", annotation, andQuery);
     }
 
+    /**
+     * Contains equiv query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param value  the value
+     * @param others the others
+     * @return the query
+     */
     public Query containsEquiv(String value, String... others) {
         return containsEquiv(Stream.concat(Stream.of(value), Stream.of(others)).collect(Collectors.toList()));
     }
 
+    /**
+     * Contains equiv query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param values the values
+     * @return the query
+     */
     public Query containsEquiv(List<String> values) {
         if (values.isEmpty()) {
             throw new IllegalArgumentException("value of \"contains equiv\" should not be empty");
@@ -112,71 +228,191 @@ public class Field extends QueryChain {
         }
     }
 
+    /**
+     * Contains uri query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param value the value
+     * @return the query
+     */
     public Query containsUri(String value) {
         return common("uri", annotation, value) ;
     }
 
+    /**
+     * Contains uri query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     *
+     * @param annotation the annotation
+     * @param value      the value
+     * @return the query
+     */
     public Query containsUri(Annotation annotation, String value) {
         return common("uri", annotation, value) ;
     }
 
+    /**
+     * Matches query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#matches
+     *
+     * @param str the str
+     * @return the query
+     */
     public Query matches(String str) {
         return common("matches", annotation, str);
     }
 
+    /**
+     * Equals query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query eq(int t) {
         return common("=", annotation, t);
     }
 
+    /**
+     * Greater than or equal to query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query ge(int t) {
         return common(">=", annotation, t);
     }
 
+    /**
+     * Greater than query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query gt(int t) {
         return common(">", annotation, t);
     }
 
+    /**
+     * Less than or equal to query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query le(int t) {
         return common("<=", annotation, t);
     }
 
+    /**
+     * Less than query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query lt(int t) {
         return common("<", annotation, t);
     }
 
+    /**
+     * In range query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param l the l
+     * @param m the m
+     * @return the query
+     */
     public Query inRange(int l, int m) {
         return common("range", annotation, l, new Integer[]{m});
     }
 
+    /**
+     * Equal to query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query eq(long t) {
         return common("=", annotation, t);
     }
 
+    /**
+     * Greater than or equal to query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query ge(long t) {
         return common(">=", annotation, t);
     }
 
+    /**
+     * Greater than query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query gt(long t) {
         return common(">", annotation, t);
     }
 
+    /**
+     * Less than or equal to query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query le(long t) {
         return common("<=", annotation, t);
     }
 
+    /**
+     * Less than query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query lt(long t) {
         return common("<", annotation, t);
     }
 
+    /**
+     * In range query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     *
+     * @param l the l
+     * @param m the m
+     * @return the query
+     */
     public Query inRange(long l, long m) {
         return common("range", annotation, l, new Long[]{m});
     }
 
 
+    /**
+     * Is true query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#boolean
+     *
+     * @return the query
+     */
     public Query isTrue() {
         return common("=", annotation, true);
     }
 
+    /**
+     * Is false query.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#boolean
+     *
+     * @return the query
+     */
     public Query isFalse() {
         return common("=", annotation, false);
     }
@@ -264,6 +500,12 @@ public class Field extends QueryChain {
         return hasNegativeSearchField(fieldName) && valuesContains(value);
     }
 
+    /**
+     * Values contains boolean.
+     *
+     * @param value the value
+     * @return the boolean
+     */
     boolean valuesContains(Object value) {
         if (value instanceof String) {
             value = "\"" + value + "\"";

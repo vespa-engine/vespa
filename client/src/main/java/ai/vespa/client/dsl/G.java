@@ -2,6 +2,14 @@
 package ai.vespa.client.dsl;
 
 
+/**
+ * Helper class for generating group syntax
+ * https://docs.vespa.ai/documentation/reference/grouping-syntax.html
+ *
+ * basically the syntax is exactly the same as Vespa group syntax.
+ * The only exception "max" in the Vespa group syntax which represents 'max returned documents',
+ * is replaced by "maxRtn" in the dsl lib.
+ */
 public final class G {
 
     public static Group all(IGroupOperation... ops) {

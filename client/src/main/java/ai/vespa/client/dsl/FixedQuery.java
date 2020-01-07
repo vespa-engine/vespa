@@ -9,14 +9,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+/**
+ * FixedQuery contains a 'Query' which is terminated by a 'semicolon'
+ * This object holds vespa or user defined parameters
+ * https://docs.vespa.ai/documentation/reference/search-api-reference.html
+ */
 public class FixedQuery {
 
     final EndQuery endQuery;
     Map<String, String> others = new HashMap<>();
     Map<String, String> queryMap;
 
-
-    public FixedQuery(EndQuery endQuery) {
+    FixedQuery(EndQuery endQuery) {
         this.endQuery = endQuery;
     }
 
@@ -330,6 +334,12 @@ public class FixedQuery {
         return this;
     }
 
+
+    /**
+     * build the query map from the query
+     *
+     * @return the query map
+     */
     public Map<String, String> buildQueryMap() {
         if (queryMap != null) {
             return queryMap;
@@ -357,7 +367,11 @@ public class FixedQuery {
         return queryMap;
     }
 
-
+    /**
+     * build the vespa query string join by '&'
+     *
+     * @return the query string
+     */
     public String build() {
         return buildQueryMap().entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue())
             .collect(Collectors.joining("&"));

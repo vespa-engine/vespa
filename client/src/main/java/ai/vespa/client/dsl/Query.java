@@ -6,11 +6,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * Vespa query object
+ */
 public class Query extends QueryChain {
 
     Annotation annotation;
     Sources sources;
-
     List<QueryChain> queries = new ArrayList<>();
 
     Query(Sources sources, QueryChain queryChain) {
@@ -86,6 +88,13 @@ public class Query extends QueryChain {
         return sb.toString().trim();
     }
 
+    /**
+     * And.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#and
+     *
+     * @param fieldName the field name
+     * @return the field
+     */
     public Field and(String fieldName) {
         Field f = new Field(this, fieldName);
         f.setOp("and");
@@ -94,6 +103,13 @@ public class Query extends QueryChain {
         return f;
     }
 
+    /**
+     * Andnot.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#andnot
+     *
+     * @param fieldName the field name
+     * @return the field
+     */
     public Field andnot(String fieldName) {
         Field f = new Field(this, fieldName);
         f.setOp("andnot");
@@ -102,6 +118,13 @@ public class Query extends QueryChain {
         return f;
     }
 
+    /**
+     * Or.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#or
+     *
+     * @param fieldName the field name
+     * @return the field
+     */
     public Field or(String fieldName) {
         Field f = new Field(this, fieldName);
         f.setOp("or");
@@ -110,6 +133,13 @@ public class Query extends QueryChain {
         return f;
     }
 
+    /**
+     * And.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#and
+     *
+     * @param query the query
+     * @return the query
+     */
     public Query and(QueryChain query) {
         query.setOp("and");
         queries.add(query);
@@ -117,6 +147,13 @@ public class Query extends QueryChain {
         return this;
     }
 
+    /**
+     * Andnot.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#andnot
+     *
+     * @param query the query
+     * @return the query
+     */
     public Query andnot(QueryChain query) {
         query.setOp("andnot");
         queries.add(query);
@@ -124,6 +161,13 @@ public class Query extends QueryChain {
         return this;
     }
 
+    /**
+     * Or.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#or
+     *
+     * @param query the query
+     * @return the query
+     */
     public Query or(QueryChain query) {
         query.setOp("or");
         queries.add(query);
@@ -131,39 +175,126 @@ public class Query extends QueryChain {
         return this;
     }
 
+    /**
+     * Annotate a query (sub-expression).
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#annotations-of-sub-expressions
+     *
+     * @param annotation the annotation
+     * @return the query
+     */
     public Query annotate(Annotation annotation) {
         this.annotation = annotation;
         return this;
     }
 
+    /**
+     * Offset.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#limit-offset
+     *
+     * @param offset the offset
+     * @return the end query
+     */
     public EndQuery offset(int offset) {
         return new EndQuery(this).offset(offset);
     }
 
+    /**
+     * Limit.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#limit-offset
+     *
+     * @param hits the hits
+     * @return the end query
+     */
     public EndQuery limit(int hits) {
         return new EndQuery(this).limit(hits);
     }
 
+    /**
+     * Timeout.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#timeout
+     *
+     * @param timeout the timeout
+     * @return the end query
+     */
     public EndQuery timeout(int timeout) {
         return new EndQuery(this).timeout(timeout);
     }
 
+    /**
+     * Group.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#grouping
+     *
+     * @param group the group
+     * @return the end query
+     */
     public EndQuery group(Group group) {
         return new EndQuery(this).group(group);
     }
 
+    /**
+     * Group.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#grouping
+     *
+     * @param groupStr the group str
+     * @return the end query
+     */
     public EndQuery group(String groupStr) {
         return new EndQuery(this).group(groupStr);
     }
 
+    /**
+     * Order by asc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param fieldName the field name
+     * @return the end query
+     */
     public EndQuery orderByAsc(String fieldName) {
         return new EndQuery(this).orderByAsc(fieldName);
     }
 
+    /**
+     * Order by asc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param annotation the annotation
+     * @param fieldName the field name
+     * @return the end query
+     */
+    public EndQuery orderByAsc(Annotation annotation, String fieldName) {
+        return new EndQuery(this).orderByAsc(annotation, fieldName);
+    }
+
+    /**
+     * Order by desc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param fieldName the field name
+     * @return the end query
+     */
     public EndQuery orderByDesc(String fieldName) {
         return new EndQuery(this).orderByDesc(fieldName);
     }
 
+
+    /**
+     * Order by desc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param annotation the annotation
+     * @param fieldName the field name
+     * @return the end query
+     */
+    public EndQuery orderByDesc(Annotation annotation, String fieldName) {
+        return new EndQuery(this).orderByDesc(annotation, fieldName);
+    }
+
+    /**
+     * Semicolon.
+     * turn a query into fixed query.
+     *
+     * @return the fixed query
+     */
     public FixedQuery semicolon() {
         return new FixedQuery(new EndQuery(this));
     }

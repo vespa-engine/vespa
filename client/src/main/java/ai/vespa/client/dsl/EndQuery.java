@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * EndQuery contains a 'Query'
+ * This object holds timeout, offset, limit, group and orderBy information before the semicolon
+ */
 public class EndQuery {
 
     QueryChain queryChain;
@@ -38,47 +42,118 @@ public class EndQuery {
         return this;
     }
 
+    /**
+     * Offset.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#limit-offset
+     *
+     * @param offset the offset
+     * @return the end query
+     */
     public EndQuery offset(int offset) {
         return this.setOffset(offset);
     }
 
+    /**
+     * Timeout.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#timeout
+     *
+     * @param timeout the timeout
+     * @return the end query
+     */
     public EndQuery timeout(int timeout) {
         return this.setTimeout(timeout);
     }
 
+    /**
+     * Limit.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#limit-offset
+     *
+     * @param limit the limit
+     * @return the end query
+     */
     public EndQuery limit(int limit) {
         return this.setLimit(limit);
     }
 
+    /**
+     * Semicolon.
+     * turn a query into fixed query.
+     *
+     * @return the fixed query
+     */
     public FixedQuery semicolon() {
         return new FixedQuery(this);
     }
 
+    /**
+     * Group.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#grouping
+     *
+     * @param group the group
+     * @return the end query
+     */
     public EndQuery group(Group group) {
         this.groupQueryStr = group.toString();
         return this;
     }
 
+    /**
+     * Group.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#grouping
+     *
+     * @param groupQueryStr the group str
+     * @return the end query
+     */
     public EndQuery group(String groupQueryStr) {
         this.groupQueryStr = groupQueryStr;
         return this;
     }
 
+    /**
+     * Order by asc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param annotation the annotation
+     * @param fieldName the field name
+     * @return the end query
+     */
     public EndQuery orderByAsc(Annotation annotation, String fieldName) {
         order.add(new Object[]{annotation, fieldName, "asc"});
         return this;
     }
 
+    /**
+     * Order by asc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param fieldName the field name
+     * @return the end query
+     */
     public EndQuery orderByAsc(String fieldName) {
         order.add(new Object[]{A.empty(), fieldName, "asc"});
         return this;
     }
 
+    /**
+     * Order by desc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param annotation the annotation
+     * @param fieldName the field name
+     * @return the end query
+     */
     public EndQuery orderByDesc(Annotation annotation, String fieldName) {
         order.add(new Object[]{annotation, fieldName, "desc"});
         return this;
     }
 
+    /**
+     * Order by desc.
+     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#order-by
+     *
+     * @param fieldName the field name
+     * @return the end query
+     */
     public EndQuery orderByDesc(String fieldName) {
         order.add(new Object[]{A.empty(), fieldName, "desc"});
         return this;
