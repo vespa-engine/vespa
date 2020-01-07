@@ -752,6 +752,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                   .steps(deploymentSpec.requireInstance(instance.name()))
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
 
+            if ( ! instance.change().isEmpty())
+                toSlime(object.setObject("deploying"), instance.change());
+
+            // Outstanding change
+            if ( ! status.outstandingChange(instance.name()).isEmpty())
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
 
             Cursor deploymentJobsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {
@@ -852,22 +858,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
-        // TODO jonmv: Remove when users are updated.
-        application.instances().values().stream().findFirst().ifPresent(firstInstance -> {
-            // Currently deploying change
-            if ( ! firstInstance.change().isEmpty())
-                toSlime(object.setObject("deploying"), firstInstance.change());
-
-            // Outstanding change
-            if ( ! status.outstandingChange(firstInstance.name()).isEmpty())
-                toSlime(object.setObject("outstandingChange"), status.outstandingChange(firstInstance.name()));
-        });
-
         if (application.deploymentSpec().instance(instance.name()).isPresent()) {
             // Jobs sorted according to deployment spec
             List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
                                                   .steps(application.deploymentSpec().requireInstance(instance.name()))
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
+
+            if ( ! instance.change().isEmpty())
+                toSlime(object.setObject("deploying"), instance.change());
+
+            // Outstanding change
+            if ( ! status.outstandingChange(instance.name()).isEmpty())
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
 
             Cursor deploymentsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {
@@ -1408,7 +1410,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Change change = application.get().require(id.instance()).change();
             if (change.isEmpty()) {
-                response.append("No deployment in progress for " + application + " at this time");
+                response.append("No deployment in progress for " + id + " at this time");
                 return;
             }
 

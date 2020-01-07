@@ -298,8 +298,10 @@ public class DeploymentStatus {
                 previous = List.of(stepStatus);
             }
             else return previous; // Empty container steps end up here, and are simply ignored.
+            JobId jobId = new JobId(application.id().instance(instance), jobType);
+            allSteps.removeIf(existing -> existing.job().equals(Optional.of(jobId))); // Replace implicit tests with explicit ones.
             allSteps.add(stepStatus);
-            dependencies.put(new JobId(application.id().instance(instance), jobType), stepStatus);
+            dependencies.put(jobId, stepStatus);
             return previous;
         }
 

@@ -39,7 +39,7 @@
         },
         "hash": "1.0.3-commit1"
       },
-      "deploying": "0 of 0 complete"
+      "completed": "0 of 0 complete"
     },
     "platform": {
       "at": 0,
@@ -47,16 +47,7 @@
       "platform": "7.1"
     }
   },
-  "deploying": {
-    "application": {
-      "build": 3,
-      "source": {
-        "gitRepository": "repository1",
-        "gitCommit": "commit1",
-        "gitBranch": "master"
-      },
-      "hash": "1.0.3-commit1"
-    }
-  },
+  "deploying": {},
   "jobs": {}
 }
+
