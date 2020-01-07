@@ -4,6 +4,15 @@
 # @author Arnstein Ressem
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
+include(functions.cmake)
+list(APPEND CMAKE_MODULE_PATH "$ENV{HOME}/share/cmake/Modules" "/opt/vespa-deps/share/cmake/Modules")
+include(default_build_settings.cmake)
+vespa_detect_build_platform()
+message("-- Vespa build platform is ${VESPA_OS_DISTRO} ${VESPA_OS_DISTRO_VERSION}")
+vespa_use_default_cxx_compiler()
+vespa_use_default_java_home()
+vespa_use_default_build_settings()
+
 project(vespa CXX C)
 
 # allows import of project in CLion on OSX
@@ -14,7 +23,6 @@ endif()
 # TODO: Move this to where it's actually needed
 find_package(JNI REQUIRED)
 
-include(functions.cmake)
 include(build_settings.cmake)
 
 # Enable CTest unit testing
