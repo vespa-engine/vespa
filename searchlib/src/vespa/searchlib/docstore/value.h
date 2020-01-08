@@ -25,6 +25,7 @@ public:
     Value &operator=(Value &&rhs) = default;
 
     Value(const Value &rhs);
+    ~Value();
 
     uint64_t getSyncToken() const { return _syncToken; }
     CompressionConfig::Type getCompression() const { return _compression; }
@@ -42,16 +43,15 @@ public:
 
     size_t size() const { return _compressedSize; }
     bool empty() const { return size() == 0; }
-    operator const void *() const { return _buf.get(); }
-    const void *get() const { return _buf.get(); }
-    void *get() { return _buf.get(); }
+    operator const void *() const { return get(); }
+    const void *get() const;
 private:
-    uint64_t _syncToken;
-    size_t   _compressedSize;
-    size_t   _uncompressedSize;
-    uint64_t _uncompressedCrc;
+    uint64_t                _syncToken;
+    uint64_t                _uncompressedCrc;
+    uint32_t                _compressedSize;
+    uint32_t                _uncompressedSize;
+    std::shared_ptr<Alloc>  _buf;
     CompressionConfig::Type _compression;
-    Alloc _buf;
 };
 
 }

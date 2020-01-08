@@ -12,29 +12,29 @@ namespace search::docstore {
 
 Value::Value()
     : _syncToken(0),
+      _uncompressedCrc(0),
       _compressedSize(0),
       _uncompressedSize(0),
-      _uncompressedCrc(0),
+      _buf(),
       _compression(CompressionConfig::NONE)
 {}
 
 Value::Value(uint64_t syncToken)
     : _syncToken(syncToken),
+      _uncompressedCrc(0),
       _compressedSize(0),
       _uncompressedSize(0),
-      _uncompressedCrc(0),
+      _buf(),
       _compression(CompressionConfig::NONE)
 {}
 
-Value::Value(const Value &rhs)
-    : _syncToken(rhs._syncToken),
-      _compressedSize(rhs._compressedSize),
-      _uncompressedSize(rhs._uncompressedSize),
-      _uncompressedCrc(rhs._uncompressedCrc),
-      _compression(rhs._compression),
-      _buf(Alloc::alloc(rhs.size()))
-{
-    memcpy(get(), rhs.get(), size());
+Value::Value(const Value &rhs) = default;
+
+Value::~Value() = default;
+
+const void *
+Value::get() const {
+    return _buf ? _buf->get() : nullptr;
 }
 
 void
@@ -44,16 +44,18 @@ Value::set(vespalib::DataBuffer &&buf, ssize_t len) {
 
 void
 Value::set(vespalib::DataBuffer &&buf, ssize_t len, const CompressionConfig &compression) {
+    assert(len < std::numeric_limits<uint32_t>::max());
     //Underlying buffer must be identical to allow swap.
     vespalib::DataBuffer compressed(buf.getData(), 0u);
     vespalib::ConstBufferRef input(buf.getData(), len);
     CompressionConfig::Type type = compress(compression, input, compressed, true);
     _compressedSize = compressed.getDataLen();
+
     if (buf.getData() == compressed.getData()) {
         // Uncompressed so we can just steal the underlying buffer.
-        buf.stealBuffer().swap(_buf);
+        _buf = std::make_shared<Alloc>(buf.stealBuffer());
     } else {
-        compressed.stealBuffer().swap(_buf);
+        _buf = std::make_shared<Alloc>(compressed.stealBuffer());
     }
     assert(((type == CompressionConfig::NONE) &&
             (len == ssize_t(_compressedSize))) ||
