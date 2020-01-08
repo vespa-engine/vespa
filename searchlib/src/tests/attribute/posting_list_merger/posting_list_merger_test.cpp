@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <algorithm>
 
 using search::btree::BTreeNoLeafData;
 using search::attribute::PostingListMerger;

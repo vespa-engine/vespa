@@ -9,6 +9,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/util/rand48.h>
+#include <algorithm>
 
 using namespace search;
 
