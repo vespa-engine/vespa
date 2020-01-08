@@ -325,7 +325,7 @@ struct Result {
         }
     }
     std::string toString() const {
-        return vespalib::make_string("%u hits, %ld ms", num_hits, vespalib::count_ms(time));
+        return vespalib::make_string("%u hits, %" PRId64 " ms", num_hits, vespalib::count_ms(time));
     }
 };
 

@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <cinttypes>
 #include <thread>
 
 using namespace vespalib;
@@ -21,7 +22,7 @@ TEST(TimeTest, timer_can_measure_elapsed_time) {
     std::this_thread::sleep_for(10ms);
     auto elapsed = timer.elapsed();
     EXPECT_GE(elapsed, 10ms);
-    fprintf(stderr, "sleep(10ms) took %ld us\n", count_us(elapsed));
+    fprintf(stderr, "sleep(10ms) took %" PRId64 " us\n", count_us(elapsed));
 }
 
 TEST(TimeTest, double_conversion_works_as_expected) {

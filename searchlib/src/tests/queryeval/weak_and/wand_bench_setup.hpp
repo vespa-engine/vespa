@@ -212,7 +212,7 @@ struct Setup {
                 stats.print();
             }
         }
-        fprintf(stderr, "time (ms): %ld\n", vespalib::count_ms(minTime));
+        fprintf(stderr, "time (ms): %" PRId64 "\n", vespalib::count_ms(minTime));
     }
 };
 

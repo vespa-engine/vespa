@@ -265,7 +265,7 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
 
     vespalib::Timer timer;
     sorter.sortResults(hits, num, num);
-    LOG(info, "sort time = %ld ms", vespalib::count_ms(timer.elapsed()));
+    LOG(info, "sort time = %" PRId64 " ms", vespalib::count_ms(timer.elapsed()));
 
     uint32_t *offsets = new uint32_t[num + 1];
     char *buf = new char[sorter.getSortDataSize(0, num)];

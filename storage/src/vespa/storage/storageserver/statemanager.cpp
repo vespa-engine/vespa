@@ -462,8 +462,8 @@ StateManager::onGetNodeState(const api::GetNodeStateCommand::SP& cmd)
         {
             int64_t msTimeout = vespalib::count_ms(cmd->getTimeout());
             LOG(debug, "Received get node state request with timeout of "
-                       "%ld milliseconds. Scheduling to be answered in "
-                       "%ld milliseconds unless a node state change "
+                       "%" PRId64 " milliseconds. Scheduling to be answered in "
+                       "%" PRId64 " milliseconds unless a node state change "
                        "happens before that time.",
                 msTimeout, msTimeout * 800 / 1000);
             TimeStatePair pair(

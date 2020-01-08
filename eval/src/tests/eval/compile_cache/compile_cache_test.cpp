@@ -278,7 +278,7 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
         auto t2 = steady_clock::now();
         test.verify();
         auto t3 = steady_clock::now();
-        fprintf(stderr, "sequential (run %zu): setup: %zu ms, wait: %zu ms, verify: %zu us, total: %zu ms\n",
+        fprintf(stderr, "sequential (run %zu): setup: %" PRIu64 " ms, wait: %" PRIu64 " ms, verify: %" PRIu64 " us, total: %" PRIu64 " ms\n",
                 i, count_ms(t1 - t0), count_ms(t2 - t1), count_us(t3 - t2), count_ms(t3 - t0));
     }
 }
@@ -299,7 +299,7 @@ TEST_F("compile concurrently (8 threads), then run all conformance tests", test:
         auto t2 = steady_clock::now();
         test.verify();
         auto t3 = steady_clock::now();
-        fprintf(stderr, "concurrent (run %zu): setup: %zu ms, wait: %zu ms, verify: %zu us, total: %zu ms\n",
+        fprintf(stderr, "concurrent (run %zu): setup: %" PRIu64 " ms, wait: %" PRIu64 " ms, verify: %" PRIu64 " us, total: %" PRIu64 " ms\n",
                 i, count_ms(t1 - t0), count_ms(t2 - t1), count_us(t3 - t2), count_ms(t3 - t0));
     }
 }
