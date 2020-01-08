@@ -63,7 +63,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
-        if (!application.isEligibleForOsUpgrades()) return false;              // Never upgrade
+        if (!application.shouldUpgradeOs()) return false;                      // Never upgrade
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())
                            .osVersion(application.nodeType())
@@ -78,7 +78,7 @@ public class OsUpgrader extends InfrastructureUpgrader {
     /** Returns whether node in application should be upgraded by this */
     public static boolean eligibleForUpgrade(Node node, SystemApplication application) {
         return upgradableNodeStates.contains(node.state()) &&
-               application.isEligibleForOsUpgrades();
+               application.shouldUpgradeOs();
     }
 
     private static String name(CloudName cloud) {

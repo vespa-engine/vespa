@@ -65,7 +65,7 @@ public class OsVersionStatus {
         controller.osVersions().forEach(osVersion -> osVersions.put(osVersion, new ArrayList<>()));
 
         for (var application : SystemApplication.all()) {
-            if (!application.isEligibleForOsUpgrades()) continue;
+            if (!application.shouldUpgradeOs()) continue;
             for (var zone : zonesToUpgrade(controller)) {
                 var targetOsVersion = controller.serviceRegistry().configServer().nodeRepository()
                                                 .targetVersionsOf(zone.getId())
