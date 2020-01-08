@@ -33,13 +33,15 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     private final JobControl jobControl;
     private final ScheduledExecutorService service;
     private final String name;
-    private final Set<SystemName> permittedSystems;
+
+    /** The systems in which this maintainer should run */
+    private final Set<SystemName> activeSystems;
 
     public Maintainer(Controller controller, Duration interval, JobControl jobControl) {
         this(controller, interval, jobControl, null, EnumSet.allOf(SystemName.class));
     }
 
-    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> permittedSystems) {
+    public Maintainer(Controller controller, Duration interval, JobControl jobControl, String name, Set<SystemName> activeSystems) {
         if (interval.isNegative() || interval.isZero())
             throw new IllegalArgumentException("Interval must be positive, but was " + interval);
 
@@ -47,7 +49,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
         this.name = name;
-        this.permittedSystems = Set.copyOf(permittedSystems);
+        this.activeSystems = Set.copyOf(activeSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
         long delay = staggeredDelay(controller.curator().cluster(), controller.hostname(), controller.clock().instant(), interval);
@@ -60,7 +62,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
     @Override
     public void run() {
         try {
-            if ( ! permittedSystems.contains(controller.system())) {
+            if ( ! activeSystems.contains(controller.system())) {
                 return;
             }
             if (jobControl.isActive(name())) {
