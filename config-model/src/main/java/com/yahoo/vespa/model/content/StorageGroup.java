@@ -412,13 +412,16 @@ public class StorageGroup {
         }
 
         private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {
-            return element.map(modelElement -> modelElement.childAsString(childTagName));
+            if (element.isEmpty()) return Optional.empty();
+            return Optional.ofNullable(element.get().childAsString(childTagName));
         }
         private Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
-            return element.map(modelElement -> modelElement.childAsLong(childTagName));
+            if (element.isEmpty()) return Optional.empty();
+            return Optional.ofNullable(element.get().childAsLong(childTagName));
         }
         private Optional<Boolean> childAsBoolean(Optional<ModelElement> element, String childTagName) {
-            return element.map(modelElement -> modelElement.childAsBoolean(childTagName));
+            if (element.isEmpty()) return Optional.empty();
+            return Optional.ofNullable(element.get().childAsBoolean(childTagName));
         }
 
         private boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {
