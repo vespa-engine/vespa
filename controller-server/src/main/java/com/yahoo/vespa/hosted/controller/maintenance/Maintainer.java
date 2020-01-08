@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -48,7 +47,7 @@ public abstract class Maintainer extends AbstractComponent implements Runnable {
         this.maintenanceInterval = interval;
         this.jobControl = jobControl;
         this.name = name;
-        this.permittedSystems = ImmutableSet.copyOf(permittedSystems);
+        this.permittedSystems = Set.copyOf(permittedSystems);
 
         service = new ScheduledThreadPoolExecutor(1);
         long delay = staggeredDelay(controller.curator().cluster(), controller.hostname(), controller.clock().instant(), interval);

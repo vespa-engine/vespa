@@ -30,12 +30,8 @@ public class SystemUpgrader extends InfrastructureUpgrader {
 
     @Override
     protected void upgrade(Version target, SystemApplication application, ZoneApi zone) {
-        // TODO(mpolden): Simplify this by comparing with version from NodeRepository#targetVersionsOf instead
-        if (minVersion(zone, application, Node::wantedVersion).map(target::isAfter)
-                                                              .orElse(true)) {
-            log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
-            controller().applications().deploy(application, zone.getId(), target);
-        }
+        log.info(String.format("Deploying %s version %s in %s", application.id(), target, zone.getId()));
+        controller().applications().deploy(application, zone.getId(), target);
     }
 
     @Override
@@ -59,6 +55,22 @@ public class SystemUpgrader extends InfrastructureUpgrader {
                            .filter(vespaVersion -> !vespaVersion.isSystemVersion())
                            .filter(vespaVersion -> vespaVersion.confidence() != VespaVersion.Confidence.broken)
                            .map(VespaVersion::versionNumber);
+    }
+
+    @Override
+    protected boolean shouldUpgrade(Version target, SystemApplication application, ZoneApi zone) {
+        if (application.hasApplicationPackage()) {
+            // For applications with package we do not have a zone-wide version target. This means that we must check
+            // the wanted version of each node.
+            return minVersion(zone, application, Node::wantedVersion)
+                    .map(target::isAfter)                                     // Upgrade if target is after any wanted version
+                    .orElse(true);                                            // Upgrade if there are no nodes allocated
+        }
+        return controller().serviceRegistry().configServer().nodeRepository()
+                           .targetVersionsOf(zone.getId())
+                           .vespaVersion(application.nodeType())
+                           .map(target::isAfter)                              // Upgrade if target is after current
+                           .orElse(true);                                     // Upgrade if target is unset
     }
 
     /** Returns whether node in application should be upgraded by this */
