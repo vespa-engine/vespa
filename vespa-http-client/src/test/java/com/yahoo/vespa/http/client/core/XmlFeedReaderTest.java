@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.yahoo.vespa.http.client.FeedClient;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +31,8 @@ public class XmlFeedReaderTest {
     private final static String feedResource2 = "/xml-challenge.xml";
     private final static String feedResource3 = "/xml-challenge2.xml";
     private final static String feedResource4 = "/xml-challenge3.xml";
+
+    private static final XmlMapper xmlMapper = new XmlMapper();
 
     private final String updateDocUpdate =
             "<?xml version=\"1.0\"?>\n" +
@@ -232,13 +234,9 @@ public class XmlFeedReaderTest {
         InputStream inputStream2 = XmlFeedReaderTest.class.getResourceAsStream(filename);
         String rawXML = new java.util.Scanner(inputStream2, "UTF-8").useDelimiter("\\A").next();
 
-        String rawDoc = rawXML.toString().split("<document")[1].split("</document>")[0];
-        assertThat(rawDoc.length() > 30, is(true));
-
-        String decodedRawXml = StringEscapeUtils.unescapeXml(rawDoc);
-        String decodedDoc = StringEscapeUtils.unescapeXml(document);
-
-        assertThat(decodedDoc, containsString(decodedRawXml));
+        JsonNode decodedDocument = xmlMapper.readTree(document);
+        JsonNode rawDocuments = xmlMapper.readTree(rawXML);
+        assertThat(decodedDocument, is(rawDocuments.get("document")));
     }
 
     @Test public void testCData() throws Exception {

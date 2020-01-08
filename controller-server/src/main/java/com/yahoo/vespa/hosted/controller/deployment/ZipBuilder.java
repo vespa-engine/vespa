@@ -1,8 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import org.apache.commons.io.IOUtils;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,7 +29,7 @@ public class ZipBuilder implements AutoCloseable {
         try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(zippedContent))) {
             for (ZipEntry entry = zin.getNextEntry(); entry != null; entry = zin.getNextEntry()) {
                 zipOutputStream.putNextEntry(entry);
-                IOUtils.copy(zin, zipOutputStream);
+                zin.transferTo(zipOutputStream);
                 zipOutputStream.closeEntry();
             }
         } catch (IOException e) {
