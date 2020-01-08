@@ -11,14 +11,11 @@ import com.yahoo.vespa.http.client.core.EndpointResult;
 import org.junit.Test;
 
 import java.util.ArrayDeque;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
@@ -79,46 +76,45 @@ public class OperationProcessorTest {
 
         //check a, b, c, d
         Result aggregated = queue.poll();
-        assertThat(aggregated.getDocumentId(), equalTo("id:a:type::b"));
-        assertThat(aggregated.getDetails().size(), is(4));
-        assertThat(aggregated.getDetails().get(0).getEndpoint().getHostname(), equalTo("a"));
-        assertThat(aggregated.getDetails().get(1).getEndpoint().getHostname(), equalTo("b"));
-        assertThat(aggregated.getDetails().get(2).getEndpoint().getHostname(), equalTo("c"));
-        assertThat(aggregated.getDetails().get(3).getEndpoint().getHostname(), equalTo("d"));
-        assertThat(aggregated.getDocumentDataAsCharSequence().toString(), is("data doc 1"));
+        assertEquals("id:a:type::b", aggregated.getDocumentId());
+        assertEquals(4, aggregated.getDetails().size());
+        assertEquals("a", aggregated.getDetails().get(0).getEndpoint().getHostname());
+        assertEquals("b", aggregated.getDetails().get(1).getEndpoint().getHostname());
+        assertEquals("c", aggregated.getDetails().get(2).getEndpoint().getHostname());
+        assertEquals("d", aggregated.getDetails().get(3).getEndpoint().getHostname());
+        assertEquals("data doc 1", aggregated.getDocumentDataAsCharSequence().toString());
 
-        assertThat(queue.size(), is(0));
-
+        assertEquals(0, queue.size());
 
         q.sendDocument(doc2);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("b"))), 1);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("c"))), 2);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("d"))), 3);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("e"))), 0);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
-        //check a, b, c, d
+        // check a, b, c, d
         aggregated = queue.poll();
-        assertThat(aggregated.getDocumentId(), equalTo("id:a:type::b2"));
-        assertThat(aggregated.getDetails().size(), is(4));
-        assertThat(aggregated.getDetails().get(0).getEndpoint().getHostname(), equalTo("a"));
-        assertThat(aggregated.getDetails().get(1).getEndpoint().getHostname(), equalTo("b"));
-        assertThat(aggregated.getDetails().get(2).getEndpoint().getHostname(), equalTo("c"));
-        assertThat(aggregated.getDetails().get(3).getEndpoint().getHostname(), equalTo("d"));
-        assertThat(aggregated.getDocumentDataAsCharSequence().toString(), is("data doc 2"));
+        assertEquals("id:a:type::b2", aggregated.getDocumentId());
+        assertEquals(4, aggregated.getDetails().size());
+        assertEquals("a", aggregated.getDetails().get(0).getEndpoint().getHostname());
+        assertEquals("b", aggregated.getDetails().get(1).getEndpoint().getHostname());
+        assertEquals("c", aggregated.getDetails().get(2).getEndpoint().getHostname());
+        assertEquals("d", aggregated.getDetails().get(3).getEndpoint().getHostname());
+        assertEquals("data doc 2", aggregated.getDocumentDataAsCharSequence().toString());
 
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
     }
 
     @Test
@@ -136,27 +132,27 @@ public class OperationProcessorTest {
         operationProcessor.sendDocument(doc1);
         operationProcessor.sendDocument(doc1b);
 
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
         // Only one operations should be in flight.
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
-        assertThat(queue.size(), is(0));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertEquals(0, queue.size());
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 1);
-        assertThat(queue.size(), is(1));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertEquals(1, queue.size());
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
-        assertThat(queue.size(), is(1));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+        assertEquals(1, queue.size());
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 1);
-        assertThat(queue.size(), is(2));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(0));
+        assertEquals(2, queue.size());
+        assertEquals(0, operationProcessor.getIncompleteResultQueueSize());
         // This should have no effect.
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 1);
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 1);
-        assertThat(queue.size(), is(2));
+        assertEquals(2, queue.size());
     }
 
     @Test
@@ -174,22 +170,22 @@ public class OperationProcessorTest {
         operationProcessor.sendDocument(doc1);
         operationProcessor.sendDocument(doc1b);
 
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
         // Only one operations should be in flight.
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
-        assertThat(queue.size(), is(1));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1b.getOperationId())));
+        assertEquals(1, queue.size());
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1b.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
-        assertThat(queue.size(), is(2));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(0));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.empty()));
+        assertEquals(2, queue.size());
+        assertEquals(0, operationProcessor.getIncompleteResultQueueSize());
+        assertFalse(operationProcessor.oldestIncompleteResultId().isPresent());
         // This should have no effect.
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
-        assertThat(queue.size(), is(2));
+        assertEquals(2, queue.size());
     }
 
     @Test
@@ -212,16 +208,16 @@ public class OperationProcessorTest {
         }
 
         for (int x = 0; x < 100; x++) {
-            assertThat(queue.size(), is(x));
+            assertEquals(x, queue.size());
             // Only one operations should be in flight.
-            assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+            assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
             Document document = documentQueue.poll();
             operationProcessor.resultReceived(new EndpointResult(document.getOperationId(), new Result.Detail(Endpoint.create("host"))), 0);
-            assertThat(queue.size(), is(x + 1));
+            assertEquals(x+1, queue.size());
             if (x < 99) {
-                assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
+                assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
             } else {
-                assertThat(operationProcessor.getIncompleteResultQueueSize(), is(0));
+                assertEquals(0, operationProcessor.getIncompleteResultQueueSize());
             }
         }
     }
@@ -244,26 +240,26 @@ public class OperationProcessorTest {
         operationProcessor.sendDocument(doc2);
         operationProcessor.sendDocument(doc3);
 
-        assertThat(queue.size(), is(0));
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(3));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
+        assertEquals(0, queue.size());
+        assertEquals(3, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
         // This should have no effect since it should not be sent.
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(endpoint)), 0);
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(3));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
+        assertEquals(3, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
 
         operationProcessor.resultReceived(new EndpointResult(doc3.getOperationId(), new Result.Detail(endpoint)), 0);
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(2));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
+        assertEquals(2, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
         operationProcessor.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(endpoint)), 0);
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1.getOperationId())));
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
         operationProcessor.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(endpoint)), 0);
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(1));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.of(doc1b.getOperationId())));
+        assertEquals(1, operationProcessor.getIncompleteResultQueueSize());
+        assertEquals(doc1b.getOperationId(), operationProcessor.oldestIncompleteResultId().get());
         operationProcessor.resultReceived(new EndpointResult(doc1b.getOperationId(), new Result.Detail(endpoint)), 0);
-        assertThat(operationProcessor.getIncompleteResultQueueSize(), is(0));
-        assertThat(operationProcessor.oldestIncompleteResultId(), is(Optional.empty()));
+        assertEquals(0, operationProcessor.getIncompleteResultQueueSize());
+        assertFalse(operationProcessor.oldestIncompleteResultId().isPresent());
     }
 
     @Test
@@ -280,16 +276,16 @@ public class OperationProcessorTest {
                 sessionParams, null);
 
         q.sendDocument(doc1);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("b"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("c"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
     }
 
     @Test
@@ -306,52 +302,51 @@ public class OperationProcessorTest {
                 sessionParams, null);
 
         q.sendDocument(doc1);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
         q.sendDocument(doc2);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
         q.sendDocument(doc3);
 
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("b"))), 1);
-        assertThat(queue.size(), is(0));
+        assertEquals(0, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("c"))), 2);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         q.resultReceived(new EndpointResult(doc3.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("a"))), 0);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("b"))), 1);
-        assertThat(queue.size(), is(1));
+        assertEquals(1, queue.size());
 
         q.resultReceived(new EndpointResult(doc2.getOperationId(), new Result.Detail(Endpoint.create("c"))), 2);
-        assertThat(queue.size(), is(2));
+        assertEquals(2, queue.size());
 
         q.resultReceived(new EndpointResult(doc3.getOperationId(), new Result.Detail(Endpoint.create("c"))), 2);
-        assertThat(queue.size(), is(2));
+        assertEquals(2, queue.size());
 
         q.resultReceived(new EndpointResult(doc3.getOperationId(), new Result.Detail(Endpoint.create("c"))), 2);
-        assertThat(queue.size(), is(2));
+        assertEquals(2, queue.size());
 
         q.resultReceived(new EndpointResult(doc3.getOperationId(), new Result.Detail(Endpoint.create("b"))), 1);
-        assertThat(queue.size(), is(3));
+        assertEquals(3, queue.size());
 
         q.resultReceived(new EndpointResult(doc1.getOperationId(), new Result.Detail(Endpoint.create("b"))), 1);
-        assertThat(queue.size(), is(3));
-        assertThat(queue.remove().getDocumentDataAsCharSequence().toString(), is("data doc 1"));
-        assertThat(queue.remove().getDocumentDataAsCharSequence().toString(), is("data doc 2"));
-        assertThat(queue.remove().getDocumentDataAsCharSequence().toString(), is("data doc 3"));
-
+        assertEquals(3, queue.size());
+        assertEquals("data doc 1", queue.remove().getDocumentDataAsCharSequence().toString());
+        assertEquals("data doc 2", queue.remove().getDocumentDataAsCharSequence().toString());
+        assertEquals("data doc 3", queue.remove().getDocumentDataAsCharSequence().toString());
     }
 
     @Test
@@ -425,7 +420,7 @@ public class OperationProcessorTest {
 
             CountDownLatch countDownLatch = new CountDownLatch(3);
 
-            OperationProcessor operationProcessor = new OperationProcessor(
+            new OperationProcessor(
                     new IncompleteResultsThrottler(19, 19, null, null),
                     (docId, documentResult) -> {
                         countDownLatch.countDown();
