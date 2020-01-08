@@ -58,6 +58,7 @@ import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -313,8 +314,7 @@ public class MetricsProxyContainerClusterTest {
     }
 
     private static String servicesWithAdminOnly() {
-        return String.join("\n",
-                           "<services>",
+        return String.join("\n", "<services>",
                            "    <admin version='4.0'>",
                            "        <adminserver hostalias='node1'/>",
                            "    </admin>",
