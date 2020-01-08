@@ -129,7 +129,7 @@ public class DeploymentStatus {
     }
 
     /**
-     * The set of jobs that need to run for the application's current change to be considered complete,
+     * The set of jobs that need to run for the changes of each instance of the application to be considered complete,
      * and any test jobs for any oustanding change, which will likely be needed to lated deploy this change.
      */
     public Map<JobId, List<Versions>> jobsToRun() {
