@@ -105,7 +105,9 @@ public interface NodeRepository {
                         toInt(node.getCost()),
                         node.getFlavor(),
                         clusterIdOf(node.getMembership()),
-                        clusterTypeOf(node.getMembership()));
+                        clusterTypeOf(node.getMembership()),
+                        node.getWantToRetire(),
+                        node.getWantToDeprovision());
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {
