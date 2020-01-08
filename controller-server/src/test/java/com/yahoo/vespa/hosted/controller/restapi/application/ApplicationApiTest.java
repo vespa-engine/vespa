@@ -340,7 +340,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                        id2.application());
 
         // Trigger upgrade and then application change
-        deploymentTester.applications().deploymentTrigger().triggerChange(TenantAndApplicationId.from(id2), Change.of(Version.fromString("7.0")));
+        deploymentTester.applications().deploymentTrigger().triggerChange(id2, Change.of(Version.fromString("7.0")));
 
         // POST an application package and a test jar, submitting a new application for production deployment.
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/submit", POST)
@@ -467,19 +467,19 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"message\":\"Changed deployment from 'application change to 1.0.1-commit1' to 'no change' for application 'tenant1.application1'\"}");
+                              "{\"message\":\"Changed deployment from 'application change to 1.0.1-commit1' to 'no change' for tenant1.application1.instance1\"}");
 
         // DELETE (cancel) again is a no-op
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
                                       .userIdentity(USER_ID)
                                       .data("{\"cancel\":\"all\"}"),
-                              "{\"message\":\"No deployment in progress for application 'tenant1.application1' at this time\"}");
+                              "{\"message\":\"No deployment in progress for tenant1.application1.instance1 at this time\"}");
 
         // POST pinning to a given version to an application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
                                       .data("6.1.0"),
-                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
+                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1.instance1\"}");
         assertTrue("Action is logged to audit log",
                    tester.controller().auditLogger().readLog().entries().stream()
                          .anyMatch(entry -> entry.resource().equals("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin")));
@@ -491,7 +491,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // DELETE only the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for application 'tenant1.application1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'upgrade to 6.1' for tenant1.application1.instance1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":false}");
 
@@ -499,21 +499,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", POST)
                                       .userIdentity(USER_ID)
                                       .data("6.1"),
-                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1\"}");
+                              "{\"message\":\"Triggered pin to 6.1 for tenant1.application1.instance1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"platform\":\"6.1\",\"pinned\":true}");
 
         // DELETE only the version, but leave the pin
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/platform", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'pin to current platform' for application 'tenant1.application1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to 6.1' to 'pin to current platform' for tenant1.application1.instance1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{\"pinned\":true}");
 
         // DELETE also the pin to a given version
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/pin", DELETE)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Changed deployment from 'pin to current platform' to 'no change' for application 'tenant1.application1'\"}");
+                              "{\"message\":\"Changed deployment from 'pin to current platform' to 'no change' for tenant1.application1.instance1\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", GET)
                                       .userIdentity(USER_ID), "{}");
 

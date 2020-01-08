@@ -12,20 +12,6 @@
     }
   },
   "projectId": 1000,
-  "deploying": {
-    "version": "7"
-  },
-  "outstandingChange": {
-    "revision": {
-      "buildNumber": 1,
-      "hash": "1.0.1-commit1",
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    }
-  },
   "compileVersion": "6.1.0",
   "majorVersion": 7,
   "instances": [
@@ -36,6 +22,20 @@
     },
     {
       "instance": "instance1",
+      "deploying": {
+        "version": "7"
+      },
+      "outstandingChange": {
+        "revision": {
+          "buildNumber": 1,
+          "hash": "1.0.1-commit1",
+          "source": {
+            "gitRepository": "repository1",
+            "gitBranch": "master",
+            "gitCommit": "commit1"
+          }
+        }
+      },
       "deploymentJobs": [
         {
           "type": "system-test",

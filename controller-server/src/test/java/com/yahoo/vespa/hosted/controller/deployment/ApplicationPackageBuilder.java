@@ -188,10 +188,6 @@ public class ApplicationPackageBuilder {
             xml.append(athenzIdentityAttributes);
         }
         xml.append(">\n");
-        if (explicitSystemTest)
-            xml.append("  <test />\n");
-        if (explicitStagingTest)
-            xml.append("  <staging />\n");
         xml.append("  <instance id='").append(instances).append("'>\n");
         if (upgradePolicy != null) {
             xml.append("    <upgrade policy='");
@@ -200,6 +196,10 @@ public class ApplicationPackageBuilder {
         }
         xml.append(notifications);
         xml.append(blockChange);
+        if (explicitSystemTest)
+            xml.append("    <test />\n");
+        if (explicitStagingTest)
+            xml.append("    <staging />\n");
         xml.append("    <");
         xml.append(environment.value());
         if (globalServiceId != null) {

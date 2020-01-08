@@ -49,16 +49,6 @@ public class ApplicationList extends AbstractFilteringList<Application, Applicat
 
     // ----------------------------------- Filters
 
-    /** Returns the subset of applications which have changes left to deploy; blocked, or deploying */
-    public ApplicationList withChanges() {
-        return matching(application -> application.change().hasTargets() || application.outstandingChange().hasTargets());
-    }
-
-    /** Returns the subset of applications which are currently deploying a change */
-    public ApplicationList deploying() {
-        return matching(application -> application.change().hasTargets());
-    }
-
     /** Returns the subset of applications which have at least one production deployment */
     public ApplicationList withProductionDeployment() {
         return matching(application -> application.instances().values().stream()

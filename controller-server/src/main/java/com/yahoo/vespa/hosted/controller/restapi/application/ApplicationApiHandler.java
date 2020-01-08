@@ -214,13 +214,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return JobControllerApiHandlerHelper.overviewResponse(controller, TenantAndApplicationId.from(path.get("tenant"), path.get("application")), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/package")) return applicationPackage(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return deploying(path.get("tenant"), path.get("application"), "default", request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/metering")) return metering(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance")) return applications(path.get("tenant"), Optional.of(path.get("application")), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return instance(path.get("tenant"), path.get("application"), path.get("instance"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), request); // TODO jonmv: remove
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), request); // TODO jonmv: remove
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deploying(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job")) return JobControllerApiHandlerHelper.jobTypeResponse(controller, appIdFromPath(path), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.runResponse(controller.jobController().runs(appIdFromPath(path), jobTypeFromPath(path)), request.getUri());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/test-config")) return testConfig(appIdFromPath(path), jobTypeFromPath(path));
@@ -257,16 +257,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), false, request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), true, request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), "default", request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return addDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return createInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobtype}")) return jobDeploy(appIdFromPath(path), jobTypeFromPath(path), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), false, request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), true, request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), false, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), path.get("instance"), true, request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/application")) return deployApplication(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/submit")) return submit(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return trigger(appIdFromPath(path), jobTypeFromPath(path), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}/pause")) return pause(appIdFromPath(path), jobTypeFromPath(path));
@@ -289,12 +289,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("choice"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "all");
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("choice"));
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/job/{jobtype}")) return JobControllerApiHandlerHelper.abortJobResponse(controller.jobController(), appIdFromPath(path), jobTypeFromPath(path));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}")) return deactivate(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true, request);
@@ -699,24 +699,27 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                  "/job/",
                                                  request.getUri()).toString());
 
+        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         application.latestVersion().ifPresent(version -> toSlime(version, object.setObject("latestVersion")));
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
-        // Currently deploying change
-        if ( ! application.change().isEmpty())
-            toSlime(object.setObject("deploying"), application.change());
+        // TODO jonmv: Remove this when users are updated.
+        application.instances().values().stream().findFirst().ifPresent(instance -> {
+            // Currently deploying change
+            if ( ! instance.change().isEmpty())
+                toSlime(object.setObject("deploying"), instance.change());
 
-        // Outstanding change
-        if ( ! application.outstandingChange().isEmpty())
-            toSlime(object.setObject("outstandingChange"), application.outstandingChange());
+            // Outstanding change
+            if ( ! status.outstandingChange(instance.name()).isEmpty())
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
+        });
 
         // Compile version. The version that should be used when building an application
         object.setString("compileVersion", compileVersion(application.id()).toFullString());
 
         application.majorVersion().ifPresent(majorVersion -> object.setLong("majorVersion", majorVersion));
 
-        DeploymentStatus status = controller.jobController().deploymentStatus(application);
         Cursor instancesArray = object.setArray("instances");
         for (Instance instance : application.instances().values())
             toSlime(instancesArray.addObject(), status, instance, application.deploymentSpec(), request);
@@ -749,6 +752,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                   .steps(deploymentSpec.requireInstance(instance.name()))
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
 
+            if ( ! instance.change().isEmpty())
+                toSlime(object.setObject("deploying"), instance.change());
+
+            // Outstanding change
+            if ( ! status.outstandingChange(instance.name()).isEmpty())
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
 
             Cursor deploymentJobsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {
@@ -849,21 +858,18 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
-        // Currently deploying change
-        if ( ! application.change().isEmpty()) {
-            toSlime(object.setObject("deploying"), application.change());
-        }
-
-        // Outstanding change
-        if ( ! application.outstandingChange().isEmpty()) {
-            toSlime(object.setObject("outstandingChange"), application.outstandingChange());
-        }
-
         if (application.deploymentSpec().instance(instance.name()).isPresent()) {
             // Jobs sorted according to deployment spec
             List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
                                                   .steps(application.deploymentSpec().requireInstance(instance.name()))
                                                   .sortedJobs(status.instanceJobs(instance.name()).values());
+
+            if ( ! instance.change().isEmpty())
+                toSlime(object.setObject("deploying"), instance.change());
+
+            // Outstanding change
+            if ( ! status.outstandingChange(instance.name()).isEmpty())
+                toSlime(object.setObject("outstandingChange"), status.outstandingChange(instance.name()));
 
             Cursor deploymentsArray = object.setArray("deploymentJobs");
             for (JobStatus job : jobStatus) {
@@ -1251,14 +1257,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse deploying(String tenant, String application, HttpRequest request) {
-        Application app = controller.applications().requireApplication(TenantAndApplicationId.from(tenant, application));
+    private HttpResponse deploying(String tenantName, String applicationName, String instanceName, HttpRequest request) {
+        Instance instance = controller.applications().requireInstance(ApplicationId.from(tenantName, applicationName, instanceName));
         Slime slime = new Slime();
         Cursor root = slime.setObject();
-        if ( ! app.change().isEmpty()) {
-            app.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
-            app.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.id()));
-            root.setBool("pinned", app.change().isPinned());
+        if ( ! instance.change().isEmpty()) {
+            instance.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
+            instance.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.id()));
+            root.setBool("pinned", instance.change().isPinned());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -1357,12 +1363,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
-    private HttpResponse deployPlatform(String tenantName, String applicationName, boolean pin, HttpRequest request) {
+    private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
         request = controller.auditLogger().log(request);
         String versionString = readToString(request.getData());
-        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
-        controller.applications().lockApplicationOrThrow(id, application -> {
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Version version = Version.fromString(versionString);
             if (version.equals(Version.emptyVersion))
                 version = controller.systemVersion();
@@ -1385,11 +1391,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Trigger deployment to the last known application package for the given application. */
-    private HttpResponse deployApplication(String tenantName, String applicationName, HttpRequest request) {
+    private HttpResponse deployApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
         controller.auditLogger().log(request);
-        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
-        controller.applications().lockApplicationOrThrow(id, application -> {
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             Change change = Change.of(application.get().latestVersion().get());
             controller.applications().deploymentTrigger().forceChange(id, change);
             response.append("Triggered " + change + " for " + id);
@@ -1398,20 +1404,20 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */
-    private HttpResponse cancelDeploy(String tenantName, String applicationName, String choice) {
-        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+    private HttpResponse cancelDeploy(String tenantName, String applicationName, String instanceName, String choice) {
+        ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
-        controller.applications().lockApplicationOrThrow(id, application -> {
-            Change change = application.get().change();
+        controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
+            Change change = application.get().require(id.instance()).change();
             if (change.isEmpty()) {
-                response.append("No deployment in progress for " + application + " at this time");
+                response.append("No deployment in progress for " + id + " at this time");
                 return;
             }
 
             ChangesToCancel cancel = ChangesToCancel.valueOf(choice.toUpperCase());
             controller.applications().deploymentTrigger().cancelChange(id, cancel);
             response.append("Changed deployment from '" + change + "' to '" +
-                            controller.applications().requireApplication(id).change() + "' for " + application);
+                            controller.applications().requireInstance(id).change() + "' for " + id);
         });
 
         return new MessageResponse(response.toString());

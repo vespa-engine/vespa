@@ -3,6 +3,12 @@
   "application": "application1",
   "steps": [
     {
+      "type": "instance",
+      "dependencies": [],
+      "declared": true,
+      "instance": "instance1"
+    },
+    {
       "type": "test",
       "dependencies": [],
       "declared": false,
@@ -23,7 +29,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -80,7 +87,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -149,7 +157,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -214,7 +223,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -272,7 +282,9 @@
     },
     {
       "type": "deployment",
-      "dependencies": [],
+      "dependencies": [
+        0
+      ],
       "declared": true,
       "instance": "instance1",
       "jobName": "production-us-central-1",
@@ -286,7 +298,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           }
         }
@@ -303,7 +316,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -346,7 +360,7 @@
     {
       "type": "deployment",
       "dependencies": [
-        2
+        3
       ],
       "declared": true,
       "instance": "instance1",
@@ -361,7 +375,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           }
         }
@@ -420,7 +435,7 @@
     {
       "type": "deployment",
       "dependencies": [
-        2
+        3
       ],
       "declared": true,
       "instance": "instance1",
@@ -435,7 +450,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           }
         }
@@ -451,7 +467,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           },
           "steps": [
@@ -492,6 +509,15 @@
       ]
     },
     {
+      "type": "instance",
+      "dependencies": [
+        4,
+        5
+      ],
+      "declared": true,
+      "instance": "instance2"
+    },
+    {
       "type": "test",
       "dependencies": [],
       "declared": false,
@@ -518,8 +544,7 @@
     {
       "type": "deployment",
       "dependencies": [
-        3,
-        4
+        6
       ],
       "declared": true,
       "instance": "instance2",
@@ -534,7 +559,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           }
         }
@@ -544,7 +570,7 @@
     {
       "type": "deployment",
       "dependencies": [
-        7
+        9
       ],
       "declared": true,
       "instance": "instance2",
@@ -559,7 +585,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           }
         }
@@ -569,7 +596,7 @@
     {
       "type": "deployment",
       "dependencies": [
-        7
+        9
       ],
       "declared": true,
       "instance": "instance2",
@@ -584,7 +611,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "source": "repository1/tree/commit1",
+              "compileVersion": "6.1.0"
             }
           }
         }

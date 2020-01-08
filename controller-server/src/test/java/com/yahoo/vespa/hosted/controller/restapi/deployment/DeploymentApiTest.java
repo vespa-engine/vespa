@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -52,9 +53,9 @@ public class DeploymentApiTest extends ControllerContainerTest {
         productionApp.submit(multiInstancePackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
         otherProductionApp.runJob(JobType.productionUsWest1);
 
-        // Deploy once so that job information is stored, then remove the deployment
+        // Deploy once so that job information is stored, then remove the deployment by submitting an empty deployment spec.
         appWithoutDeployments.submit(applicationPackage).deploy();
-        deploymentTester.applications().deactivate(appWithoutDeployments.instanceId(), ZoneId.from("prod", "us-west-1"));
+        appWithoutDeployments.submit(new ApplicationPackageBuilder().allow(ValidationId.deploymentRemoval).build());
 
         // New version released
         version = Version.fromString("5.1");
@@ -65,6 +66,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
         deploymentTester.triggerJobs();
         productionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
         failingApp.runJob(JobType.systemTest).failDeployment(JobType.stagingTest);
+        deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller())));

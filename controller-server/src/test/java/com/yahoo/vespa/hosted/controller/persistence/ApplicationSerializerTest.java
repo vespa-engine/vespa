@@ -110,19 +110,19 @@ public class ApplicationSerializerTest {
                                                         deployments,
                                                         Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
                                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
-                                                        rotationStatus),
+                                                        rotationStatus,
+                                                        Change.of(new Version("6.1"))),
                                            new Instance(id3,
                                                         List.of(),
                                                         Map.of(),
                                                         List.of(),
-                                                        RotationStatus.EMPTY));
+                                                        RotationStatus.EMPTY,
+                                                        Change.of(Version.fromString("6.7")).withPin()));
 
         Application original = new Application(TenantAndApplicationId.from(id1),
                                                Instant.now().truncatedTo(ChronoUnit.MILLIS),
                                                deploymentSpec,
                                                validationOverrides,
-                                               Change.of(Version.fromString("6.7")).withPin(),
-                                               Change.of(ApplicationVersion.from(new SourceRevision("repo", "master", "deadcafe"), 42)),
                                                Optional.of(IssueId.from("4321")),
                                                Optional.of(IssueId.from("1234")),
                                                Optional.of(User.from("by-username")),
@@ -164,16 +164,16 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).jobPause(JobType.stagingTest),
                      serialized.require(id1.instance()).jobPause(JobType.stagingTest));
 
-        assertEquals(original.outstandingChange(), serialized.outstandingChange());
-
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());
         assertEquals(original.majorVersion(), serialized.majorVersion());
-        assertEquals(original.change(), serialized.change());
         assertEquals(original.deployKeys(), serialized.deployKeys());
 
         assertEquals(original.require(id1.instance()).rotations(), serialized.require(id1.instance()).rotations());
         assertEquals(original.require(id1.instance()).rotationStatus(), serialized.require(id1.instance()).rotationStatus());
+
+        assertEquals(original.require(id1.instance()).change(), serialized.require(id1.instance()).change());
+        assertEquals(original.require(id3.instance()).change(), serialized.require(id3.instance()).change());
 
         // Test cluster info
         assertEquals(3, serialized.require(id1.instance()).deployments().get(zone2).clusterInfo().size());

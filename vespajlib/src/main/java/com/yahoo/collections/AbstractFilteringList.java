@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
- * Abstract, immutable list for subclassing with concrete types, and domain specific filters.
+ * Abstract, immutable list for subclassing with concrete types and domain specific filters.
  *
  * @author jonmv
  */
@@ -52,7 +52,7 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
         return constructor.apply(items.subList(negate ? n : 0, negate ? items.size() : n), false);
     }
 
-    /** Returns the first item in this list, or empty if there is none. */
+    /** Returns the first item in this list, or empty if there are none. */
     public Optional<Type> first() {
         return items.stream().findFirst();
     }

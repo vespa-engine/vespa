@@ -195,7 +195,7 @@ public class VersionStatus {
             versionMap.put(infrastructureVersion, DeploymentStatistics.empty(infrastructureVersion));
         }
 
-        for (DeploymentStatus status : statuses.withProductionDeployment().asList()) {
+        for (DeploymentStatus status : statuses.asList()) {
             for (Instance instance : status.application().instances().values())
                 for (Deployment deployment : instance.productionDeployments().values())
                     versionMap.computeIfAbsent(deployment.version(), DeploymentStatistics::empty);

@@ -92,11 +92,8 @@ public class DeploymentContext {
     private final TesterId testerId;
     private final JobController jobs;
     private final RoutingGeneratorMock routing;
-    private final MockTesterCloud cloud;
     private final JobRunner runner;
-    private final ControllerTester tester;
-    private final ReadyJobsTrigger readyJobsTrigger;
-    private final NameServiceDispatcher nameServiceDispatcher;;
+    private final DeploymentTester tester;
 
     private ApplicationVersion lastSubmission = null;
     private boolean deferDnsUpdates = false;
@@ -108,18 +105,15 @@ public class DeploymentContext {
         this.testerId = TesterId.of(instanceId);
         this.jobs = tester.controller().jobController();
         this.runner = tester.runner();
-        this.tester = tester.controllerTester();
-        this.routing = this.tester.serviceRegistry().routingGeneratorMock();
-        this.cloud = this.tester.serviceRegistry().testerCloud();
-        this.readyJobsTrigger = tester.readyJobsTrigger();
-        this.nameServiceDispatcher = tester.nameServiceDispatcher();
+        this.tester = tester;
+        this.routing = tester.controllerTester().serviceRegistry().routingGeneratorMock();
         createTenantAndApplication();
     }
 
     private void createTenantAndApplication() {
         try {
-            var tenant = tester.createTenant(instanceId.tenant().value());
-            tester.createApplication(tenant.value(), instanceId.application().value(), instanceId.instance().value());
+            var tenant = tester.controllerTester().createTenant(instanceId.tenant().value());
+            tester.controllerTester().createApplication(tenant.value(), instanceId.application().value(), instanceId.instance().value());
         } catch (IllegalArgumentException ignored) { } // Tenant and or application may already exist with custom setup.
     }
 
@@ -156,30 +150,30 @@ public class DeploymentContext {
 
     /** Completely deploy the latest change */
     public DeploymentContext deploy() {
-        assertNotNull("Application package submitted", lastSubmission);
+        assertTrue("Application package submitted", application().latestVersion().isPresent());
         assertFalse("Submission is not already deployed", application().instances().values().stream()
                                                                        .anyMatch(instance -> instance.deployments().values().stream()
                                                                                                      .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));
-        assertEquals(lastSubmission, application().change().application().get());
+        assertEquals(application().latestVersion(), instance().change().application());
         completeRollout();
-        assertFalse(application().change().hasTargets());
+        assertFalse(instance().change().hasTargets());
         return this;
     }
 
     /** Upgrade platform of this to given version */
     public DeploymentContext deployPlatform(Version version) {
-        assertEquals(application().change().platform().get(), version);
+        assertEquals(instance().change().platform().get(), version);
         assertFalse(application().instances().values().stream()
                           .anyMatch(instance -> instance.deployments().values().stream()
                                                         .anyMatch(deployment -> deployment.version().equals(version))));
-        assertEquals(version, application().change().platform().get());
-        assertFalse(application().change().application().isPresent());
+        assertEquals(version, instance().change().platform().get());
+        assertFalse(instance().change().application().isPresent());
 
         completeRollout();
 
         assertTrue(application().productionDeployments().values().stream()
-                         .allMatch(deployments -> deployments.stream()
-                                                             .allMatch(deployment -> deployment.version().equals(version))));
+                                .allMatch(deployments -> deployments.stream()
+                                                                    .allMatch(deployment -> deployment.version().equals(version))));
 
         for (var spec : application().deploymentSpec().instances())
             for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
@@ -187,7 +181,7 @@ public class DeploymentContext {
                                  .list(type.zone(tester.controller().system()), applicationId.defaultInstance()).stream() // TODO jonmv: support more
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
-        assertFalse(application().change().hasTargets());
+        assertFalse(instance().change().hasTargets());
         return this;
     }
 
@@ -200,7 +194,7 @@ public class DeploymentContext {
 
     /** Flush all pending DNS updates */
     public DeploymentContext flushDnsUpdates() {
-        nameServiceDispatcher.run();
+        tester.nameServiceDispatcher().run();
         assertTrue("All name service requests dispatched",
                    tester.controller().curator().readNameServiceQueue().requests().isEmpty());
         return this;
@@ -279,7 +273,7 @@ public class DeploymentContext {
                 else
                     throw new AssertionError("Job '" + run.id() + "' was run twice");
 
-        assertFalse("Change should have no targets, but was " + application().change(), application().change().hasTargets());
+        assertFalse("Change should have no targets, but was " + instance().change(), instance().change().hasTargets());
         if (!deferDnsUpdates) {
             flushDnsUpdates();
         }
@@ -370,12 +364,12 @@ public class DeploymentContext {
     /** Deploy default application package, start a run for that change and return its ID */
     public RunId newRun(JobType type) {
         submit();
-        readyJobsTrigger.maintain();
+        tester.readyJobsTrigger().maintain();
 
         if (type.isProduction()) {
             runJob(JobType.systemTest);
             runJob(JobType.stagingTest);
-            readyJobsTrigger.maintain();
+            tester.readyJobsTrigger().maintain();
         }
 
         Run run = jobs.active().stream()
@@ -523,7 +517,7 @@ public class DeploymentContext {
         assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.startTests));
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
-        cloud.set(TesterCloud.Status.SUCCESS);
+        tester.cloud().set(TesterCloud.Status.SUCCESS);
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());

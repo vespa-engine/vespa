@@ -96,11 +96,6 @@ public class Versions {
                              targetApplication.id());
     }
 
-    /** Create versions using change contained in application */
-    public static Versions from(Application application, Version defaultPlatformVersion) {
-        return from(application.change(), application, Optional.empty(), defaultPlatformVersion);
-    }
-
     /** Create versions using given change and application */
     public static Versions from(Change change, Application application, Optional<Deployment> deployment,
                                 Version defaultPlatformVersion) {

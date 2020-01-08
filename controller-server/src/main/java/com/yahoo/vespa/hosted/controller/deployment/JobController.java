@@ -270,7 +270,7 @@ public class JobController {
                          .collect(toUnmodifiableList());
     }
 
-    /** Returns a list of all active runs for the given instance. */
+    /** Returns a list of all active runs for the given application. */
     public List<Run> active(TenantAndApplicationId id) {
         return copyOf(controller.applications().requireApplication(id).instances().keySet().stream()
                                 .flatMap(name -> Stream.of(JobType.values())
@@ -278,6 +278,15 @@ public class JobController {
                                                        .flatMap(Optional::stream)
                                                        .filter(run -> ! run.hasEnded()))
                                 .iterator());
+    }
+
+    /** Returns a list of all active runs for the given instance. */
+    public List<Run> active(ApplicationId id) {
+        return copyOf(Stream.of(JobType.values())
+                            .map(type -> last(id, type))
+                            .flatMap(Optional::stream)
+                            .filter(run -> ! run.hasEnded())
+                            .iterator());
     }
 
     /** Returns the job status of the given job, possibly empty. */
@@ -292,7 +301,8 @@ public class JobController {
                                                     .collect(toUnmodifiableMap(job -> job,
                                                                                job -> jobStatus(job))),
                                     controller.system(),
-                                    controller.systemVersion());
+                                    controller.systemVersion(),
+                                    controller.clock().instant());
     }
 
     /** Adds deployment status to each of the given applications. */
