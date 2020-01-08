@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.mojo;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -12,13 +13,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * @author Tony Vaagenes
@@ -98,24 +96,10 @@ public class ApplicationMojo extends AbstractMojo {
     private void copyApplicationPackage(File applicationPackage, File applicationDestination) throws MojoExecutionException {
         if (applicationPackage.exists()) {
             try {
-                copyDirectory(applicationPackage.toPath(), applicationDestination.toPath());
-            } catch (Exception e) {
+                FileUtils.copyDirectory(applicationPackage, applicationDestination);
+            } catch (IOException e) {
                 throw new MojoExecutionException("Failed copying applicationPackage", e);
             }
-        }
-    }
-
-    private static void copyDirectory(Path source, Path destination) {
-        try (Stream<Path> fileStreams = Files.walk(source)) {
-            fileStreams.forEachOrdered(sourcePath -> {
-                try {
-                    Files.copy(sourcePath, source.resolve(destination.relativize(sourcePath)));
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
