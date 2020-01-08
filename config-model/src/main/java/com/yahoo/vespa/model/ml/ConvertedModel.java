@@ -172,13 +172,16 @@ public class ConvertedModel {
         ExpressionFunction expression = expressions.get(arguments.toName());
         if (expression != null) return expression;
 
-        if ( ! arguments.signature().isPresent()) {
+        expression = expressions.get("default." + arguments.toName());
+        if (expression != null) return expression;
+
+        if (arguments.signature().isEmpty()) {
             if (expressions.size() > 1)
                 throw new IllegalArgumentException("Multiple candidate expressions " + missingExpressionMessageSuffix());
             return expressions.values().iterator().next();
         }
 
-        if ( ! arguments.output().isPresent()) {
+        if (arguments.output().isEmpty()) {
             List<Map.Entry<String, ExpressionFunction>> entriesWithTheRightPrefix =
                     expressions.entrySet().stream().filter(entry -> entry.getKey().startsWith(arguments.signature().get() + ".")).collect(Collectors.toList());
             if (entriesWithTheRightPrefix.size() < 1)
