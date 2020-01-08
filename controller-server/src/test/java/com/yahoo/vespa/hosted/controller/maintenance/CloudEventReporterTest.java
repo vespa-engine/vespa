@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.jdk8compat.Set;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -18,6 +17,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
@@ -46,27 +46,22 @@ public class CloudEventReporterTest {
         setUpZones();
         CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15), new JobControl(tester.curator()));
 
-        equalListsIgnoreOrder(List.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
-        equalListsIgnoreOrder(List.of("host1.com", "host2.com", "host3.com"), getHostnames(awsZone1.getId()));
-        equalListsIgnoreOrder(List.of("host4.com", "host5.com", "confighost.com"), getHostnames(awsZone2.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(awsZone1.getId()));
+        assertEquals(Set.of("host4.com", "host5.com", "confighost.com"), getHostnames(awsZone2.getId()));
 
         mockEvents();
         cloudEventReporter.maintain();
 
-        equalListsIgnoreOrder(List.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
-        equalListsIgnoreOrder(List.of("host3.com"), getHostnames(awsZone1.getId()));
-        equalListsIgnoreOrder(List.of("host4.com", "confighost.com"), getHostnames(awsZone2.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
+        assertEquals(Set.of("host3.com"), getHostnames(awsZone1.getId()));
+        assertEquals(Set.of("host4.com", "confighost.com"), getHostnames(awsZone2.getId()));
 
         Map<IssueId, MockIssueHandler.MockIssue> createdIssues = tester.serviceRegistry().issueHandler().issues();
         assertEquals(1, createdIssues.size());
         String description = createdIssues.get(IssueId.from("1")).issue().description();
-        assertEquals("[confighost]", description);
+        assertTrue(description.contains("confighost"));
 
-    }
-
-    private void equalListsIgnoreOrder(List<?> l1, List<?> l2) {
-        assertTrue(l1 + " and " + l2 + " should be equal",
-                l1.size() == l2.size() && l1.containsAll(l2));
     }
 
     private void mockEvents() {
@@ -144,11 +139,11 @@ public class CloudEventReporterTest {
                 .build();
     }
 
-    private List<String> getHostnames(ZoneId zoneId) {
+    private Set<String> getHostnames(ZoneId zoneId) {
         return tester.configServer().nodeRepository().list(zoneId)
                 .stream()
                 .map(node -> node.hostname().value())
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     private ZoneApiMock createZone(String zoneId, String cloudNativeRegionName, String cloud) {

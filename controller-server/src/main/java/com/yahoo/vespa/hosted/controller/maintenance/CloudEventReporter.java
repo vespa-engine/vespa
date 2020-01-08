@@ -49,28 +49,31 @@ public class CloudEventReporter extends Maintainer {
         for (var awsRegion : zonesByCloudNativeRegion.keySet()) {
             List<CloudEvent> events = eventFetcher.getEvents(awsRegion);
             for (var event : events) {
-                deprovisionHosts(awsRegion, event);
-                submitIssue(event);
+                List<String> deprovisionedHosts = deprovisionHosts(awsRegion, event);
+                submitIssue(event, deprovisionedHosts);
             }
         }
     }
 
-    private void deprovisionHosts(String awsRegion, CloudEvent event) {
-        for (var zone : zonesByCloudNativeRegion.get(awsRegion)) {
-            nodeRepository.list(zone.getId())
-                    .stream()
-                    .filter(shouldDeprovisionHost(event))
-                    .map(node -> node.hostname().value())
-                    .forEach(hostname -> {
-                        log.info(String.format("Setting host %s to wantToRetire and wantToDeprovision", hostname));
-                        nodeRepository.retireAndDeprovision(zone.getId(), hostname);
-                        event.affectedInstances.removeIf(hostname::contains);
-                    });
-        }
+    private List<String> deprovisionHosts(String awsRegion, CloudEvent event) {
+        return zonesByCloudNativeRegion.get(awsRegion)
+                .stream()
+                .flatMap(zone ->
+                    nodeRepository.list(zone.getId())
+                            .stream()
+                            .filter(shouldDeprovisionHost(event))
+                            .map(node -> {
+                                if (!node.wantToDeprovision() || !node.wantToRetire())
+                                    log.info(String.format("Setting host %s to wantToRetire and wantToDeprovision", node.hostname().value()));
+                                    nodeRepository.retireAndDeprovision(zone.getId(), node.hostname().value());
+                                return node.hostname().value();
+                            })
+                )
+                .collect(Collectors.toList());
     }
 
-    private void submitIssue(CloudEvent event) {
-        if (event.affectedInstances.isEmpty())
+    private void submitIssue(CloudEvent event, List<String> deprovisionedHosts) {
+        if (event.affectedInstances.size() == deprovisionedHosts.size())
             return;
         Issue issue = eventFetcher.createIssue(event);
         if (!issueHandler.issueExists(issue)) {
