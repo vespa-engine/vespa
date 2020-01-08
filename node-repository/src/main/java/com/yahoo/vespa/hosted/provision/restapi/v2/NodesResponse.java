@@ -203,7 +203,7 @@ class NodesResponse extends HttpResponse {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
-            object.setString("agent", normalizedAgentUntilV6IsGone(event.agent()).name());
+            object.setString("agent", event.agent().name());
         }
     }
 
@@ -230,12 +230,6 @@ class NodesResponse extends HttpResponse {
     // this allows the docker host to pre-download the (likely) image its node will run
     private DockerImage dockerImageFor(NodeType nodeType) {
         return nodeRepository.dockerImage(nodeType.isDockerHost() ? nodeType.childNodeType() : nodeType);
-    }
-
-
-    /** maven-vespa-plugin @ v6 needs to deserialize nodes w/history. */
-    private Agent normalizedAgentUntilV6IsGone(Agent agent) {
-        return agent == Agent.NodeFailer ? Agent.system : agent;
     }
 
     private void ipAddressesToSlime(Set<String> ipAddresses, Cursor array) {

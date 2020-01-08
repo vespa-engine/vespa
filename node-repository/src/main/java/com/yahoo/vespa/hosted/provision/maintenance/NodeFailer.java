@@ -108,7 +108,7 @@ public class NodeFailer extends Maintainer {
                     continue;
                 }
                 String reason = entry.getValue();
-                nodeRepository().fail(node.hostname(), Agent.system, reason);
+                nodeRepository().fail(node.hostname(), Agent.NodeFailer, reason);
             }
         }
 
@@ -144,7 +144,7 @@ public class NodeFailer extends Maintainer {
 
             if (! node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                 History updatedHistory = node.history()
-                        .with(new History.Event(History.Event.Type.requested, Agent.system, lastLocalRequest.get()));
+                        .with(new History.Event(History.Event.Type.requested, Agent.NodeFailer, lastLocalRequest.get()));
                 nodeRepository().write(node.with(updatedHistory), lock);
             }
         }
@@ -357,12 +357,12 @@ public class NodeFailer extends Maintainer {
                 if (failingTenantNode.state() == Node.State.active) {
                     allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reasonForChildFailure);
                 } else {
-                    nodeRepository().fail(failingTenantNode.hostname(), Agent.system, reasonForChildFailure);
+                    nodeRepository().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
                 }
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            node = nodeRepository().fail(node.hostname(), Agent.system, reason);
+            node = nodeRepository().fail(node.hostname(), Agent.NodeFailer, reason);
             try {
                 deployment.get().activate();
                 return true;
@@ -373,7 +373,7 @@ public class NodeFailer extends Maintainer {
             } catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().reactivate(node.hostname(), Agent.system,
+                nodeRepository().reactivate(node.hostname(), Agent.NodeFailer,
                                             "Failed to redeploy after being failed by NodeFailer");
                 log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
                                        ", but redeploying without the node failed", e);
