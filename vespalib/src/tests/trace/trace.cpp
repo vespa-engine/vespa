@@ -334,7 +334,7 @@ TEST("testVisiting")
     EXPECT_EQUAL(encoder.str, b1.encode());
 }
 
-constexpr system_time zero(duration::zero());
+constexpr system_time zero;
 constexpr system_time as_ms(long ms) { return system_time(std::chrono::milliseconds(ms)); }
 
 TEST("testTimestamp")
