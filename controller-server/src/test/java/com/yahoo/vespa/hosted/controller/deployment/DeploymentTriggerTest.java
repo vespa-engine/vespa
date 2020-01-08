@@ -889,12 +889,20 @@ public class DeploymentTriggerTest {
                 "            </notifications>\n" +
                 "        </instance>\n" +
                 "    </parallel>\n" +
+                "    <instance id='last'>\n" +
+                "        <upgrade policy='conservative' />\n" +
+                "        <prod>\n" +
+                "            <region active='true'>eu-west-1</region>\n" +
+                "        </prod>\n" +
+                "    </instance>\n" +
                 "</deployment>\n";
 
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(complicatedDeploymentSpec);
         var app1 = tester.newDeploymentContext("t", "a", "instance").submit(applicationPackage);
         var app2 = tester.newDeploymentContext("t", "a", "other");
+        var app3 = tester.newDeploymentContext("t", "a", "last");
 
+        // Verify that the first submission rolls out as per the spec.
         tester.triggerJobs();
         assertEquals(2, tester.jobs().active().size());
         app1.runJob(stagingTest);
@@ -952,6 +960,9 @@ public class DeploymentTriggerTest {
         assertEquals(1, tester.jobs().active().size());
         app1.runJob(productionApSoutheast1);
         tester.triggerJobs();
+        assertEquals(1, tester.jobs().active().size());
+        app3.runJob(productionEuWest1);
+        tester.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
 
         tester.atMondayMorning().clock().advance(Duration.ofDays(5)); // Inside block window for second instance.
@@ -960,6 +971,7 @@ public class DeploymentTriggerTest {
         tester.upgrader().maintain();
         assertEquals(Change.of(version), app1.instance().change());
         assertEquals(Change.empty(), app2.instance().change());
+        assertEquals(Change.empty(), app3.instance().change());
 
         // Upgrade instance 1; a failure allows an application change to accompany the upgrade.
         // The new platform won't roll out to the conservative instance until the normal one is upgraded.
@@ -985,6 +997,9 @@ public class DeploymentTriggerTest {
         app1.runJob(testUsEast3);
         app1.runJob(productionApSoutheast1);
 
+        app2.runJob(systemTest)     // Testing outstanding revision.
+            .runJob(stagingTest);   // Testing outstanding revision.
+
         tester.controllerTester().computeVersionStatus();
         tester.upgrader().maintain();
         tester.outstandingChangeDeployer().run();
@@ -992,9 +1007,7 @@ public class DeploymentTriggerTest {
         assertEquals(2, tester.jobs().active().size());
         assertEquals(Change.empty(), app1.instance().change());
         assertEquals(Change.of(version), app2.instance().change());
-
-        app2.runJob(systemTest)     // Testing outstanding revision.
-            .runJob(stagingTest);   // Testing outstanding revision.
+        assertEquals(Change.empty(), app3.instance().change());
 
         app2.runJob(systemTest)     // Explicitly defined for this instance.
             .runJob(stagingTest)    // Never completed successfully with just the upgrade.
@@ -1015,6 +1028,24 @@ public class DeploymentTriggerTest {
         app2.runJob(productionEuWest1)
             .runJob(testEuWest1);
         assertEquals(Change.empty(), app2.instance().change());
+        assertEquals(Change.empty(), app3.instance().change());
+
+        // Two first instances upgraded and with new revision — last instance gets change from whatever maintainer runs first.
+        tester.upgrader().maintain();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(version), app3.instance().change());
+
+        tester.deploymentTrigger().cancelChange(app3.instanceId(), ALL);
+        tester.outstandingChangeDeployer().run();
+        tester.upgrader().maintain();
+        assertEquals(Change.of(app1.application().latestVersion().get()), app3.instance().change());
+
+        app3.runJob(productionEuWest1);
+        tester.upgrader().maintain();
+        app3.runJob(productionEuWest1);
+        tester.triggerJobs();
+        assertEquals(List.of(), tester.jobs().active());
+        assertEquals(Change.empty(), app3.instance().change());
     }
 
     @Test
