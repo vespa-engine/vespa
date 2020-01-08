@@ -45,6 +45,10 @@
           <groupId>io.airlift</groupId>
           <artifactId>airline</artifactId>
         </exclusion>
+         <exclusion>
+          <groupId>org.apache.commons</groupId>
+          <artifactId>commons-lang3</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>

@@ -32,10 +32,9 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.ClusterView;
 import com.yahoo.vespa.serviceview.bindings.ServiceView;
+import org.apache.commons.io.IOUtils;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -413,7 +412,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
-        return new ByteArrayInputStream(log.getBytes(StandardCharsets.UTF_8));
+        return IOUtils.toInputStream(log);
     }
 
     public void setLogStream(String log) {
