@@ -47,15 +47,17 @@ public class TuningDispatch {
             return this;
         }
         public Builder setDispatchPolicy(String policy) {
-            if (policy == null) {
-            } else if ("random".equals(policy.toLowerCase())) {
-                dispatchPolicy = DispatchPolicy.ADAPTIVE;
-            } else if ("round-robin".equals(policy.toLowerCase())) {
-                dispatchPolicy = DispatchPolicy.ROUNDROBIN;
-            } else {
-                dispatchPolicy = DispatchPolicy.valueOf(policy.toUpperCase());
-            }
+            if (policy != null)
+                dispatchPolicy = toDispatchPolicy(policy);
             return this;
+        }
+
+        private DispatchPolicy toDispatchPolicy(String policy) {
+            switch (policy.toLowerCase()) {
+                case "adaptive": case "random": return DispatchPolicy.ADAPTIVE; // TODO: Deprecate 'random' on Java 8
+                case "round-robin": return DispatchPolicy.ROUNDROBIN;
+                default: throw new IllegalArgumentException("Unknown dispatch policy '" + policy + "'");
+            }
         }
 
         public Builder setUseLocalNode(Boolean useLocalNode) {
@@ -71,4 +73,5 @@ public class TuningDispatch {
             return this;
         }
     }
+
 }
