@@ -31,6 +31,7 @@ import static org.junit.Assert.assertTrue;
 public class SearchClusterTest {
 
     static class State {
+
         class MyExecutor implements Executor {
             private final List<Runnable> list = new ArrayList<>();
             @Override
@@ -44,15 +45,18 @@ public class SearchClusterTest {
                 list.clear();
             }
         }
+
         final String clusterId;
         final int nodesPerGroup;
         final VipStatus vipStatus;
         final SearchCluster searchCluster;
         final List<AtomicInteger> numDocsPerNode;
         List<AtomicInteger> pingCounts;
+
         State(String clusterId, int nodesPergroup, String ... nodeNames) {
             this(clusterId, nodesPergroup, Arrays.asList(nodeNames));
         }
+
         State(String clusterId, int nodesPergroup, List<String> nodeNames) {
             this.clusterId = clusterId;
             this.nodesPerGroup = nodesPergroup;
@@ -70,10 +74,12 @@ public class SearchClusterTest {
             }
             searchCluster = new SearchCluster(clusterId, MockSearchCluster.createDispatchConfig(nodes), nodes.size() / nodesPergroup, vipStatus);
         }
+
         void startMonitoring() {
             searchCluster.startClusterMonitoring(new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
         }
-        static private int getMaxValue(List<AtomicInteger> list) {
+
+        static private int maxFrom(List<AtomicInteger> list) {
             int max = list.get(0).get();
             for (AtomicInteger v : list) {
                 if (v.get() > max) {
@@ -82,7 +88,8 @@ public class SearchClusterTest {
             }
             return max;
         }
-        private static int getMinValue(List<AtomicInteger> list) {
+
+        private static int minFrom(List<AtomicInteger> list) {
             int min = list.get(0).get();
             for (AtomicInteger v : list) {
                 if (v.get() < min) {
@@ -91,19 +98,24 @@ public class SearchClusterTest {
             }
             return min;
         }
+
         private void waitAtLeast(int atLeast, List<AtomicInteger> list) {
-            while (getMinValue(list) < atLeast) {
+            while (minFrom(list) < atLeast) {
                 ExecutorService executor = Executors.newCachedThreadPool();
                 searchCluster.clusterMonitor().ping(executor);
                 executor.shutdown();
                 try {
-                    executor.awaitTermination(60, TimeUnit.SECONDS);
+                    boolean completed = executor.awaitTermination(120, TimeUnit.SECONDS);
+                    if ( ! completed )
+                        throw new IllegalStateException("Ping thread timed out");
                 } catch (InterruptedException e) {}
             }
         }
+
         void waitOneFullPingRound() {
-            waitAtLeast(getMaxValue(pingCounts) + 1, pingCounts);
+            waitAtLeast(maxFrom(pingCounts) + 1, pingCounts);
         }
+
         static class Factory implements PingFactory {
             static class Pinger implements Callable<Pong> {
                 private final AtomicInteger numDocs;
