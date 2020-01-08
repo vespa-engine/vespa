@@ -9,11 +9,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
-* Created with IntelliJ IDEA.
-* User: thomasg
-* Date: 9/28/12
-* Time: 1:20 PM
-* To change this template use File | Settings | File Templates.
+* @author Thomas Gundersen
 */
 public class SearchDefinitionBuilder {
     public Map<String, NewDocumentType> build(DocumentTypeRepo repo, ModelElement elem) {
