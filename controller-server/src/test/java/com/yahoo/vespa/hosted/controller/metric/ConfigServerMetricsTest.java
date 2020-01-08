@@ -44,12 +44,12 @@ public class ConfigServerMetricsTest {
         //
         var deploymentId = new DeploymentId(applicationId, zoneId);
 
-        var clusterMetrics1 = new ClusterMetrics("niceCluster", ClusterMetrics.ClusterType.container) {{
+        var clusterMetrics1 = new ClusterMetrics("niceCluster", "container") {{
             addMetric("queriesPerSecond", 23.0);
             addMetric("queryLatency", 1337.0);
         }};
 
-        var clusterMetrics2 = new ClusterMetrics("alsoNiceCluster", ClusterMetrics.ClusterType.container) {{
+        var clusterMetrics2 = new ClusterMetrics("alsoNiceCluster", "container") {{
             addMetric("queriesPerSecond", 11.0);
             addMetric("queryLatency", 12.0);
         }};

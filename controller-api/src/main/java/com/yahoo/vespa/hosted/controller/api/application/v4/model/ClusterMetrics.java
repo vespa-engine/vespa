@@ -18,10 +18,10 @@ public class ClusterMetrics {
     public static final String QUERY_LATENCY  = "queryLatency";
 
     private final String clusterId;
-    private final ClusterType clusterType;
+    private final String clusterType;
     private final Map<String, Double> metrics;
 
-    public ClusterMetrics(String clusterId, ClusterType clusterType) {
+    public ClusterMetrics(String clusterId, String clusterType) {
         this.clusterId = clusterId;
         this.clusterType = clusterType;
         this.metrics = new HashMap<>();
@@ -31,7 +31,7 @@ public class ClusterMetrics {
         return clusterId;
     }
 
-    public ClusterType getClusterType() {
+    public String getClusterType() {
         return clusterType;
     }
 
@@ -58,11 +58,6 @@ public class ClusterMetrics {
     public ClusterMetrics addMetric(String name, double value) {
         metrics.put(name, value);
         return this;
-    }
-
-    public enum ClusterType {
-        content,
-        container
     }
 
 }
