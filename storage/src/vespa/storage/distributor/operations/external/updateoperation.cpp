@@ -149,13 +149,13 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
 
                 for (uint32_t i = 0; i < _results.size(); i++) {
                     if (_results[i].oldTs < oldTs) {
-                        LOG(warning, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
-                                     "This should not happen and may indicate undetected replica divergence. "
-                                     "Found ts=%" PRIu64 " on node %u, ts=%" PRIu64 " on node %u",
-                                     reply.getDocumentId().toString().c_str(),
-                                     reply.getBucket().toString().c_str(),
-                                     _results[i].oldTs, _results[i].nodeId,
-                                     _results[goodNode].oldTs, _results[goodNode].nodeId);
+                        LOG(error, "Update operation for '%s' in bucket %s updated documents with different timestamps. "
+                                   "This should not happen and may indicate undetected replica divergence. "
+                                   "Found ts=%" PRIu64 " on node %u, ts=%" PRIu64 " on node %u",
+                                   reply.getDocumentId().toString().c_str(),
+                                   reply.getBucket().toString().c_str(),
+                                   _results[i].oldTs, _results[i].nodeId,
+                                   _results[goodNode].oldTs, _results[goodNode].nodeId);
                         _metrics.diverging_timestamp_updates.inc();
 
                         replyToSend.setNodeWithNewestTimestamp(_results[goodNode].nodeId);
