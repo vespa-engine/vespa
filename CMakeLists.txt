@@ -11,9 +11,9 @@ vespa_detect_build_platform()
 message("-- Vespa build platform is ${VESPA_OS_DISTRO} ${VESPA_OS_DISTRO_VERSION}")
 vespa_use_default_cxx_compiler()
 vespa_use_default_java_home()
-vespa_use_default_build_settings()
 
 project(vespa CXX C)
+vespa_use_default_build_settings()
 
 # allows import of project in CLion on OSX
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
