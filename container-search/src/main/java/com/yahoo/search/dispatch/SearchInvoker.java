@@ -18,6 +18,7 @@ import java.util.Optional;
  * @author ollivir
  */
 public abstract class SearchInvoker extends CloseableInvoker {
+
     private final Optional<Node> node;
     private ResponseMonitor<SearchInvoker> monitor;
 

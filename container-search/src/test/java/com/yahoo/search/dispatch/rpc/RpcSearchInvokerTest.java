@@ -19,15 +19,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * @author ollivir
  */
 public class RpcSearchInvokerTest {
+
     @Test
     public void testProtobufSerialization() throws IOException {
         var compressionTypeHolder = new AtomicReference<CompressionType>();
@@ -35,8 +35,7 @@ public class RpcSearchInvokerTest {
         var lengthHolder = new AtomicInteger();
         var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
         var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
-        @SuppressWarnings("resource")
-        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool);
+        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, 1000);
 
         Query q = new Query("search/?query=test&hits=10&offset=3");
         invoker.sendSearchRequest(q);
@@ -44,9 +43,28 @@ public class RpcSearchInvokerTest {
         var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
         var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
 
-        assertThat(request.getHits(), equalTo(10));
-        assertThat(request.getOffset(), equalTo(3));
-        assertThat(request.getQueryTreeBlob().size(), greaterThan(0));
+        assertEquals(10, request.getHits());
+        assertEquals(3, request.getOffset());
+        assertTrue(request.getQueryTreeBlob().size() > 0);
+    }
+
+    @Test
+    public void testProtobufSerializationWithMaxHitsSet() throws IOException {
+        int maxHits = 5;
+        var compressionTypeHolder = new AtomicReference<CompressionType>();
+        var payloadHolder = new AtomicReference<byte[]>();
+        var lengthHolder = new AtomicInteger();
+        var mockClient = parameterCollectorClient(compressionTypeHolder, payloadHolder, lengthHolder);
+        var mockPool = new RpcResourcePool(ImmutableMap.of(7, mockClient.createConnection("foo", 123)));
+        var invoker = new RpcSearchInvoker(mockSearcher(), new Node(7, "seven", 1), mockPool, maxHits);
+
+        Query q = new Query("search/?query=test&hits=10&offset=3");
+        invoker.sendSearchRequest(q);
+
+        var bytes = mockPool.compressor().decompress(payloadHolder.get(), compressionTypeHolder.get(), lengthHolder.get());
+        var request = SearchProtocol.SearchRequest.newBuilder().mergeFrom(bytes).build();
+
+        assertEquals(maxHits, request.getHits());
     }
 
     private Client parameterCollectorClient(AtomicReference<CompressionType> compressionTypeHolder, AtomicReference<byte[]> payloadHolder,
@@ -91,4 +109,5 @@ public class RpcSearchInvokerTest {
             }
         };
     }
+
 }

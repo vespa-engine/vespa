@@ -108,7 +108,8 @@ public class DispatcherTest {
                                                            Query query,
                                                            OptionalInt groupId,
                                                            List<Node> nodes,
-                                                           boolean acceptIncompleteCoverage) {
+                                                           boolean acceptIncompleteCoverage,
+                                                           int maxHitsPerNode) {
             if (step >= events.length) {
                 throw new RuntimeException("Was not expecting more calls to getSearchInvoker");
             }
@@ -126,7 +127,10 @@ public class DispatcherTest {
         }
 
         @Override
-        protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node) {
+        protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
+                                                                  Query query,
+                                                                  int maxHitsPerNode,
+                                                                  Node node) {
             fail("Unexpected call to createNodeSearchInvoker");
             return null;
         }

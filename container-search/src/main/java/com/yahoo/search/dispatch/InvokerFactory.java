@@ -27,7 +27,10 @@ public abstract class InvokerFactory {
         this.searchCluster = searchCluster;
     }
 
-    protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node);
+    protected abstract Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
+                                                                       Query query,
+                                                                       int maxHits,
+                                                                       Node node);
 
     public abstract FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result);
 
@@ -47,13 +50,14 @@ public abstract class InvokerFactory {
                                                        Query query,
                                                        OptionalInt groupId,
                                                        List<Node> nodes,
-                                                       boolean acceptIncompleteCoverage) {
+                                                       boolean acceptIncompleteCoverage,
+                                                       int maxHits) {
         List<SearchInvoker> invokers = new ArrayList<>(nodes.size());
         Set<Integer> failed = null;
         for (Node node : nodes) {
             boolean nodeAdded = false;
             if (node.isWorking() != Boolean.FALSE) {
-                Optional<SearchInvoker> invoker = createNodeSearchInvoker(searcher, query, node);
+                Optional<SearchInvoker> invoker = createNodeSearchInvoker(searcher, query, maxHits, node);
                 if (invoker.isPresent()) {
                     invokers.add(invoker.get());
                     nodeAdded = true;

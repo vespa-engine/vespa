@@ -38,12 +38,12 @@ public class ProtobufSerialization {
 
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
-    static byte[] serializeSearchRequest(Query query, String serverId) {
-        return convertFromQuery(query, serverId).toByteArray();
+    static byte[] serializeSearchRequest(Query query, int hits, String serverId) {
+        return convertFromQuery(query, hits, serverId).toByteArray();
     }
 
-    private static SearchProtocol.SearchRequest convertFromQuery(Query query, String serverId) {
-        var builder = SearchProtocol.SearchRequest.newBuilder().setHits(query.getHits()).setOffset(query.getOffset())
+    private static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId) {
+        var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
                 .setTimeout((int) query.getTimeLeft());
 
         var documentDb = query.getModel().getDocumentDb();
