@@ -27,12 +27,25 @@ public class WordMatch extends Processor {
 
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
-            if ( ! field.getMatching().getType().equals(Matching.Type.WORD)) continue;
-
-            field.setStemming(Stemming.NONE);
-            field.getNormalizing().inferLowercase();
-            field.addQueryCommand("word");
+            processFieldRecursive(field);
         }
     }
+
+    private void processFieldRecursive(SDField field) {
+        processField(field);
+        for (SDField structField : field.getStructFields()) {
+            processField(structField);
+        }
+    }
+
+    private void processField(SDField field) {
+        if (!field.getMatching().getType().equals(Matching.Type.WORD)) {
+            return;
+        }
+        field.setStemming(Stemming.NONE);
+        field.getNormalizing().inferLowercase();
+        field.addQueryCommand("word");
+    }
+
 
 }
