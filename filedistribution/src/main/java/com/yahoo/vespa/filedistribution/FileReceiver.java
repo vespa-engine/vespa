@@ -111,6 +111,9 @@ public class FileReceiver {
             }
             File file = new File(fileReferenceDir, fileName);
             try {
+                // Delete destination dir, in case a previous attempt at writing to disk failed and the directory
+                // exists, but has no or incomplete content
+                deleteFileOrDirectory(fileReferenceDir);
                 // Unpack if necessary
                 if (fileType == FileReferenceData.Type.compressed) {
                     File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
