@@ -2,6 +2,8 @@
 #include "bucket.h"
 #include <assert.h>
 #include <map>
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 
 namespace vespalib {
 namespace metrics {
@@ -34,37 +36,24 @@ mergeFromSamples(const StableStore<typename T::sample_type> &source)
 }
 
 template<typename T>
+struct IdxComparator {
+    bool operator() (const T& a, const T& b) { return a.idx < b.idx; }
+};
+
+template<typename T>
 std::vector<T>
 mergeVectors(const std::vector<T> &a,
              const std::vector<T> &b)
 {
     std::vector<T> result;
-    auto a_iter = a.begin();
-    auto b_iter = b.begin();
-    while (a_iter != a.end() &&
-           b_iter != b.end())
-    {
-        if (a_iter->idx < b_iter->idx) {
-            result.push_back(*a_iter);
-            ++a_iter;
-        } else if (b_iter->idx < a_iter->idx) {
-            result.push_back(*b_iter);
-            ++b_iter;
-        } else {
-            result.push_back(*a_iter);
-            result.back().merge(*b_iter);
-            ++a_iter;
-            ++b_iter;
-        }
-    }
-    while (a_iter != a.end()) {
-        result.push_back(*a_iter);
-        ++a_iter;
-    }
-    while (b_iter != b.end()) {
-        result.push_back(*b_iter);
-        ++b_iter;
-    }
+    visit_ranges(overload
+                 {
+                     [&result](visit_ranges_either, const T& x) { result.push_back(x); },
+                     [&result](visit_ranges_both, const T& x, const T& y) {
+                         result.push_back(x);
+                         result.back().merge(y);
+                     }
+                 }, a.begin(), a.end(), b.begin(), b.end(), IdxComparator<T>());
     return result;
 }
 
@@ -74,29 +63,18 @@ findMissing(const std::vector<T> &already,
             const std::vector<T> &complete)
 {
     std::vector<T> result;
-    auto a_iter = already.begin();
-    auto c_iter = complete.begin();
-    while (a_iter != already.end() &&
-           c_iter != complete.end())
-    {
-        if (a_iter->idx < c_iter->idx) {
-            // missing from "complete", should not happen
-            ++a_iter;
-        } else if (c_iter->idx < a_iter->idx) {
-            // missing this
-            result.push_back(*c_iter);
-            ++c_iter;
-        } else {
-            // already have this
-            ++a_iter;
-            ++c_iter;
-        }
-    }
-    while (c_iter != complete.end()) {
-        // missing this
-        result.push_back(*c_iter);
-        ++c_iter;
-    }
+    visit_ranges(overload
+                 {
+                     // missing from "complete", should not happen:
+                     [&result](visit_ranges_first, const T&) { },
+                     // missing this:
+                     [&result](visit_ranges_second, const T& x) { result.push_back(x); },
+                     // already have this:
+                     [&result](visit_ranges_both, const T&, const T&) { }
+                 },
+                 already.begin(), already.end(),
+                 complete.begin(), complete.end(),
+                 IdxComparator<T>());
     return result;
 }
 
