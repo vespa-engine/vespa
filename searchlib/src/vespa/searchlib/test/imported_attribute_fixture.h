@@ -31,7 +31,7 @@ struct MockDocumentMetaStoreContext : public IDocumentMetaStoreContext {
 
 namespace search::attribute {
 
-namespace test { class MockGidToLidMapperFactory; }
+namespace test { struct MockGidToLidMapperFactory; }
 
 using document::DocumentId;
 using document::GlobalId;
