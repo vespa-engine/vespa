@@ -626,7 +626,7 @@ TEST("test that the integrated visit cache works.") {
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
     }
-    constexpr size_t BASE_SZ = 22174;
+    constexpr size_t BASE_SZ = 20594;
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 0, 100, 100, BASE_SZ));
     for (size_t i(1); i <= 100; i++) {
         vcs.verifyRead(i);
@@ -648,11 +648,11 @@ TEST("test that the integrated visit cache works.") {
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 99, BASE_SZ+180));
     vcs.rewrite(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, BASE_SZ-680));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 103, 97, BASE_SZ-671));
     vcs.verifyVisit({7,9,17,19,67,88,89}, true);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 98, BASE_SZ-20));
     vcs.remove(17);
-    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, BASE_SZ-680));
+    TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 104, 97, BASE_SZ-671));
     vcs.verifyVisit({7,9,17,19,67,88,89}, {7,9,19,67,88,89}, true);
     TEST_DO(verifyCacheStats(ds.getCacheStats(), 101, 105, 98, BASE_SZ-90));
 
