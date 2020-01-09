@@ -84,7 +84,15 @@ public class ApplicationSerializerTest {
         OptionalLong projectId = OptionalLong.of(123L);
 
         List<Deployment> deployments = new ArrayList<>();
-        ApplicationVersion applicationVersion1 = ApplicationVersion.from(new SourceRevision("repo1", "branch1", "commit1"), 31);
+        ApplicationVersion applicationVersion1 = new ApplicationVersion(Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
+                                                                        OptionalLong.of(31),
+                                                                        Optional.of("william@shakespeare"),
+                                                                        Optional.of(Version.fromString("1.2.3")),
+                                                                        Optional.of(Instant.ofEpochMilli(666)),
+                                                                        Optional.empty(),
+                                                                        Optional.of("best commit"));
+        assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
+
         ApplicationVersion applicationVersion2 = ApplicationVersion
                 .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b",
                       Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
@@ -138,6 +146,10 @@ public class ApplicationSerializerTest {
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
         assertEquals(original.latestVersion(), serialized.latestVersion());
+        assertEquals(original.latestVersion().get().authorEmail(), serialized.latestVersion().get().authorEmail());
+        assertEquals(original.latestVersion().get().buildTime(), serialized.latestVersion().get().buildTime());
+        assertEquals(original.latestVersion().get().sourceUrl(), serialized.latestVersion().get().sourceUrl());
+        assertEquals(original.latestVersion().get().commit(), serialized.latestVersion().get().commit());
 
         assertEquals(original.deploymentSpec().xmlForm(), serialized.deploymentSpec().xmlForm());
         assertEquals(original.validationOverrides().xmlForm(), serialized.validationOverrides().xmlForm());

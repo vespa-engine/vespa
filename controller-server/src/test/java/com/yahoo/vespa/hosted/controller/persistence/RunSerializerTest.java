@@ -77,14 +77,19 @@ public class RunSerializerTest {
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
         assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
-        assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
-                                                                "master",
-                                                                "f00bad"),
-                                             123,
-                                             "a@b",
-                                             Version.fromString("6.3.1"),
-                                             Instant.ofEpochMilli(100)),
-                     run.versions().targetApplication());
+        ApplicationVersion applicationVersion = ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
+                                                                                           "master",
+                                                                                           "f00bad"),
+                                                                        123,
+                                                                        "a@b",
+                                                                        Version.fromString("6.3.1"),
+                                                                        Instant.ofEpochMilli(100));
+        assertEquals(applicationVersion, run.versions().targetApplication());
+        assertEquals(applicationVersion.authorEmail(), run.versions().targetApplication().authorEmail());
+        assertEquals(applicationVersion.buildTime(), run.versions().targetApplication().buildTime());
+        assertEquals(applicationVersion.compileVersion(), run.versions().targetApplication().compileVersion());
+        assertEquals("f00bad", run.versions().targetApplication().commit().get());
+        assertEquals("https://github.com/user/repo/tree/f00bad", run.versions().targetApplication().sourceUrl().get());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
         assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
                                                                 "master",

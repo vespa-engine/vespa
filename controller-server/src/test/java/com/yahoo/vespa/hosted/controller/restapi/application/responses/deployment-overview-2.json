@@ -21,7 +21,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -29,7 +29,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -86,7 +86,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -94,7 +94,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -151,7 +151,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "targetPlatform": "6.1.0"
@@ -221,7 +221,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -229,7 +229,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -244,7 +244,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -252,7 +252,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -317,7 +317,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -325,7 +325,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -390,7 +390,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -398,7 +398,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -463,7 +463,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -471,7 +471,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -536,7 +536,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "targetPlatform": "6.1.0"
@@ -611,7 +611,7 @@
       "currentApplication": {
         "commit": "commit1",
         "id": 3,
-        "source": "repository1/tree/commit1",
+        "sourceUrl": "repository1/tree/commit1",
         "compileVersion": "6.1.0"
       },
       "type": "deployment",
@@ -622,7 +622,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -630,7 +630,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -678,7 +678,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -686,7 +686,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -735,7 +735,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "targetPlatform": "6.1.0"
@@ -798,7 +798,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -806,7 +806,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           }
@@ -820,7 +820,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -828,7 +828,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -869,7 +869,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -877,7 +877,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -931,7 +931,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -939,7 +939,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           }
@@ -948,7 +948,7 @@
       "currentApplication": {
         "commit": "commit1",
         "id": 2,
-        "source": "repository1/tree/commit1",
+        "sourceUrl": "repository1/tree/commit1",
         "compileVersion": "6.1.0"
       },
       "type": "deployment",
@@ -959,7 +959,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -967,7 +967,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -1016,7 +1016,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "targetPlatform": "6.1.0"
@@ -1079,7 +1079,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 3,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -1087,7 +1087,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           }
@@ -1096,7 +1096,7 @@
       "currentApplication": {
         "commit": "commit1",
         "id": 1,
-        "source": "repository1/tree/commit1",
+        "sourceUrl": "repository1/tree/commit1",
         "compileVersion": "6.1.0"
       },
       "type": "deployment",
@@ -1107,7 +1107,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 2,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "sourcePlatform": "6.1.0",
@@ -1115,7 +1115,7 @@
             "sourceApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             }
           },
@@ -1164,7 +1164,7 @@
             "targetApplication": {
               "commit": "commit1",
               "id": 1,
-              "source": "repository1/tree/commit1",
+              "sourceUrl": "repository1/tree/commit1",
               "compileVersion": "6.1.0"
             },
             "targetPlatform": "6.1.0"

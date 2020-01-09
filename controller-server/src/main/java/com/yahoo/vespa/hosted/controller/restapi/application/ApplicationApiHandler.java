@@ -854,7 +854,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                  "/instance/" + instance.id().instance().value() + "/job/",
                                                  request.getUri()).toString());
 
-        application.latestVersion().ifPresent(version -> sourceRevisionToSlime(version.source(), object.setObject("source")));
+        application.latestVersion().ifPresent(version -> {
+            sourceRevisionToSlime(version.source(), object.setObject("source"));
+            version.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
+            version.commit().ifPresent(commit -> object.setString("commit", commit));
+        });
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
@@ -1077,6 +1081,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             object.setLong("buildNumber", applicationVersion.buildNumber().getAsLong());
             object.setString("hash", applicationVersion.id());
             sourceRevisionToSlime(applicationVersion.source(), object.setObject("source"));
+            applicationVersion.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
+            applicationVersion.commit().ifPresent(commit -> object.setString("commit", commit));
         }
     }
 
@@ -1948,6 +1954,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         SourceRevision sourceRevision = toSourceRevision(submitOptions);
         String authorEmail = submitOptions.field("authorEmail").asString();
         long projectId = Math.max(1, submitOptions.field("projectId").asLong());
+        Optional<String> commit = submitOptions.field("commit").valid() ? Optional.of(submitOptions.field("commit").asString()) : Optional.empty();
+        Optional<String> sourceUrl = submitOptions.field("sourceUrl").valid() ? Optional.of(submitOptions.field("sourceUrl").asString()) : Optional.empty();
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
@@ -1960,6 +1968,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                                                             application,
                                                             sourceRevision,
                                                             authorEmail,
+                                                            sourceUrl,
+                                                            commit,
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));

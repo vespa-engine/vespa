@@ -37,6 +37,8 @@
           "gitCommit": "commit1",
           "gitBranch": "master"
         },
+        "sourceUrl": "repository1/tree/commit1",
+        "commit": "commit1",
         "hash": "1.0.3-commit1"
       },
       "completed": "0 of 0 complete"

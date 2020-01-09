@@ -21,7 +21,8 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
      * environment)
      */
     public static final ApplicationVersion unknown = new ApplicationVersion(Optional.empty(), OptionalLong.empty(),
-                                                                            Optional.empty(), Optional.empty(), Optional.empty());
+                                                                            Optional.empty(), Optional.empty(), Optional.empty(),
+                                                                            Optional.empty(), Optional.empty());
 
     // This never changes and is only used to create a valid semantic version number, as required by application bundles
     private static final String majorVersion = "1.0";
@@ -31,9 +32,13 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
     private final OptionalLong buildNumber;
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
+    private final Optional<String> sourceUrl;
+    private final Optional<String> commit;
 
-    private ApplicationVersion(Optional<SourceRevision> source, OptionalLong buildNumber, Optional<String> authorEmail,
-                               Optional<Version> compileVersion, Optional<Instant> buildTime) {
+    /** Public for serialisation only. */
+    public ApplicationVersion(Optional<SourceRevision> source, OptionalLong buildNumber, Optional<String> authorEmail,
+                               Optional<Version> compileVersion, Optional<Instant> buildTime, Optional<String> sourceUrl,
+                               Optional<String> commit) {
         Objects.requireNonNull(source, "source cannot be null");
         Objects.requireNonNull(buildNumber, "buildNumber cannot be null");
         Objects.requireNonNull(authorEmail, "author cannot be null");
@@ -57,25 +62,34 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         this.authorEmail = authorEmail;
         this.compileVersion = compileVersion;
         this.buildTime = buildTime;
+        this.sourceUrl = Objects.requireNonNull(sourceUrl, "sourceUrl cannot be null");
+        this.commit = Objects.requireNonNull(commit, "commit cannot be null");
     }
 
     /** Create an application package version from a completed build, without an author email */
     public static ApplicationVersion from(SourceRevision source, long buildNumber) {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.empty(),
-                                      Optional.empty(), Optional.empty());
+                                      Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /** Creates an version from a completed build and an author email. */
     public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail) {
-        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber),
-                                      Optional.of(authorEmail), Optional.empty(), Optional.empty());
+        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail),
+                                      Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     /** Creates an version from a completed build, an author email, and build meta data. */
     public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail,
                                           Version compileVersion, Instant buildTime) {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail),
-                                      Optional.of(compileVersion), Optional.of(buildTime));
+                                      Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty());
+    }
+
+    /** Creates an version from a completed build, an author email, and build meta data. */
+    public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail, Version compileVersion,
+                                          Instant buildTime, Optional<String> sourceUrl, Optional<String> commit) {
+        return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail),
+                                      Optional.of(compileVersion), Optional.of(buildTime), sourceUrl, commit);
     }
 
     /** Returns an unique identifier for this version or "unknown" if version is not known */
@@ -83,7 +97,12 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         if (isUnknown()) {
             return "unknown";
         }
-        return String.format("%s.%d-%s", majorVersion, buildNumber.getAsLong(), abbreviateCommit(source.get().commit()));
+        return String.format("%s.%d-%s",
+                             majorVersion,
+                             buildNumber.getAsLong(),
+                             source.map(SourceRevision::commit).map(commit -> abbreviateCommit(commit))
+                                   .or(this::commit)
+                                   .orElse("unknown"));
     }
 
     /**
@@ -103,6 +122,21 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns the time this package was built, if known. */
     public Optional<Instant> buildTime() { return buildTime; }
+
+    /** Returns the source URL for this application version. */
+    public Optional<String> sourceUrl() {
+        return sourceUrl.or(() -> source.map(source -> {
+            String repository = source.repository();
+            if (repository.startsWith("git@"))
+                repository = "https://" + repository.substring(4).replace(':', '/');
+            if (repository.endsWith(".git"))
+                repository = repository.substring(0, repository.length() - 4);
+            return repository + "/tree/" + source.commit();
+        }));
+    }
+
+    /** Returns the commit name of this application version. */
+    public Optional<String> commit() { return commit.or(() -> source.map(SourceRevision::commit)); }
 
     /** Returns whether this is unknown */
     public boolean isUnknown() {
@@ -144,4 +178,5 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
         return Long.compare(buildNumber().getAsLong(), o.buildNumber().getAsLong());
     }
+
 }

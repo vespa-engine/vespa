@@ -291,6 +291,7 @@ public abstract class ControllerHttpClient {
         rootObject.setString("repository", submission.repository());
         rootObject.setString("branch", submission.branch());
         rootObject.setString("commit", submission.commit());
+        submission.sourceUrl().ifPresent(url -> rootObject.setString("sourceUrl", url));
         rootObject.setString("authorEmail", submission.authorEmail());
         submission.projectId().ifPresent(projectId -> rootObject.setLong("projectId", projectId));
         return toJson(slime);

@@ -9,7 +9,9 @@
       "gitRepository": "repository1",
       "gitBranch": "master",
       "gitCommit": "commit1"
-    }
+    },
+    "sourceUrl": "repository1/tree/commit1",
+    "commit": "commit1"
   },
   "projectId": 1000,
   "compileVersion": "6.1.0",
@@ -32,7 +34,9 @@
             "gitRepository": "repository1",
             "gitBranch": "master",
             "gitCommit": "commit1"
-          }
+          },
+          "sourceUrl": "repository1/tree/commit1",
+          "commit": "commit1"
         }
       },
       "deploymentJobs": [
@@ -49,7 +53,9 @@
                 "gitRepository": "repository1",
                 "gitBranch": "master",
                 "gitCommit": "commit1"
-              }
+              },
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             },
             "reason": "unknown reason",
             "at": "(ignore)"
@@ -68,7 +74,9 @@
                 "gitRepository": "repository1",
                 "gitBranch": "master",
                 "gitCommit": "commit1"
-              }
+              },
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             },
             "reason": "unknown reason",
             "at": "(ignore)"
@@ -87,7 +95,9 @@
                 "gitRepository": "repository1",
                 "gitBranch": "master",
                 "gitCommit": "commit1"
-              }
+              },
+              "sourceUrl": "repository1/tree/commit1",
+              "commit": "commit1"
             },
             "reason": "unknown reason",
             "at": "(ignore)"
