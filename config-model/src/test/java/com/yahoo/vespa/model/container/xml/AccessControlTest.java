@@ -45,6 +45,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
             ContainerCluster.ROOT_HANDLER_PATH);
 
     public AccessControlTest() {
+        // Note: isHosted is assigned in the constructor as it is used by a @Before annotated method in the super class.
         isHosted = true;
     }
 
