@@ -221,6 +221,13 @@ public:
         _update_fast_path_restart_enabled = enabled;
     }
 
+    bool merge_operations_disabled() const noexcept {
+        return _merge_operations_disabled;
+    }
+    void set_merge_operations_disabled(bool disabled) noexcept {
+        _merge_operations_disabled = disabled;
+    }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -265,6 +272,7 @@ private:
     bool _sequenceMutatingOperations;
     bool _allowStaleReadsDuringClusterStateTransitions;
     bool _update_fast_path_restart_enabled;
+    bool _merge_operations_disabled;
 
     DistrConfig::MinimumReplicaCountingMode _minimumReplicaCountingMode;
     

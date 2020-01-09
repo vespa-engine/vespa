@@ -181,6 +181,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         configureDistributor(builder);
     }
 
+    void configure_merge_operations_disabled(bool disabled) {
+        ConfigBuilder builder;
+        builder.mergeOperationsDisabled = disabled;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -1019,6 +1025,17 @@ TEST_F(DistributorTest, fast_path_on_consistent_gets_config_is_propagated_to_int
 
     configure_update_fast_path_restart_enabled(false);
     EXPECT_FALSE(getConfig().update_fast_path_restart_enabled());
+}
+
+TEST_F(DistributorTest, merge_disabling_config_is_propagated_to_internal_config) {
+    createLinks(true);
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_merge_operations_disabled(true);
+    EXPECT_TRUE(getConfig().merge_operations_disabled());
+
+    configure_merge_operations_disabled(false);
+    EXPECT_FALSE(getConfig().merge_operations_disabled());
 }
 
 TEST_F(DistributorTest, concurrent_reads_not_enabled_if_btree_db_is_not_enabled) {
