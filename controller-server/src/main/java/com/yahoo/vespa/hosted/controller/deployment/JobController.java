@@ -296,19 +296,24 @@ public class JobController {
 
     /** Returns the deployment status of the given application. */
     public DeploymentStatus deploymentStatus(Application application) {
+        return deploymentStatus(application, controller.systemVersion());
+    }
+
+    private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
         return new DeploymentStatus(application,
                                     DeploymentStatus.jobsFor(application, controller.system()).stream()
                                                     .collect(toUnmodifiableMap(job -> job,
                                                                                job -> jobStatus(job))),
                                     controller.system(),
-                                    controller.systemVersion(),
+                                    systemVersion,
                                     controller.clock().instant());
     }
 
     /** Adds deployment status to each of the given applications. */
     public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
+        var systemVersion = controller.systemVersion();
         return DeploymentStatusList.from(applications.asList().stream()
-                                                     .map(this::deploymentStatus)
+                                                     .map(application -> deploymentStatus(application, systemVersion))
                                                      .collect(toUnmodifiableList()));
     }
 
