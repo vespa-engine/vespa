@@ -310,11 +310,15 @@ public class JobController {
     }
 
     /** Adds deployment status to each of the given applications. */
-    public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
-        var systemVersion = controller.systemVersion();
+    public DeploymentStatusList deploymentStatuses(ApplicationList applications, Version systemVersion) {
         return DeploymentStatusList.from(applications.asList().stream()
                                                      .map(application -> deploymentStatus(application, systemVersion))
                                                      .collect(toUnmodifiableList()));
+    }
+
+    /** Adds deployment status to each of the given applications. Calling this will do an implicit read of the controller's version status */
+    public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
+        return deploymentStatuses(applications, controller.systemVersion());
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
