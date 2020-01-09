@@ -40,19 +40,29 @@ public class RankFeatures implements Cloneable {
         features.put(name, value);
     }
 
-    /** Sets a rank feature to a value represented as a string */
+    /**
+     * Sets a rank feature to a value represented as a string.
+     *
+     * @deprecated set either a double or a tensor
+     */
+    @Deprecated // TODO: Remove on Vespa 8
     public void put(String name, String value) {
         features.put(name, value);
     }
 
-    /** Returns a rank feature as a string by full name or null if not set */
+    /**
+     * Returns a rank feature as a string by full name or null if not set
+     *
+     * @deprecated use getTensor (or getDouble) instead
+     */
+    @Deprecated // TODO: Remove on Vespa 8
     public String get(String name) {
         Object value = features.get(name);
         if (value == null) return null;
         return value.toString();
     }
 
-    /** Returns this value as whatever type it was stored as. Returns null if the value is not set. */
+    /** Returns this value as either a Double, Tensor or String. Returns null if the value is not set. */
     public Object getObject(String name) {
         return features.get(name);
     }
@@ -70,14 +80,15 @@ public class RankFeatures implements Cloneable {
     }
 
     /**
-     * Returns a tensor rank feature, or empty if there is no value with this name.
+     * Returns a rank feature as a tensor, or empty if there is no value with this name.
      *
-     * @throws IllegalArgumentException if the value is set but is not a tensor
+     * @throws IllegalArgumentException if the value is a string, not a tensor or double
      */
     public Optional<Tensor> getTensor(String name) {
         Object feature = features.get(name);
         if (feature == null) return Optional.empty();
         if (feature instanceof Tensor) return Optional.of((Tensor)feature);
+        if (feature instanceof Double) return Optional.of(Tensor.from((Double)feature));
         throw new IllegalArgumentException("Expected a tensor value of '" + name + "' but has " + feature);
     }
 

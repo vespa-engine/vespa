@@ -316,11 +316,23 @@ public class QueryProperties extends Properties {
         return properties;
     }
 
+    @SuppressWarnings("deprecation")
     private void setRankingFeature(Query query, String key, Object value) {
-        if (value instanceof Tensor)
-            query.getRanking().getFeatures().put(key, (Tensor)value);
-        else
-            query.getRanking().getFeatures().put(key, asString(value, ""));
+        if (value instanceof Tensor) {
+            query.getRanking().getFeatures().put(key, (Tensor) value);
+        }
+        else if (value instanceof Double) {
+            query.getRanking().getFeatures().put(key, (Double) value);
+        }
+        else {
+            String valueString = asString(value, "");
+            try {
+                query.getRanking().getFeatures().put(key, Double.parseDouble(valueString));
+            }
+            catch (IllegalArgumentException e) { // TODO: Throw instead on Vespa 8
+                query.getRanking().getFeatures().put(key, valueString);
+            }
+        }
     }
 
     private Object toSpecifiedType(String key, Object value, QueryProfileType type) {

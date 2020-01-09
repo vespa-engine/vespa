@@ -34,6 +34,7 @@ public class RankFeaturesTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void requireThatRankFeaturesUsingDoubleAndDoubleToStringEncodeTheSameWay() {
         RankFeatures withDouble = new RankFeatures();
         withDouble.put("query(myDouble)", 3.8);

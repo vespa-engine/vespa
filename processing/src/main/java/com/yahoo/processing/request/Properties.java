@@ -411,8 +411,8 @@ public class Properties implements Cloneable {
             if (value == null)
                 return defaultValue;
 
-            if (value instanceof Integer)
-                return (Integer) value;
+            if (value instanceof Number)
+                return ((Number)value).intValue();
 
             String stringValue = value.toString();
             if (stringValue.isEmpty())
@@ -420,7 +420,7 @@ public class Properties implements Cloneable {
 
             return Integer.valueOf(stringValue);
         } catch (IllegalArgumentException e) {
-            throw new NumberFormatException("Not a valid integer");
+            throw new NumberFormatException("'" + value + "' is not a valid integer");
         }
     }
 

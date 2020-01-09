@@ -138,20 +138,22 @@ public class QueryProfileConfigurationTestCase {
 
     @Test
     public void testVariant2ConfigurationThroughQueryLookup() {
+        final double delta = 0.0000001;
+
         QueryProfileConfigurer configurer=
                 new QueryProfileConfigurer("file:" + CONFIG_DIR + "query-profile-variants2.cfg");
 
         CompiledQueryProfileRegistry registry = configurer.getCurrentRegistry().compile();
         Query query = new Query(QueryTestCase.httpEncode("?query=heh&queryProfile=multi&myindex=default&myquery=lo ve&tracelevel=5"),
                                 registry.findQueryProfile("multi"));
-        assertEquals("love",query.properties().get("model.queryString"));
-        assertEquals("default",query.properties().get("model.defaultIndex"));
+        assertEquals("love", query.properties().get("model.queryString"));
+        assertEquals("default", query.properties().get("model.defaultIndex"));
 
-        assertEquals("-20",query.properties().get("ranking.features.query(scorelimit)"));
-        assertEquals("-20",query.getRanking().getFeatures().get("query(scorelimit)"));
+        assertEquals(-20.0, query.properties().get("ranking.features.query(scorelimit)"));
+        assertEquals(-20.0, query.getRanking().getFeatures().getDouble("query(scorelimit)").getAsDouble(), delta);
         query.properties().set("rankfeature.query(scorelimit)", -30);
-        assertEquals("-30",query.properties().get("ranking.features.query(scorelimit)"));
-        assertEquals("-30",query.getRanking().getFeatures().get("query(scorelimit)"));
+        assertEquals(-30.0, query.properties().get("ranking.features.query(scorelimit)"));
+        assertEquals(-30, query.getRanking().getFeatures().getDouble("query(scorelimit)").getAsDouble(), delta);
     }
 
     private void assertGet(String expectedValue,String parameter,String[] dimensionValues,QueryProfile profile) {
