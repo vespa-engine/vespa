@@ -6,6 +6,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
@@ -34,6 +35,9 @@ public class SubmitMojo extends AbstractVespaMojo {
     @Parameter(property = "commit", defaultValue = "unknown")
     private String commit;
 
+    @Parameter(property = "sourceUrl")
+    private String sourceUrl;
+
     @Parameter(property = "projectId")
     private Long projectId;
 
@@ -41,7 +45,7 @@ public class SubmitMojo extends AbstractVespaMojo {
     public void doExecute() {
         applicationZip = firstNonBlank(applicationZip, projectPathOf("target", "application.zip"));
         applicationTestZip = firstNonBlank(applicationTestZip, projectPathOf("target", "application-test.zip"));
-        Submission submission = new Submission(repository, branch, commit, authorEmail,
+        Submission submission = new Submission(repository, branch, commit, Optional.ofNullable(sourceUrl), authorEmail,
                                                Paths.get(applicationZip),
                                                Paths.get(applicationTestZip),
                                                projectId == null ? OptionalLong.empty() : OptionalLong.of(projectId));

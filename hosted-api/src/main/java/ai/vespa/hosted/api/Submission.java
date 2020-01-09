@@ -2,6 +2,7 @@
 package ai.vespa.hosted.api;
 
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.OptionalLong;
 
 /**
@@ -14,15 +15,18 @@ public class Submission {
     private final String repository;
     private final String branch;
     private final String commit;
+    private final Optional<String> sourceUrl;
     private final String authorEmail;
     private final Path applicationZip;
     private final Path applicationTestZip;
     private final OptionalLong projectId;
 
-    public Submission(String repository, String branch, String commit, String authorEmail, Path applicationZip, Path applicationTestZip, OptionalLong projectId) {
+    public Submission(String repository, String branch, String commit, Optional<String> sourceUrl, String authorEmail,
+                      Path applicationZip, Path applicationTestZip, OptionalLong projectId) {
         this.repository = repository;
         this.branch = branch;
         this.commit = commit;
+        this.sourceUrl = sourceUrl;
         this.authorEmail = authorEmail;
         this.applicationZip = applicationZip;
         this.applicationTestZip = applicationTestZip;
@@ -32,6 +36,7 @@ public class Submission {
     public String repository() { return repository; }
     public String branch() { return branch; }
     public String commit() { return commit; }
+    public Optional<String> sourceUrl() { return sourceUrl; }
     public String authorEmail() { return authorEmail; }
     public Path applicationZip() { return applicationZip; }
     public Path applicationTestZip() { return applicationTestZip; }
