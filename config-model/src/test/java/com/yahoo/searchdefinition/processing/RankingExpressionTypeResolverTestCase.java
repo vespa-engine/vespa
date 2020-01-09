@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.processing;
 
+import com.yahoo.collections.Pair;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.SearchBuilder;
@@ -9,11 +11,17 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -218,23 +226,77 @@ public class RankingExpressionTypeResolverTestCase {
 
     @Test
     public void undeclaredQueryFeaturesAreAccepted() throws Exception {
+        InspectableDeployLogger logger = new InspectableDeployLogger();
         SearchBuilder builder = new SearchBuilder();
         builder.importString(joinLines(
                 "search test {",
                 "  document test { ",
+                "    field anyfield type double {" +
+                "      indexing: attribute",
+                "    }",
                 "  }",
                 "  rank-profile my_rank_profile {",
                 "    first-phase {",
-                "      expression: query(foo)",
+                "      expression: query(foo) + f() + sum(attribute(anyfield))",
+                "    }",
+                "    function f() {",
+                "      expression: query(bar) + query(baz)",
                 "    }",
                 "  }",
                 "}"
-        ));
-        builder.build();
+        ), logger);
+        builder.build(true, logger);
+        String message = logger.findMessage("The following query features");
+        assertNull(message);
+    }
+
+    @Test
+    public void undeclaredQueryFeaturesAreAcceptedWithWarningWhenUsingTensors() throws Exception {
+        InspectableDeployLogger logger = new InspectableDeployLogger();
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(joinLines(
+                "search test {",
+                "  document test { ",
+                "    field anyfield type tensor(d[2]) {",
+                "      indexing: attribute",
+                "    }",
+                "  }",
+                "  rank-profile my_rank_profile {",
+                "    first-phase {",
+                "      expression: query(foo) + f() + sum(attribute(anyfield))",
+                "    }",
+                "    function f() {",
+                "      expression: query(bar) + query(baz)",
+                "    }",
+                "  }",
+                "}"
+        ), logger);
+        builder.build(true, logger);
+        String message = logger.findMessage("The following query features");
+        assertNotNull(message);
+        assertEquals("WARNING: The following query features are not declared in query profile types and " +
+                     "will be interpreted as scalars, not tensors: [query(bar), query(baz), query(foo)]",
+                     message);
     }
 
     private Map<String, ReferenceNode> summaryFeatures(RankProfile profile) {
         return profile.getSummaryFeatures().stream().collect(Collectors.toMap(f -> f.toString(), f -> f));
+    }
+
+    private static class InspectableDeployLogger implements DeployLogger {
+
+        private List<String> messages = new ArrayList<>();
+
+        @Override
+        public void log(Level level, String message) {
+            messages.add(level + ": " + message);
+        }
+
+        /** Returns the first message containing the given string, or null if none */
+        public String findMessage(String substring) {
+            return messages.stream().filter(message -> message.contains(substring)).findFirst().orElse(null);
+        }
+
     }
 
 }

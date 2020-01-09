@@ -343,7 +343,9 @@
   },
   "com.yahoo.searchlib.rankingexpression.Reference": {
     "superClass": "com.yahoo.tensor.evaluation.Name",
-    "interfaces": [],
+    "interfaces": [
+      "java.lang.Comparable"
+    ],
     "attributes": [
       "public"
     ],
@@ -362,7 +364,9 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
-      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)"
+      "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
+      "public int compareTo(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": []
   },

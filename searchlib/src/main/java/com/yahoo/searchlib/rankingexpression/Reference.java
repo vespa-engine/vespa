@@ -18,7 +18,7 @@ import java.util.Optional;
  *
  * @author bratseth
  */
-public class Reference extends Name {
+public class Reference extends Name implements Comparable<Reference> {
 
     private final int hashCode;
 
@@ -161,6 +161,11 @@ public class Reference extends Name {
         if (output != null)
             b.append(".").append(output);
         return b;
+    }
+
+    @Override
+    public int compareTo(Reference o) {
+        return this.toString().compareTo(o.toString());
     }
 
 }
