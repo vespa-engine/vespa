@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.content.cluster;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -115,7 +116,6 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
         
         public ContentCluster build(Collection<ContainerModel> containers, ConfigModelContext context, Element w3cContentElement) {
-
             ModelElement contentElement = new ModelElement(w3cContentElement);
             DeployState deployState = context.getDeployState();
             ModelElement documentsElement = contentElement.child("documents");
@@ -139,31 +139,27 @@ public class ContentCluster extends AbstractConfigProducer implements
             c.search.handleRedundancy(c.redundancy);
 
             IndexedSearchCluster index = c.search.getIndexed();
-            if (index != null) {
-                setupIndexedCluster(index, contentElement);
-            }
+            if (index != null)
+                setupIndexedCluster(index, contentElement, deployState.getDeployLogger());
 
-            if (c.search.hasIndexedCluster() && !(c.persistenceFactory instanceof ProtonEngine.Factory) ) {
-                throw new RuntimeException("If you have indexed search you need to have proton as engine");
-            }
+            if (c.search.hasIndexedCluster() && !(c.persistenceFactory instanceof ProtonEngine.Factory) )
+                throw new RuntimeException("Indexed search requires proton as engine");
 
             if (documentsElement != null) {
                 ModelElement e = documentsElement.child("document-processing");
-                if (e != null) {
+                if (e != null)
                     setupDocumentProcessing(c, e);
-                }
             } else if (c.persistenceFactory != null) {
                 throw new IllegalArgumentException("The specified content engine requires the <documents> element to be specified.");
             }
 
             ModelElement tuning = contentElement.child("tuning");
-            if (tuning != null) {
+            if (tuning != null)
                 setupTuning(c, tuning);
-            }
+
             ModelElement experimental = contentElement.child("experimental");
-            if (experimental != null) {
+            if (experimental != null)
                 setupExperimental(c, experimental);
-            }
 
             if (context.getParentProducer().getRoot() == null) return c;
 
@@ -171,7 +167,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             return c;
         }
 
-        private void setupIndexedCluster(IndexedSearchCluster index, ModelElement element) {
+        private void setupIndexedCluster(IndexedSearchCluster index, ModelElement element, DeployLogger logger) {
             ContentSearch search = DomContentSearchBuilder.build(element);
             Double queryTimeout = search.getQueryTimeout();
             if (queryTimeout != null) {
@@ -188,22 +184,15 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             // TODO: This should be cleaned up to avoid having to change code in 100 places
             // every time we add a dispatch option.
-            TuningDispatch tuningDispatch = DomTuningDispatchBuilder.build(element);
+            TuningDispatch tuningDispatch = DomTuningDispatchBuilder.build(element, logger);
             Integer maxHitsPerPartition = tuningDispatch.getMaxHitsPerPartition();
-            Boolean useLocalNode = tuningDispatch.getUseLocalNode();
 
-            if (index.getTuning() == null) {
+            if (index.getTuning() == null)
                 index.setTuning(new Tuning(index));
-            }
-            if (index.getTuning().dispatch == null) {
+            if (index.getTuning().dispatch == null)
                 index.getTuning().dispatch = new Tuning.Dispatch();
-            }
-            if (maxHitsPerPartition != null) {
+            if (maxHitsPerPartition != null)
                 index.getTuning().dispatch.maxHitsPerPartition = maxHitsPerPartition;
-            }
-            if (useLocalNode != null) {
-                index.getTuning().dispatch.useLocalNode = useLocalNode;
-            }
             index.getTuning().dispatch.minGroupCoverage = tuningDispatch.getMinGroupCoverage();
             index.getTuning().dispatch.minActiveDocsCoverage = tuningDispatch.getMinActiveDocsCoverage();
             index.getTuning().dispatch.policy = tuningDispatch.getDispatchPolicy();

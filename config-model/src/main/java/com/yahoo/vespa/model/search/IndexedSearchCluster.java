@@ -325,7 +325,6 @@ public class IndexedSearchCluster extends SearchCluster
             builder.maxHitsPerNode(tuning.dispatch.maxHitsPerPartition);
 
         builder.maxNodesDownPerGroup(rootDispatch.getMaxNodesDownPerFixedRow());
-        builder.useLocalNode(tuning.dispatch.useLocalNode);
         builder.searchableCopies(rootDispatch.getSearchableCopies());
         if (searchCoverage != null) {
             if (searchCoverage.getMinimum() != null)

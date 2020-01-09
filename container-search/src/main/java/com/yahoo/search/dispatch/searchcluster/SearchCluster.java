@@ -137,18 +137,8 @@ public class SearchCluster implements NodeManager<Node> {
 
     private static ImmutableList<Node> toNodes(DispatchConfig dispatchConfig) {
         ImmutableList.Builder<Node> nodesBuilder = new ImmutableList.Builder<>();
-        Predicate<DispatchConfig.Node> filter;
-        if (dispatchConfig.useLocalNode()) {
-            final String hostName = HostName.getLocalhost();
-            filter = node -> node.host().equals(hostName);
-        } else {
-            filter = node -> true;
-        }
-        for (DispatchConfig.Node node : dispatchConfig.node()) {
-            if (filter.test(node)) {
-                nodesBuilder.add(new Node(node.key(), node.host(), node.group()));
-            }
-        }
+        for (DispatchConfig.Node node : dispatchConfig.node())
+            nodesBuilder.add(new Node(node.key(), node.host(), node.group()));
         return nodesBuilder.build();
     }
 

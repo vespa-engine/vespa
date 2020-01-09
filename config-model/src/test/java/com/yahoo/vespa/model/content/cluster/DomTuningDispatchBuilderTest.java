@@ -1,8 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.TuningDispatch;
+import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -94,6 +96,7 @@ public class DomTuningDispatchBuilderTest {
                 new ModelElement(DocumentBuilderFactory.newInstance()
                                                        .newDocumentBuilder()
                                                        .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)))
-                                                       .getDocumentElement()));
+                                                       .getDocumentElement()),
+                new DeployLoggerStub());
     }
 }

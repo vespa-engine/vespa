@@ -19,7 +19,6 @@ public class Tuning extends AbstractConfigProducer implements ProtonConfig.Produ
 
         public Integer maxHitsPerPartition = null;
         public TuningDispatch.DispatchPolicy policy = null;
-        public boolean useLocalNode = false;
         public Double minGroupCoverage = null;
         public Double minActiveDocsCoverage = null;
     }

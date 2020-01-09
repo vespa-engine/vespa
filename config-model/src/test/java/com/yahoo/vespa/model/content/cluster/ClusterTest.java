@@ -76,8 +76,7 @@ public class ClusterTest {
                                                            "<max-hits-per-partition>77</max-hits-per-partition>",
                                                            "<dispatch-policy>adaptive</dispatch-policy>",
                                                            "<min-group-coverage>13</min-group-coverage>",
-                                                           "<min-active-docs-coverage>93</min-active-docs-coverage>",
-                                                           "<use-local-node>true</use-local-node>"),
+                                                           "<min-active-docs-coverage>93</min-active-docs-coverage>"),
                                                    false);
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         cluster.getSearch().getConfig(builder);
@@ -85,7 +84,6 @@ public class ClusterTest {
         assertEquals(2, config.searchableCopies());
         assertEquals(93.0, config.minActivedocsPercentage(), DELTA);
         assertEquals(13.0, config.minGroupCoverage(), DELTA);
-        assertTrue(config.useLocalNode());
         assertEquals(DispatchConfig.DistributionPolicy.ADAPTIVE, config.distributionPolicy());
         assertEquals(77, config.maxHitsPerNode());
     }
@@ -107,7 +105,6 @@ public class ClusterTest {
         assertEquals(100.0, config.minSearchCoverage(), DELTA);
         assertEquals(97.0, config.minActivedocsPercentage(), DELTA);
         assertEquals(100.0, config.minGroupCoverage(), DELTA);
-        assertFalse(config.useLocalNode());
         assertEquals(3, config.node().size());
         assertEquals(0, config.node(0).key());
         assertEquals(1, config.node(1).key());

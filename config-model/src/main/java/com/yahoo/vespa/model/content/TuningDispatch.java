@@ -9,14 +9,12 @@ public class TuningDispatch {
     private final Integer maxHitsPerPartition;
     public enum DispatchPolicy { ROUNDROBIN, ADAPTIVE};
     private final DispatchPolicy dispatchPolicy;
-    private final Boolean useLocalNode;
     private final Double minGroupCoverage;
     private final Double minActiveDocsCoverage;
 
     private TuningDispatch(Builder builder) {
         maxHitsPerPartition = builder.maxHitsPerPartition;
         dispatchPolicy = builder.dispatchPolicy;
-        useLocalNode = builder.useLocalNode;
         minGroupCoverage = builder.minGroupCoverage;
         minActiveDocsCoverage = builder.minActiveDocsCoverage;
     }
@@ -26,7 +24,6 @@ public class TuningDispatch {
     }
 
     public DispatchPolicy getDispatchPolicy() { return dispatchPolicy; }
-    public Boolean getUseLocalNode() { return useLocalNode; }
     public Double getMinGroupCoverage() { return minGroupCoverage; }
     public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
 
@@ -34,7 +31,6 @@ public class TuningDispatch {
 
         private Integer maxHitsPerPartition;
         private DispatchPolicy dispatchPolicy;
-        private Boolean useLocalNode;
         private Double minGroupCoverage;
         private Double minActiveDocsCoverage;
 
@@ -60,14 +56,11 @@ public class TuningDispatch {
             }
         }
 
-        public Builder setUseLocalNode(Boolean useLocalNode) {
-            this.useLocalNode = useLocalNode;
-            return this;
-        }
         public Builder setMinGroupCoverage(Double minGroupCoverage) {
             this.minGroupCoverage = minGroupCoverage;
             return this;
         }
+
         public Builder setMinActiveDocsCoverage(Double minCoverage) {
             this.minActiveDocsCoverage = minCoverage;
             return this;
