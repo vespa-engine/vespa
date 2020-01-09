@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.MapEvaluationTypeContext;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
@@ -15,6 +16,7 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Resolves and assigns types to all functions in a ranking expression, and
@@ -59,7 +61,7 @@ public class RankingExpressionTypeResolver extends Processor {
      * @throws IllegalArgumentException if validate is true and the given rank profile does not produce valid types
      */
     private void resolveTypesIn(RankProfile profile, boolean validate) {
-        TypeContext<Reference> context = profile.typeContext(queryProfiles);
+        MapEvaluationTypeContext context = profile.typeContext(queryProfiles);
         for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
             if (hasUntypedArguments(function.getValue().function())) continue;
             TensorType type = resolveType(function.getValue().function().getBody(),
@@ -72,6 +74,11 @@ public class RankingExpressionTypeResolver extends Processor {
             profile.getSummaryFeatures().forEach(f -> resolveType(f, "summary feature " + f, context));
             ensureValidDouble(profile.getFirstPhaseRanking(), "first-phase expression", context);
             ensureValidDouble(profile.getSecondPhaseRanking(), "second-phase expression", context);
+            if ( context.tensorsAreUsed() && ! context.queryFeaturesNotDeclared().isEmpty()) {
+                deployLogger.log(Level.WARNING, "The following query features are not declared in query profile " +
+                                             "types and will be interpreted as scalars, not tensors: " +
+                                             context.queryFeaturesNotDeclared());
+            }
         }
     }
 

@@ -13,14 +13,19 @@ import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.TypeContext;
 
+import java.sql.Ref;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 /**
@@ -42,19 +47,28 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     /** For invocation loop detection */
     private final Deque<Reference> currentResolutionCallStack;
 
+    private final SortedSet<Reference> queryFeaturesNotDeclared;
+    private boolean tensorsAreUsed;
+
     MapEvaluationTypeContext(Collection<ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack =  new ArrayDeque<>();
+        this.queryFeaturesNotDeclared = new TreeSet<>();
+        tensorsAreUsed = false;
     }
 
     private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
                                      Map<String, String> bindings,
                                      Map<Reference, TensorType> featureTypes,
-                                     Deque<Reference> currentResolutionCallStack) {
+                                     Deque<Reference> currentResolutionCallStack,
+                                     SortedSet<Reference> queryFeaturesNotDeclared,
+                                     boolean tensorsAreUsed) {
         super(functions, bindings);
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack = currentResolutionCallStack;
+        this.queryFeaturesNotDeclared = queryFeaturesNotDeclared;
+        this.tensorsAreUsed = tensorsAreUsed;
     }
 
     public void setType(Reference reference, TensorType type) {
@@ -63,7 +77,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     @Override
     public TensorType getType(String reference) {
-        throw new UnsupportedOperationException("Not able to parse gereral references from string form");
+        throw new UnsupportedOperationException("Not able to parse general references from string form");
     }
 
     public void forgetResolvedTypes() {
@@ -80,6 +94,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         if (resolvedType == null)
             return defaultTypeOf(reference); // Don't store fallback to default as we may know more later
         resolvedTypes.put(reference, resolvedType);
+        if (resolvedType.rank() > 0)
+            tensorsAreUsed = true;
         return resolvedType;
     }
 
@@ -142,8 +158,10 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     public TensorType defaultTypeOf(Reference reference) {
         if ( ! FeatureNames.isSimpleFeature(reference))
             throw new IllegalArgumentException("This can only be called for simple references, not " + reference);
-        if (reference.name().equals("query")) // we do not require all query features to be declared, only non-doubles
+        if (reference.name().equals("query")) { // we do not require all query features to be declared, only non-doubles
+            queryFeaturesNotDeclared.add(reference);
             return TensorType.empty;
+        }
         return null;
     }
 
@@ -215,9 +233,26 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Collections.unmodifiableMap(featureTypes);
     }
 
+    /**
+     * Returns an unmodifiable view of the query features which was requested but for which we have no type info
+     * (such that they default to TensorType.empty), shared between all instances of this
+     * involved in resolving a particular rank profile.
+     */
+    public SortedSet<Reference> queryFeaturesNotDeclared() {
+        return Collections.unmodifiableSortedSet(queryFeaturesNotDeclared);
+    }
+
+    /** Returns true if any feature across all instances involved in resolving this rank profile resolves to a tensor */
+    public boolean tensorsAreUsed() { return tensorsAreUsed; }
+
     @Override
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
-        return new MapEvaluationTypeContext(functions(), bindings, featureTypes, currentResolutionCallStack);
+        return new MapEvaluationTypeContext(functions(),
+                                            bindings,
+                                            featureTypes,
+                                            currentResolutionCallStack,
+                                            queryFeaturesNotDeclared,
+                                            tensorsAreUsed);
     }
 
 }

@@ -187,9 +187,8 @@ public class SearchBuilder {
      * @throws IllegalArgumentException if the given search object has already been processed.
      */
     public String importRawSearch(Search rawSearch) {
-        if (rawSearch.getName() == null) {
+        if (rawSearch.getName() == null)
             throw new IllegalArgumentException("Search has no name.");
-        }
         String rawName = rawSearch.getName();
         for (Search search : searchList) {
             if (rawName.equals(search.getName())) {

@@ -755,7 +755,6 @@ public class RankProfile implements Cloneable {
      * referable from this rank profile.
      */
     public MapEvaluationTypeContext typeContext(QueryProfileRegistry queryProfiles) {
-
         return typeContext(queryProfiles, collectFeatureTypes());
     }
 
