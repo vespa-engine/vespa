@@ -44,7 +44,6 @@ public class VersionStatusSerializer {
     private static final String isReleasedField = "isReleased";
     private static final String deploymentStatisticsField = "deploymentStatistics";
     private static final String confidenceField = "confidence";
-    private static final String configServersField = "configServerHostnames";
 
     // NodeVersions fields
     private static final String nodeVersionsField = "nodeVersions";
