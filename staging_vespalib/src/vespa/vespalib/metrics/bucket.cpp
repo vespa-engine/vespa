@@ -66,11 +66,11 @@ findMissing(const std::vector<T> &already,
     visit_ranges(overload
                  {
                      // missing from "complete", should not happen:
-                     [&result](visit_ranges_first, const T&) { },
+                     [](visit_ranges_first, const T&) { },
                      // missing this:
                      [&result](visit_ranges_second, const T& x) { result.push_back(x); },
                      // already have this:
-                     [&result](visit_ranges_both, const T&, const T&) { }
+                     [](visit_ranges_both, const T&, const T&) { }
                  },
                  already.begin(), already.end(),
                  complete.begin(), complete.end(),
