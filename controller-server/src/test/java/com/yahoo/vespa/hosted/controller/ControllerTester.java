@@ -234,6 +234,9 @@ public final class ControllerTester {
     public void upgradeSystemApplications(Version version, List<SystemApplication> systemApplications) {
         for (ZoneApi zone : zoneRegistry().zones().all().zones()) {
             for (SystemApplication application : systemApplications) {
+                if (!application.hasApplicationPackage()) {
+                    configServer().nodeRepository().upgrade(zone.getId(), application.nodeType(), version);
+                }
                 configServer().setVersion(application.id(), zone.getId(), version);
                 configServer().convergeServices(application.id(), zone.getId());
             }
