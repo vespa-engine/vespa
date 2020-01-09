@@ -80,7 +80,7 @@ public interface NodeSpec {
         private final boolean exclusive;
         private final boolean canFail;
 
-        CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail) {
+        private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail) {
             this.count = count;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
             this.exclusive = exclusive;

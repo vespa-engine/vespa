@@ -172,9 +172,9 @@ class NodeAllocation {
      * to the physical host, then we cannot host this application on it.
      */
     private boolean exclusiveTo(TenantName tenant, Optional<String> parentHostname) {
-        if ( ! parentHostname.isPresent()) return true;
+        if (parentHostname.isEmpty()) return true;
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
-            if ( ! nodeOnHost.allocation().isPresent()) continue;
+            if (nodeOnHost.allocation().isEmpty()) continue;
 
             if ( nodeOnHost.allocation().get().membership().cluster().isExclusive() &&
                  ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
@@ -184,10 +184,10 @@ class NodeAllocation {
     }
 
     private boolean hostsOnly(TenantName tenant, Optional<String> parentHostname) {
-        if ( ! parentHostname.isPresent()) return true; // yes, as host is exclusive
+        if (parentHostname.isEmpty()) return true; // yes, as host is exclusive
 
         for (Node nodeOnHost : allNodes.childrenOf(parentHostname.get())) {
-            if ( ! nodeOnHost.allocation().isPresent()) continue;
+            if (nodeOnHost.allocation().isEmpty()) continue;
             if ( ! nodeOnHost.allocation().get().owner().tenant().equals(tenant))
                 return false;
         }
@@ -228,23 +228,20 @@ class NodeAllocation {
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.flavor().resources())));
 
         if (! wantToRetire) {
-            if ( ! node.state().equals(Node.State.active)) {
-                // reactivated node - make sure its not retired
+            if (node.state() != Node.State.active) // reactivated node - make sure its not retired
                 node = node.unretire();
-                prioritizableNode.node = node;
-            }
+
             acceptedOfRequestedFlavor++;
         } else {
             ++wasRetiredJustNow;
             // Retire nodes which are of an unwanted flavor, retired flavor or have an overlapping parent host
             node = node.retire(clock.instant());
-            prioritizableNode.node = node;
         }
         if ( ! node.allocation().get().membership().cluster().equals(cluster)) {
             // group may be different
             node = setCluster(cluster, node);
-            prioritizableNode.node = node;
         }
+        prioritizableNode.node = node;
         indexes.add(node.allocation().get().membership().index());
         highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));
         nodes.add(prioritizableNode);
@@ -307,7 +304,7 @@ class NodeAllocation {
 
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0, prefer to retire higher indexes to minimize redistribution
             for (PrioritizableNode node : byDecreasingIndex(nodes)) {
-                if ( ! node.node.allocation().get().membership().retired() && node.node.state().equals(Node.State.active)) {
+                if ( ! node.node.allocation().get().membership().retired() && node.node.state() == Node.State.active) {
                     node.node = node.node.retire(Agent.application, clock.instant());
                     surplusNodes.add(node.node); // offer this node to other groups
                     if (--deltaRetiredCount == 0) break;

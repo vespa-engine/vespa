@@ -16,7 +16,7 @@ import static com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer.ALLO
 class PrioritizableNode implements Comparable<PrioritizableNode> {
 
     private static final NodeResources zeroResources =
-            new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any);
+            new NodeResources(0, 0, 0, 0, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
     // TODO: Make immutable
     Node node;
@@ -146,27 +146,27 @@ class PrioritizableNode implements Comparable<PrioritizableNode> {
         }
 
         /** The free capacity of the parent, before adding this node to it */
-        Builder withFreeParentCapacity(NodeResources freeParentCapacity) {
+        Builder freeParentCapacity(NodeResources freeParentCapacity) {
             this.freeParentCapacity = freeParentCapacity;
             return this;
         }
 
-        Builder withParent(Node parent) {
+        Builder parent(Node parent) {
             this.parent = Optional.of(parent);
             return this;
         }
 
-        Builder withViolatesSpares(boolean violatesSpares) {
+        Builder violatesSpares(boolean violatesSpares) {
             this.violatesSpares = violatesSpares;
             return this;
         }
 
-        Builder withSurplusNode(boolean surplusNode) {
+        Builder surplusNode(boolean surplusNode) {
             isSurplusNode = surplusNode;
             return this;
         }
 
-        Builder withNewNode(boolean newNode) {
+        Builder newNode(boolean newNode) {
             isNewNode = newNode;
             return this;
         }

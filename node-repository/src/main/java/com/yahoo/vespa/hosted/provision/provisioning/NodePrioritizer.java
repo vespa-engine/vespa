@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
@@ -56,21 +57,12 @@ public class NodePrioritizer {
         this.nameResolver = nameResolver;
         this.spareHosts = findSpareHosts(allNodes, capacity, spares);
 
-        int nofFailedNodes = (int) allNodes.asList().stream()
-                                           .filter(node -> node.state().equals(Node.State.failed))
-                                           .filter(node -> node.allocation().isPresent())
-                                           .filter(node -> node.allocation().get().owner().equals(appId))
-                                           .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
-                                           .count();
+        NodeList nodesInCluster = allNodes.owner(appId).type(clusterSpec.type()).cluster(clusterSpec.id());
 
-        int nofNodesInCluster = (int) allNodes.asList().stream()
-                                              .filter(node -> node.allocation().isPresent())
-                                              .filter(node -> node.allocation().get().owner().equals(appId))
-                                              .filter(node -> node.allocation().get().membership().cluster().id().equals(clusterSpec.id()))
-                                              .count();
-
-        this.isAllocatingForReplacement = isReplacement(nofNodesInCluster, nofFailedNodes);
-        this.isDocker = isDocker();
+        this.isAllocatingForReplacement = isReplacement(
+                nodesInCluster.size(),
+                nodesInCluster.state(Node.State.failed).size());
+        this.isDocker = resources(requestedNodes) != null;
     }
 
     /**
@@ -81,8 +73,8 @@ public class NodePrioritizer {
      */
     private static Set<Node> findSpareHosts(LockedNodeList nodes, DockerHostCapacity capacity, int spares) {
         return nodes.asList().stream()
-                    .filter(node -> node.type().equals(NodeType.host))
-                    .filter(dockerHost -> dockerHost.state().equals(Node.State.active))
+                    .filter(node -> node.type() == NodeType.host)
+                    .filter(dockerHost -> dockerHost.state() == Node.State.active)
                     .filter(dockerHost -> capacity.freeIPs(dockerHost) > 0)
                     .sorted(capacity::compareWithoutInactive)
                     .limit(spares)
@@ -175,7 +167,7 @@ public class NodePrioritizer {
     void addApplicationNodes() {
         EnumSet<Node.State> legalStates = EnumSet.of(Node.State.active, Node.State.inactive, Node.State.reserved);
         allNodes.asList().stream()
-                .filter(node -> node.type().equals(requestedNodes.type()))
+                .filter(node -> node.type() == requestedNodes.type())
                 .filter(node -> legalStates.contains(node.state()))
                 .filter(node -> node.allocation().isPresent())
                 .filter(node -> node.allocation().get().owner().equals(appId))
@@ -186,8 +178,8 @@ public class NodePrioritizer {
     /** Add nodes already provisioned, but not allocated to any application */
     void addReadyNodes() {
         allNodes.asList().stream()
-                .filter(node -> node.type().equals(requestedNodes.type()))
-                .filter(node -> node.state().equals(Node.State.ready))
+                .filter(node -> node.type() == requestedNodes.type())
+                .filter(node -> node.state() == Node.State.ready)
                 .map(node -> toPrioritizable(node, false, false))
                 .filter(n -> !n.violatesSpares || isAllocatingForReplacement)
                 .forEach(prioritizableNode -> nodes.put(prioritizableNode.node, prioritizableNode));
@@ -199,13 +191,13 @@ public class NodePrioritizer {
      */
     private PrioritizableNode toPrioritizable(Node node, boolean isSurplusNode, boolean isNewNode) {
         PrioritizableNode.Builder builder = new PrioritizableNode.Builder(node)
-                .withSurplusNode(isSurplusNode)
-                .withNewNode(isNewNode);
+                .surplusNode(isSurplusNode)
+                .newNode(isNewNode);
 
         allNodes.parentOf(node).ifPresent(parent -> {
-            builder.withParent(parent).withFreeParentCapacity(capacity.freeCapacityOf(parent, false));
+            builder.parent(parent).freeParentCapacity(capacity.freeCapacityOf(parent, false));
             if (spareHosts.contains(parent)) {
-                builder.withViolatesSpares(true);
+                builder.violatesSpares(true);
             }
         });
 
@@ -221,10 +213,6 @@ public class NodePrioritizer {
     private static NodeResources resources(NodeSpec requestedNodes) {
         if ( ! (requestedNodes instanceof NodeSpec.CountNodeSpec)) return null;
         return requestedNodes.resources().get();
-    }
-
-    private boolean isDocker() {
-        return resources(requestedNodes) != null;
     }
 
 }
