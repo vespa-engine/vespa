@@ -25,9 +25,20 @@ public class AttributesImplicitWord extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (ImmutableSDField field : search.allConcreteFields()) {
-            if (fieldImplicitlyWordMatch(field)) {
-                field.getMatching().setType(Matching.Type.WORD);
-            }
+            processFieldRecursive(field);
+        }
+    }
+
+    private void processFieldRecursive(ImmutableSDField field) {
+        processField(field);
+        for (ImmutableSDField structField : field.getStructFields()) {
+            processFieldRecursive(structField);
+        }
+    }
+
+    private void processField(ImmutableSDField field) {
+        if (fieldImplicitlyWordMatch(field)) {
+            field.getMatching().setType(Matching.Type.WORD);
         }
     }
 
