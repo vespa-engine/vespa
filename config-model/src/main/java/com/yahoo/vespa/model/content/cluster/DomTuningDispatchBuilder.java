@@ -1,15 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content.cluster;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.content.TuningDispatch;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
+
+import java.util.logging.Level;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class DomTuningDispatchBuilder {
 
-    public static TuningDispatch build(ModelElement contentXml) {
+    public static TuningDispatch build(ModelElement contentXml, DeployLogger logger) {
         TuningDispatch.Builder builder = new TuningDispatch.Builder();
         ModelElement tuningElement = contentXml.child("tuning");
         if (tuningElement == null) {
@@ -21,10 +24,12 @@ public class DomTuningDispatchBuilder {
         }
         builder.setMaxHitsPerPartition(dispatchElement.childAsInteger("max-hits-per-partition"));
         builder.setDispatchPolicy(dispatchElement.childAsString("dispatch-policy"));
-        builder.setUseLocalNode(dispatchElement.childAsBoolean("use-local-node"));
         builder.setMinGroupCoverage(dispatchElement.childAsDouble("min-group-coverage"));
         builder.setMinActiveDocsCoverage(dispatchElement.childAsDouble("min-active-docs-coverage"));
 
+        if (dispatchElement.child("use-local-node") != null)
+            logger.log(Level.WARNING, "Attribute 'use-local-node' is deprecated and ignored: " +
+                                      "The local node will automatically be preferred when appropriate.");
         return builder.build();
     }
 
