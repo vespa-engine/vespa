@@ -139,7 +139,7 @@ public class ModelProvisioningTest {
         QrStartConfig qrsStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals(45, qrsStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         
-        HostSystem hostSystem = model.getHostSystem();
+        HostSystem hostSystem = model.hostSystem();
         assertNotNull(hostSystem.getHostByHostname("myhost0"));
         assertNotNull(hostSystem.getHostByHostname("myhost1"));
         assertNotNull(hostSystem.getHostByHostname("myhost2"));
@@ -169,7 +169,7 @@ public class ModelProvisioningTest {
         tester.addHosts(numberOfHosts);
         int numberOfContentNodes = 2;
         VespaModel model = tester.createModel(xmlWithNodes, true);
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
         Map<String, ContentCluster> contentClusters = model.getContentClusters();
         ContentCluster cluster = contentClusters.get("bar");
         assertEquals(numberOfContentNodes, cluster.getRootGroup().getNodes().size());
@@ -217,8 +217,8 @@ public class ModelProvisioningTest {
         tester.addHosts(1);
         VespaModel model = tester.createModel(xmlWithNodes, true);
 
-        assertEquals(1, model.getHostSystem().getHosts().size());
-        HostResource host = model.getHostSystem().getHosts().iterator().next();
+        assertEquals(1, model.hostSystem().getHosts().size());
+        HostResource host = model.hostSystem().getHosts().iterator().next();
 
         assertTrue(host.spec().membership().isPresent());
         assertEquals("container", host.spec().membership().get().cluster().type().name());
@@ -250,7 +250,7 @@ public class ModelProvisioningTest {
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Heap size is lowered with combined clusters", 
                      17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
-        assertEquals(2, model.getHostSystem().getHosts().stream()
+        assertEquals(2, model.hostSystem().getHosts().stream()
                              .filter(hostResource -> hostResource.spec().membership().get().cluster().type() == ClusterSpec.Type.combined)
                              .count());
 
@@ -391,7 +391,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         // Check container cluster
         assertEquals(1, model.getContainerClusters().size());
@@ -497,7 +497,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content cluster
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -553,7 +553,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -594,7 +594,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -632,7 +632,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
@@ -661,7 +661,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "node-1-3-9-09", "node-1-3-9-06", "node-1-3-9-03");
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -691,7 +691,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "node-1-3-9-09");
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 1+3, model.getAdmin().getSlobroks().size());
@@ -716,7 +716,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "node-1-3-9-01", "node-1-3-9-02");
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());
@@ -745,7 +745,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "node-1-3-9-12", "node-1-3-9-03", "node-1-3-9-02");
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
         // ... from cluster default
@@ -777,7 +777,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ContainerCluster clusterControllers = cluster.getClusterControllers();
@@ -886,7 +886,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check content clusters
         ContentCluster cluster = model.getContentClusters().get("bar");
@@ -952,7 +952,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         assertEquals(2*3, cluster.redundancy().effectiveInitialRedundancy()); // Reduced from 3*3
@@ -1008,7 +1008,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         assertEquals(4, cluster.redundancy().effectiveInitialRedundancy());
@@ -1052,7 +1052,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         ClusterControllerContainerCluster clusterControllers = cluster.getClusterControllers();
@@ -1113,7 +1113,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         assertEquals(1, cluster.redundancy().effectiveInitialRedundancy());
@@ -1189,7 +1189,7 @@ public class ModelProvisioningTest {
         tester.addHosts(new NodeResources(0.7, 2, 2.5, 0.3), 3); // Controller-bar
         tester.addHosts(new NodeResources(10, 64, 200, 0.3), 6); // Content-bar
         VespaModel model = tester.createModel(services, true, 0);
-        assertEquals(totalHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(totalHosts, model.getRoot().hostSystem().getHosts().size());
     }
 
     @Test
@@ -1204,7 +1204,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
         assertEquals(3, model.getContainerClusters().get("container").getContainers().size());
         assertNotNull(model.getAdmin().getLogserver());
         assertEquals(3, model.getAdmin().getSlobroks().size());
@@ -1222,7 +1222,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
         assertEquals("xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
     }
 
@@ -1238,7 +1238,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
         assertEquals("xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
     }
 
@@ -1282,7 +1282,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
     }
     @Test
@@ -1356,7 +1356,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
@@ -1375,7 +1375,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
     }
@@ -1399,7 +1399,7 @@ public class ModelProvisioningTest {
         tester.setHosted(false);
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().recursiveGetNodes().size());
@@ -1426,7 +1426,7 @@ public class ModelProvisioningTest {
         tester.setHosted(false);
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
-        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         assertEquals(1, model.getAdmin().getSlobroks().size());
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
@@ -1468,7 +1468,7 @@ public class ModelProvisioningTest {
         " </services>";
 
         VespaModel model = createNonProvisionedMultitenantModel(services);
-        assertEquals(1, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(1, model.getRoot().hostSystem().getHosts().size());
         ContentCluster content = model.getContentClusters().get("storage");
         assertEquals(2, content.getRootGroup().getNodes().size());
         ContainerCluster controller = content.getClusterControllers();
@@ -1514,7 +1514,7 @@ public class ModelProvisioningTest {
                 "</services>";
 
         VespaModel model = createNonProvisionedMultitenantModel(services);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(1));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(1));
         ContentCluster content = model.getContentClusters().get("storage");
         assertEquals(1, content.getRootGroup().getNodes().size());
         ContainerCluster controller = content.getClusterControllers();
@@ -1577,7 +1577,7 @@ public class ModelProvisioningTest {
                 "</services>";
 
         VespaModel model = createNonProvisionedModel(false, hosts, services);
-        assertEquals(3, model.getRoot().getHostSystem().getHosts().size());
+        assertEquals(3, model.getRoot().hostSystem().getHosts().size());
         ContentCluster content = model.getContentClusters().get("storage");
         assertEquals(3, content.getRootGroup().getNodes().size());
     }
@@ -1626,7 +1626,7 @@ public class ModelProvisioningTest {
                 " </services>";
 
         VespaModel model = createNonProvisionedMultitenantModel(services);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(1));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(1));
         ContentCluster content = model.getContentClusters().get("storage");
         assertEquals(2, content.getRootGroup().getNodes().size());
         ContainerCluster controller = content.getClusterControllers();
@@ -1747,7 +1747,7 @@ public class ModelProvisioningTest {
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         Admin admin = model.getAdmin();
         Logserver logserver = admin.getLogserver();

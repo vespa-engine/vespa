@@ -607,7 +607,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     /** Creates a single host when there is no nodes tag */
     private HostResource allocateSingleNodeHost(ApplicationContainerCluster cluster, DeployLogger logger, Element containerElement, ConfigModelContext context) {
         DeployState deployState = context.getDeployState();
-        HostSystem hostSystem = cluster.getHostSystem();
+        HostSystem hostSystem = cluster.hostSystem();
         if (deployState.isHosted()) {
             Optional<HostResource> singleContentHost = getHostResourceFromContentClusters(cluster, containerElement, context);
             if (singleContentHost.isPresent()) { // there is a content cluster; put the container on its first node 
@@ -631,7 +631,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private List<ApplicationContainer> createNodesFromNodeCount(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
         NodesSpecification nodesSpecification = NodesSpecification.from(new ModelElement(nodesElement), context);
-        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().getHostSystem(),
+        Map<HostResource, ClusterMembership> hosts = nodesSpecification.provision(cluster.getRoot().hostSystem(),
                                                                                   ClusterSpec.Type.container,
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
                                                                                   log);
@@ -645,8 +645,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                       context.getDeployState().getWantedNodeVespaVersion(),
                                                       false);
         Map<HostResource, ClusterMembership> hosts = 
-                cluster.getRoot().getHostSystem().allocateHosts(clusterSpec, 
-                                                                Capacity.fromRequiredNodeType(type), 1, log);
+                cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
+                                                             Capacity.fromRequiredNodeType(type), 1, log);
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
     
@@ -663,7 +663,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts = 
                 StorageGroup.provisionHosts(nodeSpecification,
                                             referenceId, 
-                                            cluster.getRoot().getHostSystem(),
+                                            cluster.getRoot().hostSystem(),
                                             context.getDeployLogger());
         return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
@@ -690,7 +690,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts =
                 StorageGroup.provisionHosts(nodesSpec,
                                             contentServices.get(0).getAttribute("id"),
-                                            cluster.getRoot().getHostSystem(),
+                                            cluster.getRoot().hostSystem(),
                                             context.getDeployLogger());
         return Optional.of(hosts.keySet().iterator().next());
     }

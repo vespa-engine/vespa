@@ -284,7 +284,7 @@ public class StorageGroup {
             private StorageNode buildSingleNode(DeployState deployState, ContentCluster parent) {
                 int distributionKey = 0;
                 StorageNode sNode = new StorageNode(parent.getStorageNodes(), 1.0, distributionKey , false);
-                sNode.setHostResource(parent.getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
+                sNode.setHostResource(parent.hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC));
                 PersistenceEngine provider = parent.getPersistence().create(deployState, sNode, storageGroup, null);
                 new Distributor(parent.getDistributorNodes(), distributionKey, null, provider);
                 return sNode;
@@ -302,7 +302,7 @@ public class StorageGroup {
                     throw new IllegalArgumentException("Specifying individual groups is not supported on hosted applications");
                 Map<HostResource, ClusterMembership> hostMapping =
                         nodeRequirement.isPresent() ?
-                        provisionHosts(nodeRequirement.get(), owner.getStorageNodes().getClusterName(), owner.getRoot().getHostSystem(), deployLogger) :
+                        provisionHosts(nodeRequirement.get(), owner.getStorageNodes().getClusterName(), owner.getRoot().hostSystem(), deployLogger) :
                         Collections.emptyMap();
 
                 Map<Optional<ClusterSpec.Group>, Map<HostResource, ClusterMembership>> hostGroups = collectAllocatedSubgroups(hostMapping);

@@ -77,7 +77,7 @@ public class ModelAmendingTestCase {
         VespaModel model = tester.createModel(services);
 
         // Check that all hosts are amended
-        for (HostResource host : model.getAdmin().getHostSystem().getHosts()) {
+        for (HostResource host : model.getAdmin().hostSystem().getHosts()) {
             assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
         }
         
@@ -108,7 +108,7 @@ public class ModelAmendingTestCase {
         }
 
         private void amend(DeployLogger deployLogger, AdminModel adminModel) {
-            for (HostResource host : adminModel.getAdmin().getHostSystem().getHosts()) {
+            for (HostResource host : adminModel.getAdmin().hostSystem().getHosts()) {
                 if ( ! host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty()) continue; // already amended
                 adminModel.getAdmin().addAndInitializeService(deployLogger, host, new AmendedService(host.getHost()));
             }

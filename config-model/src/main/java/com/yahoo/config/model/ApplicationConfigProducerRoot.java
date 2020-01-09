@@ -223,7 +223,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     @Override
     public void getConfig(ModelConfig.Builder builder) {
         builder.vespaVersion(vespaVersion.toFullString());
-        for (HostResource modelHost : getHostSystem().getHosts()) {
+        for (HostResource modelHost : hostSystem().getHosts()) {
             builder.hosts(new Hosts.Builder()
                     .name(modelHost.getHostname())
                     .services(getServices(modelHost))
@@ -278,7 +278,7 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     }
 
     @Override
-    public HostSystem getHostSystem() {
+    public HostSystem hostSystem() {
         return hostSystem;
     }
 

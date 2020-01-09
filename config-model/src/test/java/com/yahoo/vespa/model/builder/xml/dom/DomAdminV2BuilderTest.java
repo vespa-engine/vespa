@@ -123,7 +123,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         assertThat(admin.getConfigservers().size(), is(3));
         assertThat(admin.getSlobroks().size(), is(1));
         assertThat(admin.getClusterControllerHosts().size(), is(1));
-        assertNotNull(admin.getHostSystem().getHostByHostname("test1"));
+        assertNotNull(admin.hostSystem().getHostByHostname("test1"));
         for (Configserver configserver : admin.getConfigservers()) {
             assertThat(configserver.getHostName(), is(not(admin.getClusterControllerHosts().get(0).getHost().getHostname())));
             for (Slobrok slobrok : admin.getSlobroks()) {
@@ -214,7 +214,7 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                                       deployState.getFileRegistry(), multitenant,
                                       configServerSpecs);
         Admin admin = domAdminBuilder.build(deployState, root, xml);
-        admin.addPerHostServices(root.getHostSystem().getHosts(), deployState);
+        admin.addPerHostServices(root.hostSystem().getHosts(), deployState);
         return admin;
     }
 

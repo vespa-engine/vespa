@@ -61,6 +61,6 @@ public class TestRoot {
      * @return A list of hosts.
      */
     public List<HostResource> getHosts() {
-        return model.getHostSystem().getHosts();
+        return model.hostSystem().getHosts();
     }
 }

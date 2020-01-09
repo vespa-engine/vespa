@@ -23,7 +23,7 @@ public interface ConfigProducer extends com.yahoo.config.ConfigInstance.Producer
     String getConfigId();
 
     /** Returns the one and only HostSystem of the root node */
-    HostSystem getHostSystem();
+    HostSystem hostSystem();
 
     /** Returns the user configs of this */
     UserConfigRepo getUserConfigs();

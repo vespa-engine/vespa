@@ -15,10 +15,8 @@ import org.w3c.dom.Element;
 
 import java.io.StringReader;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
 
 /**
  * @author gjoranv
@@ -94,12 +92,12 @@ public class VespaDomBuilderTest {
     @Test
     public void testHostSystem() {
         VespaModel model = createModel(hosts, services);
-        HostSystem hostSystem = model.getHostSystem();
-        assertThat(hostSystem.getHosts().size(), is(1));
+        HostSystem hostSystem = model.hostSystem();
+        assertEquals(1, hostSystem.getHosts().size());
         HostResource host = hostSystem.getHosts().get(0);
-        assertThat(host, is(hostSystem.getHostByHostname(host.getHostname())));
+        assertEquals(hostSystem.getHostByHostname(host.getHostname()), host);
         assertNotNull(hostSystem.getHost("node1"));
-        assertThat(hostSystem.toString(), is("host '" + host.getHostname() + "'"));
+        assertEquals("hosts [" + host.getHostname() + "]", hostSystem.toString());
     }
 
     private VespaModel createModel(String hosts, String services) {

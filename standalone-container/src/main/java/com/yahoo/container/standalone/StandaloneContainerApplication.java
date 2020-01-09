@@ -288,7 +288,7 @@ public class StandaloneContainerApplication implements Application {
     }
 
     private static void initializeContainer(DeployLogger deployLogger, Container container, Element spec) {
-        HostResource host = container.getRoot().getHostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
+        HostResource host = container.getRoot().hostSystem().getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
 
         container.setBasePort(VespaDomBuilder.getXmlWantedPort(spec));
         container.setHostResource(host);

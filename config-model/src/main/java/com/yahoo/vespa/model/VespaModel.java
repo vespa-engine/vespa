@@ -176,7 +176,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
 
 
-        HostSystem hostSystem = root.getHostSystem();
+        HostSystem hostSystem = root.hostSystem();
         if (complete) { // create a a completed, frozen model
             configModelRepo.readConfigModels(deployState, this, builder, root, configModelRegistry);
             addServiceClusters(deployState, builder);
@@ -261,16 +261,16 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     }
 
     /** Returns the one and only HostSystem of this VespaModel */
-    public HostSystem getHostSystem() {
-        return root.getHostSystem();
+    public HostSystem hostSystem() {
+        return root.hostSystem();
     }
 
     /** Return a collection of all hostnames used in this application */
     @Override
     public Set<HostInfo> getHosts() {
-        return getHostSystem().getHosts().stream()
-                .map(HostResource::getHostInfo)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+        return hostSystem().getHosts().stream()
+                           .map(HostResource::getHostInfo)
+                           .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public FileDistributor getFileDistributor() {

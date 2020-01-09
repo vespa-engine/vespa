@@ -122,7 +122,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             T t = doBuild(deployState, ancestor, producerSpec);
 
             if (t instanceof AbstractService) {
-                initializeService((AbstractService)t, deployState, ancestor.getHostSystem(), producerSpec);
+                initializeService((AbstractService)t, deployState, ancestor.hostSystem(), producerSpec);
             } else {
                 initializeProducer(t, deployState, producerSpec);
             }

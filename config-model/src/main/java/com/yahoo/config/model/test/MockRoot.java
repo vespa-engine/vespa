@@ -123,7 +123,7 @@ public class MockRoot extends AbstractConfigProducerRoot {
         return fileDistributor;
     }
 
-    public HostSystem getHostSystem() {
+    public HostSystem hostSystem() {
         return hostSystem;
     }
 

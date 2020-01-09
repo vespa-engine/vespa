@@ -291,7 +291,7 @@ public class VespaModelTestCase {
         VespaModel model = new VespaModel(new MockApplicationPackage.Builder()
                                                   .withServices("<services version='1.0'><container version='1.0'><search /></container></services>")
                                                   .build());
-        assertThat(model.getHostSystem().getHosts().size(), is(1));
+        assertThat(model.hostSystem().getHosts().size(), is(1));
         assertThat(model.getContainerClusters().size(), is(1));
     }
 

@@ -472,7 +472,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .withServices(servicesXml)
                 .build();
         VespaModel model = new VespaModel(applicationPackage);
-        assertThat(model.getHostSystem().getHosts().size(), is(1));
+        assertThat(model.hostSystem().getHosts().size(), is(1));
     }
 
     @Test
@@ -575,7 +575,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                         .setMultitenant(true)
                         .setHostedVespa(true))
                 .build());
-        assertEquals(1, model.getHostSystem().getHosts().size());
+        assertEquals(1, model.hostSystem().getHosts().size());
     }
 
     @Test(expected = IllegalArgumentException.class)
