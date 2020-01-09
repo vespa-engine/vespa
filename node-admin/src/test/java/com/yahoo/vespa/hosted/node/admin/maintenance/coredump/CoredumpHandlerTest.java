@@ -64,7 +64,7 @@ public class CoredumpHandlerTest {
         final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
 
         Files.createDirectories(crashPathOnHost);
-        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve(".bash.core.431")), FileTime.from(Instant.now()));
+        createFileAged(crashPathOnHost.resolve(".bash.core.431"), Duration.ZERO);
 
         assertFolderContents(crashPathOnHost, ".bash.core.431");
         Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
@@ -72,8 +72,8 @@ public class CoredumpHandlerTest {
 
         // bash.core.431 finished writing... and 2 more have since been written
         Files.move(crashPathOnHost.resolve(".bash.core.431"), crashPathOnHost.resolve("bash.core.431"));
-        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-proton.core.119")), FileTime.from(Instant.now().minus(Duration.ofMinutes(10))));
-        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-slobrok.core.673")), FileTime.from(Instant.now().minus(Duration.ofMinutes(5))));
+        createFileAged(crashPathOnHost.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
+        createFileAged(crashPathOnHost.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
 
         when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
         enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
@@ -93,6 +93,27 @@ public class CoredumpHandlerTest {
     }
 
     @Test
+    public void enqueue_with_hs_err_files() throws IOException {
+        final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
+        final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
+        Files.createDirectories(crashPathOnHost);
+
+        createFileAged(crashPathOnHost.resolve("java.core.69"), Duration.ofSeconds(15));
+        createFileAged(crashPathOnHost.resolve("hs_err_pid69.log"), Duration.ofSeconds(20));
+
+        createFileAged(crashPathOnHost.resolve("java.core.2420"), Duration.ofSeconds(40));
+        createFileAged(crashPathOnHost.resolve("hs_err_pid2420.log"), Duration.ofSeconds(49));
+        createFileAged(crashPathOnHost.resolve("hs_err_pid2421.log"), Duration.ofSeconds(50));
+
+        when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
+        Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
+        assertEquals(Optional.of(processingDir.resolve("id-123")), enqueuedPath);
+        assertFolderContents(crashPathOnHost, "hs_err_pid69.log", "java.core.69");
+        assertFolderContents(processingDir, "id-123");
+        assertFolderContents(processingDir.resolve("id-123"), "hs_err_pid2420.log", "hs_err_pid2421.log", "dump_java.core.2420");
+    }
+
+    @Test
     public void coredump_to_process_test() throws IOException {
         final Path crashPathOnHost = fileSystem.getPath("/home/docker/container-1/some/crash/path");
         final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
@@ -103,9 +124,9 @@ public class CoredumpHandlerTest {
 
         // 3 core dumps occur
         Files.createDirectories(crashPathOnHost);
-        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("bash.core.431")), FileTime.from(Instant.now()));
-        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-proton.core.119")), FileTime.from(Instant.now().minus(Duration.ofMinutes(10))));
-        Files.setLastModifiedTime(Files.createFile(crashPathOnHost.resolve("vespa-slobrok.core.673")), FileTime.from(Instant.now().minus(Duration.ofMinutes(5))));
+        createFileAged(crashPathOnHost.resolve("bash.core.431"), Duration.ZERO);
+        createFileAged(crashPathOnHost.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
+        createFileAged(crashPathOnHost.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
 
         when(coredumpIdSupplier.get()).thenReturn("id-123");
         enqueuedPath = coredumpHandler.getCoredumpToProcess(crashPathOnHost, processingDir);
@@ -206,5 +227,11 @@ public class CoredumpHandlerTest {
                 .map(unixPath -> unixPath.toPath().getFileName().toString())
                 .collect(Collectors.toSet());
         assertEquals(expectedContentsOfFolder, actualContentsOfFolder);
+    }
+
+    private static Path createFileAged(Path path, Duration age) {
+        return uncheck(() -> Files.setLastModifiedTime(
+                Files.createFile(path),
+                FileTime.from(Instant.now().minus(age))));
     }
 }

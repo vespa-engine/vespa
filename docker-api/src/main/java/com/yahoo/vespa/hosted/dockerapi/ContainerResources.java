@@ -112,7 +112,7 @@ public class ContainerResources {
 
     /** Returns only the CPU component(s) of {@link #toString()} */
     public String toStringCpu() {
-        return (cpus > 0 ? cpus : "unlimited") +" CPUs, " +
+        return (cpus > 0 ? String.format("%.2f", cpus) : "unlimited") +" CPUs, " +
                 (cpuShares > 0 ? cpuShares : "unlimited") + " CPU Shares";
     }
 
