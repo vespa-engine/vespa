@@ -18,9 +18,6 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
 @JsonPropertyOrder({ "name", "timestamp", "metrics" })
 public class GenericNode {
 
-    @JsonProperty("name")
-    public String name;
-
     @JsonProperty("timestamp")
     public Long timestamp;
 

@@ -1,8 +1,8 @@
 {
   "nodes": [
     {
+      "name": "node0",
       "node": {
-        "name": "node0",
         "timestamp": 1234,
         "metrics": [
           {
@@ -36,8 +36,8 @@
       ]
     },
     {
+      "name": "node1",
       "node": {
-        "name": "node1",
         "timestamp": 1234,
         "metrics": [
           {

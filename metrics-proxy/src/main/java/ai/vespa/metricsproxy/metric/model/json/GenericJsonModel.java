@@ -19,9 +19,11 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_ABSENT;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(NON_ABSENT)
-@JsonPropertyOrder({ "node", "services" })
+@JsonPropertyOrder({ "name", "node", "services" })
 public class GenericJsonModel {
-    private static Logger log = Logger.getLogger(GenericJsonModel.class.getName());
+
+    @JsonProperty("name")
+    public String name;
 
     @JsonProperty("node")
     public GenericNode node;
