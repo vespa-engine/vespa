@@ -66,6 +66,8 @@ public class Dispatcher extends AbstractComponent {
     private final Metric metric;
     private final Metric.Context metricContext;
 
+    private final int maxHitsPerNode;
+
     private static final QueryProfileType argumentType;
 
     static {
@@ -120,6 +122,7 @@ public class Dispatcher extends AbstractComponent {
         this.invokerFactory = invokerFactory;
         this.metric = metric;
         this.metricContext = metric.createContext(null);
+        this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
 
         searchCluster.startClusterMonitoring(pingFactory);
     }
@@ -161,7 +164,11 @@ public class Dispatcher extends AbstractComponent {
             if (nodes.isEmpty()) return Optional.empty();
 
             query.trace(false, 2, "Dispatching with search path ", searchPath);
-            return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), nodes, true);
+            return invokerFactory.createSearchInvoker(searcher, query,
+                                                      OptionalInt.empty(),
+                                                      nodes,
+                                                      true,
+                                                      maxHitsPerNode);
         } catch (InvalidSearchPathException e) {
             return Optional.of(new SearchErrorInvoker(ErrorMessage.createIllegalQuery(e.getMessage())));
         }
@@ -172,7 +179,12 @@ public class Dispatcher extends AbstractComponent {
         if (directNode.isPresent()) {
             Node node = directNode.get();
             query.trace(false, 2, "Dispatching to ", node);
-            return invokerFactory.createSearchInvoker(searcher, query, OptionalInt.empty(), Arrays.asList(node), true)
+            return invokerFactory.createSearchInvoker(searcher,
+                                                      query,
+                                                      OptionalInt.empty(),
+                                                      Arrays.asList(node),
+                                                      true,
+                                                      maxHitsPerNode)
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
         }
 
@@ -190,7 +202,8 @@ public class Dispatcher extends AbstractComponent {
                                                                                  query,
                                                                                  OptionalInt.of(group.id()),
                                                                                  group.nodes(),
-                                                                                 acceptIncompleteCoverage);
+                                                                                 acceptIncompleteCoverage,
+                                                                                 maxHitsPerNode);
             if (invoker.isPresent()) {
                 query.trace(false, 2, "Dispatching to group ", group.id());
                 query.getModel().setSearchPath("/" + group.id());

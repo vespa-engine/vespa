@@ -36,6 +36,7 @@ import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
  * @author ollivir
  */
 public class InterleavedSearchInvoker extends SearchInvoker implements ResponseMonitor<SearchInvoker> {
+
     private static final Logger log = Logger.getLogger(InterleavedSearchInvoker.class.getName());
 
     private final Set<SearchInvoker> invokers;

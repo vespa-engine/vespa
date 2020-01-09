@@ -85,7 +85,7 @@ public class FastSearcher extends VespaBackEndSearcher {
     public Result doSearch2(Query query, Execution execution) {
         if (dispatcher.searchCluster().groupSize() == 1)
             forceSinglePassGrouping(query);
-        try(SearchInvoker invoker = getSearchInvoker(query)) {
+        try (SearchInvoker invoker = getSearchInvoker(query)) {
             Result result = invoker.search(query, execution);
             injectSource(result.hits());
 

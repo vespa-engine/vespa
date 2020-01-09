@@ -18,6 +18,7 @@ import java.util.Optional;
  * @author ollivir
  */
 public class SearchErrorInvoker extends SearchInvoker {
+
     private final ErrorMessage message;
     private Query query;
     private final Coverage coverage;

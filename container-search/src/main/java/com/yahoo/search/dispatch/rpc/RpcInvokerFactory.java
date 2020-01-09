@@ -35,8 +35,11 @@ public class RpcInvokerFactory extends InvokerFactory implements PingFactory {
     }
 
     @Override
-    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher, Query query, Node node) {
-        return Optional.of(new RpcSearchInvoker(searcher, node, rpcResourcePool));
+    protected Optional<SearchInvoker> createNodeSearchInvoker(VespaBackEndSearcher searcher,
+                                                              Query query,
+                                                              int maxHits,
+                                                              Node node) {
+        return Optional.of(new RpcSearchInvoker(searcher, node, rpcResourcePool, maxHits));
     }
 
     @Override

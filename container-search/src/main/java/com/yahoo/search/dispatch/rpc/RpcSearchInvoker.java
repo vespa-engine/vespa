@@ -25,25 +25,28 @@ import java.util.concurrent.TimeUnit;
  * @author ollivir
  */
 public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseReceiver {
+
     private static final String RPC_METHOD = "vespa.searchprotocol.search";
 
     private final VespaBackEndSearcher searcher;
     private final Node node;
     private final RpcResourcePool resourcePool;
     private final BlockingQueue<Client.ResponseOrError<ProtobufResponse>> responses;
+    private final int maxHits;
 
     private Query query;
 
-    RpcSearchInvoker(VespaBackEndSearcher searcher, Node node, RpcResourcePool resourcePool) {
+    RpcSearchInvoker(VespaBackEndSearcher searcher, Node node, RpcResourcePool resourcePool, int maxHits) {
         super(Optional.of(node));
         this.searcher = searcher;
         this.node = node;
         this.resourcePool = resourcePool;
         this.responses = new LinkedBlockingQueue<>(1);
+        this.maxHits = maxHits;
     }
 
     @Override
-    protected void sendSearchRequest(Query query) throws IOException {
+    protected void sendSearchRequest(Query query) {
         this.query = query;
 
         Client.NodeConnection nodeConnection = resourcePool.getConnection(node.key());
@@ -54,7 +57,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         }
         query.trace(false, 5, "Sending search request with jrt/protobuf to node with dist key ", node.key());
 
-        var payload = ProtobufSerialization.serializeSearchRequest(query, searcher.getServerId());
+        var payload = ProtobufSerialization.serializeSearchRequest(query, Math.min(query.getHits(), maxHits), searcher.getServerId());
         double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compress(query, payload);
         nodeConnection.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(), this, timeoutSeconds);
