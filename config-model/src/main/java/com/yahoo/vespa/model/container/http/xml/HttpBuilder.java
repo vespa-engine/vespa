@@ -45,6 +45,9 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
             Element accessControlElem = XML.getChild(filteringElem, "access-control");
             if (accessControlElem != null) {
+                if (!deployState.isHosted()) {
+                    throw new IllegalArgumentException("The 'access-control' element in currently only available in hosted Vespa.");
+                }
                 accessControl = buildAccessControl(deployState, ancestor, accessControlElem);
                 bindings.addAll(accessControl.getBindings());
                 filterChains.add(new Chain<>(FilterChains.emptyChainSpec(ACCESS_CONTROL_CHAIN_ID)));
