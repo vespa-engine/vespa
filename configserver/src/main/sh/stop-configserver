@@ -91,8 +91,7 @@ PIDFILE_LOGD=var/run/logd.pid
 VESPA_LOG_TARGET="file:${ROOT}/logs/vespa/vespa.log"
 export VESPA_LOG_TARGET
 
-multitenant=$cloudconfig_server__multitenant
-if [ "$multitenant" = "true" ]; then
+if [ "$cloudconfig_server__multitenant" = "true" || "$VESPA_CONFIGSERVER_MULTITENANT" = "true" ]; then
     vespa-run-as-vespa-user vespa-runserver -s logd -p $PIDFILE_LOGD -S
 fi
 
