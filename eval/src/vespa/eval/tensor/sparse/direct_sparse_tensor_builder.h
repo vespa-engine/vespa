@@ -5,7 +5,6 @@
 #include <vespa/vespalib/util/hdr_abort.h>
 #include "sparse_tensor.h"
 #include "sparse_tensor_address_builder.h"
-#include "sparse_tensor_address_padder.h"
 
 namespace vespalib::tensor {
 
@@ -36,18 +35,6 @@ public:
         }
     }
 
-    void
-    copyCells(const Cells &cells_in, const eval::ValueType &cells_in_type)
-    {
-        SparseTensorAddressPadder addressPadder(_type, cells_in_type);
-        for (const auto &cell : cells_in) {
-            addressPadder.padAddress(cell.first);
-            SparseTensorAddressRef oldRef = addressPadder.getAddressRef();
-            SparseTensorAddressRef newRef(oldRef, _stash);
-            _cells[newRef] = cell.second;
-        }
-    }
-
     DirectSparseTensorBuilder()
         : _stash(SparseTensor::STASH_CHUNK_SIZE),
           _type(eval::ValueType::double_type()),
@@ -68,20 +55,6 @@ public:
           _cells()
     {
         copyCells(cells_in);
-    }
-
-    DirectSparseTensorBuilder(const eval::ValueType &type_in,
-                        const Cells &cells_in,
-                        const eval::ValueType &cells_in_type)
-        : _stash(SparseTensor::STASH_CHUNK_SIZE),
-          _type(type_in),
-          _cells()
-    {
-        if (type_in.dimensions().size() == cells_in_type.dimensions().size()) {
-            copyCells(cells_in);
-        } else {
-            copyCells(cells_in, cells_in_type);
-        }
     }
 
     ~DirectSparseTensorBuilder() {};
