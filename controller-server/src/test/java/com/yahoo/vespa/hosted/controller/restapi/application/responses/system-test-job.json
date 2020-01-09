@@ -12,7 +12,9 @@
         "gitRepository": "repository1",
         "gitBranch": "master",
         "gitCommit": "commit1"
-      }
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
     },
     "steps": {
       "deployTester": "succeeded",
@@ -45,7 +47,9 @@
         "gitRepository": "repository1",
         "gitBranch": "master",
         "gitCommit": "commit1"
-      }
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
     },
     "steps": {
       "deployTester": "unfinished",

@@ -416,6 +416,8 @@ class JobControllerApiHandlerHelper {
         sourceObject.setString("gitRepository", version.source().get().repository());
         sourceObject.setString("gitBranch", version.source().get().branch());
         sourceObject.setString("gitCommit", version.source().get().commit());
+        version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
+        version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
     }
 
     /**
@@ -472,11 +474,14 @@ class JobControllerApiHandlerHelper {
      * @return Response with the new application version
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
-                                       SourceRevision sourceRevision, String authorEmail, long projectId,
+                                       SourceRevision sourceRevision, String authorEmail, Optional<String> sourceUrl,
+                                       Optional<String> commit, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
         ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application),
                                                           sourceRevision,
                                                           authorEmail,
+                                                          sourceUrl,
+                                                          commit,
                                                           projectId,
                                                           applicationPackage,
                                                           testPackage);
@@ -601,8 +606,9 @@ class JobControllerApiHandlerHelper {
     private static void toSlime(Cursor versionObject, ApplicationVersion version) {
         version.buildNumber().ifPresent(id -> versionObject.setLong("id", id));
         version.source().ifPresent(source -> versionObject.setString("commit", source.commit()));
-        version.source().flatMap(source -> toUrl(source)).ifPresent(source -> versionObject.setString("source", source.toString()));
         version.compileVersion().ifPresent(platform -> versionObject.setString("compileVersion", platform.toFullString()));
+        version.sourceUrl().ifPresent(url -> versionObject.setString("sourceUrl", url));
+        version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
     }
 
     private static void toSlime(Cursor versionsObject, Versions versions) {
@@ -610,21 +616,6 @@ class JobControllerApiHandlerHelper {
         toSlime(versionsObject.setObject("targetApplication"), versions.targetApplication());
         versions.sourcePlatform().ifPresent(platform -> versionsObject.setString("sourcePlatform", platform.toFullString()));
         versions.sourceApplication().ifPresent(application -> toSlime(versionsObject.setObject("sourceApplication"), application));
-    }
-
-    // TODO jonmv: Remove this when source url is stored instead of SourceRevision.
-    private static Optional<URI> toUrl(SourceRevision source) {
-        try {
-            String repository = source.repository();
-            if (repository.startsWith("git@"))
-                repository = "https://" + repository.substring(4);
-            if (repository.endsWith(".git"))
-                repository = repository.substring(0, repository.length() - 4);
-            return Optional.of(URI.create(repository + "/tree/" + source.commit()));
-        }
-        catch (RuntimeException e) {
-            return Optional.empty();
-        }
     }
 
 }

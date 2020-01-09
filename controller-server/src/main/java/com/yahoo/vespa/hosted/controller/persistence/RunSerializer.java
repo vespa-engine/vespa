@@ -25,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.EnumMap;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
@@ -84,6 +85,7 @@ class RunSerializer {
     private static final String authorEmailField = "authorEmail";
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
+    private static final String sourceUrlField = "sourceUrl";
     private static final String buildField = "build";
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
@@ -158,16 +160,14 @@ class RunSerializer {
                                                      versionObject.field(branchField).asString(),
                                                      versionObject.field(commitField).asString());
         long buildNumber = versionObject.field(buildField).asLong();
+        Optional<String> authorEmail = Serializers.optionalString(versionObject.field(authorEmailField));
+        Optional<Version> compileVersion = Serializers.optionalString(versionObject.field(compileVersionField)).map(Version::fromString);
+        Optional<Instant> buildTime = Serializers.optionalInstant(versionObject.field(buildTimeField));
+        Optional<String> sourceUrl = Serializers.optionalString(versionObject.field(sourceUrlField));
+        Optional<String> commit = Serializers.optionalString(versionObject.field(commitField));
 
-        if ( ! versionObject.field(authorEmailField).valid())
-            return ApplicationVersion.from(revision, buildNumber);
-
-        if ( ! versionObject.field(compileVersionField).valid() || ! versionObject.field(buildTimeField).valid())
-            return ApplicationVersion.from(revision, buildNumber, versionObject.field(authorEmailField).asString());
-
-        return ApplicationVersion.from(revision, buildNumber, versionObject.field(authorEmailField).asString(),
-                                       Version.fromString(versionObject.field(compileVersionField).asString()),
-                                       Instant.ofEpochMilli(versionObject.field(buildTimeField).asLong()));
+        return new ApplicationVersion(Optional.of(revision), OptionalLong.of(buildNumber), authorEmail,
+                                      compileVersion, buildTime, sourceUrl, commit);
     }
 
     Slime toSlime(Iterable<Run> runs) {
@@ -224,6 +224,8 @@ class RunSerializer {
         applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
         applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
         applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
+        applicationVersion.sourceUrl().ifPresent(url -> versionsObject.setString(sourceUrlField, url));
+        applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
     }
 
     static String valueOf(Step step) {

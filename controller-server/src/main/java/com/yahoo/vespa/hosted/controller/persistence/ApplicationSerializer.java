@@ -115,6 +115,7 @@ public class ApplicationSerializer {
     private static final String authorEmailField = "authorEmailField";
     private static final String compileVersionField = "compileVersion";
     private static final String buildTimeField = "buildTime";
+    private static final String sourceUrlField = "sourceUrl";
     private static final String lastQueriedField = "lastQueried";
     private static final String lastWrittenField = "lastWritten";
     private static final String lastQueriesPerSecondField = "lastQueriesPerSecond";
@@ -263,6 +264,8 @@ public class ApplicationSerializer {
             applicationVersion.authorEmail().ifPresent(email -> object.setString(authorEmailField, email));
             applicationVersion.compileVersion().ifPresent(version -> object.setString(compileVersionField, version.toString()));
             applicationVersion.buildTime().ifPresent(time -> object.setLong(buildTimeField, time.toEpochMilli()));
+            applicationVersion.sourceUrl().ifPresent(url -> object.setString(sourceUrlField, url));
+            applicationVersion.commit().ifPresent(commit -> object.setString(commitField, commit));
         }
     }
 
@@ -478,6 +481,8 @@ public class ApplicationSerializer {
         Optional<String> authorEmail = Serializers.optionalString(object.field(authorEmailField));
         Optional<Version> compileVersion = Serializers.optionalString(object.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = Serializers.optionalInstant(object.field(buildTimeField));
+        Optional<String> sourceUrl = Serializers.optionalString(object.field(sourceUrlField));
+        Optional<String> commit = Serializers.optionalString(object.field(commitField));
 
         if (authorEmail.isEmpty())
             return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong());
@@ -485,8 +490,7 @@ public class ApplicationSerializer {
         if (compileVersion.isEmpty() || buildTime.isEmpty())
             return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get());
 
-        return ApplicationVersion.from(sourceRevision.get(), applicationBuildNumber.getAsLong(), authorEmail.get(),
-                                       compileVersion.get(), buildTime.get());
+        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {

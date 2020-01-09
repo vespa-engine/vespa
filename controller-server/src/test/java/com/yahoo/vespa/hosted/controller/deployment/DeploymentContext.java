@@ -211,7 +211,7 @@ public class DeploymentContext {
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
-        lastSubmission = jobs.submit(applicationId, sourceRevision, "a@b", projectId, applicationPackage, new byte[0]);
+        lastSubmission = jobs.submit(applicationId, sourceRevision, "a@b", Optional.empty(), Optional.empty(), projectId, applicationPackage, new byte[0]);
         return this;
     }
 

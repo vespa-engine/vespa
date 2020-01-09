@@ -359,8 +359,9 @@ public class JobController {
     /**
      * Accepts and stores a new application package and test jar pair under a generated application version key.
      */
-    public ApplicationVersion submit(TenantAndApplicationId id, SourceRevision revision, String authorEmail, long projectId,
-                                     ApplicationPackage applicationPackage, byte[] testPackageBytes) {
+    public ApplicationVersion submit(TenantAndApplicationId id, SourceRevision revision, String authorEmail,
+                                     Optional<String> sourceUrl, Optional<String> commit,
+                                     long projectId, ApplicationPackage applicationPackage, byte[] testPackageBytes) {
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         controller.applications().lockApplicationOrThrow(id, application -> {
             long run = 1 + application.get().latestVersion()
@@ -369,7 +370,9 @@ public class JobController {
             if (applicationPackage.compileVersion().isPresent() && applicationPackage.buildTime().isPresent())
                 version.set(ApplicationVersion.from(revision, run, authorEmail,
                                                     applicationPackage.compileVersion().get(),
-                                                    applicationPackage.buildTime().get()));
+                                                    applicationPackage.buildTime().get(),
+                                                    sourceUrl,
+                                                    commit));
             else
                 version.set(ApplicationVersion.from(revision, run, authorEmail));
 

@@ -1,214 +1,232 @@
 {
   "1": {
-    "id": 1,
-    "status": "success",
+    "wantedPlatform": "6.1",
+    "log": "https://some.url:43/root/run/1",
+    "wantedApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 1,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.1-commit1"
+    },
     "start": 0,
     "end": 0,
-    "wantedPlatform": "6.1",
-    "wantedApplication": {
-      "hash": "1.0.1-commit1",
-      "build": 1,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
+    "id": 1,
     "steps": {
       "deployInitialReal": "succeeded",
       "installInitialReal": "succeeded",
+      "startTests": "succeeded",
+      "deployTester": "succeeded",
+      "report": "succeeded",
+      "installTester": "succeeded",
       "deployReal": "succeeded",
       "installReal": "succeeded",
-      "deployTester": "succeeded",
-      "installTester": "succeeded",
-      "startTests": "succeeded",
+      "deactivateTester": "succeeded",
       "endTests": "succeeded",
       "copyVespaLogs": "succeeded",
-      "deactivateReal": "succeeded",
-      "deactivateTester": "succeeded",
-      "report": "succeeded"
+      "deactivateReal": "succeeded"
     },
     "tasks": {
-      "deploy": "succeeded",
+      "test": "succeeded",
       "install": "succeeded",
-      "test": "succeeded"
+      "deploy": "succeeded"
     },
-    "log": "https://some.url:43/root/run/1"
+    "status": "success"
   },
   "2": {
-    "id": 2,
-    "status": "success",
+    "wantedPlatform": "6.1",
+    "currentPlatform": "6.1",
+    "log": "https://some.url:43/root/run/2",
+    "wantedApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 2,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.2-commit1"
+    },
+    "currentApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 1,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.1-commit1"
+    },
     "start": 1000,
     "end": 1000,
-    "wantedPlatform": "6.1",
-    "wantedApplication": {
-      "hash": "1.0.2-commit1",
-      "build": 2,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
-    "currentPlatform": "6.1",
-    "currentApplication": {
-      "hash": "1.0.1-commit1",
-      "build": 1,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
+    "id": 2,
     "steps": {
       "deployInitialReal": "succeeded",
       "installInitialReal": "succeeded",
+      "startTests": "succeeded",
+      "deployTester": "succeeded",
+      "report": "succeeded",
+      "installTester": "succeeded",
       "deployReal": "succeeded",
       "installReal": "succeeded",
-      "deployTester": "succeeded",
-      "installTester": "succeeded",
-      "startTests": "succeeded",
+      "deactivateTester": "succeeded",
       "endTests": "succeeded",
       "copyVespaLogs": "succeeded",
-      "deactivateReal": "succeeded",
-      "deactivateTester": "succeeded",
-      "report": "succeeded"
+      "deactivateReal": "succeeded"
     },
     "tasks": {
-      "deploy": "succeeded",
+      "test": "succeeded",
       "install": "succeeded",
-      "test": "succeeded"
+      "deploy": "succeeded"
     },
-    "log": "https://some.url:43/root/run/2"
+    "status": "success"
   },
   "3": {
-    "id": 3,
-    "status": "success",
+    "wantedPlatform": "6.1",
+    "currentPlatform": "6.1",
+    "log": "https://some.url:43/root/run/3",
+    "wantedApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 3,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.3-commit1"
+    },
+    "currentApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 2,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.2-commit1"
+    },
     "start": 2000,
     "end": 2000,
-    "wantedPlatform": "6.1",
-    "wantedApplication": {
-      "hash": "1.0.3-commit1",
-      "build": 3,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
-    "currentPlatform": "6.1",
-    "currentApplication": {
-      "hash": "1.0.2-commit1",
-      "build": 2,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
+    "id": 3,
     "steps": {
       "deployInitialReal": "succeeded",
       "installInitialReal": "succeeded",
+      "startTests": "succeeded",
+      "deployTester": "succeeded",
+      "report": "succeeded",
+      "installTester": "succeeded",
       "deployReal": "succeeded",
       "installReal": "succeeded",
-      "deployTester": "succeeded",
-      "installTester": "succeeded",
-      "startTests": "succeeded",
+      "deactivateTester": "succeeded",
       "endTests": "succeeded",
       "copyVespaLogs": "succeeded",
-      "deactivateReal": "succeeded",
-      "deactivateTester": "succeeded",
-      "report": "succeeded"
+      "deactivateReal": "succeeded"
     },
     "tasks": {
-      "deploy": "succeeded",
+      "test": "succeeded",
       "install": "succeeded",
-      "test": "succeeded"
+      "deploy": "succeeded"
     },
-    "log": "https://some.url:43/root/run/3"
+    "status": "success"
   },
   "4": {
-    "id": 4,
-    "status": "installationFailed",
+    "wantedPlatform": "6.1",
+    "currentPlatform": "6.1",
+    "log": "https://some.url:43/root/run/4",
+    "wantedApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 3,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.3-commit1"
+    },
+    "currentApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 1,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.1-commit1"
+    },
     "start": 2000,
     "end": 2000,
-    "wantedPlatform": "6.1",
-    "wantedApplication": {
-      "hash": "1.0.3-commit1",
-      "build": 3,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
-    "currentPlatform": "6.1",
-    "currentApplication": {
-      "hash": "1.0.1-commit1",
-      "build": 1,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
+    "id": 4,
     "steps": {
       "deployInitialReal": "succeeded",
       "installInitialReal": "failed",
+      "startTests": "unfinished",
+      "deployTester": "succeeded",
+      "report": "succeeded",
+      "installTester": "unfinished",
       "deployReal": "unfinished",
       "installReal": "unfinished",
-      "deployTester": "succeeded",
-      "installTester": "unfinished",
-      "startTests": "unfinished",
+      "deactivateTester": "succeeded",
       "endTests": "unfinished",
       "copyVespaLogs": "succeeded",
-      "deactivateReal": "succeeded",
-      "deactivateTester": "succeeded",
-      "report": "succeeded"
+      "deactivateReal": "succeeded"
     },
     "tasks": {},
-    "log": "https://some.url:43/root/run/4"
+    "status": "installationFailed"
   },
   "5": {
-    "id": 5,
-    "status": "installationFailed",
+    "wantedPlatform": "6.1",
+    "currentPlatform": "6.1",
+    "log": "https://some.url:43/root/run/5",
+    "wantedApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 3,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.3-commit1"
+    },
+    "currentApplication": {
+      "sourceUrl": "repository1/tree/commit1",
+      "build": 1,
+      "commit": "commit1",
+      "source": {
+        "gitRepository": "repository1",
+        "gitCommit": "commit1",
+        "gitBranch": "master"
+      },
+      "hash": "1.0.1-commit1"
+    },
     "start": 102000,
     "end": 102000,
-    "wantedPlatform": "6.1",
-    "wantedApplication": {
-      "hash": "1.0.3-commit1",
-      "build": 3,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
-    "currentPlatform": "6.1",
-    "currentApplication": {
-      "hash": "1.0.1-commit1",
-      "build": 1,
-      "source": {
-        "gitRepository": "repository1",
-        "gitBranch": "master",
-        "gitCommit": "commit1"
-      }
-    },
+    "id": 5,
     "steps": {
       "deployInitialReal": "succeeded",
       "installInitialReal": "failed",
+      "startTests": "unfinished",
+      "deployTester": "succeeded",
+      "report": "succeeded",
+      "installTester": "unfinished",
       "deployReal": "unfinished",
       "installReal": "unfinished",
-      "deployTester": "succeeded",
-      "installTester": "unfinished",
-      "startTests": "unfinished",
+      "deactivateTester": "succeeded",
       "endTests": "unfinished",
       "copyVespaLogs": "succeeded",
-      "deactivateReal": "succeeded",
-      "deactivateTester": "succeeded",
-      "report": "succeeded"
+      "deactivateReal": "succeeded"
     },
     "tasks": {},
-    "log": "https://some.url:43/root/run/5"
+    "status": "installationFailed"
   }
 }

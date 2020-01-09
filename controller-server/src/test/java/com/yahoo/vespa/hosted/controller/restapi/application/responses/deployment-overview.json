@@ -29,8 +29,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -87,8 +87,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -157,8 +157,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -223,8 +223,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -298,8 +298,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           }
         }
@@ -316,8 +316,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -375,8 +375,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           }
         }
@@ -392,7 +392,7 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1"
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -450,8 +450,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           }
         }
@@ -467,8 +467,8 @@
             "targetApplication": {
               "id": 1,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           },
           "steps": [
@@ -559,8 +559,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           }
         }
@@ -585,8 +585,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           }
         }
@@ -611,8 +611,8 @@
             "targetApplication": {
               "id": 4,
               "commit": "commit1",
-              "source": "repository1/tree/commit1",
-              "compileVersion": "6.1.0"
+              "compileVersion": "6.1.0",
+              "sourceUrl": "repository1/tree/commit1"
             }
           }
         }
@@ -621,4 +621,3 @@
     }
   ]
 }
-

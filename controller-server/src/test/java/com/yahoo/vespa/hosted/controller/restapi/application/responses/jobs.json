@@ -13,7 +13,9 @@
           "gitRepository": "repository1",
           "gitBranch": "master",
           "gitCommit": "commit1"
-        }
+        },
+        "sourceUrl": "repository1/tree/commit1",
+        "commit": "commit1"
       },
       "at": "(ignore)",
       "deploying": "0 of 3 complete"
@@ -27,7 +29,9 @@
         "gitRepository": "repository1",
         "gitBranch": "master",
         "gitCommit": "commit1"
-      }
+      },
+      "sourceUrl": "repository1/tree/commit1",
+      "commit": "commit1"
     }
   },
   "deployments": [
@@ -49,7 +53,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "unfinished",
@@ -79,7 +85,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "succeeded",
@@ -117,7 +125,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "unfinished",
@@ -149,7 +159,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "succeeded",
@@ -187,7 +199,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "tasks": {
             "system-test": "running",
@@ -207,7 +221,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "succeeded",
@@ -243,7 +259,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "unfinished",
@@ -275,7 +293,9 @@
               "gitRepository": "repository1",
               "gitBranch": "master",
               "gitCommit": "commit1"
-            }
+            },
+            "sourceUrl": "repository1/tree/commit1",
+            "commit": "commit1"
           },
           "steps": {
             "deployTester": "unfinished",
