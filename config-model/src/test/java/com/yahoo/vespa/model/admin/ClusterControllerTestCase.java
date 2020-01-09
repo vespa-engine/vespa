@@ -274,7 +274,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
     private boolean existsHostsWithClusterControllerConfigId(VespaModel model) {
         boolean found = false;
-        for (HostResource h : model.getHostSystem().getHosts()) {
+        for (HostResource h : model.hostSystem().getHosts()) {
             for (Service s : h.getServices()) {
                 if (s.getConfigId().equals("admin/cluster-controllers/0")) {
                     found = true;

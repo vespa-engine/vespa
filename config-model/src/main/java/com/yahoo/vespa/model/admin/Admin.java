@@ -262,27 +262,21 @@ public class Admin extends AbstractConfigProducer implements Serializable {
 
     private void addFileDistribution(HostResource host) {
         FileDistributor fileDistributor = fileDistribution.getFileDistributor();
-        HostResource deployHost = getHostSystem().getHostByHostname(fileDistributor.fileSourceHost());
-        if (deployHostIsMissing(deployHost)) {
-            throw new RuntimeException("Could not find host in the application's host system: '" +
-                                       fileDistributor.fileSourceHost() + "'. Hostsystem=" + getHostSystem());
-        }
+        HostResource hostResource = hostSystem().getHostByHostname(fileDistributor.fileSourceHost());
+        if (hostResource == null && ! multitenant)
+            throw new IllegalArgumentException("Could not find " + host + " in the application's " + hostSystem());
 
         FileDistributionConfigProvider configProvider =
                 new FileDistributionConfigProvider(fileDistribution,
                                                    fileDistributor,
-                                                   host == deployHost,
+                                                   host == hostResource,
                                                    host.getHost());
         fileDistribution.addFileDistributionConfigProducer(host.getHost(), configProvider);
     }
 
-    private boolean deployHostIsMissing(HostResource deployHost) {
-        return !multitenant && deployHost == null;
-    }
-
     // If not configured by user: Use default setup: max 3 slobroks, 1 on the default configserver host
     private List<Slobrok> createDefaultSlobrokSetup(DeployLogger deployLogger) {
-        List<HostResource> hosts = getHostSystem().getHosts();
+        List<HostResource> hosts = hostSystem().getHosts();
         List<Slobrok> slobs = new ArrayList<>();
         if (logserver != null) {
             Slobrok slobrok = new Slobrok(this, 0);

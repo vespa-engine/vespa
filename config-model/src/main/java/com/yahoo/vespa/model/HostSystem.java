@@ -63,8 +63,8 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     /**
      * Returns the host with the given hostname.
      *
-     * @param name the hostname of the host.
-     * @return the host with the given hostname.
+     * @param name the hostname of the host
+     * @return the host with the given hostname, or null if no such host
      */
     public HostResource getHostByHostname(String name) {
         // TODO: please eliminate the following ugly hack
@@ -106,12 +106,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (HostResource host : hostname2host.values()) {
-            sb.append(host).append(",");
-        }
-        if (sb.length() > 0) sb.deleteCharAt(sb.length() - 1);
-        return sb.toString();
+        return "hosts [" + hostname2host.values().stream()
+                                                 .map(host -> host.getHostname())
+                                                 .collect(Collectors.joining(", ")) +
+               "]";
     }
 
     public HostResource getHost(String hostAlias) {

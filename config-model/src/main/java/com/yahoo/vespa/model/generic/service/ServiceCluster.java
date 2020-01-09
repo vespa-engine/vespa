@@ -42,9 +42,9 @@ public class ServiceCluster extends AbstractConfigProducer {
     }
 
     @Override
-    public HostSystem getHostSystem() {
+    public HostSystem hostSystem() {
         if (hostSystem!=null) return hostSystem;
-        return super.getHostSystem();
+        return super.hostSystem();
     }
 
     /**

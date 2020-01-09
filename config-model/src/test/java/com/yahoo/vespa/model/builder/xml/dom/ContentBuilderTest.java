@@ -168,8 +168,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("clu", c.getConfigId());
         //assertEquals("content/a/0", a.getRootGroup().getNodes().get(0).getConfigId()); // This is how it should look like in an ideal world.
         assertEquals("clu/storage/0", c.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
-        assertEquals(1, c.getRoot().getHostSystem().getHosts().size());
-        HostResource h = c.getRoot().getHostSystem().getHost("mockhost");
+        assertEquals(1, c.getRoot().hostSystem().getHosts().size());
+        HostResource h = c.getRoot().hostSystem().getHost("mockhost");
         String [] expectedServices = {"configserver", "logserver", "logd", "container-clustercontroller", "metricsproxy-container", "slobrok", "configproxy","config-sentinel", "qrserver", "storagenode", "searchnode", "distributor", "transactionlogserver"};
         assertServices(h, expectedServices);
         assertEquals("clu/storage/0", h.getService("storagenode").getConfigId());
@@ -216,8 +216,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(musicClusterId, cluster.getConfigId());
         //assertEquals("content/a/0", a.getRootGroup().getNodes().get(0).getConfigId());
         assertEquals(musicClusterId + "/storage/0", cluster.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
-        assertEquals(1, cluster.getRoot().getHostSystem().getHosts().size());
-        HostResource h = cluster.getRoot().getHostSystem().getHost("mockhost");
+        assertEquals(1, cluster.getRoot().hostSystem().getHosts().size());
+        HostResource h = cluster.getRoot().hostSystem().getHost("mockhost");
         String [] expectedServices = {
                 "logd", "configproxy", "config-sentinel", "configserver", "logserver",
                 "slobrok", "storagenode", "distributor","searchnode","transactionlogserver",
@@ -301,8 +301,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals("b", b.getConfigId());
         //assertEquals("content/a/0", a.getRootGroup().getNodes().get(0).getConfigId());
         assertEquals("b/storage/0", b.getRootGroup().getNodes().get(0).getConfigId()); // Due to reuse.
-        assertEquals(1, b.getRoot().getHostSystem().getHosts().size());
-        HostResource h = b.getRoot().getHostSystem().getHost("mockhost");
+        assertEquals(1, b.getRoot().hostSystem().getHosts().size());
+        HostResource h = b.getRoot().hostSystem().getHost("mockhost");
         assertEquals("b/storage/0", h.getService("storagenode").getConfigId());
     }
 

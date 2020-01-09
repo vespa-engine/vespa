@@ -105,7 +105,7 @@ public class SystemModelTestCase {
     @Test
     public void testHostSystem() {
         VespaModel vespaModel = getVespaModelDoNotValidateXml(TESTDIR + "simpleconfig/");
-        HostSystem hostSystem = vespaModel.getHostSystem();
+        HostSystem hostSystem = vespaModel.hostSystem();
 
         HostResource host1 = hostSystem.getHost("host1");
         HostResource host2 = hostSystem.getHost("host2");

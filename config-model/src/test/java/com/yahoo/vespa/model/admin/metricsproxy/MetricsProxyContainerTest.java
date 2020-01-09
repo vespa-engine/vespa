@@ -15,12 +15,10 @@ import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.C
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getModel;
-import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.configId;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getNodeDimensionsConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getRpcConnectorConfig;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.getVespaServicesConfig;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertEquals;
@@ -39,9 +37,9 @@ public class MetricsProxyContainerTest {
         tester.addHosts(numberOfHosts);
 
         VespaModel model = tester.createModel(servicesWithManyNodes(), true);
-        assertThat(model.getRoot().getHostSystem().getHosts().size(), is(numberOfHosts));
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
-        for (var host : model.getHostSystem().getHosts()) {
+        for (var host : model.hostSystem().getHosts()) {
             assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
 
             long metricsProxies =  host.getServices().stream()

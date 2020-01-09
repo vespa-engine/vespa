@@ -265,13 +265,8 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         }
     }
 
-    /**
-     * Returns the one and only HostSystem of the root node
-     * Must be overridden by root node.
-     */
-    public HostSystem getHostSystem() {
-        return getRoot().getHostSystem();
-    }
+    /** Returns the one and only HostSystem of the root node. Must be overridden by root node. */
+    public HostSystem hostSystem() { return getRoot().hostSystem(); }
 
     public AbstractConfigProducerRoot getRoot() {
         return parent == null ? null : parent.getRoot();
