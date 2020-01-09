@@ -37,11 +37,13 @@ public class Node {
     private final String flavor;
     private final String clusterId;
     private final ClusterType clusterType;
+    private final boolean wantToRetire;
+    private final boolean wantToDeprovision;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion, ServiceState serviceState,
                 long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                int cost, String flavor, String clusterId, ClusterType clusterType) {
+                int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -61,6 +63,8 @@ public class Node {
         this.flavor = flavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
+        this.wantToRetire = wantToRetire;
+        this.wantToDeprovision = wantToDeprovision;
     }
 
     public HostName hostname() {
@@ -137,6 +141,14 @@ public class Node {
         return clusterType;
     }
 
+    public boolean wantToRetire() {
+        return wantToRetire;
+    }
+
+    public boolean wantToDeprovision() {
+        return wantToDeprovision;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -198,6 +210,8 @@ public class Node {
         private String flavor;
         private String clusterId;
         private ClusterType clusterType;
+        private boolean wantToRetire;
+        private boolean wantToDeprovision;
         
         public Builder() { }
 
@@ -221,6 +235,8 @@ public class Node {
             this.flavor = node.flavor;
             this.clusterId = node.clusterId;
             this.clusterType = node.clusterType;
+            this.wantToRetire = node.wantToRetire;
+            this.wantToDeprovision = node.wantToDeprovision;
         }
 
         public Builder hostname(HostName hostname) {
@@ -318,10 +334,20 @@ public class Node {
             return this;
         }
 
+        public Builder wantToRetire(boolean wantToRetire) {
+            this.wantToRetire = wantToRetire;
+            return this;
+        }
+
+        public Builder wantToDeprovision(boolean wantToDeprovision) {
+            this.wantToDeprovision = wantToDeprovision;
+            return this;
+        }
+
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion, currentOsVersion,
                     wantedOsVersion, serviceState, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                    cost, flavor, clusterId, clusterType);
+                    cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision);
         }
     }
 }

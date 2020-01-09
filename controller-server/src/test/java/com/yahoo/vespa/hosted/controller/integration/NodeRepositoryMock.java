@@ -188,6 +188,11 @@ public class NodeRepositoryMock implements NodeRepository {
     public void cancelFirmwareCheck(ZoneId zone) {
     }
 
+    @Override
+    public void retireAndDeprovision(ZoneId zoneId, String hostName) {
+        nodeRepository.get(zoneId).remove(HostName.from(hostName));
+    }
+
     public void doUpgrade(DeploymentId deployment, Optional<HostName> hostName, Version version) {
         modifyNodes(deployment, hostName, node -> {
             assert node.wantedVersion().equals(version);

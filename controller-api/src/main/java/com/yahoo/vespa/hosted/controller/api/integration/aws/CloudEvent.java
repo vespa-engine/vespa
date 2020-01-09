@@ -14,10 +14,10 @@ public final class CloudEvent {
     public final Optional<Date> notAfter;
 
     public String awsRegionName;
-    public Set<String> affectedHostnames;
+    public Set<String> affectedInstances;
 
     public CloudEvent(String instanceEventId, String code, String description, Date notAfter, Date notBefore, Date notBeforeDeadline,
-                      String awsRegionName, Set<String> affectedHostnames) {
+                      String awsRegionName, Set<String> affectedInstances) {
         this.instanceEventId = instanceEventId;
         this.code = code;
         this.description = description;
@@ -26,6 +26,6 @@ public final class CloudEvent {
         this.notAfter = Optional.ofNullable(notAfter);
 
         this.awsRegionName = awsRegionName;
-        this.affectedHostnames = affectedHostnames;
+        this.affectedInstances = affectedInstances;
     }
 }
