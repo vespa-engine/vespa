@@ -35,7 +35,7 @@ public class NodeFlavorsTest {
         Flavor banana = nodeFlavors.getFlavor("banana").get();
         assertEquals(3, banana.cost());
         assertEquals(10, banana.getMinCpuCores(), delta);
-        assertEquals("10 * (1 + 2*(1.3 - 1)/3", 12, banana.resources().vcpu(), delta);
+        assertEquals("10 * 1.3", 13, banana.resources().vcpu(), delta);
     }
 
 }

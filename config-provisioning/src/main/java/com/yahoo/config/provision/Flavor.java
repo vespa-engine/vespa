@@ -28,13 +28,10 @@ public class Flavor {
 
     private final Optional<FlavorOverrides> flavorOverrides;
 
-    private static final double cpuSpeedupRolloutFactor = 2.0/3.0; // TODO: Increase to 1 on a later release
-
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this(flavorConfig.name(),
-             new NodeResources(flavorConfig.minCpuCores() *
-                                      (1 + (flavorConfig.cpuSpeedup() - 1) * cpuSpeedupRolloutFactor),
+             new NodeResources(flavorConfig.minCpuCores() * flavorConfig.cpuSpeedup(),
                                flavorConfig.minMainMemoryAvailableGb(),
                                flavorConfig.minDiskAvailableGb(),
                                flavorConfig.bandwidth() / 1000,
