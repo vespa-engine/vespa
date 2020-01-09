@@ -53,6 +53,8 @@ public class Curator implements AutoCloseable {
     private static final int BASE_SLEEP_TIME = 1000; //ms
     private static final int MAX_RETRIES = 10;
 
+    private static final File zkClientConfigFile = new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg"));
+
     protected final RetryPolicy retryPolicy;
 
     private final CuratorFramework curatorFramework;
@@ -63,10 +65,10 @@ public class Curator implements AutoCloseable {
 
     /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
     public static Curator create(String connectionSpec) {
-        return Curator.create(connectionSpec, Optional.empty());
+        return new Curator(connectionSpec, connectionSpec, Optional.of(zkClientConfigFile));
     }
 
-    /** Creates a curator instance from a comma-separated string of ZooKeeper host:port strings */
+    // For testing only, use Optional.empty for clientConfigFile parameter to create default zookeeper client config
     public static Curator create(String connectionSpec, Optional<File> clientConfigFile) {
         return new Curator(connectionSpec, connectionSpec, clientConfigFile);
     }
@@ -75,7 +77,7 @@ public class Curator implements AutoCloseable {
     // TODO: Move zookeeperserver config out of configserverconfig (requires update of controller services.xml as well)
     @Inject
     public Curator(ConfigserverConfig configserverConfig, VespaZooKeeperServer server) {
-        this(configserverConfig, Optional.empty());
+        this(configserverConfig, Optional.of(zkClientConfigFile));
     }
 
     Curator(ConfigserverConfig configserverConfig, Optional<File> clientConfigFile) {
@@ -127,19 +129,19 @@ public class Curator implements AutoCloseable {
                 : createEnsembleConnectionSpec(configserverConfig);
     }
 
-    private static ZKClientConfig createClientConfig(Optional<File> file) {
-        boolean useSecureClient = Boolean.parseBoolean(getEnvironmentVariable("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT").orElse("false"));
-        String config = "zookeeper.client.secure=" + useSecureClient + "\n";
-
-        File clientConfigFile =
-                file.orElseGet(() -> new File(Defaults.getDefaults().underVespaHome("conf/zookeeper/zookeeper-client.cfg")));
-        clientConfigFile.getParentFile().mkdirs();
-        IOUtils.writeFile(clientConfigFile, Utf8.toBytes(config));
-
-        try {
-            return new ZKClientConfig(clientConfigFile);
-        } catch (QuorumPeerConfig.ConfigException e) {
-            throw new RuntimeException("Unable to create ZooKeeper client config file " + file);
+    private static ZKClientConfig createClientConfig(Optional<File> clientConfigFile) {
+        if (clientConfigFile.isPresent()) {
+            boolean useSecureClient = Boolean.parseBoolean(getEnvironmentVariable("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT").orElse("false"));
+            String config = "zookeeper.client.secure=" + useSecureClient + "\n";
+            clientConfigFile.get().getParentFile().mkdirs();
+            IOUtils.writeFile(clientConfigFile.get(), Utf8.toBytes(config));
+            try {
+                return new ZKClientConfig(clientConfigFile.get());
+            } catch (QuorumPeerConfig.ConfigException e) {
+                throw new RuntimeException("Unable to create ZooKeeper client config file " + clientConfigFile.get());
+            }
+        } else {
+            return new ZKClientConfig();
         }
     }
 

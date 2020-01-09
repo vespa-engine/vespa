@@ -77,7 +77,7 @@ public class ZookeeperStatusServiceTest {
     }
 
     private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
-        Curator curator = Curator.create(server.getConnectString());
+        Curator curator = Curator.create(server.getConnectString(), Optional.empty());
         curator.framework().blockUntilConnected(1, TimeUnit.MINUTES);
         return curator;
     }
