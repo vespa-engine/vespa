@@ -72,7 +72,7 @@ public class GenericJsonUtil {
                     .get();
             if (VESPA_NODE_SERVICE_ID.equals(serviceId)) {
                 jsonModel.node = new GenericNode(genericService.timestamp, genericService.metrics);
-                jsonModel.node.name = nodeName;
+                jsonModel.name = nodeName;
             } else {
                 genericServices.add(genericService);
 

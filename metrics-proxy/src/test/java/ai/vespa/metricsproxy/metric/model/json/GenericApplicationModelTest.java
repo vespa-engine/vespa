@@ -33,7 +33,7 @@ public class GenericApplicationModelTest {
         // Do some sanity checking
         assertEquals(2, model.nodes.size());
         GenericJsonModel node0Model = model.nodes.get(0);
-        assertEquals("node0", node0Model.node.name);
+        assertEquals("node0", node0Model.name);
         assertEquals(1, node0Model.services.size());
         GenericService service = node0Model.services.get(0);
         assertEquals(1, service.metrics.size());
@@ -41,7 +41,7 @@ public class GenericApplicationModelTest {
 
         GenericJsonModel node1Model = model.nodes.get(1);
         GenericNode node1 = node1Model.node;
-        assertEquals("node1", node1.name);
+        assertEquals("node1", node1Model.name);
         assertEquals(32.444, node1.metrics.get(0).values.get("cpu.util"), 0.001d);
 
         assertThatSerializedModelEqualsTestFile(model);
@@ -69,7 +69,7 @@ public class GenericApplicationModelTest {
 
         GenericJsonModel nodeModel = model.nodes.get(0);
         assertNotNull(nodeModel.node);
-        assertEquals("node0", nodeModel.node.name);
+        assertEquals("node0", nodeModel.name);
         assertEquals(1, nodeModel.node.metrics.size());
         GenericMetrics nodeMetrics = nodeModel.node.metrics.get(0);
         assertEquals(1.234, nodeMetrics.values.get("node-metric"), 0.001d);
