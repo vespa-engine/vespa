@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -86,11 +87,13 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor platformArray = root.setArray("versions");
-        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()))
+        var versionStatus = controller.versionStatus();
+        var systemVersion = versionStatus.systemVersion().map(VespaVersion::versionNumber).orElse(Vtag.currentVersion);
+        Map<ApplicationId, JobList> jobs = controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList()), systemVersion)
                                                      .asList().stream()
                                                      .flatMap(status -> status.instanceJobs().entrySet().stream())
                                                      .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
-        for (VespaVersion version : controller.versionStatus().versions()) {
+        for (VespaVersion version : versionStatus.versions()) {
             Cursor versionObject = platformArray.addObject();
             versionObject.setString("version", version.versionNumber().toString());
             versionObject.setString("confidence", version.confidence().name());
