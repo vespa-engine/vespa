@@ -5,7 +5,6 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.ConfigModel;
 import com.yahoo.config.model.ConfigModelContext;
@@ -15,12 +14,10 @@ import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -56,7 +53,6 @@ public class Content extends ConfigModel {
 
     private ContentCluster cluster;
     private Optional<ApplicationContainerCluster> ownedIndexingCluster = Optional.empty();
-    private final boolean isHosted;
 
     // Dependencies to other models
     private final AdminModel adminModel;
@@ -68,7 +64,6 @@ public class Content extends ConfigModel {
     public Content(ConfigModelContext modelContext, AdminModel adminModel, Collection<ContainerModel> containers) {
         super(modelContext);
         modelContext.getParentProducer().getRoot();
-        isHosted = modelContext.getDeployState().isHosted();
         this.adminModel = adminModel;
         this.containers = containers;
     }

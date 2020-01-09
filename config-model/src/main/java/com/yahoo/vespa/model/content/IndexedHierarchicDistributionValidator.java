@@ -1,9 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
  * Class used to validate that hierarchic distribution is correctly setup when having an indexed content cluster.
  *
@@ -30,7 +27,7 @@ public class IndexedHierarchicDistributionValidator {
         this.dispatchPolicy = dispatchPolicy;
     }
 
-    public void validate() throws Exception {
+    public void validate() {
         validateThatWeHaveOneGroupLevel();
         validateThatLeafGroupsHasEqualNumberOfNodes();
         validateThatLeafGroupsCountIsAFactorOfRedundancy(clusterName, redundancy.effectiveFinalRedundancy(), rootGroup.getSubgroups().size());
@@ -82,10 +79,6 @@ public class IndexedHierarchicDistributionValidator {
                                                redundancyPerGroup + ", but it is not according to distribution partitions '" +
                                                rootGroup.getPartitions().get() + "'. Expected distribution partitions should be '" + expPartitions + "'.");
         }
-    }
-
-    private List<StorageNode> nonRetired(List<StorageNode> nodes) {
-        return nodes.stream().filter((node) -> { return !node.isRetired(); }  ).collect(Collectors.toList());
     }
 
     private String createDistributionPartitions(int redundancyPerGroup, int numGroups) {

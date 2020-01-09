@@ -275,7 +275,7 @@ public class StorageGroup {
                     storageGroup.nodes.add(nodeBuilder.build(deployState, owner, storageGroup));
                 }
                 
-                if ( ! parent.isPresent() && subGroups.isEmpty() && nodeBuilders.isEmpty()) // no nodes or groups: create single node
+                if (parent.isEmpty() && subGroups.isEmpty() && nodeBuilders.isEmpty()) // no nodes or groups: create single node
                     storageGroup.nodes.add(buildSingleNode(deployState, owner));
 
                 return storageGroup;
@@ -412,21 +412,20 @@ public class StorageGroup {
         }
 
         private Optional<String> childAsString(Optional<ModelElement> element, String childTagName) {
-            if ( ! element.isPresent()) return Optional.empty();
+            if (element.isEmpty()) return Optional.empty();
             return Optional.ofNullable(element.get().childAsString(childTagName));
         }
         private Optional<Long> childAsLong(Optional<ModelElement> element, String childTagName) {
-            if ( ! element.isPresent()) return Optional.empty();
+            if (element.isEmpty()) return Optional.empty();
             return Optional.ofNullable(element.get().childAsLong(childTagName));
         }
         private Optional<Boolean> childAsBoolean(Optional<ModelElement> element, String childTagName) {
-            if ( ! element.isPresent()) return Optional.empty();
+            if (element.isEmpty()) return Optional.empty();
             return Optional.ofNullable(element.get().childAsBoolean(childTagName));
         }
 
         private boolean booleanAttributeOr(Optional<ModelElement> element, String attributeName, boolean defaultValue) {
-            if ( ! element.isPresent()) return defaultValue;
-            return element.get().booleanAttribute(attributeName, defaultValue);
+            return element.map(modelElement -> modelElement.booleanAttribute(attributeName, defaultValue)).orElse(defaultValue);
         }
 
         private Optional<ModelElement> getNodes(ModelElement groupOrNodesElement) {
@@ -435,7 +434,7 @@ public class StorageGroup {
         }
 
         private List<XmlNodeBuilder> collectExplicitNodes(Optional<ModelElement> groupOrNodesElement) {
-            if ( ! groupOrNodesElement.isPresent()) return Collections.emptyList();
+            if (groupOrNodesElement.isEmpty()) return Collections.emptyList();
             List<XmlNodeBuilder> nodes = new ArrayList<>();
             for (ModelElement n : groupOrNodesElement.get().subElements("node"))
                 nodes.add(new XmlNodeBuilder(clusterElement, n));
@@ -444,7 +443,7 @@ public class StorageGroup {
 
         private List<GroupBuilder> collectSubGroups(boolean isHosted, StorageGroup parentGroup, ModelElement parentGroupElement) {
             List<ModelElement> subGroupElements = parentGroupElement.subElements("group");
-            if (subGroupElements.size() > 1 &&  ! parentGroup.getPartitions().isPresent())
+            if (subGroupElements.size() > 1 && parentGroup.getPartitions().isEmpty())
                 throw new IllegalArgumentException("'distribution' attribute is required with multiple subgroups");
 
             List<GroupBuilder> subGroups = new ArrayList<>();
