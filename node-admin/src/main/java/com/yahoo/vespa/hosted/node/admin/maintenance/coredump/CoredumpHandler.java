@@ -13,12 +13,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameEndsWith;
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameMatches;
@@ -33,6 +36,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class CoredumpHandler {
 
     private static final Pattern JAVA_CORE_PATTERN = Pattern.compile("java_pid.*\\.hprof");
+    private static final Pattern HS_ERR_PATTERN = Pattern.compile("hs_err_pid[0-9]+\\.log");
     private static final String LZ4_PATH = "/usr/bin/lz4";
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
@@ -96,26 +100,39 @@ public class CoredumpHandler {
     }
 
     /**
-     * Moves a coredump to a new directory under the processing/ directory. Limit to only processing
-     * one coredump at the time, starting with the oldest.
+     * Moves a coredump and related hs_err file(s) to a new directory under the processing/ directory.
+     * Limit to only processing one coredump at the time, starting with the oldest.
+     *
+     * Assumption: hs_err files are much smaller than core files and are written (last modified time)
+     * before the core file.
      *
      * @return path to directory inside processing directory which contains the enqueued core dump file
      */
     Optional<Path> enqueueCoredump(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
-        return FileFinder.files(containerCrashPathOnHost)
-                .match(nameStartsWith(".").negate())
+        List<Path> toProcess = FileFinder.files(containerCrashPathOnHost)
+                .match(nameStartsWith(".").negate()) // Skip core dump files currently being written
                 .maxDepth(1)
                 .stream()
-                .min(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
+                .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
                 .map(FileFinder.FileAttributes::path)
-                .map(coredumpPath -> {
-                    UnixPath coredumpInProcessingDirectory = new UnixPath(
-                            containerProcessingPathOnHost
-                                    .resolve(coredumpIdSupplier.get())
-                                    .resolve(COREDUMP_FILENAME_PREFIX + coredumpPath.getFileName()));
-                    coredumpInProcessingDirectory.createParents();
-                    return uncheck(() -> Files.move(coredumpPath, coredumpInProcessingDirectory.toPath())).getParent();
+                .collect(Collectors.toList());
+
+        int coredumpIndex = IntStream.range(0, toProcess.size())
+                .filter(i -> !HS_ERR_PATTERN.matcher(toProcess.get(i).getFileName().toString()).matches())
+                .findFirst()
+                .orElse(-1);
+
+        // Either there are no files in crash directory, or all the files are hs_err files.
+        if (coredumpIndex == -1) return Optional.empty();
+
+        Path enqueuedDir = uncheck(() -> Files.createDirectories(containerProcessingPathOnHost.resolve(coredumpIdSupplier.get())));
+        IntStream.range(0, coredumpIndex + 1)
+                .forEach(i -> {
+                    Path path = toProcess.get(i);
+                    String prefix = i == coredumpIndex ? COREDUMP_FILENAME_PREFIX : "";
+                    uncheck(() -> Files.move(path, enqueuedDir.resolve(prefix + path.getFileName())));
                 });
+        return Optional.of(enqueuedDir);
     }
 
     void processAndReportSingleCoredump(NodeAgentContext context, Path coredumpDirectory, Supplier<Map<String, Object>> nodeAttributesSupplier) {
